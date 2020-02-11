@@ -1,0 +1,275 @@
+{
+	"auto_complete":
+	{
+		"selected_items":
+		[
+			[
+				"get",
+				"get_unique_minima"
+			],
+			[
+				"file",
+				"filehandle"
+			],
+			[
+				"stru",
+				"structure"
+			]
+		]
+	},
+	"buffers":
+	[
+	],
+	"build_system": "",
+	"build_system_choices":
+	[
+	],
+	"build_varint": "",
+	"command_palette":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+			[
+				"install",
+				"Package Control: Install Package"
+			],
+			[
+				"color",
+				"UI: Select Color Scheme"
+			],
+			[
+				"theme",
+				"UI: Select Theme"
+			],
+			[
+				"ins",
+				"Package Control: Install Package"
+			],
+			[
+				"pack",
+				"Install Package Control"
+			],
+			[
+				"instal",
+				"Install Package Control"
+			],
+			[
+				"pac",
+				"Install Package Control"
+			],
+			[
+				"inarl",
+				"Install Package Control"
+			]
+		],
+		"width": 0.0
+	},
+	"console":
+	{
+		"height": 0.0,
+		"history":
+		[
+		]
+	},
+	"distraction_free":
+	{
+		"menu_visible": true,
+		"show_minimap": false,
+		"show_open_files": false,
+		"show_tabs": false,
+		"side_bar_visible": false,
+		"status_bar_visible": false
+	},
+	"expanded_folders":
+	[
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella"
+	],
+	"file_history":
+	[
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/build/setup.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/build/rmgcat_to_sella/relax_3d.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/build/rmgcat_to_sella/graph_utils.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/build/rmgcat_to_sella/find_equivalent_bonds.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/build/rmgcat_to_sella/find_all_nebs.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/build/rmgcat_to_sella/compare_structures.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/build/rmgcat_to_sella/adjacency_to_3d.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/build/rmgcat_to_sella/__init__.py",
+		"/Users/mgierad/.zshrc",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/build/rmgcat_to_sella/rmgcat_stella.sublime-project",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/test_bond_equivalency.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/test.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/reactions.yaml",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/rmgcat_to_sella/rmgcat_to_sella.egg-info/top_level.txt",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/rmgcat_to_sella/setup.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/rmgcat_to_sella/README.md",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/__init__.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/relax_3d.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/graph_utils.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/find_equivalent_bonds.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/find_all_nebs.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/compare_structures.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/adjacency_to_3d.py",
+		"/Users/mgierad/00_SANDIA_WORK/04_pymatgen/02_rmgcat_to_stella/rmgcat_to_sella/README.md",
+		"/Users/mgierad/00_SANDIA_WORK/04_pymatgen/02_rmgcat_to_stella/rmgcat_to_sella/setup.py",
+		"/Users/mgierad/00_SANDIA_WORK/04_pymatgen/02_rmgcat_to_stella/rmgcat_to_sella/rmgcat_to_sella/compare_structures.py",
+		"/Users/mgierad/Library/Preferences/muCommander/preferences.xml",
+		"/Users/mgierad/00_SANDIA_WORK/04_pymatgen/01_cu_model/with_pymatgen/gen_surfaces.py",
+		"/Users/mgierad/00_SANDIA_WORK/04_pymatgen/00_dev_pymatgen/pymatgen/pymatgen/core/structure.py",
+		"/etc/hosts",
+		"/Users/mgierad/00_SANDIA_WORK/04_pymatgen/01_cu_model/Cu_from_crystal_structures_1_1963_7-83.cif",
+		"/Users/mgierad/00_SANDIA_WORK/04_pymatgen/01_cu_model/test_adsorption.py",
+		"/Users/mgierad/00_SANDIA_WORK/04_pymatgen/01_cu_model/web.py",
+		"/Users/mgierad/00_SANDIA_WORK/04_pymatgen/00_dev_pymatgen/pymatgen/tasks.py",
+		"/Users/mgierad/00_SANDIA_WORK/04_pymatgen/01_cu_model/gen_surface.py",
+		"/Users/mgierad/00_SANDIA_WORK/04_pymatgen/01_cu_model/test_based.py",
+		"/Users/mgierad/00_SANDIA_WORK/04_pymatgen/01_cu_model/web_.py",
+		"/Users/mgierad/00_SANDIA_WORK/04_pymatgen/01_cu_model/pymatgen_test.py",
+		"/Users/mgierad/00_SANDIA_WORK/04_pymatgen/00_dev_pymatgen/pymatgen/README.rst",
+		"/Users/mgierad/00_SANDIA_WORK/04_pymatgen/01_cu_model/test",
+		"/Users/mgierad/00_SANDIA_WORK/04_pymatgen/00_dev_pymatgen/pymatgen/pymatgen/analysis/tests/test_adsorption.py",
+		"/Users/mgierad/00_SANDIA_WORK/04_pymatgen/01_cu_model/pytmatgen_tests.py",
+		"/Users/mgierad/00_SANDIA_WORK/04_pymatgen/01_cu_model/pytmatgen_tests",
+		"/Users/mgierad/00_SANDIA_WORK/04_pymatgen/01_cu_model/POSCAR",
+		"/Users/mgierad/00_SANDIA_WORK/00_ECC_project_overview/cu_111_2_2.POSCAR.vasp",
+		"/Users/mgierad/00_SANDIA_WORK/00_ECC_project_overview/AMS_DATA.POSCAR.vasp",
+		"/Users/mgierad/00_SANDIA_WORK/03_rmg/rmg_test.py",
+		"/Users/mgierad/opt/packmol/examples/executed/test.py",
+		"/Users/mgierad/opt/packmol/examples/executed/.zshrc",
+		"/usr/local/bin/vmd",
+		"/Users/mgierad/opt/packmol/examples/interface-comment.inp",
+		"/usr/local/bin/00_by_mg/pro",
+		"/usr/local/bin/00_by_mg/opt1",
+		"/usr/local/bin/00_by_mg/opt2",
+		"/usr/local/bin/00_by_mg/opt4",
+		"/usr/local/bin/00_by_mg/int3",
+		"/usr/local/bin/00_by_mg/int1",
+		"/usr/local/bin/00_by_mg/int2",
+		"/Users/mgierad/Library/Application Support/Sublime Text 3/Packages/Default/Preferences.sublime-settings",
+		"/Users/mgierad/Library/Application Support/Sublime Text 3/Packages/User/Preferences.sublime-settings",
+		"/Users/mgierad/.pk10",
+		"/Users/mgierad/get-pip.py",
+		"/usr/local/bin/00_by_mg/menten"
+	],
+	"find":
+	{
+		"height": 43.0
+	},
+	"find_in_files":
+	{
+		"height": 0.0,
+		"where_history":
+		[
+		]
+	},
+	"find_state":
+	{
+		"case_sensitive": false,
+		"find_history":
+		[
+		],
+		"highlight": true,
+		"in_selection": false,
+		"preserve_case": false,
+		"regex": false,
+		"replace_history":
+		[
+		],
+		"reverse": false,
+		"show_context": true,
+		"use_buffer2": true,
+		"whole_word": false,
+		"wrap": true
+	},
+	"groups":
+	[
+		{
+			"sheets":
+			[
+			]
+		}
+	],
+	"incremental_find":
+	{
+		"height": 30.0
+	},
+	"input":
+	{
+		"height": 0.0
+	},
+	"layout":
+	{
+		"cells":
+		[
+			[
+				0,
+				0,
+				1,
+				1
+			]
+		],
+		"cols":
+		[
+			0.0,
+			1.0
+		],
+		"rows":
+		[
+			0.0,
+			1.0
+		]
+	},
+	"menu_visible": true,
+	"output.find_results":
+	{
+		"height": 0.0
+	},
+	"pinned_build_system": "",
+	"project": "rmgcat_to_stella.sublime-project",
+	"replace":
+	{
+		"height": 56.0
+	},
+	"save_all_on_build": true,
+	"select_file":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"select_project":
+	{
+		"height": 500.0,
+		"last_filter": "",
+		"selected_items":
+		[
+		],
+		"width": 380.0
+	},
+	"select_symbol":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"selected_group": 0,
+	"settings":
+	{
+	},
+	"show_minimap": true,
+	"show_open_files": true,
+	"show_tabs": true,
+	"side_bar_visible": true,
+	"side_bar_width": 209.0,
+	"status_bar_visible": true,
+	"template_settings":
+	{
+	}
+}

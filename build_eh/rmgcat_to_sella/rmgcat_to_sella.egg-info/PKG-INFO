@@ -1,0 +1,12 @@
+Metadata-Version: 1.2
+Name: rmgcat-to-sella
+Version: 0.0.1
+Summary: UNKNOWN
+Home-page: UNKNOWN
+Author: Eric Hermes
+Author-email: ehermes@sandia.gov
+License: UNKNOWN
+Description: A loose collection of scripts to convert predicted reactions from RMGCat into actual saddle points.
+        
+Platform: UNKNOWN
+Requires-Python: >=3.6

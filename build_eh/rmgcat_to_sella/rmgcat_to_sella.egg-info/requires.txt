@@ -1,0 +1,4 @@
+numpy
+ase
+catkit
+spglib
