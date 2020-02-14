@@ -4,6 +4,30 @@
 		"selected_items":
 		[
 			[
+				"rmg",
+				"rmgcat_to_sella"
+			],
+			[
+				"species",
+				"speciespath"
+			],
+			[
+				"find_",
+				"find_equivalent_atoms"
+			],
+			[
+				"fin",
+				"find_equivalent_bonds"
+			],
+			[
+				"find",
+				"find_equivalent_permutations"
+			],
+			[
+				"find_equivalent",
+				"find_equivalent_bonds"
+			],
+			[
 				"get",
 				"get_unique_minima"
 			],
@@ -20,6 +44,23 @@
 	"buffers":
 	[
 		{
+			"file": "build_eh/rmgcat_to_sella/rmgcat_to_sella/__init__.py",
+			"settings":
+			{
+				"buffer_size": 133,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "build_eh/rmgcat_to_sella/rmgcat_to_sella/adjacency_to_3d.py",
+			"settings":
+			{
+				"buffer_size": 8881,
+				"encoding": "UTF-8",
+				"line_ending": "Unix"
+			}
+		},
+		{
 			"file": "build_eh/rmgcat_to_sella/rmgcat_to_sella/compare_structures.py",
 			"settings":
 			{
@@ -28,10 +69,105 @@
 			}
 		},
 		{
-			"file": "build_eh/rmgcat_to_sella/rmgcat_to_sella/__init__.py",
+			"file": "build_eh/rmgcat_to_sella/rmgcat_to_sella/find_all_nebs.py",
 			"settings":
 			{
-				"buffer_size": 133,
+				"buffer_size": 11321,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "build_eh/rmgcat_to_sella/rmgcat_to_sella/find_equivalent_bonds.py",
+			"settings":
+			{
+				"buffer_size": 1727,
+				"encoding": "UTF-8",
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "build_eh/rmgcat_to_sella/rmgcat_to_sella/graph_utils.py",
+			"settings":
+			{
+				"buffer_size": 75,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "build_eh/rmgcat_to_sella/rmgcat_to_sella/relax_3d.py",
+			"settings":
+			{
+				"buffer_size": 1133,
+				"encoding": "UTF-8",
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "test/rmgcat_to_sella/test_find_all_nebs.py",
+			"settings":
+			{
+				"buffer_size": 194,
+				"encoding": "UTF-8",
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "test/rmgcat_to_sella/test.py",
+			"settings":
+			{
+				"buffer_size": 183,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "test/rmgcat_to_sella/test_bond_equivalency.py",
+			"settings":
+			{
+				"buffer_size": 622,
+				"encoding": "UTF-8",
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "test/rmgcat_to_sella/test2.py",
+			"settings":
+			{
+				"buffer_size": 179,
+				"encoding": "UTF-8",
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "test/rmgcat_to_sella/run_Pt_111.py",
+			"settings":
+			{
+				"buffer_size": 258,
+				"encoding": "UTF-8",
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "test/rmgcat_to_sella/run_compare.py",
+			"settings":
+			{
+				"buffer_size": 95,
+				"encoding": "UTF-8",
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "test/rmgcat_to_sella/run_set_up_nebs.py",
+			"settings":
+			{
+				"buffer_size": 189,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "test/rmgcat_to_sella/run_Pt_111_reactions.py",
+			"settings":
+			{
+				"buffer_size": 215,
 				"line_ending": "Unix"
 			}
 		}
@@ -103,10 +239,27 @@
 		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella",
 		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/build_eh",
 		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/build_eh/rmgcat_to_sella",
-		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/build_eh/rmgcat_to_sella/rmgcat_to_sella"
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/build_eh/rmgcat_to_sella/rmgcat_to_sella",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella"
 	],
 	"file_history":
 	[
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/mg2test.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/build_eh/rmgcat_to_sella/build/lib/rmgcat_to_sella/compare_structures.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/test_mg.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/build_eh/rmgcat_to_sella/build/lib/rmgcat_to_sella/relax_3d.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/build_eh/rmgcat_to_sella/rmgcat_to_sella/find_equivalent_bonds.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/build_eh/rmgcat_to_sella/build/lib/rmgcat_to_sella/find_equivalent_bonds.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/build_eh/rmgcat_to_sella/rmgcat_to_sella/relax_3d.py",
+		"/Users/mgierad/opt/anaconda3/lib/python3.7/site-packages/catkit/gratoms.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/build_eh/rmgcat_to_sella/rmgcat_to_sella/adjacency_to_3d.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/build_eh/rmgcat_to_sella/rmgcat_to_sella/compare_structures.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/build_eh/rmgcat_to_sella/rmgcat_to_sella/find_all_nebs.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/build_eh/rmgcat_to_sella/rmgcat_to_sella/__init__.py",
+		"/Users/mgierad/00_SANDIA_WORK/get-pip.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/run_set_up_nebs.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/test_bond_equivalency.py",
 		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/build/setup.py",
 		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/build/rmgcat_to_sella/relax_3d.py",
 		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/build/rmgcat_to_sella/graph_utils.py",
@@ -117,7 +270,6 @@
 		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/build/rmgcat_to_sella/__init__.py",
 		"/Users/mgierad/.zshrc",
 		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/build/rmgcat_to_sella/rmgcat_stella.sublime-project",
-		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/test_bond_equivalency.py",
 		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/test.py",
 		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/reactions.yaml",
 		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/rmgcat_to_sella/rmgcat_to_sella.egg-info/top_level.txt",
@@ -177,9 +329,10 @@
 	},
 	"find_in_files":
 	{
-		"height": 0.0,
+		"height": 111.0,
 		"where_history":
 		[
+			""
 		]
 	},
 	"find_state":
@@ -187,6 +340,25 @@
 		"case_sensitive": false,
 		"find_history":
 		[
+			"slab",
+			"slab.pbc",
+			"slabname",
+			"gr_ref",
+			"find_all_uni",
+			"get_unique",
+			"_cell",
+			"conn",
+			"adjtxt",
+			"gratoms_list",
+			"gratom",
+			"rmgcat_to_gratoms",
+			"cell",
+			"_cell",
+			"gratom",
+			"gratoms",
+			"set_up",
+			"sdt_up",
+			"setup_nebs"
 		],
 		"highlight": true,
 		"in_selection": false,
@@ -204,11 +376,69 @@
 	"groups":
 	[
 		{
-			"selected": 0,
+			"selected": 1,
 			"sheets":
 			[
 				{
 					"buffer": 0,
+					"file": "build_eh/rmgcat_to_sella/rmgcat_to_sella/__init__.py",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 133,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								133,
+								133
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Python/Python.sublime-syntax"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 10,
+					"type": "text"
+				},
+				{
+					"buffer": 1,
+					"file": "build_eh/rmgcat_to_sella/rmgcat_to_sella/adjacency_to_3d.py",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 8881,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								8524,
+								8574
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Python/Python.sublime-syntax",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 3745.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 0,
+					"type": "text"
+				},
+				{
+					"buffer": 2,
 					"file": "build_eh/rmgcat_to_sella/rmgcat_to_sella/compare_structures.py",
 					"semi_transient": false,
 					"settings":
@@ -220,8 +450,38 @@
 						"selection":
 						[
 							[
-								45,
-								45
+								2855,
+								2855
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Python/Python.sublime-syntax",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 1286.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 6,
+					"type": "text"
+				},
+				{
+					"buffer": 3,
+					"file": "build_eh/rmgcat_to_sella/rmgcat_to_sella/find_all_nebs.py",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 11321,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								965,
+								965
 							]
 						],
 						"settings":
@@ -234,16 +494,46 @@
 						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 0,
+					"stack_index": 11,
 					"type": "text"
 				},
 				{
-					"buffer": 1,
-					"file": "build_eh/rmgcat_to_sella/rmgcat_to_sella/__init__.py",
+					"buffer": 4,
+					"file": "build_eh/rmgcat_to_sella/rmgcat_to_sella/find_equivalent_bonds.py",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 133,
+						"buffer_size": 1727,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								553,
+								553
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Python/Python.sublime-syntax",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 8,
+					"type": "text"
+				},
+				{
+					"buffer": 5,
+					"file": "build_eh/rmgcat_to_sella/rmgcat_to_sella/graph_utils.py",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 75,
 						"regions":
 						{
 						},
@@ -262,7 +552,267 @@
 						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
+					"stack_index": 9,
+					"type": "text"
+				},
+				{
+					"buffer": 6,
+					"file": "build_eh/rmgcat_to_sella/rmgcat_to_sella/relax_3d.py",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 1133,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								606,
+								606
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Python/Python.sublime-syntax",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 5,
+					"type": "text"
+				}
+			]
+		},
+		{
+			"selected": 4,
+			"sheets":
+			[
+				{
+					"buffer": 7,
+					"file": "test/rmgcat_to_sella/test_find_all_nebs.py",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 194,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								194,
+								194
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Python/Python.sublime-syntax"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 7,
+					"type": "text"
+				},
+				{
+					"buffer": 8,
+					"file": "test/rmgcat_to_sella/test.py",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 183,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								183,
+								183
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Python/Python.sublime-syntax"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 4,
+					"type": "text"
+				},
+				{
+					"buffer": 9,
+					"file": "test/rmgcat_to_sella/test_bond_equivalency.py",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 622,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								591,
+								591
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Python/Python.sublime-syntax"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 3,
+					"type": "text"
+				},
+				{
+					"buffer": 10,
+					"file": "test/rmgcat_to_sella/test2.py",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 179,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								179,
+								179
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Python/Python.sublime-syntax"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 2,
+					"type": "text"
+				},
+				{
+					"buffer": 11,
+					"file": "test/rmgcat_to_sella/run_Pt_111.py",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 258,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								258,
+								258
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Python/Python.sublime-syntax"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
 					"stack_index": 1,
+					"type": "text"
+				},
+				{
+					"buffer": 12,
+					"file": "test/rmgcat_to_sella/run_compare.py",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 95,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								95,
+								95
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Python/Python.sublime-syntax"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 14,
+					"type": "text"
+				},
+				{
+					"buffer": 13,
+					"file": "test/rmgcat_to_sella/run_set_up_nebs.py",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 189,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								189,
+								189
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Python/Python.sublime-syntax"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 12,
+					"type": "text"
+				},
+				{
+					"buffer": 14,
+					"file": "test/rmgcat_to_sella/run_Pt_111_reactions.py",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 215,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								215,
+								215
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Python/Python.sublime-syntax"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 13,
 					"type": "text"
 				}
 			]
@@ -285,11 +835,18 @@
 				0,
 				1,
 				1
+			],
+			[
+				1,
+				0,
+				2,
+				1
 			]
 		],
 		"cols":
 		[
 			0.0,
+			0.475915735423,
 			1.0
 		],
 		"rows":
@@ -316,6 +873,10 @@
 		"last_filter": "",
 		"selected_items":
 		[
+			[
+				"set up",
+				"test/rmgcat_to_sella/run_set_up_nebs.py"
+			]
 		],
 		"width": 0.0
 	},
@@ -341,7 +902,7 @@
 		],
 		"width": 0.0
 	},
-	"selected_group": 0,
+	"selected_group": 1,
 	"settings":
 	{
 	},

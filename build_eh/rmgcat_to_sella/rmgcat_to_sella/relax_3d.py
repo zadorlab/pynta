@@ -15,10 +15,12 @@ def create_relax_jobs(facetpath, pytemplate, shtemplate=None):
         for structure in os.listdir(speciespath):
             if structure.endswith('xyz'):
                 prefix = os.path.splitext(structure)[0]
-                fname = os.path.join(facetpath, f'{species}_{prefix}_relax.py')
+                fname = os.path.join(speciespath, f'{species}_{prefix}_relax.py')
                 with open(fname, 'w') as f:
                     f.write(pytemplate.format(adsorbate=species,
                                               prefix=prefix))
+
+
                 if shtemplate is None:
                     continue
 

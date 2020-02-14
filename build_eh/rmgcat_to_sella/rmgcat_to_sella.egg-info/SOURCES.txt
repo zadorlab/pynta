@@ -5,6 +5,7 @@ rmgcat_to_sella/adjacency_to_3d.py
 rmgcat_to_sella/compare_structures.py
 rmgcat_to_sella/find_all_nebs.py
 rmgcat_to_sella/find_equivalent_bonds.py
+rmgcat_to_sella/get_slab.py
 rmgcat_to_sella/graph_utils.py
 rmgcat_to_sella/relax_3d.py
 rmgcat_to_sella.egg-info/PKG-INFO

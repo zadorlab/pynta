@@ -236,3 +236,5 @@ def adjacency_to_3d(reactionlist, slab, repeats, slabname):
         for j, structure in enumerate(adsorbate):
             big_slab_ads = big_slab + structure[nslab:]
             write(os.path.join(savedir, '{}.xyz'.format(str(j).zfill(2))), big_slab_ads)
+            write(os.path.join(savedir, '{}.png'.format(str(j).zfill(2))), big_slab_ads)
+            # write(os.path.join(savedir, '{}.png'.format(str(j).zfill(2))), big_slab_ads, rotation='10z,-80x')

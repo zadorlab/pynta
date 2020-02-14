@@ -19,6 +19,9 @@ def find_equivalent_atoms(graph):
         else:
             equiv[testgraph1] = [idx]
     return list(equiv.values())
+    print(graph)
+    # return print('aa')
+
 
 def find_equivalent_permutations(gratoms, indices):
     """Given a CatKit Gratoms object and a set of indices corresopnding
@@ -26,7 +29,7 @@ def find_equivalent_permutations(gratoms, indices):
     of the nodes"""
 
     natoms = len(gratoms)
-
+    # print(natoms)
     groups = find_equivalent_atoms(gratoms.graph)
     groupids = -np.ones(natoms, dtype=int)
     for i, group in enumerate(groups):
