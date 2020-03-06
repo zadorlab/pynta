@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-
 import os
 import yaml
 
@@ -202,6 +201,7 @@ def adjacency_to_3d(reactionlist, slab, repeats, slabname):
             unique_bonds.append(bond)
 
     slabedges, tags = get_edges(slab, True)
+    #slab transfromed to gratom object
     grslab = Gratoms(numbers=slab.numbers,
                      positions=slab.positions,
                      cell=slab.cell,
@@ -231,7 +231,7 @@ def adjacency_to_3d(reactionlist, slab, repeats, slabname):
     nslab = len(slab)
 
     for species_name, adsorbate in structures.items():
-        savedir = f'./{slabname}/{species_name}'
+        savedir = f'./{slabname}/minima/{species_name}'
         os.makedirs(savedir, exist_ok=True)
         for j, structure in enumerate(adsorbate):
             big_slab_ads = big_slab + structure[nslab:]

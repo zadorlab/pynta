@@ -121,8 +121,12 @@ def find_all_nebs(slab, reactionlist, facetpath):
         for i, species in enumerate(unique_reactants):
             fname = os.path.join(rpath, '{}.xyz'.format(str(i).zfill(3)))
             write(fname, species)
+            fname = os.path.join(rpath, '{}.png'.format(str(i).zfill(3)))
+            write(fname, species)
         for i, species in enumerate(unique_products):
             fname = os.path.join(ppath, '{}.xyz'.format(str(i).zfill(3)))
+            write(fname, species)
+            fname = os.path.join(ppath, '{}.png'.format(str(i).zfill(3)))
             write(fname, species)
 
 
@@ -171,13 +175,16 @@ def set_up_nebs(yamlfile, facetpath, slab):
 
     all_rxns = dict()
     for rxn in rxn_spec:
+        # assigning first valie, i.e, rmgcat_to_gratoms(rxn['reactant'].split('\n') to reactants and ignoring the second, i.e. None. In the end reatcants is a catkit gratom object
         reactants, _ = rmgcat_to_gratoms(rxn['reactant'].split('\n'))
         r_names = '+'.join([str(species.symbols) for species in reactants])
+        # assigning first valie, i.e, rmgcat_to_gratoms(rxn['reactant'].split('\n') to products and ignoring the second, i.e. None. In the end products is a catkit gratom object
         products, _ = rmgcat_to_gratoms(rxn['product'].split('\n'))
         p_names = '+'.join([str(species.symbols) for species in products])
         rxn_name = r_names + '_' + p_names
         all_rxns[rxn_name] = (reactants, products)
 
+    #prepare environment for neb, i.e., foleders
     for name, rxn in all_rxns.items():
         rxnpath = os.path.join(facetpath, 'rxns_unique', name)
         rpath = os.path.join(rxnpath, 'reactants')
@@ -290,5 +297,7 @@ def set_up_nebs(yamlfile, facetpath, slab):
             nebpath = os.path.join(facetpath, 'nebs', name, prefix)
             os.makedirs(nebpath, exist_ok=True)
             write(os.path.join(nebpath, 'reactants.xyz'), react)
+            write(os.path.join(nebpath, 'reactants.png'), react)
             write(os.path.join(nebpath, 'products.xyz'), prod)
+            write(os.path.join(nebpath, 'products.png'), prod)
 

@@ -51,15 +51,17 @@ def get_unique_minima(yamlfile, facetpath, slab):
         path = os.path.join(facetpath, 'minima', str(species.symbols))
         fnames = os.listdir(path)
         all_confs = []
-        for fname in fnames:
+        for fname in sorted(fnames, key=str):
             if fname.endswith('.traj'):
                 all_confs.append(read(os.path.join(path, fname), index=-1))
         unique_confs = find_all_unique(all_confs, slab, species)
         newpath = os.path.join(facetpath, 'minima_unique', str(species.symbols))
         os.makedirs(newpath, exist_ok=True)
         for i, conf in enumerate(unique_confs):
-            fname = os.path.join(newpath, '{}.xyz'.format(str(i).zfill(2)))
-            write(fname, conf)
+            fname_xyz = os.path.join(newpath, '{}.xyz'.format(str(i).zfill(2)))
+            fname_png = os.path.join(newpath, '{}.png'.format(str(i).zfill(2)))
+            write(fname_xyz, conf)
+            write(fname_png, conf)
 
 def get_unique_rxns(yamlfile, facetpath, slab):
     with open(yamlfile, 'r') as f:
@@ -68,6 +70,7 @@ def get_unique_rxns(yamlfile, facetpath, slab):
 
     all_rxns = dict()
     for rxn in rxn_spec:
+        # assigning first value, i.e, rmgcat_to_gratoms(rxn['reactant'].split('\n') to reactants and ignoring the second, i.e. None. In the end reatcants is a catkit gratom object
         reactants, _ = rmgcat_to_gratoms(rxn['reactant'].split('\n'))
         r_names = '+'.join([str(species.symbols) for species in reactants])
         products, _ = rmgcat_to_gratoms(rxn['product'].split('\n'))
@@ -76,6 +79,7 @@ def get_unique_rxns(yamlfile, facetpath, slab):
         all_rxns[rxn_name] = (reactants, products)
 
     for name, rxn in all_rxns.items():
+        # split name of rxns to reactant and product. Note, that loop has to be through keys and value
         r_name, p_name = name.split('_')
         rpath = os.path.join(facetpath, 'rxns', name, 'reactants')
         all_reactants = []
@@ -104,6 +108,9 @@ def get_unique_rxns(yamlfile, facetpath, slab):
             write(fname, conf)
 
 def find_all_unique(adsorbates, slab, gr_ref):
+    # adsorbates is a gratom object containig info about adsorbated specias + surface 
+    # slab is a gratom object
+    # g_ref is a gratom object. Is a set of connectivity (graph) representation of species. See species definition in get_unique_minima()
     if isinstance(gr_ref, Gratoms):
         gr_ref = [gr_ref]
 

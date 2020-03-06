@@ -8,11 +8,11 @@ with open('README.md', 'r') as f:
 
 setup(name='rmgcat_to_sella',
       version='0.0.1',
-      author='Eric Hermes',
-      author_email='ehermes@sandia.gov',
+      author='Eric Hermes, Maciej Gierada',
+      author_email='ehermes@sandia.gov, mgierad@sandia.gov',
       long_description=long_description,
       long_description_type='text/markdown',
       packages=find_packages(),
       python_requires='>=3.6',
-      install_requires=['numpy', 'ase', 'catkit', 'spglib'],
+      install_requires=['numpy', 'ase', 'catkit', 'spglib', 'matplotlib<3.2', 'networkx<2.4'],
       )
