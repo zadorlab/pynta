@@ -1,0 +1,23 @@
+#!/usr/bin/env python3
+#SBATCH -J runIRC
+#SBATCH -N 1
+#SBATCH -n 1
+#SBATCH -p day-long-cpu
+#SBATCH -t 1-00:00:00
+#SBATCH -e %x.err
+#SBATCH -o %x.out
+
+from rmgcat_to_sella.irc import set_up_irc
+
+import os
+
+facetpath    = '{facetpath}'
+pytemplate_f = '{pytemplate_f}'
+pytemplate_r = '{pytemplate_r}'
+TSdir        = 'TS_estimate_unique'
+
+set_up_irc(facetpath, TSdir, pytemplate_f, pytemplate_r)
+
+bashCommand = os.popen(
+    "cd {facetpath}/IRC/; for i in $(ls | grep 'py'); do sbatch $i; done > ../../submitted_04.txt; cd ../../")
+print(bashCommand.read())

@@ -1,0 +1,600 @@
+from catkit import Gratoms
+from catkit.gen.adsorption import AdsorptionSites, Builder
+from catkit.build import molecule
+
+from rmgcat_to_sella.adjacency_to_3d import get_edges, rmgcat_to_gratoms
+from rmgcat_to_sella.find_all_nebs import get_all_species
+from rmgcat_to_sella.graph_utils import node_test
+
+from ase.io import read, write
+from ase import Atoms
+from ase.optimize import LBFGS
+from ase.calculators.emt import EMT
+from ase.constraints import FixBondLength
+from ase.utils.structure_comparator import SymmetryEquivalenceCheck
+
+import numpy as np
+
+from xtb import GFN0, GFN1
+
+import itertools
+
+from scipy.optimize import minimize
+
+import yaml
+
+import os
+
+import shutil
+
+from statistics import mean
+
+
+def genTSestimate(slab, repeats, yamlfile, facetpath, rotAngle, scfactor):
+    # Caclulate how many distinct rotations exists based on the slab symmetry
+    # rotAngle = slab.get_cell_lengths_and_angles()[5]
+    # possibleRotations = (360 / slab.get_cell_lengths_and_angles()[5]) - 1
+
+    possibleRotations = (360 / rotAngle) - 1
+
+    with open(yamlfile, 'r') as f:
+        yamltxt = f.read()
+    reactions = yaml.safe_load(yamltxt)
+
+    species_unique = dict()
+    nslab = len(slab)
+
+    speciesInd = []
+    bonds = []
+
+    for rxn in reactions:
+        # transforming reactions data to gratom objects
+        reactants, rbonds = rmgcat_to_gratoms(rxn['reactant'].split('\n'))
+        products, pbonds = rmgcat_to_gratoms(rxn['product'].split('\n'))
+        speciesInd += reactants + products
+        bonds += rbonds + pbonds
+
+    r_unique = []
+    p_unique = []
+    symbols_list = []
+
+    for rp, uniquelist in ((reactants, r_unique), (products, p_unique)):
+        for species in rp:
+            symbols = str(species.symbols)
+            symbols_list.append(symbols)
+            speciesdir = os.path.join(facetpath, 'minima_unique', symbols)
+            if symbols not in species_unique:
+                species_unique[symbols] = get_all_species(speciesdir)
+            uniquelist.append(species_unique[symbols])
+
+    r_name = '+'.join([str(species.symbols) for species in reactants])
+    p_name = '+'.join([str(species.symbols) for species in products])
+
+    rxn_name = r_name + '_' + p_name
+
+    unique_species = []
+    unique_bonds = []
+    images = []
+    r_name_list = [str(species.symbols) for species in reactants]
+    p_name_list = [str(species.symbols) for species in products]
+
+    if len(r_name_list) < len(p_name_list):
+        print('Reactant structure will be used to estimate TS')
+        rpDir = 'reactants'
+    elif len(r_name_list) > len(p_name_list):
+        print('Products will be used to estimate TS')
+        rpDir = 'products'
+
+    saveDir = os.path.join(facetpath, 'TS_estimate')
+    if os.path.exists(saveDir):
+        shutil.rmtree(saveDir)
+        os.makedirs(saveDir)
+    else:
+        os.makedirs(saveDir)
+
+    # ADSORBATES
+
+    atom1 = 0
+    atom2 = 1
+    if len(r_name_list) <= len(p_name_list):
+        TS_candidate = molecule(r_name_list[0])[0]
+        reactName = p_name
+    # elif len(r_name_list) > len(p_name_list):
+    else:
+        if p_name_list[0] == 'COH':
+            atom2 = 2
+        else:
+            atom2 = 1
+        TS_candidate = molecule(p_name_list[0])[0]
+        reactName = r_name
+        # print(p_name_list)
+
+    blen = TS_candidate.get_distance(atom1, atom2)
+    TS_candidate.set_distance(atom1, atom2, blen * scfactor, fix=0)
+    if len(TS_candidate.get_tags()) < 3:
+        TS_candidate.rotate(90, 'y')
+    if len(TS_candidate.get_tags()) == 3:
+        TS_candidate.rotate(90, 'z')
+
+    slabedges, tags = get_edges(slab, True)
+    grslab = Gratoms(numbers=slab.numbers,
+                     positions=slab.positions,
+                     cell=slab.cell,
+                     pbc=slab.pbc,
+                     edges=slabedges)
+    grslab.arrays['surface_atoms'] = tags
+
+    # building adsorbtion structures
+    ads_builder = Builder(grslab)
+    count = 0
+    str_list = []
+    while count <= possibleRotations:
+        structs = ads_builder.add_adsorbate(
+            TS_candidate, [0], -1, auto_construct=False)
+        big_slab = slab * repeats
+        nbigslab = len(big_slab)
+        nslab = len(slab)
+
+        pngSaveDir = os.path.join(saveDir, 'initial_png')
+        os.makedirs(pngSaveDir, exist_ok=True)
+
+        for i, struc in enumerate(structs):
+            big_slab_ads = big_slab + struc[nslab:]
+            write(os.path.join(pngSaveDir, '{}'.format(
+                str(i + len(structs) * count).zfill(3)) + '_' + reactName + '.png'), big_slab_ads)
+            write(os.path.join(saveDir, '{}'.format(
+                str(i + len(structs) * count).zfill(3)) + '_' + reactName + '.xyz'), big_slab_ads)
+        TS_candidate.rotate(rotAngle, 'z')
+        count += 1
+
+
+# def optimize(path):
+#     for num, geom in enumerate(sorted(os.listdir(path), key=str)):
+#         # for num, geom in os.listdir(path) if not endswith('.png'):
+#         if geom.endswith('.xyz'):
+#             print(geom)
+#             job = read(os.path.join(path, geom))
+#             calc = EMT()
+#             job.set_calculator(calc)
+#             trajPath = os.path.join(path, geom + '.traj')
+#             opt = LBFGS(job, trajectory=trajPath)
+#             # opt.calc(BFGS)
+#             opt.run(fmax=0.05)
+
+#             writeDir = os.path.join(saveDir, 'opt')
+#             os.makedirs(writeDir, exist_ok=True)
+
+#             write(os.path.join(writeDir, '{}'.format(
+#                 str(num).zfill(3)) + 'result_relax.png'), read(trajPath))
+
+
+# saveDir = '/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/Cu_111_tests/slab_optimized/Cu_111/neb_estimate/OH_O+H/'
+# optimize(saveDir)
+# geom = os.path.join(saveDir, '10_O+H.xyz')
+
+
+# def optimize_fix_bond(geom):
+#     job = read(geom)
+#     trajPath = os.path.join(saveDir, '10.traj')
+
+#     fix_O = []
+#     fix_H = []
+
+#     with open(geom, 'r') as f:
+#         xyz_geom_file = f.readlines()
+#         for num, line in enumerate(xyz_geom_file):
+#             if 'H' in line:
+#                 fix_H.append(num - 2)  # reading each line and adding only the one with tags = 1 (surface atoms). It is necessary to subtract 2 as indices in atom object starts with 0 and we also have to take into account that the first line in xyz file contains non xyz information
+#             elif 'O' in line:
+#                 fix_O.append(num - 2)
+#     f.close()
+
+#     # print(ads_O, ads_H)
+
+#     calc = EMT()
+#     job.set_calculator(calc)
+#     c = FixBondLength(fix_H[0], fix_O[0])
+#     job.set_constraint(c)
+#     opt = LBFGS(job, trajectory=trajPath)
+#     # opt.calc(BFGS)
+#     opt.run(fmax=0.05)
+
+#     writeDir = os.path.join(saveDir, 'opt')
+#     os.makedirs(writeDir, exist_ok=True)
+
+#     write(os.path.join(writeDir, 'result_fix_bond.png'), read(trajPath))
+
+# optimize_fix_bond(geom)
+
+
+# avDist_Cu_O = (1.75 + 1.90 + 1.90 + 1.90) / 4
+# avDist_Cu_H = (1.53 + 1.73 + 1.75 + 1.73) / 4
+# print('Average Cu-O distance: ', avDist_Cu_O)
+# print('Average Cu-H distance: ', avDist_Cu_H)
+# print()
+
+# path_minima = os.path.join(facetpath, 'minima')
+
+def gen_xyz_from_traj(avDistPath, species):
+    # if species == 'C':
+    #     speciesPath = os.path.join(avDistPath, species + 'O')
+    # else:
+    speciesPath = os.path.join(avDistPath, species)
+    for traj in sorted(os.listdir(speciesPath), key=str):
+        if traj.endswith('.traj'):
+            srcTrajPath = os.path.join(speciesPath, traj)
+            desTrajPath = os.path.join(speciesPath, traj[:-5] + '_final.xyz')
+            write(desTrajPath, read(srcTrajPath))
+
+
+def get_av_dist(avDistPath, species):
+    # nslab = len(read(slab) * repeats)
+    surface_atoms_indices = []
+    adsorbate_atoms_indices = []
+    all_conf_dist = []
+    gen_xyz_from_traj(avDistPath, species)
+    speciesPath = os.path.join(avDistPath, species)
+    if len(species) > 1:
+        species = species[:-1]
+    for xyz in sorted(os.listdir(speciesPath), key=str):
+        if xyz.endswith('_final.xyz'):
+            xyzPath = os.path.join(speciesPath, xyz)
+            conf = read(xyzPath)
+            # print(conf)
+            with open(xyzPath, 'r') as f:
+                xyzFile = f.readlines()
+                for num, line in enumerate(xyzFile):
+                    if ' 1 ' in line:
+                        surface_atoms_indices.append(num - 2)
+                    elif species in line:
+                        if not 'Cu' in line:
+                            adsorbate_atoms_indices.append(num - 2)
+            f.close()
+            dist = float(min(conf.get_distances(
+                adsorbate_atoms_indices[0], surface_atoms_indices)))
+            all_conf_dist.append(dist)
+            meanDist = mean(all_conf_dist)
+    # print(meanDist)
+    return meanDist
+
+
+# specify adsorbate atom symbol and bond distance with the closest surface
+# metal atom will be calculated
+def get_bond_dist(ads_atom, geom):
+    surface_atom = []
+    adsorbate_atom = []
+    struc = read(geom)
+    if len(ads_atom) > 1:
+        ads_atom = ads_atom[:-1]
+    # if ads_atom == 'C':
+    #     ads_atom == 'CO'
+    with open(geom, 'r') as f:
+        xyz_geom_file = f.readlines()
+        for num, line in enumerate(xyz_geom_file):
+            if ' 1 ' in line:
+                # reading each line and adding only the one with tags = 1
+                # (surface atoms). It is necessary to subtract 2 as indices in
+                # atom object starts with 0 and we also have to take into
+                # account that the first line in xyz file contains non xyz
+                # information
+                surface_atom.append(num - 2)
+            elif ads_atom in line:
+                if not "Cu" in line:
+                    adsorbate_atom.append(num - 2)
+    f.close()
+
+    if len(adsorbate_atom) > 1:
+        # print(adsorbate_atom[0])
+        dist_Cu_adsorbate = min(struc.get_distances(
+            adsorbate_atom[0], surface_atom))
+        return dist_Cu_adsorbate
+    else:
+        dist_Cu_adsorbate = min(
+            struc.get_distances(adsorbate_atom, surface_atom))
+        return dist_Cu_adsorbate
+
+
+def get_index_adatom(ads_atom, geom):
+    adsorbate_atom = []
+    if len(ads_atom) > 1:
+        ads_atom = ads_atom[:-1]
+    with open(geom, 'r') as f:
+        xyz_geom_file = f.readlines()
+        for num, line in enumerate(xyz_geom_file):
+            if ads_atom in line:
+                if not 'Cu' in line:
+                    adsorbate_atom.append(num - 2)
+    f.close()
+
+    return adsorbate_atom[0]
+
+
+def get_index_surface_atom(ads_atom, geom):
+    surface_atom = []
+    adsorbate_atom = []
+    if len(ads_atom) > 1:
+        ads_atom = ads_atom[:-1]
+    # print(ads_atom)
+    struc = read(geom)
+    with open(geom, 'r') as f:
+        xyz_geom_file = f.readlines()
+        for num, line in enumerate(xyz_geom_file):
+            if ' 1 ' in line:
+                surface_atom.append(num - 2)
+            elif ads_atom in line:
+                if not 'Cu' in line:
+                    adsorbate_atom.append(num - 2)
+    f.close()
+
+    all_dist_surface_adsorbate = struc.get_distances(
+        adsorbate_atom[0], surface_atom)
+    min_dist_surface_adsorbate = min(
+        struc.get_distances(adsorbate_atom[0], surface_atom))
+    # get index of the surface atom for which distance to adsorbate is the
+    # lowest
+    index = np.where(all_dist_surface_adsorbate == min_dist_surface_adsorbate)
+
+    return surface_atom[index[0][0]]
+
+'''
+def set_adsorbate_positions(x):
+    # make a copy of adsorbate
+    ads = TS_candidate.copy()
+    # extract center and axis/angle
+    center = x[:3]
+    axis = x[3:]
+    # angle is encoded as the norm of the axis
+    # ASE expects degrees, but we want to use radians so that the center and
+    # terms have about the same magnitude
+    angle = np.linalg.norm(axis) * 180 / np.pi
+    # Shift the adsorbate center to "center"
+    ads.positions += center - ads.positions.mean(0)
+    # Rotate the adsorbate by angle "angle" through axis "axis"
+    ads.rotate(angle, v=axis, center=center)
+    return ads
+
+
+def penalty(x):
+    # Temporarily combine slab and rotated/translated adsorbate
+    atoms = bigSlab + set_adsorbate_positions(x)
+    calc = EMT()
+    # calc = GPAW(xc='PBE', mode = 'pw')
+    # c = FixBondLength(36, 37)
+    atoms.set_calculator(calc)
+    # atoms.set_constraint(c)
+    # print(atoms.get_potential_energy())
+    energy = 0
+    for bond, dist in zip(bonds, dists):
+        energy += (atoms.get_distance(*bond) - dist)**2 + \
+            atoms.get_potential_energy()
+    # with open ('results.log', 'a+') as f:
+    #     print(energy, '\t', atoms.get_potential_energy(), file=f)
+    # f.close()
+    print(energy, '\t', atoms.get_potential_energy())
+    return energy
+
+
+def optimizePenalty(path, geom):
+    x0 = np.zeros(6)
+    x0[:3] = TS_candidate.positions.mean(0)
+    x0[3:] = [0, np.pi / 2, 0]  # just an arbitrary initial guess
+    res = minimize(penalty, x0, tol=1e-03)
+    print(res)
+    ads_opt = set_adsorbate_positions(res['x'])
+    # view(slab + ads_opt)
+    # write('maciek_emt.png', bigSlab + ads_opt, rotation='10z,-80x')
+
+    # def unique_file(basename, ext):
+    #     actualname = "%s.%s" % (basename, ext)
+    #     c = itertools.count()
+    #     while os.path.exists(actualname):
+    #         actualname = "%s (%d).%s" % (basename, next(c), ext)
+    #     return actualname
+
+    save_png = os.path.join(path, geom + '.png')
+    save_xyz = os.path.join(path, geom + '.xyz')
+    write(save_png, bigSlab + ads_opt)
+    write(save_xyz, bigSlab + ads_opt)
+    # write('maciek_emt_2.xyz', bigSlab + ads_opt)
+    # write('maciek_emt_3.png', bigSlab + ads_opt, rotation='10z,-80x')
+
+
+def run_preopt():
+    for geom in sorted(os.listdir(saveDir), key=str):
+        print('E_pot + penalty', '\t', 'E_pot')
+
+        geomPath = os.path.join(saveDir, geom)
+        SaveDir_final = os.path.join(saveDir, 'neb_candidate_xtb')
+        os.makedirs(SaveDir_final, exist_ok=True)
+        if geom.endswith('.xyz'):
+            O_index = get_index_adatom('O', geomPath)
+            H_index = get_index_adatom('H', geomPath)
+            Cu_index1 = get_index_surface_atom('O', geomPath)
+            Cu_index2 = get_index_surface_atom('H', geomPath)
+            dist_Cu_O = get_bond_dist('O', geomPath)
+            dist_Cu_H = get_bond_dist('H', geomPath)
+
+            adsorbed = read(geomPath)
+            bigSlab = slab * repeats
+            nbigSlab = len(bigSlab)
+            TS_candidate = adsorbed[nbigSlab:]
+        # write('maciek_emt_1.png', bigSlab + TS_candidate)
+
+        # List of bonds we want O-Cu; H-Cu
+            bonds = ((O_index, Cu_index1),
+                     (H_index, Cu_index2))
+        # For now, assume the optimal Cu-C and Cu-O bond distances are both 2.0
+        # Ang
+            avDist1 = get_av_dist('H', 'Cu_111')
+            avDist2 = get_av_dist('O', 'Cu_111')
+            dists = (avDist1, avDist2)
+            geom = geom[:-4]
+            # print(bonds)
+            optimizePenalty(SaveDir_final, geom)
+'''
+
+
+def checkSymm(path, TSdir):
+    good_adsorbate = []
+    result_list = []
+    gpath = os.path.join(path, TSdir)
+    for geom in sorted(os.listdir(gpath), key=str):
+        geomDir = os.path.join(gpath, geom)
+        if os.path.isdir(geomDir):
+            for traj in os.listdir(geomDir):
+                if traj.endswith('.traj'):
+                    adsorbed = read(os.path.join(geomDir, traj))
+                    adsorbed.pbc = True
+                    comparator = SymmetryEquivalenceCheck()
+                    result = comparator.compare(adsorbed, good_adsorbate)
+                    result_list.append(result)
+                    if result is False:
+                        good_adsorbate.append(adsorbed)
+
+    unique_index = []
+    for num, res in enumerate(result_list):
+        if res is False:
+            unique_index.append(str(num).zfill(3))
+    return unique_index
+
+
+def create_unique_TS(facetpath, TSdir):
+    # checkSymmPath = os.path.join(path, 'TS_estimate')
+
+    gd_ads_index = checkSymm(facetpath, TSdir)
+    for i, index in enumerate(gd_ads_index):
+        uniqueTSdir = os.path.join(
+            facetpath, TSdir + '_unique', str(i).zfill(2))
+        if os.path.isdir(uniqueTSdir):
+            shutil.rmtree(uniqueTSdir)
+            os.makedirs(uniqueTSdir, exist_ok=True)
+        else:
+            os.makedirs(uniqueTSdir, exist_ok=True)
+        gpath = os.path.join(facetpath, TSdir)
+        for geom in os.listdir(gpath):
+            geomDir = os.path.join(gpath, geom)
+            if os.path.isdir(geomDir):
+                for traj in sorted(os.listdir(geomDir)):
+                    if traj.startswith(gd_ads_index[i]) and traj.endswith('.traj'):
+                        srcFile = os.path.join(geomDir, traj)
+                        destFile = os.path.join(uniqueTSdir, traj[:-5] + '_ts')
+                        write(destFile + '.xyz', read(srcFile))
+                        write(destFile + '.png', read(srcFile))
+        #         shutil.copy2(os.path.join(path, geom), uniqueTSdir)
+        for ts in os.listdir(uniqueTSdir):
+            # if neb.endswith('.xyz'):
+            TS_xyz_Dir = os.path.join(uniqueTSdir, ts)
+            newTS_xyz_Dir = os.path.join(
+                uniqueTSdir, str(i).zfill(2) + ts[3:])
+            # NEB_png_Dir = os.path.join(uniqueTSdir, str(
+            #     i).zfill(3) + neb[2:][:-4] + '.png')
+            os.rename(TS_xyz_Dir, newTS_xyz_Dir)
+            # write(NEB_png_Dir, read(newNEB_xyz_Dir))
+
+
+# uniqueNEB = '/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/Cu_111_tests/slab_optimized/Cu_111/neb_estimate/OH_O+H/neb_candidate_unique/'
+
+# pytemplate = '/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/Cu_111_tests/slab_optimized/pytemplate_neb.py'
+
+
+def create_all_TS(facetpath):
+    all_TS_candidate_path = os.path.join(facetpath, 'TS_candidate')
+    os.makedirs(all_TS_candidate_path, exist_ok=True)
+    gpath = os.path.join(facetpath, 'TS_estimate')
+    for geom in os.listdir(gpath):
+        geomDir = os.path.join(gpath, geom)
+        if os.path.isdir(geomDir):
+            for traj in sorted(os.listdir(geomDir)):
+                if traj.endswith('.traj'):
+                    # print(str(num/2).zfill(3))
+                    xyz_dir_path = os.path.join(
+                        all_TS_candidate_path, traj[:3])
+                    os.makedirs(xyz_dir_path, exist_ok=True)
+                    srcFile = os.path.join(geomDir, traj)
+                    destFile = os.path.join(xyz_dir_path, traj[:-5])
+                    write(destFile + '.xyz', read(srcFile))
+                    write(destFile + '_initial.png', read(srcFile))
+
+
+def create_all_TS_job_files(facetpath, pytemplate):
+    all_TS_candidate_path = os.path.join(facetpath, 'TS_candidate')
+    with open(pytemplate, 'r') as f:
+        pytemplate = f.read()
+
+    for struc in os.listdir(all_TS_candidate_path):
+        TSdir = os.path.join(all_TS_candidate_path, struc)
+        if os.path.isdir(TSdir):
+            TSpath = os.path.join(all_TS_candidate_path, struc)
+            for file in os.listdir(TSpath):
+                if file.endswith('.xyz'):
+                    fname = os.path.join(all_TS_candidate_path, f'{struc}_{file[:-4][4:]}_relax.py')
+                    with open(fname, 'w') as f:
+                        f.write(pytemplate.format(TS=os.path.join(
+                            struc, file), rxn=file[:-4][4:], prefix=file[:3]))
+                    f.close()
+    f.close()
+
+
+def create_TS_unique_job_files(facetpath, TSdir, pytemplate):
+    unique_TS_candidate_path = os.path.join(facetpath, TSdir + '_unique')
+    with open(pytemplate, 'r') as f:
+        pytemplate = f.read()
+
+    for struc in os.listdir(unique_TS_candidate_path):
+        TSdir = os.path.join(unique_TS_candidate_path, struc)
+        if os.path.isdir(TSdir):
+            TSpath = os.path.join(unique_TS_candidate_path, struc)
+            for fl in os.listdir(TSpath):
+                if fl.endswith('.xyz'):
+                    fname = os.path.join(
+                        unique_TS_candidate_path, fl[:-4] + '.py')
+                    with open(fname, 'w') as f:
+                        f.write(pytemplate.format(TS=os.path.join(
+                            struc, fl), rxn=fl[3:-7], prefix=fl[:2]))
+                    f.close()
+    f.close()
+
+
+def set_up_penalty_xtb(path, pytemplate, repeats, species1, species2):
+
+    fPath = os.path.split(path)
+    avPath = os.path.join(fPath[0], 'minima')
+    with open(pytemplate, 'r') as f:
+        pytemplate = f.read()
+
+    for geom in os.listdir(path):
+        if geom.endswith('.xyz'):
+            geomPath = os.path.join(path, geom)
+            sp1_index = get_index_adatom(species1, geomPath)
+            sp2_index = get_index_adatom(species2, geomPath)
+            Cu_index1 = get_index_surface_atom(species1, geomPath)
+            Cu_index2 = get_index_surface_atom(species2, geomPath)
+            dist_Cu_sp1 = get_bond_dist(species1, geomPath)
+            dist_Cu_sp2 = get_bond_dist(species2, geomPath)
+
+            prefix = geom.split('_')
+            calcDir = os.path.join(path, prefix[0])
+            os.makedirs(calcDir, exist_ok=True)
+
+            geomName = geom[:-4]
+
+            # List of bonds we want O-Cu; H-Cu
+            bonds = ((sp1_index, Cu_index1),
+                     (sp2_index, Cu_index2))
+            avDist1 = get_av_dist(avPath, species1)
+            avDist2 = get_av_dist(avPath, species2)
+            avDists = (avDist1, avDist2)
+            trajPath = os.path.join(geom[:-4] + '.traj')
+            init_png = os.path.join(calcDir, geom[:-4] + '_initial.png')
+            write(init_png, read(geomPath))
+            fname = os.path.join(calcDir, geom[:-4] + '.py')
+            with open(fname, 'w') as f:
+                f.write(pytemplate.format(geom=geom, bonds=bonds,
+                                          avDists=avDists, trajPath=trajPath,
+                                          repeats=repeats, prefix=prefix[0],
+                                          geomName=geomName))
+            f.close()
+            shutil.move(geomPath, calcDir)
+    f.close()
+    rmpath = os.path.join(path, 'initial_png')
+    shutil.rmtree(rmpath)

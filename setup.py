@@ -8,11 +8,13 @@ with open('README.md', 'r') as f:
 
 setup(name='rmgcat_to_sella',
       version='0.0.1',
-      author='Eric Hermes, Maciej Gierada',
-      author_email='ehermes@sandia.gov, mgierad@sandia.gov',
+      summary='Workflow for automatic search of 1st order saddle points (transition states)',
+      author='Maciej Gierada, Eric Hermes',
+      author_email='mgierad@sandia.gov. ehermes@sandia.gov',
       long_description=long_description,
       long_description_type='text/markdown',
-      packages=find_packages(),
+      # packages=find_packages(),
+      packages=['rmgcat_to_sella', 'rmgcat_to_sella.pytemplate','rmgcat_to_sella.jobtemplate'],
       python_requires='>=3.6',
       install_requires=['numpy', 'ase', 'catkit', 'spglib', 'matplotlib<3.2', 'networkx<2.4'],
       )

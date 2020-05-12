@@ -4,6 +4,310 @@
 		"selected_items":
 		[
 			[
+				"good",
+				"good_reactants\tstatement"
+			],
+			[
+				"path",
+				"path_template\tstatement"
+			],
+			[
+				"TS",
+				"TSxtbScript\tstatement"
+			],
+			[
+				"Surface",
+				"SurfaceAdsorbateScript\tstatement"
+			],
+			[
+				"gen",
+				"genJobFiles\tfunction"
+			],
+			[
+				"pytempl",
+				"pytemplate_r\tstatement"
+			],
+			[
+				"pytemplate",
+				"pytemplate_relax_Cu_111_ads.py"
+			],
+			[
+				"unique",
+				"uniquePrefixShort\tstatement"
+			],
+			[
+				"is",
+				"isdir\tfunction"
+			],
+			[
+				"which",
+				"whichIRC\tstatement"
+			],
+			[
+				"get",
+				"get_barrier\tmodule"
+			],
+			[
+				"time",
+				"timedelta\tclass"
+			],
+			[
+				"spec",
+				"species2\tparam"
+			],
+			[
+				"specie",
+				"species1"
+			],
+			[
+				"speci",
+				"species_name\tstatement"
+			],
+			[
+				"slab",
+				"slabname\tparam"
+			],
+			[
+				"ract",
+				"reactmp\tstatement"
+			],
+			[
+				"pref",
+				"prefix_index\tstatement"
+			],
+			[
+				"react",
+				"reactmp\tstatement"
+			],
+			[
+				"ts",
+				"ts_path\tstatement"
+			],
+			[
+				"ts_pa",
+				"ts_path_list\tstatement"
+			],
+			[
+				"reac",
+				"reactant\tstatement"
+			],
+			[
+				"len",
+				"lenght\tstatement"
+			],
+			[
+				"rea",
+				"reactmp\tstatement"
+			],
+			[
+				"get_",
+				"get_av_dist\tfunction"
+			],
+			[
+				"avdi",
+				"avDist1"
+			],
+			[
+				"e",
+				"endswith\tfunction"
+			],
+			[
+				"Aut",
+				"AutoMinorLocator\tclass"
+			],
+			[
+				"irc_f",
+				"irc_f_ener\tstatement"
+			],
+			[
+				"scan_bond",
+				"scan_bond_top"
+			],
+			[
+				"selec",
+				"selected_pos\tstatement"
+			],
+			[
+				"ts_",
+				"ts_xyz\tstatement"
+			],
+			[
+				"text",
+				"\\textdegree"
+			],
+			[
+				"penal",
+				"penal_only\tstatement"
+			],
+			[
+				"abs",
+				"abs_ener\tstatement"
+			],
+			[
+				"angle",
+				"angle_top\tstatement"
+			],
+			[
+				"pen",
+				"penPlusAbsEner_path\tstatement"
+			],
+			[
+				"out",
+				"outfileDir\tstatement"
+			],
+			[
+				"dir",
+				"directory\tstatement"
+			],
+			[
+				"dist_",
+				"dist_Cu_O"
+			],
+			[
+				"Cu",
+				"Cu_index2\tstatement"
+			],
+			[
+				"neb_ca",
+				"neb_cadidate_xtb"
+			],
+			[
+				"neb_can",
+				"neb_candidate_xtb_path"
+			],
+			[
+				"neb_",
+				"neb_candidate_xtb_path"
+			],
+			[
+				"neb_cand",
+				"neb_candidate_unique_xtb"
+			],
+			[
+				"exsi",
+				"exist_ok"
+			],
+			[
+				"make",
+				"makedirs\tfunction"
+			],
+			[
+				"exist",
+				"exist_ok"
+			],
+			[
+				"adsor",
+				"adsorbate_atoms\tstatement"
+			],
+			[
+				"traj",
+				"trajPath"
+			],
+			[
+				"write",
+				"writeDir"
+			],
+			[
+				"dist",
+				"dist_Cu_H"
+			],
+			[
+				"sur",
+				"surface_Cu_atoms"
+			],
+			[
+				"structure",
+				"structure"
+			],
+			[
+				"in",
+				"initBondSt3"
+			],
+			[
+				"get_al",
+				"get_all_species"
+			],
+			[
+				"find",
+				"find_all_nebs_ener_based"
+			],
+			[
+				"rmgcat",
+				"rmgcat_to_sella"
+			],
+			[
+				"i",
+				"i"
+			],
+			[
+				"enerH",
+				"enerH"
+			],
+			[
+				"stru",
+				"structs"
+			],
+			[
+				"gett",
+				"get_positions"
+			],
+			[
+				"str",
+				"struc1"
+			],
+			[
+				"symb",
+				"symbols_list"
+			],
+			[
+				"grad",
+				"grad_slab"
+			],
+			[
+				"ad",
+				"adjacency_to_3d"
+			],
+			[
+				"grads",
+				"grads_slab"
+			],
+			[
+				"uni",
+				"p_uniqueDir_ads"
+			],
+			[
+				"r_ads",
+				"r_adsorbate"
+			],
+			[
+				"ads1",
+				"ads1full"
+			],
+			[
+				"reat",
+				"reactants"
+			],
+			[
+				"yam",
+				"yamlfile"
+			],
+			[
+				"yaml",
+				"yamltxt"
+			],
+			[
+				"rxn",
+				"rxn_name"
+			],
+			[
+				"uniq",
+				"unique_species"
+			],
+			[
+				"fcc",
+				"fcc111"
+			],
+			[
 				"rmg",
 				"rmgcat_to_sella"
 			],
@@ -20,64 +324,219 @@
 				"find_equivalent_bonds"
 			],
 			[
-				"find",
-				"find_equivalent_permutations"
-			],
-			[
 				"find_equivalent",
 				"find_equivalent_bonds"
 			],
 			[
-				"get",
-				"get_unique_minima"
-			],
-			[
 				"file",
 				"filehandle"
-			],
-			[
-				"stru",
-				"structure"
 			]
 		]
 	},
 	"buffers":
 	[
 		{
-			"file": "build_eh/rmgcat_to_sella/rmgcat_to_sella/__init__.py",
+			"file": "test/rmgcat_to_sella/03_Cu_methanol_CH_C+H/run_main.py",
 			"settings":
 			{
-				"buffer_size": 133,
+				"buffer_size": 1990,
 				"line_ending": "Unix"
 			}
 		},
 		{
-			"file": "build_eh/rmgcat_to_sella/rmgcat_to_sella/adjacency_to_3d.py",
+			"file": "test/rmgcat_to_sella/03_Cu_methanol_CH_C+H/inputR2S.py",
 			"settings":
 			{
-				"buffer_size": 8881,
+				"buffer_size": 860,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "test/rmgcat_to_sella/03_Cu_methanol_CH_C+H/reactions.yaml",
+			"settings":
+			{
+				"buffer_size": 424,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "test/rmgcat_to_sella/03_Cu_methanol_CH_C+H/01_set_up_Cu_111_ads.py",
+			"settings":
+			{
+				"buffer_size": 762,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "test/rmgcat_to_sella/03_Cu_methanol_CH_C+H/02_set_up_TS_with_xtb.py",
+			"settings":
+			{
+				"buffer_size": 979,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "test/rmgcat_to_sella/get_final_minimas.py",
+			"settings":
+			{
+				"buffer_size": 397,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "test/rmgcat_to_sella/02_Cu_methanol_CO+H_HCO/calc_barrier.py",
+			"settings":
+			{
+				"buffer_size": 277,
 				"encoding": "UTF-8",
 				"line_ending": "Unix"
 			}
 		},
 		{
-			"file": "build_eh/rmgcat_to_sella/rmgcat_to_sella/compare_structures.py",
+			"file": "rmgcat_to_sella/main.py",
 			"settings":
 			{
-				"buffer_size": 6187,
+				"buffer_size": 5525,
+				"encoding": "UTF-8",
 				"line_ending": "Unix"
 			}
 		},
 		{
-			"file": "build_eh/rmgcat_to_sella/rmgcat_to_sella/find_all_nebs.py",
+			"file": "rmgcat_to_sella/test.py",
 			"settings":
 			{
-				"buffer_size": 11321,
+				"buffer_size": 1364,
+				"encoding": "UTF-8",
 				"line_ending": "Unix"
 			}
 		},
 		{
-			"file": "build_eh/rmgcat_to_sella/rmgcat_to_sella/find_equivalent_bonds.py",
+			"file": "rmgcat_to_sella/ts.py",
+			"settings":
+			{
+				"buffer_size": 22219,
+				"encoding": "UTF-8",
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "rmgcat_to_sella/irc.py",
+			"settings":
+			{
+				"buffer_size": 7607,
+				"encoding": "UTF-8",
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "rmgcat_to_sella/scan_bond.py",
+			"settings":
+			{
+				"buffer_size": 10079,
+				"encoding": "UTF-8",
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "rmgcat_to_sella/adjacency_to_3d.py",
+			"settings":
+			{
+				"buffer_size": 8993,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "rmgcat_to_sella/getavtime.py",
+			"settings":
+			{
+				"buffer_size": 1468,
+				"encoding": "UTF-8",
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "rmgcat_to_sella/get_barrier.py",
+			"settings":
+			{
+				"buffer_size": 9349,
+				"encoding": "UTF-8",
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "rmgcat_to_sella/prepare_ts_with_xtb.py",
+			"settings":
+			{
+				"buffer_size": 5023,
+				"encoding": "UTF-8",
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "setup.py",
+			"settings":
+			{
+				"buffer_size": 739,
+				"encoding": "UTF-8",
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "rmgcat_to_sella/find_all_nebs_ener_based.py",
+			"settings":
+			{
+				"buffer_size": 4985,
+				"encoding": "UTF-8",
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "rmgcat_to_sella/compare_structures.py",
+			"settings":
+			{
+				"buffer_size": 6865,
+				"encoding": "UTF-8",
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "rmgcat_to_sella/estimate_struc_to_neb.py",
+			"settings":
+			{
+				"buffer_size": 3592,
+				"encoding": "UTF-8",
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "rmgcat_to_sella/checkEner.py",
+			"settings":
+			{
+				"buffer_size": 3977,
+				"encoding": "UTF-8",
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "rmgcat_to_sella/find_all_nebs.py",
+			"settings":
+			{
+				"buffer_size": 12072,
+				"encoding": "UTF-8",
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "rmgcat_to_sella/__init__.py",
+			"settings":
+			{
+				"buffer_size": 133,
+				"encoding": "UTF-8",
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "rmgcat_to_sella/find_equivalent_bonds.py",
 			"settings":
 			{
 				"buffer_size": 1727,
@@ -86,7 +545,7 @@
 			}
 		},
 		{
-			"file": "build_eh/rmgcat_to_sella/rmgcat_to_sella/graph_utils.py",
+			"file": "rmgcat_to_sella/graph_utils.py",
 			"settings":
 			{
 				"buffer_size": 75,
@@ -94,87 +553,110 @@
 			}
 		},
 		{
-			"file": "build_eh/rmgcat_to_sella/rmgcat_to_sella/relax_3d.py",
+			"file": "rmgcat_to_sella/get_slab.py",
 			"settings":
 			{
-				"buffer_size": 1133,
+				"buffer_size": 2037,
 				"encoding": "UTF-8",
-				"line_ending": "Unix"
-			}
-		},
-		{
-			"file": "test/rmgcat_to_sella/test_find_all_nebs.py",
-			"settings":
-			{
-				"buffer_size": 194,
-				"encoding": "UTF-8",
-				"line_ending": "Unix"
-			}
-		},
-		{
-			"file": "test/rmgcat_to_sella/test.py",
-			"settings":
-			{
-				"buffer_size": 183,
-				"line_ending": "Unix"
-			}
-		},
-		{
-			"file": "test/rmgcat_to_sella/test_bond_equivalency.py",
-			"settings":
-			{
-				"buffer_size": 622,
-				"encoding": "UTF-8",
-				"line_ending": "Unix"
-			}
-		},
-		{
-			"file": "test/rmgcat_to_sella/test2.py",
-			"settings":
-			{
-				"buffer_size": 179,
-				"encoding": "UTF-8",
-				"line_ending": "Unix"
-			}
-		},
-		{
-			"file": "test/rmgcat_to_sella/run_Pt_111.py",
-			"settings":
-			{
-				"buffer_size": 258,
-				"encoding": "UTF-8",
-				"line_ending": "Unix"
-			}
-		},
-		{
-			"file": "test/rmgcat_to_sella/run_compare.py",
-			"settings":
-			{
-				"buffer_size": 95,
-				"encoding": "UTF-8",
-				"line_ending": "Unix"
-			}
-		},
-		{
-			"file": "test/rmgcat_to_sella/run_set_up_nebs.py",
-			"settings":
-			{
-				"buffer_size": 189,
-				"line_ending": "Unix"
-			}
-		},
-		{
-			"file": "test/rmgcat_to_sella/run_Pt_111_reactions.py",
-			"settings":
-			{
-				"buffer_size": 215,
 				"line_ending": "Unix"
 			}
 		}
 	],
-	"build_system": "",
+	"build_system": "Packages/Python/Python.sublime-build",
 	"build_system_choices":
 	[
+		[
+			[
+				[
+					"Anaconda Python Builder",
+					""
+				],
+				[
+					"Packages/Python/Python.sublime-build",
+					""
+				],
+				[
+					"Packages/Python/Python.sublime-build",
+					"Syntax Check"
+				]
+			],
+			[
+				"Anaconda Python Builder",
+				""
+			]
+		],
+		[
+			[
+				[
+					"Packages/LaTeXing/LaTeX.sublime-build",
+					""
+				],
+				[
+					"Packages/LaTeXing/LaTeX.sublime-build",
+					"Clean up Files"
+				],
+				[
+					"Packages/LaTeXTools/LaTeX.sublime-build",
+					""
+				],
+				[
+					"Packages/LaTeXTools/LaTeX.sublime-build",
+					"Traditional"
+				],
+				[
+					"Packages/LaTeXTools/LaTeX.sublime-build",
+					"PdfLaTeX"
+				],
+				[
+					"Packages/LaTeXTools/LaTeX.sublime-build",
+					"XeLaTeX"
+				],
+				[
+					"Packages/LaTeXTools/LaTeX.sublime-build",
+					"LuaLaTeX"
+				],
+				[
+					"Packages/LaTeXTools/LaTeX.sublime-build",
+					"Basic Builder"
+				],
+				[
+					"Packages/LaTeXTools/LaTeX.sublime-build",
+					"Basic Builder - PdfLaTeX"
+				],
+				[
+					"Packages/LaTeXTools/LaTeX.sublime-build",
+					"Basic Builder - XeLaTeX"
+				],
+				[
+					"Packages/LaTeXTools/LaTeX.sublime-build",
+					"Basic Builder - LuaLaTeX"
+				],
+				[
+					"Packages/LaTeXTools/LaTeX.sublime-build",
+					"Script Builder"
+				]
+			],
+			[
+				"Packages/LaTeXing/LaTeX.sublime-build",
+				""
+			]
+		],
+		[
+			[
+				[
+					"Packages/Python/Python.sublime-build",
+					""
+				],
+				[
+					"Packages/Python/Python.sublime-build",
+					"Syntax Check"
+				]
+			],
+			[
+				"Packages/Python/Python.sublime-build",
+				""
+			]
+		]
 	],
 	"build_varint": "",
 	"command_palette":
@@ -184,12 +666,292 @@
 		"selected_items":
 		[
 			[
+				"anaconda",
+				"Anaconda: Disable linting on this file"
+			],
+			[
+				"remove",
+				"Package Control: Remove Package"
+			],
+			[
 				"install",
 				"Package Control: Install Package"
 			],
 			[
+				"pep",
+				"Anaconda: Autoformat PEP8 Errors"
+			],
+			[
+				"autp",
+				"Anaconda: Autoformat PEP8 Errors"
+			],
+			[
+				"anacon",
+				"Anaconda: Disable linting on this file"
+			],
+			[
+				"autopep",
+				"Anaconda: Autoformat PEP8 Errors"
+			],
+			[
+				"auto",
+				"AutoPEP8: Format Code"
+			],
+			[
+				"stack",
+				"Stackoverflow: Search Selection"
+			],
+			[
+				"ipy",
+				"Open IPython Notebook"
+			],
+			[
+				"ipytho",
+				"Open IPython Notebook"
+			],
+			[
+				"de",
+				"Debugger: Run Command"
+			],
+			[
+				"debug",
+				"Debugger: Run Command"
+			],
+			[
+				"scho",
+				"GoogleScholar: Search Highlighted"
+			],
+			[
+				"BUILD",
+				"Build With: Python"
+			],
+			[
+				"go to ",
+				"Anaconda: Goto object definition"
+			],
+			[
+				"bu",
+				"Build With: Python"
+			],
+			[
+				"buil",
+				"Build With: Anaconda Python Builder"
+			],
+			[
+				"build",
+				"Build With: Python"
+			],
+			[
+				"python sy",
+				"Build With: Python - Syntax Check"
+			],
+			[
+				"bul",
+				"Build With: Anaconda Python Builder"
+			],
+			[
+				"pyt",
+				"Build With: Python"
+			],
+			[
+				"pyth",
+				"Build With: Python"
+			],
+			[
+				"disabe",
+				"Anaconda: Disable linting on this file"
+			],
+			[
+				"anacond",
+				"Anaconda: Disable linting on this file"
+			],
+			[
+				"show",
+				"Anaconda: Show error list"
+			],
+			[
+				"aut",
+				"Anaconda: Autoformat PEP8 Errors"
+			],
+			[
+				"u",
+				"UI: Select Color Scheme"
+			],
+			[
+				"tracke",
+				"Traceback: Go To Line"
+			],
+			[
 				"color",
 				"UI: Select Color Scheme"
+			],
+			[
+				"colo",
+				"UI: Select Color Scheme"
+			],
+			[
+				"clor",
+				"Color Highlight: Reset"
+			],
+			[
+				"by",
+				"Build With: Python"
+			],
+			[
+				"view",
+				"LaTeXTools: View PDF"
+			],
+			[
+				"xe",
+				"Build With: LaTeX - XeLaTeX"
+			],
+			[
+				"buld",
+				"Build With: Anaconda Python Builder"
+			],
+			[
+				"python",
+				"Build With: Python"
+			],
+			[
+				"clear",
+				"Equation Preview: Clear Equation Preview"
+			],
+			[
+				"bud",
+				"Build With: Python"
+			],
+			[
+				"pdf",
+				"Project: Add Folder"
+			],
+			[
+				"xel",
+				"Build With: LaTeX - XeLaTeX"
+			],
+			[
+				"build ana",
+				"Build With: Anaconda Python Builder"
+			],
+			[
+				"",
+				"Anaconda: Disable linting on this file"
+			],
+			[
+				"build and",
+				"Build With: Anaconda Python Builder"
+			],
+			[
+				"buol",
+				"Build With: Anaconda Python Builder"
+			],
+			[
+				"latex view",
+				"LaTeXYZ: Toggle Auto Set Preview Math Template Preamble"
+			],
+			[
+				"latextoo",
+				"LaTeXTools: Check system"
+			],
+			[
+				"clear prev",
+				"Equation Preview: Clear Equation Preview"
+			],
+			[
+				"previe",
+				"Equation Preview: View Current Equation"
+			],
+			[
+				"build ",
+				"LaTeXTools: Build cache of LaTeX packages"
+			],
+			[
+				"wh",
+				"Remove Selected Whitespace"
+			],
+			[
+				"bui",
+				"Build With: Anaconda Python Builder"
+			],
+			[
+				"whi",
+				"Remove Selected Whitespace"
+			],
+			[
+				"white",
+				"Remove Selected Whitespace"
+			],
+			[
+				"pepe",
+				"Anaconda: Autoformat PEP8 Errors"
+			],
+			[
+				"break",
+				"Python Breakpoints: Clear All"
+			],
+			[
+				"autoforma",
+				"User: Python PEP8 Autoformat"
+			],
+			[
+				"breake",
+				"Python Breakpoints: Toggle"
+			],
+			[
+				"convert",
+				"Indentation: Convert to Spaces"
+			],
+			[
+				"build lat",
+				"LaTeXTools: Build cache of LaTeX packages"
+			],
+			[
+				"buld late",
+				"Build With: Anaconda Python Builder"
+			],
+			[
+				"conda bu",
+				"Build With: Anaconda Python Builder"
+			],
+			[
+				"conda by",
+				"Build With: Anaconda Python Builder"
+			],
+			[
+				"build ac",
+				"Build With: Anaconda Python Builder"
+			],
+			[
+				"anaconda bui",
+				"Build With: Anaconda Python Builder"
+			],
+			[
+				"anaconda pep",
+				"Anaconda: Autoformat PEP8 Errors"
+			],
+			[
+				"anaco",
+				"Anaconda: Goto object definition"
+			],
+			[
+				"py",
+				"Build With: Python"
+			],
+			[
+				"check",
+				"Build With: Python - Syntax Check"
+			],
+			[
+				"instal",
+				"Package Control: Install Package"
+			],
+			[
+				"install ",
+				"Package Control: Install Package"
+			],
+			[
+				"insta",
+				"Package Control: Install Package"
 			],
 			[
 				"theme",
@@ -201,10 +963,6 @@
 			],
 			[
 				"pack",
-				"Install Package Control"
-			],
-			[
-				"instal",
 				"Install Package Control"
 			],
 			[
@@ -237,99 +995,154 @@
 	"expanded_folders":
 	[
 		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella",
-		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/build_eh",
-		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/build_eh/rmgcat_to_sella",
-		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/build_eh/rmgcat_to_sella/rmgcat_to_sella",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/rmgcat_to_sella",
 		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test",
-		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella"
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/00_Cu_methanol_CO+O_CO2",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/00_Cu_methanol_CO+O_CO2/menten",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/00_Cu_methanol_CO+O_CO2/menten/qe",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/01_Cu_methanol_OH_O+H",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/01_Cu_methanol_OH_O+H/ment",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/01_Cu_methanol_OH_O+H/ment/qe"
 	],
 	"file_history":
 	[
-		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/mg2test.py",
-		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/build_eh/rmgcat_to_sella/build/lib/rmgcat_to_sella/compare_structures.py",
-		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/test_mg.py",
-		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/build_eh/rmgcat_to_sella/build/lib/rmgcat_to_sella/relax_3d.py",
-		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/build_eh/rmgcat_to_sella/rmgcat_to_sella/find_equivalent_bonds.py",
-		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/build_eh/rmgcat_to_sella/build/lib/rmgcat_to_sella/find_equivalent_bonds.py",
-		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/build_eh/rmgcat_to_sella/rmgcat_to_sella/relax_3d.py",
-		"/Users/mgierad/opt/anaconda3/lib/python3.7/site-packages/catkit/gratoms.py",
-		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/build_eh/rmgcat_to_sella/rmgcat_to_sella/adjacency_to_3d.py",
-		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/build_eh/rmgcat_to_sella/rmgcat_to_sella/compare_structures.py",
-		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/build_eh/rmgcat_to_sella/rmgcat_to_sella/find_all_nebs.py",
-		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/build_eh/rmgcat_to_sella/rmgcat_to_sella/__init__.py",
-		"/Users/mgierad/00_SANDIA_WORK/get-pip.py",
-		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/run_set_up_nebs.py",
-		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/test_bond_equivalency.py",
-		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/build/setup.py",
-		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/build/rmgcat_to_sella/relax_3d.py",
-		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/build/rmgcat_to_sella/graph_utils.py",
-		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/build/rmgcat_to_sella/find_equivalent_bonds.py",
-		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/build/rmgcat_to_sella/find_all_nebs.py",
-		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/build/rmgcat_to_sella/compare_structures.py",
-		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/build/rmgcat_to_sella/adjacency_to_3d.py",
-		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/build/rmgcat_to_sella/__init__.py",
-		"/Users/mgierad/.zshrc",
-		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/build/rmgcat_to_sella/rmgcat_stella.sublime-project",
-		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/test.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/03_Cu_methanol_CH_C+H/calc_barrier.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/get_final_minimas.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/02_Cu_methanol_CO+H_HCO/calc_barrier.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/03_Cu_methanol_CH_C+H/calc_av_time.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/03_Cu_methanol_CH_C+H/00_calc_time.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/03_Cu_methanol_CH_C+H/00_calc_ener.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/03_Cu_methanol_C+H_CH/inputR2S.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/03_Cu_methanol_C+H_CH/run_main.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/03_Cu_methanol_C+H_CH/reactions.yaml",
 		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/reactions.yaml",
-		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/rmgcat_to_sella/rmgcat_to_sella.egg-info/top_level.txt",
-		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/rmgcat_to_sella/setup.py",
-		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/rmgcat_to_sella/README.md",
-		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/__init__.py",
-		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/relax_3d.py",
-		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/graph_utils.py",
-		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/find_equivalent_bonds.py",
-		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/find_all_nebs.py",
-		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/compare_structures.py",
-		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/adjacency_to_3d.py",
-		"/Users/mgierad/00_SANDIA_WORK/04_pymatgen/02_rmgcat_to_stella/rmgcat_to_sella/README.md",
-		"/Users/mgierad/00_SANDIA_WORK/04_pymatgen/02_rmgcat_to_stella/rmgcat_to_sella/setup.py",
-		"/Users/mgierad/00_SANDIA_WORK/04_pymatgen/02_rmgcat_to_stella/rmgcat_to_sella/rmgcat_to_sella/compare_structures.py",
-		"/Users/mgierad/Library/Preferences/muCommander/preferences.xml",
-		"/Users/mgierad/00_SANDIA_WORK/04_pymatgen/01_cu_model/with_pymatgen/gen_surfaces.py",
-		"/Users/mgierad/00_SANDIA_WORK/04_pymatgen/00_dev_pymatgen/pymatgen/pymatgen/core/structure.py",
-		"/etc/hosts",
-		"/Users/mgierad/00_SANDIA_WORK/04_pymatgen/01_cu_model/Cu_from_crystal_structures_1_1963_7-83.cif",
-		"/Users/mgierad/00_SANDIA_WORK/04_pymatgen/01_cu_model/test_adsorption.py",
-		"/Users/mgierad/00_SANDIA_WORK/04_pymatgen/01_cu_model/web.py",
-		"/Users/mgierad/00_SANDIA_WORK/04_pymatgen/00_dev_pymatgen/pymatgen/tasks.py",
-		"/Users/mgierad/00_SANDIA_WORK/04_pymatgen/01_cu_model/gen_surface.py",
-		"/Users/mgierad/00_SANDIA_WORK/04_pymatgen/01_cu_model/test_based.py",
-		"/Users/mgierad/00_SANDIA_WORK/04_pymatgen/01_cu_model/web_.py",
-		"/Users/mgierad/00_SANDIA_WORK/04_pymatgen/01_cu_model/pymatgen_test.py",
-		"/Users/mgierad/00_SANDIA_WORK/04_pymatgen/00_dev_pymatgen/pymatgen/README.rst",
-		"/Users/mgierad/00_SANDIA_WORK/04_pymatgen/01_cu_model/test",
-		"/Users/mgierad/00_SANDIA_WORK/04_pymatgen/00_dev_pymatgen/pymatgen/pymatgen/analysis/tests/test_adsorption.py",
-		"/Users/mgierad/00_SANDIA_WORK/04_pymatgen/01_cu_model/pytmatgen_tests.py",
-		"/Users/mgierad/00_SANDIA_WORK/04_pymatgen/01_cu_model/pytmatgen_tests",
-		"/Users/mgierad/00_SANDIA_WORK/04_pymatgen/01_cu_model/POSCAR",
-		"/Users/mgierad/00_SANDIA_WORK/00_ECC_project_overview/cu_111_2_2.POSCAR.vasp",
-		"/Users/mgierad/00_SANDIA_WORK/00_ECC_project_overview/AMS_DATA.POSCAR.vasp",
-		"/Users/mgierad/00_SANDIA_WORK/03_rmg/rmg_test.py",
-		"/Users/mgierad/opt/packmol/examples/executed/test.py",
-		"/Users/mgierad/opt/packmol/examples/executed/.zshrc",
-		"/usr/local/bin/vmd",
-		"/Users/mgierad/opt/packmol/examples/interface-comment.inp",
-		"/usr/local/bin/00_by_mg/pro",
-		"/usr/local/bin/00_by_mg/opt1",
-		"/usr/local/bin/00_by_mg/opt2",
-		"/usr/local/bin/00_by_mg/opt4",
-		"/usr/local/bin/00_by_mg/int3",
-		"/usr/local/bin/00_by_mg/int1",
-		"/usr/local/bin/00_by_mg/int2",
-		"/Users/mgierad/Library/Application Support/Sublime Text 3/Packages/Default/Preferences.sublime-settings",
-		"/Users/mgierad/Library/Application Support/Sublime Text 3/Packages/User/Preferences.sublime-settings",
-		"/Users/mgierad/.pk10",
-		"/Users/mgierad/get-pip.py",
-		"/usr/local/bin/00_by_mg/menten"
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/class_test/run_main.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/class_test/inputR2S.py",
+		"/Users/mgierad/.local/lib/python3.7/site-packages/rmgcat_to_sella-0.0.1-py3.7.egg/rmgcat_to_sella/irc.py",
+		"/Users/mgierad/opt/anaconda3/lib/python3.7/site-packages/rmgcat_to_sella-0.0.1-py3.7.egg/rmgcat_to_sella/irc.py",
+		"/Users/mgierad/.local/lib/python3.7/site-packages/rmgcat_to_sella-0.0.1-py3.7.egg/rmgcat_to_sella/main.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/class_test/01_set_up_Cu_111_ads.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/rmgcat_to_sella/adjacency_to_3d.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/class_test/config.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/02_Cu_methanol_CO+H_HCO/05_template_set_up_opt_after_irc.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/02_Cu_methanol_CO+H_HCO/04_template_set_up_irc.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/02_Cu_methanol_CO+H_HCO/03_template_checksym_xtb_runTS.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/02_Cu_methanol_CO+H_HCO/02_template_set_up_ts_with_xtb.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/02_Cu_methanol_CO+H_HCO/01_template_set_up_ads.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/02_Cu_methanol_CO+H_HCO/pytemplate_set_up_ts.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/01_Cu_methanol_OH_O+H/ment/qe/calc_av_time.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/02_Cu_methanol_CO+H_HCO/run_main.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/02_Cu_methanol_CO+H_HCO/pytemplate_set_up_irc_f.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/02_Cu_methanol_CO+H_HCO/pytemplate_set_up_irc_r.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/class_test/test.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/02_Cu_methanol_CO+H_HCO/04_set_up_irc.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/02_Cu_methanol_CO+H_HCO/Cu_111/TS_estimate_unique/03_CO+H_ts.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/01_Cu_methanol_OH_O+H/ment/qe/pytemplate_set_up_ts.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/02_Cu_methanol_CO+H_HCO/Cu_111/TS_estimate/013/013_CO+H.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/class_test/02_template_set_up_ts_with_xtb.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/class_test/02_set_up_TS_with_xtb.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/class_test/05_template_set_up_opt_after_irc.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/class_test/05_set_up_opt_after_irc.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/class_test/04_set_up_irc.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/class_test/03_checksym_xtb_runTS.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/class_test/03_template_checksym_xtb_runTS.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/class_test/01_template_set_up_ads.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/02_Cu_methanol_CO+H_HCO/05_set_up_opt_after_irc.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/02_Cu_methanol_CO+H_HCO/03_checksym_xtb_runTS.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/02_Cu_methanol_CO+H_HCO/02_set_up_TS_with_xtb.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/02_Cu_methanol_CO+H_HCO/01_set_up_Cu_111_ads.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/class_test/01_template.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/class_test/01_set_up_Cu_111_ads.py_template",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/class_test/class_test.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/02_Cu_methanol_CO+H_HCO/pytemplate_set_up_opt_irc.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/02_Cu_methanol_CO+H_HCO/pytemplate_set_up_xtb.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/02_Cu_methanol_CO+H_HCO/Cu_111/IRC/06_CO+_ts_irc_f.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/02_Cu_methanol_CO+H_HCO/Cu_111/IRC/06_CO+_ts_irc_r.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/02_Cu_methanol_CO+H_HCO/Cu_111/IRC/00_CO+H_irc_f.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/02_Cu_methanol_CO+H_HCO/Cu_111/IRC/00_CO+_ts_irc_f.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/02_Cu_methanol_CO+H_HCO/Cu_111/IRC/06_CO+_irc_r.out",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/02_Cu_methanol_CO+H_HCO/Cu_111/IRC/06_CO+_irc_f.out",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/02_Cu_methanol_CO+H_HCO/Cu_111/IRC/00_CO+_ts_irc_r.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/01_Cu_methanol_OH_O+H/ment/qe/calc_barrier.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/00_calc_ener.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/02_Cu_methanol_CO+H_HCO/Cu_111/IRC/07/irc_f.pwo",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/02_Cu_methanol_CO+H_HCO/Cu_111/IRC/00_CO+_irc_r.out",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/02_Cu_methanol_CO+H_HCO/Cu_111/IRC/00_CO+_irc_f.out",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/02_Cu_methanol_CO+H_HCO/reactions.yaml",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/01_Cu_methanol_OH_O+H/ment/qe/Cu_111/TS_estimate/000/000_O+H.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/02_Cu_methanol_CO+H_HCO/Cu_111/TS_estimate/000/000_CO+H.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/01_Cu_methanol_OH_O+H/ment/qe/Cu_111/TS_estimate/020/020_O+H.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/01_Cu_methanol_OH_O+H/ment/qe/Cu_111/TS_candidate/00_O+H_neb_xtb_relax.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/02_Cu_methanol_CO+H_HCO/relax_Cu_111.py.tmpl",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/rmgcat_to_sella/ts.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/00_Cu_methanol_CO+O_CO2/menten/qe/07_checksym_after_xtb.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/01_Cu_methanol_OH_O+H/ment/qe/08_create_all_TS.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/00_Cu_methanol_CO+O_CO2/menten/qe/10_set_up_opt_after_irc.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/00_Cu_methanol_CO+O_CO2/menten/qe/pytemplate_set_up_ts.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/00_Cu_methanol_CO+O_CO2/menten/qe/pytemplate_set_up_opt_irc.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/00_Cu_methanol_CO+O_CO2/menten/qe/Cu_111/IRC_ts_estimate/000/irc_f_opt/000_CO+O_irc_f_opt.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/01_Cu_methanol_OH_O+H/ment/qe/test_main/08_create_all_TS.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/01_Cu_methanol_OH_O+H/ment/qe/test_main/00_gen_surface.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/01_Cu_methanol_OH_O+H/ment/qe/test_main/03_create_all_TS.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/01_Cu_methanol_OH_O+H/ment/qe/test_main/02_set_up_TS_with_xtb.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/01_Cu_methanol_OH_O+H/ment/qe/test_main/01_set_up_Cu_111_ads.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/01_Cu_methanol_OH_O+H/ment/qe/test_main/run_main.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/01_Cu_methanol_OH_O+H/ment/qe/test_main/reactions.yaml",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/01_Cu_methanol_OH_O+H/ment/qe/test_main/main.sh",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/01_Cu_methanol_OH_O+H/ment/qe/test_main/main.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/01_Cu_methanol_OH_O+H/ment/qe/test_main/runxtb.txt",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/01_Cu_methanol_OH_O+H/ment/qe/test_main/pytemplate_set_up_ts.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/01_Cu_methanol_OH_O+H/ment/qe/test_main/06_set_up_TS_with_xtb.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/01_Cu_methanol_OH_O+H/ment/qe/06_set_up_TS_with_xtb.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/01_Cu_methanol_OH_O+H/ment/qe/pytemplate_set_up_xtb.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/01_Cu_methanol_OH_O+H/ment/qe/test_main/pytemplate_set_up_xtb.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/01_Cu_methanol_OH_O+H/ment/qe/test_main/Cu_111/TS_estimate/000/000_O+H.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/01_Cu_methanol_OH_O+H/ment/qe/main.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/01_Cu_methanol_OH_O+H/ment/qe/irc_on_ts_estimate_288_unique.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/01_Cu_methanol_OH_O+H/ment/qe/07_checksym_after_xtb.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/01_Cu_methanol_OH_O+H/ment/qe/Cu_111/IRC_ts_estimate_288_unique/00_O+H_ts_irc_f.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/01_Cu_methanol_OH_O+H/ment/qe/irc_on_ts_estimate_unique.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/01_Cu_methanol_OH_O+H/ment/qe/09_set_up_irc.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/01_Cu_methanol_OH_O+H/ment/qe/sf_1722/07_checksym_after_xtb.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/01_Cu_methanol_OH_O+H/ment/qe/sf_1618/07_checksym_after_xtb.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/01_Cu_methanol_OH_O+H/ment/qe/Cu_111/TS_estimate_288_unique/01_O+H_ts.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/01_Cu_methanol_OH_O+H/ment/qe/Cu_111/TS_estimate_288_unique/00_O+H_ts.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/01_Cu_methanol_OH_O+H/ment/qe/Cu_111/TS_estimate_288_unique/00_+H_ts_relax.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/01_Cu_methanol_OH_O+H/ment/qe/Cu_111/TS_estimate_288/000/000_O+H.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/01_Cu_methanol_OH_O+H/ment/qe/check_ts_bl.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/01_Cu_methanol_OH_O+H/ment/qe/Cu_111/IRC/00/irc_f_opt/00_O+H_irc_relax.out",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/01_Cu_methanol_OH_O+H/ment/qe/10_set_up_opt_after_irc.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/01_Cu_methanol_OH_O+H/ment/qe/sf_1722/pytemplate_set_up_xtb.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/01_Cu_methanol_OH_O+H/ment/qe/sf_1722/06_set_up_TS_with_xtb.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/01_Cu_methanol_OH_O+H/ment/qe/sf_1722/08_create_all_TS.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/01_Cu_methanol_OH_O+H/ment/qe/sf_1722/Cu_111_slab_opt.xyz",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/01_Cu_methanol_OH_O+H/ment/qe/sf_1722/pytemplate_set_up_ts.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/01_Cu_methanol_OH_O+H/ment/qe/sf_1722/reactions.yaml",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/01_Cu_methanol_OH_O+H/ment/qe/plot_scan_bond/scan_graph.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/01_Cu_methanol_OH_O+H/ment/qe/Cu_111/sf_1618/Cu_111_slab_opt.xyz",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/01_Cu_methanol_OH_O+H/ment/qe/pytemplate_set_up_opt_irc.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/01_Cu_methanol_OH_O+H/ment/qe/Cu_111/IRC/00/irc_r_opt/00_O+H_irc_r_opt.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/01_Cu_methanol_OH_O+H/ment/qe/relax_Cu_111.py.tmpl",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/01_Cu_methanol_OH_O+H/ment/qe/opt_after_irf.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/01_Cu_methanol_OH_O+H/ment/qe/Cu_111/IRC/00/irc_f_opt/00_O+H_irc_f_opt.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/01_Cu_methanol_OH_O+H/ment/qe/Cu_111/TS_candidate/23/23_time.log",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/00_calc_time.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/01_Cu_methanol_OH_O+H/ment/qe/sf_1618/pytemplate_set_up_ts.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/01_Cu_methanol_OH_O+H/ment/qe/sf_1618/08_create_all_TS.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/01_Cu_methanol_OH_O+H/ment/qe/sf_1618/pytemplate_set_up_xtb.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/01_Cu_methanol_OH_O+H/ment/qe/sf_1618/Cu_111_slab_opt.xyz",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/01_Cu_methanol_OH_O+H/ment/qe/sf_1618/Cu_111/TS_candidate/000_O+H_relax.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/01_Cu_methanol_OH_O+H/ment/qe/Cu_111/sf_1618/pytemplate_set_up_ts.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/01_Cu_methanol_OH_O+H/ment/qe/Cu_111/sf_1618/08_create_all_TS.py"
 	],
 	"find":
 	{
-		"height": 43.0
+		"height": 30.0
 	},
 	"find_in_files":
 	{
-		"height": 111.0,
+		"height": 114.0,
 		"where_history":
 		[
 			""
@@ -340,25 +1153,134 @@
 		"case_sensitive": false,
 		"find_history":
 		[
-			"slab",
-			"slab.pbc",
-			"slabname",
-			"gr_ref",
-			"find_all_uni",
-			"get_unique",
-			"_cell",
-			"conn",
-			"adjtxt",
-			"gratoms_list",
-			"gratom",
-			"rmgcat_to_gratoms",
-			"cell",
-			"_cell",
-			"gratom",
+			"initBondSt3",
+			"input",
+			"config",
+			"pytemplate/",
+			"jobtemplate",
+			"pytemplate_",
+			"template/",
+			"_template_",
+			"_template",
+			"template",
+			"_template",
+			"slabopt",
 			"gratoms",
-			"set_up",
-			"sdt_up",
-			"setup_nebs"
+			"1",
+			"label",
+			"newDir",
+			"_sf",
+			"sf_",
+			"sf",
+			"new",
+			"pbc",
+			"3",
+			"slabname",
+			"slav",
+			"slab ",
+			"slab",
+			"3",
+			"TSxyz",
+			"SBATCH",
+			"t",
+			"dist_Cu_sp1",
+			"srcTrajPath",
+			"):\n",
+			"skew",
+			"AdsorbatePlacer",
+			"Adsorb",
+			"prepare_neb",
+			"prepare_",
+			"avDi",
+			"facetpath",
+			"avDist_Cu_O",
+			", color='C1'",
+			"1 SCF cycle",
+			"s = ",
+			"irc_r_ener",
+			"irc_f_ener",
+			"get_index_adatom",
+			"()\n",
+			"avdis",
+			"scan_bond",
+			"initBondSt3",
+			"irc_f",
+			"traj",
+			"uniqueNEBdir",
+			"TS",
+			"TS_est",
+			"copy",
+			"f'",
+			"candidate",
+			"run xtb",
+			"lowest",
+			"27",
+			"\\includegraphics{",
+			"\\scriptsize{\\texttt{\\hl{00",
+			"symmetry",
+			"kcal",
+			"hl",
+			"\\scriptsize{\\texttt{00}}",
+			"mol",
+			"CO",
+			"CO2",
+			"equatio",
+			"rotate",
+			"trajdir",
+			"TSdir",
+			"gpath",
+			"geomPath",
+			"geompPath",
+			"isdir",
+			"Penalty + E_pot",
+			"fontsize=14",
+			"position'",
+			"Penalty ",
+			"plot",
+			"angle ",
+			"angle",
+			"line",
+			"zfill",
+			"zfil",
+			"neb_est",
+			"rotAgle",
+			"open",
+			"pdf",
+			"view",
+			"width",
+			"\\hl{",
+			"path",
+			"neb_xt_",
+			"initial",
+			")):\n",
+			"set",
+			"slab",
+			"label",
+			"prefix",
+			"grom",
+			"f",
+			"skew",
+			"slab",
+			"file",
+			"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/Cu_111_tests/slab_optimized/",
+			"candi",
+			"4",
+			"rotate",
+			"zfill",
+			"symme",
+			"is_iso",
+			"geomPath",
+			"path",
+			"oath",
+			"exist",
+			"surface_atoms",
+			"ads_atoms",
+			"get_bonded_atoms",
+			"constr",
+			"sour",
+			"dir",
+			"dirs",
+			"dir"
 		],
 		"highlight": true,
 		"in_selection": false,
@@ -376,12 +1298,694 @@
 	"groups":
 	[
 		{
-			"selected": 1,
+			"selected": 6,
 			"sheets":
 			[
 				{
 					"buffer": 0,
-					"file": "build_eh/rmgcat_to_sella/rmgcat_to_sella/__init__.py",
+					"file": "test/rmgcat_to_sella/03_Cu_methanol_CH_C+H/run_main.py",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 1990,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								280,
+								280
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Python Improved/PythonImproved.tmLanguage",
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 6,
+					"type": "text"
+				},
+				{
+					"buffer": 1,
+					"file": "test/rmgcat_to_sella/03_Cu_methanol_CH_C+H/inputR2S.py",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 860,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								389,
+								389
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Python Improved/PythonImproved.tmLanguage"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 8,
+					"type": "text"
+				},
+				{
+					"buffer": 2,
+					"file": "test/rmgcat_to_sella/03_Cu_methanol_CH_C+H/reactions.yaml",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 424,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								0,
+								423
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/YAML/YAML.sublime-syntax",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 9,
+					"type": "text"
+				},
+				{
+					"buffer": 3,
+					"file": "test/rmgcat_to_sella/03_Cu_methanol_CH_C+H/01_set_up_Cu_111_ads.py",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 762,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								736,
+								736
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Python Improved/PythonImproved.tmLanguage"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 12,
+					"type": "text"
+				},
+				{
+					"buffer": 4,
+					"file": "test/rmgcat_to_sella/03_Cu_methanol_CH_C+H/02_set_up_TS_with_xtb.py",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 979,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								102,
+								102
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Python Improved/PythonImproved.tmLanguage"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 3,
+					"type": "text"
+				},
+				{
+					"buffer": 5,
+					"file": "test/rmgcat_to_sella/get_final_minimas.py",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 397,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								0,
+								0
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Python Improved/PythonImproved.tmLanguage"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 2,
+					"type": "text"
+				},
+				{
+					"buffer": 6,
+					"file": "test/rmgcat_to_sella/02_Cu_methanol_CO+H_HCO/calc_barrier.py",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 277,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								92,
+								92
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Python Improved/PythonImproved.tmLanguage"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 0,
+					"type": "text"
+				}
+			]
+		},
+		{
+			"selected": 7,
+			"sheets":
+			[
+				{
+					"buffer": 7,
+					"file": "rmgcat_to_sella/main.py",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 5525,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								573,
+								573
+							]
+						],
+						"settings":
+						{
+							"git_gutter_is_enabled": true,
+							"syntax": "Packages/Python Improved/PythonImproved.tmLanguage",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 4,
+					"type": "text"
+				},
+				{
+					"buffer": 8,
+					"file": "rmgcat_to_sella/test.py",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 1364,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								160,
+								160
+							]
+						],
+						"settings":
+						{
+							"auto_name": "",
+							"syntax": "Packages/Python Improved/PythonImproved.tmLanguage",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 13,
+					"type": "text"
+				},
+				{
+					"buffer": 9,
+					"file": "rmgcat_to_sella/ts.py",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 22219,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								6544,
+								6544
+							]
+						],
+						"settings":
+						{
+							"git_gutter_is_enabled": true,
+							"syntax": "Packages/Python Improved/PythonImproved.tmLanguage",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 5,
+					"type": "text"
+				},
+				{
+					"buffer": 10,
+					"file": "rmgcat_to_sella/irc.py",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 7607,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								7607,
+								7607
+							]
+						],
+						"settings":
+						{
+							"git_gutter_is_enabled": true,
+							"syntax": "Packages/Python/Python.sublime-syntax",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 15,
+					"type": "text"
+				},
+				{
+					"buffer": 11,
+					"file": "rmgcat_to_sella/scan_bond.py",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 10079,
+						"regions":
+						{
+							"bookmarks":
+							{
+								"flags": 144,
+								"icon": "bookmark",
+								"regions":
+								[
+									[
+										9242,
+										9242
+									]
+								],
+								"scope": "bookmarks"
+							}
+						},
+						"selection":
+						[
+							[
+								601,
+								601
+							]
+						],
+						"settings":
+						{
+							"git_gutter_is_enabled": true,
+							"syntax": "Packages/Python Improved/PythonImproved.tmLanguage",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 10,
+					"type": "text"
+				},
+				{
+					"buffer": 12,
+					"file": "rmgcat_to_sella/adjacency_to_3d.py",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 8993,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								3462,
+								3461
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Python Improved/PythonImproved.tmLanguage",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 14,
+					"type": "text"
+				},
+				{
+					"buffer": 13,
+					"file": "rmgcat_to_sella/getavtime.py",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 1468,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								1017,
+								1017
+							]
+						],
+						"settings":
+						{
+							"git_gutter_is_enabled": true,
+							"syntax": "Packages/Python Improved/PythonImproved.tmLanguage",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 24,
+					"type": "text"
+				},
+				{
+					"buffer": 14,
+					"file": "rmgcat_to_sella/get_barrier.py",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 9349,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								7456,
+								7456
+							]
+						],
+						"settings":
+						{
+							"git_gutter_is_enabled": true,
+							"syntax": "Packages/Python Improved/PythonImproved.tmLanguage",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 4004.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 1,
+					"type": "text"
+				},
+				{
+					"buffer": 15,
+					"file": "rmgcat_to_sella/prepare_ts_with_xtb.py",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 5023,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								328,
+								328
+							]
+						],
+						"settings":
+						{
+							"git_gutter_is_enabled": true,
+							"syntax": "Packages/Python Improved/PythonImproved.tmLanguage",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 23,
+					"type": "text"
+				},
+				{
+					"buffer": 16,
+					"file": "setup.py",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 739,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								135,
+								135
+							]
+						],
+						"settings":
+						{
+							"git_gutter_is_enabled": true,
+							"syntax": "Packages/Python/Python.sublime-syntax",
+							"tab_size": 6,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 7,
+					"type": "text"
+				},
+				{
+					"buffer": 17,
+					"file": "rmgcat_to_sella/find_all_nebs_ener_based.py",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 4985,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								564,
+								564
+							]
+						],
+						"settings":
+						{
+							"git_gutter_is_enabled": true,
+							"syntax": "Packages/Python/Python.sublime-syntax",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 25,
+					"type": "text"
+				},
+				{
+					"buffer": 18,
+					"file": "rmgcat_to_sella/compare_structures.py",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 6865,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								764,
+								764
+							]
+						],
+						"settings":
+						{
+							"git_gutter_is_enabled": true,
+							"syntax": "Packages/Python/Python.sublime-syntax",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 22,
+					"type": "text"
+				},
+				{
+					"buffer": 19,
+					"file": "rmgcat_to_sella/estimate_struc_to_neb.py",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 3592,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								1148,
+								1148
+							]
+						],
+						"settings":
+						{
+							"git_gutter_is_enabled": true,
+							"syntax": "Packages/Python/Python.sublime-syntax",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 21,
+					"type": "text"
+				},
+				{
+					"buffer": 20,
+					"file": "rmgcat_to_sella/checkEner.py",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 3977,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								443,
+								443
+							]
+						],
+						"settings":
+						{
+							"git_gutter_is_enabled": true,
+							"syntax": "Packages/Python/Python.sublime-syntax",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 20,
+					"type": "text"
+				},
+				{
+					"buffer": 21,
+					"file": "rmgcat_to_sella/find_all_nebs.py",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 12072,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								1217,
+								1217
+							]
+						],
+						"settings":
+						{
+							"git_gutter_is_enabled": true,
+							"syntax": "Packages/Python/Python.sublime-syntax",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 11,
+					"type": "text"
+				},
+				{
+					"buffer": 22,
+					"file": "rmgcat_to_sella/__init__.py",
 					"semi_transient": false,
 					"settings":
 					{
@@ -398,108 +2002,19 @@
 						],
 						"settings":
 						{
+							"git_gutter_is_enabled": true,
 							"syntax": "Packages/Python/Python.sublime-syntax"
 						},
 						"translation.x": 0.0,
 						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 10,
+					"stack_index": 19,
 					"type": "text"
 				},
 				{
-					"buffer": 1,
-					"file": "build_eh/rmgcat_to_sella/rmgcat_to_sella/adjacency_to_3d.py",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 8881,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								8524,
-								8574
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/Python/Python.sublime-syntax",
-							"tab_size": 4,
-							"translate_tabs_to_spaces": true
-						},
-						"translation.x": 0.0,
-						"translation.y": 3745.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 0,
-					"type": "text"
-				},
-				{
-					"buffer": 2,
-					"file": "build_eh/rmgcat_to_sella/rmgcat_to_sella/compare_structures.py",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 6187,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								2855,
-								2855
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/Python/Python.sublime-syntax",
-							"tab_size": 4,
-							"translate_tabs_to_spaces": true
-						},
-						"translation.x": 0.0,
-						"translation.y": 1286.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 6,
-					"type": "text"
-				},
-				{
-					"buffer": 3,
-					"file": "build_eh/rmgcat_to_sella/rmgcat_to_sella/find_all_nebs.py",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 11321,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								965,
-								965
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/Python/Python.sublime-syntax",
-							"tab_size": 4,
-							"translate_tabs_to_spaces": true
-						},
-						"translation.x": 0.0,
-						"translation.y": 0.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 11,
-					"type": "text"
-				},
-				{
-					"buffer": 4,
-					"file": "build_eh/rmgcat_to_sella/rmgcat_to_sella/find_equivalent_bonds.py",
+					"buffer": 23,
+					"file": "rmgcat_to_sella/find_equivalent_bonds.py",
 					"semi_transient": false,
 					"settings":
 					{
@@ -510,12 +2025,13 @@
 						"selection":
 						[
 							[
-								553,
-								553
+								86,
+								86
 							]
 						],
 						"settings":
 						{
+							"git_gutter_is_enabled": true,
 							"syntax": "Packages/Python/Python.sublime-syntax",
 							"tab_size": 4,
 							"translate_tabs_to_spaces": true
@@ -524,12 +2040,12 @@
 						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 8,
+					"stack_index": 18,
 					"type": "text"
 				},
 				{
-					"buffer": 5,
-					"file": "build_eh/rmgcat_to_sella/rmgcat_to_sella/graph_utils.py",
+					"buffer": 24,
+					"file": "rmgcat_to_sella/graph_utils.py",
 					"semi_transient": false,
 					"settings":
 					{
@@ -540,279 +2056,64 @@
 						"selection":
 						[
 							[
-								0,
-								0
+								75,
+								75
 							]
 						],
 						"settings":
 						{
+							"git_gutter_is_enabled": true,
 							"syntax": "Packages/Python/Python.sublime-syntax"
 						},
 						"translation.x": 0.0,
 						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 9,
+					"stack_index": 17,
 					"type": "text"
 				},
 				{
-					"buffer": 6,
-					"file": "build_eh/rmgcat_to_sella/rmgcat_to_sella/relax_3d.py",
+					"buffer": 25,
+					"file": "rmgcat_to_sella/get_slab.py",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 1133,
+						"buffer_size": 2037,
 						"regions":
 						{
+							"bookmarks":
+							{
+								"flags": 144,
+								"icon": "bookmark",
+								"regions":
+								[
+									[
+										1477,
+										1477
+									]
+								],
+								"scope": "bookmarks"
+							}
 						},
 						"selection":
 						[
 							[
-								606,
-								606
+								1998,
+								1998
 							]
 						],
 						"settings":
 						{
+							"git_gutter_is_enabled": true,
 							"syntax": "Packages/Python/Python.sublime-syntax",
 							"tab_size": 4,
-							"translate_tabs_to_spaces": true
+							"translate_tabs_to_spaces": false
 						},
 						"translation.x": 0.0,
 						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 5,
-					"type": "text"
-				}
-			]
-		},
-		{
-			"selected": 4,
-			"sheets":
-			[
-				{
-					"buffer": 7,
-					"file": "test/rmgcat_to_sella/test_find_all_nebs.py",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 194,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								194,
-								194
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/Python/Python.sublime-syntax"
-						},
-						"translation.x": 0.0,
-						"translation.y": 0.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 7,
-					"type": "text"
-				},
-				{
-					"buffer": 8,
-					"file": "test/rmgcat_to_sella/test.py",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 183,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								183,
-								183
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/Python/Python.sublime-syntax"
-						},
-						"translation.x": 0.0,
-						"translation.y": 0.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 4,
-					"type": "text"
-				},
-				{
-					"buffer": 9,
-					"file": "test/rmgcat_to_sella/test_bond_equivalency.py",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 622,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								591,
-								591
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/Python/Python.sublime-syntax"
-						},
-						"translation.x": 0.0,
-						"translation.y": 0.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 3,
-					"type": "text"
-				},
-				{
-					"buffer": 10,
-					"file": "test/rmgcat_to_sella/test2.py",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 179,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								179,
-								179
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/Python/Python.sublime-syntax"
-						},
-						"translation.x": 0.0,
-						"translation.y": 0.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 2,
-					"type": "text"
-				},
-				{
-					"buffer": 11,
-					"file": "test/rmgcat_to_sella/run_Pt_111.py",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 258,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								258,
-								258
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/Python/Python.sublime-syntax"
-						},
-						"translation.x": 0.0,
-						"translation.y": 0.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 1,
-					"type": "text"
-				},
-				{
-					"buffer": 12,
-					"file": "test/rmgcat_to_sella/run_compare.py",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 95,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								95,
-								95
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/Python/Python.sublime-syntax"
-						},
-						"translation.x": 0.0,
-						"translation.y": 0.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 14,
-					"type": "text"
-				},
-				{
-					"buffer": 13,
-					"file": "test/rmgcat_to_sella/run_set_up_nebs.py",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 189,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								189,
-								189
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/Python/Python.sublime-syntax"
-						},
-						"translation.x": 0.0,
-						"translation.y": 0.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 12,
-					"type": "text"
-				},
-				{
-					"buffer": 14,
-					"file": "test/rmgcat_to_sella/run_Pt_111_reactions.py",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 215,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								215,
-								215
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/Python/Python.sublime-syntax"
-						},
-						"translation.x": 0.0,
-						"translation.y": 0.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 13,
+					"stack_index": 16,
 					"type": "text"
 				}
 			]
@@ -824,7 +2125,7 @@
 	},
 	"input":
 	{
-		"height": 0.0
+		"height": 43.0
 	},
 	"layout":
 	{
@@ -846,7 +2147,7 @@
 		"cols":
 		[
 			0.0,
-			0.475915735423,
+			0.5,
 			1.0
 		],
 		"rows":
@@ -856,9 +2157,29 @@
 		]
 	},
 	"menu_visible": true,
+	"output.anaconda_documentation":
+	{
+		"height": 133.0
+	},
+	"output.autopep8":
+	{
+		"height": 145.0
+	},
+	"output.exec":
+	{
+		"height": 185.0
+	},
 	"output.find_results":
 	{
 		"height": 0.0
+	},
+	"output.latextools":
+	{
+		"height": 145.0
+	},
+	"output.unsaved_changes":
+	{
+		"height": 145.0
 	},
 	"pinned_build_system": "",
 	"project": "rmgcat_to_sella.sublime-project",
@@ -874,6 +2195,10 @@
 		"selected_items":
 		[
 			[
+				"",
+				"test/rmgcat_to_sella/01_Cu_methanol_OH_O+H/ment/qe/scan_bond.py"
+			],
+			[
 				"set up",
 				"test/rmgcat_to_sella/run_set_up_nebs.py"
 			]
@@ -888,21 +2213,73 @@
 		[
 			[
 				"",
-				"~/00_SANDIA_WORK/05_rmgcat_to_stella/rmgcat_to_sella/rmgcat_to_sella/rmgcat_stella.sublime-workspace"
+				"~/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/01_Cu_methanol_OH_O+H/ment/00_results_doc/project_notes.sublime-project"
+			],
+			[
+				"note",
+				"~/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/01_Cu_methanol_OH_O+H/ment/00_results_doc/project_notes.sublime-project"
+			],
+			[
+				"not",
+				"~/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/01_Cu_methanol_OH_O+H/ment/00_results_doc/project_notes.sublime-project"
+			],
+			[
+				"pr",
+				"~/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/01_Cu_methanol_OH_O+H/ment/00_results_doc/project_notes.sublime-project"
+			],
+			[
+				"pro",
+				"~/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/01_Cu_methanol_OH_O+H/ment/00_results_doc/project_notes.sublime-project"
 			]
 		],
 		"width": 380.0
 	},
 	"select_symbol":
 	{
-		"height": 0.0,
+		"height": 64.0,
 		"last_filter": "",
 		"selected_items":
 		[
+			[
+				"get ni",
+				"get_unique_minima"
+			],
+			[
+				"get",
+				"get_unique_minima"
+			],
+			[
+				"gratom",
+				"rmgcat_to_gratoms"
+			],
+			[
+				"gratoms",
+				"generate_unique_combinations"
+			],
+			[
+				"gtaro",
+				"rmgcat_to_gratoms"
+			],
+			[
+				"ad",
+				"adjacency_to_3d"
+			],
+			[
+				"rmg",
+				"rmgcat_to_gratoms"
+			],
+			[
+				"adje",
+				"adjacency_to_3d"
+			],
+			[
+				"",
+				"fcc111"
+			]
 		],
-		"width": 0.0
+		"width": 592.0
 	},
-	"selected_group": 1,
+	"selected_group": 0,
 	"settings":
 	{
 	},
@@ -910,7 +2287,7 @@
 	"show_open_files": true,
 	"show_tabs": true,
 	"side_bar_visible": true,
-	"side_bar_width": 209.0,
+	"side_bar_width": 290.0,
 	"status_bar_visible": true,
 	"template_settings":
 	{

@@ -231,7 +231,8 @@ def adjacency_to_3d(reactionlist, slab, repeats, slabname):
     nslab = len(slab)
 
     for species_name, adsorbate in structures.items():
-        savedir = f'./{slabname}/minima/{species_name}'
+        # savedir = f'./{slabname}/minima/{species_name}'
+        savedir = os.path.join(slabname, 'minima', species_name)
         os.makedirs(savedir, exist_ok=True)
         for j, structure in enumerate(adsorbate):
             big_slab_ads = big_slab + structure[nslab:]

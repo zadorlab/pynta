@@ -1,8 +1,20 @@
 {
+	"build_systems":
+	[
+		{
+			"file_regex": "^[ ]*File \"(...*?)\", line ([0-9]*)",
+			"name": "Anaconda Python Builder",
+			"selector": "source.python",
+			"shell_cmd": "\"python\" -u \"$file\""
+		}
+	],
 	"folders":
 	[
 		{
 			"path": "."
+		},
+		{
+			"path": "test/rmgcat_to_sella/01_Cu_methanol_OH_O+H/ment/qe/Cu_111/TS_estimate_288_unique/07"
 		}
 	]
 }
