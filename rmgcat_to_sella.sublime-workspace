@@ -4,6 +4,10 @@
 		"selected_items":
 		[
 			[
+				"ke",
+				"keyPhrase\tstatement"
+			],
+			[
 				"good",
 				"good_reactants\tstatement"
 			],
@@ -336,42 +340,36 @@
 	"buffers":
 	[
 		{
-			"file": "test/rmgcat_to_sella/03_Cu_methanol_CH_C+H/run_main.py",
+			"file": "test/rmgcat_to_sella/00_Cu_methanol_CO+O_CO2/run_main.py",
 			"settings":
 			{
 				"buffer_size": 1990,
+				"encoding": "UTF-8",
 				"line_ending": "Unix"
 			}
 		},
 		{
-			"file": "test/rmgcat_to_sella/03_Cu_methanol_CH_C+H/inputR2S.py",
+			"file": "test/rmgcat_to_sella/00_Cu_methanol_CO+O_CO2/Cu_111_slab_opt.xyz",
+			"settings":
+			{
+				"buffer_size": 857,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "test/rmgcat_to_sella/00_Cu_methanol_CO+O_CO2/inputR2S.py",
 			"settings":
 			{
 				"buffer_size": 860,
+				"encoding": "UTF-8",
 				"line_ending": "Unix"
 			}
 		},
 		{
-			"file": "test/rmgcat_to_sella/03_Cu_methanol_CH_C+H/reactions.yaml",
+			"file": "test/rmgcat_to_sella/00_Cu_methanol_CO+O_CO2/reactions.yaml",
 			"settings":
 			{
-				"buffer_size": 424,
-				"line_ending": "Unix"
-			}
-		},
-		{
-			"file": "test/rmgcat_to_sella/03_Cu_methanol_CH_C+H/01_set_up_Cu_111_ads.py",
-			"settings":
-			{
-				"buffer_size": 762,
-				"line_ending": "Unix"
-			}
-		},
-		{
-			"file": "test/rmgcat_to_sella/03_Cu_methanol_CH_C+H/02_set_up_TS_with_xtb.py",
-			"settings":
-			{
-				"buffer_size": 979,
+				"buffer_size": 487,
 				"line_ending": "Unix"
 			}
 		},
@@ -384,19 +382,10 @@
 			}
 		},
 		{
-			"file": "test/rmgcat_to_sella/02_Cu_methanol_CO+H_HCO/calc_barrier.py",
-			"settings":
-			{
-				"buffer_size": 277,
-				"encoding": "UTF-8",
-				"line_ending": "Unix"
-			}
-		},
-		{
 			"file": "rmgcat_to_sella/main.py",
 			"settings":
 			{
-				"buffer_size": 5525,
+				"buffer_size": 5856,
 				"encoding": "UTF-8",
 				"line_ending": "Unix"
 			}
@@ -414,7 +403,7 @@
 			"file": "rmgcat_to_sella/ts.py",
 			"settings":
 			{
-				"buffer_size": 22219,
+				"buffer_size": 22159,
 				"encoding": "UTF-8",
 				"line_ending": "Unix"
 			}
@@ -999,17 +988,21 @@
 		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test",
 		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella",
 		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/00_Cu_methanol_CO+O_CO2",
-		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/00_Cu_methanol_CO+O_CO2/menten",
-		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/00_Cu_methanol_CO+O_CO2/menten/qe",
 		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/01_Cu_methanol_OH_O+H",
 		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/01_Cu_methanol_OH_O+H/ment",
 		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/01_Cu_methanol_OH_O+H/ment/qe"
 	],
 	"file_history":
 	[
-		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/03_Cu_methanol_CH_C+H/calc_barrier.py",
-		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/get_final_minimas.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/CheckForMinimas.py",
 		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/02_Cu_methanol_CO+H_HCO/calc_barrier.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/get_final_minimas.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/03_Cu_methanol_CH_C+H/02_set_up_TS_with_xtb.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/03_Cu_methanol_CH_C+H/reactions.yaml",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/03_Cu_methanol_CH_C+H/inputR2S.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/03_Cu_methanol_CH_C+H/run_main.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/03_Cu_methanol_CH_C+H/01_set_up_Cu_111_ads.py",
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/03_Cu_methanol_CH_C+H/calc_barrier.py",
 		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/03_Cu_methanol_CH_C+H/calc_av_time.py",
 		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/03_Cu_methanol_CH_C+H/00_calc_time.py",
 		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/03_Cu_methanol_CH_C+H/00_calc_ener.py",
@@ -1128,13 +1121,7 @@
 		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/01_Cu_methanol_OH_O+H/ment/qe/Cu_111/IRC/00/irc_f_opt/00_O+H_irc_f_opt.py",
 		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/01_Cu_methanol_OH_O+H/ment/qe/Cu_111/TS_candidate/23/23_time.log",
 		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/00_calc_time.py",
-		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/01_Cu_methanol_OH_O+H/ment/qe/sf_1618/pytemplate_set_up_ts.py",
-		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/01_Cu_methanol_OH_O+H/ment/qe/sf_1618/08_create_all_TS.py",
-		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/01_Cu_methanol_OH_O+H/ment/qe/sf_1618/pytemplate_set_up_xtb.py",
-		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/01_Cu_methanol_OH_O+H/ment/qe/sf_1618/Cu_111_slab_opt.xyz",
-		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/01_Cu_methanol_OH_O+H/ment/qe/sf_1618/Cu_111/TS_candidate/000_O+H_relax.py",
-		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/01_Cu_methanol_OH_O+H/ment/qe/Cu_111/sf_1618/pytemplate_set_up_ts.py",
-		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/01_Cu_methanol_OH_O+H/ment/qe/Cu_111/sf_1618/08_create_all_TS.py"
+		"/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/01_Cu_methanol_OH_O+H/ment/qe/sf_1618/pytemplate_set_up_ts.py"
 	],
 	"find":
 	{
@@ -1153,6 +1140,7 @@
 		"case_sensitive": false,
 		"find_history":
 		[
+			"Exists",
 			"initBondSt3",
 			"input",
 			"config",
@@ -1279,8 +1267,7 @@
 			"constr",
 			"sour",
 			"dir",
-			"dirs",
-			"dir"
+			"dirs"
 		],
 		"highlight": true,
 		"in_selection": false,
@@ -1298,12 +1285,12 @@
 	"groups":
 	[
 		{
-			"selected": 6,
+			"selected": 4,
 			"sheets":
 			[
 				{
 					"buffer": 0,
-					"file": "test/rmgcat_to_sella/03_Cu_methanol_CH_C+H/run_main.py",
+					"file": "test/rmgcat_to_sella/00_Cu_methanol_CO+O_CO2/run_main.py",
 					"semi_transient": false,
 					"settings":
 					{
@@ -1314,25 +1301,52 @@
 						"selection":
 						[
 							[
-								280,
-								280
+								1379,
+								1379
 							]
 						],
 						"settings":
 						{
-							"syntax": "Packages/Python Improved/PythonImproved.tmLanguage",
-							"translate_tabs_to_spaces": true
+							"syntax": "Packages/Python Improved/PythonImproved.tmLanguage"
 						},
 						"translation.x": 0.0,
 						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 6,
+					"stack_index": 4,
 					"type": "text"
 				},
 				{
 					"buffer": 1,
-					"file": "test/rmgcat_to_sella/03_Cu_methanol_CH_C+H/inputR2S.py",
+					"file": "test/rmgcat_to_sella/00_Cu_methanol_CO+O_CO2/Cu_111_slab_opt.xyz",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 857,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								0,
+								0
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Text/Plain text.tmLanguage"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 1,
+					"type": "text"
+				},
+				{
+					"buffer": 2,
+					"file": "test/rmgcat_to_sella/00_Cu_methanol_CO+O_CO2/inputR2S.py",
 					"semi_transient": false,
 					"settings":
 					{
@@ -1343,122 +1357,8 @@
 						"selection":
 						[
 							[
-								389,
-								389
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/Python Improved/PythonImproved.tmLanguage"
-						},
-						"translation.x": 0.0,
-						"translation.y": 0.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 8,
-					"type": "text"
-				},
-				{
-					"buffer": 2,
-					"file": "test/rmgcat_to_sella/03_Cu_methanol_CH_C+H/reactions.yaml",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 424,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								0,
-								423
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/YAML/YAML.sublime-syntax",
-							"tab_size": 4,
-							"translate_tabs_to_spaces": true
-						},
-						"translation.x": 0.0,
-						"translation.y": 0.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 9,
-					"type": "text"
-				},
-				{
-					"buffer": 3,
-					"file": "test/rmgcat_to_sella/03_Cu_methanol_CH_C+H/01_set_up_Cu_111_ads.py",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 762,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								736,
-								736
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/Python Improved/PythonImproved.tmLanguage"
-						},
-						"translation.x": 0.0,
-						"translation.y": 0.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 12,
-					"type": "text"
-				},
-				{
-					"buffer": 4,
-					"file": "test/rmgcat_to_sella/03_Cu_methanol_CH_C+H/02_set_up_TS_with_xtb.py",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 979,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								102,
-								102
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/Python Improved/PythonImproved.tmLanguage"
-						},
-						"translation.x": 0.0,
-						"translation.y": 0.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 3,
-					"type": "text"
-				},
-				{
-					"buffer": 5,
-					"file": "test/rmgcat_to_sella/get_final_minimas.py",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 397,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								0,
-								0
+								417,
+								417
 							]
 						],
 						"settings":
@@ -1473,20 +1373,50 @@
 					"type": "text"
 				},
 				{
-					"buffer": 6,
-					"file": "test/rmgcat_to_sella/02_Cu_methanol_CO+H_HCO/calc_barrier.py",
+					"buffer": 3,
+					"file": "test/rmgcat_to_sella/00_Cu_methanol_CO+O_CO2/reactions.yaml",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 277,
+						"buffer_size": 487,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								92,
-								92
+								0,
+								0
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/YAML/YAML.sublime-syntax",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 3,
+					"type": "text"
+				},
+				{
+					"buffer": 4,
+					"file": "test/rmgcat_to_sella/get_final_minimas.py",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 397,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								397,
+								397
 							]
 						],
 						"settings":
@@ -1503,16 +1433,16 @@
 			]
 		},
 		{
-			"selected": 7,
+			"selected": 2,
 			"sheets":
 			[
 				{
-					"buffer": 7,
+					"buffer": 5,
 					"file": "rmgcat_to_sella/main.py",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 5525,
+						"buffer_size": 5856,
 						"regions":
 						{
 						},
@@ -1531,14 +1461,14 @@
 							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
-						"translation.y": 0.0,
+						"translation.y": 341.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 4,
+					"stack_index": 7,
 					"type": "text"
 				},
 				{
-					"buffer": 8,
+					"buffer": 6,
 					"file": "rmgcat_to_sella/test.py",
 					"semi_transient": false,
 					"settings":
@@ -1550,8 +1480,8 @@
 						"selection":
 						[
 							[
-								160,
-								160
+								1010,
+								1010
 							]
 						],
 						"settings":
@@ -1565,24 +1495,24 @@
 						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 13,
+					"stack_index": 6,
 					"type": "text"
 				},
 				{
-					"buffer": 9,
+					"buffer": 7,
 					"file": "rmgcat_to_sella/ts.py",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 22219,
+						"buffer_size": 22159,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								6544,
-								6544
+								19890,
+								19890
 							]
 						],
 						"settings":
@@ -1593,14 +1523,14 @@
 							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
-						"translation.y": 0.0,
+						"translation.y": 11198.0,
 						"zoom_level": 1.0
 					},
 					"stack_index": 5,
 					"type": "text"
 				},
 				{
-					"buffer": 10,
+					"buffer": 8,
 					"file": "rmgcat_to_sella/irc.py",
 					"semi_transient": false,
 					"settings":
@@ -1627,11 +1557,11 @@
 						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 15,
+					"stack_index": 13,
 					"type": "text"
 				},
 				{
-					"buffer": 11,
+					"buffer": 9,
 					"file": "rmgcat_to_sella/scan_bond.py",
 					"semi_transient": false,
 					"settings":
@@ -1675,7 +1605,7 @@
 					"type": "text"
 				},
 				{
-					"buffer": 12,
+					"buffer": 10,
 					"file": "rmgcat_to_sella/adjacency_to_3d.py",
 					"semi_transient": false,
 					"settings":
@@ -1701,11 +1631,11 @@
 						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 14,
+					"stack_index": 12,
 					"type": "text"
 				},
 				{
-					"buffer": 13,
+					"buffer": 11,
 					"file": "rmgcat_to_sella/getavtime.py",
 					"semi_transient": false,
 					"settings":
@@ -1732,11 +1662,11 @@
 						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 24,
+					"stack_index": 22,
 					"type": "text"
 				},
 				{
-					"buffer": 14,
+					"buffer": 12,
 					"file": "rmgcat_to_sella/get_barrier.py",
 					"semi_transient": false,
 					"settings":
@@ -1748,8 +1678,8 @@
 						"selection":
 						[
 							[
-								7456,
-								7456
+								6914,
+								6914
 							]
 						],
 						"settings":
@@ -1760,14 +1690,14 @@
 							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
-						"translation.y": 4004.0,
+						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 1,
+					"stack_index": 8,
 					"type": "text"
 				},
 				{
-					"buffer": 15,
+					"buffer": 13,
 					"file": "rmgcat_to_sella/prepare_ts_with_xtb.py",
 					"semi_transient": false,
 					"settings":
@@ -1794,11 +1724,11 @@
 						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 23,
+					"stack_index": 21,
 					"type": "text"
 				},
 				{
-					"buffer": 16,
+					"buffer": 14,
 					"file": "setup.py",
 					"semi_transient": false,
 					"settings":
@@ -1825,11 +1755,11 @@
 						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 7,
+					"stack_index": 9,
 					"type": "text"
 				},
 				{
-					"buffer": 17,
+					"buffer": 15,
 					"file": "rmgcat_to_sella/find_all_nebs_ener_based.py",
 					"semi_transient": false,
 					"settings":
@@ -1856,11 +1786,11 @@
 						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 25,
+					"stack_index": 23,
 					"type": "text"
 				},
 				{
-					"buffer": 18,
+					"buffer": 16,
 					"file": "rmgcat_to_sella/compare_structures.py",
 					"semi_transient": false,
 					"settings":
@@ -1887,11 +1817,11 @@
 						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 22,
+					"stack_index": 20,
 					"type": "text"
 				},
 				{
-					"buffer": 19,
+					"buffer": 17,
 					"file": "rmgcat_to_sella/estimate_struc_to_neb.py",
 					"semi_transient": false,
 					"settings":
@@ -1918,11 +1848,11 @@
 						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 21,
+					"stack_index": 19,
 					"type": "text"
 				},
 				{
-					"buffer": 20,
+					"buffer": 18,
 					"file": "rmgcat_to_sella/checkEner.py",
 					"semi_transient": false,
 					"settings":
@@ -1949,11 +1879,11 @@
 						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 20,
+					"stack_index": 18,
 					"type": "text"
 				},
 				{
-					"buffer": 21,
+					"buffer": 19,
 					"file": "rmgcat_to_sella/find_all_nebs.py",
 					"semi_transient": false,
 					"settings":
@@ -1984,7 +1914,7 @@
 					"type": "text"
 				},
 				{
-					"buffer": 22,
+					"buffer": 20,
 					"file": "rmgcat_to_sella/__init__.py",
 					"semi_transient": false,
 					"settings":
@@ -2009,11 +1939,11 @@
 						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 19,
+					"stack_index": 17,
 					"type": "text"
 				},
 				{
-					"buffer": 23,
+					"buffer": 21,
 					"file": "rmgcat_to_sella/find_equivalent_bonds.py",
 					"semi_transient": false,
 					"settings":
@@ -2040,11 +1970,11 @@
 						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 18,
+					"stack_index": 16,
 					"type": "text"
 				},
 				{
-					"buffer": 24,
+					"buffer": 22,
 					"file": "rmgcat_to_sella/graph_utils.py",
 					"semi_transient": false,
 					"settings":
@@ -2069,11 +1999,11 @@
 						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 17,
+					"stack_index": 15,
 					"type": "text"
 				},
 				{
-					"buffer": 25,
+					"buffer": 23,
 					"file": "rmgcat_to_sella/get_slab.py",
 					"semi_transient": false,
 					"settings":
@@ -2113,7 +2043,7 @@
 						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 16,
+					"stack_index": 14,
 					"type": "text"
 				}
 			]

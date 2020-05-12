@@ -17,6 +17,7 @@ from catkit.gen.surface import SlabGenerator
 from catkit import Gratoms
 
 from .graph_utils import node_test
+from rmgcat_to_sella.main import CheckIfMinimasAlreadyCalculated
 
 # Instead of using CatKit's built in slab generator routines, we want to
 # use pre-relaxed slab geometries to save computer time. In order to use
@@ -25,6 +26,8 @@ from .graph_utils import node_test
 # but they are not great, so I wrote my own method. This can be
 # used to convert any ASE Atoms object into a CatKit Gratoms object,
 # though we are only currently using it for the catalyst geometry.
+
+
 def get_edges(atoms, find_surface=False):
     # If the Atoms object is periodic, we need to check connectivity
     # across the unit cell boundary as well.
@@ -65,7 +68,8 @@ def get_edges(atoms, find_surface=False):
             # 1.25 times the sum of the covalent radii was chosen based
             # on trial and error. Too small, and you miss neighbors.
             # Too big, and you start including next-nearest-neighbors.
-            cutoff = 1.25 * (covalent_radii[atomi.number] + covalent_radii[atomj.number])
+            cutoff = 1.25 * \
+                (covalent_radii[atomi.number] + covalent_radii[atomj.number])
             # xij is the direct displacement vector in the central unit
             # cell.
             xij = atomj.position - atomi.position
@@ -102,6 +106,7 @@ def get_edges(atoms, find_surface=False):
             # the bottom of the slab
             surface[i] = int(np.sign(pairvec[2]))
     return edges, surface
+
 
 def rmgcat_to_gratoms(adjtxt):
     symbols = []
@@ -148,8 +153,8 @@ def rmgcat_to_gratoms(adjtxt):
     for i, subgraph in enumerate(nx.connected_component_subgraphs(gratoms.graph)):
         indices = list(subgraph.nodes)
         symbols = gratoms[indices].symbols
-        #new_gratoms = gratoms[indices].copy()
-        new_indices = {old:new for new, old in enumerate(indices)}
+        # new_gratoms = gratoms[indices].copy()
+        new_indices = {old: new for new, old in enumerate(indices)}
         new_edges = []
         for edge in subgraph.edges:
             newa = new_indices[edge[0]]
@@ -166,13 +171,15 @@ def rmgcat_to_gratoms(adjtxt):
                 elif len(bond) == 1:
                     bond.append(i)
                 else:
-                    raise RuntimeError('At most two bonds to the metal are allowed per adsorbate!')
+                    raise RuntimeError(
+                        'At most two bonds to the metal are allowed per adsorbate!')
                 tags[i] = abs(tags[i])
         new_gratoms.set_tags(tags)
         bonds.append(bond)
         gratoms_list.append(new_gratoms)
 
     return gratoms_list, bonds
+
 
 def adjacency_to_3d(reactionlist, slab, repeats, slabname):
     with open(reactionlist, 'r') as f:
@@ -201,7 +208,7 @@ def adjacency_to_3d(reactionlist, slab, repeats, slabname):
             unique_bonds.append(bond)
 
     slabedges, tags = get_edges(slab, True)
-    #slab transfromed to gratom object
+    # slab transfromed to gratom object
     grslab = Gratoms(numbers=slab.numbers,
                      positions=slab.positions,
                      cell=slab.cell,
@@ -212,17 +219,24 @@ def adjacency_to_3d(reactionlist, slab, repeats, slabname):
     ads_builder = Builder(grslab)
 
     structures = dict()
-
+    # getting path to directory up
+    currentDir = os.path.dirname(os.getcwd())
     for adsorbate, bond in zip(images, unique_bonds):
         if len(adsorbate) == 0:
             continue
-
         if bond is None:
             bond = [0]
 
         key = adsorbate.get_chemical_formula()
+        isItCalculated = CheckIfMinimasAlreadyCalculated(currentDir, key)
+        # currentDir = os.getcwd()
+        if isItCalculated is False:
+            pass
+        else:
+            continue
         try:
-            structs = ads_builder.add_adsorbate(adsorbate, bonds=bond, index=-1)
+            structs = ads_builder.add_adsorbate(
+                adsorbate, bonds=bond, index=-1)
             structures[key] = structs
         except IndexError:
             print(adsorbate, adsorbate.edges, adsorbate.get_tags())
@@ -236,6 +250,8 @@ def adjacency_to_3d(reactionlist, slab, repeats, slabname):
         os.makedirs(savedir, exist_ok=True)
         for j, structure in enumerate(adsorbate):
             big_slab_ads = big_slab + structure[nslab:]
-            write(os.path.join(savedir, '{}.xyz'.format(str(j).zfill(2))), big_slab_ads)
-            write(os.path.join(savedir, '{}.png'.format(str(j).zfill(2))), big_slab_ads)
+            write(os.path.join(savedir, '{}.xyz'.format(
+                str(j).zfill(2))), big_slab_ads)
+            write(os.path.join(savedir, '{}.png'.format(
+                str(j).zfill(2))), big_slab_ads)
             # write(os.path.join(savedir, '{}.png'.format(str(j).zfill(2))), big_slab_ads, rotation='10z,-80x')
