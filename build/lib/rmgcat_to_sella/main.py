@@ -180,6 +180,6 @@ def CheckIfMinimasAlreadyCalculated(currentDir, species):
         print(uniqueMinimaDirs[0])
         return True, uniqueMinimaDirs[0]
     elif IndexError:
-        print('Species {} was not yeat calculated. Setting up new calculations.'.format(
+        print('Species {} was not yet calculated. Setting up new calculations.'.format(
             species))
         return False

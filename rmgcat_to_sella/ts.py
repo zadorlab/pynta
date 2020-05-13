@@ -5,6 +5,7 @@ from catkit.build import molecule
 from rmgcat_to_sella.adjacency_to_3d import get_edges, rmgcat_to_gratoms
 from rmgcat_to_sella.find_all_nebs import get_all_species
 from rmgcat_to_sella.graph_utils import node_test
+from rmgcat_to_sella.main import CheckIfMinimasAlreadyCalculated
 
 from ase.io import read, write
 from ase import Atoms
@@ -336,6 +337,7 @@ def get_index_surface_atom(ads_atom, geom):
 
     return surface_atom[index[0][0]]
 
+
 '''
 def set_adsorbate_positions(x):
     # make a copy of adsorbate
@@ -527,7 +529,8 @@ def create_all_TS_job_files(facetpath, pytemplate):
             TSpath = os.path.join(all_TS_candidate_path, struc)
             for file in os.listdir(TSpath):
                 if file.endswith('.xyz'):
-                    fname = os.path.join(all_TS_candidate_path, f'{struc}_{file[:-4][4:]}_relax.py')
+                    fname = os.path.join(
+                        all_TS_candidate_path, f'{struc}_{file[:-4][4:]}_relax.py')
                     with open(fname, 'w') as f:
                         f.write(pytemplate.format(TS=os.path.join(
                             struc, file), rxn=file[:-4][4:], prefix=file[:3]))
@@ -559,6 +562,19 @@ def set_up_penalty_xtb(path, pytemplate, repeats, species1, species2):
 
     fPath = os.path.split(path)
     avPath = os.path.join(fPath[0], 'minima')
+    '''the code belowe does not work in the loop, probably two differet avPath variable needed to accouut for the poscible scenaario that one species was already calculated (other set of calculations - different reactions, whereas the second in calculated here for the first time) '''
+    # checkMinimaPath = os.path.dirname(os.getcwd())
+    # spList = [species1, species2]
+
+    # for species in spList:
+    #     isItCalculated = CheckIfMinimasAlreadyCalculated(
+    #         checkMinimaPath, species)
+    #     if isItCalculated is False:
+    #         fPath = os.path.split(path)
+    #         avPath = os.path.join(fPath[0], 'minima')
+    #     else:
+    #         avPath = isItCalculated[1]
+
     with open(pytemplate, 'r') as f:
         pytemplate = f.read()
 
@@ -569,8 +585,8 @@ def set_up_penalty_xtb(path, pytemplate, repeats, species1, species2):
             sp2_index = get_index_adatom(species2, geomPath)
             Cu_index1 = get_index_surface_atom(species1, geomPath)
             Cu_index2 = get_index_surface_atom(species2, geomPath)
-            dist_Cu_sp1 = get_bond_dist(species1, geomPath)
-            dist_Cu_sp2 = get_bond_dist(species2, geomPath)
+            # dist_Cu_sp1 = get_bond_dist(species1, geomPath)
+            # dist_Cu_sp2 = get_bond_dist(species2, geomPath)
 
             prefix = geom.split('_')
             calcDir = os.path.join(path, prefix[0])
@@ -598,3 +614,25 @@ def set_up_penalty_xtb(path, pytemplate, repeats, species1, species2):
     f.close()
     rmpath = os.path.join(path, 'initial_png')
     shutil.rmtree(rmpath)
+
+
+def copyMinimasPrevCalculated(checkMinimaDir, sp1, sp2, dstDir):
+    '''
+    Copy directories
+    '''
+    speciesList = [sp1, sp2]
+    for species in speciesList:
+        isItCalculated = CheckIfMinimasAlreadyCalculated(
+            checkMinimaDir, species)
+        if isItCalculated is False:
+            pass
+        else:
+            try:
+                copyPath = isItCalculated[1]
+                dstDir = os.path.join(dstDir, species)
+                shutil.copytree(copyPath, dstDir)
+                dstDir = os.path.split(dstDir)[0]
+            except FileExistsError:
+                dstDir = os.path.split(dstDir)[0]
+                print('All required files already exist.')
+                pass

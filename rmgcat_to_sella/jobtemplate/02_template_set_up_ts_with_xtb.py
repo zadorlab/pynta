@@ -7,7 +7,7 @@
 #SBATCH -e %x.err
 #SBATCH -o %x.out
 
-from rmgcat_to_sella.ts import genTSestimate, set_up_penalty_xtb
+from rmgcat_to_sella.ts import genTSestimate, set_up_penalty_xtb, copyMinimasPrevCalculated
 
 from ase.io import read
 
@@ -21,9 +21,12 @@ rotAngle       = {rotAngle}
 scfactor       = {scfactor}
 pytemplate_xtb = '{pytemplate_xtb}'
 path           = os.path.join(facetpath, 'TS_estimate')
-sp1 = '{sp1}'
-sp2 = '{sp2}'
+sp1            = '{sp1}'
+sp2            = '{sp2}'
+checkMinimaDir = os.path.dirname(os.getcwd())
+dstDir         = os.path.join(facetpath, 'minima')
 
+copyMinimasPrevCalculated(checkMinimaDir, sp1, sp2, dstDir)
 genTSestimate(slab, repeats, yamlfile, facetpath, rotAngle, scfactor)
 set_up_penalty_xtb(path, pytemplate_xtb, repeats, sp1, sp2)
 
