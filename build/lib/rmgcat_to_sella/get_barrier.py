@@ -124,7 +124,8 @@ def getBarrierAfterIRC(path, distCutoff):
         print(rener + ' kJ/mol' + '\t' + '\t' + ts + ' kJ/mol')
 
 
-def getBarrier(path, distCutoff):
+def getBarrier(path, distCutoff, adsAt0, adsAt1):
+
     confList = []
     for conf in sorted(os.listdir(path), key=str):
         confPath = os.path.join(path, conf)
@@ -145,19 +146,16 @@ def getBarrier(path, distCutoff):
                 if f.endswith('irc_f.traj'):
                     ftrajPath = os.path.join(confPath, f)
                     ftrajFile = read(ftrajPath)[36:]
-                    if ftrajFile.get_distance(0, 1) < distCutoff:
+                    if ftrajFile.get_distance(adsAt0, adsAt1) < distCutoff:
                         reactmp.append(f)
-                    elif ftrajFile.get_distance(0, 1) > distCutoff:
+                    else:
                         prodtmp.append(f)
                 elif f.endswith('irc_r.traj'):
                     ftrajPath = os.path.join(confPath, f)
                     ftrajFile = read(ftrajPath)[36:]
-                    # for el in reactmp:
-                    #     if f_prefix in el:
-                    #         print(f)
-                    if ftrajFile.get_distance(0, 1) < distCutoff:
+                    if ftrajFile.get_distance(adsAt0, adsAt1) < distCutoff:
                         reactmp.append(f)
-                    elif ftrajFile.get_distance(0, 1) > distCutoff:
+                    else:
                         prodtmp.append(f)
     # print(reactmp)
     # print(prodtmp)
@@ -208,7 +206,6 @@ def getBarrier(path, distCutoff):
     underscore_len = good_reactants[0].count('_') - 1
     howManyRemove = len(rxn) + len(good_reactants[:2]) + underscore_len
 
-
     for geom in good_reactants:
         whichIRC = os.path.join(geom[howManyRemove:][:-5] + '_opt')
         prefix = geom[:2]
@@ -258,6 +255,7 @@ def getBarrier(path, distCutoff):
 
     TS_ener = []
     for react, ts in zip(reactants, TS_abs_ener):
+        print(react)
         TS_ener.append("{:8.3f}".format((ts - react) * 23.06035 * 4.184))
 
     print('dE_react' + '\t' + 'dE_TS')
