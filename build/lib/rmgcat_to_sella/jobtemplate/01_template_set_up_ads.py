@@ -7,11 +7,17 @@
 #SBATCH -e %x.err
 #SBATCH -o %x.out
 
+import os
+import sys
+submitDir = os.environ['SLURM_SUBMIT_DIR']
+os.chdir(submitDir)
+sys.path.append(os.getcwd())
+
+import inputR2S
+
 from ase.io import read
 
 from rmgcat_to_sella import adjacency_to_3d, create_relax_jobs
-
-import os
 
 slab     = read('{slabopt}')
 slab.pbc = [True, True, False]

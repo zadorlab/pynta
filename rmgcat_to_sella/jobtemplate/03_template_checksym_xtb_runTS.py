@@ -7,9 +7,15 @@
 #SBATCH -e %x.err
 #SBATCH -o %x.out
 
-from rmgcat_to_sella.ts import create_unique_TS, create_TS_unique_job_files
-
 import os
+import sys
+submitDir = os.environ['SLURM_SUBMIT_DIR']
+os.chdir(submitDir)
+sys.path.append(os.getcwd())
+
+import inputR2S
+
+from rmgcat_to_sella.ts import create_unique_TS, create_TS_unique_job_files
 
 facetpath  = '{facetpath}'
 pytemplate = '{pytemplate}'

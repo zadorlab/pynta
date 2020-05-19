@@ -385,7 +385,7 @@
 			"file": "rmgcat_to_sella/main.py",
 			"settings":
 			{
-				"buffer_size": 5856,
+				"buffer_size": 6666,
 				"encoding": "UTF-8",
 				"line_ending": "Unix"
 			}
@@ -403,7 +403,7 @@
 			"file": "rmgcat_to_sella/ts.py",
 			"settings":
 			{
-				"buffer_size": 22159,
+				"buffer_size": 23666,
 				"encoding": "UTF-8",
 				"line_ending": "Unix"
 			}
@@ -430,7 +430,7 @@
 			"file": "rmgcat_to_sella/adjacency_to_3d.py",
 			"settings":
 			{
-				"buffer_size": 8993,
+				"buffer_size": 9435,
 				"line_ending": "Unix"
 			}
 		},
@@ -1313,7 +1313,7 @@
 						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 4,
+					"stack_index": 6,
 					"type": "text"
 				},
 				{
@@ -1341,7 +1341,7 @@
 						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 1,
+					"stack_index": 3,
 					"type": "text"
 				},
 				{
@@ -1369,7 +1369,7 @@
 						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 2,
+					"stack_index": 4,
 					"type": "text"
 				},
 				{
@@ -1399,7 +1399,7 @@
 						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 3,
+					"stack_index": 5,
 					"type": "text"
 				},
 				{
@@ -1427,13 +1427,13 @@
 						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 0,
+					"stack_index": 1,
 					"type": "text"
 				}
 			]
 		},
 		{
-			"selected": 2,
+			"selected": 0,
 			"sheets":
 			[
 				{
@@ -1442,15 +1442,15 @@
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 5856,
+						"buffer_size": 6666,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								573,
-								573
+								46,
+								46
 							]
 						],
 						"settings":
@@ -1461,10 +1461,10 @@
 							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
-						"translation.y": 341.0,
+						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 7,
+					"stack_index": 0,
 					"type": "text"
 				},
 				{
@@ -1495,7 +1495,7 @@
 						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 6,
+					"stack_index": 7,
 					"type": "text"
 				},
 				{
@@ -1504,15 +1504,15 @@
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 22159,
+						"buffer_size": 23666,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								19890,
-								19890
+								19735,
+								19735
 							]
 						],
 						"settings":
@@ -1526,7 +1526,7 @@
 						"translation.y": 11198.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 5,
+					"stack_index": 2,
 					"type": "text"
 				},
 				{
@@ -1610,15 +1610,15 @@
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 8993,
+						"buffer_size": 9435,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								3462,
-								3461
+								0,
+								0
 							]
 						],
 						"settings":
@@ -2077,7 +2077,7 @@
 		"cols":
 		[
 			0.0,
-			0.5,
+			0.456793325637,
 			1.0
 		],
 		"rows":
@@ -2209,7 +2209,7 @@
 		],
 		"width": 592.0
 	},
-	"selected_group": 0,
+	"selected_group": 1,
 	"settings":
 	{
 	},

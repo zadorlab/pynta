@@ -7,6 +7,15 @@
 #SBATCH -e %x.err
 #SBATCH -o %x.out
 
+import os
+import sys
+from pathlib import Path
+submitDir = os.environ['SLURM_SUBMIT_DIR']
+os.chdir(submitDir)
+path = Path(submitDir).parents[2]
+sys.path.append(str(path))
+#import inputR2S
+
 from rmgcat_to_sella.prepare_ts_with_xtb import AdsorbatePlacer
 
 from ase.io import read, write

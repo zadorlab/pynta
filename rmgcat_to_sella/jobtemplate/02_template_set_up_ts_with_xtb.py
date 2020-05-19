@@ -7,11 +7,17 @@
 #SBATCH -e %x.err
 #SBATCH -o %x.out
 
+import os
+import sys
+submitDir = os.environ['SLURM_SUBMIT_DIR']
+os.chdir(submitDir)
+sys.path.append(os.getcwd())
+
+import inputR2S
+
 from rmgcat_to_sella.ts import genTSestimate, set_up_penalty_xtb, copyMinimasPrevCalculated
 
 from ase.io import read
-
-import os
 
 slab           = read('{slabopt}')
 repeats        = {repeats}

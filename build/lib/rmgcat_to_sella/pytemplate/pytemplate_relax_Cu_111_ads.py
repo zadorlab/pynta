@@ -74,6 +74,9 @@ with SocketIOCalculator(espresso, unixsocket=unixsocket) as calc:
     opt = Sella(atoms, order=0, delta0=1e-2, trajectory=jobdir + '.traj')
     opt.run(fmax=0.01)
 
+pngWriteFile = os.path.join(jobdir + '_final.png')
+write(pngWriteFile, read(jobdir + '.traj'))
+
 end = datetime.datetime.now()
 
 with open(outdir + '_time.log', 'a+') as f:

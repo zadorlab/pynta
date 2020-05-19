@@ -1,7 +1,7 @@
 import os
 import time
-from pathlib import Path
 import inputR2S
+from pathlib import Path
 
 '''
 User defined parameters. Here we only read them. They can be set up in inputR2S.py (submit directory)
@@ -169,15 +169,17 @@ def CheckIfMinimasAlreadyCalculated(currentDir, species):
     # transforming posix path to regular string
     for mainDir in mainDirsList:
         mainDirs.append(mainDir)
+    # print(mainDirs)
     # expected -> mainDirs = ['00_Cu_methanol_CO+O_CO2', '01_Cu_methanol_OH_O+H', '02_Cu_methanol_CO+H_HCO']
     for mainDir in mainDirs:
         minimaDir = CheckIfPathToMiminaExists(mainDir, species)
         if minimaDir != None:
             uniqueMinimaDirs.append(minimaDir)
 
-    if len(uniqueMinimaDirs) > 1:
-        print('More than one possible path were found for the species {}. Choosing the following path:'.format(species))
-        print(uniqueMinimaDirs[0])
+    if len(uniqueMinimaDirs) >= 1:
+        print('More than one possible path were found for the species {}. Choosing the following path: {}'.format(
+            species, uniqueMinimaDirs[0]))
+        # print(uniqueMinimaDirs[0])
         return True, uniqueMinimaDirs[0]
     elif IndexError:
         print('Species {} was not yet calculated. Setting up new calculations.'.format(

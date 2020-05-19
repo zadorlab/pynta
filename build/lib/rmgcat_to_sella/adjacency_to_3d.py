@@ -235,6 +235,8 @@ def adjacency_to_3d(reactionlist, slab, repeats, slabname):
         else:
             continue
         try:
+            if key == 'CHO2': # connect through oxygen
+                bond = [2]
             structs = ads_builder.add_adsorbate(
                 adsorbate, bonds=bond, index=-1)
             structures[key] = structs

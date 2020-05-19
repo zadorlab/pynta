@@ -71,11 +71,11 @@ def genTSestimate(slab, repeats, yamlfile, facetpath, rotAngle, scfactor):
     r_name = '+'.join([str(species.symbols) for species in reactants])
     p_name = '+'.join([str(species.symbols) for species in products])
 
-    rxn_name = r_name + '_' + p_name
+    # rxn_name = r_name + '_' + p_name
 
-    unique_species = []
-    unique_bonds = []
-    images = []
+    # unique_species = []
+    # unique_bonds = []
+    # images = []
     r_name_list = [str(species.symbols) for species in reactants]
     p_name_list = [str(species.symbols) for species in products]
 
@@ -94,28 +94,37 @@ def genTSestimate(slab, repeats, yamlfile, facetpath, rotAngle, scfactor):
         os.makedirs(saveDir)
 
     # ADSORBATES
-
-    atom1 = 0
-    atom2 = 1
+    '''
+    This part here is a bit hard coded, especially when dealing with reactants with >= 3 atoms. The code works for couple of species included in if else statement below. Probably will fail for other species. This is becouse ase.build.molecule function numbers atoms very diferently depending on the molecule specify. To be resolved somehow.
+    '''
+    atom1 = 0  # atom1 should always have index 0, i.e. the first atom
+    atom2 = 1  # well, here is the problem becouse ase.build.molecule counts atoms differently than my input in the yaml file. Probably the problem with the way yamlfile is converted to species - to be resolved
     if len(r_name_list) <= len(p_name_list):
         TS_candidate = molecule(r_name_list[0])[0]
         reactName = p_name
-    # elif len(r_name_list) > len(p_name_list):
     else:
-        if p_name_list[0] == 'COH':
-            atom2 = 2
-        else:
-            atom2 = 1
         TS_candidate = molecule(p_name_list[0])[0]
         reactName = r_name
-        # print(p_name_list)
+        if TS_candidate.get_chemical_formula() == 'COH':
+            atom2 = 2
+            bondedThrough = [0]
+        elif TS_candidate.get_chemical_formula() == 'CHO2':
+            atom2 = 3
+            bondedThrough = [2] # connect through oxygen
+        else:
+            atom2 = 1
+            bondedThrough = [0]
 
     blen = TS_candidate.get_distance(atom1, atom2)
     TS_candidate.set_distance(atom1, atom2, blen * scfactor, fix=0)
+    
     if len(TS_candidate.get_tags()) < 3:
         TS_candidate.rotate(90, 'y')
-    if len(TS_candidate.get_tags()) == 3:
+    elif len(TS_candidate.get_tags()) == 3:
         TS_candidate.rotate(90, 'z')
+    else:
+        # TS_candidate.rotate(60, 'y')
+        TS_candidate.rotate(90, 'x')
 
     slabedges, tags = get_edges(slab, True)
     grslab = Gratoms(numbers=slab.numbers,
@@ -127,13 +136,14 @@ def genTSestimate(slab, repeats, yamlfile, facetpath, rotAngle, scfactor):
 
     # building adsorbtion structures
     ads_builder = Builder(grslab)
+    
     count = 0
-    str_list = []
+    # print(TS_candidate.get_chemical_formula())
     while count <= possibleRotations:
         structs = ads_builder.add_adsorbate(
-            TS_candidate, [0], -1, auto_construct=False)
+            TS_candidate, bondedThrough, -1, auto_construct = False) # change to True will make bondedThrough work. Now it uses TS_candidate,rotate... to generate adsorbed strucutres
         big_slab = slab * repeats
-        nbigslab = len(big_slab)
+        # nbigslab = len(big_slab)
         nslab = len(slab)
 
         pngSaveDir = os.path.join(saveDir, 'initial_png')
@@ -236,7 +246,7 @@ def get_av_dist(avDistPath, species):
     gen_xyz_from_traj(avDistPath, species)
     speciesPath = os.path.join(avDistPath, species)
     if len(species) > 1:
-        species = species[:-1]
+        species = species[:1]
     for xyz in sorted(os.listdir(speciesPath), key=str):
         if xyz.endswith('_final.xyz'):
             xyzPath = os.path.join(speciesPath, xyz)
@@ -298,7 +308,7 @@ def get_bond_dist(ads_atom, geom):
 def get_index_adatom(ads_atom, geom):
     adsorbate_atom = []
     if len(ads_atom) > 1:
-        ads_atom = ads_atom[:-1]
+        ads_atom = ads_atom[:1]
     with open(geom, 'r') as f:
         xyz_geom_file = f.readlines()
         for num, line in enumerate(xyz_geom_file):
@@ -306,7 +316,6 @@ def get_index_adatom(ads_atom, geom):
                 if not 'Cu' in line:
                     adsorbate_atom.append(num - 2)
     f.close()
-
     return adsorbate_atom[0]
 
 
@@ -314,7 +323,7 @@ def get_index_surface_atom(ads_atom, geom):
     surface_atom = []
     adsorbate_atom = []
     if len(ads_atom) > 1:
-        ads_atom = ads_atom[:-1]
+        ads_atom = ads_atom[:1]
     # print(ads_atom)
     struc = read(geom)
     with open(geom, 'r') as f:
@@ -562,6 +571,8 @@ def set_up_penalty_xtb(path, pytemplate, repeats, species1, species2):
 
     fPath = os.path.split(path)
     avPath = os.path.join(fPath[0], 'minima')
+    avDist1 = get_av_dist(avPath, species1)
+    avDist2 = get_av_dist(avPath, species2)
     '''the code belowe does not work in the loop, probably two differet avPath variable needed to accouut for the poscible scenaario that one species was already calculated (other set of calculations - different reactions, whereas the second in calculated here for the first time) '''
     # checkMinimaPath = os.path.dirname(os.getcwd())
     # spList = [species1, species2]
@@ -597,8 +608,8 @@ def set_up_penalty_xtb(path, pytemplate, repeats, species1, species2):
             # List of bonds we want O-Cu; H-Cu
             bonds = ((sp1_index, Cu_index1),
                      (sp2_index, Cu_index2))
-            avDist1 = get_av_dist(avPath, species1)
-            avDist2 = get_av_dist(avPath, species2)
+            # avDist1 = get_av_dist(avPath, species1)
+            # avDist2 = get_av_dist(avPath, species2)
             avDists = (avDist1, avDist2)
             trajPath = os.path.join(geom[:-4] + '.traj')
             init_png = os.path.join(calcDir, geom[:-4] + '_initial.png')
