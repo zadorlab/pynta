@@ -2,6 +2,7 @@ import os
 import time
 import inputR2S
 from pathlib import Path
+import sys
 
 '''
 User defined parameters. Here we only read them. They can be set up in inputR2S.py (submit directory)
@@ -14,6 +15,8 @@ rotAngle = inputR2S.rotAngle
 scfactor = inputR2S.scfactor
 sp1 = inputR2S.sp1
 sp2 = inputR2S.sp2
+scaled1 = inputR2S.scaled1
+scaled2 = inputR2S.scaled2
 '''
 These template and pytemplate scripts can be modified by users to tune them to given calculation setup, i.e. calculator, method, queue menager, etc. The current version works for SLURM and Quantum Espresso.
 '''
@@ -80,7 +83,7 @@ def set_up_TS_with_xtb(template, slabopt,
                                     repeats=repeats, yamlfile=yamlfile,
                                     rotAngle=rotAngle, scfactor=scfactor,
                                     pytemplate_xtb=pytemplate_xtb, sp1=sp1,
-                                    sp2=sp2))
+                                    sp2=sp2, scaled1=scaled1, scaled2=scaled2))
         c.close()
     r.close()
 
@@ -134,7 +137,11 @@ def get_slurm_jobs_id(slurm_id_subm):
 def genSbatchCommand(slurm_id_subm):
     slurmID = get_slurm_jobs_id(slurm_id_subm)
     slurmID = ",".join(["{}"] * len(slurmID)).format(*slurmID)
-    command = os.path.join('sbatch --dependency=afterany:' + str(slurmID))
+    if not slurmID:
+        sys.exit('No submitted jobs, probably all files have been already generated')
+        # return command = False
+    else:
+        command = os.path.join('sbatch --dependency=afterany:' + str(slurmID))
     return command
 
 

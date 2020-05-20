@@ -105,7 +105,10 @@ def genTSestimate(slab, repeats, yamlfile, facetpath, rotAngle, scfactor):
     else:
         TS_candidate = molecule(p_name_list[0])[0]
         reactName = r_name
-        if TS_candidate.get_chemical_formula() == 'COH':
+        if TS_candidate.get_chemical_formula() == 'CHO':
+            atom2 = 2
+            bondedThrough = [0]
+        elif TS_candidate.get_chemical_formula() == 'COH':
             atom2 = 2
             bondedThrough = [0]
         elif TS_candidate.get_chemical_formula() == 'CHO2':
@@ -238,7 +241,7 @@ def gen_xyz_from_traj(avDistPath, species):
             write(desTrajPath, read(srcTrajPath))
 
 
-def get_av_dist(avDistPath, species):
+def get_av_dist(avDistPath, species, scfactor, scaled = False):
     # nslab = len(read(slab) * repeats)
     surface_atoms_indices = []
     adsorbate_atoms_indices = []
@@ -264,7 +267,10 @@ def get_av_dist(avDistPath, species):
             dist = float(min(conf.get_distances(
                 adsorbate_atoms_indices[0], surface_atoms_indices)))
             all_conf_dist.append(dist)
-            meanDist = mean(all_conf_dist)
+            if scaled:
+                meanDist = mean(all_conf_dist) * scfactor
+            else:
+                meanDist = mean(all_conf_dist)
     # print(meanDist)
     return meanDist
 
@@ -567,12 +573,12 @@ def create_TS_unique_job_files(facetpath, TSdir, pytemplate):
     f.close()
 
 
-def set_up_penalty_xtb(path, pytemplate, repeats, species1, species2):
+def set_up_penalty_xtb(path, pytemplate, repeats, species1, species2, scfactor, scaled1, scaled2):
 
     fPath = os.path.split(path)
     avPath = os.path.join(fPath[0], 'minima')
-    avDist1 = get_av_dist(avPath, species1)
-    avDist2 = get_av_dist(avPath, species2)
+    avDist1 = get_av_dist(avPath, species1, scfactor, scaled1)
+    avDist2 = get_av_dist(avPath, species2, scfactor, scaled2)
     '''the code belowe does not work in the loop, probably two differet avPath variable needed to accouut for the poscible scenaario that one species was already calculated (other set of calculations - different reactions, whereas the second in calculated here for the first time) '''
     # checkMinimaPath = os.path.dirname(os.getcwd())
     # spList = [species1, species2]
