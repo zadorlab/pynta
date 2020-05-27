@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 #SBATCH -J {geomName}_xtb
 #SBATCH -N 1
-#SBATCH -n 1
+#SBATCH -c 1
+#SBATCH --mem=1gb
 #SBATCH -p day-long-cpu
 #SBATCH -t 1-00:00:00
 #SBATCH -e %x.err
@@ -10,25 +11,24 @@
 import os
 import sys
 from pathlib import Path
+
 submitDir = os.environ['SLURM_SUBMIT_DIR']
 os.chdir(submitDir)
 path = Path(submitDir).parents[2]
 sys.path.append(str(path))
-#import inputR2S
-
-from rmgcat_to_sella.prepare_ts_with_xtb import AdsorbatePlacer
-
-from ase.io import read, write
-
-from xtb import GFN1
+# import inputR2S
 
 import datetime
+from xtb import GFN1
+from ase.io import read, write
+from rmgcat_to_sella.prepare_ts_with_xtb import AdsorbatePlacer
+
 
 geom = '{geom}'
 bonds = {bonds}
 avDists = {avDists}
 trajPath = '{trajPath}'
-slab = '../../../Cu_111_slab_opt.xyz'
+slab = '../../../{slabopt}'
 repeats = {repeats}
 prefix = '{prefix}'
 

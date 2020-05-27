@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 #SBATCH -J runOptIRC
 #SBATCH -N 1
-#SBATCH -n 1
+#SBATCH -c 1
 #SBATCH -p day-long-cpu
 #SBATCH -t 1-00:00:00
 #SBATCH -e %x.err

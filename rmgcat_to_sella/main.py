@@ -1,22 +1,26 @@
 import os
 import time
-import inputR2S
 from pathlib import Path
 import sys
+try:
+    import inputR2S
+    '''
+    User defined parameters. Here we only read them. They can be set up in inputR2S.py (submit directory)
+    '''
+    facetpath = inputR2S.facetpath
+    slabopt = inputR2S.slabopt
+    yamlfile = inputR2S.yamlfile
+    repeats = inputR2S.repeats
+    rotAngle = inputR2S.rotAngle
+    scfactor = inputR2S.scfactor
+    scfactor_surface = inputR2S.scfactor_surface
+    sp1 = inputR2S.sp1
+    sp2 = inputR2S.sp2
+    scaled1 = inputR2S.scaled1
+    scaled2 = inputR2S.scaled2
 
-'''
-User defined parameters. Here we only read them. They can be set up in inputR2S.py (submit directory)
-'''
-facetpath = inputR2S.facetpath
-slabopt = inputR2S.slabopt
-yamlfile = inputR2S.yamlfile
-repeats = inputR2S.repeats
-rotAngle = inputR2S.rotAngle
-scfactor = inputR2S.scfactor
-sp1 = inputR2S.sp1
-sp2 = inputR2S.sp2
-scaled1 = inputR2S.scaled1
-scaled2 = inputR2S.scaled2
+except ImportError:
+    print('Missing input file. You cannot run caclulations but will be able to use most of the workflow.')
 '''
 These template and pytemplate scripts can be modified by users to tune them to given calculation setup, i.e. calculator, method, queue menager, etc. The current version works for SLURM and Quantum Espresso.
 '''
@@ -51,7 +55,7 @@ def genJobFiles():
                yamlfile, repeats, pytemplate_relax_ads)
     set_up_TS_with_xtb(template_set_up_ts_with_xtb,
                        slabopt, repeats, yamlfile, facetpath,
-                       rotAngle, scfactor, pytemplate_xtb, sp1, sp2)
+                       rotAngle, scfactor, scfactor_surface, pytemplate_xtb, sp1, sp2)
     set_up_run_TS(template_set_up_ts, facetpath, pytemplate_set_up_ts)
     set_up_run_IRC(template_set_up_IRC, facetpath, pytemplate_f, pytemplate_r)
     set_up_opt_IRC(template_set_up_optIRC, facetpath, pytemplate_optIRC)
@@ -75,13 +79,14 @@ def set_up_ads(template, facetpath, slabopt, yamlfile, repeats, pytemplate):
 
 def set_up_TS_with_xtb(template, slabopt,
                        repeats, yamlfile, facetpath, rotAngle,
-                       scfactor, pytemplate_xtb, sp1, sp2):
+                       scfactor, scfactor_surface,
+                       pytemplate_xtb, sp1, sp2):
     with open(template, 'r') as r:
         template = r.read()
         with open('02_set_up_TS_with_xtb.py', 'w') as c:
             c.write(template.format(facetpath=facetpath, slabopt=slabopt,
                                     repeats=repeats, yamlfile=yamlfile,
-                                    rotAngle=rotAngle, scfactor=scfactor,
+                                    rotAngle=rotAngle, scfactor=scfactor, scfactor_surface=scfactor_surface,
                                     pytemplate_xtb=pytemplate_xtb, sp1=sp1,
                                     sp2=sp2, scaled1=scaled1, scaled2=scaled2))
         c.close()
@@ -169,14 +174,16 @@ def CheckIfPathToMiminaExists(mainDir, species):
         return None
 
 
-def CheckIfMinimasAlreadyCalculated(currentDir, species):
+def CheckIfMinimasAlreadyCalculated(currentDir, species, facetpath):
     mainDirs = []
     uniqueMinimaDirs = []
-    mainDirsList = Path(str(currentDir)).glob('*_Cu_methanol*')
+    if facetpath == 'Cu_211':
+        mainDirsList = Path(str(currentDir)).glob('*_Cu_211_methanol*')
+    else:
+        mainDirsList = Path(str(currentDir)).glob('*_Cu_methanol*')
     # transforming posix path to regular string
     for mainDir in mainDirsList:
         mainDirs.append(mainDir)
-    # print(mainDirs)
     # expected -> mainDirs = ['00_Cu_methanol_CO+O_CO2', '01_Cu_methanol_OH_O+H', '02_Cu_methanol_CO+H_HCO']
     for mainDir in mainDirs:
         minimaDir = CheckIfPathToMiminaExists(mainDir, species)

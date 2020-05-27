@@ -181,7 +181,7 @@ def rmgcat_to_gratoms(adjtxt):
     return gratoms_list, bonds
 
 
-def adjacency_to_3d(reactionlist, slab, repeats, slabname):
+def adjacency_to_3d(reactionlist, slab, repeats, facetpath):
     with open(reactionlist, 'r') as f:
         text = f.read()
     reactions = yaml.safe_load(text)
@@ -228,7 +228,7 @@ def adjacency_to_3d(reactionlist, slab, repeats, slabname):
             bond = [0]
 
         key = adsorbate.get_chemical_formula()
-        isItCalculated = CheckIfMinimasAlreadyCalculated(currentDir, key)
+        isItCalculated = CheckIfMinimasAlreadyCalculated(currentDir, key, facetpath)
         # currentDir = os.getcwd()
         if isItCalculated is False:
             pass
@@ -248,7 +248,7 @@ def adjacency_to_3d(reactionlist, slab, repeats, slabname):
 
     for species_name, adsorbate in structures.items():
         # savedir = f'./{slabname}/minima/{species_name}'
-        savedir = os.path.join(slabname, 'minima', species_name)
+        savedir = os.path.join(facetpath, 'minima', species_name)
         os.makedirs(savedir, exist_ok=True)
         for j, structure in enumerate(adsorbate):
             big_slab_ads = big_slab + structure[nslab:]

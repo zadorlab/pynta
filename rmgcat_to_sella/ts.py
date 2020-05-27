@@ -105,22 +105,23 @@ def genTSestimate(slab, repeats, yamlfile, facetpath, rotAngle, scfactor):
     else:
         TS_candidate = molecule(p_name_list[0])[0]
         reactName = r_name
-        if TS_candidate.get_chemical_formula() == 'CHO':
-            atom2 = 2
-            bondedThrough = [0]
-        elif TS_candidate.get_chemical_formula() == 'COH':
-            atom2 = 2
-            bondedThrough = [0]
-        elif TS_candidate.get_chemical_formula() == 'CHO2':
-            atom2 = 3
-            bondedThrough = [2] # connect through oxygen
-        else:
-            atom2 = 1
-            bondedThrough = [0]
+
+    if TS_candidate.get_chemical_formula() == 'CHO':
+        atom2 = 2
+        bondedThrough = [0]
+    elif TS_candidate.get_chemical_formula() == 'COH':
+        atom2 = 2
+        bondedThrough = [0]
+    elif TS_candidate.get_chemical_formula() == 'CHO2':
+        atom2 = 3
+        bondedThrough = [2]  # connect through oxygen
+    else:
+        atom2 = 1
+        bondedThrough = [0]
 
     blen = TS_candidate.get_distance(atom1, atom2)
     TS_candidate.set_distance(atom1, atom2, blen * scfactor, fix=0)
-    
+
     if len(TS_candidate.get_tags()) < 3:
         TS_candidate.rotate(90, 'y')
     elif len(TS_candidate.get_tags()) == 3:
@@ -139,12 +140,12 @@ def genTSestimate(slab, repeats, yamlfile, facetpath, rotAngle, scfactor):
 
     # building adsorbtion structures
     ads_builder = Builder(grslab)
-    
+
     count = 0
     # print(TS_candidate.get_chemical_formula())
     while count <= possibleRotations:
         structs = ads_builder.add_adsorbate(
-            TS_candidate, bondedThrough, -1, auto_construct = False) # change to True will make bondedThrough work. Now it uses TS_candidate,rotate... to generate adsorbed strucutres
+            TS_candidate, bondedThrough, -1, auto_construct=False)  # change to True will make bondedThrough work. Now it uses TS_candidate,rotate... to generate adsorbed strucutres
         big_slab = slab * repeats
         # nbigslab = len(big_slab)
         nslab = len(slab)
@@ -241,7 +242,7 @@ def gen_xyz_from_traj(avDistPath, species):
             write(desTrajPath, read(srcTrajPath))
 
 
-def get_av_dist(avDistPath, species, scfactor, scaled = False):
+def get_av_dist(avDistPath, species, scfactor_surface, scaled=False):
     # nslab = len(read(slab) * repeats)
     surface_atoms_indices = []
     adsorbate_atoms_indices = []
@@ -250,25 +251,32 @@ def get_av_dist(avDistPath, species, scfactor, scaled = False):
     speciesPath = os.path.join(avDistPath, species)
     if len(species) > 1:
         species = species[:1]
+    # print(species)
     for xyz in sorted(os.listdir(speciesPath), key=str):
         if xyz.endswith('_final.xyz'):
+            # if xyz.endswith('.traj'):
             xyzPath = os.path.join(speciesPath, xyz)
+            # trajPath = os.path.join(speciesPath, xyz[:-10] + '.traj')
+            # print(trajPath)
             conf = read(xyzPath)
             # print(conf)
+        # if xyz.endswith('*traj'):
             with open(xyzPath, 'r') as f:
                 xyzFile = f.readlines()
                 for num, line in enumerate(xyzFile):
-                    if ' 1 ' in line:
+                    '''For Cu(111) we can put ' 1 ' instead of 'Cu ' to limit calculations to surface Cu atoms only. For Cu(211) ase is not generating tags like this, so full calculation have to be performed, i.e. all surface atoms'''
+                    if 'Cu ' in line:
                         surface_atoms_indices.append(num - 2)
-                    elif species in line:
-                        if not 'Cu' in line:
-                            adsorbate_atoms_indices.append(num - 2)
+                    elif species in line and not 'Cu' in line:
+                        ''' We need to have additional statement 'not 'Cu' in line' because for C it does not work without it'''
+                        # if not 'Cu' in line:
+                        adsorbate_atoms_indices.append(num - 2)
             f.close()
             dist = float(min(conf.get_distances(
                 adsorbate_atoms_indices[0], surface_atoms_indices)))
             all_conf_dist.append(dist)
             if scaled:
-                meanDist = mean(all_conf_dist) * scfactor
+                meanDist = mean(all_conf_dist) * scfactor_surface
             else:
                 meanDist = mean(all_conf_dist)
     # print(meanDist)
@@ -335,7 +343,7 @@ def get_index_surface_atom(ads_atom, geom):
     with open(geom, 'r') as f:
         xyz_geom_file = f.readlines()
         for num, line in enumerate(xyz_geom_file):
-            if ' 1 ' in line:
+            if 'Cu ' in line:
                 surface_atom.append(num - 2)
             elif ads_atom in line:
                 if not 'Cu' in line:
@@ -573,12 +581,12 @@ def create_TS_unique_job_files(facetpath, TSdir, pytemplate):
     f.close()
 
 
-def set_up_penalty_xtb(path, pytemplate, repeats, species1, species2, scfactor, scaled1, scaled2):
+def set_up_penalty_xtb(path, pytemplate, repeats, slabopt, species1, species2, scfactor_surface, scaled1, scaled2):
 
     fPath = os.path.split(path)
     avPath = os.path.join(fPath[0], 'minima')
-    avDist1 = get_av_dist(avPath, species1, scfactor, scaled1)
-    avDist2 = get_av_dist(avPath, species2, scfactor, scaled2)
+    avDist1 = get_av_dist(avPath, species1, scfactor_surface, scaled1)
+    avDist2 = get_av_dist(avPath, species2, scfactor_surface, scaled2)
     '''the code belowe does not work in the loop, probably two differet avPath variable needed to accouut for the poscible scenaario that one species was already calculated (other set of calculations - different reactions, whereas the second in calculated here for the first time) '''
     # checkMinimaPath = os.path.dirname(os.getcwd())
     # spList = [species1, species2]
@@ -625,7 +633,7 @@ def set_up_penalty_xtb(path, pytemplate, repeats, species1, species2, scfactor, 
                 f.write(pytemplate.format(geom=geom, bonds=bonds,
                                           avDists=avDists, trajPath=trajPath,
                                           repeats=repeats, prefix=prefix[0],
-                                          geomName=geomName))
+                                          geomName=geomName, slabopt=slabopt))
             f.close()
             shutil.move(geomPath, calcDir)
     f.close()
@@ -633,14 +641,14 @@ def set_up_penalty_xtb(path, pytemplate, repeats, species1, species2, scfactor, 
     shutil.rmtree(rmpath)
 
 
-def copyMinimasPrevCalculated(checkMinimaDir, sp1, sp2, dstDir):
+def copyMinimasPrevCalculated(checkMinimaDir, sp1, sp2, dstDir, slabname):
     '''
     Copy directories
     '''
     speciesList = [sp1, sp2]
     for species in speciesList:
         isItCalculated = CheckIfMinimasAlreadyCalculated(
-            checkMinimaDir, species)
+            checkMinimaDir, species, slabname)
         if isItCalculated is False:
             pass
         else:

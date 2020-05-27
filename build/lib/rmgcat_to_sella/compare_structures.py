@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-
 import yaml
 import os
 import networkx as nx
@@ -11,6 +10,7 @@ from catkit import Gratoms
 import numpy as np
 from spglib import get_symmetry
 from ase.utils.structure_comparator import SymmetryEquivalenceCheck
+from pathlib import Path
 
 from .adjacency_to_3d import rmgcat_to_gratoms
 from .graph_utils import node_test
@@ -30,7 +30,32 @@ def get_unique(adsorbates):
             unique.append(atoms1)
     return unique
 
-def get_unique_minima(yamlfile, facetpath, slab):
+
+def get_unique_minima(facetpath, minimaDir):
+    good_minima = []
+    result_list = []
+    unique_index = []
+    gpath = os.path.join(facetpath, minimaDir)
+    # for geom in sorted(os.listdir(gpath), key=str):
+    #     geomDir = os.path.join(gpath, geom)
+    #     if os.path.isdir(geomDir):
+    trajlist = sorted(Path(gpath).glob('*traj'), key = str)
+    for traj in trajlist:
+        print(traj)
+        minima = read(traj)
+        minima.pbc = True
+        comparator = SymmetryEquivalenceCheck()
+        result = comparator.compare(minima, good_minima)
+        result_list.append(result)
+        if result is False:
+            good_minima.append(minima)
+    for num, res in enumerate(result_list):
+        if res is False:
+            unique_index.append(str(num).zfill(3))
+    return unique_index
+
+
+def get_unique_minima_eh(yamlfile, facetpath, slab):
     with open(yamlfile, 'r') as f:
         yamltxt = f.read()
     rxn_spec = yaml.safe_load(yamltxt)

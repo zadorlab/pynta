@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 #SBATCH -J relax_surf_ads
 #SBATCH -N 1
-#SBATCH -n 1
+#SBATCH -c 1
 #SBATCH -p day-long-cpu
 #SBATCH -t 1-00:00:00
 #SBATCH -e %x.err
@@ -13,7 +13,7 @@ submitDir = os.environ['SLURM_SUBMIT_DIR']
 os.chdir(submitDir)
 sys.path.append(os.getcwd())
 
-import inputR2S
+# import inputR2S
 
 from ase.io import read
 
