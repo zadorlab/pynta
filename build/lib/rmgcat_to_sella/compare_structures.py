@@ -31,7 +31,31 @@ def get_unique(adsorbates):
     return unique
 
 
-def get_unique_minima(facetpath, minimaDir):
+def get_unique_TS_estimate_before_xtb(facetpath, TSestimateDir):
+    good_minima = []
+    result_list = []
+    unique_index = []
+    gpath = os.path.join(facetpath, TSestimateDir)
+    # for geom in sorted(os.listdir(gpath), key=str):
+    #     geomDir = os.path.join(gpath, geom)
+    #     if os.path.isdir(geomDir):
+    trajlist = sorted(Path(gpath).glob('*xyz'), key = str)
+    for traj in trajlist:
+        print(traj)
+        minima = read(traj)
+        minima.pbc = True
+        comparator = SymmetryEquivalenceCheck()
+        result = comparator.compare(minima, good_minima)
+        result_list.append(result)
+        if result is False:
+            good_minima.append(minima)
+    for num, res in enumerate(result_list):
+        if res is False:
+            unique_index.append(str(num).zfill(3))
+    return unique_index
+
+
+def get_unique_minima_after_opt(facetpath, minimaDir):
     good_minima = []
     result_list = []
     unique_index = []
@@ -39,7 +63,7 @@ def get_unique_minima(facetpath, minimaDir):
     # for geom in sorted(os.listdir(gpath), key=str):
     #     geomDir = os.path.join(gpath, geom)
     #     if os.path.isdir(geomDir):
-    trajlist = sorted(Path(gpath).glob('*traj'), key = str)
+    trajlist = sorted(Path(gpath).glob('*final.xyz'), key = str)
     for traj in trajlist:
         print(traj)
         minima = read(traj)

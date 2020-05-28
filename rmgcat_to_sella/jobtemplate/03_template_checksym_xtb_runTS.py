@@ -2,6 +2,7 @@
 #SBATCH -J runTS
 #SBATCH -N 1
 #SBATCH -c 1
+#SBATCH --mem=1gb
 #SBATCH -p day-long-cpu
 #SBATCH -t 1-00:00:00
 #SBATCH -e %x.err
