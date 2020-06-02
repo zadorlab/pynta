@@ -230,6 +230,7 @@ def adjacency_to_3d(reactionlist, slab, repeats, facetpath):
         key = adsorbate.get_chemical_formula()
         isItCalculated = CheckIfMinimasAlreadyCalculated(currentDir, key, facetpath)
         # currentDir = os.getcwd()
+        # print(adsorbate)
         if isItCalculated is False:
             pass
         else:
@@ -237,6 +238,14 @@ def adjacency_to_3d(reactionlist, slab, repeats, facetpath):
         try:
             if key == 'CHO2': # connect through oxygen
                 bond = [2]
+            elif key == 'CH3O':
+                bond = [1]
+            elif key == 'CH2O':
+                bond = [2]
+            elif key == 'C2H5O2':
+                bond = [6]
+            else:
+                bond = [0]
             structs = ads_builder.add_adsorbate(
                 adsorbate, bonds=bond, index=-1)
             structures[key] = structs

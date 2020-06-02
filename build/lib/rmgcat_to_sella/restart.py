@@ -91,7 +91,7 @@ def restart(species, PathToSpecies, facetpath):
     for prefix in restarting_prefix_list:
         # print(prefix)
         fname = species + '_' + prefix + '_relax.py'
-        command = "cd ./{}/minima/; sbatch {} > ../../submitted_01.txt; cd ../../".format(
+        command = "cd ./{}/minima/; sbatch {} >> ../../submitted_01.txt; cd ../../".format(
             facetpath, fname)
         bashCommand = os.popen(command)
         print(bashCommand.read())
@@ -102,7 +102,7 @@ def restartTS(PathToSpecies, facetpath):
     # rxn = TSxyz.split('_')[1]
     for prefix in restarting_prefix_list:
         fname = prefix + '_' + rxn + '_ts.py'
-        command = "cd ./{}/TS_estimate_unique/; sbatch {} > ../../submitted_03.txt; cd ../../".format(
+        command = "cd ./{}/TS_estimate_unique/; sbatch {} >> ../../submitted_03.txt; cd ../../".format(
             facetpath, fname)
         # print(command)
         bashCommand = os.popen(command)

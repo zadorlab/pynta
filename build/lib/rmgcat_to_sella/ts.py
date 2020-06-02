@@ -30,6 +30,8 @@ import shutil
 
 from statistics import mean
 
+from pathlib import Path
+
 
 def genTSestimate(slab, repeats, yamlfile, facetpath, rotAngle, scfactor):
     # Caclulate how many distinct rotations exists based on the slab symmetry
@@ -150,18 +152,33 @@ def genTSestimate(slab, repeats, yamlfile, facetpath, rotAngle, scfactor):
         # nbigslab = len(big_slab)
         nslab = len(slab)
 
-        pngSaveDir = os.path.join(saveDir, 'initial_png')
-        os.makedirs(pngSaveDir, exist_ok=True)
+        # pngSaveDir = os.path.join(saveDir, 'initial_png')
+        # os.makedirs(pngSaveDir, exist_ok=True)
 
         for i, struc in enumerate(structs):
             big_slab_ads = big_slab + struc[nslab:]
-            write(os.path.join(pngSaveDir, '{}'.format(
-                str(i + len(structs) * count).zfill(3)) + '_' + reactName + '.png'), big_slab_ads)
+            # write(os.path.join(pngSaveDir, '{}'.format(
+                # str(i + len(structs) * count).zfill(3)) + '_' + reactName + '.png'), big_slab_ads)
             write(os.path.join(saveDir, '{}'.format(
                 str(i + len(structs) * count).zfill(3)) + '_' + reactName + '.xyz'), big_slab_ads)
         TS_candidate.rotate(rotAngle, 'z')
         count += 1
 
+    '''Filtering out symmetry equivalent sites '''
+    filtered_equivalen_sites = checkSymmBeforeXTB(saveDir)
+    # print(filtered_equivalen_sites)
+    for eqsites in filtered_equivalen_sites:
+        try:
+            fileToRemove = os.path.join(saveDir, eqsites + '_' + reactName + '.xyz')
+            os.remove(fileToRemove)
+        except OSError:
+            print("Error while deleting file : ", fileToRemove)
+
+    for prefix, noneqsites in enumerate(sorted(os.listdir(saveDir))):
+        prefix = str(prefix).zfill(3)
+        oldfname = os.path.join(saveDir, noneqsites)
+        newfname = os.path.join(saveDir, prefix + noneqsites[3:])
+        os.rename(oldfname, newfname)
 
 # def optimize(path):
 #     for num, geom in enumerate(sorted(os.listdir(path), key=str)):
@@ -467,7 +484,7 @@ def checkSymm(path, TSdir):
         geomDir = os.path.join(gpath, geom)
         if os.path.isdir(geomDir):
             for traj in os.listdir(geomDir):
-                if traj.endswith('.traj'):
+                if traj.endswith('.xyz'):
                     adsorbed = read(os.path.join(geomDir, traj))
                     adsorbed.pbc = True
                     comparator = SymmetryEquivalenceCheck()
@@ -475,12 +492,48 @@ def checkSymm(path, TSdir):
                     result_list.append(result)
                     if result is False:
                         good_adsorbate.append(adsorbed)
-
     unique_index = []
     for num, res in enumerate(result_list):
         if res is False:
             unique_index.append(str(num).zfill(3))
     return unique_index
+
+
+def checkSymmBeforeXTB(path):
+    good_adsorbate = []
+    result_list = []
+    geomlist = sorted(Path(path).glob('*.xyz'))
+    for geom in geomlist:
+        adsorbed = read(geom)
+        adsorbed.pbc = True
+        comparator = SymmetryEquivalenceCheck()
+        result = comparator.compare(adsorbed, good_adsorbate)
+        result_list.append(result)
+        if result is False:
+            good_adsorbate.append(adsorbed)
+    notunique_index = []
+    for num, res in enumerate(result_list):
+        if res is True:
+            ''' Better to have all symmetry equivalent site here in a list. The workflow will remove them in getTSestimate function keeping all symmetry distinct sites '''
+            notunique_index.append(str(num).zfill(3))
+    return notunique_index
+
+    # for geom in sorted(os.listdir(path), key=str):
+    #     geomDir = os.path.join(path, geom)
+    #     for traj in os.listdir(geomDir):
+    #         if traj.endswith('.xyz'):
+    #             adsorbed = read(os.path.join(geomDir, traj))
+    #             adsorbed.pbc = True
+    #             comparator = SymmetryEquivalenceCheck()
+    #             result = comparator.compare(adsorbed, good_adsorbate)
+    #             result_list.append(result)
+    #             if result is False:
+    #                 good_adsorbate.append(adsorbed)
+    # unique_index = []
+    # for num, res in enumerate(result_list):
+    #     if res is False:
+    #         unique_index.append(str(num).zfill(3))
+    # return unique_index
 
 
 def create_unique_TS(facetpath, TSdir):
@@ -637,8 +690,15 @@ def set_up_penalty_xtb(path, pytemplate, repeats, slabopt, species1, species2, s
             f.close()
             shutil.move(geomPath, calcDir)
     f.close()
-    rmpath = os.path.join(path, 'initial_png')
-    shutil.rmtree(rmpath)
+
+    try:
+        rmpath = os.path.join(path, 'initial_png')
+        shutil.rmtree(rmpath)
+    except FileNotFoundError:
+        pass
+        # print('No files to delete')
+
+    
 
 
 def copyMinimasPrevCalculated(checkMinimaDir, sp1, sp2, dstDir, slabname):
