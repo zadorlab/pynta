@@ -1,44 +1,94 @@
 import os
 
 from ase.io import read, write
+from rmgcat_to_sella.ts import checkSymm
+from pathlib import Path
 
 
 def set_up_irc(facetpath, TSdir, pytemplate_f, pytemplate_r):
-    # get ts geoms and create png
     ts_path = os.path.join(facetpath, TSdir)
-    for conf in os.listdir(ts_path):
-        conf_path = os.path.join(ts_path, conf)
-        if os.path.isdir(conf_path):
-            for TSxyz in os.listdir(conf_path):
-                if TSxyz.endswith('_final.xyz'):
-                    rxn = TSxyz.split('_')[1]
-                    prefix = TSxyz[:2]
-                    fname = os.path.join(prefix + '_' + rxn)
-                    ircDir = os.path.join(facetpath, 'IRC', prefix)
-                    ircpy = os.path.join(facetpath, 'IRC')
-                    os.makedirs(ircDir, exist_ok=True)
-                    ts_src_TSxyz_path = os.path.join(conf_path, TSxyz)
-                    ts_dest_path = os.path.join(ircDir, fname)
-                    write(ts_dest_path + '.xyz', read(ts_src_TSxyz_path))
-                    write(ts_dest_path + '.png', read(ts_src_TSxyz_path))
-                    TS_xyz = os.path.join(prefix, fname + '.xyz')
-                    # create run job scripts
-                    with open(pytemplate_f, 'r') as f:
-                        template = f.read()
-                        job_name_f = os.path.join(ircpy, fname + '_irc_f.py')
-                        with open(job_name_f, 'w') as f:
-                            f.write(template.format(
-                                prefix=prefix, rxn=rxn, TS_xyz=TS_xyz))
-                            f.close()
-                    f.close()
-                    with open(pytemplate_r, 'r') as r:
-                        template = r.read()
-                        job_name_r = os.path.join(ircpy, fname + '_irc_r.py')
-                        with open(job_name_r, 'w') as r:
-                            r.write(template.format(
-                                prefix=prefix, rxn=rxn, TS_xyz=TS_xyz))
-                            r.close()
-                    r.close()
+    rxn_path = os.path.join(ts_path, '00')
+    rxn_path_list = Path(rxn_path).glob('*final.xyz')
+    for rxn in rxn_path_list:
+        rxn = str(rxn)
+        rxn = os.path.split(rxn)[1] # only *final.xyz part of path to be extracted
+        rxn = rxn.split('_')[1]
+    unique_ts_index = checkSymm(ts_path)
+
+    for i, prefix in enumerate(unique_ts_index):
+        prefix = prefix[1:]
+        ircDir = os.path.join(facetpath, 'IRC', prefix)
+        ircpy = os.path.join(facetpath, 'IRC')
+        ts_file = os.path.join(prefix + '_' + rxn + '_ts')
+        TS_xyz = os.path.join(prefix, ts_file + '.xyz')
+        os.makedirs(ircDir, exist_ok=True)
+        ts_src_TSxyz_path = os.path.join(ts_path, prefix, prefix + '_' + rxn + '_final.xyz')
+        ts_dest_path = os.path.join(ircDir, ts_file)
+        try:
+            write(ts_dest_path + '.xyz', read(ts_src_TSxyz_path))
+            write(ts_dest_path + '.png', read(ts_src_TSxyz_path))
+        except FileNotFoundError:
+            pass
+        '''create run job scripts'''
+        with open(pytemplate_f, 'r') as f:
+            template = f.read()
+            job_name_f = os.path.join(ircpy, ts_file + '_irc_f.py')
+            with open(job_name_f, 'w') as f:
+                f.write(template.format(
+                    prefix=prefix, rxn=rxn, TS_xyz=TS_xyz))
+                f.close()
+        f.close()
+        with open(pytemplate_r, 'r') as r:
+            template = r.read()
+            job_name_r = os.path.join(ircpy, ts_file + '_irc_r.py')
+            with open(job_name_r, 'w') as r:
+                r.write(template.format(
+                    prefix=prefix, rxn=rxn, TS_xyz=TS_xyz))
+                r.close()
+        r.close()
+        
+
+        # if os.path.isdir(uniqueTSdir):
+        #     shutil.rmtree(uniqueTSdir)
+        #     os.makedirs(uniqueTSdir, exist_ok=True)
+        # else:
+        #     os.makedirs(uniqueTSdir, exist_ok=True)
+    # get ts geoms and create png
+
+    # for conf in os.listdir(ts_path):
+    #     conf_path = os.path.join(ts_path, conf)
+    #     if os.path.isdir(conf_path):
+    #         for TSxyz in os.listdir(conf_path):
+    #             if TSxyz.endswith('_final.xyz'):
+    #                 print(TSxyz)
+                    # rxn = TSxyz.split('_')[1]
+                    # prefix = TSxyz[:2]
+                    # fname = os.path.join(prefix + '_' + rxn)
+                    # ircDir = os.path.join(facetpath, 'IRC', prefix)
+                    # ircpy = os.path.join(facetpath, 'IRC')
+                    # os.makedirs(ircDir, exist_ok=True)
+                    # ts_src_TSxyz_path = os.path.join(conf_path, TSxyz)
+                    # ts_dest_path = os.path.join(ircDir, fname)
+                    # write(ts_dest_path + '.xyz', read(ts_src_TSxyz_path))
+                    # write(ts_dest_path + '.png', read(ts_src_TSxyz_path))
+                    # TS_xyz = os.path.join(prefix, fname + '.xyz')
+                    # # create run job scripts
+                    # with open(pytemplate_f, 'r') as f:
+                    #     template = f.read()
+                    #     job_name_f = os.path.join(ircpy, fname + '_irc_f.py')
+                    #     with open(job_name_f, 'w') as f:
+                    #         f.write(template.format(
+                    #             prefix=prefix, rxn=rxn, TS_xyz=TS_xyz))
+                    #         f.close()
+                    # f.close()
+                    # with open(pytemplate_r, 'r') as r:
+                    #     template = r.read()
+                    #     job_name_r = os.path.join(ircpy, fname + '_irc_r.py')
+                    #     with open(job_name_r, 'w') as r:
+                    #         r.write(template.format(
+                    #             prefix=prefix, rxn=rxn, TS_xyz=TS_xyz))
+                    #         r.close()
+                    # r.close()
 
 
 def set_up_irc_choosen(path, list_struc, pytemplate_f, pytemplate_r):

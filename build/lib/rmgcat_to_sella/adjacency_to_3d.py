@@ -222,6 +222,7 @@ def adjacency_to_3d(reactionlist, slab, repeats, facetpath):
     # getting path to directory up
     currentDir = os.path.dirname(os.getcwd())
     for adsorbate, bond in zip(images, unique_bonds):
+        # print(adsorbate)
         if len(adsorbate) == 0:
             continue
         if bond is None:

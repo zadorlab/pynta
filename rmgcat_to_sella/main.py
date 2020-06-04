@@ -187,7 +187,7 @@ def CheckIfMinimasAlreadyCalculated(currentDir, species, facetpath):
     # expected -> mainDirs = ['00_Cu_methanol_CO+O_CO2', '01_Cu_methanol_OH_O+H', '02_Cu_methanol_CO+H_HCO']
     for mainDir in mainDirs:
         minimaDir = CheckIfPathToMiminaExists(mainDir, species)
-        if minimaDir != None:
+        if minimaDir is not None:
             uniqueMinimaDirs.append(minimaDir)
 
     if len(uniqueMinimaDirs) >= 1:

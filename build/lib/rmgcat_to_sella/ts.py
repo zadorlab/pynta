@@ -1,6 +1,7 @@
 from catkit import Gratoms
 from catkit.gen.adsorption import AdsorptionSites, Builder
 from catkit.build import molecule
+from catkit.gen.molecules import get_3D_positions
 
 from rmgcat_to_sella.adjacency_to_3d import get_edges, rmgcat_to_gratoms
 from rmgcat_to_sella.find_all_nebs import get_all_species
@@ -31,6 +32,8 @@ import shutil
 from statistics import mean
 
 from pathlib import Path
+
+import networkx as nx
 
 
 def genTSestimate(slab, repeats, yamlfile, facetpath, rotAngle, scfactor):
@@ -75,16 +78,28 @@ def genTSestimate(slab, repeats, yamlfile, facetpath, rotAngle, scfactor):
 
     # rxn_name = r_name + '_' + p_name
 
-    # unique_species = []
-    # unique_bonds = []
-    # images = []
+    unique_species = []
+    unique_bonds = []
+    images = []
+    # check if any products are the same as any reactants
+    for species1, bond in zip(speciesInd, bonds):
+        for species2 in unique_species:
+            if nx.is_isomorphic(species1.graph, species2.graph, node_test):
+                break
+        else:
+            images.append(get_3D_positions(species1))
+            unique_species.append(species1)
+            unique_bonds.append(bond)
+    # print(unique_species)
+
     r_name_list = [str(species.symbols) for species in reactants]
     p_name_list = [str(species.symbols) for species in products]
 
     if len(r_name_list) < len(p_name_list):
         print('Reactant structure will be used to estimate TS')
         rpDir = 'reactants'
-    elif len(r_name_list) > len(p_name_list):
+    # elif len(r_name_list) > len(p_name_list):
+    else:
         print('Products will be used to estimate TS')
         rpDir = 'products'
 
@@ -105,9 +120,12 @@ def genTSestimate(slab, repeats, yamlfile, facetpath, rotAngle, scfactor):
         TS_candidate = molecule(r_name_list[0])[0]
         reactName = p_name
     else:
-        TS_candidate = molecule(p_name_list[0])[0]
+        # TS_candidate = molecule(p_name_list[0])[0]
+        '''images[2] keeps info about product. It's a Gratom object. Cannot use catkit's molecule method becouse it generates gemetry based on wierd order chemical formula string. Sometimes it works to use molecule method but in general it is better to use get_3D_positions() as it converts yaml info into 3d position. In images I keep the oryginal order of elements with connectivity info. In TS_candidate.get_chemical_formula() elements are sorted and grouped '''
+        TS_candidate = images[2] 
         reactName = r_name
 
+    ''' Differetn cases '''
     if TS_candidate.get_chemical_formula() == 'CHO':
         atom2 = 2
         bondedThrough = [0]
@@ -117,20 +135,35 @@ def genTSestimate(slab, repeats, yamlfile, facetpath, rotAngle, scfactor):
     elif TS_candidate.get_chemical_formula() == 'CHO2':
         atom2 = 3
         bondedThrough = [2]  # connect through oxygen
+    elif TS_candidate.get_chemical_formula() == 'C2H5O2':
+        atom0 = 0
+        atom1 = 1
+        atom2 = 5
+        bondedThrough = [6]  # connect through oxygen
     else:
         atom2 = 1
         bondedThrough = [0]
+        
+    bondlen = TS_candidate.get_distance(atom1, atom2)
+    # bondlen = TS_candidate.get_distance(atom1, atom2)
+    # angle = TS_candidate.get_angle(0, 1, 5)
 
-    blen = TS_candidate.get_distance(atom1, atom2)
-    TS_candidate.set_distance(atom1, atom2, blen * scfactor, fix=0)
+    # TS_candidate.set_distance(atom1, atom2, blen * scfactor, fix=0)
 
+    '''Final ridgid rotations to orientade TS_candidate on the surface'''
     if len(TS_candidate.get_tags()) < 3:
         TS_candidate.rotate(90, 'y')
+        TS_candidate.set_distance(atom1, atom2, bondlen * scfactor, fix=0)
     elif len(TS_candidate.get_tags()) == 3:
         TS_candidate.rotate(90, 'z')
+        TS_candidate.set_distance(atom1, atom2, bondlen * scfactor, fix=0)
     else:
         # TS_candidate.rotate(60, 'y')
-        TS_candidate.rotate(90, 'x')
+        TS_candidate.rotate(90, 'z')
+        ''' Should work for H2CO*OCH3, i.e. COH3+HCOH '''
+        TS_candidate.set_angle(atom2, atom1, atom0, -60, indices=[0, 1, 2, 3, 4], add=True)
+        TS_candidate.set_distance(atom1, atom2, bondlen * scfactor, fix=1, indices=[0, 1, 2, 3, 4])
+        # indices=[0, 1, 2, 3, 4]
 
     slabedges, tags = get_edges(slab, True)
     grslab = Gratoms(numbers=slab.numbers,
@@ -266,8 +299,12 @@ def get_av_dist(avDistPath, species, scfactor_surface, scaled=False):
     all_conf_dist = []
     gen_xyz_from_traj(avDistPath, species)
     speciesPath = os.path.join(avDistPath, species)
+    if species in ['CH3O', 'CH2O']:
+        species = 'O'
     if len(species) > 1:
         species = species[:1]
+        print(species)
+    
     # print(species)
     for xyz in sorted(os.listdir(speciesPath), key=str):
         if xyz.endswith('_final.xyz'):
@@ -476,22 +513,41 @@ def run_preopt():
 '''
 
 
-def checkSymm(path, TSdir):
+# def checkSymm(path, TSdir):
+#     good_adsorbate = []
+#     result_list = []
+#     gpath = os.path.join(path, TSdir)
+#     for geom in sorted(os.listdir(gpath), key=str):
+#         geomDir = os.path.join(gpath, geom)
+#         if os.path.isdir(geomDir):
+#             for traj in os.listdir(geomDir):
+#                 if traj.endswith('.traj'):
+#                     adsorbed = read(os.path.join(geomDir, traj))
+#                     adsorbed.pbc = True
+#                     comparator = SymmetryEquivalenceCheck()
+#                     result = comparator.compare(adsorbed, good_adsorbate)
+#                     result_list.append(result)
+#                     if result is False:
+#                         good_adsorbate.append(adsorbed)
+#     unique_index = []
+#     for num, res in enumerate(result_list):
+#         if res is False:
+#             unique_index.append(str(num).zfill(3))
+#     return unique_index
+
+
+def checkSymm(path):
     good_adsorbate = []
     result_list = []
-    gpath = os.path.join(path, TSdir)
-    for geom in sorted(os.listdir(gpath), key=str):
-        geomDir = os.path.join(gpath, geom)
-        if os.path.isdir(geomDir):
-            for traj in os.listdir(geomDir):
-                if traj.endswith('.xyz'):
-                    adsorbed = read(os.path.join(geomDir, traj))
-                    adsorbed.pbc = True
-                    comparator = SymmetryEquivalenceCheck()
-                    result = comparator.compare(adsorbed, good_adsorbate)
-                    result_list.append(result)
-                    if result is False:
-                        good_adsorbate.append(adsorbed)
+    geomlist = sorted(Path(path).glob('**/*.traj'))
+    for geom in geomlist:
+        adsorbed = read(geom)
+        adsorbed.pbc = True
+        comparator = SymmetryEquivalenceCheck()
+        result = comparator.compare(adsorbed, good_adsorbate)
+        result_list.append(result)
+        if result is False:
+            good_adsorbate.append(adsorbed)
     unique_index = []
     for num, res in enumerate(result_list):
         if res is False:
@@ -539,7 +595,8 @@ def checkSymmBeforeXTB(path):
 def create_unique_TS(facetpath, TSdir):
     # checkSymmPath = os.path.join(path, 'TS_estimate')
 
-    gd_ads_index = checkSymm(facetpath, TSdir)
+    # gd_ads_index = checkSymm(facetpath, TSdir)
+    gd_ads_index = checkSymm(os.path.join(facetpath, TSdir)) # new checksym with globbing
     for i, index in enumerate(gd_ads_index):
         uniqueTSdir = os.path.join(
             facetpath, TSdir + '_unique', str(i).zfill(2))
