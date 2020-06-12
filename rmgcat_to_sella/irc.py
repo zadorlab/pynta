@@ -204,12 +204,33 @@ def create_job_files(pytemplate, optDir, traj, geom):
 
 
 def optAfterIRC(path, pytemplate):
+    ''' Function to set up optimization to minimas after IRC calculation
+        
+        path - path to main IRC directory, e.g. Cu_111/IRC
+        pytemplate - slurm template for this calculations
+
+        The function checks if *traj files containing IRC trajectories exists and have some content. If so, a minimum optimization will be set up. Otherwise, the given geometry is skipped.
+    '''
     for struc in sorted(os.listdir(path), key=str):
         strucPath = os.path.join(path, struc)
         if os.path.isdir(strucPath):
             for traj in os.listdir(strucPath):
                 if traj.endswith('irc_f.traj'):
-                    prepare_opt(strucPath, 'irc_f', traj, pytemplate)
+                    trajPath = os.path.join(strucPath, traj)
+                    if os.stat(trajPath).st_size == 0:
+                        pass
+                    else:
+                        try:
+                            prepare_opt(strucPath, 'irc_f', traj, pytemplate)
+                        except FileNotFoundError:
+                            pass
                 elif traj.endswith('irc_r.traj'):
-                    prepare_opt(strucPath, 'irc_r', traj, pytemplate)
-
+                    trajPath = os.path.join(strucPath, traj)
+                    if os.stat(trajPath).st_size == 0:
+                        pass
+                    else:
+                        try:
+                            prepare_opt(strucPath, 'irc_r', traj, pytemplate)
+                        except FileNotFoundError:
+                            pass
+            # Error handling to be developed
