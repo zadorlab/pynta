@@ -157,14 +157,9 @@ def createRestartJobs_optIRC(PathToSpecies):
             ircPath, prefix + '_' + rxn + '.traj')
         newXYZ = os.path.join(ircPath, prefix + '_' +
                               rxn + '_' + irc[:-4] + '.xyz')
-        # print(PathToConformer)
-        # print(newXYZ)
         write(newXYZ, read(PathToConformer))
     print('Restarting...')
     return restarting_list, rxn
-
-
-''' Subbmistion is not working - sbatch ... to be fixed'''
 
 
 def restart_optIRC(PathToSpecies):
@@ -172,10 +167,11 @@ def restart_optIRC(PathToSpecies):
     # rxn = TSxyz.split('_')[1]
     for ircPath in restarting_list:
         _, _, prefix, irc = ircPath.split('/')
-        fname = os.path.join(ircPath, prefix + '_' +
-                             rxn + '_' + irc + '.py')
-        command = "sbatch ./{} >> ../../submitted_03.txt".format(
-            fname)
-        print(command)
+        fname = os.path.join(prefix + '_' + rxn + '_' + irc + '.py')
+        # print(fname)
+        # print(ircPath)
+        command = "cd {}; sbatch {}; cd ../../../../ >> ../../submitted_03.txt".format(ircPath,
+                                                                                       fname)
+        # print(command)
         bashCommand = os.popen(command)
         print(bashCommand.read())

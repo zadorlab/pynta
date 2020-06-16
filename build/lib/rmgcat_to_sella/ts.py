@@ -125,7 +125,7 @@ def genTSestimate(slab, repeats, yamlfile, facetpath, rotAngle, scfactor):
         TS_candidate = images[2] 
         reactName = r_name
 
-    ''' Differetn cases '''
+    ''' Different cases '''
     if TS_candidate.get_chemical_formula() == 'CHO':
         atom2 = 2
         bondedThrough = [0]
@@ -161,7 +161,7 @@ def genTSestimate(slab, repeats, yamlfile, facetpath, rotAngle, scfactor):
         # TS_candidate.rotate(60, 'y')
         TS_candidate.rotate(90, 'z')
         ''' Should work for H2CO*OCH3, i.e. COH3+HCOH '''
-        TS_candidate.set_angle(atom2, atom1, atom0, -60, indices=[0, 1, 2, 3, 4], add=True)
+        TS_candidate.set_angle(atom2, atom1, atom0, -45, indices=[0, 1, 2, 3, 4], add=True)
         TS_candidate.set_distance(atom1, atom2, bondlen * scfactor, fix=1, indices=[0, 1, 2, 3, 4])
         # indices=[0, 1, 2, 3, 4]
 
