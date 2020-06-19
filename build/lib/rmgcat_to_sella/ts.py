@@ -133,15 +133,17 @@ def genTSestimate(slab, repeats, yamlfile, facetpath, rotAngle, scfactor):
         atom2 = 2
         bondedThrough = [0]
     elif TS_candidate.get_chemical_formula() == 'CHO2':
-        atom2 = 3
+        # atom1 = 0
+        # atom2 = 1
         bondedThrough = [2]  # connect through oxygen
+
     elif TS_candidate.get_chemical_formula() == 'C2H5O2':
         atom0 = 0
         atom1 = 1
         atom2 = 5
         bondedThrough = [6]  # connect through oxygen
     else:
-        atom2 = 1
+        # atom2 = 1
         bondedThrough = [0]
         
     bondlen = TS_candidate.get_distance(atom1, atom2)
@@ -157,13 +159,18 @@ def genTSestimate(slab, repeats, yamlfile, facetpath, rotAngle, scfactor):
     elif len(TS_candidate.get_tags()) == 3:
         TS_candidate.rotate(90, 'z')
         TS_candidate.set_distance(atom1, atom2, bondlen * scfactor, fix=0)
-    else:
+    # else:
+    elif TS_candidate.get_chemical_formula() == 'C2H5O2':
         # TS_candidate.rotate(60, 'y')
         TS_candidate.rotate(90, 'z')
         ''' Should work for H2CO*OCH3, i.e. COH3+HCOH '''
         TS_candidate.set_angle(atom2, atom1, atom0, -45, indices=[0, 1, 2, 3, 4], add=True)
         TS_candidate.set_distance(atom1, atom2, bondlen * scfactor, fix=1, indices=[0, 1, 2, 3, 4])
         # indices=[0, 1, 2, 3, 4]
+    elif TS_candidate.get_chemical_formula() == 'CHO2':
+        TS_candidate.rotate(90, 'z')
+        TS_candidate.set_distance(atom1, atom2, bondlen * scfactor, fix=0)
+
 
     slabedges, tags = get_edges(slab, True)
     grslab = Gratoms(numbers=slab.numbers,
@@ -303,7 +310,6 @@ def get_av_dist(avDistPath, species, scfactor_surface, scaled=False):
         species = 'O'
     if len(species) > 1:
         species = species[:1]
-        print(species)
     
     # print(species)
     for xyz in sorted(os.listdir(speciesPath), key=str):

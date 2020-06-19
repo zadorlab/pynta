@@ -67,10 +67,9 @@ with SocketIOCalculator(espresso, unixsocket=unixsocket) as calc:
     opt = Sella(TS_est, order=1, delta0=1e-2, trajectory = trajdir)
     opt.run(fmax=0.01)
 
-pngWriteDir = os.path.join(prefix, prefix + '_' + rxn + '_final.png')
-write(pngWriteDir, read(trajdir))
-xyzWriteDir = os.path.join(prefix, prefix + '_' + rxn + '_final.xyz')
-write(xyzWriteDir, read(trajdir))
+WriteDir = os.path.join(prefix, prefix + '_' + rxn)
+write(WriteDir + '_ts_final.png', read(trajdir))
+write(WriteDir + '_ts_final.xyz', read(trajdir))
 
 end = datetime.datetime.now()
 with open(label + '_time.log', 'a+') as f:

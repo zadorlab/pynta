@@ -182,6 +182,7 @@ def rmgcat_to_gratoms(adjtxt):
 
 
 def adjacency_to_3d(reactionlist, slab, repeats, facetpath):
+    os.makedirs(facetpath, exist_ok = True)
     with open(reactionlist, 'r') as f:
         text = f.read()
     reactions = yaml.safe_load(text)
@@ -193,6 +194,7 @@ def adjacency_to_3d(reactionlist, slab, repeats, facetpath):
         products, pbonds = rmgcat_to_gratoms(rxn['product'].split('\n'))
         species += reactants + products
         bonds += rbonds + pbonds
+    print(products)
 
     unique_species = []
     unique_bonds = []
@@ -222,12 +224,11 @@ def adjacency_to_3d(reactionlist, slab, repeats, facetpath):
     # getting path to directory up
     currentDir = os.path.dirname(os.getcwd())
     for adsorbate, bond in zip(images, unique_bonds):
-        # print(adsorbate)
+        # write('aaa.xyz', adsorbate)
         if len(adsorbate) == 0:
             continue
         if bond is None:
             bond = [0]
-
         key = adsorbate.get_chemical_formula()
         isItCalculated = CheckIfMinimasAlreadyCalculated(currentDir, key, facetpath)
         # currentDir = os.getcwd()
@@ -237,8 +238,25 @@ def adjacency_to_3d(reactionlist, slab, repeats, facetpath):
         else:
             continue
         try:
+            # print(key)
+            # for i, subgraph in enumerate(nx.connected_component_subgraphs(adsorbate.graph)):
+            #     new_edges = []
+            #     for edge in subgraph.edges:
+            #         # newa = new_indices[edge[0]]
+            #         # newb = new_indices[edge[1]]
+            #         new_edges.append((0, 1))
+            #         # new_edges.append((0, 2))
+            #         # new_edges.append((0, 3))
+            #         # new_edges.append((0, 2))
+            #         new_edges.append((0, 3))
+            #         # new_edges.append((1, 3))
+            #         new_edges.append((1, 2))
+            #         # new_edges.append((2, 1))
+            #     adsorbate = Gratoms(adsorbate, edges=new_edges)
+            #     print(adsorbate.edges)
             if key == 'CHO2': # connect through oxygen
                 bond = [2]
+                # print(adsorbate.set_angle(1, 0, 3, 90))
             elif key == 'CH3O':
                 bond = [1]
             elif key == 'CH2O':

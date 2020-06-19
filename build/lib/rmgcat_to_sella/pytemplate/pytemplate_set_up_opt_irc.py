@@ -60,15 +60,17 @@ espresso = Espresso(command='/home/ehermes/local/bin/mpirun -np 48 /home/ehermes
                     )
 
 geom_opt = read('{geom}')
-geom_opt.set_constraint(FixAtoms([atom.index for atom in geom_opt if atom.position[2] < geom_opt.cell[2, 2] / 2.]))
+geom_opt.set_constraint(FixAtoms(
+    [atom.index for atom in geom_opt if atom.position[2] < geom_opt.cell[2, 2] / 2.]))
 
 with SocketIOCalculator(espresso, unixsocket=unixsocket) as calc:
     geom_opt.calc = calc
-    opt = Sella(geom_opt, order=0, delta0=1e-2, trajectory = trajdir)
+    opt = Sella(geom_opt, order=0, delta0=1e-2, trajectory=trajdir)
     opt.run(fmax=0.01)
 
-pngWriteDir = os.path.join(prefix + '_' + rxn + '_final.png')
-write(pngWriteDir, read(trajdir))
+WriteDir = os.path.join(prefix + '_' + rxn + '_final')
+write(WriteDir + '.png', read(trajdir))
+write(WriteDir + '.xyz', read(trajdir))
 
 end = datetime.datetime.now()
 with open(prefix + '_time.log', 'a+') as f:

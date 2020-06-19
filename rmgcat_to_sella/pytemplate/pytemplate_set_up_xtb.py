@@ -53,6 +53,7 @@ adsplacer = AdsorbatePlacer(bigSlab, TS_candidate, bonds, avDists,
 opt = adsplacer.optimize()
 # visualize end point of each trajectory
 write(trajPath[:-5] + '_final.png', read(trajPath))
+write(trajPath[:-5] + '_final.xyz', read(trajPath))
 
 end = datetime.datetime.now()
 with open(prefix + '_time.log', 'a+') as f:
