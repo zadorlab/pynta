@@ -69,7 +69,7 @@ Generate inputR2S files
 def set_up_ads(template, facetpath, slabopt, yamlfile, repeats, pytemplate):
     with open(template, 'r') as r:
         template = r.read()
-        with open('01_set_up_Cu_111_ads.py', 'w') as c:
+        with open('01_set_up_ads.py', 'w') as c:
             c.write(template.format(facetpath=facetpath, slabopt=slabopt,
                                     yamlfile=yamlfile, repeats=repeats,
                                     pytemplate=pytemplate))
@@ -179,6 +179,8 @@ def CheckIfMinimasAlreadyCalculated(currentDir, species, facetpath):
     uniqueMinimaDirs = []
     if facetpath == 'Cu_211':
         mainDirsList = Path(str(currentDir)).glob('*_Cu_211_methanol*')
+    elif facetpath == 'Cu_100':
+        mainDirsList = Path(str(currentDir)).glob('*_Cu_100_methanol*')
     else:
         mainDirsList = Path(str(currentDir)).glob('*_Cu_methanol*')
     # transforming posix path to regular string

@@ -182,6 +182,7 @@ def rmgcat_to_gratoms(adjtxt):
 
 
 def adjacency_to_3d(reactionlist, slab, repeats, facetpath):
+    os.makedirs(facetpath, exist_ok = True)
     with open(reactionlist, 'r') as f:
         text = f.read()
     reactions = yaml.safe_load(text)
@@ -237,7 +238,7 @@ def adjacency_to_3d(reactionlist, slab, repeats, facetpath):
         else:
             continue
         try:
-            print(key)
+            # print(key)
             # for i, subgraph in enumerate(nx.connected_component_subgraphs(adsorbate.graph)):
             #     new_edges = []
             #     for edge in subgraph.edges:
@@ -255,7 +256,7 @@ def adjacency_to_3d(reactionlist, slab, repeats, facetpath):
             #     print(adsorbate.edges)
             if key == 'CHO2': # connect through oxygen
                 bond = [2]
-                print(adsorbate.set_angle(1, 0, 3, 90))
+                # print(adsorbate.set_angle(1, 0, 3, 90))
             elif key == 'CH3O':
                 bond = [1]
             elif key == 'CH2O':

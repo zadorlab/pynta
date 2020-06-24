@@ -32,7 +32,7 @@ def set_up_irc(facetpath, TSdir, pytemplate_f, pytemplate_r):
         '''create run job scripts'''
         with open(pytemplate_f, 'r') as f:
             template = f.read()
-            job_name_f = os.path.join(ircpy, ts_file + '_irc_f.py')
+            job_name_f = os.path.join(ircpy, ts_file[:-3] + '_irc_f.py')
             with open(job_name_f, 'w') as f:
                 f.write(template.format(
                     prefix=prefix, rxn=rxn, TS_xyz=TS_xyz))
@@ -40,7 +40,7 @@ def set_up_irc(facetpath, TSdir, pytemplate_f, pytemplate_r):
         f.close()
         with open(pytemplate_r, 'r') as r:
             template = r.read()
-            job_name_r = os.path.join(ircpy, ts_file + '_irc_r.py')
+            job_name_r = os.path.join(ircpy, ts_file[:-3] + '_irc_r.py')
             with open(job_name_r, 'w') as r:
                 r.write(template.format(
                     prefix=prefix, rxn=rxn, TS_xyz=TS_xyz))

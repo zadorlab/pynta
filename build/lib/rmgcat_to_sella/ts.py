@@ -35,6 +35,9 @@ from pathlib import Path
 
 import networkx as nx
 
+# def prepare_ts_estimate()
+#     reactName = genTSestimate()
+#     filtered_out_equiv_ts_estimate(saveDir, reactName)
 
 def genTSestimate(slab, repeats, yamlfile, facetpath, rotAngle, scfactor):
     # Caclulate how many distinct rotations exists based on the slab symmetry
@@ -98,7 +101,6 @@ def genTSestimate(slab, repeats, yamlfile, facetpath, rotAngle, scfactor):
     if len(r_name_list) < len(p_name_list):
         print('Reactant structure will be used to estimate TS')
         rpDir = 'reactants'
-    # elif len(r_name_list) > len(p_name_list):
     else:
         print('Products will be used to estimate TS')
         rpDir = 'products'
@@ -184,29 +186,25 @@ def genTSestimate(slab, repeats, yamlfile, facetpath, rotAngle, scfactor):
     ads_builder = Builder(grslab)
 
     count = 0
-    # print(TS_candidate.get_chemical_formula())
+
     while count <= possibleRotations:
         structs = ads_builder.add_adsorbate(
             TS_candidate, bondedThrough, -1, auto_construct=False)  # change to True will make bondedThrough work. Now it uses TS_candidate,rotate... to generate adsorbed strucutres
         big_slab = slab * repeats
-        # nbigslab = len(big_slab)
         nslab = len(slab)
-
-        # pngSaveDir = os.path.join(saveDir, 'initial_png')
-        # os.makedirs(pngSaveDir, exist_ok=True)
 
         for i, struc in enumerate(structs):
             big_slab_ads = big_slab + struc[nslab:]
-            # write(os.path.join(pngSaveDir, '{}'.format(
-                # str(i + len(structs) * count).zfill(3)) + '_' + reactName + '.png'), big_slab_ads)
             write(os.path.join(saveDir, '{}'.format(
                 str(i + len(structs) * count).zfill(3)) + '_' + reactName + '.xyz'), big_slab_ads)
+        
         TS_candidate.rotate(rotAngle, 'z')
         count += 1
+    # return reactName
 
     '''Filtering out symmetry equivalent sites '''
+# def filtered_out_equiv_ts_estimate(saveDir, reactName)
     filtered_equivalen_sites = checkSymmBeforeXTB(saveDir)
-    # print(filtered_equivalen_sites)
     for eqsites in filtered_equivalen_sites:
         try:
             fileToRemove = os.path.join(saveDir, eqsites + '_' + reactName + '.xyz')
@@ -219,73 +217,6 @@ def genTSestimate(slab, repeats, yamlfile, facetpath, rotAngle, scfactor):
         oldfname = os.path.join(saveDir, noneqsites)
         newfname = os.path.join(saveDir, prefix + noneqsites[3:])
         os.rename(oldfname, newfname)
-
-# def optimize(path):
-#     for num, geom in enumerate(sorted(os.listdir(path), key=str)):
-#         # for num, geom in os.listdir(path) if not endswith('.png'):
-#         if geom.endswith('.xyz'):
-#             print(geom)
-#             job = read(os.path.join(path, geom))
-#             calc = EMT()
-#             job.set_calculator(calc)
-#             trajPath = os.path.join(path, geom + '.traj')
-#             opt = LBFGS(job, trajectory=trajPath)
-#             # opt.calc(BFGS)
-#             opt.run(fmax=0.05)
-
-#             writeDir = os.path.join(saveDir, 'opt')
-#             os.makedirs(writeDir, exist_ok=True)
-
-#             write(os.path.join(writeDir, '{}'.format(
-#                 str(num).zfill(3)) + 'result_relax.png'), read(trajPath))
-
-
-# saveDir = '/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/Cu_111_tests/slab_optimized/Cu_111/neb_estimate/OH_O+H/'
-# optimize(saveDir)
-# geom = os.path.join(saveDir, '10_O+H.xyz')
-
-
-# def optimize_fix_bond(geom):
-#     job = read(geom)
-#     trajPath = os.path.join(saveDir, '10.traj')
-
-#     fix_O = []
-#     fix_H = []
-
-#     with open(geom, 'r') as f:
-#         xyz_geom_file = f.readlines()
-#         for num, line in enumerate(xyz_geom_file):
-#             if 'H' in line:
-#                 fix_H.append(num - 2)  # reading each line and adding only the one with tags = 1 (surface atoms). It is necessary to subtract 2 as indices in atom object starts with 0 and we also have to take into account that the first line in xyz file contains non xyz information
-#             elif 'O' in line:
-#                 fix_O.append(num - 2)
-#     f.close()
-
-#     # print(ads_O, ads_H)
-
-#     calc = EMT()
-#     job.set_calculator(calc)
-#     c = FixBondLength(fix_H[0], fix_O[0])
-#     job.set_constraint(c)
-#     opt = LBFGS(job, trajectory=trajPath)
-#     # opt.calc(BFGS)
-#     opt.run(fmax=0.05)
-
-#     writeDir = os.path.join(saveDir, 'opt')
-#     os.makedirs(writeDir, exist_ok=True)
-
-#     write(os.path.join(writeDir, 'result_fix_bond.png'), read(trajPath))
-
-# optimize_fix_bond(geom)
-
-
-# avDist_Cu_O = (1.75 + 1.90 + 1.90 + 1.90) / 4
-# avDist_Cu_H = (1.53 + 1.73 + 1.75 + 1.73) / 4
-# print('Average Cu-O distance: ', avDist_Cu_O)
-# print('Average Cu-H distance: ', avDist_Cu_H)
-# print()
-
-# path_minima = os.path.join(facetpath, 'minima')
 
 def gen_xyz_from_traj(avDistPath, species):
     # if species == 'C':
@@ -697,12 +628,13 @@ def create_TS_unique_job_files(facetpath, TSdir, pytemplate):
     f.close()
 
 
-def set_up_penalty_xtb(path, pytemplate, repeats, slabopt, species1, species2, scfactor_surface, scaled1, scaled2):
-
+def set_up_penalty_xtb(path, pytemplate, repeats, slabopt, species_list, scfactor_surface, scaled1, scaled2):
+    '''Species3 is/should be optional '''
+    # print(species3)
     fPath = os.path.split(path)
     avPath = os.path.join(fPath[0], 'minima')
-    avDist1 = get_av_dist(avPath, species1, scfactor_surface, scaled1)
-    avDist2 = get_av_dist(avPath, species2, scfactor_surface, scaled2)
+    avDist1 = get_av_dist(avPath, species_list[0], scfactor_surface, scaled1)
+    avDist2 = get_av_dist(avPath, species_list[1], scfactor_surface, scaled2)
     '''the code belowe does not work in the loop, probably two differet avPath variable needed to accouut for the poscible scenaario that one species was already calculated (other set of calculations - different reactions, whereas the second in calculated here for the first time) '''
     # checkMinimaPath = os.path.dirname(os.getcwd())
     # spList = [species1, species2]
@@ -716,18 +648,28 @@ def set_up_penalty_xtb(path, pytemplate, repeats, slabopt, species1, species2, s
     #     else:
     #         avPath = isItCalculated[1]
 
+    # species_list = [species1, species2, species3]
+
     with open(pytemplate, 'r') as f:
         pytemplate = f.read()
-
-    for geom in os.listdir(path):
+    
+    for geom in sorted(os.listdir(path)):
         if geom.endswith('.xyz'):
+            bonds = []
             geomPath = os.path.join(path, geom)
-            sp1_index = get_index_adatom(species1, geomPath)
-            sp2_index = get_index_adatom(species2, geomPath)
-            Cu_index1 = get_index_surface_atom(species1, geomPath)
-            Cu_index2 = get_index_surface_atom(species2, geomPath)
-            # dist_Cu_sp1 = get_bond_dist(species1, geomPath)
-            # dist_Cu_sp2 = get_bond_dist(species2, geomPath)
+            
+            for species in species_list:
+                sp_index = get_index_adatom(species, geomPath)
+                Cu_index = get_index_surface_atom(species, geomPath)
+                # print(sp_index, Cu_index)
+                bonds.append((sp_index, Cu_index))
+
+            # sp1_index = get_index_adatom(species1, geomPath)
+            # sp2_index = get_index_adatom(species2, geomPath)
+            # # sp3_index = get_index_adatom(species3, geomPath)
+            # Cu_index1 = get_index_surface_atom(species1, geomPath)
+            # Cu_index2 = get_index_surface_atom(species2, geomPath)
+            # # Cu_index3 = get_index_surface_atom(species3, geomPath)
 
             prefix = geom.split('_')
             calcDir = os.path.join(path, prefix[0])
@@ -736,10 +678,9 @@ def set_up_penalty_xtb(path, pytemplate, repeats, slabopt, species1, species2, s
             geomName = geom[:-4]
 
             # List of bonds we want O-Cu; H-Cu
-            bonds = ((sp1_index, Cu_index1),
-                     (sp2_index, Cu_index2))
-            # avDist1 = get_av_dist(avPath, species1)
-            # avDist2 = get_av_dist(avPath, species2)
+            # bonds = ((sp1_index, Cu_index1),
+            #          (sp2_index, Cu_index2))
+            # print(type(bonds))
             avDists = (avDist1, avDist2)
             trajPath = os.path.join(geom[:-4] + '.traj')
             init_png = os.path.join(calcDir, geom[:-4] + '_initial.png')

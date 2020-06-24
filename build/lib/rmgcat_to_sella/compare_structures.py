@@ -89,7 +89,8 @@ def get_unique_minima_eh(yamlfile, facetpath, slab):
         grtmp1, _ = rmgcat_to_gratoms(rxn['reactant'].split('\n'))
         grtmp2, _ = rmgcat_to_gratoms(rxn['product'].split('\n'))
 
-        for sp1 in grtmp1 + grtmp2:
+        # for sp1 in grtmp1 + grtmp2:
+        for sp1 in grtmp2:
             for sp2 in all_species:
                 if nx.is_isomorphic(sp1.graph, sp2.graph, node_test):
                     break

@@ -30,16 +30,15 @@ scfactor         = {scfactor}
 scfactor_surface = {scfactor_surface}
 pytemplate_xtb   = '{pytemplate_xtb}'
 path             = os.path.join(facetpath, 'TS_estimate')
-sp1              = '{sp1}'
-sp2              = '{sp2}'
+species          = ['{sp1}', '{sp2}']
 checkMinimaDir   = os.path.dirname(os.getcwd())
 dstDir           = os.path.join(facetpath, 'minima')
 scaled1          = {scaled1}
 scaled2          = {scaled2}
 
-copyMinimasPrevCalculated(checkMinimaDir, sp1, sp2, dstDir, facetpath)
+copyMinimasPrevCalculated(checkMinimaDir, species[0], species[1], dstDir, facetpath)
 genTSestimate(slab, repeats, yamlfile, facetpath, rotAngle, scfactor)
-set_up_penalty_xtb(path, pytemplate_xtb, repeats, slabopt, sp1, sp2, scfactor_surface, scaled1, scaled2)
+set_up_penalty_xtb(path, pytemplate_xtb, repeats, slabopt, species, scfactor_surface, scaled1, scaled2)
 
 bashCommand = os.popen(
     "cd {facetpath}/TS_estimate/; for i in $(ls -d */); do cd $i; sbatch *py; cd ../ || exit; done > ../../submitted_02.txt; cd ../../")
