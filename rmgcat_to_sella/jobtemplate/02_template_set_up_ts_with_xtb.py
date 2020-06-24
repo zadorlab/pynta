@@ -16,9 +16,7 @@ sys.path.append(os.getcwd())
 
 # import inputR2S
 
-from rmgcat_to_sella.ts import copyMinimasPrevCalculated
-from rmgcat_to_sella.ts import prepare_ts_estimate
-from rmgcat_to_sella.ts import set_up_penalty_xtb
+from rmgcat_to_sella.ts import TS
 
 from ase.io import read
 
@@ -31,18 +29,18 @@ rotAngle         = {rotAngle}
 scfactor         = {scfactor}
 scfactor_surface = {scfactor_surface}
 pytemplate_xtb   = '{pytemplate_xtb}'
-path             = os.path.join(facetpath, 'TS_estimate')
+ts_estimate_path = os.path.join(facetpath, 'TS_estimate')
 species          = ['{sp1}', '{sp2}']
-checkMinimaDir   = os.path.dirname(os.getcwd())
-dstDir           = os.path.join(facetpath, 'minima')
+current_dir      = os.path.dirname(os.getcwd())
+minima_dir       = os.path.join(facetpath, 'minima')
 scaled1          = {scaled1}
 scaled2          = {scaled2}
 
-copyMinimasPrevCalculated(checkMinimaDir, species[0], species[1], dstDir, 
-                         facetpath)
-prepare_ts_estimate(slab, repeats, yamlfile, facetpath, rotAngle, scfactor)
-set_up_penalty_xtb(path, pytemplate_xtb, repeats, slabopt, species, 
-                scfactor_surface, scaled1, scaled2)
+ts = TS(ts_estimate_path, slab, repeats, yamlfile, facetpath, rotAngle, scfactor,
+        scfactor_surface, scaled1, scaled2)
+ts.copy_minimas_prev_calculated(current_dir, species, minima_dir)
+ts.prepare_ts_estimate()
+ts.set_up_penalty_xtb(pytemplate_xtb, slabopt, species)
 
 bashCommand = os.popen(
     "cd {facetpath}/TS_estimate/; for i in $(ls -d */); do cd $i; sbatch *py; cd ../ || exit; done > ../../submitted_02.txt; cd ../../")

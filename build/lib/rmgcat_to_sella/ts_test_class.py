@@ -37,8 +37,7 @@ import networkx as nx
 
 
 class TS:
-    def __init__(self,ts_estimate_path, slab, repeats, yamlfile, facetpath, rotAngle, scfactor, scfactor_surface, scaled1, scaled2):
-        self.ts_estimate_path = ts_estimate_path
+    def __init__(self, slab, repeats, yamlfile, facetpath, rotAngle, scfactor, scfactor_surface, scaled1, scaled2):
         self.slab = slab
         self.repeats = repeats
         self.yamlfile = yamlfile
@@ -52,20 +51,19 @@ class TS:
     def prepare_ts_estimate(self):
         ''' Prepare TS estimates for subsequent xTB calculations '''
 
-        # ts_estimate_path = os.path.join(self.facetpath, 'TS_estimate')
-        if os.path.exists(self.ts_estimate_path):
-            shutil.rmtree(self.ts_estimate_path)
-            os.makedirs(self.ts_estimate_path)
+        ts_estimate_path = os.path.join(self.facetpath, 'TS_estimate')
+        if os.path.exists(ts_estimate_path):
+            shutil.rmtree(ts_estimate_path)
+            os.makedirs(ts_estimate_path)
         else:
-            os.makedirs(self.ts_estimate_path)
+            os.makedirs(ts_estimate_path)
 
         rxn_name, rpDir, r_name_list, p_name_list, images = TS.prepare_react_list(
             self)
 
-        TS.TS_placer(self, rxn_name, r_name_list, p_name_list, images)
+        TS.TS_placer(self, ts_estimate_path, rxn_name, r_name_list, p_name_list, images)
 
-        TS.filtered_out_equiv_ts_estimate(self,rxn_name)
-
+        TS.filtered_out_equiv_ts_estimate(ts_estimate_path, rxn_name)
 
 
     def prepare_react_list(self):
@@ -129,7 +127,7 @@ class TS:
         return rxn_name, rpDir, r_name_list, p_name_list, images
 
 
-    def TS_placer(self, rxn_name, r_name_list, p_name_list, images):
+    def TS_placer(self, ts_estimate_path, rxn_name, r_name_list, p_name_list, images):
         ''' Place adsorbates on the surface to estimate TS '''
 
         # ADSORBATES
@@ -220,7 +218,7 @@ class TS:
 
             for i, struc in enumerate(structs):
                 big_slab_ads = big_slab + struc[nslab:]
-                write(os.path.join(self.ts_estimate_path, '{}'.format(
+                write(os.path.join(ts_estimate_path, '{}'.format(
                     str(i + len(structs) * count).zfill(3)) + '_' + rxn_name + '.xyz'), big_slab_ads)
 
             TS_candidate.rotate(self.rotAngle, 'z')
@@ -228,26 +226,26 @@ class TS:
 
         '''Filtering out symmetry equivalent sites '''
 
-    def filtered_out_equiv_ts_estimate(self, rxn_name):
-        filtered_equivalen_sites = checkSymmBeforeXTB(self.ts_estimate_path)
+    def filtered_out_equiv_ts_estimate(ts_estimate_path, rxn_name):
+        filtered_equivalen_sites = checkSymmBeforeXTB(ts_estimate_path)
         for eqsites in filtered_equivalen_sites:
             try:
                 fileToRemove = os.path.join(
-                    self.ts_estimate_path, eqsites + '_' + rxn_name + '.xyz')
+                    ts_estimate_path, eqsites + '_' + rxn_name + '.xyz')
                 os.remove(fileToRemove)
             except OSError:
                 print("Error while deleting file : ", fileToRemove)
 
-        for prefix, noneqsites in enumerate(sorted(os.listdir(self.ts_estimate_path))):
+        for prefix, noneqsites in enumerate(sorted(os.listdir(ts_estimate_path))):
             prefix = str(prefix).zfill(3)
-            oldfname = os.path.join(self.ts_estimate_path, noneqsites)
-            newfname = os.path.join(self.ts_estimate_path, prefix + noneqsites[3:])
+            oldfname = os.path.join(ts_estimate_path, noneqsites)
+            newfname = os.path.join(ts_estimate_path, prefix + noneqsites[3:])
             os.rename(oldfname, newfname)
     
-    def set_up_penalty_xtb(self, pytemplate, slabopt, species_list):
+    def set_up_penalty_xtb(self, ts_estimate_path, pytemplate, slabopt, species_list):
         '''Species3 is/should be optional '''
         # print(species3)
-        fPath = os.path.split(self.ts_estimate_path)
+        fPath = os.path.split(ts_estimate_path)
         avPath = os.path.join(fPath[0], 'minima')
         avDist1 = get_av_dist(avPath, species_list[0], self.scfactor_surface, self.scaled1)
         avDist2 = get_av_dist(avPath, species_list[1], self.scfactor_surface, self.scaled2)
@@ -269,10 +267,10 @@ class TS:
         with open(pytemplate, 'r') as f:
             pytemplate = f.read()
 
-        for geom in sorted(os.listdir(self.ts_estimate_path)):
+        for geom in sorted(os.listdir(ts_estimate_path)):
             if geom.endswith('.xyz'):
                 bonds = []
-                geomPath = os.path.join(self.ts_estimate_path, geom)
+                geomPath = os.path.join(ts_estimate_path, geom)
 
                 for species in species_list:
                     sp_index = get_index_adatom(species, geomPath)
@@ -288,7 +286,7 @@ class TS:
                 # # Cu_index3 = get_index_surface_atom(species3, geomPath)
 
                 prefix = geom.split('_')
-                calcDir = os.path.join(self.ts_estimate_path, prefix[0])
+                calcDir = os.path.join(ts_estimate_path, prefix[0])
                 os.makedirs(calcDir, exist_ok=True)
 
                 geomName = geom[:-4]
@@ -312,30 +310,11 @@ class TS:
         f.close()
 
         try:
-            rmpath = os.path.join(self.ts_estimate_path, 'initial_png')
+            rmpath = os.path.join(ts_estimate_path, 'initial_png')
             shutil.rmtree(rmpath)
         except FileNotFoundError:
             pass
             # print('No files to delete')
-
-    def copy_minimas_prev_calculated(self, checkMinimaDir, species_list, minima_dir):
-        ''' If minimas have been already calculated in different set of reactions, they are copied to the current workflow and used instead of calculating it again'''
-        for species in species_list:
-            isItCalculated = CheckIfMinimasAlreadyCalculated(
-                checkMinimaDir, species, self.facetpath)
-            if isItCalculated is False:
-                pass
-            else:
-                try:
-                    copyPath = isItCalculated[1]
-                    dstDir = os.path.join(minima_dir, species)
-                    shutil.copytree(copyPath, dstDir)
-                    dstDir = os.path.split(dstDir)[0]
-                except FileExistsError:
-                    dstDir = os.path.split(dstDir)[0]
-                    print('All required files already exist.')
-                    pass
-
 
 
 
@@ -647,3 +626,25 @@ def set_up_penalty_xtb(path, pytemplate, repeats, slabopt, species_list, scfacto
     except FileNotFoundError:
         pass
         # print('No files to delete')
+
+
+def copyMinimasPrevCalculated(checkMinimaDir, sp1, sp2, dstDir, slabname):
+    '''
+    Copy directories
+    '''
+    speciesList = [sp1, sp2]
+    for species in speciesList:
+        isItCalculated = CheckIfMinimasAlreadyCalculated(
+            checkMinimaDir, species, slabname)
+        if isItCalculated is False:
+            pass
+        else:
+            try:
+                copyPath = isItCalculated[1]
+                dstDir = os.path.join(dstDir, species)
+                shutil.copytree(copyPath, dstDir)
+                dstDir = os.path.split(dstDir)[0]
+            except FileExistsError:
+                dstDir = os.path.split(dstDir)[0]
+                print('All required files already exist.')
+                pass
