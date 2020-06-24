@@ -16,7 +16,9 @@ sys.path.append(os.getcwd())
 
 # import inputR2S
 
-from rmgcat_to_sella.ts import genTSestimate, set_up_penalty_xtb, copyMinimasPrevCalculated
+from rmgcat_to_sella.ts import copyMinimasPrevCalculated
+from rmgcat_to_sella.ts import prepare_ts_estimate
+from rmgcat_to_sella.ts import set_up_penalty_xtb
 
 from ase.io import read
 
@@ -36,9 +38,11 @@ dstDir           = os.path.join(facetpath, 'minima')
 scaled1          = {scaled1}
 scaled2          = {scaled2}
 
-copyMinimasPrevCalculated(checkMinimaDir, species[0], species[1], dstDir, facetpath)
-genTSestimate(slab, repeats, yamlfile, facetpath, rotAngle, scfactor)
-set_up_penalty_xtb(path, pytemplate_xtb, repeats, slabopt, species, scfactor_surface, scaled1, scaled2)
+copyMinimasPrevCalculated(checkMinimaDir, species[0], species[1], dstDir, 
+                         facetpath)
+prepare_ts_estimate(slab, repeats, yamlfile, facetpath, rotAngle, scfactor)
+set_up_penalty_xtb(path, pytemplate_xtb, repeats, slabopt, species, 
+                scfactor_surface, scaled1, scaled2)
 
 bashCommand = os.popen(
     "cd {facetpath}/TS_estimate/; for i in $(ls -d */); do cd $i; sbatch *py; cd ../ || exit; done > ../../submitted_02.txt; cd ../../")

@@ -35,26 +35,41 @@ from pathlib import Path
 
 import networkx as nx
 
-# def prepare_ts_estimate()
-#     reactName = genTSestimate()
-#     filtered_out_equiv_ts_estimate(saveDir, reactName)
 
-def genTSestimate(slab, repeats, yamlfile, facetpath, rotAngle, scfactor):
-    # Caclulate how many distinct rotations exists based on the slab symmetry
-    # rotAngle = slab.get_cell_lengths_and_angles()[5]
-    # possibleRotations = (360 / slab.get_cell_lengths_and_angles()[5]) - 1
+def prepare_ts_estimate(slab, repeats, yamlfile, facetpath, rotAngle, scfactor):
+    ''' Prepare TS estimates for subsequent xTB calculations '''
 
-    possibleRotations = (360 / rotAngle) - 1
+    ts_estimate_path = os.path.join(facetpath, 'TS_estimate')
+    if os.path.exists(ts_estimate_path):
+        shutil.rmtree(ts_estimate_path)
+        os.makedirs(ts_estimate_path)
+    else:
+        os.makedirs(ts_estimate_path)
 
+    rxn_name, rpDir, r_name_list, p_name_list, images = prepare_react_list(
+        yamlfile, facetpath)
+
+    TS_placer(ts_estimate_path, slab, repeats, facetpath, rotAngle,
+              scfactor, rxn_name, r_name_list, p_name_list, images)
+
+    # reactName, saveDir = genTSestimate(slab, repeats, yamlfile, facetpath, rotAngle, scfactor)
+    filtered_out_equiv_ts_estimate(ts_estimate_path, rxn_name)
+
+
+def prepare_react_list(yamlfile, facetpath):
+    '''Convert yaml file to more useful format'''
     with open(yamlfile, 'r') as f:
         yamltxt = f.read()
     reactions = yaml.safe_load(yamltxt)
-
     species_unique = dict()
-    nslab = len(slab)
-
     speciesInd = []
     bonds = []
+    r_unique = []
+    p_unique = []
+    symbols_list = []
+    unique_species = []
+    unique_bonds = []
+    images = []
 
     for rxn in reactions:
         # transforming reactions data to gratom objects
@@ -62,10 +77,6 @@ def genTSestimate(slab, repeats, yamlfile, facetpath, rotAngle, scfactor):
         products, pbonds = rmgcat_to_gratoms(rxn['product'].split('\n'))
         speciesInd += reactants + products
         bonds += rbonds + pbonds
-
-    r_unique = []
-    p_unique = []
-    symbols_list = []
 
     for rp, uniquelist in ((reactants, r_unique), (products, p_unique)):
         for species in rp:
@@ -79,11 +90,8 @@ def genTSestimate(slab, repeats, yamlfile, facetpath, rotAngle, scfactor):
     r_name = '+'.join([str(species.symbols) for species in reactants])
     p_name = '+'.join([str(species.symbols) for species in products])
 
-    # rxn_name = r_name + '_' + p_name
+    rxn_name = r_name + '_' + p_name
 
-    unique_species = []
-    unique_bonds = []
-    images = []
     # check if any products are the same as any reactants
     for species1, bond in zip(speciesInd, bonds):
         for species2 in unique_species:
@@ -93,11 +101,12 @@ def genTSestimate(slab, repeats, yamlfile, facetpath, rotAngle, scfactor):
             images.append(get_3D_positions(species1))
             unique_species.append(species1)
             unique_bonds.append(bond)
-    # print(unique_species)
 
     r_name_list = [str(species.symbols) for species in reactants]
     p_name_list = [str(species.symbols) for species in products]
 
+    # It is easier to estimate TS starting from reactant/product with
+    # smaller numnber of species
     if len(r_name_list) < len(p_name_list):
         print('Reactant structure will be used to estimate TS')
         rpDir = 'reactants'
@@ -105,27 +114,30 @@ def genTSestimate(slab, repeats, yamlfile, facetpath, rotAngle, scfactor):
         print('Products will be used to estimate TS')
         rpDir = 'products'
 
-    saveDir = os.path.join(facetpath, 'TS_estimate')
-    if os.path.exists(saveDir):
-        shutil.rmtree(saveDir)
-        os.makedirs(saveDir)
-    else:
-        os.makedirs(saveDir)
+    return rxn_name, rpDir, r_name_list, p_name_list, images
+
+
+def TS_placer(ts_estimate_path, slab, repeats, facetpath, rotAngle, scfactor,
+              rxn_name, r_name_list, p_name_list, images):
+    ''' Place adsorbates on the surface to estimate TS '''
 
     # ADSORBATES
     '''
     This part here is a bit hard coded, especially when dealing with reactants with >= 3 atoms. The code works for couple of species included in if else statement below. Probably will fail for other species. This is becouse ase.build.molecule function numbers atoms very diferently depending on the molecule specify. To be resolved somehow.
     '''
     atom1 = 0  # atom1 should always have index 0, i.e. the first atom
-    atom2 = 1  # well, here is the problem becouse ase.build.molecule counts atoms differently than my input in the yaml file. Probably the problem with the way yamlfile is converted to species - to be resolved
+    atom2 = 1
+    # well, here is the problem becouse ase.build.molecule counts atoms
+    # differently than my input in the yaml file. Probably the problem with
+    # the way yamlfile is converted to species - to be resolved
     if len(r_name_list) <= len(p_name_list):
         TS_candidate = molecule(r_name_list[0])[0]
-        reactName = p_name
+        # reactName = p_name
     else:
         # TS_candidate = molecule(p_name_list[0])[0]
         '''images[2] keeps info about product. It's a Gratom object. Cannot use catkit's molecule method becouse it generates gemetry based on wierd order chemical formula string. Sometimes it works to use molecule method but in general it is better to use get_3D_positions() as it converts yaml info into 3d position. In images I keep the oryginal order of elements with connectivity info. In TS_candidate.get_chemical_formula() elements are sorted and grouped '''
-        TS_candidate = images[2] 
-        reactName = r_name
+        TS_candidate = images[2]
+        # reactName = r_name
 
     ''' Different cases '''
     if TS_candidate.get_chemical_formula() == 'CHO':
@@ -147,7 +159,7 @@ def genTSestimate(slab, repeats, yamlfile, facetpath, rotAngle, scfactor):
     else:
         # atom2 = 1
         bondedThrough = [0]
-        
+
     bondlen = TS_candidate.get_distance(atom1, atom2)
     # bondlen = TS_candidate.get_distance(atom1, atom2)
     # angle = TS_candidate.get_angle(0, 1, 5)
@@ -166,13 +178,14 @@ def genTSestimate(slab, repeats, yamlfile, facetpath, rotAngle, scfactor):
         # TS_candidate.rotate(60, 'y')
         TS_candidate.rotate(90, 'z')
         ''' Should work for H2CO*OCH3, i.e. COH3+HCOH '''
-        TS_candidate.set_angle(atom2, atom1, atom0, -45, indices=[0, 1, 2, 3, 4], add=True)
-        TS_candidate.set_distance(atom1, atom2, bondlen * scfactor, fix=1, indices=[0, 1, 2, 3, 4])
+        TS_candidate.set_angle(atom2, atom1, atom0, -45,
+                               indices=[0, 1, 2, 3, 4], add=True)
+        TS_candidate.set_distance(
+            atom1, atom2, bondlen * scfactor, fix=1, indices=[0, 1, 2, 3, 4])
         # indices=[0, 1, 2, 3, 4]
     elif TS_candidate.get_chemical_formula() == 'CHO2':
         TS_candidate.rotate(90, 'z')
         TS_candidate.set_distance(atom1, atom2, bondlen * scfactor, fix=0)
-
 
     slabedges, tags = get_edges(slab, True)
     grslab = Gratoms(numbers=slab.numbers,
@@ -185,6 +198,7 @@ def genTSestimate(slab, repeats, yamlfile, facetpath, rotAngle, scfactor):
     # building adsorbtion structures
     ads_builder = Builder(grslab)
 
+    possibleRotations = (360 / rotAngle) - 1
     count = 0
 
     while count <= possibleRotations:
@@ -195,28 +209,31 @@ def genTSestimate(slab, repeats, yamlfile, facetpath, rotAngle, scfactor):
 
         for i, struc in enumerate(structs):
             big_slab_ads = big_slab + struc[nslab:]
-            write(os.path.join(saveDir, '{}'.format(
-                str(i + len(structs) * count).zfill(3)) + '_' + reactName + '.xyz'), big_slab_ads)
-        
+            write(os.path.join(ts_estimate_path, '{}'.format(
+                str(i + len(structs) * count).zfill(3)) + '_' + rxn_name + '.xyz'), big_slab_ads)
+
         TS_candidate.rotate(rotAngle, 'z')
         count += 1
-    # return reactName
 
     '''Filtering out symmetry equivalent sites '''
-# def filtered_out_equiv_ts_estimate(saveDir, reactName)
-    filtered_equivalen_sites = checkSymmBeforeXTB(saveDir)
+
+
+def filtered_out_equiv_ts_estimate(ts_estimate_path, rxn_name):
+    filtered_equivalen_sites = checkSymmBeforeXTB(ts_estimate_path)
     for eqsites in filtered_equivalen_sites:
         try:
-            fileToRemove = os.path.join(saveDir, eqsites + '_' + reactName + '.xyz')
+            fileToRemove = os.path.join(
+                ts_estimate_path, eqsites + '_' + rxn_name + '.xyz')
             os.remove(fileToRemove)
         except OSError:
             print("Error while deleting file : ", fileToRemove)
 
-    for prefix, noneqsites in enumerate(sorted(os.listdir(saveDir))):
+    for prefix, noneqsites in enumerate(sorted(os.listdir(ts_estimate_path))):
         prefix = str(prefix).zfill(3)
-        oldfname = os.path.join(saveDir, noneqsites)
-        newfname = os.path.join(saveDir, prefix + noneqsites[3:])
+        oldfname = os.path.join(ts_estimate_path, noneqsites)
+        newfname = os.path.join(ts_estimate_path, prefix + noneqsites[3:])
         os.rename(oldfname, newfname)
+
 
 def gen_xyz_from_traj(avDistPath, species):
     # if species == 'C':
@@ -241,8 +258,7 @@ def get_av_dist(avDistPath, species, scfactor_surface, scaled=False):
         species = 'O'
     if len(species) > 1:
         species = species[:1]
-    
-    # print(species)
+
     for xyz in sorted(os.listdir(speciesPath), key=str):
         if xyz.endswith('_final.xyz'):
             # if xyz.endswith('.traj'):
@@ -270,13 +286,12 @@ def get_av_dist(avDistPath, species, scfactor_surface, scaled=False):
                 meanDist = mean(all_conf_dist) * scfactor_surface
             else:
                 meanDist = mean(all_conf_dist)
-    # print(meanDist)
     return meanDist
 
 
-# specify adsorbate atom symbol and bond distance with the closest surface
-# metal atom will be calculated
+
 def get_bond_dist(ads_atom, geom):
+    ''' Specify adsorbate atom symbol and bond distance with the closest surface metal atom will be calculated '''
     surface_atom = []
     adsorbate_atom = []
     struc = read(geom)
@@ -300,7 +315,6 @@ def get_bond_dist(ads_atom, geom):
     f.close()
 
     if len(adsorbate_atom) > 1:
-        # print(adsorbate_atom[0])
         dist_Cu_adsorbate = min(struc.get_distances(
             adsorbate_atom[0], surface_atom))
         return dist_Cu_adsorbate
@@ -309,8 +323,8 @@ def get_bond_dist(ads_atom, geom):
             struc.get_distances(adsorbate_atom, surface_atom))
         return dist_Cu_adsorbate
 
-
 def get_index_adatom(ads_atom, geom):
+    ''' Specify adsorbate atom symbol and its index will be returned '''
     adsorbate_atom = []
     if len(ads_atom) > 1:
         ads_atom = ads_atom[:1]
@@ -325,6 +339,7 @@ def get_index_adatom(ads_atom, geom):
 
 
 def get_index_surface_atom(ads_atom, geom):
+    ''' Specify adsorbate atom symbol and index of the neares metal atom will be returned '''
     surface_atom = []
     adsorbate_atom = []
     if len(ads_atom) > 1:
@@ -350,127 +365,6 @@ def get_index_surface_atom(ads_atom, geom):
     index = np.where(all_dist_surface_adsorbate == min_dist_surface_adsorbate)
 
     return surface_atom[index[0][0]]
-
-
-'''
-def set_adsorbate_positions(x):
-    # make a copy of adsorbate
-    ads = TS_candidate.copy()
-    # extract center and axis/angle
-    center = x[:3]
-    axis = x[3:]
-    # angle is encoded as the norm of the axis
-    # ASE expects degrees, but we want to use radians so that the center and
-    # terms have about the same magnitude
-    angle = np.linalg.norm(axis) * 180 / np.pi
-    # Shift the adsorbate center to "center"
-    ads.positions += center - ads.positions.mean(0)
-    # Rotate the adsorbate by angle "angle" through axis "axis"
-    ads.rotate(angle, v=axis, center=center)
-    return ads
-
-
-def penalty(x):
-    # Temporarily combine slab and rotated/translated adsorbate
-    atoms = bigSlab + set_adsorbate_positions(x)
-    calc = EMT()
-    # calc = GPAW(xc='PBE', mode = 'pw')
-    # c = FixBondLength(36, 37)
-    atoms.set_calculator(calc)
-    # atoms.set_constraint(c)
-    # print(atoms.get_potential_energy())
-    energy = 0
-    for bond, dist in zip(bonds, dists):
-        energy += (atoms.get_distance(*bond) - dist)**2 + \
-            atoms.get_potential_energy()
-    # with open ('results.log', 'a+') as f:
-    #     print(energy, '\t', atoms.get_potential_energy(), file=f)
-    # f.close()
-    print(energy, '\t', atoms.get_potential_energy())
-    return energy
-
-
-def optimizePenalty(path, geom):
-    x0 = np.zeros(6)
-    x0[:3] = TS_candidate.positions.mean(0)
-    x0[3:] = [0, np.pi / 2, 0]  # just an arbitrary initial guess
-    res = minimize(penalty, x0, tol=1e-03)
-    print(res)
-    ads_opt = set_adsorbate_positions(res['x'])
-    # view(slab + ads_opt)
-    # write('maciek_emt.png', bigSlab + ads_opt, rotation='10z,-80x')
-
-    # def unique_file(basename, ext):
-    #     actualname = "%s.%s" % (basename, ext)
-    #     c = itertools.count()
-    #     while os.path.exists(actualname):
-    #         actualname = "%s (%d).%s" % (basename, next(c), ext)
-    #     return actualname
-
-    save_png = os.path.join(path, geom + '.png')
-    save_xyz = os.path.join(path, geom + '.xyz')
-    write(save_png, bigSlab + ads_opt)
-    write(save_xyz, bigSlab + ads_opt)
-    # write('maciek_emt_2.xyz', bigSlab + ads_opt)
-    # write('maciek_emt_3.png', bigSlab + ads_opt, rotation='10z,-80x')
-
-
-def run_preopt():
-    for geom in sorted(os.listdir(saveDir), key=str):
-        print('E_pot + penalty', '\t', 'E_pot')
-
-        geomPath = os.path.join(saveDir, geom)
-        SaveDir_final = os.path.join(saveDir, 'neb_candidate_xtb')
-        os.makedirs(SaveDir_final, exist_ok=True)
-        if geom.endswith('.xyz'):
-            O_index = get_index_adatom('O', geomPath)
-            H_index = get_index_adatom('H', geomPath)
-            Cu_index1 = get_index_surface_atom('O', geomPath)
-            Cu_index2 = get_index_surface_atom('H', geomPath)
-            dist_Cu_O = get_bond_dist('O', geomPath)
-            dist_Cu_H = get_bond_dist('H', geomPath)
-
-            adsorbed = read(geomPath)
-            bigSlab = slab * repeats
-            nbigSlab = len(bigSlab)
-            TS_candidate = adsorbed[nbigSlab:]
-        # write('maciek_emt_1.png', bigSlab + TS_candidate)
-
-        # List of bonds we want O-Cu; H-Cu
-            bonds = ((O_index, Cu_index1),
-                     (H_index, Cu_index2))
-        # For now, assume the optimal Cu-C and Cu-O bond distances are both 2.0
-        # Ang
-            avDist1 = get_av_dist('H', 'Cu_111')
-            avDist2 = get_av_dist('O', 'Cu_111')
-            dists = (avDist1, avDist2)
-            geom = geom[:-4]
-            # print(bonds)
-            optimizePenalty(SaveDir_final, geom)
-'''
-
-
-# def checkSymm(path, TSdir):
-#     good_adsorbate = []
-#     result_list = []
-#     gpath = os.path.join(path, TSdir)
-#     for geom in sorted(os.listdir(gpath), key=str):
-#         geomDir = os.path.join(gpath, geom)
-#         if os.path.isdir(geomDir):
-#             for traj in os.listdir(geomDir):
-#                 if traj.endswith('.traj'):
-#                     adsorbed = read(os.path.join(geomDir, traj))
-#                     adsorbed.pbc = True
-#                     comparator = SymmetryEquivalenceCheck()
-#                     result = comparator.compare(adsorbed, good_adsorbate)
-#                     result_list.append(result)
-#                     if result is False:
-#                         good_adsorbate.append(adsorbed)
-#     unique_index = []
-#     for num, res in enumerate(result_list):
-#         if res is False:
-#             unique_index.append(str(num).zfill(3))
-#     return unique_index
 
 
 def checkSymm(path):
@@ -510,63 +404,6 @@ def checkSymmBeforeXTB(path):
             ''' Better to have all symmetry equivalent site here in a list. The workflow will remove them in getTSestimate function keeping all symmetry distinct sites '''
             notunique_index.append(str(num).zfill(3))
     return notunique_index
-
-    # for geom in sorted(os.listdir(path), key=str):
-    #     geomDir = os.path.join(path, geom)
-    #     for traj in os.listdir(geomDir):
-    #         if traj.endswith('.xyz'):
-    #             adsorbed = read(os.path.join(geomDir, traj))
-    #             adsorbed.pbc = True
-    #             comparator = SymmetryEquivalenceCheck()
-    #             result = comparator.compare(adsorbed, good_adsorbate)
-    #             result_list.append(result)
-    #             if result is False:
-    #                 good_adsorbate.append(adsorbed)
-    # unique_index = []
-    # for num, res in enumerate(result_list):
-    #     if res is False:
-    #         unique_index.append(str(num).zfill(3))
-    # return unique_index
-
-
-def create_unique_TS(facetpath, TSdir):
-    # checkSymmPath = os.path.join(path, 'TS_estimate')
-
-    # gd_ads_index = checkSymm(facetpath, TSdir)
-    gd_ads_index = checkSymm(os.path.join(facetpath, TSdir)) # new checksym with globbing
-    for i, index in enumerate(gd_ads_index):
-        uniqueTSdir = os.path.join(
-            facetpath, TSdir + '_unique', str(i).zfill(2))
-        if os.path.isdir(uniqueTSdir):
-            shutil.rmtree(uniqueTSdir)
-            os.makedirs(uniqueTSdir, exist_ok=True)
-        else:
-            os.makedirs(uniqueTSdir, exist_ok=True)
-        gpath = os.path.join(facetpath, TSdir)
-        for geom in os.listdir(gpath):
-            geomDir = os.path.join(gpath, geom)
-            if os.path.isdir(geomDir):
-                for traj in sorted(os.listdir(geomDir)):
-                    if traj.startswith(gd_ads_index[i]) and traj.endswith('.traj'):
-                        srcFile = os.path.join(geomDir, traj)
-                        destFile = os.path.join(uniqueTSdir, traj[:-5] + '_ts')
-                        write(destFile + '.xyz', read(srcFile))
-                        write(destFile + '.png', read(srcFile))
-        #         shutil.copy2(os.path.join(path, geom), uniqueTSdir)
-        for ts in os.listdir(uniqueTSdir):
-            # if neb.endswith('.xyz'):
-            TS_xyz_Dir = os.path.join(uniqueTSdir, ts)
-            newTS_xyz_Dir = os.path.join(
-                uniqueTSdir, str(i).zfill(2) + ts[3:])
-            # NEB_png_Dir = os.path.join(uniqueTSdir, str(
-            #     i).zfill(3) + neb[2:][:-4] + '.png')
-            os.rename(TS_xyz_Dir, newTS_xyz_Dir)
-            # write(NEB_png_Dir, read(newNEB_xyz_Dir))
-
-
-# uniqueNEB = '/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/Cu_111_tests/slab_optimized/Cu_111/neb_estimate/OH_O+H/neb_candidate_unique/'
-
-# pytemplate = '/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/Cu_111_tests/slab_optimized/pytemplate_neb.py'
 
 
 def create_all_TS(facetpath):
@@ -652,12 +489,12 @@ def set_up_penalty_xtb(path, pytemplate, repeats, slabopt, species_list, scfacto
 
     with open(pytemplate, 'r') as f:
         pytemplate = f.read()
-    
+
     for geom in sorted(os.listdir(path)):
         if geom.endswith('.xyz'):
             bonds = []
             geomPath = os.path.join(path, geom)
-            
+
             for species in species_list:
                 sp_index = get_index_adatom(species, geomPath)
                 Cu_index = get_index_surface_atom(species, geomPath)
@@ -701,8 +538,6 @@ def set_up_penalty_xtb(path, pytemplate, repeats, slabopt, species_list, scfacto
     except FileNotFoundError:
         pass
         # print('No files to delete')
-
-    
 
 
 def copyMinimasPrevCalculated(checkMinimaDir, sp1, sp2, dstDir, slabname):
