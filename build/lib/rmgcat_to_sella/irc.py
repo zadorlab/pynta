@@ -10,6 +10,7 @@ def set_up_irc(facetpath, TSdir, pytemplate_f, pytemplate_r):
     rxn_path = os.path.join(ts_path, '00')
     rxn_path_list = Path(rxn_path).glob('*final.xyz')
     for rxn in rxn_path_list:
+        print(rxn)
         rxn = str(rxn)
         rxn = os.path.split(rxn)[1] # only *final.xyz part of path to be extracted
         rxn = rxn.split('_')[1]

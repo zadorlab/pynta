@@ -36,8 +36,8 @@ minima_dir       = os.path.join(facetpath, 'minima')
 scaled1          = {scaled1}
 scaled2          = {scaled2}
 
-ts = TS(ts_estimate_path, slab, repeats, yamlfile, facetpath, rotAngle, scfactor,
-        scfactor_surface, scaled1, scaled2)
+ts = TS(ts_estimate_path, slab, repeats, yamlfile, facetpath, rotAngle,
+        scfactor, scfactor_surface, scaled1, scaled2)
 ts.copy_minimas_prev_calculated(current_dir, species, minima_dir)
 ts.prepare_ts_estimate()
 ts.set_up_penalty_xtb(pytemplate_xtb, slabopt, species)
