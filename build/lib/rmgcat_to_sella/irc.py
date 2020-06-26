@@ -12,7 +12,8 @@ def set_up_irc(facetpath, TSdir, pytemplate_f, pytemplate_r):
     for rxn in rxn_path_list:
         print(rxn)
         rxn = str(rxn)
-        rxn = os.path.split(rxn)[1] # only *final.xyz part of path to be extracted
+        # only *final.xyz part of path to be extracted
+        rxn = os.path.split(rxn)[1]
         rxn = rxn.split('_')[1]
     unique_ts_index = checkSymm(ts_path)
 
@@ -23,7 +24,8 @@ def set_up_irc(facetpath, TSdir, pytemplate_f, pytemplate_r):
         ts_file = os.path.join(prefix + '_' + rxn + '_ts')
         TS_xyz = os.path.join(prefix, ts_file + '.xyz')
         os.makedirs(ircDir, exist_ok=True)
-        ts_src_TSxyz_path = os.path.join(ts_path, prefix, prefix + '_' + rxn + '_final.xyz')
+        ts_src_TSxyz_path = os.path.join(
+            ts_path, prefix, prefix + '_' + rxn + '_final.xyz')
         ts_dest_path = os.path.join(ircDir, ts_file)
         try:
             write(ts_dest_path + '.xyz', read(ts_src_TSxyz_path))
@@ -47,7 +49,6 @@ def set_up_irc(facetpath, TSdir, pytemplate_f, pytemplate_r):
                     prefix=prefix, rxn=rxn, TS_xyz=TS_xyz))
                 r.close()
         r.close()
-        
 
         # if os.path.isdir(uniqueTSdir):
         #     shutil.rmtree(uniqueTSdir)
@@ -62,34 +63,34 @@ def set_up_irc(facetpath, TSdir, pytemplate_f, pytemplate_r):
     #         for TSxyz in os.listdir(conf_path):
     #             if TSxyz.endswith('_final.xyz'):
     #                 print(TSxyz)
-                    # rxn = TSxyz.split('_')[1]
-                    # prefix = TSxyz[:2]
-                    # fname = os.path.join(prefix + '_' + rxn)
-                    # ircDir = os.path.join(facetpath, 'IRC', prefix)
-                    # ircpy = os.path.join(facetpath, 'IRC')
-                    # os.makedirs(ircDir, exist_ok=True)
-                    # ts_src_TSxyz_path = os.path.join(conf_path, TSxyz)
-                    # ts_dest_path = os.path.join(ircDir, fname)
-                    # write(ts_dest_path + '.xyz', read(ts_src_TSxyz_path))
-                    # write(ts_dest_path + '.png', read(ts_src_TSxyz_path))
-                    # TS_xyz = os.path.join(prefix, fname + '.xyz')
-                    # # create run job scripts
-                    # with open(pytemplate_f, 'r') as f:
-                    #     template = f.read()
-                    #     job_name_f = os.path.join(ircpy, fname + '_irc_f.py')
-                    #     with open(job_name_f, 'w') as f:
-                    #         f.write(template.format(
-                    #             prefix=prefix, rxn=rxn, TS_xyz=TS_xyz))
-                    #         f.close()
-                    # f.close()
-                    # with open(pytemplate_r, 'r') as r:
-                    #     template = r.read()
-                    #     job_name_r = os.path.join(ircpy, fname + '_irc_r.py')
-                    #     with open(job_name_r, 'w') as r:
-                    #         r.write(template.format(
-                    #             prefix=prefix, rxn=rxn, TS_xyz=TS_xyz))
-                    #         r.close()
-                    # r.close()
+        # rxn = TSxyz.split('_')[1]
+        # prefix = TSxyz[:2]
+        # fname = os.path.join(prefix + '_' + rxn)
+        # ircDir = os.path.join(facetpath, 'IRC', prefix)
+        # ircpy = os.path.join(facetpath, 'IRC')
+        # os.makedirs(ircDir, exist_ok=True)
+        # ts_src_TSxyz_path = os.path.join(conf_path, TSxyz)
+        # ts_dest_path = os.path.join(ircDir, fname)
+        # write(ts_dest_path + '.xyz', read(ts_src_TSxyz_path))
+        # write(ts_dest_path + '.png', read(ts_src_TSxyz_path))
+        # TS_xyz = os.path.join(prefix, fname + '.xyz')
+        # # create run job scripts
+        # with open(pytemplate_f, 'r') as f:
+        #     template = f.read()
+        #     job_name_f = os.path.join(ircpy, fname + '_irc_f.py')
+        #     with open(job_name_f, 'w') as f:
+        #         f.write(template.format(
+        #             prefix=prefix, rxn=rxn, TS_xyz=TS_xyz))
+        #         f.close()
+        # f.close()
+        # with open(pytemplate_r, 'r') as r:
+        #     template = r.read()
+        #     job_name_r = os.path.join(ircpy, fname + '_irc_r.py')
+        #     with open(job_name_r, 'w') as r:
+        #         r.write(template.format(
+        #             prefix=prefix, rxn=rxn, TS_xyz=TS_xyz))
+        #         r.close()
+        # r.close()
 
 
 def set_up_irc_choosen(path, list_struc, pytemplate_f, pytemplate_r):
@@ -206,7 +207,7 @@ def create_job_files(pytemplate, optDir, traj, geom):
 
 def optAfterIRC(path, pytemplate):
     ''' Function to set up optimization to minimas after IRC calculation
-        
+
         path - path to main IRC directory, e.g. Cu_111/IRC
         pytemplate - slurm template for this calculations
 
