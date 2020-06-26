@@ -57,7 +57,7 @@ def genJobFiles():
                        slabopt, repeats, yamlfile, facetpath,
                        rotAngle, scfactor, scfactor_surface, pytemplate_xtb, sp1, sp2)
     set_up_run_TS(template_set_up_ts, facetpath, pytemplate_set_up_ts)
-    set_up_run_IRC(template_set_up_IRC, facetpath, pytemplate_f, pytemplate_r)
+    set_up_run_IRC(template_set_up_IRC, facetpath, pytemplate_f, pytemplate_r, yamlfile)
     set_up_opt_IRC(template_set_up_optIRC, facetpath, pytemplate_optIRC)
 
 
@@ -77,14 +77,14 @@ def set_up_ads(template, facetpath, slabopt, yamlfile, repeats, pytemplate):
     r.close()
 
 
-def set_up_TS_with_xtb(template, slabopt,
+def set_up_TS_with_xtb(template, slab,
                        repeats, yamlfile, facetpath, rotAngle,
                        scfactor, scfactor_surface,
                        pytemplate_xtb, sp1, sp2):
     with open(template, 'r') as r:
         template = r.read()
         with open('02_set_up_TS_with_xtb.py', 'w') as c:
-            c.write(template.format(facetpath=facetpath, slabopt=slabopt,
+            c.write(template.format(facetpath=facetpath, slab=slab,
                                     repeats=repeats, yamlfile=yamlfile,
                                     rotAngle=rotAngle, scfactor=scfactor, scfactor_surface=scfactor_surface,
                                     pytemplate_xtb=pytemplate_xtb, sp1=sp1,
@@ -103,13 +103,14 @@ def set_up_run_TS(template, facetpath, pytemplate):
     r.close()
 
 
-def set_up_run_IRC(template, facetpath, pytemplate_f, pytemplate_r):
+def set_up_run_IRC(template, facetpath, pytemplate_f, pytemplate_r, yamlfile):
     with open(template, 'r') as r:
         template = r.read()
         with open('04_set_up_irc.py', 'w') as c:
             c.write(template.format(facetpath=facetpath,
                                     pytemplate_f=pytemplate_f,
-                                    pytemplate_r=pytemplate_r))
+                                    pytemplate_r=pytemplate_r,
+                                    yamlfile=yamlfile))
         c.close()
     r.close()
 

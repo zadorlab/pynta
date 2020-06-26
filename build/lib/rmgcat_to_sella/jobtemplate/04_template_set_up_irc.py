@@ -21,9 +21,10 @@ from rmgcat_to_sella.irc import set_up_irc
 facetpath    = '{facetpath}'
 pytemplate_f = '{pytemplate_f}'
 pytemplate_r = '{pytemplate_r}'
-TSdir        = 'TS_estimate_unique'
+yamlfile     = '{yamlfile}'
+ts_dir       = 'TS_estimate'
 
-set_up_irc(facetpath, TSdir, pytemplate_f, pytemplate_r)
+set_up_irc(facetpath, ts_dir, pytemplate_f, pytemplate_r, yamlfile)
 
 bashCommand = os.popen(
     "cd {facetpath}/IRC/; for i in $(ls | grep 'py'); do sbatch $i; done > ../../submitted_04.txt; cd ../../")

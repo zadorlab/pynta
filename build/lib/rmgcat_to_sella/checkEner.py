@@ -80,5 +80,5 @@ def checkEner(path, treshHold):
 
     # def findAllNebsEner():
 
-    # checkEner(path, treshHold)
+    checkEner(path, treshHold)
 

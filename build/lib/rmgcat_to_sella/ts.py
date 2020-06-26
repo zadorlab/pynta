@@ -28,34 +28,79 @@ import networkx as nx
 
 
 class TS:
-    def __init__(self, ts_estimate_path, slab, repeats, yamlfile, facetpath, rotAngle, scfactor, scfactor_surface, scaled1, scaled2):
-        self.ts_estimate_path = ts_estimate_path
-        self.slab = slab
-        self.repeats = repeats
-        self.yamlfile = yamlfile
+    def __init__(self, facetpath, ts_dir, yamlfile):
         self.facetpath = facetpath
-        self.rotAngle = rotAngle
-        self.scfactor = scfactor
-        self.scfactor_surface = scfactor_surface
-        self.scaled1 = scaled1
-        self.scaled2 = scaled2
+        self.ts_dir = ts_dir
+        # self.ts_estimate_path = ts_estimate_path
+        # self.slab = slab
+        # self.repeats = repeats
+        self.yamlfile = yamlfile
+        # self.rotAngle = rotAngle
+        # self.scfactor = scfactor
+        # self.scfactor_surface = scfactor_surface
+        # self.scaled1 = scaled1
+        # self.scaled2 = scaled2
 
-    def prepare_ts_estimate(self):
+    def prepare_ts_estimate(self, slab, repeats, scfactor,  scfactor_surface,
+                            rotAngle, pytemplate_xtb, species,
+                            scaled1, scaled2):
         ''' Prepare TS estimates for subsequent xTB calculations '''
-
-        # ts_estimate_path = os.path.join(self.facetpath, 'TS_estimate')
-        if os.path.exists(self.ts_estimate_path):
-            shutil.rmtree(self.ts_estimate_path)
-            os.makedirs(self.ts_estimate_path)
+        ts_estimate_path = os.path.join(self.facetpath, self.ts_dir)
+        if os.path.exists(ts_estimate_path):
+            shutil.rmtree(ts_estimate_path)
+            os.makedirs(ts_estimate_path)
         else:
-            os.makedirs(self.ts_estimate_path)
+            os.makedirs(ts_estimate_path)
 
-        rxn_name, rpDir, r_name_list, p_name_list, images = TS.prepare_react_list(
-            self)
+        r_name_list, p_name_list, images = TS.prepare_react_list(self)
+        rxn_name = TS.get_rxn_name(self)
+        # rxn_name = TS.prepare_react_list(self)[0]
 
-        TS.TS_placer(self, rxn_name, r_name_list, p_name_list, images)
+        TS.TS_placer(self, slab, repeats, scfactor, rotAngle,
+                     rxn_name, r_name_list, p_name_list, images)
 
         TS.filtered_out_equiv_ts_estimate(self, rxn_name)
+        TS.set_up_penalty_xtb(self, pytemplate_xtb, slab, repeats,
+                              species, scaled1, scaled2, scfactor_surface)
+
+    def get_rxn_name(self):
+        ''' Returns reaction name '''
+
+        with open(self.yamlfile, 'r') as f:
+            yamltxt = f.read()
+        reactions = yaml.safe_load(yamltxt)
+        species_unique = dict()
+        speciesInd = []
+        bonds = []
+        r_unique = []
+        p_unique = []
+        symbols_list = []
+        # unique_species = []
+        # unique_bonds = []
+        # images = []
+
+        for rxn in reactions:
+            # transforming reactions data to gratom objects
+            reactants, rbonds = rmgcat_to_gratoms(rxn['reactant'].split('\n'))
+            products, pbonds = rmgcat_to_gratoms(rxn['product'].split('\n'))
+            speciesInd += reactants + products
+            bonds += rbonds + pbonds
+
+        for rp, uniquelist in ((reactants, r_unique), (products, p_unique)):
+            for species in rp:
+                symbols = str(species.symbols)
+                symbols_list.append(symbols)
+                speciesdir = os.path.join(
+                    self.facetpath, 'minima_unique', symbols)
+                if symbols not in species_unique:
+                    species_unique[symbols] = get_all_species(speciesdir)
+                uniquelist.append(species_unique[symbols])
+
+        r_name = '+'.join([str(species.symbols) for species in reactants])
+        p_name = '+'.join([str(species.symbols) for species in products])
+
+        rxn_name = r_name + '_' + p_name
+        return rxn_name
 
     def prepare_react_list(self):
         '''Convert yaml file to more useful format'''
@@ -89,11 +134,6 @@ class TS:
                     species_unique[symbols] = get_all_species(speciesdir)
                 uniquelist.append(species_unique[symbols])
 
-        r_name = '+'.join([str(species.symbols) for species in reactants])
-        p_name = '+'.join([str(species.symbols) for species in products])
-
-        rxn_name = r_name + '_' + p_name
-
         # check if any products are the same as any reactants
         for species1, bond in zip(speciesInd, bonds):
             for species2 in unique_species:
@@ -109,18 +149,20 @@ class TS:
 
         # It is easier to estimate TS starting from reactant/product with
         # smaller numnber of species
-        if len(r_name_list) < len(p_name_list):
-            print('Reactant structure will be used to estimate TS')
-            rpDir = 'reactants'
-        else:
-            print('Products will be used to estimate TS')
-            rpDir = 'products'
+        # if len(r_name_list) < len(p_name_list):
+        #     print('Reactant structure will be used to estimate TS')
+        #     rpDir = 'reactants'
+        # else:
+        #     print('Products will be used to estimate TS')
+        #     rpDir = 'products'
 
-        return rxn_name, rpDir, r_name_list, p_name_list, images
+        return r_name_list, p_name_list, images
 
-    def TS_placer(self, rxn_name, r_name_list, p_name_list, images):
+    def TS_placer(self, slab, repeats, scfactor, rotAngle, rxn_name,
+                  r_name_list, p_name_list, images):
         ''' Place adsorbates on the surface to estimate TS '''
-
+        ts_estimate_path = os.path.join(self.facetpath, self.ts_dir)
+        slab = read(slab)
         # ADSORBATES
         # This part here is a bit hard coded, especially when dealing with
         # reactants with >= 3 atoms. The code works for couple of species
@@ -181,11 +223,11 @@ class TS:
         if len(TS_candidate.get_tags()) < 3:
             TS_candidate.rotate(90, 'y')
             TS_candidate.set_distance(
-                atom1, atom2, bondlen * self.scfactor, fix=0)
+                atom1, atom2, bondlen * scfactor, fix=0)
         elif len(TS_candidate.get_tags()) == 3:
             TS_candidate.rotate(90, 'z')
             TS_candidate.set_distance(
-                atom1, atom2, bondlen * self.scfactor, fix=0)
+                atom1, atom2, bondlen * scfactor, fix=0)
         # else:
         elif TS_candidate.get_chemical_formula() == 'C2H5O2':
             # TS_candidate.rotate(60, 'y')
@@ -194,68 +236,72 @@ class TS:
             TS_candidate.set_angle(atom2, atom1, atom0, -45,
                                    indices=[0, 1, 2, 3, 4], add=True)
             TS_candidate.set_distance(
-                atom1, atom2, bondlen * self.scfactor, fix=1, indices=[0, 1, 2, 3, 4])
+                atom1, atom2, bondlen * scfactor, fix=1, indices=[0, 1, 2, 3, 4])
             # indices=[0, 1, 2, 3, 4]
         elif TS_candidate.get_chemical_formula() == 'CHO2':
             TS_candidate.rotate(90, 'z')
             TS_candidate.set_distance(
-                atom1, atom2, bondlen * self.scfactor, fix=0)
+                atom1, atom2, bondlen * scfactor, fix=0)
 
-        slabedges, tags = get_edges(self.slab, True)
-        grslab = Gratoms(numbers=self.slab.numbers,
-                         positions=self.slab.positions,
-                         cell=self.slab.cell,
-                         pbc=self.slab.pbc,
+        slabedges, tags = get_edges(slab, True)
+        grslab = Gratoms(numbers=slab.numbers,
+                         positions=slab.positions,
+                         cell=slab.cell,
+                         pbc=slab.pbc,
                          edges=slabedges)
         grslab.arrays['surface_atoms'] = tags
 
         # building adsorbtion structures
         ads_builder = Builder(grslab)
 
-        possibleRotations = (360 / self.rotAngle) - 1
+        possibleRotations = (360 / rotAngle) - 1
         count = 0
 
         while count <= possibleRotations:
             structs = ads_builder.add_adsorbate(
                 TS_candidate, bondedThrough, -1, auto_construct=False)  # change to True will make bondedThrough work. Now it uses TS_candidate,rotate... to generate adsorbed strucutres
-            big_slab = self.slab * self.repeats
-            nslab = len(self.slab)
+            big_slab = slab * repeats
+            nslab = len(slab)
 
             for i, struc in enumerate(structs):
                 big_slab_ads = big_slab + struc[nslab:]
-                write(os.path.join(self.ts_estimate_path, '{}'.format(
+                write(os.path.join(ts_estimate_path, '{}'.format(
                     str(i + len(structs) * count).zfill(3)) + '_' + rxn_name + '.xyz'), big_slab_ads)
 
-            TS_candidate.rotate(self.rotAngle, 'z')
+            TS_candidate.rotate(rotAngle, 'z')
             count += 1
 
     def filtered_out_equiv_ts_estimate(self, rxn_name):
         '''Filtering out symmetry equivalent sites '''
-        filtered_equivalen_sites = checkSymmBeforeXTB(self.ts_estimate_path)
+        ts_estimate_path = os.path.join(self.facetpath, self.ts_dir)
+        filtered_equivalen_sites = checkSymmBeforeXTB(ts_estimate_path)
         for eqsites in filtered_equivalen_sites:
             try:
                 fileToRemove = os.path.join(
-                    self.ts_estimate_path, eqsites + '_' + rxn_name + '.xyz')
+                    ts_estimate_path, eqsites + '_' + rxn_name + '.xyz')
                 os.remove(fileToRemove)
             except OSError:
                 print("Error while deleting file : ", fileToRemove)
 
-        for prefix, noneqsites in enumerate(sorted(os.listdir(self.ts_estimate_path))):
+        for prefix, noneqsites in enumerate(sorted(os.listdir(ts_estimate_path))):
             prefix = str(prefix).zfill(3)
-            oldfname = os.path.join(self.ts_estimate_path, noneqsites)
+            oldfname = os.path.join(ts_estimate_path, noneqsites)
             newfname = os.path.join(
-                self.ts_estimate_path, prefix + noneqsites[3:])
+                ts_estimate_path, prefix + noneqsites[3:])
             os.rename(oldfname, newfname)
 
-    def set_up_penalty_xtb(self, pytemplate, slabopt, species_list):
+    def set_up_penalty_xtb(self, pytemplate, slab, repeats, species_list,
+                           scaled1, scaled2, scfactor_surface):
         '''Species3 is/should be optional '''
+        ts_estimate_path = os.path.join(self.facetpath, self.ts_dir)
+
         # print(species3)
-        fPath = os.path.split(self.ts_estimate_path)
+        fPath = os.path.split(ts_estimate_path)
         avPath = os.path.join(fPath[0], 'minima')
         avDist1 = get_av_dist(
-            avPath, species_list[0], self.scfactor_surface, self.scaled1)
+            avPath, species_list[0], scfactor_surface, scaled1)
         avDist2 = get_av_dist(
-            avPath, species_list[1], self.scfactor_surface, self.scaled2)
+            avPath, species_list[1], scfactor_surface, scaled2)
         '''the code belowe does not work in the loop, probably two differet avPath variable needed to accouut for the poscible scenaario that one species was already calculated (other set of calculations - different reactions, whereas the second in calculated here for the first time) '''
         # checkMinimaPath = os.path.dirname(os.getcwd())
         # spList = [species1, species2]
@@ -274,10 +320,10 @@ class TS:
         with open(pytemplate, 'r') as f:
             pytemplate = f.read()
 
-        for geom in sorted(os.listdir(self.ts_estimate_path)):
+        for geom in sorted(os.listdir(ts_estimate_path)):
             if geom.endswith('.xyz'):
                 bonds = []
-                geomPath = os.path.join(self.ts_estimate_path, geom)
+                geomPath = os.path.join(ts_estimate_path, geom)
 
                 for species in species_list:
                     sp_index = get_index_adatom(species, geomPath)
@@ -293,7 +339,7 @@ class TS:
                 # # Cu_index3 = get_index_surface_atom(species3, geomPath)
 
                 prefix = geom.split('_')
-                calcDir = os.path.join(self.ts_estimate_path, prefix[0])
+                calcDir = os.path.join(ts_estimate_path, prefix[0])
                 os.makedirs(calcDir, exist_ok=True)
 
                 geomName = geom[:-4]
@@ -310,14 +356,14 @@ class TS:
                 with open(fname, 'w') as f:
                     f.write(pytemplate.format(geom=geom, bonds=bonds,
                                               avDists=avDists, trajPath=trajPath,
-                                              repeats=self.repeats, prefix=prefix[0],
-                                              geomName=geomName, slabopt=slabopt))
+                                              repeats=repeats, prefix=prefix[0],
+                                              geomName=geomName, slabopt=slab))
                 f.close()
                 shutil.move(geomPath, calcDir)
         f.close()
 
         try:
-            rmpath = os.path.join(self.ts_estimate_path, 'initial_png')
+            rmpath = os.path.join(ts_estimate_path, 'initial_png')
             shutil.rmtree(rmpath)
         except FileNotFoundError:
             pass
@@ -575,7 +621,7 @@ def create_TS_unique_job_files(facetpath, TSdir, pytemplate):
     f.close()
 
 
-def set_up_penalty_xtb(path, pytemplate, repeats, slabopt, species_list, scfactor_surface, scaled1, scaled2):
+def set_up_penalty_xtb(path, pytemplate, repeats, slab, species_list, scfactor_surface, scaled1, scaled2):
     '''Species3 is/should be optional '''
     # print(species3)
     fPath = os.path.split(path)
@@ -637,7 +683,7 @@ def set_up_penalty_xtb(path, pytemplate, repeats, slabopt, species_list, scfacto
                 f.write(pytemplate.format(geom=geom, bonds=bonds,
                                           avDists=avDists, trajPath=trajPath,
                                           repeats=repeats, prefix=prefix[0],
-                                          geomName=geomName, slabopt=slabopt))
+                                          geomName=geomName, slabopt=slab))
             f.close()
             shutil.move(geomPath, calcDir)
     f.close()

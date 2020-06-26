@@ -18,14 +18,14 @@ sys.path.append(os.getcwd())
 
 from rmgcat_to_sella.irc import set_up_irc
 
-facetpath    = '{facetpath}'
-pytemplate_f = '{pytemplate_f}'
-pytemplate_r = '{pytemplate_r}'
-yamlfile     = '{yamlfile}'
+facetpath    = 'Cu_100'
+pytemplate_f = '/Users/mgierad/.local/lib/python3.7/site-packages/rmgcat_to_sella-0.0.1-py3.7.egg/rmgcat_to_sella/pytemplate/pytemplate_set_up_irc_f.py'
+pytemplate_r = '/Users/mgierad/.local/lib/python3.7/site-packages/rmgcat_to_sella-0.0.1-py3.7.egg/rmgcat_to_sella/pytemplate/pytemplate_set_up_irc_r.py'
+yamlfile     = 'reactions.yaml'
 ts_dir       = 'TS_estimate'
 
 set_up_irc(facetpath, ts_dir, pytemplate_f, pytemplate_r, yamlfile)
 
 bashCommand = os.popen(
-    "cd {facetpath}/IRC/; for i in $(ls | grep 'py'); do sbatch $i; done > ../../submitted_04.txt; cd ../../")
+    "cd Cu_100/IRC/; for i in $(ls | grep 'py'); do sbatch $i; done > ../../submitted_04.txt; cd ../../")
 print(bashCommand.read())
