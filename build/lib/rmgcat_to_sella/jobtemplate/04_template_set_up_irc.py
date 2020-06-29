@@ -14,9 +14,7 @@ submitDir = os.environ['SLURM_SUBMIT_DIR']
 os.chdir(submitDir)
 sys.path.append(os.getcwd())
 
-# import inputR2S
-
-from rmgcat_to_sella.irc import set_up_irc
+from rmgcat_to_sella.irc import IRC
 
 facetpath    = '{facetpath}'
 pytemplate_f = '{pytemplate_f}'
@@ -24,7 +22,8 @@ pytemplate_r = '{pytemplate_r}'
 yamlfile     = '{yamlfile}'
 ts_dir       = 'TS_estimate'
 
-set_up_irc(facetpath, ts_dir, pytemplate_f, pytemplate_r, yamlfile)
+irc = IRC(facetpath, ts_dir, yamlfile)
+irc.set_up_irc(pytemplate_f, pytemplate_r)
 
 bashCommand = os.popen(
     "cd {facetpath}/IRC/; for i in $(ls | grep 'py'); do sbatch $i; done > ../../submitted_04.txt; cd ../../")

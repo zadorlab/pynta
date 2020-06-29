@@ -14,8 +14,6 @@ submitDir = os.environ['SLURM_SUBMIT_DIR']
 os.chdir(submitDir)
 sys.path.append(os.getcwd())
 
-# import inputR2S
-
 from ase.io import read
 
 from rmgcat_to_sella import adjacency_to_3d, create_relax_jobs

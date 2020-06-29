@@ -17,7 +17,7 @@ from catkit.gen.surface import SlabGenerator
 from catkit import Gratoms
 
 from .graph_utils import node_test
-from rmgcat_to_sella.main import CheckIfMinimasAlreadyCalculated
+from rmgcat_to_sella.main import check_if_minima_already_calculated
 
 # Instead of using CatKit's built in slab generator routines, we want to
 # use pre-relaxed slab geometries to save computer time. In order to use
@@ -230,7 +230,7 @@ def adjacency_to_3d(reactionlist, slab, repeats, facetpath):
         if bond is None:
             bond = [0]
         key = adsorbate.get_chemical_formula()
-        isItCalculated = CheckIfMinimasAlreadyCalculated(currentDir, key, facetpath)
+        isItCalculated = check_if_minima_already_calculated(currentDir, key, facetpath)
         # currentDir = os.getcwd()
         # print(adsorbate)
         if isItCalculated is False:

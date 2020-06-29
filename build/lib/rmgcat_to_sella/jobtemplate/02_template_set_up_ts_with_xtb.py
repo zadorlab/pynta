@@ -14,10 +14,7 @@ submitDir = os.environ['SLURM_SUBMIT_DIR']
 os.chdir(submitDir)
 sys.path.append(os.getcwd())
 
-
 from rmgcat_to_sella.ts import TS
-
-from ase.io import read
 
 slab = '{slab}'
 repeats = {repeats}

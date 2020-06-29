@@ -5,7 +5,7 @@ import sys
 try:
     import inputR2S
     '''
-    User defined parameters. Here we only read them. They can be set up in inputR2S.py (submit directory)
+    User defined parameters. Here we only read them. They are set up in inputR2S.py (submit directory)
     '''
     facetpath = inputR2S.facetpath
     slabopt = inputR2S.slabopt
@@ -21,9 +21,11 @@ try:
 
 except ImportError:
     print('Missing input file. You cannot run caclulations but will be able to use most of the workflow.')
-'''
-These template and pytemplate scripts can be modified by users to tune them to given calculation setup, i.e. calculator, method, queue menager, etc. The current version works for SLURM and Quantum Espresso.
-'''
+
+# These template and pytemplate scripts can be modified by users to tune 
+# them to given calculation setup, i.e. calculator, method, queue menager, 
+# etc. The current version works for SLURM and Quantum Espresso.
+
 path = os.path.abspath(__file__)
 dir_path = os.path.dirname(path)
 path_template = os.path.join(dir_path, 'jobtemplate/')
@@ -45,28 +47,35 @@ pytemplate_f = os.path.join(path_pytemplate + 'pytemplate_set_up_irc_f.py')
 pytemplate_r = os.path.join(path_pytemplate + 'pytemplate_set_up_irc_r.py')
 pytemplate_optIRC = os.path.join(
     path_pytemplate + 'pytemplate_set_up_opt_irc.py')
+
 ####################################################
 #################### Initialize ####################
 ####################################################
 
+# TODO: It would be great to hava a class here
+
 
 def genJobFiles():
+    ''' Generate submt scripts for 5 stages of the workflow '''
     set_up_ads(template_ads, facetpath, slabopt,
                yamlfile, repeats, pytemplate_relax_ads)
     set_up_TS_with_xtb(template_set_up_ts_with_xtb,
                        slabopt, repeats, yamlfile, facetpath,
-                       rotAngle, scfactor, scfactor_surface, pytemplate_xtb, sp1, sp2)
+                       rotAngle, scfactor, scfactor_surface, pytemplate_xtb,
+                       sp1, sp2)
     set_up_run_TS(template_set_up_ts, facetpath, pytemplate_set_up_ts)
-    set_up_run_IRC(template_set_up_IRC, facetpath, pytemplate_f, pytemplate_r, yamlfile)
+    set_up_run_IRC(template_set_up_IRC, facetpath,
+                   pytemplate_f, pytemplate_r, yamlfile)
     set_up_opt_IRC(template_set_up_optIRC, facetpath, pytemplate_optIRC)
 
 
-'''
-Generate inputR2S files
-'''
+###########################
+#   Create submit files   #
+###########################
 
 
 def set_up_ads(template, facetpath, slabopt, yamlfile, repeats, pytemplate):
+    ''' Create 01_template_set_up_ads.py file '''
     with open(template, 'r') as r:
         template = r.read()
         with open('01_set_up_ads.py', 'w') as c:
@@ -81,6 +90,7 @@ def set_up_TS_with_xtb(template, slab,
                        repeats, yamlfile, facetpath, rotAngle,
                        scfactor, scfactor_surface,
                        pytemplate_xtb, sp1, sp2):
+    ''' Create 02_template_set_up_ts_with_xtb.py file'''
     with open(template, 'r') as r:
         template = r.read()
         with open('02_set_up_TS_with_xtb.py', 'w') as c:
@@ -94,6 +104,7 @@ def set_up_TS_with_xtb(template, slab,
 
 
 def set_up_run_TS(template, facetpath, pytemplate):
+    ''' Create 03_template_checksym_xtb_runTS.py file '''
     with open(template, 'r') as r:
         template = r.read()
         with open('03_checksym_xtb_runTS.py', 'w') as c:
@@ -104,6 +115,7 @@ def set_up_run_TS(template, facetpath, pytemplate):
 
 
 def set_up_run_IRC(template, facetpath, pytemplate_f, pytemplate_r, yamlfile):
+    ''' Create 04_template_set_up_irc.py file '''
     with open(template, 'r') as r:
         template = r.read()
         with open('04_set_up_irc.py', 'w') as c:
@@ -116,21 +128,24 @@ def set_up_run_IRC(template, facetpath, pytemplate_f, pytemplate_r, yamlfile):
 
 
 def set_up_opt_IRC(template, facetpath, pytemplate):
+    ''' Create 05_template_set_up_opt_after_irc.py file'''
     with open(template, 'r') as r:
         template = r.read()
         with open('05_set_up_opt_after_irc.py', 'w') as c:
             c.write(template.format(facetpath=facetpath,
-                                    pytemplate=pytemplate))
+                                    pytemplate=pytemplate,
+                                    yamlfile=yamlfile))
         c.close()
     r.close()
 
 
-'''
-Submit jobs and execute it
-'''
+##############################
+# Submit jobs and execute it #
+##############################
 
 
 def get_slurm_jobs_id(slurm_id_subm):
+    ''' Get slurm IDs of just submitted jobs '''
     slurm_jobs_id = []
     with open(slurm_id_subm, 'r') as f:
         for line in f.readlines():
@@ -141,6 +156,7 @@ def get_slurm_jobs_id(slurm_id_subm):
 
 
 def genSbatchCommand(slurm_id_subm):
+    ''' Prepare a bash command to submit jobs '''
     slurmID = get_slurm_jobs_id(slurm_id_subm)
     slurmID = ",".join(["{}"] * len(slurmID)).format(*slurmID)
     if not slurmID:
@@ -152,30 +168,34 @@ def genSbatchCommand(slurm_id_subm):
 
 
 def run(slurm_id_subm, job_script):
+    ''' Submit slurm jobs '''
     command = genSbatchCommand(slurm_id_subm)
     os.popen(str(os.path.join(command + ' ' + job_script)))
-    # print(submit.read())
 
 
 def exe(prevSlurmID, job_script):
+    ''' Check if the previous step of calculations terminated. If so, run the next step'''
     while not os.path.exists(prevSlurmID):
         time.sleep(60)
     run(prevSlurmID, job_script)
 
 
-def CheckIfPathToMiminaExists(mainDir, species):
-    # keyPhrase = '**/minima' + species
+def check_if_path_to_mimina_exists(mainDir, species):
+    ''' Check for the paths to previously calculated minima and return 
+        a list with all valid paths '''
+        
     pathlist = Path(mainDir).glob('**/minima/' + species)
-    p = []
+    paths = []
     for path in pathlist:
         # path = str(path)
-        p.append(str(path))
-        return p[0]
+        paths.append(str(path))
+        return paths[0]
     if IndexError:
         return None
 
 
-def CheckIfMinimasAlreadyCalculated(currentDir, species, facetpath):
+def check_if_minima_already_calculated(currentDir, species, facetpath):
+    ''' Check for previously calculated minima '''
     mainDirs = []
     uniqueMinimaDirs = []
     if facetpath == 'Cu_211':
@@ -187,9 +207,10 @@ def CheckIfMinimasAlreadyCalculated(currentDir, species, facetpath):
     # transforming posix path to regular string
     for mainDir in mainDirsList:
         mainDirs.append(mainDir)
-    # expected -> mainDirs = ['00_Cu_methanol_CO+O_CO2', '01_Cu_methanol_OH_O+H', '02_Cu_methanol_CO+H_HCO']
+    # expected e.g. -> mainDirs = ['00_Cu_methanol_CO+O_CO2',
+    # '01_Cu_methanol_OH_O+H', '02_Cu_methanol_CO+H_HCO']
     for mainDir in mainDirs:
-        minimaDir = CheckIfPathToMiminaExists(mainDir, species)
+        minimaDir = check_if_path_to_mimina_exists(mainDir, species)
         if minimaDir is not None:
             uniqueMinimaDirs.append(minimaDir)
 

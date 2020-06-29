@@ -6,7 +6,7 @@ from catkit.gen.molecules import get_3D_positions
 from rmgcat_to_sella.adjacency_to_3d import get_edges, rmgcat_to_gratoms
 from rmgcat_to_sella.find_all_nebs import get_all_species
 from rmgcat_to_sella.graph_utils import node_test
-from rmgcat_to_sella.main import CheckIfMinimasAlreadyCalculated
+from rmgcat_to_sella.main import check_if_minima_already_calculated
 
 from ase.io import read, write
 from ase import Atoms
@@ -31,16 +31,8 @@ class TS:
     def __init__(self, facetpath, ts_dir, yamlfile):
         self.facetpath = facetpath
         self.ts_dir = ts_dir
-        # self.ts_estimate_path = ts_estimate_path
-        # self.slab = slab
-        # self.repeats = repeats
         self.yamlfile = yamlfile
-        # self.rotAngle = rotAngle
-        # self.scfactor = scfactor
-        # self.scfactor_surface = scfactor_surface
-        # self.scaled1 = scaled1
-        # self.scaled2 = scaled2
-
+    
     def prepare_ts_estimate(self, slab, repeats, scfactor,  scfactor_surface,
                             rotAngle, pytemplate_xtb, species,
                             scaled1, scaled2):
@@ -375,7 +367,7 @@ class TS:
          reactions, they are copied to the current workflow and used instead 
          of calculating it again'''
         for species in species_list:
-            isItCalculated = CheckIfMinimasAlreadyCalculated(
+            isItCalculated = check_if_minima_already_calculated(
                 checkMinimaDir, species, self.facetpath)
             if isItCalculated is False:
                 pass
