@@ -46,7 +46,6 @@ class TS:
 
         r_name_list, p_name_list, images = TS.prepare_react_list(self)
         rxn_name = TS.get_rxn_name(self)
-        # rxn_name = TS.prepare_react_list(self)[0]
 
         TS.TS_placer(self, slab, repeats, scfactor, rotAngle,
                      rxn_name, r_name_list, p_name_list, images)
@@ -211,7 +210,7 @@ class TS:
 
         # TS_candidate.set_distance(atom1, atom2, blen * scfactor, fix=0)
 
-        '''Final ridgid rotations to orientade TS_candidate on the surface'''
+        '''Final ridgid rotations to orientate the TS_candidate on the surface'''
         if len(TS_candidate.get_tags()) < 3:
             TS_candidate.rotate(90, 'y')
             TS_candidate.set_distance(
@@ -364,7 +363,7 @@ class TS:
     def copy_minimas_prev_calculated(self, checkMinimaDir, species_list,
                                      minima_dir):
         ''' If minimas have been already calculated in different set of
-         reactions, they are copied to the current workflow and used instead 
+         reactions, they are copied to the current workflow and used instead
          of calculating it again'''
         for species in species_list:
             isItCalculated = check_if_minima_already_calculated(
