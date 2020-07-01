@@ -27,7 +27,7 @@ try:
     scaled2 = inputR2S.scaled2
 
 except ImportError:
-    print('Missing input file. You cannot run caclulations but will be able to use most of the workflow.')
+    print('Missing input file. You cannot run calculations but will be able to use most of the workflow.')
 
 # These template and pytemplate scripts can be modified by users to tune
 # them to given calculation setup, i.e. calculator, method, queue menager,

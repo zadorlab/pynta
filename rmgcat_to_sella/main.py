@@ -27,7 +27,7 @@ try:
     scaled2 = inputR2S.scaled2
 
 except ImportError:
-    print('Missing input file. You cannot run caclulations but will be able to use most of the workflow.')
+    print('Missing input file. You cannot run calculations but will be able to use most of the workflow.')
 
 # These template and pytemplate scripts can be modified by users to tune
 # them to given calculation setup, i.e. calculator, method, queue menager,
@@ -176,6 +176,7 @@ def get_slurm_jobs_id(slurm_id_subm):
             line = line.split()[3]
             slurm_jobs_id.append(line)
     f.close()
+    print(slurm_jobs_id)
     return slurm_jobs_id
 
 
@@ -183,11 +184,13 @@ def genSbatchCommand(slurm_id_subm):
     ''' Prepare a bash command to submit jobs '''
     slurmID = get_slurm_jobs_id(slurm_id_subm)
     slurmID = ",".join(["{}"] * len(slurmID)).format(*slurmID)
-    if not slurmID:
-        sys.exit('No submitted jobs, probably all files have been already generated')
-        # return command = False
-    else:
-        command = os.path.join('sbatch --dependency=afterany:' + str(slurmID))
+    # if not slurmID:
+    #     print('Error')
+    #     sys.exit('No submitted jobs, probably all files have been already generated')
+    #     return command = False
+    # else:
+    command = os.path.join('sbatch --dependency=afterany:' + str(slurmID))
+    print(command)
     return command
 
 

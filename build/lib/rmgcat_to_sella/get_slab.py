@@ -104,11 +104,11 @@ class GetSlab:
 
         label = os.path.join(unixsocket, self.slab_name)
 
-        espresso = Espresso(command='mpirun -np 8 /Users/mgierad/00_SANDIA_WORK/03_codes/build/q-e-qe-6.4.1/bin/pw.x -inp PREFIX.pwi --ipi {{unixsocket}}:UNIX > PREFIX.pwo'
+        espresso = Espresso(command='/home/ehermes/local/bin/mpirun -np 48 /home/ehermes/local/bin/pw.x -inp PREFIX.pwi --ipi {{unixsocket}}:UNIX > PREFIX.pwo'
                         .format(unixsocket=unixsocket),
                         label=label,
                         pseudopotentials=pseudopotentials,
-                        pseudo_dir='/Users/mgierad/00_SANDIA_WORK/03_codes/build/q-e-qe-6.4.1/pseudoPOT',
+                        pseudo_dir='/home/mgierad/espresso/pseudo',
                         kpts=(3, 3, 1),
                         occupations='smearing',
                         smearing='marzari-vanderbilt',
@@ -118,7 +118,6 @@ class GetSlab:
                         conv_thr=1e-11,
                         mixing_mode='local-TF',
                         )
-
         with SocketIOCalculator(espresso, unixsocket=unixsocket) as calc:
             slab.calc = calc
             opt = Sella(slab, order=0, delta0=1e-2, trajectory=label + '.traj')
@@ -126,4 +125,28 @@ class GetSlab:
         ener = slab.get_potential_energy()
         force = slab.get_forces()
         write(self.slab_name + '.xyz', slab)
+        
+
+        # espresso = Espresso(command='mpirun -np 8 /Users/mgierad/00_SANDIA_WORK/03_codes/build/q-e-qe-6.4.1/bin/pw.x -inp PREFIX.pwi --ipi {{unixsocket}}:UNIX > PREFIX.pwo'
+        #                 .format(unixsocket=unixsocket),
+        #                 label=label,
+        #                 pseudopotentials=pseudopotentials,
+        #                 pseudo_dir='/Users/mgierad/00_SANDIA_WORK/03_codes/build/q-e-qe-6.4.1/pseudoPOT',
+        #                 kpts=(3, 3, 1),
+        #                 occupations='smearing',
+        #                 smearing='marzari-vanderbilt',
+        #                 degauss=0.01,  # Rydberg
+        #                 ecutwfc=40,  # Rydberg
+        #                 nosym=True,  # Allow symmetry breaking during optimization
+        #                 conv_thr=1e-11,
+        #                 mixing_mode='local-TF',
+        #                 )
+
+        # with SocketIOCalculator(espresso, unixsocket=unixsocket) as calc:
+        #     slab.calc = calc
+        #     opt = Sella(slab, order=0, delta0=1e-2, trajectory=label + '.traj')
+        #     opt.run(fmax=0.01)
+        # ener = slab.get_potential_energy()
+        # force = slab.get_forces()
+        # write(self.slab_name + '.xyz', slab)
         
