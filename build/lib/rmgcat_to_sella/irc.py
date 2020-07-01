@@ -12,9 +12,14 @@ class IRC:
         self.ts_dir = ts_dir
         self.yamlfile = yamlfile
 
-
     def set_up_irc(self, pytemplate_f, pytemplate_r):
-        ''' Set up IRC calculations '''
+        ''' Set up IRC calculations
+        
+        Parameters
+        __________
+        pytemplate_f, pytemplate_r : python scripts
+            python scripts templates for irc calculations
+        '''
 
         ts_path = os.path.join(self.facetpath, self.ts_dir)
         ts_uq_dir = ts_path + '_unique'
@@ -62,10 +67,16 @@ class IRC:
     def prepare_opt_irc(self, struc_path, irc, traj, pytemplate_irc_opt):
         ''' Preapare files for IRC optimization 
 
-        struc_path - path to all sets of IRC calculations, eg. IRC/00, IRC/01 ...
-        irc -> str specify between irc_f and irc_r
-        traj - ase trajectory file (e.g *irc_f.traj) from previous irc calculation
-        pytemplate_irc_opt - template file for IRC optimization job
+        Parameters
+        __________
+        struc_path :
+            path to all sets of IRC calculations, eg. IRC/00, IRC/01 ...
+        irc : str 
+            specify between irc_f and irc_r
+        traj : ase trajectory file
+            e.g *irc_f.traj from previous irc calculation
+        pytemplate_irc_opt : python script
+            template file for IRC optimization job
 
         '''
         irc_opt_pth = os.path.join(struc_path, irc + '_opt')
@@ -79,17 +90,27 @@ class IRC:
 
     def create_job_files(self, pytemplate_irc_opt, irc_opt_pth, traj, geom):
         ''' Create slurm files for IRC optimization 
-        
-        pytemplate_irc_opt - template file for IRC optimization job
-        irc_opt_pth - directory where irc optimization will we placed, 
-        e.g Cu_111/IRC/00/irc_r_opt
+
+        Parameters
+        __________
+        pytemplate_irc_opt : python script
+            template file for IRC optimization job
+        irc_opt_pth : str
+            directory where irc optimization will we placed, 
+            e.g Cu_111/IRC/00/irc_r_opt
+        traj : ase trajectory file
+            e.g *irc_f.traj from previous irc calculation
+        geom : str
+            a name of a .xyz file with the coordinates of the TS
+
         '''
         with open(pytemplate_irc_opt, 'r') as f:
             pytemplate_irc_opt = f.read()
             ts = TS(self.facetpath, self.ts_dir, self.yamlfile)
             rxn = ts.get_rxn_name()
             prefix = traj[:2]
-            fname = os.path.join(irc_opt_pth, prefix + '_' + rxn + '_' + os.path.split(irc_opt_pth)[1] + '.py')
+            fname = os.path.join(irc_opt_pth, prefix + '_' +
+                                 rxn + '_' + os.path.split(irc_opt_pth)[1] + '.py')
             with open(fname, 'w') as f:
                 f.write(pytemplate_irc_opt.format(
                     geom=geom, rxn=rxn, prefix=prefix))
@@ -99,11 +120,19 @@ class IRC:
     def opt_after_IRC(self, irc_dir, pytemplate_irc_opt):
         ''' Set up optimization to minimas after IRC calculation
 
-            facetpath - e.g. Cu_111/
-            irc_dir - main IRC directory 
-            pytemplate_irc_opt - slurm template for this calculations
+        Parameters
+        __________
+        facetpath : str
+            a path to main directory
+            e.g. Cu_111/
+        irc_dir : str
+            a path to main IRC directory
+        pytemplate_irc_opt : python script
+            slurm template for IRC optimization
 
-            The function checks if *traj files containing IRC trajectories exists and have some content. If so, a minimum optimization will be set up. Otherwise, the given geometry is skipped.
+        The function checks if *traj files containing IRC trajectories exists
+        and have some content. If so, a minimum optimization will be set up.
+        Otherwise, the given geometry is skipped.
         '''
         irc_path = os.path.join(self.facetpath, irc_dir)
         for struc in sorted(os.listdir(irc_path), key=str):

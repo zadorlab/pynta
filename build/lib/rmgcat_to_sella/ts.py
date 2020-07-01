@@ -36,7 +36,42 @@ class TS:
     def prepare_ts_estimate(self, slab, repeats, scfactor,  scfactor_surface,
                             rotAngle, pytemplate_xtb, species,
                             scaled1, scaled2):
-        ''' Prepare TS estimates for subsequent xTB calculations '''
+        ''' Prepare TS estimates for subsequent xTB calculations
+        
+        Parameters
+        __________
+        slab : str
+            filename/path to the .xyz file with the optiumized slab.
+            # TODO: generate slab file automatically
+            eg. Cu_111_slab_opt.xyz
+        reapeats: touple
+            specify reapeats in (x, y, z) direction,
+            eg. (3, 3, 1)
+        scfator : float
+            a scaling factor to scale a bond distance between
+            atoms taking part in the reaction
+            e.g. 1.4
+        scfactor_surface : float
+            a scaling factor to scale the target bond distance, i.e.
+            the average distance between adsorbed atom and the nearest
+            surface atom. Helpful e.g. when H is far away form the surface
+            in TS, whereas for minima it is close to the surface
+            e.g. 1.0
+        rotAngle : float
+            an angle (deg) of rotation  of the TS guess adduct on the surface
+            e.g. 60
+        pytemplate_xtb : python script
+            a template file for penalty function minimization job
+        species : list(str)
+            a list of max 2 species that take part in the reaction
+            e.g. ['O', 'H'] or ['CO2', 'H']
+        scaled1 : bool
+            specify whether use the optional scfactor_surface
+            for the species 1 (sp1)
+        scaled2 : bool
+            specify whether use the optional scfactor_surface
+            for the species 2 (sp2)
+        '''
         ts_estimate_path = os.path.join(self.facetpath, self.ts_dir)
         if os.path.exists(ts_estimate_path):
             shutil.rmtree(ts_estimate_path)
@@ -46,7 +81,6 @@ class TS:
 
         r_name_list, p_name_list, images = TS.prepare_react_list(self)
         rxn_name = TS.get_rxn_name(self)
-        # rxn_name = TS.prepare_react_list(self)[0]
 
         TS.TS_placer(self, slab, repeats, scfactor, rotAngle,
                      rxn_name, r_name_list, p_name_list, images)
@@ -56,7 +90,13 @@ class TS:
                               species, scaled1, scaled2, scfactor_surface)
 
     def get_rxn_name(self):
-        ''' Returns reaction name '''
+        ''' Get the reaction name
+        
+        Returns
+        _______
+        The name of the reaction in the following format:
+        e.g. OH_H+O
+        '''
 
         with open(self.yamlfile, 'r') as f:
             yamltxt = f.read()
@@ -95,7 +135,18 @@ class TS:
         return rxn_name
 
     def prepare_react_list(self):
-        '''Convert yaml file to more useful format'''
+        '''Convert yaml file to more useful format
+        
+        Returns
+        _______
+        r_name_list : list(str)
+            a list with all reactants for the given reaction
+        p_name_list : list(str)
+            a list with all products for the given reaction
+        images : list(Gratoms)
+            a list of CatKit's Gratom object (both reactants and products)
+
+        '''
         with open(self.yamlfile, 'r') as f:
             yamltxt = f.read()
         reactions = yaml.safe_load(yamltxt)
@@ -147,12 +198,44 @@ class TS:
         # else:
         #     print('Products will be used to estimate TS')
         #     rpDir = 'products'
-
         return r_name_list, p_name_list, images
 
     def TS_placer(self, slab, repeats, scfactor, rotAngle, rxn_name,
                   r_name_list, p_name_list, images):
-        ''' Place adsorbates on the surface to estimate TS '''
+        ''' Place adsorbates on the surface to estimate TS 
+                
+        Parameters
+        __________
+        slab : str
+            filename/path to the .xyz file with the optiumized slab. 
+            # TODO: generate slab file automatically
+            eg. Cu_111_slab_opt.xyz
+        reapeats: touple
+            specify reapeats in (x, y, z) direction,
+            eg. (3, 3, 1)
+        scfator : float
+            a scaling factor to scale a bond distance between
+            atoms taking part in the reaction
+            e.g. 1.4
+        scfactor_surface : float
+            a scaling factor to scale the target bond distance, i.e.
+            the average distance between adsorbed atom and the nearest
+            surface atom. Helpful e.g. when H is far away form the surface
+            in TS, whereas for minima it is close to the surface
+            e.g. 1.0
+        rotAngle : float
+            an angle (deg) of rotation  of the TS guess adduct on the surface
+            e.g. 60
+        rxn_name : str
+            a reaction name
+        r_name_list : list(str)
+            a list with all reactants for the given reaction
+        p_name_list : list(str)
+            a list with all products for the given reaction
+        images : list(Gratoms)
+            a list of CatKit's Gratom object (both reactants and products)
+        
+        '''
         ts_estimate_path = os.path.join(self.facetpath, self.ts_dir)
         slab = read(slab)
         # ADSORBATES
@@ -211,7 +294,7 @@ class TS:
 
         # TS_candidate.set_distance(atom1, atom2, blen * scfactor, fix=0)
 
-        '''Final ridgid rotations to orientade TS_candidate on the surface'''
+        '''Final ridgid rotations to orientate the TS_candidate on the surface'''
         if len(TS_candidate.get_tags()) < 3:
             TS_candidate.rotate(90, 'y')
             TS_candidate.set_distance(
@@ -251,7 +334,10 @@ class TS:
 
         while count <= possibleRotations:
             structs = ads_builder.add_adsorbate(
-                TS_candidate, bondedThrough, -1, auto_construct=False)  # change to True will make bondedThrough work. Now it uses TS_candidate,rotate... to generate adsorbed strucutres
+                TS_candidate, bondedThrough, -1, auto_construct=False)  
+                # change to True will make bondedThrough work. 
+                # Now it uses TS_candidate,rotate... 
+                # to generate adsorbed strucutres
             big_slab = slab * repeats
             nslab = len(slab)
 
@@ -264,7 +350,13 @@ class TS:
             count += 1
 
     def filtered_out_equiv_ts_estimate(self, rxn_name):
-        '''Filtering out symmetry equivalent sites '''
+        '''Filtering out symmetry equivalent sites
+        
+        Parameters
+        __________
+        rxn_name : str
+            a reaction name
+        '''
         ts_estimate_path = os.path.join(self.facetpath, self.ts_dir)
         filtered_equivalen_sites = checkSymmBeforeXTB(ts_estimate_path)
         for eqsites in filtered_equivalen_sites:
@@ -284,7 +376,37 @@ class TS:
 
     def set_up_penalty_xtb(self, pytemplate, slab, repeats, species_list,
                            scaled1, scaled2, scfactor_surface):
-        '''Species3 is/should be optional '''
+        ''' Prepare calculations of the penalty function
+
+        Parameters
+        __________
+
+        pytemplate : python script
+            a template for the penalty function calculations
+        slab : str
+            filename/path to the .xyz file with the optiumized slab. 
+            # TODO: generate slab file automatically
+            eg. Cu_111_slab_opt.xyz
+        reapeats: touple
+            specify reapeats in (x, y, z) direction,
+            eg. (3, 3, 1)
+        species_list : list(str)
+            a list of max 2 species that take part in the reaction
+            e.g. ['O', 'H'] or ['CO2', 'H']
+        scaled1 : bool
+            specify whether use the optional scfactor_surface
+            for the species 1 (sp1)
+        scaled2 : bool
+            specify whether use the optional scfactor_surface
+            for the species 2 (sp2)
+        scfactor_surface : float
+            a scaling factor to scale the target bond distance, i.e.
+            the average distance between adsorbed atom and the nearest
+            surface atom. Helpful e.g. when H is far away form the surface
+            in TS, whereas for minima it is close to the surface
+            e.g. 1.0
+        
+        # TODO: Species3 is/should be optional '''
         ts_estimate_path = os.path.join(self.facetpath, self.ts_dir)
 
         # print(species3)
@@ -294,18 +416,18 @@ class TS:
             avPath, species_list[0], scfactor_surface, scaled1)
         avDist2 = get_av_dist(
             avPath, species_list[1], scfactor_surface, scaled2)
-        '''the code belowe does not work in the loop, probably two differet avPath variable needed to accouut for the poscible scenaario that one species was already calculated (other set of calculations - different reactions, whereas the second in calculated here for the first time) '''
+        '''the code belowe does not work in the loop, probably two differet avPath variable needed to accouut for the possible scenario that one species was already calculated (other set of calculations - different reactions, whereas the second in calculated here for the first time) '''
         # checkMinimaPath = os.path.dirname(os.getcwd())
         # spList = [species1, species2]
 
         # for species in spList:
-        #     isItCalculated = CheckIfMinimasAlreadyCalculated(
+        #     is_it_calculated = CheckIfMinimasAlreadyCalculated(
         #         checkMinimaPath, species)
-        #     if isItCalculated is False:
+        #     if is_it_calculated is False:
         #         fPath = os.path.split(path)
         #         avPath = os.path.join(fPath[0], 'minima')
         #     else:
-        #         avPath = isItCalculated[1]
+        #         avPath = is_it_calculated[1]
 
         # species_list = [species1, species2, species3]
 
@@ -361,19 +483,34 @@ class TS:
             pass
             # print('No files to delete')
 
-    def copy_minimas_prev_calculated(self, checkMinimaDir, species_list,
+    def copy_minimas_prev_calculated(self, current_dir, species_list,
                                      minima_dir):
         ''' If minimas have been already calculated in different set of
-         reactions, they are copied to the current workflow and used instead 
-         of calculating it again'''
+         reactions, they are copied to the current workflow and used instead
+         of calculating it again
+         
+        Parameters
+        __________
+
+        current_dir : str
+            a path to the current directory
+            e.g './Cu_111'
+        species_list : list(str)
+            a list of max 2 species that take part in the reaction
+            e.g. ['O', 'H'] or ['CO2', 'H']
+        minima_dir : str
+            a path to minima directory
+            e.g. Cu_111/minima
+
+        '''
         for species in species_list:
-            isItCalculated = check_if_minima_already_calculated(
-                checkMinimaDir, species, self.facetpath)
-            if isItCalculated is False:
+            is_it_calculated = check_if_minima_already_calculated(
+                current_dir, species, self.facetpath)
+            if is_it_calculated is False:
                 pass
             else:
                 try:
-                    copyPath = isItCalculated[1]
+                    copyPath = is_it_calculated[1]
                     dstDir = os.path.join(minima_dir, species)
                     shutil.copytree(copyPath, dstDir)
                     dstDir = os.path.split(dstDir)[0]
@@ -625,13 +762,13 @@ def set_up_penalty_xtb(path, pytemplate, repeats, slab, species_list, scfactor_s
     # spList = [species1, species2]
 
     # for species in spList:
-    #     isItCalculated = CheckIfMinimasAlreadyCalculated(
+    #     is_it_calculated = CheckIfMinimasAlreadyCalculated(
     #         checkMinimaPath, species)
-    #     if isItCalculated is False:
+    #     if is_it_calculated is False:
     #         fPath = os.path.split(path)
     #         avPath = os.path.join(fPath[0], 'minima')
     #     else:
-    #         avPath = isItCalculated[1]
+    #         avPath = is_it_calculated[1]
 
     # species_list = [species1, species2, species3]
 
