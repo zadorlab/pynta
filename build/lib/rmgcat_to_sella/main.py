@@ -8,9 +8,16 @@ try:
     User defined parameters. Here we only read them. They are set up in inputR2S.py (submit directory)
     '''
     facetpath = inputR2S.facetpath
+    slab_name = inputR2S.slab_name
+    surface_type = inputR2S.surface_type
+    symbol = inputR2S.symbol
+    a = inputR2S.a
+    vacuum = inputR2S.vacuum
+    pseudopotentials = inputR2S.pseudopotentials
     slabopt = inputR2S.slabopt
     yamlfile = inputR2S.yamlfile
     repeats = inputR2S.repeats
+    repeats_surface = inputR2S.repeats_surface
     rotAngle = inputR2S.rotAngle
     scfactor = inputR2S.scfactor
     scfactor_surface = inputR2S.scfactor_surface
@@ -22,14 +29,16 @@ try:
 except ImportError:
     print('Missing input file. You cannot run caclulations but will be able to use most of the workflow.')
 
-# These template and pytemplate scripts can be modified by users to tune 
-# them to given calculation setup, i.e. calculator, method, queue menager, 
+# These template and pytemplate scripts can be modified by users to tune
+# them to given calculation setup, i.e. calculator, method, queue menager,
 # etc. The current version works for SLURM and Quantum Espresso.
 
 path = os.path.abspath(__file__)
 dir_path = os.path.dirname(path)
 path_template = os.path.join(dir_path, 'jobtemplate/')
 path_pytemplate = os.path.join(dir_path, 'pytemplate/')
+template_slab_opt = os.path.join(
+    path_template + '00_template_set_up_slab_opt.py')
 template_ads = os.path.join(path_template + '01_template_set_up_ads.py')
 template_set_up_ts_with_xtb = os.path.join(
     path_template + '02_template_set_up_ts_with_xtb.py')
@@ -57,6 +66,8 @@ pytemplate_optIRC = os.path.join(
 
 def genJobFiles():
     ''' Generate submt scripts for 5 stages of the workflow '''
+    set_up_slab(template_slab_opt, surface_type, symbol, a, repeats_surface,
+                vacuum, slab_name, pseudopotentials)
     set_up_ads(template_ads, facetpath, slabopt,
                yamlfile, repeats, pytemplate_relax_ads)
     set_up_TS_with_xtb(template_set_up_ts_with_xtb,
@@ -73,9 +84,22 @@ def genJobFiles():
 #   Create submit files   #
 ###########################
 
+def set_up_slab(template, surface_type, symbol, a, repeats_surface, vacuum,
+                slab_name, pseudopotentials):
+    ''' Create 00_set_up_slab_opt.py file '''
+    with open(template, 'r') as r:
+        template = r.read()
+        with open('00_set_up_slab_opt.py', 'w') as c:
+            c.write(template.format(surface_type=surface_type, symbol=symbol,
+                                    a=a, repeats_surface=repeats_surface,
+                                    vacuum=vacuum, slab_name=slab_name,
+                                    pseudopotentials=pseudopotentials))
+        c.close()
+    r.close()
+
 
 def set_up_ads(template, facetpath, slabopt, yamlfile, repeats, pytemplate):
-    ''' Create 01_template_set_up_ads.py file '''
+    ''' Create 01_set_up_ads.py file '''
     with open(template, 'r') as r:
         template = r.read()
         with open('01_set_up_ads.py', 'w') as c:
@@ -90,7 +114,7 @@ def set_up_TS_with_xtb(template, slab,
                        repeats, yamlfile, facetpath, rotAngle,
                        scfactor, scfactor_surface,
                        pytemplate_xtb, sp1, sp2):
-    ''' Create 02_template_set_up_ts_with_xtb.py file'''
+    ''' Create 02_set_up_TS_with_xtb.py file'''
     with open(template, 'r') as r:
         template = r.read()
         with open('02_set_up_TS_with_xtb.py', 'w') as c:
@@ -104,7 +128,7 @@ def set_up_TS_with_xtb(template, slab,
 
 
 def set_up_run_TS(template, facetpath, pytemplate):
-    ''' Create 03_template_checksym_xtb_runTS.py file '''
+    ''' Create 03_checksym_xtb_runTS.py file '''
     with open(template, 'r') as r:
         template = r.read()
         with open('03_checksym_xtb_runTS.py', 'w') as c:
@@ -115,7 +139,7 @@ def set_up_run_TS(template, facetpath, pytemplate):
 
 
 def set_up_run_IRC(template, facetpath, pytemplate_f, pytemplate_r, yamlfile):
-    ''' Create 04_template_set_up_irc.py file '''
+    ''' Create 04_set_up_irc.py file '''
     with open(template, 'r') as r:
         template = r.read()
         with open('04_set_up_irc.py', 'w') as c:
@@ -128,7 +152,7 @@ def set_up_run_IRC(template, facetpath, pytemplate_f, pytemplate_r, yamlfile):
 
 
 def set_up_opt_IRC(template, facetpath, pytemplate):
-    ''' Create 05_template_set_up_opt_after_irc.py file'''
+    ''' Create 05_set_up_opt_after_irc.py file'''
     with open(template, 'r') as r:
         template = r.read()
         with open('05_set_up_opt_after_irc.py', 'w') as c:
@@ -183,7 +207,7 @@ def exe(prevSlurmID, job_script):
 def check_if_path_to_mimina_exists(mainDir, species):
     ''' Check for the paths to previously calculated minima and return 
         a list with all valid paths '''
-        
+
     pathlist = Path(mainDir).glob('**/minima/' + species)
     paths = []
     for path in pathlist:

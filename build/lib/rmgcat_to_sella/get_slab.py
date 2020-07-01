@@ -16,14 +16,41 @@ from sella import Sella
 
 class GetSlab:
     def __init__(self, surface_type, symbol, a, repeats, vacuum, slab_name,
-                 slab_extension, pseudopotentials):
-        self.surface_type = surface_type
-        self.symbol = symbol
-        self.a = a
-        self.repeats = repeats
-        self.vacuum = vacuum
-        self.slab_name = slab_name
-        self.slab_extension = slab_extension
+                 pseudopotentials):
+        ''' A class for preparing and optimizing a user defined slab
+
+        Parameters
+        __________
+        surface_type : str
+            type of the surface. Available options are:
+            fcc111, fcc211, fcc100
+        symbol : str
+            atomic symbol of the studied metal surface
+            e.g. 'Cu'
+        a : float
+            a lattice constant
+        repeats : tuple
+            specify reapeats in (x, y, z) direction,
+            eg. (3, 3, 1)
+        vacuum : float
+            amount of vacuum in the z direction (Units: Angstrem)
+        slab_name : str
+            a user defined name of the slab
+        slab_extension : str
+            usually, it should be 'xyz'
+        pseudopotentials : dict(str='str')
+            a dictionary with all pseudopotentials, as for Quantum Espresso
+            keys() - symbol
+            values() - file name of a pseudopotential
+            e.g. dict(Cu='Cu.pbe-spn-kjpaw_psl.1.0.0.UPF')
+
+        '''
+        self.surface_type     = surface_type
+        self.symbol           = symbol
+        self.a                = a
+        self.repeats          = repeats
+        self.vacuum           = vacuum
+        self.slab_name        = slab_name
         self.pseudopotentials = pseudopotentials
 
     def run_slab_opt(self):
@@ -78,25 +105,25 @@ class GetSlab:
         label = os.path.join(unixsocket, self.slab_name)
 
         espresso = Espresso(command='mpirun -np 8 /Users/mgierad/00_SANDIA_WORK/03_codes/build/q-e-qe-6.4.1/bin/pw.x -inp PREFIX.pwi --ipi {{unixsocket}}:UNIX > PREFIX.pwo'
-                            .format(unixsocket=unixsocket),
-                            label=label,
-                            pseudopotentials=pseudopotentials,
-                            pseudo_dir='/Users/mgierad/00_SANDIA_WORK/03_codes/build/q-e-qe-6.4.1/pseudoPOT',
-                            kpts=(3, 3, 1),
-                            occupations='smearing',
-                            smearing='marzari-vanderbilt',
-                            degauss=0.01,  # Rydberg
-                            ecutwfc=40,  # Rydberg
-                            nosym=True,  # Allow symmetry breaking during optimization
-                            conv_thr=1e-11,
-                            mixing_mode='local-TF',
-                            )
+                        .format(unixsocket=unixsocket),
+                        label=label,
+                        pseudopotentials=pseudopotentials,
+                        pseudo_dir='/Users/mgierad/00_SANDIA_WORK/03_codes/build/q-e-qe-6.4.1/pseudoPOT',
+                        kpts=(3, 3, 1),
+                        occupations='smearing',
+                        smearing='marzari-vanderbilt',
+                        degauss=0.01,  # Rydberg
+                        ecutwfc=40,  # Rydberg
+                        nosym=True,  # Allow symmetry breaking during optimization
+                        conv_thr=1e-11,
+                        mixing_mode='local-TF',
+                        )
 
         with SocketIOCalculator(espresso, unixsocket=unixsocket) as calc:
             slab.calc = calc
             opt = Sella(slab, order=0, delta0=1e-2, trajectory=label + '.traj')
             opt.run(fmax=0.01)
-
-        slab.get_potential_energy()
-        slab.get_forces()
-        write(self.slab_name + '.' + self.slab_extension, slab)
+        ener = slab.get_potential_energy()
+        force = slab.get_forces()
+        write(self.slab_name + '.xyz', slab)
+        

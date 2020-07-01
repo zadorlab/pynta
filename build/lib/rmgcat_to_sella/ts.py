@@ -44,7 +44,7 @@ class TS:
             filename/path to the .xyz file with the optiumized slab.
             # TODO: generate slab file automatically
             eg. Cu_111_slab_opt.xyz
-        reapeats: touple
+        repeats: tuple
             specify reapeats in (x, y, z) direction,
             eg. (3, 3, 1)
         scfator : float

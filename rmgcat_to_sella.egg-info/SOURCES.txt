@@ -26,6 +26,7 @@ rmgcat_to_sella.egg-info/SOURCES.txt
 rmgcat_to_sella.egg-info/dependency_links.txt
 rmgcat_to_sella.egg-info/requires.txt
 rmgcat_to_sella.egg-info/top_level.txt
+rmgcat_to_sella/jobtemplate/00_template_set_up_slab_opt.py
 rmgcat_to_sella/jobtemplate/01_template_set_up_ads.py
 rmgcat_to_sella/jobtemplate/02_template_set_up_ts_with_xtb.py
 rmgcat_to_sella/jobtemplate/03_template_checksym_xtb_runTS.py
