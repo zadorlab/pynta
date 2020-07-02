@@ -6,7 +6,7 @@ from catkit.gen.molecules import get_3D_positions
 from rmgcat_to_sella.adjacency_to_3d import get_edges, rmgcat_to_gratoms
 from rmgcat_to_sella.find_all_nebs import get_all_species
 from rmgcat_to_sella.graph_utils import node_test
-from rmgcat_to_sella.main import check_if_minima_already_calculated
+from rmgcat_to_sella.main import WorkFlow
 
 from ase.io import read, write
 from ase import Atoms
@@ -504,7 +504,7 @@ class TS:
 
         '''
         for species in species_list:
-            is_it_calculated = check_if_minima_already_calculated(
+            is_it_calculated = WorkFlow().check_if_minima_already_calculated(
                 current_dir, species, self.facetpath)
             if is_it_calculated is False:
                 pass

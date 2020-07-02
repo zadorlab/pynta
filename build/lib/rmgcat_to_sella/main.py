@@ -1,7 +1,6 @@
 import os
 import time
 from pathlib import Path
-import sys
 try:
     import inputR2S
     '''
@@ -243,6 +242,8 @@ class WorkFlow:
             WorkFlowDirsList = Path(str(currentDir)).glob('*_Cu_211_methanol*')
         elif facetpath == 'Cu_100':
             WorkFlowDirsList = Path(str(currentDir)).glob('*_Cu_100_methanol*')
+        elif facetpath == 'Cu_111':
+            WorkFlowDirsList = Path(str(currentDir)).glob('test_code')
         else:
             WorkFlowDirsList = Path(str(currentDir)).glob('*_Cu_methanol*')
         # transforming posix path to regular string

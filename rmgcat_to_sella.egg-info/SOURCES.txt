@@ -17,6 +17,7 @@ rmgcat_to_sella/main.py
 rmgcat_to_sella/prepare_ts_with_xtb.py
 rmgcat_to_sella/relax_3d.py
 rmgcat_to_sella/restart.py
+rmgcat_to_sella/results.py
 rmgcat_to_sella/scan_bond.py
 rmgcat_to_sella/test.py
 rmgcat_to_sella/to_be_removed.py
