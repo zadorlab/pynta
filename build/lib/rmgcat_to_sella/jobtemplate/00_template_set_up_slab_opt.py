@@ -1,20 +1,20 @@
 #!/usr/bin/env python3
 #SBATCH -J slab_opt
 #SBATCH -N 1
-#SBATCH -c 1
-#SBATCH --mem=1gb
+#SBATCH -n 8
+#SBATCH --mem=4gb
 #SBATCH -p day-long-cpu
 #SBATCH -t 1-00:00:00
 #SBATCH -e %x.err
 #SBATCH -o %x.out
 
-from rmgcat_to_sella.get_slab import GetSlab
 import os
 import sys
-
 submitDir = os.environ['SLURM_SUBMIT_DIR']
 os.chdir(submitDir)
 sys.path.append(os.getcwd())
+
+from rmgcat_to_sella.get_slab import GetSlab
 
 surface_type     = '{surface_type}'
 symbol           = '{symbol}'

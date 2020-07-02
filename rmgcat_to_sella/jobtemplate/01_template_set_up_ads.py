@@ -16,7 +16,8 @@ sys.path.append(os.getcwd())
 
 from ase.io import read
 
-from rmgcat_to_sella import adjacency_to_3d, create_relax_jobs
+from rmgcat_to_sella.adjacency_to_3d import adjacency_to_3d
+from rmgcat_to_sella.relax_3d import create_relax_jobs
 
 slab     = read('{slabopt}')
 slab.pbc = [True, True, False]
