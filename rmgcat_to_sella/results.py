@@ -1,6 +1,9 @@
 from ase.io import read
 from pathlib import Path
 import os
+import matplotlib.pyplot as plt
+import numpy as np
+from scipy.interpolate import make_interp_spline
 
 
 class Results():
@@ -29,7 +32,7 @@ class Results():
 
         Returns:
         ________
-        reaction_energy : float
+        reaction_energy : str
             an energy of reaction calculated a difference between
             the most stable product and the most stable reactant
 
@@ -84,7 +87,7 @@ class Results():
         Returns:
         ________
 
-        activation_barriers : dict(str)
+        activation_barriers : dict('str'='str')
             a dictonary with all barrier heights relatively
             to the most stable reactant (in kJ/mol)
 
@@ -248,3 +251,29 @@ class Results():
             prefix = os.path.split(ts_out_file)[1].split('_')[0]
             prefix_list.append(prefix)
         return prefix_list
+
+    def plot(self, activation_barriers, reaction_energy):
+        ''' Plot reaction energy diagram
+        
+        Parameters:
+        ___________
+        activation_barriers : dict('str'='str')
+            a dictonary with all barrier heights relatively
+            to the most stable reactant (in kJ/mol)
+        reaction_energy : str
+            an energy of reaction calculated a difference between
+            the most stable product and the most stable reactant
+
+        '''
+        for ts_name, barrier in activation_barriers.items():
+            # x = [1, 2, 3]
+            x = np.arange(6)
+            y = np.array([0, 0, float(barrier), float(barrier),
+                          float(reaction_energy, float(reaction_energy)])
+            # x_new = np.linspace(1, 5, 50)
+            # a_BSpline = make_interp_spline(x, y)
+            # y_new = a_BSpline(x_new)
+            plt.plot(x, y, label=ts_name)
+        plt.legend()
+        plt.title('OH --> O + H')
+        plt.show()
