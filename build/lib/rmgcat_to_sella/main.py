@@ -266,7 +266,7 @@ class WorkFlow:
         elif IndexError:
             print('Species {} was not yet calculated. Setting up new calculations.'.format(
                 species))
-            return False
+            return (False, )
 
     def run_slab_optimization(self):
         ''' Submit slab_optimization_job '''
@@ -284,14 +284,35 @@ class WorkFlow:
         ''' Run TS estimation calculations '''
         return WorkFlow.exe(self, submit_txt, TSxtb)
 
-    # def check_all_species(self):
-    #     checksp1 = WorkFlow.check_if_minima_already_calculated(
-    #             self, currentDir, sp1, facetpath)
-    #     checksp2 = WorkFlow.check_if_minima_already_calculated(
-    #             self, currentDir, sp2, facetpath)
+    def check_all_species(self):
+        ''' Check all species to find whether there are previous calculation
+            the code can use
+
+        Return:
+        _______
+        all_sp_checked : list(tuple(bool, str=None))
+            a list of tuples with info whether a species were calculated
+            (True, path_to_prev_calc)
+            or not
+            (False, )
+        '''
+        all_sp_checked = []
+        for species in species_list:
+            check_sp = WorkFlow.check_if_minima_already_calculated(
+                self, currentDir, species, facetpath)
+            all_sp_checked.append(check_sp)
+        return all_sp_checked
 
     def check_if_slab_opt_exists(self):
-        ''' Check whether slab has been already optimized '''
+        ''' Check whether slab has been already optimized
+
+        Returns : tuple(bool, str=None):
+            True if there are previous calculations
+                (True, path_to_prev_calc)
+            False otherwise
+                (False, )
+
+        '''
         slab_opt_path_str = []
         # the code will look for anything like Cu_111*.xyz starting from the
         # facetpath directory including all subdirectories.
@@ -302,51 +323,49 @@ class WorkFlow:
         if len(slab_opt_path_str) >= 1:
             return True, slab_opt_path_str[0]
         else:
-            return False
-    
+            return (False, )
+
     def copy_slab_opt_file(self):
         ''' Copy .xyz of previously optimized slab '''
         if WorkFlow.check_if_slab_opt_exists(self):
             src = WorkFlow.check_if_slab_opt_exists(self)[1]
             dst = os.getcwd()
-            print(src)
-            print(dst)
             shutil.copy2(src, dst)
-
 
     def execute(self):
         ''' The main executable '''
+        checksp1, checksp2 = WorkFlow.check_all_species(self)
+
         if optimize_slab is True:
             # If the code cannot locate optimized slab .xyz file,
             # a slab optimization will be launched.
             if not WorkFlow.check_if_slab_opt_exists(self):
                 WorkFlow.run_slab_optimization(self)
+                # wait a bit in case the file write process is too slow
+                while not os.path.exists('submitted_00.txt'):
+                    time.sleep(3)
             else:
-                pass
-            # wait a bit in case the file write process is too slow
-            while not os.path.exists('submitted_00.txt'):
-                time.sleep(3)
+                WorkFlow.copy_slab_opt_file(self)
             # check whether sp1 and sp2 was already cacluated
-            checksp1 = WorkFlow.check_if_minima_already_calculated(
-                self, currentDir, sp1, facetpath)
-            checksp2 = WorkFlow.check_if_minima_already_calculated(
-                self, currentDir, sp2, facetpath)
             if checksp1 is False or checksp2 is False:
+                # If any of these is False
                 # run optimization of surface + reactants; surface + products
                 WorkFlow.run_opt_surf_and_adsorbate(self)
                 # run calculations to get TS guesses
                 WorkFlow.run_ts_estimate(self, 'submitted_01.txt')
             else:
-                # If both are True, start by generating TS guesses and use
-                # penalty function minimization
+                # If both are True, start by generating TS guesses and run
+                # the penalty function minimization
                 WorkFlow.run_ts_estimate(self, 'submitted_00.txt')
         else:
             # this is executed if user provide .xyz with the optimized slab
             # check whether sp1 and sp2 was already cacluated
-            checksp1 = WorkFlow.check_if_minima_already_calculated(
-                self, currentDir, sp1, facetpath)
-            checksp2 = WorkFlow.check_if_minima_already_calculated(
-                self, currentDir, sp2, facetpath)
+            if WorkFlow.check_if_slab_opt_exists(self):
+                pass
+            else:
+                raise FileNotFoundError(
+                    'It appears that there is no slab_opt.xyz file')
+
             if checksp1 is False or checksp2 is False:
                 # run optimization of surface + reactants; surface + products
                 runSurfAds = os.popen(os.path.join(

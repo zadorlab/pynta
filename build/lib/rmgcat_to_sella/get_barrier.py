@@ -258,6 +258,7 @@ def calc_prod_min_relative_to_react_min(minima_path, reactants_list,
     else:
         reaction_energy = (sum(p_ener_list) -
                            sum(r_ener_list)) * ev_to_kjmol
+
     return reaction_energy
 
 
