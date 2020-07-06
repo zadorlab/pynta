@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 #SBATCH -J slab_opt
 #SBATCH -N 1
-#SBATCH -n 8
+#SBATCH -n 48
 #SBATCH --mem=4gb
 #SBATCH -p day-long-cpu
 #SBATCH -t 1-00:00:00
