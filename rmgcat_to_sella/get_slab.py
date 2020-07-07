@@ -126,7 +126,7 @@ class GetSlab:
         force = slab.get_forces()
         write(self.slab_name + '.xyz', slab)
         
-
+        # To run quickly on my Mac
         # espresso = Espresso(command='mpirun -np 8 /Users/mgierad/00_SANDIA_WORK/03_codes/build/q-e-qe-6.4.1/bin/pw.x -inp PREFIX.pwi --ipi {{unixsocket}}:UNIX > PREFIX.pwo'
         #                 .format(unixsocket=unixsocket),
         #                 label=label,

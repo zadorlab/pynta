@@ -182,7 +182,7 @@ def rmgcat_to_gratoms(adjtxt):
 
 
 def adjacency_to_3d(reactionlist, slab, repeats, facetpath):
-    os.makedirs(facetpath, exist_ok = True)
+    os.makedirs(facetpath, exist_ok=True)
     with open(reactionlist, 'r') as f:
         text = f.read()
     reactions = yaml.safe_load(text)
@@ -194,7 +194,6 @@ def adjacency_to_3d(reactionlist, slab, repeats, facetpath):
         products, pbonds = rmgcat_to_gratoms(rxn['product'].split('\n'))
         species += reactants + products
         bonds += rbonds + pbonds
-    print(products)
 
     unique_species = []
     unique_bonds = []
@@ -224,18 +223,19 @@ def adjacency_to_3d(reactionlist, slab, repeats, facetpath):
     # getting path to directory up
     currentDir = os.path.dirname(os.getcwd())
     for adsorbate, bond in zip(images, unique_bonds):
-        # write('aaa.xyz', adsorbate)
         if len(adsorbate) == 0:
             continue
         if bond is None:
             bond = [0]
         key = adsorbate.get_chemical_formula()
-        isItCalculated = WorkFlow().check_if_minima_already_calculated(currentDir, key, facetpath)
-        # currentDir = os.getcwd()
-        # print(adsorbate)
-        if isItCalculated is False:
+        isItCalculated = WorkFlow().check_if_minima_already_calculated(
+            currentDir, key, facetpath)
+        if not isItCalculated[0]:
+            # if species was not already calculated,
+            # prepare a new set of calculations
             pass
         else:
+            # if species was already calculated, do noting
             continue
         try:
             # print(key)
@@ -254,7 +254,7 @@ def adjacency_to_3d(reactionlist, slab, repeats, facetpath):
             #         # new_edges.append((2, 1))
             #     adsorbate = Gratoms(adsorbate, edges=new_edges)
             #     print(adsorbate.edges)
-            if key == 'CHO2': # connect through oxygen
+            if key == 'CHO2':  # connect through oxygen
                 bond = [2]
                 # print(adsorbate.set_angle(1, 0, 3, 90))
             elif key == 'CH3O':

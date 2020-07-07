@@ -1,7 +1,9 @@
 import os
 
+
 def create_relax_jobs(facetpath, pytemplate, shtemplate=None):
     facetpath = os.path.join(facetpath, 'minima')
+    # os.makedirs(facetpath)
     with open(pytemplate, 'r') as f:
         pytemplate = f.read()
 

@@ -39,8 +39,6 @@ class TS:
         ''' Prepare TS estimates for subsequent xTB calculations
         
         Parameters
-        __________
-        slab : str
             filename/path to the .xyz file with the optiumized slab.
             # TODO: generate slab file automatically
             eg. Cu_111_slab_opt.xyz
@@ -72,6 +70,7 @@ class TS:
             specify whether use the optional scfactor_surface
             for the species 2 (sp2)
         '''
+        
         ts_estimate_path = os.path.join(self.facetpath, self.ts_dir)
         if os.path.exists(ts_estimate_path):
             shutil.rmtree(ts_estimate_path)
@@ -518,6 +517,9 @@ class TS:
                     dstDir = os.path.split(dstDir)[0]
                     print('All required files already exist.')
                     pass
+                # is_it_calculated[1] is None when is_it_calculated[0] == False
+                except IndexError:
+                    pass
 
 
 def gen_xyz_from_traj(avDistPath, species):
@@ -561,7 +563,6 @@ def get_av_dist(avDistPath, species, scfactor_surface, scaled=False):
                         surface_atoms_indices.append(num - 2)
                     elif species in line and not 'Cu' in line:
                         ''' We need to have additional statement 'not 'Cu' in line' because for C it does not work without it'''
-                        # if not 'Cu' in line:
                         adsorbate_atoms_indices.append(num - 2)
             f.close()
             dist = float(min(conf.get_distances(
@@ -571,7 +572,7 @@ def get_av_dist(avDistPath, species, scfactor_surface, scaled=False):
                 meanDist = mean(all_conf_dist) * scfactor_surface
             else:
                 meanDist = mean(all_conf_dist)
-    return meanDist
+            return meanDist
 
 
 def get_bond_dist(ads_atom, geom):
