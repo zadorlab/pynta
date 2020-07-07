@@ -49,7 +49,7 @@ def scan_bond_len_all(slab, repeats, yamlfile, facetpath, bondlen_increment, bon
             uniquelist.append(species_unique[symbols])
 
 
- = '+'.join([str(species.symbols) for species in reactants])
+    r_name = '+'.join([str(species.symbols) for species in reactants])
     p_name = '+'.join([str(species.symbols) for species in products])
 
     r_name_list = [str(species.symbols) for species in reactants]
