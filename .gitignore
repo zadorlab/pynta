@@ -6,7 +6,7 @@
 ehthumbs.db
 Thumbs.db
 test/
-00_sent_DB
+00_sent_DB/
 build/
 dist
 *workspace
