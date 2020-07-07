@@ -371,4 +371,5 @@ class Results():
         plt.legend()
         plt.title(rxn_name)
         plt.show()
+        print('Done')
         
