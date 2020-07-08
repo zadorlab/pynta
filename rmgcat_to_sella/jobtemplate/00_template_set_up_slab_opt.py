@@ -24,7 +24,6 @@ vacuum           = {vacuum}
 slab_name        = '{slab_name}'
 pseudopotentials = {pseudopotentials}
 
-
 get_slab = GetSlab(surface_type, symbol, a, repeats_surface, vacuum,
                    slab_name, pseudopotentials)
 get_slab.run_slab_opt()

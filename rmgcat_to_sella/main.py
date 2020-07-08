@@ -7,25 +7,26 @@ try:
     '''
     User defined parameters. Here we only read them. They are set up in inputR2S.py (submit directory)
     '''
-    facetpath = inputR2S.facetpath
-    slab_name = inputR2S.slab_name
-    surface_type = inputR2S.surface_type
-    symbol = inputR2S.symbol
-    a = inputR2S.a
-    vacuum = inputR2S.vacuum
+    facetpath        = inputR2S.facetpath
+    slab_name        = inputR2S.slab_name
+    surface_type     = inputR2S.surface_type
+    symbol           = inputR2S.symbol
+    a                = inputR2S.a
+    vacuum           = inputR2S.vacuum
+    pseudo_dir       = inputR2S.pseudo_dir
     pseudopotentials = inputR2S.pseudopotentials
-    slabopt = inputR2S.slabopt
-    yamlfile = inputR2S.yamlfile
-    repeats = inputR2S.repeats
-    repeats_surface = inputR2S.repeats_surface
-    rotAngle = inputR2S.rotAngle
-    scfactor = inputR2S.scfactor
+    slabopt          = inputR2S.slabopt
+    yamlfile         = inputR2S.yamlfile
+    repeats          = inputR2S.repeats
+    repeats_surface  = inputR2S.repeats_surface
+    rotAngle         = inputR2S.rotAngle
+    scfactor         = inputR2S.scfactor
     scfactor_surface = inputR2S.scfactor_surface
-    sp1 = inputR2S.sp1
-    sp2 = inputR2S.sp2
-    scaled1 = inputR2S.scaled1
-    scaled2 = inputR2S.scaled2
-    species_list = [sp1, sp2]
+    sp1              = inputR2S.sp1
+    sp2              = inputR2S.sp2
+    scaled1          = inputR2S.scaled1
+    scaled2          = inputR2S.scaled2
+    species_list     = [sp1, sp2]
 
 except ImportError:
     print('Missing input file. You cannot run calculations but will be able to use most of the workflow.')
@@ -82,13 +83,14 @@ class WorkFlow:
     # def __init__(self, facetpath):
     #     self.facetpath = facetpath
 
-    def genJobFiles(self):
+    def gen_job_files(self):
         ''' Generate submt scripts for 6 stages of the workflow '''
         WorkFlow.set_up_slab(self, template_slab_opt, surface_type, symbol, a,
                              repeats_surface, vacuum, slab_name,
                              pseudopotentials)
-        WorkFlow.set_up_ads(self, template_ads, facetpath, slabopt, yamlfile,
-                            repeats, pytemplate_relax_ads)
+        WorkFlow.set_up_ads(self, template_ads, facetpath, slabopt,
+                            repeats, yamlfile, pytemplate_relax_ads,
+                            pseudopotentials, pseudo_dir)
         WorkFlow.set_up_TS_with_xtb(self, template_set_up_ts_with_xtb, slabopt,
                                     repeats, yamlfile, facetpath, rotAngle,
                                     scfactor, scfactor_surface, pytemplate_xtb,
@@ -118,15 +120,17 @@ class WorkFlow:
             c.close()
         r.close()
 
-    def set_up_ads(self, template, facetpath, slabopt, yamlfile, repeats,
-                   pytemplate):
+    def set_up_ads(self, template, facetpath, slabopt, repeats, yamlfile,
+                   pytemplate, pseudopotentials, pseudo_dir):
         ''' Create 01_set_up_ads.py file '''
         with open(template, 'r') as r:
             template = r.read()
             with open('01_set_up_ads.py', 'w') as c:
                 c.write(template.format(facetpath=facetpath, slabopt=slabopt,
                                         yamlfile=yamlfile, repeats=repeats,
-                                        pytemplate=pytemplate))
+                                        pytemplate=pytemplate,
+                                        pseudopotentials=pseudopotentials,
+                                        pseudo_dir=pseudo_dir))
             c.close()
         r.close()
 

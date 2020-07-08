@@ -8,6 +8,20 @@ from rmgcat_to_sella.ts import TS
 
 class IRC:
     def __init__(self, facetpath, ts_dir, yamlfile):
+        ''' Initializing
+        
+        Parameters:
+        ___________
+        facetpath : str
+            a path to the workflow's main dir
+            e.g. 'Cu_111'
+        ts_dir : str
+            a path to directory with TSs
+            e.g. 'TS_estimate'
+        yamlfile : str
+            a name of the .yaml file with reaction list
+            
+        '''
         self.facetpath = facetpath
         self.ts_dir = ts_dir
         self.yamlfile = yamlfile

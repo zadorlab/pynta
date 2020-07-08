@@ -17,5 +17,5 @@ import inputR2S
 from rmgcat_to_sella.main import WorkFlow
 
 workflow = WorkFlow()
-workflow.genJobFiles()
+workflow.gen_job_files()
 workflow.execute()

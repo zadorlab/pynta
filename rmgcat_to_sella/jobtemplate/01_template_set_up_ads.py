@@ -14,17 +14,21 @@ submitDir = os.environ['SLURM_SUBMIT_DIR']
 os.chdir(submitDir)
 sys.path.append(os.getcwd())
 
-from ase.io import read
+from rmgcat_to_sella.adsorbates import Adsorbates
 
-from rmgcat_to_sella.adjacency_to_3d import adjacency_to_3d
-from rmgcat_to_sella.relax_3d import create_relax_jobs
+facetpath        = '{facetpath}'
+slab             = '{slabopt}'
+repeats          = {repeats}
+yamlfile         = '{yamlfile}'
+pytemplate       = '{pytemplate}'
+pseudopotentials = {pseudopotentials}
+pseudo_dir       = '{pseudo_dir}'
 
-slab     = read('{slabopt}')
-slab.pbc = [True, True, False]
-repeats  = {repeats}
-pytemplate = '{pytemplate}'
-adjacency_to_3d('{yamlfile}', slab, repeats, '{facetpath}')
-create_relax_jobs('{facetpath}', pytemplate)
+put_adsorbates = Adsorbates(
+    facetpath, slab, repeats, yamlfile, pytemplate, pseudopotentials,
+    pseudo_dir)
+put_adsorbates.adjacency_to_3d()
+put_adsorbates.create_relax_jobs()
 
 bashCommand = os.popen(
     "cd ./{facetpath}/minima/; for i in $(ls | grep py); do sbatch $i; done > ../../submitted_01.txt; cd ../../")
