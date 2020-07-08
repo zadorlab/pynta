@@ -102,7 +102,8 @@ class WorkFlow:
                                 pytemplate_f, pytemplate_r, yamlfile,
                                 pseudopotentials, pseudo_dir)
         WorkFlow.set_up_opt_IRC(self, template_set_up_optIRC,
-                                facetpath, pytemplate_optIRC)
+                                facetpath, pytemplate_optIRC,
+                                pseudopotentials, pseudo_dir)
 
 ###########################
 #   Create submit files   #
@@ -183,14 +184,17 @@ class WorkFlow:
             c.close()
         r.close()
 
-    def set_up_opt_IRC(self, template, facetpath, pytemplate):
+    def set_up_opt_IRC(self, template, facetpath, pytemplate,
+                       pseudopotentials, pseudo_dir):
         ''' Create 05_set_up_opt_after_irc.py file'''
         with open(template, 'r') as r:
             template = r.read()
             with open('05_set_up_opt_after_irc.py', 'w') as c:
                 c.write(template.format(facetpath=facetpath,
                                         pytemplate=pytemplate,
-                                        yamlfile=yamlfile))
+                                        yamlfile=yamlfile,
+                                        pseudo_dir=pseudo_dir,
+                                        pseudopotentials=pseudopotentials))
             c.close()
         r.close()
 

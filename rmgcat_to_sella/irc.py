@@ -99,13 +99,13 @@ class IRC():
             r.close()
 
     def prepare_opt_irc(self, struc_path, irc, traj, pytemplate_irc_opt):
-        ''' Preapare files for IRC optimization 
+        ''' Preapare files for IRC optimization
 
         Parameters
         __________
         struc_path :
             path to all sets of IRC calculations, eg. IRC/00, IRC/01 ...
-        irc : str 
+        irc : str
             specify between irc_f and irc_r
         traj : ase trajectory file
             e.g *irc_f.traj from previous irc calculation
@@ -144,10 +144,13 @@ class IRC():
             rxn = ts.get_rxn_name()
             prefix = traj[:2]
             fname = os.path.join(irc_opt_pth, prefix + '_' +
-                                 rxn + '_' + os.path.split(irc_opt_pth)[1] + '.py')
+                                 rxn + '_' + os.path.split(irc_opt_pth)[1]
+                                 + '.py')
             with open(fname, 'w') as f:
                 f.write(pytemplate_irc_opt.format(
-                    geom=geom, rxn=rxn, prefix=prefix))
+                    geom=geom, rxn=rxn, prefix=prefix,
+                    pseudopotentials=self.pseudopotentials,
+                    pseudo_dir=self.pseudo_dir))
             f.close()
         f.close()
 
@@ -167,6 +170,7 @@ class IRC():
         The function checks if *traj files containing IRC trajectories exists
         and have some content. If so, a minimum optimization will be set up.
         Otherwise, the given geometry is skipped.
+
         '''
         irc_path = os.path.join(self.facetpath, irc_dir)
         for struc in sorted(os.listdir(irc_path), key=str):
