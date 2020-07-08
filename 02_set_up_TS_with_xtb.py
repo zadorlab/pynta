@@ -16,19 +16,19 @@ sys.path.append(os.getcwd())
 
 from rmgcat_to_sella.ts import TS
 
-slab             = '{slab}'
-repeats          = {repeats}
-yamlfile         = '{yamlfile}'
-facetpath        = '{facetpath}'
-rotAngle         = {rotAngle}
-scfactor         = {scfactor}
-scfactor_surface = {scfactor_surface}
-pytemplate_xtb   = '{pytemplate_xtb}'
-species          = ['{sp1}', '{sp2}']
+slab             = 'Cu_100_slab_opt.xyz'
+repeats          = (3, 4, 1)
+yamlfile         = 'reactions.yaml'
+facetpath        = 'Cu_100'
+rotAngle         = 60
+scfactor         = 1.4
+scfactor_surface = 1.0
+pytemplate_xtb   = '/Users/mgierad/.local/lib/python3.7/site-packages/rmgcat_to_sella-0.0.1-py3.7.egg/rmgcat_to_sella/pytemplate/pytemplate_set_up_xtb.py'
+species          = ['O', 'H']
 current_dir      = os.path.dirname(os.getcwd())
 minima_dir       = os.path.join(facetpath, 'minima')
-scaled1          = {scaled1}
-scaled2          = {scaled2}
+scaled1          = False
+scaled2          = False
 ts_dir           = 'TS_estimate'
 
 ts = TS(facetpath, slab, ts_dir, yamlfile, repeats)
@@ -37,5 +37,5 @@ ts.prepare_ts_estimate(scfactor, scfactor_surface, rotAngle,
                        pytemplate_xtb, species, scaled1, scaled2)
                        
 bashCommand = os.popen(
-    "cd {facetpath}/TS_estimate/; for i in $(ls -d */); do cd $i; sbatch *py; cd ../ || exit; done > ../../submitted_02.txt; cd ../../")
+    "cd Cu_100/TS_estimate/; for i in $(ls -d */); do cd $i; sbatch *py; cd ../ || exit; done > ../../submitted_02.txt; cd ../../")
 print(bashCommand.read())

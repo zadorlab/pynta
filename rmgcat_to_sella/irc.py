@@ -8,7 +8,7 @@ from rmgcat_to_sella.adsorbates import Adsorbates
 
 
 class IRC():
-    def __init__(self, facetpath, ts_dir, yamlfile,
+    def __init__(self, facetpath, slab, repeats, ts_dir, yamlfile,
                  pseudopotentials, pseudo_dir):
         ''' Initializing
 
@@ -37,6 +37,8 @@ class IRC():
 
         '''
         self.facetpath = facetpath
+        self.slab = slab
+        self.repeats = repeats
         self.ts_dir = ts_dir
         self.yamlfile = yamlfile
         self.pseudopotentials = pseudopotentials
@@ -53,7 +55,8 @@ class IRC():
 
         ts_path = os.path.join(self.facetpath, self.ts_dir)
         ts_uq_dir = ts_path + '_unique'
-        ts = TS(self.facetpath, self.ts_dir, self.yamlfile)
+        ts = TS(self.facetpath, self.slab, self.ts_dir,
+                self.yamlfile, self.repeats)
         rxn = ts.get_rxn_name()
         unique_ts_index = checkSymm(ts_uq_dir)
 

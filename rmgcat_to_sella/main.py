@@ -67,9 +67,9 @@ IRC = inputR2S.IRCScript
 IRCopt = inputR2S.IRCoptScript
 ##
 currentDir = os.path.dirname(os.getcwd())
-sp1 = inputR2S.sp1
-sp2 = inputR2S.sp2
-facetpath = inputR2S.facetpath
+# sp1 = inputR2S.sp1
+# sp2 = inputR2S.sp2
+# facetpath = inputR2S.facetpath
 optimize_slab = inputR2S.optimize_slab
 
 ####################################################
@@ -95,14 +95,15 @@ class WorkFlow:
                                     repeats, yamlfile, facetpath, rotAngle,
                                     scfactor, scfactor_surface, pytemplate_xtb,
                                     sp1, sp2)
-        WorkFlow.set_up_run_TS(self, template_set_up_ts,
-                               facetpath, pytemplate_set_up_ts,
+        WorkFlow.set_up_run_TS(self, template_set_up_ts, facetpath, slabopt,
+                               repeats, yamlfile, pytemplate_set_up_ts,
                                pseudopotentials, pseudo_dir)
-        WorkFlow.set_up_run_IRC(self, template_set_up_IRC, facetpath,
-                                pytemplate_f, pytemplate_r, yamlfile,
+        WorkFlow.set_up_run_IRC(self, template_set_up_IRC, facetpath, slabopt,
+                                repeats, pytemplate_f, pytemplate_r, yamlfile,
                                 pseudopotentials, pseudo_dir)
         WorkFlow.set_up_opt_IRC(self, template_set_up_optIRC,
-                                facetpath, pytemplate_optIRC,
+                                facetpath, slabopt, repeats,
+                                pytemplate_optIRC,
                                 pseudopotentials, pseudo_dir)
 
 ###########################
@@ -155,20 +156,21 @@ class WorkFlow:
             c.close()
         r.close()
 
-    def set_up_run_TS(self, template, facetpath, pytemplate, pseudopotentials,
-                      pseudo_dir):
+    def set_up_run_TS(self, template, facetpath, slab, repeats, yamlfile,
+                      pytemplate, pseudopotentials, pseudo_dir):
         ''' Create 03_checksym_xtb_runTS.py file '''
         with open(template, 'r') as r:
             template = r.read()
             with open('03_checksym_xtb_runTS.py', 'w') as c:
-                c.write(template.format(facetpath=facetpath,
+                c.write(template.format(facetpath=facetpath, slab=slab,
+                                        repeats=repeats, yamlfile=yamlfile,
                                         pytemplate=pytemplate,
                                         pseudo_dir=pseudo_dir,
                                         pseudopotentials=pseudopotentials))
             c.close()
         r.close()
 
-    def set_up_run_IRC(self, template, facetpath,
+    def set_up_run_IRC(self, template, facetpath, slab, repeats,
                        pytemplate_f, pytemplate_r, yamlfile,
                        pseudopotentials, pseudo_dir):
         ''' Create 04_set_up_irc.py file '''
@@ -176,6 +178,8 @@ class WorkFlow:
             template = r.read()
             with open('04_set_up_irc.py', 'w') as c:
                 c.write(template.format(facetpath=facetpath,
+                                        slab=slab,
+                                        repeats=repeats,
                                         pytemplate_f=pytemplate_f,
                                         pytemplate_r=pytemplate_r,
                                         yamlfile=yamlfile,
@@ -184,13 +188,15 @@ class WorkFlow:
             c.close()
         r.close()
 
-    def set_up_opt_IRC(self, template, facetpath, pytemplate,
+    def set_up_opt_IRC(self, template, facetpath, slab, repeats, pytemplate,
                        pseudopotentials, pseudo_dir):
         ''' Create 05_set_up_opt_after_irc.py file'''
         with open(template, 'r') as r:
             template = r.read()
             with open('05_set_up_opt_after_irc.py', 'w') as c:
                 c.write(template.format(facetpath=facetpath,
+                                        slab=slab,
+                                        repeats=repeats,
                                         pytemplate=pytemplate,
                                         yamlfile=yamlfile,
                                         pseudo_dir=pseudo_dir,

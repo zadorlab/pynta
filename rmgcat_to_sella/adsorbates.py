@@ -31,8 +31,7 @@ from rmgcat_to_sella.main import WorkFlow
 class Adsorbates:
     ''' This class handles adsorbates and puts them on the surface'''
 
-    def __init__(self, facetpath, slab, repeats, yamlfile, pytemplate,
-                 pseudopotentials, pseudo_dir):
+    def __init__(self, facetpath, slab, repeats, yamlfile):
         ''' Initializing
 
         Parameters:
@@ -69,9 +68,9 @@ class Adsorbates:
         self.slab = slab
         self.repeats = repeats
         self.yamlfile = yamlfile
-        self.pytemplate = pytemplate
-        self.pseudopotentials = pseudopotentials
-        self.pseudo_dir = pseudo_dir
+        # self.pytemplate = pytemplate
+        # self.pseudopotentials = pseudopotentials
+        # self.pseudo_dir = pseudo_dir
 
     def get_edges(self, find_surface=False):
         ''' Get adsorption edges
@@ -397,7 +396,7 @@ class Adsorbates:
                     str(j).zfill(2))), big_slab_ads)
                 # write(os.path.join(savedir, '{}.png'.format(str(j).zfill(2))), big_slab_ads, rotation='10z,-80x')
 
-    def create_relax_jobs(self, shtemplate=None):
+    def create_relax_jobs(self, pytemplate, pseudopotentials, pseudo_dir, shtemplate=None):
         ''' Create a submit scripts
 
         Parameters:
@@ -407,7 +406,7 @@ class Adsorbates:
 
         '''
         minimapath = os.path.join(self.facetpath, 'minima')
-        with open(self.pytemplate, 'r') as f:
+        with open(pytemplate, 'r') as f:
             pytemplate = f.read()
 
         if shtemplate is not None:
@@ -426,8 +425,8 @@ class Adsorbates:
                     with open(fname, 'w') as f:
                         f.write(pytemplate.format(adsorbate=species,
                                                   prefix=prefix,
-                                                  pseudopotentials=self.pseudopotentials,
-                                                  pseudo_dir=self.pseudo_dir))
+                                                  pseudopotentials=pseudopotentials,
+                                                  pseudo_dir=pseudo_dir))
                     if shtemplate is None:
                         continue
                     # optional
@@ -436,7 +435,7 @@ class Adsorbates:
                     with open(fname, 'w') as f:
                         f.write(shtemplate.format(adsorbate=species,
                                                   prefix=prefix))
-    # TODO: to be debug later
+    # TODO: to be debugged later
     # def get_all_species(self, path):
     #     ''' '''
     #     idx = 0

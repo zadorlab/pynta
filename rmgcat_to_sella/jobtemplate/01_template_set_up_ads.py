@@ -24,11 +24,9 @@ pytemplate       = '{pytemplate}'
 pseudopotentials = {pseudopotentials}
 pseudo_dir       = '{pseudo_dir}'
 
-put_adsorbates = Adsorbates(
-    facetpath, slab, repeats, yamlfile, pytemplate, pseudopotentials,
-    pseudo_dir)
+put_adsorbates = Adsorbates(facetpath, slab, repeats, yamlfile)
 put_adsorbates.adjacency_to_3d()
-put_adsorbates.create_relax_jobs()
+put_adsorbates.create_relax_jobs(pytemplate, pseudopotentials, pseudo_dir)
 
 bashCommand = os.popen(
     "cd ./{facetpath}/minima/; for i in $(ls | grep py); do sbatch $i; done > ../../submitted_01.txt; cd ../../")

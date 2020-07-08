@@ -51,10 +51,10 @@ scfactor         = 1.4
 # specify the scaling factor to scale the target distance
 # i.e. the average bond distance between adsorbate and
 # the nearest surface metal atom
-scfactor_surface = 0.9
+scfactor_surface = 1.0
 ####################################################
 # species 1
-sp1              = 'CO'
+sp1              = 'O'
 ####################################################
 # species 2
 sp2              = 'H'
@@ -63,7 +63,7 @@ sp2              = 'H'
 scaled1          = False
 ####################################################
 # do you want to apply scfactor_surface to the species 2?
-scaled2          = True
+scaled2          = False
 ####################################################
 '''
 ####################################################

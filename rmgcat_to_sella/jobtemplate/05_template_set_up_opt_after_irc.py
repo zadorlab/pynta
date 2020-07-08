@@ -16,6 +16,8 @@ sys.path.append(os.getcwd())
 
 from rmgcat_to_sella.irc import IRC
 
+slab             = '{slab}'
+repeats          = {repeats}
 yamlfile         = '{yamlfile}'
 facetpath        = '{facetpath}'
 pytemplate       = '{pytemplate}'
@@ -24,7 +26,8 @@ irc_dir          = 'IRC'
 pseudopotentials = {pseudopotentials}
 pseudo_dir       = '{pseudo_dir}'
 
-irc = IRC(facetpath, ts_dir, yamlfile, pseudopotentials, pseudo_dir)
+irc = IRC(facetpath, slab, repeats, ts_dir, yamlfile,
+          pseudopotentials, pseudo_dir)
 irc.opt_after_IRC(irc_dir, pytemplate)
 
 bashCommand = os.popen(

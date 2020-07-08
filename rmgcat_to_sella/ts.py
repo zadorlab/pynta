@@ -26,8 +26,8 @@ from pathlib import Path
 import networkx as nx
 
 
-class TS(Adsorbates):
-    def __init__(self, facetpath, ts_dir, yamlfile):
+class TS():
+    def __init__(self, facetpath, slab, ts_dir, yamlfile, repeats):
         ''' Initializing
 
         Parameters:
@@ -43,10 +43,12 @@ class TS(Adsorbates):
 
         '''
         self.facetpath = facetpath
+        self.slab = slab
         self.ts_dir = ts_dir
         self.yamlfile = yamlfile
+        self.repeats = repeats
 
-    def prepare_ts_estimate(self, slab, repeats, scfactor,  scfactor_surface,
+    def prepare_ts_estimate(self, scfactor,  scfactor_surface,
                             rotAngle, pytemplate_xtb, species,
                             scaled1, scaled2):
         ''' Prepare TS estimates for subsequent xTB calculations
@@ -95,11 +97,11 @@ class TS(Adsorbates):
         r_name_list, p_name_list, images = TS.prepare_react_list(self)
         rxn_name = TS.get_rxn_name(self)
 
-        TS.TS_placer(self, slab, repeats, scfactor, rotAngle,
+        TS.TS_placer(self, scfactor, rotAngle,
                      rxn_name, r_name_list, p_name_list, images)
 
         TS.filtered_out_equiv_ts_estimate(self, rxn_name)
-        TS.set_up_penalty_xtb(self, pytemplate_xtb, slab, repeats,
+        TS.set_up_penalty_xtb(self, pytemplate_xtb,
                               species, scaled1, scaled2, scfactor_surface)
 
     def get_rxn_name(self):
@@ -114,22 +116,25 @@ class TS(Adsorbates):
         with open(self.yamlfile, 'r') as f:
             yamltxt = f.read()
         reactions = yaml.safe_load(yamltxt)
-        species_unique = dict()
+        # species_unique = dict()
         speciesInd = []
         bonds = []
-        r_unique = []
-        p_unique = []
-        symbols_list = []
+        # r_unique = []
+        # p_unique = []
+        # symbols_list = []
         # unique_species = []
         # unique_bonds = []
         # images = []
 
+        put_adsorbates = Adsorbates(
+            self.facetpath, self.slab, self.repeats, self.yamlfile)
+
         for rxn in reactions:
             # transforming reactions data to gratom objects
-            reactants, rbonds = TS.rmgcat_to_gratoms(self,
-                                                     rxn['reactant'].split('\n'))
-            products, pbonds = TS.rmgcat_to_gratoms(self,
-                                                    rxn['product'].split('\n'))
+            reactants, rbonds = put_adsorbates.rmgcat_to_gratoms(
+                rxn['reactant'].split('\n'))
+            products, pbonds = put_adsorbates.rmgcat_to_gratoms(
+                rxn['product'].split('\n'))
             speciesInd += reactants + products
             bonds += rbonds + pbonds
 
@@ -168,33 +173,37 @@ class TS(Adsorbates):
         with open(self.yamlfile, 'r') as f:
             yamltxt = f.read()
         reactions = yaml.safe_load(yamltxt)
-        species_unique = dict()
+        # species_unique = dict()
         speciesInd = []
         bonds = []
-        r_unique = []
-        p_unique = []
-        symbols_list = []
+        # r_unique = []
+        # p_unique = []
+        # symbols_list = []
         unique_species = []
         unique_bonds = []
         images = []
 
+        put_adsorbates = Adsorbates(
+            self.facetpath, self.slab, self.repeats, self.yamlfile)
         for rxn in reactions:
             # transforming reactions data to gratom objects
-            reactants, rbonds = rmgcat_to_gratoms(rxn['reactant'].split('\n'))
-            products, pbonds = rmgcat_to_gratoms(rxn['product'].split('\n'))
+            reactants, rbonds = put_adsorbates.rmgcat_to_gratoms(
+                rxn['reactant'].split('\n'))
+            products, pbonds = put_adsorbates.rmgcat_to_gratoms(
+                rxn['product'].split('\n'))
             speciesInd += reactants + products
             bonds += rbonds + pbonds
 
-        for rp, uniquelist in ((reactants, r_unique), (products, p_unique)):
-            for species in rp:
-                symbols = str(species.symbols)
-                symbols_list.append(symbols)
-                speciesdir = os.path.join(
-                    self.facetpath, 'minima_unique', symbols)
-                if symbols not in species_unique:
-                    species_unique[symbols] = TS.get_all_species(
-                        self, speciesdir)
-                uniquelist.append(species_unique[symbols])
+        # for rp, uniquelist in ((reactants, r_unique), (products, p_unique)):
+        #     for species in rp:
+        #         symbols = str(species.symbols)
+        #         symbols_list.append(symbols)
+        #         speciesdir = os.path.join(
+        #             self.facetpath, 'minima_unique', symbols)
+        #         if symbols not in species_unique:
+        #             species_unique[symbols] = get_all_species(
+        #                 self, speciesdir)
+        #         uniquelist.append(species_unique[symbols])
 
         # check if any products are the same as any reactants
         for species1, bond in zip(speciesInd, bonds):
@@ -219,7 +228,7 @@ class TS(Adsorbates):
         #     rpDir = 'products'
         return r_name_list, p_name_list, images
 
-    def TS_placer(self, slab, repeats, scfactor, rotAngle, rxn_name,
+    def TS_placer(self, scfactor, rotAngle, rxn_name,
                   r_name_list, p_name_list, images):
         ''' Place adsorbates on the surface to estimate TS 
 
@@ -256,7 +265,7 @@ class TS(Adsorbates):
 
         '''
         ts_estimate_path = os.path.join(self.facetpath, self.ts_dir)
-        slab = read(slab)
+        slab = read(self.slab)
         # ADSORBATES
         # This part here is a bit hard coded, especially when dealing with
         # reactants with >= 3 atoms. The code works for couple of species
@@ -336,8 +345,11 @@ class TS(Adsorbates):
             TS_candidate.rotate(90, 'z')
             TS_candidate.set_distance(
                 atom1, atom2, bondlen * scfactor, fix=0)
-
-        slabedges, tags = get_edges(slab, True)
+        # double check this
+        put_adsorbates = Adsorbates(
+            self.facetpath, self.slab, self.repeats, self.yamlfile)
+        slabedges, tags = put_adsorbates.get_edges(self)
+        # double check this
         grslab = Gratoms(numbers=slab.numbers,
                          positions=slab.positions,
                          cell=slab.cell,
@@ -357,7 +369,7 @@ class TS(Adsorbates):
             # change to True will make bondedThrough work.
             # Now it uses TS_candidate,rotate...
             # to generate adsorbed strucutres
-            big_slab = slab * repeats
+            big_slab = slab * self.repeats
             nslab = len(slab)
 
             for i, struc in enumerate(structs):
@@ -393,7 +405,7 @@ class TS(Adsorbates):
                 ts_estimate_path, prefix + noneqsites[3:])
             os.rename(oldfname, newfname)
 
-    def set_up_penalty_xtb(self, pytemplate, slab, repeats, species_list,
+    def set_up_penalty_xtb(self, pytemplate, species_list,
                            scaled1, scaled2, scfactor_surface):
         ''' Prepare calculations of the penalty function
 
@@ -489,8 +501,8 @@ class TS(Adsorbates):
                 with open(fname, 'w') as f:
                     f.write(pytemplate.format(geom=geom, bonds=bonds,
                                               avDists=avDists, trajPath=trajPath,
-                                              repeats=repeats, prefix=prefix[0],
-                                              geomName=geomName, slabopt=slab))
+                                              repeats=self.repeats, prefix=prefix[0],
+                                              geomName=geomName, slabopt=self.slab))
                 f.close()
                 shutil.move(geomPath, calcDir)
         f.close()
@@ -540,6 +552,63 @@ class TS(Adsorbates):
                 # is_it_calculated[1] is None when is_it_calculated[0] == False
                 except IndexError:
                     pass
+
+    def create_unique_TS(self):
+        ''' Create unique TS files for calculations '''
+        gd_ads_index = checkSymm(os.path.join(self.facetpath, self.ts_dir))
+        for i, index in enumerate(gd_ads_index):
+            uniqueTSdir = os.path.join(
+                self.facetpath, self.ts_dir + '_unique', str(i).zfill(2))
+            if os.path.isdir(uniqueTSdir):
+                shutil.rmtree(uniqueTSdir)
+                os.makedirs(uniqueTSdir, exist_ok=True)
+            else:
+                os.makedirs(uniqueTSdir, exist_ok=True)
+            gpath = os.path.join(self.facetpath, self.ts_dir)
+            for geom in os.listdir(gpath):
+                geomDir = os.path.join(gpath, geom)
+                if os.path.isdir(geomDir):
+                    for traj in sorted(os.listdir(geomDir)):
+                        if traj.startswith(gd_ads_index[i]) and traj.endswith('.traj'):
+                            srcFile = os.path.join(geomDir, traj)
+                            destFile = os.path.join(
+                                uniqueTSdir, traj[:-5] + '_ts')
+                            write(destFile + '.xyz', read(srcFile))
+                            write(destFile + '.png', read(srcFile))
+            #         shutil.copy2(os.path.join(path, geom), uniqueTSdir)
+            for ts in os.listdir(uniqueTSdir):
+                # if neb.endswith('.xyz'):
+                TS_xyz_Dir = os.path.join(uniqueTSdir, ts)
+                newTS_xyz_Dir = os.path.join(
+                    uniqueTSdir, str(i).zfill(2) + ts[3:])
+                # NEB_png_Dir = os.path.join(uniqueTSdir, str(
+                #     i).zfill(3) + neb[2:][:-4] + '.png')
+                os.rename(TS_xyz_Dir, newTS_xyz_Dir)
+                # write(NEB_png_Dir, read(newNEB_xyz_Dir))
+
+    def create_TS_unique_job_files(self, pytemplate,
+                                   pseudopotentials, pseudo_dir):
+        ''' Create job submission files'''
+        unique_TS_candidate_path = os.path.join(
+            self.facetpath, self.ts_dir + '_unique')
+        with open(pytemplate, 'r') as f:
+            pytemplate = f.read()
+
+        for struc in os.listdir(unique_TS_candidate_path):
+            TSdir = os.path.join(unique_TS_candidate_path, struc)
+            if os.path.isdir(TSdir):
+                TSpath = os.path.join(unique_TS_candidate_path, struc)
+                for fl in os.listdir(TSpath):
+                    if fl.endswith('.xyz'):
+                        fname = os.path.join(
+                            unique_TS_candidate_path, fl[:-4] + '.py')
+                        with open(fname, 'w') as f:
+                            f.write(pytemplate.format(TS=os.path.join(
+                                struc, fl), rxn=fl[3:-7], prefix=fl[:2],
+                                pseudopotentials=pseudopotentials,
+                                pseudo_dir=pseudo_dir))
+                        f.close()
+        f.close()
 
 
 def gen_xyz_from_traj(avDistPath, species):
@@ -751,24 +820,24 @@ def create_all_TS_job_files(facetpath, pytemplate):
     f.close()
 
 
-def create_TS_unique_job_files(facetpath, TSdir, pytemplate):
-    unique_TS_candidate_path = os.path.join(facetpath, TSdir + '_unique')
-    with open(pytemplate, 'r') as f:
-        pytemplate = f.read()
+# def create_TS_unique_job_files(facetpath, TSdir, pytemplate):
+#     unique_TS_candidate_path = os.path.join(facetpath, TSdir + '_unique')
+#     with open(pytemplate, 'r') as f:
+#         pytemplate = f.read()
 
-    for struc in os.listdir(unique_TS_candidate_path):
-        TSdir = os.path.join(unique_TS_candidate_path, struc)
-        if os.path.isdir(TSdir):
-            TSpath = os.path.join(unique_TS_candidate_path, struc)
-            for fl in os.listdir(TSpath):
-                if fl.endswith('.xyz'):
-                    fname = os.path.join(
-                        unique_TS_candidate_path, fl[:-4] + '.py')
-                    with open(fname, 'w') as f:
-                        f.write(pytemplate.format(TS=os.path.join(
-                            struc, fl), rxn=fl[3:-7], prefix=fl[:2]))
-                    f.close()
-    f.close()
+#     for struc in os.listdir(unique_TS_candidate_path):
+#         TSdir = os.path.join(unique_TS_candidate_path, struc)
+#         if os.path.isdir(TSdir):
+#             TSpath = os.path.join(unique_TS_candidate_path, struc)
+#             for fl in os.listdir(TSpath):
+#                 if fl.endswith('.xyz'):
+#                     fname = os.path.join(
+#                         unique_TS_candidate_path, fl[:-4] + '.py')
+#                     with open(fname, 'w') as f:
+#                         f.write(pytemplate.format(TS=os.path.join(
+#                             struc, fl), rxn=fl[3:-7], prefix=fl[:2]))
+#                     f.close()
+#     f.close()
 
 
 def set_up_penalty_xtb(path, pytemplate, repeats, slab, species_list, scfactor_surface, scaled1, scaled2):
@@ -846,37 +915,37 @@ def set_up_penalty_xtb(path, pytemplate, repeats, slab, species_list, scfactor_s
         # print('No files to delete')
 
 
-def create_unique_TS(facetpath, TSdir):
-    # checkSymmPath = os.path.join(path, 'TS_estimate')
+# def create_unique_TS(facetpath, TSdir):
+#     # checkSymmPath = os.path.join(path, 'TS_estimate')
 
-    # gd_ads_index = checkSymm(facetpath, TSdir)
-    # new checksym with globbing
-    gd_ads_index = checkSymm(os.path.join(facetpath, TSdir))
-    for i, index in enumerate(gd_ads_index):
-        uniqueTSdir = os.path.join(
-            facetpath, TSdir + '_unique', str(i).zfill(2))
-        if os.path.isdir(uniqueTSdir):
-            shutil.rmtree(uniqueTSdir)
-            os.makedirs(uniqueTSdir, exist_ok=True)
-        else:
-            os.makedirs(uniqueTSdir, exist_ok=True)
-        gpath = os.path.join(facetpath, TSdir)
-        for geom in os.listdir(gpath):
-            geomDir = os.path.join(gpath, geom)
-            if os.path.isdir(geomDir):
-                for traj in sorted(os.listdir(geomDir)):
-                    if traj.startswith(gd_ads_index[i]) and traj.endswith('.traj'):
-                        srcFile = os.path.join(geomDir, traj)
-                        destFile = os.path.join(uniqueTSdir, traj[:-5] + '_ts')
-                        write(destFile + '.xyz', read(srcFile))
-                        write(destFile + '.png', read(srcFile))
-        #         shutil.copy2(os.path.join(path, geom), uniqueTSdir)
-        for ts in os.listdir(uniqueTSdir):
-            # if neb.endswith('.xyz'):
-            TS_xyz_Dir = os.path.join(uniqueTSdir, ts)
-            newTS_xyz_Dir = os.path.join(
-                uniqueTSdir, str(i).zfill(2) + ts[3:])
-            # NEB_png_Dir = os.path.join(uniqueTSdir, str(
-            #     i).zfill(3) + neb[2:][:-4] + '.png')
-            os.rename(TS_xyz_Dir, newTS_xyz_Dir)
-            # write(NEB_png_Dir, read(newNEB_xyz_Dir))
+#     # gd_ads_index = checkSymm(facetpath, TSdir)
+#     # new checksym with globbing
+#     gd_ads_index = checkSymm(os.path.join(facetpath, TSdir))
+#     for i, index in enumerate(gd_ads_index):
+#         uniqueTSdir = os.path.join(
+#             facetpath, TSdir + '_unique', str(i).zfill(2))
+#         if os.path.isdir(uniqueTSdir):
+#             shutil.rmtree(uniqueTSdir)
+#             os.makedirs(uniqueTSdir, exist_ok=True)
+#         else:
+#             os.makedirs(uniqueTSdir, exist_ok=True)
+#         gpath = os.path.join(facetpath, TSdir)
+#         for geom in os.listdir(gpath):
+#             geomDir = os.path.join(gpath, geom)
+#             if os.path.isdir(geomDir):
+#                 for traj in sorted(os.listdir(geomDir)):
+#                     if traj.startswith(gd_ads_index[i]) and traj.endswith('.traj'):
+#                         srcFile = os.path.join(geomDir, traj)
+#                         destFile = os.path.join(uniqueTSdir, traj[:-5] + '_ts')
+#                         write(destFile + '.xyz', read(srcFile))
+#                         write(destFile + '.png', read(srcFile))
+#         #         shutil.copy2(os.path.join(path, geom), uniqueTSdir)
+#         for ts in os.listdir(uniqueTSdir):
+#             # if neb.endswith('.xyz'):
+#             TS_xyz_Dir = os.path.join(uniqueTSdir, ts)
+#             newTS_xyz_Dir = os.path.join(
+#                 uniqueTSdir, str(i).zfill(2) + ts[3:])
+#             # NEB_png_Dir = os.path.join(uniqueTSdir, str(
+#             #     i).zfill(3) + neb[2:][:-4] + '.png')
+#             os.rename(TS_xyz_Dir, newTS_xyz_Dir)
+#             # write(NEB_png_Dir, read(newNEB_xyz_Dir))

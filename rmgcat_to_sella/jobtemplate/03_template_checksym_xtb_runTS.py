@@ -14,13 +14,20 @@ submitDir = os.environ['SLURM_SUBMIT_DIR']
 os.chdir(submitDir)
 sys.path.append(os.getcwd())
 
-from rmgcat_to_sella.ts import create_unique_TS, create_TS_unique_job_files
+from rmgcat_to_sella.ts import TS
 
-facetpath  = '{facetpath}'
-pytemplate = '{pytemplate}'
-TSdir      = 'TS_estimate'
-create_unique_TS(facetpath, TSdir)
-create_TS_unique_job_files(facetpath, TSdir, pytemplate)
+slab             = '{slab}'
+repeats          = {repeats}
+yamlfile         = '{yamlfile}'
+facetpath        = '{facetpath}'
+pytemplate       = '{pytemplate}'
+ts_dir           = 'TS_estimate'
+pseudopotentials = {pseudopotentials}
+pseudo_dir       = '{pseudo_dir}'
+
+ts = TS(facetpath, slab, ts_dir, yamlfile, repeats)
+ts.create_unique_TS()
+ts.create_TS_unique_job_files(pytemplate, pseudopotentials, pseudo_dir)
 
 bashCommand = os.popen(
     "cd {facetpath}/TS_estimate_unique; for i in $(ls | grep py); do sbatch $i; done > ../../submitted_03.txt; cd ../../")
