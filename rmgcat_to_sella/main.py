@@ -7,26 +7,26 @@ try:
     '''
     User defined parameters. Here we only read them. They are set up in inputR2S.py (submit directory)
     '''
-    facetpath        = inputR2S.facetpath
-    slab_name        = inputR2S.slab_name
-    surface_type     = inputR2S.surface_type
-    symbol           = inputR2S.symbol
-    a                = inputR2S.a
-    vacuum           = inputR2S.vacuum
-    pseudo_dir       = inputR2S.pseudo_dir
+    facetpath = inputR2S.facetpath
+    slab_name = inputR2S.slab_name
+    surface_type = inputR2S.surface_type
+    symbol = inputR2S.symbol
+    a = inputR2S.a
+    vacuum = inputR2S.vacuum
+    pseudo_dir = inputR2S.pseudo_dir
     pseudopotentials = inputR2S.pseudopotentials
-    slabopt          = inputR2S.slabopt
-    yamlfile         = inputR2S.yamlfile
-    repeats          = inputR2S.repeats
-    repeats_surface  = inputR2S.repeats_surface
-    rotAngle         = inputR2S.rotAngle
-    scfactor         = inputR2S.scfactor
+    slabopt = inputR2S.slabopt
+    yamlfile = inputR2S.yamlfile
+    repeats = inputR2S.repeats
+    repeats_surface = inputR2S.repeats_surface
+    rotAngle = inputR2S.rotAngle
+    scfactor = inputR2S.scfactor
     scfactor_surface = inputR2S.scfactor_surface
-    sp1              = inputR2S.sp1
-    sp2              = inputR2S.sp2
-    scaled1          = inputR2S.scaled1
-    scaled2          = inputR2S.scaled2
-    species_list     = [sp1, sp2]
+    sp1 = inputR2S.sp1
+    sp2 = inputR2S.sp2
+    scaled1 = inputR2S.scaled1
+    scaled2 = inputR2S.scaled2
+    species_list = [sp1, sp2]
 
 except ImportError:
     print('Missing input file. You cannot run calculations but will be able to use most of the workflow.')
@@ -96,9 +96,11 @@ class WorkFlow:
                                     scfactor, scfactor_surface, pytemplate_xtb,
                                     sp1, sp2)
         WorkFlow.set_up_run_TS(self, template_set_up_ts,
-                               facetpath, pytemplate_set_up_ts)
+                               facetpath, pytemplate_set_up_ts,
+                               pseudopotentials, pseudo_dir)
         WorkFlow.set_up_run_IRC(self, template_set_up_IRC, facetpath,
-                                pytemplate_f, pytemplate_r, yamlfile)
+                                pytemplate_f, pytemplate_r, yamlfile,
+                                pseudopotentials, pseudo_dir)
         WorkFlow.set_up_opt_IRC(self, template_set_up_optIRC,
                                 facetpath, pytemplate_optIRC)
 
@@ -152,18 +154,22 @@ class WorkFlow:
             c.close()
         r.close()
 
-    def set_up_run_TS(self, template, facetpath, pytemplate):
+    def set_up_run_TS(self, template, facetpath, pytemplate, pseudopotentials,
+                      pseudo_dir):
         ''' Create 03_checksym_xtb_runTS.py file '''
         with open(template, 'r') as r:
             template = r.read()
             with open('03_checksym_xtb_runTS.py', 'w') as c:
                 c.write(template.format(facetpath=facetpath,
-                                        pytemplate=pytemplate))
+                                        pytemplate=pytemplate,
+                                        pseudo_dir=pseudo_dir,
+                                        pseudopotentials=pseudopotentials))
             c.close()
         r.close()
 
     def set_up_run_IRC(self, template, facetpath,
-                       pytemplate_f, pytemplate_r, yamlfile):
+                       pytemplate_f, pytemplate_r, yamlfile,
+                       pseudopotentials, pseudo_dir):
         ''' Create 04_set_up_irc.py file '''
         with open(template, 'r') as r:
             template = r.read()
@@ -171,7 +177,9 @@ class WorkFlow:
                 c.write(template.format(facetpath=facetpath,
                                         pytemplate_f=pytemplate_f,
                                         pytemplate_r=pytemplate_r,
-                                        yamlfile=yamlfile))
+                                        yamlfile=yamlfile,
+                                        pseudo_dir=pseudo_dir,
+                                        pseudopotentials=pseudopotentials))
             c.close()
         r.close()
 

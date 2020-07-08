@@ -4,12 +4,14 @@ from ase.io import read, write
 from rmgcat_to_sella.ts import checkSymm
 # from pathlib import Path
 from rmgcat_to_sella.ts import TS
+from rmgcat_to_sella.adsorbates import Adsorbates
 
 
-class IRC:
-    def __init__(self, facetpath, ts_dir, yamlfile):
+class IRC():
+    def __init__(self, facetpath, ts_dir, yamlfile,
+                 pseudopotentials, pseudo_dir):
         ''' Initializing
-        
+
         Parameters:
         ___________
         facetpath : str
@@ -20,15 +22,29 @@ class IRC:
             e.g. 'TS_estimate'
         yamlfile : str
             a name of the .yaml file with reaction list
-            
+        pseudopotentials : dict(str: str)
+            a dictionary with QE pseudopotentials for all species.
+            e.g.
+            dict(Cu='Cu.pbe-spn-kjpaw_psl.1.0.0.UPF',
+                H='H.pbe-kjpaw_psl.1.0.0.UPF',
+                O='O.pbe-n-kjpaw_psl.1.0.0.UPF',
+                C='C.pbe-n-kjpaw_psl.1.0.0.UPF',
+                )
+        pseudo_dir : str
+            a path to the QE's pseudopotentials main directory
+            e.g.
+            '/home/mgierad/espresso/pseudo'
+
         '''
         self.facetpath = facetpath
         self.ts_dir = ts_dir
         self.yamlfile = yamlfile
+        self.pseudopotentials = pseudopotentials
+        self.pseudo_dir = pseudo_dir
 
     def set_up_irc(self, pytemplate_f, pytemplate_r):
         ''' Set up IRC calculations
-        
+
         Parameters
         __________
         pytemplate_f, pytemplate_r : python scripts
@@ -65,7 +81,9 @@ class IRC:
                     irc_py_file, ts_file_name[:-3] + '_irc_f.py')
                 with open(job_name_f, 'w') as f:
                     f.write(template.format(
-                        prefix=prefix, rxn=rxn, TS_xyz=ts_file_name_xyz))
+                        prefix=prefix, rxn=rxn, TS_xyz=ts_file_name_xyz,
+                        pseudopotentials=self.pseudopotentials,
+                        pseudo_dir=self.pseudo_dir))
                     f.close()
             f.close()
             with open(pytemplate_r, 'r') as r:
@@ -74,7 +92,9 @@ class IRC:
                     irc_py_file, ts_file_name[:-3] + '_irc_r.py')
                 with open(job_name_r, 'w') as r:
                     r.write(template.format(
-                        prefix=prefix, rxn=rxn, TS_xyz=ts_file_name_xyz))
+                        prefix=prefix, rxn=rxn, TS_xyz=ts_file_name_xyz,
+                        pseudopotentials=self.pseudopotentials,
+                        pseudo_dir=self.pseudo_dir))
                     r.close()
             r.close()
 

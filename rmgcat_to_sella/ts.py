@@ -3,8 +3,7 @@ from catkit.gen.adsorption import AdsorptionSites, Builder
 from catkit.build import molecule
 from catkit.gen.molecules import get_3D_positions
 
-from rmgcat_to_sella.adjacency_to_3d import get_edges, rmgcat_to_gratoms
-from rmgcat_to_sella.find_all_nebs import get_all_species
+from rmgcat_to_sella.adsorbates import Adsorbates
 from rmgcat_to_sella.graph_utils import node_test
 from rmgcat_to_sella.main import WorkFlow
 
@@ -27,10 +26,10 @@ from pathlib import Path
 import networkx as nx
 
 
-class TS:
+class TS(Adsorbates):
     def __init__(self, facetpath, ts_dir, yamlfile):
         ''' Initializing
-        
+
         Parameters:
         ___________
         facetpath : str
@@ -41,17 +40,17 @@ class TS:
             e.g. 'TS_estimate'
         yamlfile : str
             a name of the .yaml file with reaction list
-            
+
         '''
         self.facetpath = facetpath
         self.ts_dir = ts_dir
         self.yamlfile = yamlfile
-    
+
     def prepare_ts_estimate(self, slab, repeats, scfactor,  scfactor_surface,
                             rotAngle, pytemplate_xtb, species,
                             scaled1, scaled2):
         ''' Prepare TS estimates for subsequent xTB calculations
-        
+
         Parameters:
         ___________
             filename/path to the .xyz file with the optiumized slab.
@@ -85,7 +84,7 @@ class TS:
             specify whether use the optional scfactor_surface
             for the species 2 (sp2)
         '''
-        
+
         ts_estimate_path = os.path.join(self.facetpath, self.ts_dir)
         if os.path.exists(ts_estimate_path):
             shutil.rmtree(ts_estimate_path)
@@ -105,7 +104,7 @@ class TS:
 
     def get_rxn_name(self):
         ''' Get the reaction name
-        
+
         Returns
         _______
         The name of the reaction in the following format:
@@ -127,20 +126,25 @@ class TS:
 
         for rxn in reactions:
             # transforming reactions data to gratom objects
-            reactants, rbonds = rmgcat_to_gratoms(rxn['reactant'].split('\n'))
-            products, pbonds = rmgcat_to_gratoms(rxn['product'].split('\n'))
+            reactants, rbonds = TS.rmgcat_to_gratoms(self,
+                                                     rxn['reactant'].split('\n'))
+            products, pbonds = TS.rmgcat_to_gratoms(self,
+                                                    rxn['product'].split('\n'))
             speciesInd += reactants + products
             bonds += rbonds + pbonds
 
-        for rp, uniquelist in ((reactants, r_unique), (products, p_unique)):
-            for species in rp:
-                symbols = str(species.symbols)
-                symbols_list.append(symbols)
-                speciesdir = os.path.join(
-                    self.facetpath, 'minima_unique', symbols)
-                if symbols not in species_unique:
-                    species_unique[symbols] = get_all_species(speciesdir)
-                uniquelist.append(species_unique[symbols])
+        # TODO :to be debug later
+        # for rp, uniquelist in ((reactants, r_unique), (products, p_unique)):
+        #     for species in rp:
+        #         symbols = str(species.symbols)
+        #         symbols_list.append(symbols)
+        #         speciesdir = os.path.join(
+        #             self.facetpath, 'minima_unique', symbols)
+        #         if symbols not in species_unique:
+        #             species_unique[symbols] = TS.get_all_species(self,
+        #                                                          speciesdir)
+        #         uniquelist.append(species_unique[symbols])
+        # print(uniquelist)
 
         r_name = '+'.join([str(species.symbols) for species in reactants])
         p_name = '+'.join([str(species.symbols) for species in products])
@@ -150,7 +154,7 @@ class TS:
 
     def prepare_react_list(self):
         '''Convert yaml file to more useful format
-        
+
         Returns
         _______
         r_name_list : list(str)
@@ -188,7 +192,8 @@ class TS:
                 speciesdir = os.path.join(
                     self.facetpath, 'minima_unique', symbols)
                 if symbols not in species_unique:
-                    species_unique[symbols] = get_all_species(speciesdir)
+                    species_unique[symbols] = TS.get_all_species(
+                        self, speciesdir)
                 uniquelist.append(species_unique[symbols])
 
         # check if any products are the same as any reactants
@@ -217,7 +222,7 @@ class TS:
     def TS_placer(self, slab, repeats, scfactor, rotAngle, rxn_name,
                   r_name_list, p_name_list, images):
         ''' Place adsorbates on the surface to estimate TS 
-                
+
         Parameters
         __________
         slab : str
@@ -248,7 +253,7 @@ class TS:
             a list with all products for the given reaction
         images : list(Gratoms)
             a list of CatKit's Gratom object (both reactants and products)
-        
+
         '''
         ts_estimate_path = os.path.join(self.facetpath, self.ts_dir)
         slab = read(slab)
@@ -348,10 +353,10 @@ class TS:
 
         while count <= possibleRotations:
             structs = ads_builder.add_adsorbate(
-                TS_candidate, bondedThrough, -1, auto_construct=False)  
-                # change to True will make bondedThrough work. 
-                # Now it uses TS_candidate,rotate... 
-                # to generate adsorbed strucutres
+                TS_candidate, bondedThrough, -1, auto_construct=False)
+            # change to True will make bondedThrough work.
+            # Now it uses TS_candidate,rotate...
+            # to generate adsorbed strucutres
             big_slab = slab * repeats
             nslab = len(slab)
 
@@ -365,7 +370,7 @@ class TS:
 
     def filtered_out_equiv_ts_estimate(self, rxn_name):
         '''Filtering out symmetry equivalent sites
-        
+
         Parameters
         __________
         rxn_name : str
@@ -419,7 +424,7 @@ class TS:
             surface atom. Helpful e.g. when H is far away form the surface
             in TS, whereas for minima it is close to the surface
             e.g. 1.0
-        
+
         # TODO: Species3 is/should be optional '''
         ts_estimate_path = os.path.join(self.facetpath, self.ts_dir)
 
@@ -502,7 +507,7 @@ class TS:
         ''' If minimas have been already calculated in different set of
          reactions, they are copied to the current workflow and used instead
          of calculating it again
-         
+
         Parameters
         __________
 

@@ -16,13 +16,15 @@ sys.path.append(os.getcwd())
 
 from rmgcat_to_sella.irc import IRC
 
-facetpath    = '{facetpath}'
-pytemplate_f = '{pytemplate_f}'
-pytemplate_r = '{pytemplate_r}'
-yamlfile     = '{yamlfile}'
-ts_dir       = 'TS_estimate'
+facetpath        = '{facetpath}'
+pytemplate_f     = '{pytemplate_f}'
+pytemplate_r     = '{pytemplate_r}'
+yamlfile         = '{yamlfile}'
+ts_dir           = 'TS_estimate'
+pseudopotentials = {pseudopotentials}
+pseudo_dir       = '{pseudo_dir}'
 
-irc = IRC(facetpath, ts_dir, yamlfile)
+irc = IRC(facetpath, ts_dir, yamlfile, pseudopotentials, pseudo_dir)
 irc.set_up_irc(pytemplate_f, pytemplate_r)
 
 bashCommand = os.popen(

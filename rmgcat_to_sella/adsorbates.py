@@ -436,3 +436,16 @@ class Adsorbates:
                     with open(fname, 'w') as f:
                         f.write(shtemplate.format(adsorbate=species,
                                                   prefix=prefix))
+    # TODO: to be debug later
+    # def get_all_species(self, path):
+    #     ''' '''
+    #     idx = 0
+    #     species = []
+    #     while True:
+    #         fname = '{}.xyz'.format(str(idx).zfill(2))
+    #         fpath = os.path.join(path, fname)
+    #         if os.path.isfile(fpath):
+    #             species.append(read(fpath))
+    #         else:
+    #             return species
+    #         idx += 1
