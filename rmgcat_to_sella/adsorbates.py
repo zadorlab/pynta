@@ -48,21 +48,7 @@ class Adsorbates:
             eg. (3, 3, 1)
         yamlfile : str
             a name of the .yaml file with reaction list
-        pytemplate : python file
-            a template to prepare a submission scripts
-            for adsorbate+surface minimization
-        pseudopotentials : dict(str: str)
-            a dictionary with QE pseudopotentials for all species.
-            e.g.
-            dict(Cu='Cu.pbe-spn-kjpaw_psl.1.0.0.UPF',
-                H='H.pbe-kjpaw_psl.1.0.0.UPF',
-                O='O.pbe-n-kjpaw_psl.1.0.0.UPF',
-                C='C.pbe-n-kjpaw_psl.1.0.0.UPF',
-                )
-        pseudo_dir : str
-            a path to the QE's pseudopotentials main directory
-            e.g.
-            '/home/mgierad/espresso/pseudo'
+
         '''
         self.facetpath = facetpath
         self.slab = slab
@@ -396,11 +382,27 @@ class Adsorbates:
                     str(j).zfill(2))), big_slab_ads)
                 # write(os.path.join(savedir, '{}.png'.format(str(j).zfill(2))), big_slab_ads, rotation='10z,-80x')
 
-    def create_relax_jobs(self, pytemplate, pseudopotentials, pseudo_dir, shtemplate=None):
+    def create_relax_jobs(self, pytemplate, pseudopotentials, pseudo_dir,
+                          shtemplate=None):
         ''' Create a submit scripts
 
         Parameters:
         __________
+        pytemplate : python file
+            a template to prepare submission scripts
+            for adsorbate+surface minimization
+        pseudopotentials : dict(str: str)
+            a dictionary with QE pseudopotentials for all species.
+            e.g.
+            dict(Cu='Cu.pbe-spn-kjpaw_psl.1.0.0.UPF',
+                H='H.pbe-kjpaw_psl.1.0.0.UPF',
+                O='O.pbe-n-kjpaw_psl.1.0.0.UPF',
+                C='C.pbe-n-kjpaw_psl.1.0.0.UPF',
+                )
+        pseudo_dir : str
+            a path to the QE's pseudopotentials main directory
+            e.g.
+            '/home/mgierad/espresso/pseudo'
         shtemplate : .sh file
             optional
 

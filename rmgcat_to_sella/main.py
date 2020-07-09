@@ -27,6 +27,12 @@ try:
     scaled1 = inputR2S.scaled1
     scaled2 = inputR2S.scaled2
     species_list = [sp1, sp2]
+    slab_opt = inputR2S.slab_opt_script
+    SurfaceAdsorbate = inputR2S.SurfaceAdsorbateScript
+    TSxtb = inputR2S.TSxtbScript
+    TS = inputR2S.TSScript
+    IRC = inputR2S.IRCScript
+    IRCopt = inputR2S.IRCoptScript
 
 except ImportError:
     print('Missing input file. You cannot run calculations but will be able to use most of the workflow.')
@@ -75,8 +81,6 @@ optimize_slab = inputR2S.optimize_slab
 ####################################################
 #################### Initialize ####################
 ####################################################
-
-# TODO: It would be great to hava a class here
 
 
 class WorkFlow:
@@ -306,6 +310,13 @@ class WorkFlow:
         ''' Run TS estimation calculations '''
         return WorkFlow.exe(self, submit_txt, TSxtb)
 
+    def run_ts_estimate_no_depend(self):
+        ''' Run TS estimate calculations if there is
+            no dependency on other jobs '''
+        bash_command = os.popen(os.path.join(
+            'sbatch ' + TSxtb))
+        print(bash_command.read())
+
     def check_all_species(self):
         ''' Check all species to find whether there are previous calculation
             the code can use
@@ -361,7 +372,9 @@ class WorkFlow:
         if optimize_slab is True:
             # If the code cannot locate optimized slab .xyz file,
             # a slab optimization will be launched.
-            if not WorkFlow.check_if_slab_opt_exists(self):
+            # a = WorkFlow.check_if_slab_opt_exists(self)
+            # print(a)
+            if WorkFlow.check_if_slab_opt_exists(self) is False:
                 WorkFlow.run_slab_optimization(self)
                 # wait a bit in case the file write process is too slow
                 while not os.path.exists('submitted_00.txt'):
@@ -378,7 +391,8 @@ class WorkFlow:
             else:
                 # If both are True, start by generating TS guesses and run
                 # the penalty function minimization
-                WorkFlow.run_ts_estimate(self, 'submitted_00.txt')
+                WorkFlow.run_ts_estimate_no_depend(self)
+                # WorkFlow.run_ts_estimate(self, 'submitted_00.txt')
         else:
             # this is executed if user provide .xyz with the optimized slab
             # check whether sp1 and sp2 was already cacluated

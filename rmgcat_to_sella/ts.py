@@ -35,11 +35,18 @@ class TS():
         facetpath : str
             a path to the workflow's main dir
             e.g. 'Cu_111'
+        slab : str
+            a '.xyz' file name with the optimized slab
+            e.g.
+            'Cu_111_slab_opt.xyz'
         ts_dir : str
             a path to directory with TSs
             e.g. 'TS_estimate'
         yamlfile : str
             a name of the .yaml file with reaction list
+        repeats: tuple
+            specify reapeats in (x, y, z) direction,
+            eg. (3, 3, 1)
 
         '''
         self.facetpath = facetpath
@@ -48,19 +55,13 @@ class TS():
         self.yamlfile = yamlfile
         self.repeats = repeats
 
-    def prepare_ts_estimate(self, scfactor,  scfactor_surface,
+    def prepare_ts_estimate(self, scfactor, scfactor_surface,
                             rotAngle, pytemplate_xtb, species,
                             scaled1, scaled2):
         ''' Prepare TS estimates for subsequent xTB calculations
 
         Parameters:
         ___________
-            filename/path to the .xyz file with the optiumized slab.
-            # TODO: generate slab file automatically
-            eg. Cu_111_slab_opt.xyz
-        repeats: tuple
-            specify reapeats in (x, y, z) direction,
-            eg. (3, 3, 1)
         scfator : float
             a scaling factor to scale a bond distance between
             atoms taking part in the reaction
@@ -110,7 +111,7 @@ class TS():
         Returns
         _______
         The name of the reaction in the following format:
-        e.g. OH_H+O
+        OH_H+O
         '''
 
         with open(self.yamlfile, 'r') as f:
@@ -138,7 +139,7 @@ class TS():
             speciesInd += reactants + products
             bonds += rbonds + pbonds
 
-        # TODO :to be debug later
+        # TODO :to be debbuged later
         # for rp, uniquelist in ((reactants, r_unique), (products, p_unique)):
         #     for species in rp:
         #         symbols = str(species.symbols)
@@ -230,32 +231,20 @@ class TS():
 
     def TS_placer(self, scfactor, rotAngle, rxn_name,
                   r_name_list, p_name_list, images):
-        ''' Place adsorbates on the surface to estimate TS 
+        ''' Place adsorbates on the surface to estimate TS
 
         Parameters
         __________
-        slab : str
-            filename/path to the .xyz file with the optiumized slab. 
-            # TODO: generate slab file automatically
-            eg. Cu_111_slab_opt.xyz
-        reapeats: touple
-            specify reapeats in (x, y, z) direction,
-            eg. (3, 3, 1)
         scfator : float
             a scaling factor to scale a bond distance between
             atoms taking part in the reaction
             e.g. 1.4
-        scfactor_surface : float
-            a scaling factor to scale the target bond distance, i.e.
-            the average distance between adsorbed atom and the nearest
-            surface atom. Helpful e.g. when H is far away form the surface
-            in TS, whereas for minima it is close to the surface
-            e.g. 1.0
         rotAngle : float
             an angle (deg) of rotation  of the TS guess adduct on the surface
             e.g. 60
         rxn_name : str
             a reaction name
+            e.g OH_O+H
         r_name_list : list(str)
             a list with all reactants for the given reaction
         p_name_list : list(str)
@@ -387,6 +376,7 @@ class TS():
         __________
         rxn_name : str
             a reaction name
+            e.g. OH_O+H
         '''
         ts_estimate_path = os.path.join(self.facetpath, self.ts_dir)
         filtered_equivalen_sites = checkSymmBeforeXTB(ts_estimate_path)
@@ -414,13 +404,6 @@ class TS():
 
         pytemplate : python script
             a template for the penalty function calculations
-        slab : str
-            filename/path to the .xyz file with the optiumized slab. 
-            # TODO: generate slab file automatically
-            eg. Cu_111_slab_opt.xyz
-        reapeats: touple
-            specify reapeats in (x, y, z) direction,
-            eg. (3, 3, 1)
         species_list : list(str)
             a list of max 2 species that take part in the reaction
             e.g. ['O', 'H'] or ['CO2', 'H']
@@ -760,6 +743,7 @@ def checkSymm(path):
             unique_index.append(str(num).zfill(3))
     return unique_index
 
+''' The code below is rather useless - double check it '''
 
 def checkSymmBeforeXTB(path):
     good_adsorbate = []
@@ -840,112 +824,112 @@ def create_all_TS_job_files(facetpath, pytemplate):
 #     f.close()
 
 
-def set_up_penalty_xtb(path, pytemplate, repeats, slab, species_list, scfactor_surface, scaled1, scaled2):
-    '''Species3 is/should be optional '''
-    # print(species3)
-    fPath = os.path.split(path)
-    avPath = os.path.join(fPath[0], 'minima')
-    avDist1 = get_av_dist(avPath, species_list[0], scfactor_surface, scaled1)
-    avDist2 = get_av_dist(avPath, species_list[1], scfactor_surface, scaled2)
-    '''the code belowe does not work in the loop, probably two differet avPath variable needed to accouut for the poscible scenaario that one species was already calculated (other set of calculations - different reactions, whereas the second in calculated here for the first time) '''
-    # checkMinimaPath = os.path.dirname(os.getcwd())
-    # spList = [species1, species2]
+# def set_up_penalty_xtb(path, pytemplate, repeats, slab, species_list, scfactor_surface, scaled1, scaled2):
+#     '''Species3 is/should be optional '''
+#     # print(species3)
+#     fPath = os.path.split(path)
+#     avPath = os.path.join(fPath[0], 'minima')
+#     avDist1 = get_av_dist(avPath, species_list[0], scfactor_surface, scaled1)
+#     avDist2 = get_av_dist(avPath, species_list[1], scfactor_surface, scaled2)
+#     '''the code belowe does not work in the loop, probably two differet avPath variable needed to accouut for the poscible scenaario that one species was already calculated (other set of calculations - different reactions, whereas the second in calculated here for the first time) '''
+#     # checkMinimaPath = os.path.dirname(os.getcwd())
+#     # spList = [species1, species2]
 
-    # for species in spList:
-    #     is_it_calculated = CheckIfMinimasAlreadyCalculated(
-    #         checkMinimaPath, species)
-    #     if is_it_calculated is False:
-    #         fPath = os.path.split(path)
-    #         avPath = os.path.join(fPath[0], 'minima')
-    #     else:
-    #         avPath = is_it_calculated[1]
+#     # for species in spList:
+#     #     is_it_calculated = CheckIfMinimasAlreadyCalculated(
+#     #         checkMinimaPath, species)
+#     #     if is_it_calculated is False:
+#     #         fPath = os.path.split(path)
+#     #         avPath = os.path.join(fPath[0], 'minima')
+#     #     else:
+#     #         avPath = is_it_calculated[1]
 
-    # species_list = [species1, species2, species3]
+#     # species_list = [species1, species2, species3]
 
-    with open(pytemplate, 'r') as f:
-        pytemplate = f.read()
+#     with open(pytemplate, 'r') as f:
+#         pytemplate = f.read()
 
-    for geom in sorted(os.listdir(path)):
-        if geom.endswith('.xyz'):
-            bonds = []
-            geomPath = os.path.join(path, geom)
+#     for geom in sorted(os.listdir(path)):
+#         if geom.endswith('.xyz'):
+#             bonds = []
+#             geomPath = os.path.join(path, geom)
 
-            for species in species_list:
-                sp_index = get_index_adatom(species, geomPath)
-                Cu_index = get_index_surface_atom(species, geomPath)
-                # print(sp_index, Cu_index)
-                bonds.append((sp_index, Cu_index))
+#             for species in species_list:
+#                 sp_index = get_index_adatom(species, geomPath)
+#                 Cu_index = get_index_surface_atom(species, geomPath)
+#                 # print(sp_index, Cu_index)
+#                 bonds.append((sp_index, Cu_index))
 
-            # sp1_index = get_index_adatom(species1, geomPath)
-            # sp2_index = get_index_adatom(species2, geomPath)
-            # # sp3_index = get_index_adatom(species3, geomPath)
-            # Cu_index1 = get_index_surface_atom(species1, geomPath)
-            # Cu_index2 = get_index_surface_atom(species2, geomPath)
-            # # Cu_index3 = get_index_surface_atom(species3, geomPath)
+#             # sp1_index = get_index_adatom(species1, geomPath)
+#             # sp2_index = get_index_adatom(species2, geomPath)
+#             # # sp3_index = get_index_adatom(species3, geomPath)
+#             # Cu_index1 = get_index_surface_atom(species1, geomPath)
+#             # Cu_index2 = get_index_surface_atom(species2, geomPath)
+#             # # Cu_index3 = get_index_surface_atom(species3, geomPath)
 
-            prefix = geom.split('_')
-            calcDir = os.path.join(path, prefix[0])
-            os.makedirs(calcDir, exist_ok=True)
+#             prefix = geom.split('_')
+#             calcDir = os.path.join(path, prefix[0])
+#             os.makedirs(calcDir, exist_ok=True)
 
-            geomName = geom[:-4]
+#             geomName = geom[:-4]
 
-            # List of bonds we want O-Cu; H-Cu
-            # bonds = ((sp1_index, Cu_index1),
-            #          (sp2_index, Cu_index2))
-            # print(type(bonds))
-            avDists = (avDist1, avDist2)
-            trajPath = os.path.join(geom[:-4] + '.traj')
-            init_png = os.path.join(calcDir, geom[:-4] + '_initial.png')
-            write(init_png, read(geomPath))
-            fname = os.path.join(calcDir, geom[:-4] + '.py')
-            with open(fname, 'w') as f:
-                f.write(pytemplate.format(geom=geom, bonds=bonds,
-                                          avDists=avDists, trajPath=trajPath,
-                                          repeats=repeats, prefix=prefix[0],
-                                          geomName=geomName, slabopt=slab))
-            f.close()
-            shutil.move(geomPath, calcDir)
-    f.close()
+#             # List of bonds we want O-Cu; H-Cu
+#             # bonds = ((sp1_index, Cu_index1),
+#             #          (sp2_index, Cu_index2))
+#             # print(type(bonds))
+#             avDists = (avDist1, avDist2)
+#             trajPath = os.path.join(geom[:-4] + '.traj')
+#             init_png = os.path.join(calcDir, geom[:-4] + '_initial.png')
+#             write(init_png, read(geomPath))
+#             fname = os.path.join(calcDir, geom[:-4] + '.py')
+#             with open(fname, 'w') as f:
+#                 f.write(pytemplate.format(geom=geom, bonds=bonds,
+#                                           avDists=avDists, trajPath=trajPath,
+#                                           repeats=repeats, prefix=prefix[0],
+#                                           geomName=geomName, slabopt=slab))
+#             f.close()
+#             shutil.move(geomPath, calcDir)
+#     f.close()
 
-    try:
-        rmpath = os.path.join(path, 'initial_png')
-        shutil.rmtree(rmpath)
-    except FileNotFoundError:
-        pass
-        # print('No files to delete')
+#     try:
+#         rmpath = os.path.join(path, 'initial_png')
+#         shutil.rmtree(rmpath)
+#     except FileNotFoundError:
+#         pass
+#         # print('No files to delete')
 
 
-# def create_unique_TS(facetpath, TSdir):
-#     # checkSymmPath = os.path.join(path, 'TS_estimate')
+# # def create_unique_TS(facetpath, TSdir):
+# #     # checkSymmPath = os.path.join(path, 'TS_estimate')
 
-#     # gd_ads_index = checkSymm(facetpath, TSdir)
-#     # new checksym with globbing
-#     gd_ads_index = checkSymm(os.path.join(facetpath, TSdir))
-#     for i, index in enumerate(gd_ads_index):
-#         uniqueTSdir = os.path.join(
-#             facetpath, TSdir + '_unique', str(i).zfill(2))
-#         if os.path.isdir(uniqueTSdir):
-#             shutil.rmtree(uniqueTSdir)
-#             os.makedirs(uniqueTSdir, exist_ok=True)
-#         else:
-#             os.makedirs(uniqueTSdir, exist_ok=True)
-#         gpath = os.path.join(facetpath, TSdir)
-#         for geom in os.listdir(gpath):
-#             geomDir = os.path.join(gpath, geom)
-#             if os.path.isdir(geomDir):
-#                 for traj in sorted(os.listdir(geomDir)):
-#                     if traj.startswith(gd_ads_index[i]) and traj.endswith('.traj'):
-#                         srcFile = os.path.join(geomDir, traj)
-#                         destFile = os.path.join(uniqueTSdir, traj[:-5] + '_ts')
-#                         write(destFile + '.xyz', read(srcFile))
-#                         write(destFile + '.png', read(srcFile))
-#         #         shutil.copy2(os.path.join(path, geom), uniqueTSdir)
-#         for ts in os.listdir(uniqueTSdir):
-#             # if neb.endswith('.xyz'):
-#             TS_xyz_Dir = os.path.join(uniqueTSdir, ts)
-#             newTS_xyz_Dir = os.path.join(
-#                 uniqueTSdir, str(i).zfill(2) + ts[3:])
-#             # NEB_png_Dir = os.path.join(uniqueTSdir, str(
-#             #     i).zfill(3) + neb[2:][:-4] + '.png')
-#             os.rename(TS_xyz_Dir, newTS_xyz_Dir)
-#             # write(NEB_png_Dir, read(newNEB_xyz_Dir))
+# #     # gd_ads_index = checkSymm(facetpath, TSdir)
+# #     # new checksym with globbing
+# #     gd_ads_index = checkSymm(os.path.join(facetpath, TSdir))
+# #     for i, index in enumerate(gd_ads_index):
+# #         uniqueTSdir = os.path.join(
+# #             facetpath, TSdir + '_unique', str(i).zfill(2))
+# #         if os.path.isdir(uniqueTSdir):
+# #             shutil.rmtree(uniqueTSdir)
+# #             os.makedirs(uniqueTSdir, exist_ok=True)
+# #         else:
+# #             os.makedirs(uniqueTSdir, exist_ok=True)
+# #         gpath = os.path.join(facetpath, TSdir)
+# #         for geom in os.listdir(gpath):
+# #             geomDir = os.path.join(gpath, geom)
+# #             if os.path.isdir(geomDir):
+# #                 for traj in sorted(os.listdir(geomDir)):
+# #                     if traj.startswith(gd_ads_index[i]) and traj.endswith('.traj'):
+# #                         srcFile = os.path.join(geomDir, traj)
+# #                         destFile = os.path.join(uniqueTSdir, traj[:-5] + '_ts')
+# #                         write(destFile + '.xyz', read(srcFile))
+# #                         write(destFile + '.png', read(srcFile))
+# #         #         shutil.copy2(os.path.join(path, geom), uniqueTSdir)
+# #         for ts in os.listdir(uniqueTSdir):
+# #             # if neb.endswith('.xyz'):
+# #             TS_xyz_Dir = os.path.join(uniqueTSdir, ts)
+# #             newTS_xyz_Dir = os.path.join(
+# #                 uniqueTSdir, str(i).zfill(2) + ts[3:])
+# #             # NEB_png_Dir = os.path.join(uniqueTSdir, str(
+# #             #     i).zfill(3) + neb[2:][:-4] + '.png')
+# #             os.rename(TS_xyz_Dir, newTS_xyz_Dir)
+# #             # write(NEB_png_Dir, read(newNEB_xyz_Dir))

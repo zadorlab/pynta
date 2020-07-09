@@ -335,7 +335,7 @@ class Results():
         return prefix_list
 
     def rxn_title(self):
-        ''' Return rxn name with arrow between reactants and products''' 
+        ''' Return rxn name with arrow between reactants and products'''
         reactants = '+'.join([str(species) for species in self.reactants_list])
         products = '+'.join([str(species) for species in self.products_list])
         rxn_name = reactants + ' --> ' + products
@@ -368,8 +368,14 @@ class Results():
             # a_BSpline = make_interp_spline(x, y)
             # y_new = a_BSpline(x_new)
             plt.plot(x, y, label=ts_name)
+            # for x_new, y_new in zip(x, y):
+            #     label = "{:.2f}".format(y_new)
+            #     plt.annotate(label,  # this is the text
+            #                  (x_new, y_new),  # this is the point to label
+            #                  textcoords="offset points",  # how to position the text
+            #                  # distance from text to points (x,y)
+            #                  xytext=(0, 10),
+            #                  ha='center')  # horizontal alignment can be left, right or center
         plt.legend()
         plt.title(rxn_name)
         plt.show()
-        print('Done')
-        

@@ -17,6 +17,13 @@ class IRC():
         facetpath : str
             a path to the workflow's main dir
             e.g. 'Cu_111'
+        slab : str
+            a '.xyz' file name with the optimized slab
+            e.g.
+            'Cu_111_slab_opt.xyz'
+        repeats: tuple
+            specify reapeats in (x, y, z) direction,
+            eg. (3, 3, 1)
         ts_dir : str
             a path to directory with TSs
             e.g. 'TS_estimate'
