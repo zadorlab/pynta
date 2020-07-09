@@ -16,7 +16,7 @@ from sella import Sella
 
 class GetSlab:
     def __init__(self, surface_type, symbol, a, repeats, vacuum, slab_name,
-                 pseudopotentials):
+                 pseudopotentials, pseudo_dir):
         ''' A class for preparing and optimizing a user defined slab
 
         Parameters
@@ -43,15 +43,20 @@ class GetSlab:
             keys() - symbol
             values() - file name of a pseudopotential
             e.g. dict(Cu='Cu.pbe-spn-kjpaw_psl.1.0.0.UPF')
+        pseudo_dir : str
+            a path to the QE's pseudopotentials main directory
+            e.g.
+            '/home/mgierad/espresso/pseudo'
 
         '''
-        self.surface_type     = surface_type
-        self.symbol           = symbol
-        self.a                = a
-        self.repeats          = repeats
-        self.vacuum           = vacuum
-        self.slab_name        = slab_name
+        self.surface_type = surface_type
+        self.symbol = symbol
+        self.a = a
+        self.repeats = repeats
+        self.vacuum = vacuum
+        self.slab_name = slab_name
         self.pseudopotentials = pseudopotentials
+        self.pseudo_dir = pseudo_dir
 
     def run_slab_opt(self):
         ''' Run slab optimization '''
@@ -72,21 +77,21 @@ class GetSlab:
         #               self.vacuum, orthogonal=False, periodic=True)
         slab = fcc111(self.symbol, self.repeats, self.a,
                       self.vacuum)
-        GetSlab.prepare_slab_opt(self, slab, self.pseudopotentials)
+        GetSlab.prepare_slab_opt(self, slab)
 
     def opt_fcc211(self):
         ''' Optimize fcc211 slab '''
         slab = fcc211(self.symbol, self.repeats, self.a,
                       self.vacuum)
-        GetSlab.prepare_slab_opt(self, slab, self.pseudopotentials)
+        GetSlab.prepare_slab_opt(self, slab, )
 
     def opt_fcc100(self):
         ''' Optimize fcc100 slab '''
         slab = fcc100(self.symbol, self.repeats, self.a,
                       self.vacuum)
-        GetSlab.prepare_slab_opt(self, slab, self.pseudopotentials)
+        GetSlab.prepare_slab_opt(self, slab)
 
-    def prepare_slab_opt(self, slab, pseudopotentials):
+    def prepare_slab_opt(self, slab):
         ''' Prepare slab optimization with Quantum Espresso '''
         # setting up calculator
         # calc = GPAW(xc='PBE', mode = 'pw', kpts=(4, 4, 4))
@@ -105,19 +110,19 @@ class GetSlab:
         label = os.path.join(unixsocket, self.slab_name)
 
         espresso = Espresso(command='/home/ehermes/local/bin/mpirun -np 48 /home/ehermes/local/bin/pw.x -inp PREFIX.pwi --ipi {{unixsocket}}:UNIX > PREFIX.pwo'
-                        .format(unixsocket=unixsocket),
-                        label=label,
-                        pseudopotentials=pseudopotentials,
-                        pseudo_dir='/home/mgierad/espresso/pseudo',
-                        kpts=(3, 3, 1),
-                        occupations='smearing',
-                        smearing='marzari-vanderbilt',
-                        degauss=0.01,  # Rydberg
-                        ecutwfc=40,  # Rydberg
-                        nosym=True,  # Allow symmetry breaking during optimization
-                        conv_thr=1e-11,
-                        mixing_mode='local-TF',
-                        )
+                            .format(unixsocket=unixsocket),
+                            label=label,
+                            pseudopotentials=self.pseudopotentials,
+                            pseudo_dir=self.pseudo_dir,
+                            kpts=(3, 3, 1),
+                            occupations='smearing',
+                            smearing='marzari-vanderbilt',
+                            degauss=0.01,  # Rydberg
+                            ecutwfc=40,  # Rydberg
+                            nosym=True,  # Allow symmetry breaking during optimization
+                            conv_thr=1e-11,
+                            mixing_mode='local-TF',
+                            )
         with SocketIOCalculator(espresso, unixsocket=unixsocket) as calc:
             slab.calc = calc
             opt = Sella(slab, order=0, delta0=1e-2, trajectory=label + '.traj')
@@ -125,13 +130,13 @@ class GetSlab:
         ener = slab.get_potential_energy()
         force = slab.get_forces()
         write(self.slab_name + '.xyz', slab)
-        
+
         # To run quickly on my Mac
         # espresso = Espresso(command='mpirun -np 8 /Users/mgierad/00_SANDIA_WORK/03_codes/build/q-e-qe-6.4.1/bin/pw.x -inp PREFIX.pwi --ipi {{unixsocket}}:UNIX > PREFIX.pwo'
         #                 .format(unixsocket=unixsocket),
         #                 label=label,
-        #                 pseudopotentials=pseudopotentials,
-        #                 pseudo_dir='/Users/mgierad/00_SANDIA_WORK/03_codes/build/q-e-qe-6.4.1/pseudoPOT',
+        #                 pseudopotentials=self.pseudopotentials,
+        #                 pseudo_dir=self.pseudo_dir,
         #                 kpts=(3, 3, 1),
         #                 occupations='smearing',
         #                 smearing='marzari-vanderbilt',
@@ -149,4 +154,3 @@ class GetSlab:
         # ener = slab.get_potential_energy()
         # force = slab.get_forces()
         # write(self.slab_name + '.xyz', slab)
-        

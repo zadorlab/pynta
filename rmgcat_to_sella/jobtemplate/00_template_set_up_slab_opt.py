@@ -23,7 +23,8 @@ repeats_surface  = {repeats_surface}
 vacuum           = {vacuum}
 slab_name        = '{slab_name}'
 pseudopotentials = {pseudopotentials}
+pseudo_dir       = '{pseudo_dir}'
 
 get_slab = GetSlab(surface_type, symbol, a, repeats_surface, vacuum,
-                   slab_name, pseudopotentials)
+                   slab_name, pseudopotentials, pseudo_dir)
 get_slab.run_slab_opt()

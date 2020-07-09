@@ -91,7 +91,7 @@ class WorkFlow:
         ''' Generate submt scripts for 6 stages of the workflow '''
         WorkFlow.set_up_slab(self, template_slab_opt, surface_type, symbol, a,
                              repeats_surface, vacuum, slab_name,
-                             pseudopotentials)
+                             pseudopotentials, pseudo_dir)
         WorkFlow.set_up_ads(self, template_ads, facetpath, slabopt,
                             repeats, yamlfile, pytemplate_relax_ads,
                             pseudopotentials, pseudo_dir)
@@ -115,7 +115,7 @@ class WorkFlow:
 ###########################
 
     def set_up_slab(self, template, surface_type, symbol, a, repeats_surface,
-                    vacuum, slab_name, pseudopotentials):
+                    vacuum, slab_name, pseudopotentials, pseudo_dir):
         ''' Create 00_set_up_slab_opt.py file '''
         with open(template, 'r') as r:
             template = r.read()
@@ -124,7 +124,8 @@ class WorkFlow:
                                         symbol=symbol, a=a,
                                         repeats_surface=repeats_surface,
                                         vacuum=vacuum, slab_name=slab_name,
-                                        pseudopotentials=pseudopotentials))
+                                        pseudopotentials=pseudopotentials,
+                                        pseudo_dir=pseudo_dir))
             c.close()
         r.close()
 
@@ -306,6 +307,13 @@ class WorkFlow:
         ''' Run optmization of adsorbates on the surface '''
         return WorkFlow.exe(self, 'submitted_00.txt', SurfaceAdsorbate)
 
+    def run_opt_surf_and_adsorbate_no_depend(self):
+        ''' Run optmization of adsorbates on the surface
+            if there is no dependency on other jobs '''
+        bash_command = os.popen(os.path.join(
+            'sbatch ' + SurfaceAdsorbate))
+        print(bash_command.read())
+
     def run_ts_estimate(self, submit_txt):
         ''' Run TS estimation calculations '''
         return WorkFlow.exe(self, submit_txt, TSxtb)
@@ -374,7 +382,7 @@ class WorkFlow:
             # a slab optimization will be launched.
             # a = WorkFlow.check_if_slab_opt_exists(self)
             # print(a)
-            if WorkFlow.check_if_slab_opt_exists(self) is False:
+            if not WorkFlow.check_if_slab_opt_exists(self):
                 WorkFlow.run_slab_optimization(self)
                 # wait a bit in case the file write process is too slow
                 while not os.path.exists('submitted_00.txt'):
@@ -385,7 +393,14 @@ class WorkFlow:
             if checksp1 is False or checksp2 is False:
                 # If any of these is False
                 # run optimization of surface + reactants; surface + products
-                WorkFlow.run_opt_surf_and_adsorbate(self)
+                if os.path.exists('submitted_00.txt'):
+                    # this is executed when slab was optimized in the
+                    # current run, because 'submitted_00.txt' was generated
+                    WorkFlow.run_opt_surf_and_adsorbate(self)
+                else:
+                    # otherwise run no_depend version
+                    # ('submitted_00.txt' not generated)
+                    WorkFlow.run_opt_surf_and_adsorbate_no_depend(self)
                 # run calculations to get TS guesses
                 WorkFlow.run_ts_estimate(self, 'submitted_01.txt')
             else:
