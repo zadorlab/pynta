@@ -43,7 +43,7 @@ if os.path.exists(socketpath):
 espresso = Espresso(command='/home/ehermes/local/bin/mpirun -np 48 /home/ehermes/local/bin/pw.x -inp PREFIX.pwi --ipi {{unixsocket}}:UNIX > irc_r.pwo'
                             .format(unixsocket=unixsocket),
                     label=label,
-                    pseudopotentials="{pseudopotentials}",
+                    pseudopotentials={pseudopotentials},
                     pseudo_dir='{pseudo_dir}',
                     kpts=(3, 3, 1),
                     occupations='smearing',
