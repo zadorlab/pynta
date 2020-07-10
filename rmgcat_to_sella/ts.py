@@ -122,7 +122,8 @@ class TS():
         # the angle of rotation is 360 devided by nrot/2 as thera are equal
         # number of symmetry operations around the z axis
         # (e.g. for Cu_111 therea are 6 z and 6 -z operations)
-        max_rot_angle = 360/(nrot/2)
+        # max_rot_angle = 360/(nrot/2)
+        max_rot_angle = 360/(nrot/4) # lets try 120 angle
         return max_rot_angle
 
     def prepare_react_list(self):
@@ -435,7 +436,6 @@ class TS():
 
         # print(species3)
         path_to_minima = os.path.join(self.facetpath, 'minima')
-        print(path_to_minima)
         avDist1 = TS.get_av_dist(self,
                                  path_to_minima, species_list[0],
                                  scfactor_surface, scaled1)
