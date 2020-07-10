@@ -99,9 +99,20 @@ class TS():
         TS.set_up_penalty_xtb(self, pytemplate_xtb,
                               species, scaled1, scaled2, scfactor_surface)
 
-    def get_uniq_rot_angle(self):
-        ''' Get unique angle of rotation of TS estimates on the surface
-            based on the symmetry of the slab '''
+    def get_max_rot_angle(self):
+        ''' Get the maximum angle of rotation for a given slab that will
+        generate all symmetrically distinct TS estimates.
+            
+        Returns:
+        ________
+        max_rot_angle : float
+            a maximum angle of rotation of TS adducts on the given slab that
+            would generate symmetrically dostinct configurations
+            i.e. once the TS adduct is rotated by bigger angle than
+            max_rot_angle, some of the generated structures will be
+            symetrically equivalent to the others
+        
+        '''
         # convert slab to ASE's Atom object
         slab = read(self.slab)
         # get all symmetry operations
@@ -111,61 +122,8 @@ class TS():
         # the angle of rotation is 360 devided by nrot/2 as thera are equal
         # number of symmetry operations around the z axis
         # (e.g. for Cu_111 therea are 6 z and 6 -z operations)
-        rot_angle = 360/(nrot/2)
-        return rot_angle
-
-    def get_rxn_name(self):
-        ''' Get the reaction name
-
-        Returns
-        _______
-        The name of the reaction in the following format:
-        OH_H+O
-        '''
-
-        with open(self.yamlfile, 'r') as f:
-            yamltxt = f.read()
-        reactions = yaml.safe_load(yamltxt)
-        # species_unique = dict()
-        speciesInd = []
-        bonds = []
-        # r_unique = []
-        # p_unique = []
-        # symbols_list = []
-        # unique_species = []
-        # unique_bonds = []
-        # images = []
-
-        put_adsorbates = Adsorbates(
-            self.facetpath, self.slab, self.repeats, self.yamlfile)
-
-        for rxn in reactions:
-            # transforming reactions data to gratom objects
-            reactants, rbonds = put_adsorbates.rmgcat_to_gratoms(
-                rxn['reactant'].split('\n'))
-            products, pbonds = put_adsorbates.rmgcat_to_gratoms(
-                rxn['product'].split('\n'))
-            speciesInd += reactants + products
-            bonds += rbonds + pbonds
-
-        # TODO :to be debbuged later
-        # for rp, uniquelist in ((reactants, r_unique), (products, p_unique)):
-        #     for species in rp:
-        #         symbols = str(species.symbols)
-        #         symbols_list.append(symbols)
-        #         speciesdir = os.path.join(
-        #             self.facetpath, 'minima_unique', symbols)
-        #         if symbols not in species_unique:
-        #             species_unique[symbols] = TS.get_all_species(self,
-        #                                                          speciesdir)
-        #         uniquelist.append(species_unique[symbols])
-        # print(uniquelist)
-
-        r_name = '+'.join([str(species.symbols) for species in reactants])
-        p_name = '+'.join([str(species.symbols) for species in products])
-
-        rxn_name = r_name + '_' + p_name
-        return rxn_name
+        max_rot_angle = 360/(nrot/2)
+        return max_rot_angle
 
     def prepare_react_list(self):
         '''Convert yaml file to more useful format
@@ -183,18 +141,15 @@ class TS():
         with open(self.yamlfile, 'r') as f:
             yamltxt = f.read()
         reactions = yaml.safe_load(yamltxt)
-        # species_unique = dict()
         speciesInd = []
         bonds = []
-        # r_unique = []
-        # p_unique = []
-        # symbols_list = []
         unique_species = []
         unique_bonds = []
         images = []
 
         put_adsorbates = Adsorbates(
             self.facetpath, self.slab, self.repeats, self.yamlfile)
+
         for rxn in reactions:
             # transforming reactions data to gratom objects
             reactants, rbonds = put_adsorbates.rmgcat_to_gratoms(
@@ -203,7 +158,8 @@ class TS():
                 rxn['product'].split('\n'))
             speciesInd += reactants + products
             bonds += rbonds + pbonds
-
+        
+        # TODO :to be debbuged later
         # for rp, uniquelist in ((reactants, r_unique), (products, p_unique)):
         #     for species in rp:
         #         symbols = str(species.symbols)
@@ -237,6 +193,22 @@ class TS():
         #     print('Products will be used to estimate TS')
         #     rpDir = 'products'
         return r_name_list, p_name_list, images
+
+    def get_rxn_name(self):
+        ''' Get the reaction name
+
+        Returns
+        _______
+        The name of the reaction in the following format:
+        OH_H+O
+        '''
+        r_name_list, p_name_list, _ = TS.prepare_react_list(self)
+
+        r_name = '+'.join([species for species in r_name_list])
+        p_name = '+'.join([species for species in p_name_list])
+
+        rxn_name = r_name + '_' + p_name
+        return rxn_name
 
     def TS_placer(self, scfactor, rotAngle, rxn_name,
                   r_name_list, p_name_list, images):
@@ -359,7 +331,7 @@ class TS():
         # building adsorbtion structures
         ads_builder = Builder(grslab)
 
-        max_angle = int(TS.get_uniq_rot_angle(self))
+        max_angle = int(TS.get_max_rot_angle(self))
 
         angle = 0
         count = 0
