@@ -271,7 +271,7 @@ class WorkFlow:
         elif facetpath == 'Cu_100':
             WorkFlowDirsList = Path(str(currentDir)).glob('*_Cu_100_methanol*')
         elif facetpath == 'Cu_111':
-            WorkFlowDirsList = Path(str(currentDir)).glob('test_code')
+            WorkFlowDirsList = Path(str(currentDir)).glob('*_Cu_methanol*')
         else:
             WorkFlowDirsList = Path(str(currentDir)).glob('*_Cu_methanol*')
         # transforming posix path to regular string
@@ -390,7 +390,7 @@ class WorkFlow:
             else:
                 WorkFlow.copy_slab_opt_file(self)
             # check whether sp1 and sp2 was already cacluated
-            if checksp1 is False or checksp2 is False:
+            if checksp1[0] is False or checksp2[0] is False:
                 # If any of these is False
                 # run optimization of surface + reactants; surface + products
                 if os.path.exists('submitted_00.txt'):
@@ -417,7 +417,7 @@ class WorkFlow:
                 raise FileNotFoundError(
                     'It appears that there is no slab_opt.xyz file')
 
-            if checksp1 is False or checksp2 is False:
+            if checksp1[0] is False or checksp2[0] is False:
                 # run optimization of surface + reactants; surface + products
                 runSurfAds = os.popen(os.path.join(
                     'sbatch ' + SurfaceAdsorbate))

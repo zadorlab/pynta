@@ -24,6 +24,7 @@ import shutil
 from statistics import mean
 from pathlib import Path
 import networkx as nx
+from spglib import get_symmetry
 
 
 class TS():
@@ -104,6 +105,21 @@ class TS():
         TS.filtered_out_equiv_ts_estimate(self, rxn_name)
         TS.set_up_penalty_xtb(self, pytemplate_xtb,
                               species, scaled1, scaled2, scfactor_surface)
+
+    def get_uniq_rot_angle(self):
+        ''' Get unique angle of rotation of TS estimates on the surface
+            based on the symmetry of the slab '''
+        # convert slab to ASE's Atom object
+        slab = read(self.slab)
+        # get all symmetry operations
+        symm = get_symmetry(slab)
+        # count rotations operations
+        nrot = len(symm['rotations'])
+        # the angle of rotation is 360 devided by nrot/2 as thera are equal
+        # number of symmetry operations around the z axis
+        # (e.g. for Cu_111 therea are 6 z and 6 -z operations)
+        rot_angle = 360/(nrot/2)
+        return rot_angle
 
     def get_rxn_name(self):
         ''' Get the reaction name
@@ -346,13 +362,16 @@ class TS():
                          edges=slabedges)
         grslab.arrays['surface_atoms'] = tags
 
+
         # building adsorbtion structures
         ads_builder = Builder(grslab)
 
-        possibleRotations = (360 / rotAngle) - 1
-        count = 0
+        max_angle = int(TS.get_uniq_rot_angle(self))
 
-        while count <= possibleRotations:
+        angle = 0
+        count = 0
+        step_size = 5
+        while angle <= max_angle:
             structs = ads_builder.add_adsorbate(
                 TS_candidate, bondedThrough, -1, auto_construct=False)
             # change to True will make bondedThrough work.
@@ -366,8 +385,34 @@ class TS():
                 write(os.path.join(ts_estimate_path, '{}'.format(
                     str(i + len(structs) * count).zfill(3)) + '_' + rxn_name + '.xyz'), big_slab_ads)
 
-            TS_candidate.rotate(rotAngle, 'z')
+            TS_candidate.rotate(step_size, 'z')
+            angle += step_size
             count += 1
+
+        ''' Old version
+        # # building adsorbtion structures
+        # ads_builder = Builder(grslab)
+
+        # possibleRotations = (360 / rotAngle) - 1
+        # count = 0
+
+        # while count <= possibleRotations:
+        #     structs = ads_builder.add_adsorbate(
+        #         TS_candidate, bondedThrough, -1, auto_construct=False)
+        #     # change to True will make bondedThrough work.
+        #     # Now it uses TS_candidate,rotate...
+        #     # to generate adsorbed strucutres
+        #     big_slab = slab * self.repeats
+        #     nslab = len(slab)
+
+        #     for i, struc in enumerate(structs):
+        #         big_slab_ads = big_slab + struc[nslab:]
+        #         write(os.path.join(ts_estimate_path, '{}'.format(
+        #             str(i + len(structs) * count).zfill(3)) + '_' + rxn_name + '.xyz'), big_slab_ads)
+
+        #     TS_candidate.rotate(rotAngle, 'z')
+        #     count += 1
+        '''
 
     def filtered_out_equiv_ts_estimate(self, rxn_name):
         '''Filtering out symmetry equivalent sites

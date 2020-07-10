@@ -53,7 +53,7 @@ atoms.set_constraint(FixAtoms([atom.index for atom in atoms if atom.position[2] 
 espresso = Espresso(command='/home/ehermes/local/bin/mpirun -np 48 /home/ehermes/local/bin/pw.x -inp PREFIX.pwi --ipi {{unixsocket}}:UNIX > PREFIX.pwo'
                             .format(unixsocket=unixsocket),
                     label=outdir,
-                    pseudopotentials="{pseudopotentials}",
+                    pseudopotentials={pseudopotentials},
                     pseudo_dir='{pseudo_dir}',
                     kpts=(3, 3, 1),
                     occupations='smearing',
