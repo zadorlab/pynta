@@ -1,5 +1,5 @@
 from catkit import Gratoms
-from catkit.gen.adsorption import AdsorptionSites, Builder
+from catkit.gen.adsorption import Builder
 from catkit.build import molecule
 from catkit.gen.molecules import get_3D_positions
 
@@ -8,16 +8,9 @@ from rmgcat_to_sella.graph_utils import node_test
 from rmgcat_to_sella.main import WorkFlow
 
 from ase.io import read, write
-from ase import Atoms
-from ase.optimize import LBFGS
-from ase.calculators.emt import EMT
-from ase.constraints import FixBondLength
 from ase.utils.structure_comparator import SymmetryEquivalenceCheck
 
 import numpy as np
-from xtb import GFN0, GFN1
-import itertools
-from scipy.optimize import minimize
 import yaml
 import os
 import shutil
@@ -102,7 +95,7 @@ class TS():
         TS.TS_placer(self, scfactor, rotAngle,
                      rxn_name, r_name_list, p_name_list, images)
 
-        TS.filtered_out_equiv_ts_estimate(self, rxn_name)
+        # TS.filtered_out_equiv_ts_estimate(self, rxn_name)
         TS.set_up_penalty_xtb(self, pytemplate_xtb,
                               species, scaled1, scaled2, scfactor_surface)
 
