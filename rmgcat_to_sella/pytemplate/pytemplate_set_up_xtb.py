@@ -11,26 +11,25 @@
 import os
 import sys
 from pathlib import Path
+import datetime
+from xtb import GFN1
+from ase.io import read, write
 
 submitDir = os.environ['SLURM_SUBMIT_DIR']
 os.chdir(submitDir)
 path = Path(submitDir).parents[2]
 sys.path.append(str(path))
-# import inputR2S
 
-import datetime
-from xtb import GFN1
-from ase.io import read, write
 from rmgcat_to_sella.prepare_ts_with_xtb import AdsorbatePlacer
 
 
-geom = '{geom}'
-bonds = {bonds}
-avDists = {avDists}
+geom     = '{geom}'
+bonds    = {bonds}
+avDists  = {avDists}
 trajPath = '{trajPath}'
-slab = '../../../{slabopt}'
-repeats = {repeats}
-prefix = '{prefix}'
+slab     = '../../../{slabopt}'
+repeats  = {repeats}
+prefix   = '{prefix}'
 
 # label = geom[:2]
 
@@ -48,8 +47,8 @@ f.close()
 
 adsplacer = AdsorbatePlacer(bigSlab, TS_candidate, bonds, avDists,
                             GFN1(accuracy=0.01,
-                                 max_iterations=1000),
-                            trajectory=trajPath)
+                                max_iterations=1000),
+                                trajectory=trajPath)
 opt = adsplacer.optimize()
 # visualize end point of each trajectory
 write(trajPath[:-5] + '_final.png', read(trajPath))
