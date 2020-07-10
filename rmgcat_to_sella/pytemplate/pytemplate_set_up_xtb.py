@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-#SBATCH -J {geomName}_xtb
+#SBATCH -J {geom_name}_xtb
 #SBATCH -N 1
 #SBATCH -c 1
 #SBATCH --mem=1gb
@@ -25,8 +25,8 @@ from rmgcat_to_sella.prepare_ts_with_xtb import AdsorbatePlacer
 
 geom     = '{geom}'
 bonds    = {bonds}
-avDists  = {avDists}
-trajPath = '{trajPath}'
+av_dists_tuple  = {av_dists_tuple}
+traj_path = '{traj_path}'
 slab     = '../../../{slabopt}'
 repeats  = {repeats}
 prefix   = '{prefix}'
@@ -35,9 +35,9 @@ prefix   = '{prefix}'
 
 adsorbed = read(geom)
 slab = read(slab)
-bigSlab = slab * repeats
-nbigSlab = len(bigSlab)
-TS_candidate = adsorbed[nbigSlab:]
+big_slab = slab * repeats
+nbig_slab = len(big_slab)
+ts_estimate = adsorbed[nbig_slab:]
 
 start = datetime.datetime.now()
 with open(prefix + '_time.log', 'w+') as f:
@@ -45,14 +45,14 @@ with open(prefix + '_time.log', 'w+') as f:
     f.write("\n")
 f.close()
 
-adsplacer = AdsorbatePlacer(bigSlab, TS_candidate, bonds, avDists,
+adsplacer = AdsorbatePlacer(big_slab, ts_estimate, bonds, av_dists_tuple,
                             GFN1(accuracy=0.01,
                                 max_iterations=1000),
-                                trajectory=trajPath)
+                                trajectory=traj_path)
 opt = adsplacer.optimize()
 # visualize end point of each trajectory
-write(trajPath[:-5] + '_final.png', read(trajPath))
-write(trajPath[:-5] + '_final.xyz', read(trajPath))
+write(traj_path[:-5] + '_final.png', read(traj_path))
+write(traj_path[:-5] + '_final.xyz', read(traj_path))
 
 end = datetime.datetime.now()
 with open(prefix + '_time.log', 'a+') as f:
