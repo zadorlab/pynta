@@ -12,8 +12,8 @@ from spglib import get_symmetry
 from ase.utils.structure_comparator import SymmetryEquivalenceCheck
 from pathlib import Path
 
-from .adjacency_to_3d import rmgcat_to_gratoms
-from .graph_utils import node_test
+# from .adjacency_to_3d import rmgcat_to_gratoms
+# from .graph_utils import node_test
 
 def get_unique(adsorbates):
     unique = []
@@ -36,9 +36,6 @@ def get_unique_TS_estimate_before_xtb(facetpath, TSestimateDir):
     result_list = []
     unique_index = []
     gpath = os.path.join(facetpath, TSestimateDir)
-    # for geom in sorted(os.listdir(gpath), key=str):
-    #     geomDir = os.path.join(gpath, geom)
-    #     if os.path.isdir(geomDir):
     trajlist = sorted(Path(gpath).glob('*xyz'), key = str)
     for traj in trajlist:
         print(traj)
@@ -60,9 +57,6 @@ def get_unique_minima_after_opt(facetpath, minimaDir):
     result_list = []
     unique_index = []
     gpath = os.path.join(facetpath, minimaDir)
-    # for geom in sorted(os.listdir(gpath), key=str):
-    #     geomDir = os.path.join(gpath, geom)
-    #     if os.path.isdir(geomDir):
     trajlist = sorted(Path(gpath).glob('*final.xyz'), key = str)
     for traj in trajlist:
         print(traj)

@@ -102,7 +102,7 @@ class TS():
     def get_max_rot_angle(self):
         ''' Get the maximum angle of rotation for a given slab that will
         generate all symmetrically distinct TS estimates.
-            
+
         Returns:
         ________
         max_rot_angle : float
@@ -111,7 +111,7 @@ class TS():
             i.e. once the TS adduct is rotated by bigger angle than
             max_rot_angle, some of the generated structures will be
             symetrically equivalent to the others
-        
+
         '''
         # convert slab to ASE's Atom object
         slab = read(self.slab)
@@ -158,7 +158,7 @@ class TS():
                 rxn['product'].split('\n'))
             speciesInd += reactants + products
             bonds += rbonds + pbonds
-        
+
         # TODO :to be debbuged later
         # for rp, uniquelist in ((reactants, r_unique), (products, p_unique)):
         #     for species in rp:
@@ -434,13 +434,13 @@ class TS():
         ts_estimate_path = os.path.join(self.facetpath, self.ts_dir)
 
         # print(species3)
-        fPath = os.path.split(ts_estimate_path)
-        avPath = os.path.join(fPath[0], 'minima')
+        path_to_minima = os.path.join(self.facetpath, 'minima')
+        print(path_to_minima)
         avDist1 = get_av_dist(
-            avPath, species_list[0], scfactor_surface, scaled1)
+            path_to_minima, species_list[0], scfactor_surface, scaled1)
         avDist2 = get_av_dist(
-            avPath, species_list[1], scfactor_surface, scaled2)
-        '''the code belowe does not work in the loop, probably two differet avPath variable needed to accouut for the possible scenario that one species was already calculated (other set of calculations - different reactions, whereas the second in calculated here for the first time) '''
+            path_to_minima, species_list[1], scfactor_surface, scaled2)
+        '''the code belowe does not work in the loop, probably two differet path_to_minima variable needed to accouut for the possible scenario that one species was already calculated (other set of calculations - different reactions, whereas the second in calculated here for the first time) '''
         # checkMinimaPath = os.path.dirname(os.getcwd())
         # spList = [species1, species2]
 
@@ -449,9 +449,9 @@ class TS():
         #         checkMinimaPath, species)
         #     if is_it_calculated is False:
         #         fPath = os.path.split(path)
-        #         avPath = os.path.join(fPath[0], 'minima')
+        #         path_to_minima = os.path.join(fPath[0], 'minima')
         #     else:
-        #         avPath = is_it_calculated[1]
+        #         path_to_minima = is_it_calculated[1]
 
         # species_list = [species1, species2, species3]
 
@@ -606,55 +606,83 @@ class TS():
 
 def gen_xyz_from_traj(avDistPath, species):
     # if species == 'C':
-    #     speciesPath = os.path.join(avDistPath, species + 'O')
+    #     species_path = os.path.join(avDistPath, species + 'O')
     # else:
-    speciesPath = os.path.join(avDistPath, species)
-    for traj in sorted(os.listdir(speciesPath), key=str):
+    species_path = os.path.join(avDistPath, species)
+    for traj in sorted(os.listdir(species_path), key=str):
         if traj.endswith('.traj'):
-            srcTrajPath = os.path.join(speciesPath, traj)
-            desTrajPath = os.path.join(speciesPath, traj[:-5] + '_final.xyz')
+            srcTrajPath = os.path.join(species_path, traj)
+            desTrajPath = os.path.join(species_path, traj[:-5] + '_final.xyz')
             write(desTrajPath, read(srcTrajPath))
 
 
+def get_unique_minima_index_after_opt(facetpath, minima_dir):
+    good_minima = []
+    result_list = []
+    unique_minima_index = []
+    gpath = os.path.join(facetpath, minima_dir)
+    trajlist = sorted(Path(gpath).glob('*final.xyz'), key=str)
+    for traj in trajlist:
+        minima = read(traj)
+        minima.pbc = True
+        comparator = SymmetryEquivalenceCheck()
+        result = comparator.compare(minima, good_minima)
+        result_list.append(result)
+        if result is False:
+            good_minima.append(minima)
+    for num, res in enumerate(result_list):
+        if res is False:
+            unique_minima_index.append(str(num).zfill(2))
+    return unique_minima_index
+
+
 def get_av_dist(avDistPath, species, scfactor_surface, scaled=False):
-    # nslab = len(read(slab) * repeats)
     surface_atoms_indices = []
     adsorbate_atoms_indices = []
-    all_conf_dist = []
+    all_dists = []
     gen_xyz_from_traj(avDistPath, species)
-    speciesPath = os.path.join(avDistPath, species)
+    species_path = os.path.join(avDistPath, species)
     if species in ['CH3O', 'CH2O']:
         species = 'O'
     if len(species) > 1:
         species = species[:1]
-
-    for xyz in sorted(os.listdir(speciesPath), key=str):
-        if xyz.endswith('_final.xyz'):
-            # if xyz.endswith('.traj'):
-            xyzPath = os.path.join(speciesPath, xyz)
-            # trajPath = os.path.join(speciesPath, xyz[:-10] + '.traj')
-            # print(trajPath)
-            conf = read(xyzPath)
-            # print(conf)
-        # if xyz.endswith('*traj'):
-            with open(xyzPath, 'r') as f:
-                xyzFile = f.readlines()
-                for num, line in enumerate(xyzFile):
-                    '''For Cu(111) we can put ' 1 ' instead of 'Cu ' to limit calculations to surface Cu atoms only. For Cu(211) ase is not generating tags like this, so full calculation have to be performed, i.e. all surface atoms'''
+    # get unique minima indices
+    unique_minima_indices = get_unique_minima_index_after_opt(
+        'Cu_111', os.path.join('minima', species))
+    # go through all indices of *final.xyz file
+    # e.g. 00_final.xyz, 01_final.xyz
+    for index in unique_minima_indices:
+        paths_to_uniq_minima_final_xyz = Path(
+            species_path).glob('{}*final.xyz'.format(index))
+        for unique_minimum_final_xyz in paths_to_uniq_minima_final_xyz:
+            unique_minimum_atom = read(unique_minimum_final_xyz)
+            # open the *final.xyz file as xyz_file
+            with open(unique_minimum_final_xyz, 'r') as f:
+                xyz_file = f.readlines()
+                # find all Cu atoms and adsorbate atoms
+                for num, line in enumerate(xyz_file):
+                    # For Cu(111) we can put ' 1 ' instead of 'Cu ' to limit
+                    # calculations to surface Cu atoms only. For Cu(211) ase is
+                    # not generating tags like this, so full calculation have
+                    # to be performed, i.e. all surface atoms'''
                     if 'Cu ' in line:
                         surface_atoms_indices.append(num - 2)
                     elif species in line and not 'Cu' in line:
-                        ''' We need to have additional statement 'not 'Cu' in line' because for C it does not work without it'''
+                        # We need to have additional statement
+                        # 'not 'Cu' in line'
+                        # because for C it does not work without it'''
                         adsorbate_atoms_indices.append(num - 2)
             f.close()
-            dist = float(min(conf.get_distances(
+            # find the shortest distance between the adsorbate and the surface
+            dist = float(min(unique_minimum_atom.get_distances(
                 adsorbate_atoms_indices[0], surface_atoms_indices)))
-            all_conf_dist.append(dist)
-            if scaled:
-                meanDist = mean(all_conf_dist) * scfactor_surface
-            else:
-                meanDist = mean(all_conf_dist)
-            return meanDist
+        all_dists.append(dist)
+    # apply scaling factor if required
+    if scaled:
+        av_dist = mean(all_dists) * scfactor_surface
+    else:
+        av_dist = mean(all_dists)
+    return av_dist
 
 
 def get_bond_dist(ads_atom, geom):
@@ -840,10 +868,10 @@ def create_all_TS_job_files(facetpath, pytemplate):
 #     '''Species3 is/should be optional '''
 #     # print(species3)
 #     fPath = os.path.split(path)
-#     avPath = os.path.join(fPath[0], 'minima')
-#     avDist1 = get_av_dist(avPath, species_list[0], scfactor_surface, scaled1)
-#     avDist2 = get_av_dist(avPath, species_list[1], scfactor_surface, scaled2)
-#     '''the code belowe does not work in the loop, probably two differet avPath variable needed to accouut for the poscible scenaario that one species was already calculated (other set of calculations - different reactions, whereas the second in calculated here for the first time) '''
+#     path_to_minima = os.path.join(fPath[0], 'minima')
+#     avDist1 = get_av_dist(path_to_minima, species_list[0], scfactor_surface, scaled1)
+#     avDist2 = get_av_dist(path_to_minima, species_list[1], scfactor_surface, scaled2)
+#     '''the code belowe does not work in the loop, probably two differet path_to_minima variable needed to accouut for the poscible scenaario that one species was already calculated (other set of calculations - different reactions, whereas the second in calculated here for the first time) '''
 #     # checkMinimaPath = os.path.dirname(os.getcwd())
 #     # spList = [species1, species2]
 
@@ -852,9 +880,9 @@ def create_all_TS_job_files(facetpath, pytemplate):
 #     #         checkMinimaPath, species)
 #     #     if is_it_calculated is False:
 #     #         fPath = os.path.split(path)
-#     #         avPath = os.path.join(fPath[0], 'minima')
+#     #         path_to_minima = os.path.join(fPath[0], 'minima')
 #     #     else:
-#     #         avPath = is_it_calculated[1]
+#     #         path_to_minima = is_it_calculated[1]
 
 #     # species_list = [species1, species2, species3]
 
