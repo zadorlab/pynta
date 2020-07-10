@@ -221,7 +221,6 @@ class WorkFlow:
                 line = line.split()[3]
                 slurm_jobs_id.append(line)
         f.close()
-        print(slurm_jobs_id)
         return slurm_jobs_id
 
     def gen_slurm_command(self, slurm_id_subm):
@@ -288,7 +287,6 @@ class WorkFlow:
         if len(uniqueMinimaDirs) >= 1:
             print('More than one possible path were found for the species {}. Choosing the following path: {}'.format(
                 species, uniqueMinimaDirs[0]))
-            # print(uniqueMinimaDirs[0])
             return True, uniqueMinimaDirs[0]
         elif IndexError:
             print('Species {} was not yet calculated. Setting up new calculations.'.format(

@@ -271,6 +271,7 @@ class TS():
         '''
         ts_estimate_path = os.path.join(self.facetpath, self.ts_dir)
         slab = read(self.slab)
+        slab.pbc = (True, True, False)
         # ADSORBATES
         # This part here is a bit hard coded, especially when dealing with
         # reactants with >= 3 atoms. The code works for couple of species
@@ -361,7 +362,6 @@ class TS():
                          pbc=slab.pbc,
                          edges=slabedges)
         grslab.arrays['surface_atoms'] = tags
-
 
         # building adsorbtion structures
         ads_builder = Builder(grslab)
@@ -788,7 +788,9 @@ def checkSymm(path):
             unique_index.append(str(num).zfill(3))
     return unique_index
 
+
 ''' The code below is rather useless - double check it '''
+
 
 def checkSymmBeforeXTB(path):
     good_adsorbate = []
