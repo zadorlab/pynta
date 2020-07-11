@@ -22,11 +22,12 @@ try:
     rotAngle = inputR2S.rotAngle
     scfactor = inputR2S.scfactor
     scfactor_surface = inputR2S.scfactor_surface
-    sp1 = inputR2S.sp1
-    sp2 = inputR2S.sp2
+    # sp1 = inputR2S.sp1
+    # sp2 = inputR2S.sp2
     scaled1 = inputR2S.scaled1
     scaled2 = inputR2S.scaled2
-    species_list = [sp1, sp2]
+    # species_list = [sp1, sp2]
+    species_list = inputR2S.species_list
     slab_opt = inputR2S.slab_opt_script
     SurfaceAdsorbate = inputR2S.SurfaceAdsorbateScript
     TSxtb = inputR2S.TSxtbScript
@@ -98,7 +99,7 @@ class WorkFlow:
         WorkFlow.set_up_TS_with_xtb(self, template_set_up_ts_with_xtb, slabopt,
                                     repeats, yamlfile, facetpath, rotAngle,
                                     scfactor, scfactor_surface, pytemplate_xtb,
-                                    sp1, sp2)
+                                    species_list)
         WorkFlow.set_up_run_TS(self, template_set_up_ts, facetpath, slabopt,
                                repeats, yamlfile, pytemplate_set_up_ts,
                                pseudopotentials, pseudo_dir)
@@ -146,7 +147,7 @@ class WorkFlow:
     def set_up_TS_with_xtb(self, template, slab,
                            repeats, yamlfile, facetpath, rotAngle,
                            scfactor, scfactor_surface,
-                           pytemplate_xtb, sp1, sp2):
+                           pytemplate_xtb, species_list):
         ''' Create 02_set_up_TS_with_xtb.py file'''
         with open(template, 'r') as r:
             template = r.read()
@@ -155,9 +156,9 @@ class WorkFlow:
                                         repeats=repeats, yamlfile=yamlfile,
                                         rotAngle=rotAngle, scfactor=scfactor,
                                         scfactor_surface=scfactor_surface,
-                                        pytemplate_xtb=pytemplate_xtb, sp1=sp1,
-                                        sp2=sp2, scaled1=scaled1,
-                                        scaled2=scaled2))
+                                        pytemplate_xtb=pytemplate_xtb,
+                                        species_list=species_list,
+                                        scaled1=scaled1, scaled2=scaled2))
             c.close()
         r.close()
 
