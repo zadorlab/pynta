@@ -234,7 +234,6 @@ class WorkFlow:
         #     return command = False
         # else:
         command = os.path.join('sbatch --dependency=afterany:' + str(slurmID))
-        print(command)
         return command
 
     def run(self, slurm_id_subm, job_script):
@@ -386,7 +385,6 @@ class WorkFlow:
             # If the code cannot locate optimized slab .xyz file,
             # a slab optimization will be launched.
             # a = WorkFlow.check_if_slab_opt_exists(self)
-            # print(a)
             if not WorkFlow.check_if_slab_opt_exists(self):
                 WorkFlow.run_slab_optimization(self)
                 # wait a bit in case the file write process is too slow
