@@ -243,13 +243,14 @@ class WorkFlow:
         os.popen(str(os.path.join(command + ' ' + job_script)))
 
     def exe(self, prevSlurmID, job_script):
-        ''' Check if the previous step of calculations terminated. If so, run the next step'''
+        ''' Check if the previous step of calculations terminated.
+        If so, run the next step'''
         while not os.path.exists(prevSlurmID):
             time.sleep(60)
         WorkFlow.run(self, prevSlurmID, job_script)
 
     def check_if_path_to_mimina_exists(self, WorkFlowDir, species):
-        ''' Check for the paths to previously calculated minima and return 
+        ''' Check for the paths to previously calculated minima and return
             a list with all valid paths '''
 
         pathlist = Path(WorkFlowDir).glob('**/minima/' + species)
@@ -374,9 +375,14 @@ class WorkFlow:
 
     def execute(self):
         ''' The main executable '''
-        checksp1, checksp2 = WorkFlow.check_all_species(self)
+        # checksp1, checksp2 = WorkFlow.check_all_species(self)
+        # Below, I have a list of tuples with all
+        all_species_checked = WorkFlow.check_all_species(self)
+        # It more convenient to have a list of bools
+        sp_check_list = [
+            False for species in all_species_checked if not species[0]]
 
-        if optimize_slab is True:
+        if optimize_slab:
             # If the code cannot locate optimized slab .xyz file,
             # a slab optimization will be launched.
             # a = WorkFlow.check_if_slab_opt_exists(self)
@@ -388,8 +394,13 @@ class WorkFlow:
                     time.sleep(3)
             else:
                 WorkFlow.copy_slab_opt_file(self)
-            # check whether sp1 and sp2 was already cacluated
-            if checksp1[0] is False or checksp2[0] is False:
+            # check whether species were already cacluated)
+            if all(sp_check_list):
+                # If all are True, start by generating TS guesses and run
+                # the penalty function minimization
+                WorkFlow.run_ts_estimate_no_depend(self)
+                # WorkFlow.run_ts_estimate(self, 'submitted_00.txt')
+            else:
                 # If any of these is False
                 # run optimization of surface + reactants; surface + products
                 if os.path.exists('submitted_00.txt'):
@@ -402,11 +413,7 @@ class WorkFlow:
                     WorkFlow.run_opt_surf_and_adsorbate_no_depend(self)
                 # run calculations to get TS guesses
                 WorkFlow.run_ts_estimate(self, 'submitted_01.txt')
-            else:
-                # If both are True, start by generating TS guesses and run
-                # the penalty function minimization
-                WorkFlow.run_ts_estimate_no_depend(self)
-                # WorkFlow.run_ts_estimate(self, 'submitted_00.txt')
+
         else:
             # this is executed if user provide .xyz with the optimized slab
             # check whether sp1 and sp2 was already cacluated
@@ -416,23 +423,18 @@ class WorkFlow:
                 raise FileNotFoundError(
                     'It appears that there is no slab_opt.xyz file')
 
-            if checksp1[0] is False or checksp2[0] is False:
-                # run optimization of surface + reactants; surface + products
-                runSurfAds = os.popen(os.path.join(
-                    'sbatch ' + SurfaceAdsorbate))
-                print(runSurfAds.read())
-                # wait a bit in case the file write process is too slow
-                while not os.path.exists('submitted_01.txt'):
-                    time.sleep(1)
-                # wait until optimization of surface + reactants; surface + products
-                # finish and submit calculations to get TS guesses
-                WorkFlow.run(self, 'submitted_01.txt', TSxtb)
+            if all(sp_check_list):
+                # If all minimas were calculated some time age for the other
+                # reactions, rmgcat_to_sella will use that calculations.
+                WorkFlow.run_ts_estimate_no_depend(self)
             else:
-                # If all minimas were calculated some time age for other reaction,
-                # rmgcat_to_sella will use that calculations.
-                run_TSxtb = os.popen(os.path.join(
-                    'sbatch ' + TSxtb))
-                print(run_TSxtb.read())
+                # run optimization of surface + reactants; surface + products
+                WorkFlow.run_opt_surf_and_adsorbate_no_depend(self)
+                # wait until optimization of surface + reactants;
+                # surface + products finish and submit calculations
+                # to get TS guesses
+                WorkFlow.exe(self, 'submitted_01.txt', TSxtb)
+
         # search for the 1st order saddle point
         WorkFlow.exe(self, 'submitted_02.txt', TS)
         # for each distinct TS, run IRC calculations

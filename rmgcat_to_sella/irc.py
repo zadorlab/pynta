@@ -133,7 +133,7 @@ class IRC():
         IRC.create_job_files(self, pytemplate_irc_opt, irc_opt_pth, traj, geom)
 
     def create_job_files(self, pytemplate_irc_opt, irc_opt_pth, traj, geom):
-        ''' Create slurm files for IRC optimization 
+        ''' Create slurm files for IRC optimization
 
         Parameters
         __________
@@ -150,7 +150,8 @@ class IRC():
         '''
         with open(pytemplate_irc_opt, 'r') as f:
             pytemplate_irc_opt = f.read()
-            ts = TS(self.facetpath, self.ts_dir, self.yamlfile)
+            ts = TS(self.facetpath, self.slab, self.ts_dir,
+                    self.yamlfile, self.repeats)
             rxn = ts.get_rxn_name()
             prefix = traj[:2]
             fname = os.path.join(irc_opt_pth, prefix + '_' +
