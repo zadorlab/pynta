@@ -332,7 +332,7 @@ class TS():
         # building adsorbtion structures
         ads_builder = Builder(grslab)
 
-        max_angle = int(TS.get_max_rot_angle(self)) * 6
+        max_angle = int(TS.get_max_rot_angle(self))
 
         angle = 0
         count = 0
