@@ -348,7 +348,7 @@ class Results():
         rxn_name = reactants + ' --> ' + products
         return rxn_name
 
-    def plot(self):
+    def plot(self, plot_title=None):
         ''' Plot reaction energy diagram'''
         reaction_energy = float(Results.get_reaction_energy(self))
         activation_barriers = Results.get_barrier(self)
@@ -386,7 +386,10 @@ class Results():
 
         plt.legend()
         # plt.title(rxn_name)
-        plt.show()
+        plt.title(plot_title)
+        # plt.show()
+        plt.tight_layout()
+        plt.savefig('plot.png')
 
     def get_latex_table(self):
         reaction_energy = Results.get_reaction_energy(self)
