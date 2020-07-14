@@ -250,17 +250,21 @@ class Results():
 
         '''
         species_ener_dict = {}
-        species_out_file_path_list = Results.get_species_out_files(self,
-                                                                   species)
-        for spiecies_out_file_path in species_out_file_path_list:
-            with open(spiecies_out_file_path, 'r') as f:
-                data = f.readlines()
-                enerLine = data[-1]
-                enerVal = enerLine.split()
-                species_ener_dict[spiecies_out_file_path] = float(enerVal[3])
-                f.close()
-        lowest_species_ener = min(species_ener_dict.values())
-        return lowest_species_ener
+        try:
+            species_out_file_path_list = Results.get_species_out_files(self,
+                                                                    species)
+            for spiecies_out_file_path in species_out_file_path_list:
+                with open(spiecies_out_file_path, 'r') as f:
+                    data = f.readlines()
+                    enerLine = data[-1]
+                    enerVal = enerLine.split()
+                    species_ener_dict[spiecies_out_file_path] = float(enerVal[3])
+                    f.close()
+            lowest_species_ener = min(species_ener_dict.values())
+            return lowest_species_ener
+        except ValueError:
+            print('Check if minima .out files copied successfully')
+            
 
     def get_ts_out_files(self):
         ''' Get TS .out files
@@ -338,7 +342,7 @@ class Results():
         ''' Return rxn name with arrow between reactants and products'''
         reactants = '+'.join([str(species) for species in self.reactants_list])
         products = '+'.join([str(species) for species in self.products_list])
-        rxn_name = reactants + ' --> ' + products
+        rxn_name = reactants + ' <--> ' + products
         return rxn_name
 
     def plot(self):
@@ -379,3 +383,14 @@ class Results():
         plt.legend()
         plt.title(rxn_name)
         plt.show()
+
+    def get_latex_table(self):
+        reaction_energy = Results.get_reaction_energy(self)
+        activation_barriers = Results.get_barrier(self)
+        rxn_name = Results.rxn_title(self)
+        var = 1
+        bra = '{'
+        ket = '}'
+
+        for i in range(10):
+            print('{0}This is {2} in brackets{1}'.format(bra, ket, var))
