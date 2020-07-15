@@ -444,7 +444,7 @@ class TS():
 
         with open(pytemplate, 'r') as f:
             pytemplate = f.read()
-    
+
         # get a list with the average distances (only symmetrically distinct
         # sites considered) for all species. It can be done outside the nested
         # loop, as it is enough to calculate it only once.
@@ -452,8 +452,8 @@ class TS():
         for species in species_list:
             av_dist = TS.get_av_dist(self, path_to_minima, species,
                                      scfactor_surface, scaled1)
-            average_distance_list.append(av_dist)                    
-        
+            average_distance_list.append(av_dist)
+
         # get all ts_estimatex_xyz files in alphabetic order
         ts_estimates_xyz_files = sorted(os.listdir(ts_estimate_path))
 
@@ -488,7 +488,8 @@ class TS():
                                               slabopt=self.slab))
                 f.close()
                 # write .png files
-                init_png = os.path.join(calcDir, xyz_file[:-4] + '_initial.png')
+                init_png = os.path.join(
+                    calcDir, xyz_file[:-4] + '_initial.png')
                 write(init_png, read(xyz_file_path))
                 # remove .xyz files
                 shutil.move(xyz_file_path, calcDir)
@@ -688,7 +689,7 @@ class TS():
 
     def create_unique_TS(self):
         ''' Create unique TS files for calculations '''
-        gd_ads_index = checkSymm(os.path.join(self.facetpath, self.ts_dir))
+        gd_ads_index = check_symm(os.path.join(self.facetpath, self.ts_dir))
         for i, index in enumerate(gd_ads_index):
             uniqueTSdir = os.path.join(
                 self.facetpath, self.ts_dir + '_unique', str(i).zfill(2))
@@ -742,11 +743,11 @@ class TS():
                                 pseudo_dir=pseudo_dir))
                         f.close()
         f.close()
-        
+
     def get_bond_dist(self, ads_atom, geom):
         ''' Specify adsorbate atom symbol and bond distance with the closest
             surface metal atom will be calculated.
-            
+
         Parameters:
         ___________
         ads_atom : str
@@ -794,7 +795,7 @@ class TS():
 
     def get_index_adatom(self, ads_atom, geom):
         ''' Specify adsorbate atom symbol and its index will be returned.
-        
+
         Parameters:
         ___________
         ads_atom : str
@@ -807,9 +808,9 @@ class TS():
         ________
         adsorbate_atom[0] : float
             index of the adsorbed atom
-            
+
         '''
-        #TODO: currently it works only for one ads_atom, so it will return
+        # TODO: currently it works only for one ads_atom, so it will return
         # only index at [0]. In the future I plan to add support for many
         # indices
         adsorbate_atom = []
@@ -827,7 +828,7 @@ class TS():
     def get_index_surface_atom(self, ads_atom, geom):
         ''' Specify adsorbate atom symbol and index of the nearest metal atom
             will be returned. 
-        
+
         Parameters:
         ___________
         ads_atom : str
@@ -840,7 +841,7 @@ class TS():
         ________
         surface_atom[index[0][0]] : float
             index of the metal atom to which ads_atom is bonded
-            
+
         '''
         surface_atom = []
         adsorbate_atom = []
@@ -863,10 +864,42 @@ class TS():
             struc.get_distances(adsorbate_atom[0], surface_atom))
         # get index of the surface atom for which distance to adsorbate is the
         # lowest
-        index = np.where(all_dist_surface_adsorbate == min_dist_surface_adsorbate)
+        index = np.where(all_dist_surface_adsorbate ==
+                         min_dist_surface_adsorbate)
 
         return surface_atom[index[0][0]]
 
+    def check_symm(self, path):
+        ''' Check for the symmetry equivalent structures in the given path
+
+        Parameters:
+        ___________
+        path : str
+            a path to a directory where are files to be checked,
+            e.g. Cu_111/TS_estimate
+
+        Returns:
+        ________
+        unique_index : list(str)
+            a list with prefixes for symmetry distinct sites
+
+        '''
+        good_adsorbate = []
+        result_list = []
+        geomlist = sorted(Path(path).glob('**/*.traj'))
+        for geom in geomlist:
+            adsorbed = read(geom)
+            adsorbed.pbc = True
+            comparator = SymmetryEquivalenceCheck()
+            result = comparator.compare(adsorbed, good_adsorbate)
+            result_list.append(result)
+            if result is False:
+                good_adsorbate.append(adsorbed)
+        unique_index = []
+        for num, res in enumerate(result_list):
+            if res is False:
+                unique_index.append(str(num).zfill(3))
+        return unique_index
 
 
 # def gen_xyz_from_traj(avDistPath, species):
@@ -1028,23 +1061,23 @@ class TS():
 #     return surface_atom[index[0][0]]
 
 
-def checkSymm(path):
-    good_adsorbate = []
-    result_list = []
-    geomlist = sorted(Path(path).glob('**/*.traj'))
-    for geom in geomlist:
-        adsorbed = read(geom)
-        adsorbed.pbc = True
-        comparator = SymmetryEquivalenceCheck()
-        result = comparator.compare(adsorbed, good_adsorbate)
-        result_list.append(result)
-        if result is False:
-            good_adsorbate.append(adsorbed)
-    unique_index = []
-    for num, res in enumerate(result_list):
-        if res is False:
-            unique_index.append(str(num).zfill(3))
-    return unique_index
+# def check_symm(path):
+#     good_adsorbate = []
+#     result_list = []
+#     geomlist = sorted(Path(path).glob('**/*.traj'))
+#     for geom in geomlist:
+#         adsorbed = read(geom)
+#         adsorbed.pbc = True
+#         comparator = SymmetryEquivalenceCheck()
+#         result = comparator.compare(adsorbed, good_adsorbate)
+#         result_list.append(result)
+#         if result is False:
+#             good_adsorbate.append(adsorbed)
+#     unique_index = []
+#     for num, res in enumerate(result_list):
+#         if res is False:
+#             unique_index.append(str(num).zfill(3))
+#     return unique_index
 
 
 ''' The code below is rather useless - double check it '''
@@ -1207,9 +1240,9 @@ def create_all_TS_job_files(facetpath, pytemplate):
 # # def create_unique_TS(facetpath, TSdir):
 # #     # checkSymmPath = os.path.join(path, 'TS_estimate')
 
-# #     # gd_ads_index = checkSymm(facetpath, TSdir)
+# #     # gd_ads_index = check_symm(facetpath, TSdir)
 # #     # new checksym with globbing
-# #     gd_ads_index = checkSymm(os.path.join(facetpath, TSdir))
+# #     gd_ads_index = check_symm(os.path.join(facetpath, TSdir))
 # #     for i, index in enumerate(gd_ads_index):
 # #         uniqueTSdir = os.path.join(
 # #             facetpath, TSdir + '_unique', str(i).zfill(2))
