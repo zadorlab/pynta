@@ -333,8 +333,13 @@ class TS():
         ads_builder = Builder(grslab)
 
         # max_angle = int(TS.get_max_rot_angle(self))
-        # do a full 360 degree rotation - bridge and hollows + top on Cu(111)
-        # have different symmetry, so cannot use on 60 degree for all of them
+        # do a full 360 degree rotation - bridge have different symmetry than
+        # hollows and top sites on Cu(111), so cannot use 60 degree for all
+        # of them. So the approach is to do a full 360 degree scan with
+        # 5 degree increment, check the symmetry using check_symm_before_xtb()
+        # method, run the penalty function minimization for the remaining
+        # structures. Once done, check symmetry again using check_symm() method
+        # That would avoid bugs if other surface is applied.
         max_angle = 360
         angle = 0
         count = 0
