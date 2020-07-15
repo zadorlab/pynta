@@ -95,7 +95,7 @@ class TS():
         TS.TS_placer(self, scfactor, rotAngle,
                      rxn_name, r_name_list, p_name_list, images)
 
-        # TS.filtered_out_equiv_ts_estimate(self, rxn_name)
+        TS.filtered_out_equiv_ts_estimate(self, rxn_name)
         TS.set_up_penalty_xtb(self, pytemplate_xtb,
                               species, scaled1, scaled2, scfactor_surface)
 
@@ -332,8 +332,10 @@ class TS():
         # building adsorbtion structures
         ads_builder = Builder(grslab)
 
-        max_angle = int(TS.get_max_rot_angle(self))
-
+        # max_angle = int(TS.get_max_rot_angle(self))
+        # do a full 360 degree rotation - bridge and hollows + top on Cu(111)
+        # have different symmetry, so cannot use on 60 degree for all of them
+        max_angle = 360
         angle = 0
         count = 0
         step_size = 5
@@ -673,24 +675,16 @@ class TS():
             if is_it_calculated[0] is False:
                 pass
             else:
-                # try:
-                _, copy_path_dft, copy_path_outfiles = is_it_calculated
-                dst_dir = os.path.join(minima_dir, species)
-                # dst_dir_outfiles = os.path.split(os.path.split(dst_dir)[0])
-                # copy DFT files
-                shutil.copytree(copy_path_dft, dst_dir)
-                # copy Sella's .out files
-                for outfile in copy_path_outfiles:
-                    shutil.copy2(outfile, minima_dir)
-                # dst_dir = os.path.split(dst_dir)[0]
-                # except FileExistsError:
-                    # print('sth wrong')
-                #     dstDir = os.path.split(dstDir)[0]
-                #     print('All required files already exist.')
-                #     pass
-                # # is_it_calculated[1] is None when is_it_calculated[0] == False
-                # except IndexError:
-                #     pass
+                try:
+                    _, copy_path_dft, copy_path_outfiles = is_it_calculated
+                    dst_dir = os.path.join(minima_dir, species)
+                    # copy DFT files
+                    shutil.copytree(copy_path_dft, dst_dir)
+                    # copy Sella's .out files
+                    for outfile in copy_path_outfiles:
+                        shutil.copy2(outfile, minima_dir)
+                except FileExistsError:
+                    raise FileExistsError('Files already copied')
 
     def create_unique_TS(self):
         ''' Create unique TS files for calculations '''
