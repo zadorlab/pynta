@@ -392,7 +392,8 @@ class TS():
             e.g. OH_O+H
         '''
         ts_estimate_path = os.path.join(self.facetpath, self.ts_dir)
-        filtered_equivalen_sites = check_symm_before_xtb(ts_estimate_path)
+        filtered_equivalen_sites = TS.check_symm_before_xtb(
+            self, ts_estimate_path)
         for eqsites in filtered_equivalen_sites:
             try:
                 fileToRemove = os.path.join(
@@ -409,6 +410,7 @@ class TS():
             os.rename(oldfname, newfname)
 
     def get_average_distance_all(self, species, geom_path):
+        # probably do not need it - check
         raise NotImplementedError
 
     def set_up_penalty_xtb(self, pytemplate, species_list,
@@ -464,8 +466,10 @@ class TS():
                 xyz_file_path = os.path.join(ts_estimate_path, xyz_file)
                 # loop through all species
                 for species in species_list:
-                    sp_index = get_index_adatom(species, xyz_file_path)
-                    Cu_index = get_index_surface_atom(species, xyz_file_path)
+                    sp_index = TS.get_index_adatom(
+                        self, species, xyz_file_path)
+                    Cu_index = TS.get_index_surface_atom(
+                        self, species, xyz_file_path)
                     bonds.append((sp_index, Cu_index))
 
                 # set up variables
@@ -689,7 +693,8 @@ class TS():
 
     def create_unique_TS(self):
         ''' Create unique TS files for calculations '''
-        gd_ads_index = check_symm(os.path.join(self.facetpath, self.ts_dir))
+        gd_ads_index = TS.check_symm(
+            self, os.path.join(self.facetpath, self.ts_dir))
         for i, index in enumerate(gd_ads_index):
             uniqueTSdir = os.path.join(
                 self.facetpath, self.ts_dir + '_unique', str(i).zfill(2))
@@ -773,11 +778,14 @@ class TS():
             xyz_geom_file = f.readlines()
             for num, line in enumerate(xyz_geom_file):
                 if ' 1 ' in line:
+                    # TODO: possibly a bug when other surface is used,
+                    # e.g. Cu_211
+                    #
                     # reading each line and adding only the one with tags = 1
-                    # (surface atoms). It is necessary to subtract 2 as indices in
-                    # atom object starts with 0 and we also have to take into
-                    # account that the first line in xyz file contains non xyz
-                    # information
+                    # (surface atoms). It is necessary to subtract 2 as indices
+                    # in atom object starts with 0 and we also have to take
+                    # into account that the first line in xyz file contains
+                    # non xyz information
                     surface_atom.append(num - 2)
                 elif ads_atom in line:
                     if not "Cu" in line:
