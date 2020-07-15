@@ -670,21 +670,27 @@ class TS():
         for species in species_list:
             is_it_calculated = WorkFlow().check_if_minima_already_calculated(
                 current_dir, species, self.facetpath)
-            if is_it_calculated is False:
+            if is_it_calculated[0] is False:
                 pass
             else:
-                try:
-                    copyPath = is_it_calculated[1]
-                    dstDir = os.path.join(minima_dir, species)
-                    shutil.copytree(copyPath, dstDir)
-                    dstDir = os.path.split(dstDir)[0]
-                except FileExistsError:
-                    dstDir = os.path.split(dstDir)[0]
-                    print('All required files already exist.')
-                    pass
-                # is_it_calculated[1] is None when is_it_calculated[0] == False
-                except IndexError:
-                    pass
+                # try:
+                _, copy_path_dft, copy_path_outfiles = is_it_calculated
+                dst_dir = os.path.join(minima_dir, species)
+                # dst_dir_outfiles = os.path.split(os.path.split(dst_dir)[0])
+                # copy DFT files
+                shutil.copytree(copy_path_dft, dst_dir)
+                # copy Sella's .out files
+                for outfile in copy_path_outfiles:
+                    shutil.copy2(outfile, minima_dir)
+                # dst_dir = os.path.split(dst_dir)[0]
+                # except FileExistsError:
+                    # print('sth wrong')
+                #     dstDir = os.path.split(dstDir)[0]
+                #     print('All required files already exist.')
+                #     pass
+                # # is_it_calculated[1] is None when is_it_calculated[0] == False
+                # except IndexError:
+                #     pass
 
     def create_unique_TS(self):
         ''' Create unique TS files for calculations '''
