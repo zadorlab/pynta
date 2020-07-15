@@ -392,7 +392,7 @@ class TS():
             e.g. OH_O+H
         '''
         ts_estimate_path = os.path.join(self.facetpath, self.ts_dir)
-        filtered_equivalen_sites = checkSymmBeforeXTB(ts_estimate_path)
+        filtered_equivalen_sites = check_symm_before_xtb(ts_estimate_path)
         for eqsites in filtered_equivalen_sites:
             try:
                 fileToRemove = os.path.join(
@@ -876,12 +876,12 @@ class TS():
         ___________
         path : str
             a path to a directory where are files to be checked,
-            e.g. Cu_111/TS_estimate
+            e.g. Cu_111/TS_estimate_unique
 
         Returns:
         ________
         unique_index : list(str)
-            a list with prefixes for symmetry distinct sites
+            a list with prefixes of all symmetrically distinct sites
 
         '''
         good_adsorbate = []
@@ -901,6 +901,41 @@ class TS():
                 unique_index.append(str(num).zfill(3))
         return unique_index
 
+    def check_symm_before_xtb(self, path):
+        ''' Check for the symmetry equivalent structures in the given path
+            before executing penalty function minimization
+
+        Parameters:
+        ___________
+        path : str
+            a path to a directory where are files to be checked,
+            e.g. Cu_111/TS_estimate
+
+        Returns:
+        ________
+        not_unique_index : list(str)
+            a list with prefixes of all symmetry equivalent structures
+
+        '''
+        good_adsorbate = []
+        result_list = []
+        geomlist = sorted(Path(path).glob('*.xyz'))
+        for geom in geomlist:
+            adsorbed = read(geom)
+            adsorbed.pbc = True
+            comparator = SymmetryEquivalenceCheck()
+            result = comparator.compare(adsorbed, good_adsorbate)
+            result_list.append(result)
+            if result is False:
+                good_adsorbate.append(adsorbed)
+        not_unique_index = []
+        for num, res in enumerate(result_list):
+            if res is True:
+                # Better to have all symmetry equivalent site here in a list. 
+                # The workflow will remove them in getTSestimate function
+                # keeping all symmetry distinct sites 
+                not_unique_index.append(str(num).zfill(3))
+        return not_unique_index
 
 # def gen_xyz_from_traj(avDistPath, species):
 #     # if species == 'C':
@@ -1083,24 +1118,24 @@ class TS():
 ''' The code below is rather useless - double check it '''
 
 
-def checkSymmBeforeXTB(path):
-    good_adsorbate = []
-    result_list = []
-    geomlist = sorted(Path(path).glob('*.xyz'))
-    for geom in geomlist:
-        adsorbed = read(geom)
-        adsorbed.pbc = True
-        comparator = SymmetryEquivalenceCheck()
-        result = comparator.compare(adsorbed, good_adsorbate)
-        result_list.append(result)
-        if result is False:
-            good_adsorbate.append(adsorbed)
-    notunique_index = []
-    for num, res in enumerate(result_list):
-        if res is True:
-            ''' Better to have all symmetry equivalent site here in a list. The workflow will remove them in getTSestimate function keeping all symmetry distinct sites '''
-            notunique_index.append(str(num).zfill(3))
-    return notunique_index
+# def check_symm_before_xtb(path):
+#     good_adsorbate = []
+#     result_list = []
+#     geomlist = sorted(Path(path).glob('*.xyz'))
+#     for geom in geomlist:
+#         adsorbed = read(geom)
+#         adsorbed.pbc = True
+#         comparator = SymmetryEquivalenceCheck()
+#         result = comparator.compare(adsorbed, good_adsorbate)
+#         result_list.append(result)
+#         if result is False:
+#             good_adsorbate.append(adsorbed)
+#     not_unique_index = []
+#     for num, res in enumerate(result_list):
+#         if res is True:
+#             ''' Better to have all symmetry equivalent site here in a list. The workflow will remove them in getTSestimate function keeping all symmetry distinct sites '''
+#             not_unique_index.append(str(num).zfill(3))
+#     return not_unique_index
 
 
 def create_all_TS(facetpath):
