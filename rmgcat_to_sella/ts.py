@@ -742,6 +742,54 @@ class TS():
                                 pseudo_dir=pseudo_dir))
                         f.close()
         f.close()
+        
+        def get_bond_dist(self, ads_atom, geom):
+            ''' Specify adsorbate atom symbol and bond distance with the closest
+                surface metal atom will be calculated.
+                
+            Parameters:
+            ___________
+            ads_atom : str
+                an atom of the species bonded to the surface, e.g. 'O' for OH
+            geom : str
+                a .xyz of .traj file name with geometry of the structures
+
+            Returns:
+            ________
+            dist_Cu_adsorbate : float
+                distance between ads_atom and the closest surface atom
+
+            '''
+            surface_atom = []
+            adsorbate_atom = []
+            struc = read(geom)
+            if len(ads_atom) > 1:
+                ads_atom = ads_atom[:-1]
+            # if ads_atom == 'C':
+            #     ads_atom == 'CO'
+            with open(geom, 'r') as f:
+                xyz_geom_file = f.readlines()
+                for num, line in enumerate(xyz_geom_file):
+                    if ' 1 ' in line:
+                        # reading each line and adding only the one with tags = 1
+                        # (surface atoms). It is necessary to subtract 2 as indices in
+                        # atom object starts with 0 and we also have to take into
+                        # account that the first line in xyz file contains non xyz
+                        # information
+                        surface_atom.append(num - 2)
+                    elif ads_atom in line:
+                        if not "Cu" in line:
+                            adsorbate_atom.append(num - 2)
+            f.close()
+
+            if len(adsorbate_atom) > 1:
+                dist_Cu_adsorbate = min(struc.get_distances(
+                    adsorbate_atom[0], surface_atom))
+                return dist_Cu_adsorbate
+            else:
+                dist_Cu_adsorbate = min(
+                    struc.get_distances(adsorbate_atom, surface_atom))
+                return dist_Cu_adsorbate
 
 
 # def gen_xyz_from_traj(avDistPath, species):
@@ -825,38 +873,38 @@ class TS():
 #     return av_dist
 
 
-def get_bond_dist(ads_atom, geom):
-    ''' Specify adsorbate atom symbol and bond distance with the closest surface metal atom will be calculated '''
-    surface_atom = []
-    adsorbate_atom = []
-    struc = read(geom)
-    if len(ads_atom) > 1:
-        ads_atom = ads_atom[:-1]
-    # if ads_atom == 'C':
-    #     ads_atom == 'CO'
-    with open(geom, 'r') as f:
-        xyz_geom_file = f.readlines()
-        for num, line in enumerate(xyz_geom_file):
-            if ' 1 ' in line:
-                # reading each line and adding only the one with tags = 1
-                # (surface atoms). It is necessary to subtract 2 as indices in
-                # atom object starts with 0 and we also have to take into
-                # account that the first line in xyz file contains non xyz
-                # information
-                surface_atom.append(num - 2)
-            elif ads_atom in line:
-                if not "Cu" in line:
-                    adsorbate_atom.append(num - 2)
-    f.close()
+# def get_bond_dist(ads_atom, geom):
+#     ''' Specify adsorbate atom symbol and bond distance with the closest surface metal atom will be calculated '''
+#     surface_atom = []
+#     adsorbate_atom = []
+#     struc = read(geom)
+#     if len(ads_atom) > 1:
+#         ads_atom = ads_atom[:-1]
+#     # if ads_atom == 'C':
+#     #     ads_atom == 'CO'
+#     with open(geom, 'r') as f:
+#         xyz_geom_file = f.readlines()
+#         for num, line in enumerate(xyz_geom_file):
+#             if ' 1 ' in line:
+#                 # reading each line and adding only the one with tags = 1
+#                 # (surface atoms). It is necessary to subtract 2 as indices in
+#                 # atom object starts with 0 and we also have to take into
+#                 # account that the first line in xyz file contains non xyz
+#                 # information
+#                 surface_atom.append(num - 2)
+#             elif ads_atom in line:
+#                 if not "Cu" in line:
+#                     adsorbate_atom.append(num - 2)
+#     f.close()
 
-    if len(adsorbate_atom) > 1:
-        dist_Cu_adsorbate = min(struc.get_distances(
-            adsorbate_atom[0], surface_atom))
-        return dist_Cu_adsorbate
-    else:
-        dist_Cu_adsorbate = min(
-            struc.get_distances(adsorbate_atom, surface_atom))
-        return dist_Cu_adsorbate
+#     if len(adsorbate_atom) > 1:
+#         dist_Cu_adsorbate = min(struc.get_distances(
+#             adsorbate_atom[0], surface_atom))
+#         return dist_Cu_adsorbate
+#     else:
+#         dist_Cu_adsorbate = min(
+#             struc.get_distances(adsorbate_atom, surface_atom))
+#         return dist_Cu_adsorbate
 
 
 def get_index_adatom(ads_atom, geom):
