@@ -824,6 +824,49 @@ class TS():
         f.close()
         return adsorbate_atom[0]
 
+    def get_index_surface_atom(self, ads_atom, geom):
+        ''' Specify adsorbate atom symbol and index of the nearest metal atom
+            will be returned. 
+        
+        Parameters:
+        ___________
+        ads_atom : str
+            an atom of the species bonded to the surface, e.g. 'O' for OH
+        geom : str
+            a .xyz of .traj file name with geometry of the structure
+            to be analysed
+
+        Returns:
+        ________
+        surface_atom[index[0][0]] : float
+            index of the metal atom to which ads_atom is bonded
+            
+        '''
+        surface_atom = []
+        adsorbate_atom = []
+        if len(ads_atom) > 1:
+            ads_atom = ads_atom[:1]
+        struc = read(geom)
+        with open(geom, 'r') as f:
+            xyz_geom_file = f.readlines()
+            for num, line in enumerate(xyz_geom_file):
+                if 'Cu ' in line:
+                    surface_atom.append(num - 2)
+                elif ads_atom in line:
+                    if not 'Cu' in line:
+                        adsorbate_atom.append(num - 2)
+        f.close()
+
+        all_dist_surface_adsorbate = struc.get_distances(
+            adsorbate_atom[0], surface_atom)
+        min_dist_surface_adsorbate = min(
+            struc.get_distances(adsorbate_atom[0], surface_atom))
+        # get index of the surface atom for which distance to adsorbate is the
+        # lowest
+        index = np.where(all_dist_surface_adsorbate == min_dist_surface_adsorbate)
+
+        return surface_atom[index[0][0]]
+
 
 
 # def gen_xyz_from_traj(avDistPath, species):
@@ -956,33 +999,33 @@ class TS():
 #     return adsorbate_atom[0]
 
 
-def get_index_surface_atom(ads_atom, geom):
-    ''' Specify adsorbate atom symbol and index of the neares metal atom will be returned '''
-    surface_atom = []
-    adsorbate_atom = []
-    if len(ads_atom) > 1:
-        ads_atom = ads_atom[:1]
-    # print(ads_atom)
-    struc = read(geom)
-    with open(geom, 'r') as f:
-        xyz_geom_file = f.readlines()
-        for num, line in enumerate(xyz_geom_file):
-            if 'Cu ' in line:
-                surface_atom.append(num - 2)
-            elif ads_atom in line:
-                if not 'Cu' in line:
-                    adsorbate_atom.append(num - 2)
-    f.close()
+# def get_index_surface_atom(ads_atom, geom):
+#     ''' Specify adsorbate atom symbol and index of the neares metal atom will be returned '''
+#     surface_atom = []
+#     adsorbate_atom = []
+#     if len(ads_atom) > 1:
+#         ads_atom = ads_atom[:1]
+#     # print(ads_atom)
+#     struc = read(geom)
+#     with open(geom, 'r') as f:
+#         xyz_geom_file = f.readlines()
+#         for num, line in enumerate(xyz_geom_file):
+#             if 'Cu ' in line:
+#                 surface_atom.append(num - 2)
+#             elif ads_atom in line:
+#                 if not 'Cu' in line:
+#                     adsorbate_atom.append(num - 2)
+#     f.close()
 
-    all_dist_surface_adsorbate = struc.get_distances(
-        adsorbate_atom[0], surface_atom)
-    min_dist_surface_adsorbate = min(
-        struc.get_distances(adsorbate_atom[0], surface_atom))
-    # get index of the surface atom for which distance to adsorbate is the
-    # lowest
-    index = np.where(all_dist_surface_adsorbate == min_dist_surface_adsorbate)
+#     all_dist_surface_adsorbate = struc.get_distances(
+#         adsorbate_atom[0], surface_atom)
+#     min_dist_surface_adsorbate = min(
+#         struc.get_distances(adsorbate_atom[0], surface_atom))
+#     # get index of the surface atom for which distance to adsorbate is the
+#     # lowest
+#     index = np.where(all_dist_surface_adsorbate == min_dist_surface_adsorbate)
 
-    return surface_atom[index[0][0]]
+#     return surface_atom[index[0][0]]
 
 
 def checkSymm(path):
