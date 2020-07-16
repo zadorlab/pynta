@@ -84,28 +84,38 @@ optimize_slab = inputR2S.optimize_slab
 
 
 class WorkFlow:
+     def __init__(self):
+         ''' Setup the balsam application for this workflow run, once we start using QE will want one app for QE, 
+         one for xtb most likely'''
+        from balsam.core.models import ApplicationDefinition
+        self.myPython= ApplicationDefinition.objects.get_or_create(
+                name="Python",
+                executable="python")
+               # envscript="/path/to/setup-envs.sh",
+               #postprocess="python /path/to/post.py"
+        self.myPython.save()
     # def __init__(self, facetpath):
     #     self.facetpath = facetpath
 
     def gen_job_files(self):
         ''' Generate submt scripts for 6 stages of the workflow '''
-        WorkFlow.set_up_slab(self, template_slab_opt, surface_type, symbol, a,
+        self.set_up_slab(template_slab_opt, surface_type, symbol, a,
                              repeats_surface, vacuum, slab_name,
                              pseudopotentials, pseudo_dir)
-        WorkFlow.set_up_ads(self, template_ads, facetpath, slabopt,
+        self.set_up_ads(template_ads, facetpath, slabopt,
                             repeats, yamlfile, pytemplate_relax_ads,
                             pseudopotentials, pseudo_dir)
-        WorkFlow.set_up_TS_with_xtb(self, template_set_up_ts_with_xtb, slabopt,
+        self.set_up_TS_with_xtb(template_set_up_ts_with_xtb, slabopt,
                                     repeats, yamlfile, facetpath, rotAngle,
                                     scfactor, scfactor_surface, pytemplate_xtb,
                                     sp1, sp2)
-        WorkFlow.set_up_run_TS(self, template_set_up_ts, facetpath, slabopt,
+        self.set_up_run_TS(template_set_up_ts, facetpath, slabopt,
                                repeats, yamlfile, pytemplate_set_up_ts,
                                pseudopotentials, pseudo_dir)
-        WorkFlow.set_up_run_IRC(self, template_set_up_IRC, facetpath, slabopt,
+        self.set_up_run_IRC(template_set_up_IRC, facetpath, slabopt,
                                 repeats, pytemplate_f, pytemplate_r, yamlfile,
                                 pseudopotentials, pseudo_dir)
-        WorkFlow.set_up_opt_IRC(self, template_set_up_optIRC,
+        self.set_up_opt_IRC(template_set_up_optIRC,
                                 facetpath, slabopt, repeats,
                                 pytemplate_optIRC,
                                 pseudopotentials, pseudo_dir)
@@ -212,40 +222,28 @@ class WorkFlow:
 ##############################
 # Submit jobs and execute it #
 ##############################
-
-    def get_slurm_jobs_id(self, slurm_id_subm):
-        ''' Get slurm IDs of just submitted jobs '''
-        slurm_jobs_id = []
-        with open(slurm_id_subm, 'r') as f:
-            for line in f.readlines():
-                line = line.split()[3]
-                slurm_jobs_id.append(line)
-        f.close()
-        return slurm_jobs_id
-
-    def gen_slurm_command(self, slurm_id_subm):
-        ''' Prepare a bash command to submit jobs '''
-        slurmID = WorkFlow.get_slurm_jobs_id(self, slurm_id_subm)
-        slurmID = ",".join(["{}"] * len(slurmID)).format(*slurmID)
-        # if not slurmID:
-        #     print('Error')
-        #     sys.exit('No submitted jobs, probably all files have been already generated')
-        #     return command = False
-        # else:
-        command = os.path.join('sbatch --dependency=afterany:' + str(slurmID))
-        print(command)
-        return command
-
-    def run(self, slurm_id_subm, job_script):
-        ''' Submit slurm jobs '''
-        command = WorkFlow.gen_slurm_command(self, slurm_id_subm)
-        os.popen(str(os.path.join(command + ' ' + job_script)))
-
-    def exe(self, prevSlurmID, job_script):
-        ''' Check if the previous step of calculations terminated. If so, run the next step'''
-        while not os.path.exists(prevSlurmID):
-            time.sleep(60)
-        WorkFlow.run(self, prevSlurmID, job_script)
+    def exe(self, parent_job, job_script,cores=1):
+        from balsam.launcher.dag import BalsamJob
+        job_to_add = BalsamJob(
+                name = job_script,
+                workflow = "test",
+                application = self.myPython,
+                args = job_script,
+                ranks_per_node = cores,
+                )
+        job_to_add.save()
+        if parent_job!='':
+            from balsam.launcher.dag import add_dependency
+            try:
+                dependency=int(parent_job[0:1])
+                dependency_workflow_name = yamlfile+facetpath+dependency
+                BalsamJob = BalsamJob
+                pending_simulations = BalsamJob.objects.filter(workflow__contains=dependency_workflow_name).exclude(state=“JOB_FINISHED”)
+                for job in pending_simulations:
+                    add_dependency(job,job_to_add) # parent, child
+            except ValueError: 
+                add_dependency(parent_job,job_script) # parent, child
+        return job_to_add
 
     def check_if_path_to_mimina_exists(self, WorkFlowDir, species):
         ''' Check for the paths to previously calculated minima and return 
@@ -296,32 +294,27 @@ class WorkFlow:
     def run_slab_optimization(self):
         ''' Submit slab_optimization_job '''
         # submit slab_optimization_job
-        run_slab_command = os.path.join(
-            'sbatch ' + slab_opt + ' > submitted_00.txt')
-        run_slab_opt = os.popen(run_slab_command)
-        print(run_slab_opt.read())
+        self.slab_opt=self.exe(self, '', slab_opt,cores=48):
 
     def run_opt_surf_and_adsorbate(self):
         ''' Run optmization of adsorbates on the surface '''
-        return WorkFlow.exe(self, 'submitted_00.txt', SurfaceAdsorbate)
+        return self.exe(self, self.slab_opt, SurfaceAdsorbate)
 
     def run_opt_surf_and_adsorbate_no_depend(self):
         ''' Run optmization of adsorbates on the surface
             if there is no dependency on other jobs '''
-        bash_command = os.popen(os.path.join(
-            'sbatch ' + SurfaceAdsorbate))
-        print(bash_command.read())
+        return self.exe(self, '', SurfaceAdsorbate)
 
-    def run_ts_estimate(self, submit_txt):
+    def run_ts_estimate(self, dependent_job):
         ''' Run TS estimation calculations '''
-        return WorkFlow.exe(self, submit_txt, TSxtb)
+        TSxtb = inputR2S.TSxtbScript
+        return self.exe(self, dependent_job, TSxtb)
 
     def run_ts_estimate_no_depend(self):
         ''' Run TS estimate calculations if there is
             no dependency on other jobs '''
-        bash_command = os.popen(os.path.join(
-            'sbatch ' + TSxtb))
-        print(bash_command.read())
+        TSxtb = inputR2S.TSxtbScript
+        return self.exe(self, '', TSxtb)
 
     def check_all_species(self):
         ''' Check all species to find whether there are previous calculation
@@ -337,8 +330,7 @@ class WorkFlow:
         '''
         all_sp_checked = []
         for species in species_list:
-            check_sp = WorkFlow.check_if_minima_already_calculated(
-                self, currentDir, species, facetpath)
+            check_sp = self.check_if_minima_already_calculated(currentDir, species, facetpath)
             all_sp_checked.append(check_sp)
         return all_sp_checked
 
@@ -366,27 +358,26 @@ class WorkFlow:
 
     def copy_slab_opt_file(self):
         ''' Copy .xyz of previously optimized slab '''
-        if WorkFlow.check_if_slab_opt_exists(self):
-            src = WorkFlow.check_if_slab_opt_exists(self)[1]
+        if self.check_if_slab_opt_exists(self):
+            src = self.check_if_slab_opt_exists()[1]
             dst = os.getcwd()
             shutil.copy2(src, dst)
 
     def execute(self):
         ''' The main executable '''
-        checksp1, checksp2 = WorkFlow.check_all_species(self)
+        checksp1, checksp2 = self.check_all_species()
 
         if optimize_slab is True:
             # If the code cannot locate optimized slab .xyz file,
             # a slab optimization will be launched.
-            # a = WorkFlow.check_if_slab_opt_exists(self)
+            # a = self.check_if_slab_opt_exists()
             # print(a)
-            if not WorkFlow.check_if_slab_opt_exists(self):
-                WorkFlow.run_slab_optimization(self)
+            if not self.check_if_slab_opt_exists():
+                self.run_slab_optimization(self)
                 # wait a bit in case the file write process is too slow
-                while not os.path.exists('submitted_00.txt'):
-                    time.sleep(3)
+                """ May need to put a post process on slab optimization to call the next step """
             else:
-                WorkFlow.copy_slab_opt_file(self)
+                self.copy_slab_opt_file()
             # check whether sp1 and sp2 was already cacluated
             if checksp1[0] is False or checksp2[0] is False:
                 # If any of these is False
@@ -394,22 +385,22 @@ class WorkFlow:
                 if os.path.exists('submitted_00.txt'):
                     # this is executed when slab was optimized in the
                     # current run, because 'submitted_00.txt' was generated
-                    WorkFlow.run_opt_surf_and_adsorbate(self)
+                    self.run_opt_surf_and_adsorbate(self)
                 else:
                     # otherwise run no_depend version
                     # ('submitted_00.txt' not generated)
-                    WorkFlow.run_opt_surf_and_adsorbate_no_depend(self)
+                    self.run_opt_surf_and_adsorbate_no_depend()
                 # run calculations to get TS guesses
-                WorkFlow.run_ts_estimate(self, 'submitted_01.txt')
+                self.run_ts_estimate(self, '01')
             else:
                 # If both are True, start by generating TS guesses and run
                 # the penalty function minimization
-                WorkFlow.run_ts_estimate_no_depend(self)
-                # WorkFlow.run_ts_estimate(self, 'submitted_00.txt')
+                self.run_ts_estimate_no_depend()
+                # self.run_ts_estimate('00')
         else:
             # this is executed if user provide .xyz with the optimized slab
             # check whether sp1 and sp2 was already cacluated
-            if WorkFlow.check_if_slab_opt_exists(self):
+            if self.check_if_slab_opt_exists():
                 pass
             else:
                 raise FileNotFoundError(
@@ -417,24 +408,19 @@ class WorkFlow:
 
             if checksp1[0] is False or checksp2[0] is False:
                 # run optimization of surface + reactants; surface + products
-                runSurfAds = os.popen(os.path.join(
-                    'sbatch ' + SurfaceAdsorbate))
-                print(runSurfAds.read())
+                self.exe('',SurfaceAdsorbate)
                 # wait a bit in case the file write process is too slow
-                while not os.path.exists('submitted_01.txt'):
-                    time.sleep(1)
+                """ May need to put a post process on surface adsorbate to call the next step """
                 # wait until optimization of surface + reactants; surface + products
                 # finish and submit calculations to get TS guesses
-                WorkFlow.run(self, 'submitted_01.txt', TSxtb)
+                self.exe('01', TSxtb)
             else:
                 # If all minimas were calculated some time age for other reaction,
                 # rmgcat_to_sella will use that calculations.
-                run_TSxtb = os.popen(os.path.join(
-                    'sbatch ' + TSxtb))
-                print(run_TSxtb.read())
+                self.exe('', TSxtb)
         # search for the 1st order saddle point
-        WorkFlow.exe(self, 'submitted_02.txt', TS)
+        self.exe('02', TS)
         # for each distinct TS, run IRC calculations
-        WorkFlow.exe(self, 'submitted_03.txt', IRC)
+        self.exe('03', IRC)
         # run optimizataion of both IRC (forward, reverse) trajectory
-        WorkFlow.exe(self, 'submitted_04.txt', IRCopt)
+        self.exe('04', IRCopt)

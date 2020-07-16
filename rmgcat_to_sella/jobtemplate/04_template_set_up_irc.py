@@ -1,17 +1,6 @@
 #!/usr/bin/env python3
-#SBATCH -J runIRC
-#SBATCH -N 1
-#SBATCH -c 1
-#SBATCH --mem=1gb
-#SBATCH -p day-long-cpu
-#SBATCH -t 1-00:00:00
-#SBATCH -e %x.err
-#SBATCH -o %x.out
-
 import os
 import sys
-submitDir = os.environ['SLURM_SUBMIT_DIR']
-os.chdir(submitDir)
 sys.path.append(os.getcwd())
 
 from rmgcat_to_sella.irc import IRC
@@ -25,11 +14,33 @@ yamlfile         = '{yamlfile}'
 ts_dir           = 'TS_estimate'
 pseudopotentials = {pseudopotentials}
 pseudo_dir       = '{pseudo_dir}'
+workflow_name    = yamlfile+facetpath+'04'
+dependency_workflow_name    = yamlfile+facetpath+'03'
 
 irc = IRC(facetpath, slab, repeats, ts_dir, yamlfile,
           pseudopotentials, pseudo_dir)
 irc.set_up_irc(pytemplate_f, pytemplate_r)
 
-bashCommand = os.popen(
-    "cd {facetpath}/IRC/; for i in $(ls | grep 'py'); do sbatch $i; done > ../../submitted_04.txt; cd ../../")
-print(bashCommand.read())
+from glob import glob
+from pathlib import Path
+
+from balsam.launcher.dag import BalsamJob
+from balsam.core.models import ApplicationDefinition
+myPython= ApplicationDefinition.objects.get_or_create(
+            name="Python",
+            executable="python")
+myPython.save()
+for py_script in glob('{facetpath}/IRC/*.py'):
+    creation_dir=Path.cwd().as_posix()+'/'+'/'.join(py_script.strip().split('/')[:-1])
+    job_to_add = BalsamJob(
+            name = py_script,
+            workflow = workflow_name,
+            application = myPython,
+            args = py_script,
+            ranks_per_node = 1,
+#            data={"creation_dir": Path.cwd().as_posix()+'./{facetpath}/minima'}
+            )
+    job_to_add.save()
+    for job in pending_simulations:
+        add_dependency(job,job_to_add) # parent, child
+

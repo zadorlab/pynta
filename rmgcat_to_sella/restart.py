@@ -86,25 +86,51 @@ def checkAllFinished(PathToSpecies):
 
 def restart(species, PathToSpecies, facetpath):
     restarting_prefix_list = createRestartJobs(PathToSpecies)
+    from balsam.launcher.dag import BalsamJob
+    from balsam.core.models import ApplicationDefinition
+    myPython= ApplicationDefinition.objects.get_or_create(
+            name="Python",
+            executable="python")
+    myPython.save()
+    yamlfile         = '{yamlfile}'
+    workflow_name    = yamlfile+facetpath+'01'
     for prefix in restarting_prefix_list:
         # print(prefix)
-        fname = species + '_' + prefix + '_relax.py'
-        command = "cd ./{}/minima/; sbatch {} >> ../../submitted_01.txt; cd ../../".format(
-            facetpath, fname)
-        bashCommand = os.popen(command)
-        print(bashCommand.read())
+        py_script =facetpath+ '/minima/'+ species + '_' + prefix + '_relax.py' 
+        job_to_add = BalsamJob(
+                name = py_script
+                workflow = workflow_name,
+                application = myPython,
+                args = py_script
+                ranks_per_node = 1,
+            #data={"creation_dir": Path.cwd().as_posix()+'/{facetpath}/minima'}
+            )
+        job_to_add.save()
 
 
 def restartTS(PathToSpecies, facetpath):
     restarting_prefix_list, rxn = createRestartJobsTS(PathToSpecies)
     # rxn = TSxyz.split('_')[1]
+    from balsam.launcher.dag import BalsamJob
+    from balsam.core.models import ApplicationDefinition
+    myPython= ApplicationDefinition.objects.get_or_create(
+            name="Python",
+            executable="python")
+    myPython.save()
+    yamlfile         = '{yamlfile}'
+    workflow_name    = yamlfile+facetpath+'03'
     for prefix in restarting_prefix_list:
-        fname = prefix + '_' + rxn + '_ts.py'
-        command = "cd ./{}/TS_estimate_unique/; sbatch {} >> ../../submitted_03.txt; cd ../../".format(
-            facetpath, fname)
-        # print(command)
-        bashCommand = os.popen(command)
-        print(bashCommand.read())
+        # print(prefix)
+        py_script =facetpath+'/TS_estimate_unique/'+ prefix + '_' + rxn + '_ts.py'
+        job_to_add = BalsamJob(
+                name = py_script
+                workflow = workflow_name,
+                application = myPython,
+                args = py_script
+                ranks_per_node = 1,
+            #data={"creation_dir": Path.cwd().as_posix()+'/{facetpath}/minima'}
+            )
+        job_to_add.save()
 
 
 ''' Remove '''
@@ -165,13 +191,27 @@ def createRestartJobs_optIRC(PathToSpecies):
 def restart_optIRC(PathToSpecies):
     restarting_list, rxn = createRestartJobs_optIRC(PathToSpecies)
     # rxn = TSxyz.split('_')[1]
+    from balsam.launcher.dag import BalsamJob
+    from balsam.core.models import ApplicationDefinition
+    myPython= ApplicationDefinition.objects.get_or_create(
+            name="Python",
+            executable="python")
+    myPython.save()
+    yamlfile         = '{yamlfile}'
+    workflow_name    = yamlfile+facetpath+'03'
     for ircPath in restarting_list:
         _, _, prefix, irc = ircPath.split('/')
-        fname = os.path.join(prefix + '_' + rxn + '_' + irc + '.py')
+        py_script = os.path.join(ircPath+ prefix + '_' + rxn + '_' + irc + '.py') 
+        """ This may be wrong, probably needs debugging"""
         # print(fname)
         # print(ircPath)
-        command = "cd {}; sbatch {}; cd ../../../../ >> ../../submitted_03.txt".format(ircPath,
-                                                                                       fname)
-        # print(command)
-        bashCommand = os.popen(command)
-        print(bashCommand.read())
+        job_to_add = BalsamJob(
+                name = py_script
+                workflow = workflow_name,
+                application = myPython,
+                args = py_script
+                ranks_per_node = 1,
+            #data={"creation_dir": Path.cwd().as_posix()+'/{facetpath}/minima'}
+            )
+        job_to_add.save()
+
