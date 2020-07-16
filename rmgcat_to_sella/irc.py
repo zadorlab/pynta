@@ -1,10 +1,8 @@
 import os
 
 from ase.io import read, write
-from rmgcat_to_sella.ts import checkSymm
 # from pathlib import Path
 from rmgcat_to_sella.ts import TS
-from rmgcat_to_sella.adsorbates import Adsorbates
 
 
 class IRC():
@@ -65,20 +63,21 @@ class IRC():
         ts = TS(self.facetpath, self.slab, self.ts_dir,
                 self.yamlfile, self.repeats)
         rxn = ts.get_rxn_name()
-        unique_ts_index = checkSymm(ts_uq_dir)
+        unique_ts_index = ts.check_symm(ts_uq_dir)
 
         # load templates for irc_f and irc_r calculations
-        # with open(pytemplate_f, 'r') as f:
-        #         template_f = f.read()
-        # with open(pytemplate_r, 'r') as r:
-        #         template_r = r.read()
+        with open(pytemplate_f, 'r') as f:
+            template_f = f.read()
+        with open(pytemplate_r, 'r') as r:
+            template_r = r.read()
 
         for i, prefix in enumerate(unique_ts_index):
             prefix = prefix[1:]
             irc_dir = os.path.join(self.facetpath, 'IRC', prefix)
-            irc_py_file = os.path.join(self.facetpath, 'IRC')
+            irc_py_dir = os.path.join(self.facetpath, 'IRC')
             ts_file_name = os.path.join(prefix + '_' + rxn + '_ts')
             ts_file_name_xyz = os.path.join(prefix, ts_file_name + '.xyz')
+            print(ts_file_name_xyz)
             os.makedirs(irc_dir, exist_ok=True)
             src_ts_xyz_path = os.path.join(
                 ts_uq_dir, prefix, prefix + '_' + rxn + '_ts_final.xyz')
@@ -86,6 +85,12 @@ class IRC():
             try:
                 write(dest_ts_path + '.xyz', read(src_ts_xyz_path))
                 write(dest_ts_path + '.png', read(src_ts_xyz_path))
+                IRC.create_job_files_irc(self, irc_py_dir, ts_file_name,
+                                         template_f, '_irc_f.py', prefix, rxn,
+                                         ts_file_name_xyz)
+                IRC.create_job_files_irc(self, irc_py_dir, ts_file_name,
+                                         template_r, '_irc_r.py', prefix, rxn,
+                                         ts_file_name_xyz)
             except FileNotFoundError:
                 # skip the file because calculation did not finished
                 print('Calculations for {} probably did not finish'.format(
@@ -94,29 +99,42 @@ class IRC():
                 pass
                 # raise
 
-            # create slurm job scripts
-            with open(pytemplate_f, 'r') as f:
-                template = f.read()
-                job_name_f = os.path.join(
-                    irc_py_file, ts_file_name[:-3] + '_irc_f.py')
-                with open(job_name_f, 'w') as f:
-                    f.write(template.format(
-                        prefix=prefix, rxn=rxn, TS_xyz=ts_file_name_xyz,
-                        pseudopotentials=self.pseudopotentials,
-                        pseudo_dir=self.pseudo_dir))
-                    f.close()
-            f.close()
-            with open(pytemplate_r, 'r') as r:
-                template = r.read()
-                job_name_r = os.path.join(
-                    irc_py_file, ts_file_name[:-3] + '_irc_r.py')
-                with open(job_name_r, 'w') as r:
-                    r.write(template.format(
-                        prefix=prefix, rxn=rxn, TS_xyz=ts_file_name_xyz,
-                        pseudopotentials=self.pseudopotentials,
-                        pseudo_dir=self.pseudo_dir))
-                    r.close()
-            r.close()
+    def create_job_files_irc(self, irc_py_dir, ts_file_name, template,
+                             which_irc, prefix, rxn, ts_file_name_xyz):
+        ''' Create python scripts to submit jobs
+
+        Parameters:
+        __________
+        irc_py_dir : str
+            a path to directory where .py scripts are to be saved
+            e.g. 'Cu_111/IRC/'
+        ts_file_name : str
+            a file name of the TS (without 'xyz.')
+            e.g. '01_CO2+H_CHO2_ts'
+        template : python file
+            a template for irc_f or irc_r calculations
+        which_irc : str
+            what to add at the end of .py file, before '.py'?
+            e.g. 
+            '_irc_f.py'
+        prefix : str
+            a prefix for the given geometry
+            e.g. '00'
+        rxn : str
+            name of the reaction
+            e.g. 'O+H_OH'
+        ts_file_name.xyz : str
+            a path to ts
+            e.g. '00/00_CO2+H_CHO2_ts.xyz'
+
+        '''
+        job_name = os.path.join(irc_py_dir, ts_file_name[:-3] + which_irc)
+        with open(job_name, 'w') as f:
+            f.write(template.format(
+                prefix=prefix, rxn=rxn, TS_xyz=ts_file_name_xyz,
+                pseudopotentials=self.pseudopotentials,
+                pseudo_dir=self.pseudo_dir))
+        f.close()
 
     def prepare_opt_irc(self, struc_path, irc, traj, pytemplate_irc_opt):
         ''' Preapare files for IRC optimization
@@ -150,7 +168,7 @@ class IRC():
         pytemplate_irc_opt : python script
             template file for IRC optimization job
         irc_opt_pth : str
-            directory where irc optimization will we placed, 
+            directory where irc optimization will we placed,
             e.g Cu_111/IRC/00/irc_r_opt
         traj : ase trajectory file
             e.g *irc_f.traj from previous irc calculation
