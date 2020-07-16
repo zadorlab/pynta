@@ -67,6 +67,12 @@ class IRC():
         rxn = ts.get_rxn_name()
         unique_ts_index = checkSymm(ts_uq_dir)
 
+        # load templates for irc_f and irc_r calculations
+        # with open(pytemplate_f, 'r') as f:
+        #         template_f = f.read()
+        # with open(pytemplate_r, 'r') as r:
+        #         template_r = r.read()
+
         for i, prefix in enumerate(unique_ts_index):
             prefix = prefix[1:]
             irc_dir = os.path.join(self.facetpath, 'IRC', prefix)
@@ -81,10 +87,14 @@ class IRC():
                 write(dest_ts_path + '.xyz', read(src_ts_xyz_path))
                 write(dest_ts_path + '.png', read(src_ts_xyz_path))
             except FileNotFoundError:
-                # pass
-                raise
+                # skip the file because calculation did not finished
+                print('Calculations for {} probably did not finish'.format(
+                    src_ts_xyz_path))
+                print('Skipping...')
+                pass
+                # raise
 
-            '''create slurm job scripts'''
+            # create slurm job scripts
             with open(pytemplate_f, 'r') as f:
                 template = f.read()
                 job_name_f = os.path.join(
