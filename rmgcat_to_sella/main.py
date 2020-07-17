@@ -288,7 +288,6 @@ class WorkFlow:
             WorkFlowDirs.append(WorkFlowDir)
         # go through all dirs and look for the match
         for WorkFlowDir in WorkFlowDirs:
-            print(WorkFlowDir)
             try:
                 check_out_files, path_to_outfiles = WorkFlow.check_if_path_to_out_files_exists(
                     self, WorkFlowDir, species)

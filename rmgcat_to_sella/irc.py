@@ -77,7 +77,6 @@ class IRC():
             irc_py_dir = os.path.join(self.facetpath, 'IRC')
             ts_file_name = os.path.join(prefix + '_' + rxn + '_ts')
             ts_file_name_xyz = os.path.join(prefix, ts_file_name + '.xyz')
-            print(ts_file_name_xyz)
             os.makedirs(irc_dir, exist_ok=True)
             src_ts_xyz_path = os.path.join(
                 ts_uq_dir, prefix, prefix + '_' + rxn + '_ts_final.xyz')
