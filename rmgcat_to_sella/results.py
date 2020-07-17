@@ -343,15 +343,34 @@ class Results():
 
     def rxn_title(self):
         ''' Return rxn name with arrow between reactants and products'''
-        reactants = '+'.join([str(species) + '*' for species in self.reactants_list])
-        products = '+'.join([str(species) + '*' for species in self.products_list])
+        reactants = '+'.join([str(species) +
+                              '*' for species in self.reactants_list])
+        products = '+'.join([str(species) +
+                             '*' for species in self.products_list])
         rxn_name = reactants + ' --> ' + products
         return rxn_name
 
-    def plot(self, plot_title=None):
-        ''' Plot reaction energy diagram'''
+    def plot(self, plot_title=None, apply_max_barrier=False):
+        ''' Plot reaction energy diagram
+        
+        Parameters:
+        ___________
+        plot_title : str
+            provide a title for the plot, optional
+        apply_max_barrier : bool
+            specify whether to apply a filter for a max barrier,
+            default = False
+        
+        '''
+
         reaction_energy = float(Results.get_reaction_energy(self))
         activation_barriers = Results.get_barrier(self)
+
+        if apply_max_barrier:
+            activation_barriers = {ts_name: float(barrier) for (
+                ts_name, barrier) in activation_barriers.items()
+                if float(barrier) < 300}
+
         rxn_name = Results.rxn_title(self)
         energy_0 = 0
         rxn_ener_position = reaction_energy + 5
@@ -370,14 +389,17 @@ class Results():
             # barrier_position = barrier + 5
             # plt.annotate('{:.2f}'.format(barrier),
             #              (2.5, barrier_position), ha='center')
+
         # add lablel with the 0 ener for reactants
         plt.annotate('{:.2f}'.format(energy_0), (0.5, 5), ha='center')
         plt.annotate(reactants, (0.5, -8), ha='center')
+
         # add lablel with the reaction energy for products
         plt.annotate('{:.2f}'.format(reaction_energy),
                      (4.5, rxn_ener_position), ha='center')
         plt.annotate(products, (4.5, rxn_ener_position_label), ha='center')
         ax = plt.axes()
+
         # plt.gca().axes.get_xaxis().set_visible(False)
         minor_locator = AutoMinorLocator(5)
         plt.margins(x=0)
@@ -391,13 +413,13 @@ class Results():
         plt.tight_layout()
         plt.savefig('plot.png')
 
-    def get_latex_table(self):
-        reaction_energy = Results.get_reaction_energy(self)
-        activation_barriers = Results.get_barrier(self)
-        rxn_name = Results.rxn_title(self)
-        var = 1
-        bra = '{'
-        ket = '}'
+    # def get_latex_table(self):
+    #     reaction_energy = Results.get_reaction_energy(self)
+    #     activation_barriers = Results.get_barrier(self)
+    #     rxn_name = Results.rxn_title(self)
+    #     var = 1
+    #     bra = '{'
+    #     ket = '}'
 
-        for i in range(10):
-            print('{0}This is {2} in brackets{1}'.format(bra, ket, var))
+    #     for i in range(10):
+    #         print('{0}This is {2} in brackets{1}'.format(bra, ket, var))
