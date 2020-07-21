@@ -54,6 +54,8 @@ espresso = Espresso(command='/home/ehermes/local/bin/mpirun -np 48 /home/ehermes
                     conv_thr=1e-16,
                     mixing_mode='local-TF',
                     )
+# was
+# conv_thr=1e-11
 
 TS_est = read('{TS}')
 # fix all atoms but not adsorbates
