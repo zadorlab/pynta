@@ -56,7 +56,7 @@ espresso = Espresso(command='/home/ehermes/local/bin/mpirun -np 48 /home/ehermes
                     )
 
 TS_est = read('{TS}')
-TS_est.set_constraint(FixAtoms([atom.index for atom in TS_est if atom.position[2] < TS_est.cell[2, 2] / 2.]))
+TS_est.set_constraint(FixAtoms([atom.index for atom in TS_est if atom.position[2] < TS_est.cell[2, 2] / 4.]))
 
 with SocketIOCalculator(espresso, unixsocket=unixsocket) as calc:
     TS_est.calc = calc
