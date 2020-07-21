@@ -51,11 +51,13 @@ espresso = Espresso(command='/home/ehermes/local/bin/mpirun -np 48 /home/ehermes
                     degauss=0.01,  # Rydberg
                     ecutwfc=40,  # Rydberg
                     nosym=True,  # Allow symmetry breaking during optimization
-                    conv_thr=1e-16,
+                    conv_thr=1e-11,
                     mixing_mode='local-TF',
                     )
 # was
 # conv_thr=1e-11
+# or 
+# conv_thr=1e-16
 
 TS_est = read('{TS}')
 # fix all atoms but not adsorbates
