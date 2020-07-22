@@ -67,7 +67,7 @@ TS_est.set_constraint(FixAtoms([atom.index for atom in TS_est if atom.position[2
 
 with SocketIOCalculator(espresso, unixsocket=unixsocket) as calc:
     TS_est.calc = calc
-    opt = Sella(TS_est, order=1, delta0=1e-2, trajectory = trajdir)
+    opt = Sella(TS_est, order=1, delta0=1e-2, gamma=1e-16, trajectory = trajdir)
     opt.run(fmax=0.01)
 
 WriteDir = os.path.join(prefix, prefix + '_' + rxn)
