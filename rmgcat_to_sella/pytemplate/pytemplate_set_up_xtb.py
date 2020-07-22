@@ -1,20 +1,13 @@
 #!/usr/bin/env python3
-#SBATCH -J {geomName}_xtb
-#SBATCH -N 1
-#SBATCH -c 1
-#SBATCH --mem=1gb
-#SBATCH -p day-long-cpu
-#SBATCH -t 1-00:00:00
-#SBATCH -e %x.err
-#SBATCH -o %x.out
 
 import os
 import sys
 from pathlib import Path
 
-submitDir = os.environ['SLURM_SUBMIT_DIR']
-os.chdir(submitDir)
-path = Path(submitDir).parents[2]
+
+from pathlib import Path
+cwd=Path.cwd().as_posix()
+path = Path(cwd).parents[2]
 sys.path.append(str(path))
 # import inputR2S
 
@@ -46,10 +39,12 @@ with open(prefix + '_time.log', 'w+') as f:
     f.write("\n")
 f.close()
 
+from xtb.ase.calculator import XTB
 adsplacer = AdsorbatePlacer(bigSlab, TS_candidate, bonds, avDists,
                             GFN1(accuracy=0.01,
                                  max_iterations=1000),
                             trajectory=trajPath)
+adsplacer.set_calculator(XTB(method="GFN1-xTB"))
 opt = adsplacer.optimize()
 # visualize end point of each trajectory
 write(trajPath[:-5] + '_final.png', read(trajPath))

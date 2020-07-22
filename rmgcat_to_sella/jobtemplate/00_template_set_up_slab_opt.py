@@ -1,9 +1,5 @@
 #!/usr/bin/env python3
 
-import os
-import sys
-sys.path.append(os.getcwd())
-
 from rmgcat_to_sella.get_slab import GetSlab
 
 surface_type     = '{surface_type}'

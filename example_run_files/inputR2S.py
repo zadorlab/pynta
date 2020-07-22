@@ -29,7 +29,8 @@ vacuum           = 8.0
 slabopt          = 'Cu_100_slab_opt.xyz'
 ####################################################
 # Quantum Espresso pseudopotantials for DFT calculations
-pseudo_dir = '/home/mgierad/espresso/pseudo'
+#pseudo_dir = '/home/mgierad/espresso/pseudo'
+pseudo_dir = '/soft/espresso/pslibrary.1.0.0/pbe/PSEUDOPOTENTIALS'
 pseudopotentials = "dict(Cu='Cu.pbe-spn-kjpaw_psl.1.0.0.UPF', H='H.pbe-kjpaw_psl.1.0.0.UPF', O='O.pbe-n-kjpaw_psl.1.0.0.UPF', C='C.pbe-n-kjpaw_psl.1.0.0.UPF')"
 ####################################################
 # filename of the .yaml file with reactions

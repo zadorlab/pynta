@@ -1,11 +1,5 @@
 #!/usr/bin/env python3
 
-import os
-import sys
-submitDir = os.environ['SLURM_SUBMIT_DIR']
-os.chdir(submitDir)
-sys.path.append(os.getcwd())
-
 from rmgcat_to_sella.irc import IRC
 
 slab             = '{slab}'
@@ -35,15 +29,15 @@ myPython= ApplicationDefinition.objects.get_or_create(
             name="Python",
             executable="python")
 myPython.save()
+cwd=Path.cwd().as_posix()
 for py_script in glob('{facetpath}/IRC/irc*/*.py'):
-    creation_dir=Path.cwd().as_posix()+'/'+'/'.join(py_script.strip().split('/')[:-1])
+    #creation_dir=Path.cwd().as_posix()+'/'+'/'.join(py_script.strip().split('/')[:-1])
     job_to_add = BalsamJob(
             name = py_script,
             workflow = workflow_name,
             application = myPython,
-            args = py_script,
+            args = cwd+py_script,
             ranks_per_node = 1,
-#            data={"creation_dir": Path.cwd().as_posix()+'./{facetpath}/minima'}
             )
     job_to_add.save()
     for job in pending_simulations:

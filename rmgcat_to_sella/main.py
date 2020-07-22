@@ -33,6 +33,8 @@ try:
     TS = inputR2S.TSScript
     IRC = inputR2S.IRCScript
     IRCopt = inputR2S.IRCoptScript
+#    from pathlib import Path
+#    creation_dir = Path.cwd().as_posix() 
 
 except ImportError:
     print('Missing input file. You cannot run calculations but will be able to use most of the workflow.')
@@ -84,16 +86,13 @@ optimize_slab = inputR2S.optimize_slab
 
 
 class WorkFlow:
-     def __init__(self):
-         ''' Setup the balsam application for this workflow run, once we start using QE will want one app for QE, 
-         one for xtb most likely'''
+
+    def __init__(self):
+        ''' Setup the balsam application for this workflow run, once we start using QE will want one app for QE, one for xtb most likely '''
         from balsam.core.models import ApplicationDefinition
-        self.myPython= ApplicationDefinition.objects.get_or_create(
-                name="Python",
-                executable="python")
-               # envscript="/path/to/setup-envs.sh",
-               #postprocess="python /path/to/post.py"
-        self.myPython.save()
+        self.myPython, self.app_created = ApplicationDefinition.objects.get_or_create(name="Python", executable="python")
+        # envscript="/path/to/setup-envs.sh",
+        #postprocess="python /path/to/post.py"
     # def __init__(self, facetpath):
     #     self.facetpath = facetpath
 
@@ -128,9 +127,9 @@ class WorkFlow:
                     vacuum, slab_name, pseudopotentials, pseudo_dir):
         ''' Create 00_set_up_slab_opt.py file '''
         with open(template, 'r') as r:
-            template = r.read()
+            template_text = r.read()
             with open('00_set_up_slab_opt.py', 'w') as c:
-                c.write(template.format(surface_type=surface_type,
+                c.write(template_text.format(surface_type=surface_type,
                                         symbol=symbol, a=a,
                                         repeats_surface=repeats_surface,
                                         vacuum=vacuum, slab_name=slab_name,
@@ -143,13 +142,13 @@ class WorkFlow:
                    pytemplate, pseudopotentials, pseudo_dir):
         ''' Create 01_set_up_ads.py file '''
         with open(template, 'r') as r:
-            template = r.read()
+            template_text = r.read()
             with open('01_set_up_ads.py', 'w') as c:
-                c.write(template.format(facetpath=facetpath, slabopt=slabopt,
-                                        yamlfile=yamlfile, repeats=repeats,
-                                        pytemplate=pytemplate,
-                                        pseudopotentials=pseudopotentials,
-                                        pseudo_dir=pseudo_dir))
+                c.write(template_text.format(facetpath=facetpath, slabopt=slabopt,
+                    yamlfile=yamlfile, repeats=repeats,
+                    pytemplate=pytemplate,
+                    pseudopotentials=pseudopotentials,
+                    pseudo_dir=pseudo_dir))
             c.close()
         r.close()
 
@@ -159,9 +158,9 @@ class WorkFlow:
                            pytemplate_xtb, sp1, sp2):
         ''' Create 02_set_up_TS_with_xtb.py file'''
         with open(template, 'r') as r:
-            template = r.read()
+            template_text = r.read()
             with open('02_set_up_TS_with_xtb.py', 'w') as c:
-                c.write(template.format(facetpath=facetpath, slab=slab,
+                c.write(template_text.format(facetpath=facetpath, slab=slab,
                                         repeats=repeats, yamlfile=yamlfile,
                                         rotAngle=rotAngle, scfactor=scfactor,
                                         scfactor_surface=scfactor_surface,
@@ -175,9 +174,9 @@ class WorkFlow:
                       pytemplate, pseudopotentials, pseudo_dir):
         ''' Create 03_checksym_xtb_runTS.py file '''
         with open(template, 'r') as r:
-            template = r.read()
+            template_text = r.read()
             with open('03_checksym_xtb_runTS.py', 'w') as c:
-                c.write(template.format(facetpath=facetpath, slab=slab,
+                c.write(template_text.format(facetpath=facetpath, slab=slab,
                                         repeats=repeats, yamlfile=yamlfile,
                                         pytemplate=pytemplate,
                                         pseudo_dir=pseudo_dir,
@@ -190,9 +189,9 @@ class WorkFlow:
                        pseudopotentials, pseudo_dir):
         ''' Create 04_set_up_irc.py file '''
         with open(template, 'r') as r:
-            template = r.read()
+            template_text = r.read()
             with open('04_set_up_irc.py', 'w') as c:
-                c.write(template.format(facetpath=facetpath,
+                c.write(template_text.format(facetpath=facetpath,
                                         slab=slab,
                                         repeats=repeats,
                                         pytemplate_f=pytemplate_f,
@@ -207,9 +206,9 @@ class WorkFlow:
                        pseudopotentials, pseudo_dir):
         ''' Create 05_set_up_opt_after_irc.py file'''
         with open(template, 'r') as r:
-            template = r.read()
+            template_text = r.read()
             with open('05_set_up_opt_after_irc.py', 'w') as c:
-                c.write(template.format(facetpath=facetpath,
+                c.write(template_text.format(facetpath=facetpath,
                                         slab=slab,
                                         repeats=repeats,
                                         pytemplate=pytemplate,
@@ -224,25 +223,29 @@ class WorkFlow:
 ##############################
     def exe(self, parent_job, job_script,cores=1):
         from balsam.launcher.dag import BalsamJob
+        from os import getcwd
+        cwd = getcwd()
         job_to_add = BalsamJob(
                 name = job_script,
                 workflow = "test",
                 application = self.myPython,
-                args = job_script,
+                args = cwd+'/'+job_script,
                 ranks_per_node = cores,
+                user_workdir = cwd
+                #working_directory = cwd
                 )
         job_to_add.save()
         if parent_job!='':
             from balsam.launcher.dag import add_dependency
             try:
-                dependency=int(parent_job[0:1])
+                add_dependency(parent_job,job_to_add) # parent, child
+            except ValueError:
+                dependency=str(int(parent_job[0:1]))
                 dependency_workflow_name = yamlfile+facetpath+dependency
                 BalsamJob = BalsamJob
-                pending_simulations = BalsamJob.objects.filter(workflow__contains=dependency_workflow_name).exclude(state=“JOB_FINISHED”)
+                pending_simulations = BalsamJob.objects.filter(workflow__contains=dependency_workflow_name).exclude(state='JOB_FINISHED')
                 for job in pending_simulations:
                     add_dependency(job,job_to_add) # parent, child
-            except ValueError: 
-                add_dependency(parent_job,job_script) # parent, child
         return job_to_add
 
     def check_if_path_to_mimina_exists(self, WorkFlowDir, species):
@@ -277,11 +280,9 @@ class WorkFlow:
         # expected e.g. -> WorkFlowDirs = ['00_Cu_methanol_CO+O_CO2',
         # '01_Cu_methanol_OH_O+H', '02_Cu_methanol_CO+H_HCO']
         for WorkFlowDir in WorkFlowDirs:
-            minimaDir = WorkFlow.check_if_path_to_mimina_exists(
-                self, WorkFlowDir, species)
+            minimaDir = WorkFlow.check_if_path_to_mimina_exists(WorkFlowDir, species)
             if minimaDir is not None:
                 uniqueMinimaDirs.append(minimaDir)
-
         if len(uniqueMinimaDirs) >= 1:
             print('More than one possible path were found for the species {}. Choosing the following path: {}'.format(
                 species, uniqueMinimaDirs[0]))
@@ -293,28 +294,28 @@ class WorkFlow:
 
     def run_slab_optimization(self):
         ''' Submit slab_optimization_job '''
+        self.slab_opt_job=self.exe('', slab_opt,cores=48)
         # submit slab_optimization_job
-        self.slab_opt=self.exe(self, '', slab_opt,cores=48):
 
     def run_opt_surf_and_adsorbate(self):
         ''' Run optmization of adsorbates on the surface '''
-        return self.exe(self, self.slab_opt, SurfaceAdsorbate)
+        return self.exe(self.slab_opt_job, SurfaceAdsorbate)
 
     def run_opt_surf_and_adsorbate_no_depend(self):
         ''' Run optmization of adsorbates on the surface
             if there is no dependency on other jobs '''
-        return self.exe(self, '', SurfaceAdsorbate)
+        return self.exe('', SurfaceAdsorbate)
 
     def run_ts_estimate(self, dependent_job):
         ''' Run TS estimation calculations '''
         TSxtb = inputR2S.TSxtbScript
-        return self.exe(self, dependent_job, TSxtb)
+        return self.exe(dependent_job, TSxtb)
 
     def run_ts_estimate_no_depend(self):
         ''' Run TS estimate calculations if there is
             no dependency on other jobs '''
         TSxtb = inputR2S.TSxtbScript
-        return self.exe(self, '', TSxtb)
+        return self.exe('', TSxtb)
 
     def check_all_species(self):
         ''' Check all species to find whether there are previous calculation
@@ -358,10 +359,13 @@ class WorkFlow:
 
     def copy_slab_opt_file(self):
         ''' Copy .xyz of previously optimized slab '''
-        if self.check_if_slab_opt_exists(self):
-            src = self.check_if_slab_opt_exists()[1]
+        self.slab_exists= self.check_if_slab_opt_exists()
+        print(self.slab_exists)
+        if self.slab_exists[0]:
+            src = self.slab_exists[1]
             dst = os.getcwd()
             shutil.copy2(src, dst)
+            self.slab_opt_job=''
 
     def execute(self):
         ''' The main executable '''
@@ -372,26 +376,21 @@ class WorkFlow:
             # a slab optimization will be launched.
             # a = self.check_if_slab_opt_exists()
             # print(a)
-            if not self.check_if_slab_opt_exists():
-                self.run_slab_optimization(self)
+            if self.check_if_slab_opt_exists():
+                self.run_slab_optimization()
                 # wait a bit in case the file write process is too slow
-                """ May need to put a post process on slab optimization to call the next step """
             else:
                 self.copy_slab_opt_file()
             # check whether sp1 and sp2 was already cacluated
             if checksp1[0] is False or checksp2[0] is False:
                 # If any of these is False
                 # run optimization of surface + reactants; surface + products
-                if os.path.exists('submitted_00.txt'):
-                    # this is executed when slab was optimized in the
-                    # current run, because 'submitted_00.txt' was generated
-                    self.run_opt_surf_and_adsorbate(self)
-                else:
-                    # otherwise run no_depend version
-                    # ('submitted_00.txt' not generated)
+                try:
+                    self.run_opt_surf_and_adsorbate()
+                except NameError:
                     self.run_opt_surf_and_adsorbate_no_depend()
                 # run calculations to get TS guesses
-                self.run_ts_estimate(self, '01')
+                self.run_ts_estimate('01')
             else:
                 # If both are True, start by generating TS guesses and run
                 # the penalty function minimization
