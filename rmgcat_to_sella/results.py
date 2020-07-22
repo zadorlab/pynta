@@ -350,9 +350,10 @@ class Results():
         rxn_name = reactants + ' --> ' + products
         return rxn_name
 
-    def plot(self, plot_title=None, apply_max_barrier=False):
+    def plot(self, plot_title=None, plot_filename=None,
+             apply_max_barrier=False):
         ''' Plot reaction energy diagram
-        
+
         Parameters:
         ___________
         plot_title : str
@@ -360,8 +361,11 @@ class Results():
         apply_max_barrier : bool
             specify whether to apply a filter for a max barrier,
             default = False
-        
+
         '''
+
+        if not plot_filename:
+            plot_filename = 'plot.png'
 
         reaction_energy = float(Results.get_reaction_energy(self))
         activation_barriers = Results.get_barrier(self)
@@ -398,20 +402,23 @@ class Results():
         plt.annotate('{:.2f}'.format(reaction_energy),
                      (4.5, rxn_ener_position), ha='center')
         plt.annotate(products, (4.5, rxn_ener_position_label), ha='center')
-        ax = plt.axes()
 
+        ax = plt.axes()
         # plt.gca().axes.get_xaxis().set_visible(False)
         minor_locator = AutoMinorLocator(5)
         plt.margins(x=0)
         ax.xaxis.set_major_locator(plt.NullLocator())
         ax.yaxis.set_minor_locator(minor_locator)
+        # labels
+        ax.set_ylabel('E (kJ/mol)')
+        ax.set_xlabel('reaction coordinate')
 
         plt.legend()
         # plt.title(rxn_name)
         plt.title(plot_title)
         # plt.show()
         plt.tight_layout()
-        plt.savefig('plot.png')
+        plt.savefig(plot_filename)
 
     # def get_latex_table(self):
     #     reaction_energy = Results.get_reaction_energy(self)
