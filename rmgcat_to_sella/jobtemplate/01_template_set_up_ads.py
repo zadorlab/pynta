@@ -30,7 +30,7 @@ for py_script in glob('{facetpath}/minima/*.py'):
     job_to_add = BalsamJob(
             name = py_script,
             workflow = workflow_name,
-            application = myPython,
+            application = myPython.name,
             args = cwd+py_script,
             ranks_per_node = 1,
             )

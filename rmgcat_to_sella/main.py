@@ -91,6 +91,7 @@ class WorkFlow:
         ''' Setup the balsam application for this workflow run, once we start using QE will want one app for QE, one for xtb most likely '''
         from balsam.core.models import ApplicationDefinition
         self.myPython, self.app_created = ApplicationDefinition.objects.get_or_create(name="Python", executable="python")
+        self.myPython.save()
         # envscript="/path/to/setup-envs.sh",
         #postprocess="python /path/to/post.py"
     # def __init__(self, facetpath):
@@ -225,10 +226,15 @@ class WorkFlow:
         from balsam.launcher.dag import BalsamJob
         from os import getcwd
         cwd = getcwd()
+        try:
+            job_number=str(int(job_script[0:1])) 
+            workflow_name = yamlfile+facetpath+job_number
+        except ValueError:
+            workflow_name = yamlfile+facetpath
         job_to_add = BalsamJob(
                 name = job_script,
-                workflow = "test",
-                application = self.myPython,
+                workflow = workflow_name,
+                application = self.myPython.name,
                 args = cwd+'/'+job_script,
                 ranks_per_node = cores,
                 user_workdir = cwd
@@ -242,6 +248,7 @@ class WorkFlow:
             except ValueError:
                 dependency=str(int(parent_job[0:1]))
                 dependency_workflow_name = yamlfile+facetpath+dependency
+                print(dependency_workflow_name)
                 BalsamJob = BalsamJob
                 pending_simulations = BalsamJob.objects.filter(workflow__contains=dependency_workflow_name).exclude(state='JOB_FINISHED')
                 for job in pending_simulations:
@@ -294,8 +301,8 @@ class WorkFlow:
 
     def run_slab_optimization(self):
         ''' Submit slab_optimization_job '''
-        self.slab_opt_job=self.exe('', slab_opt,cores=48)
-        # submit slab_optimization_job
+        self.slab_opt_job=self.exe('', slab_opt,cores=1)
+        # submit slab_optimization_job 1 task probably, was 48 originally
 
     def run_opt_surf_and_adsorbate(self):
         ''' Run optmization of adsorbates on the surface '''
