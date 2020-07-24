@@ -402,7 +402,10 @@ class WorkFlow:
             self.slab_opt_job = ''
 
     def execute(self):
-        ''' The main executable '''
+        ''' The main executable 
+        
+        TODO DEBUG -- it could be a bit buggy
+        '''
         # Below, I have a list of tuples with all
         all_species_checked = self.check_all_species()
         # It more convenient to have a list of bools
