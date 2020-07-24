@@ -54,11 +54,8 @@ scfactor         = 1.4
 # the nearest surface metal atom
 scfactor_surface = 1.0
 ####################################################
-# species 1
-sp1              = 'O'
-####################################################
-# species 2
-sp2              = 'H'
+# species list
+species_list     = ['O', 'H'] 
 ####################################################
 # do you want to apply the scfactor_surface to the species 1?
 scaled1          = False

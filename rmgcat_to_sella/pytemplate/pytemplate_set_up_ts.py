@@ -54,13 +54,20 @@ espresso = Espresso(command='/home/ehermes/local/bin/mpirun -np 48 /home/ehermes
                     conv_thr=1e-11,
                     mixing_mode='local-TF',
                     )
+# was
+# conv_thr=1e-11
+# or 
+# conv_thr=1e-16
 
 TS_est = read('{TS}')
+# fix all atoms but not adsorbates
+# TS_est.set_constraint(FixAtoms([atom.index for atom in TS_est if atom.index < len(TS_est) - 2]))
+# fix bottom half of the slab
 TS_est.set_constraint(FixAtoms([atom.index for atom in TS_est if atom.position[2] < TS_est.cell[2, 2] / 2.]))
 
 with SocketIOCalculator(espresso, unixsocket=unixsocket) as calc:
     TS_est.calc = calc
-    opt = Sella(TS_est, order=1, delta0=1e-2, trajectory = trajdir)
+    opt = Sella(TS_est, order=1, delta0=1e-2, gamma=1e-16, trajectory = trajdir)
     opt.run(fmax=0.01)
 
 WriteDir = os.path.join(prefix, prefix + '_' + rxn)

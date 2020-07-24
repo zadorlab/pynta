@@ -1,26 +1,25 @@
 #!/usr/bin/env python3
 
+from xtb.ase.calculator import XTB
+from rmgcat_to_sella.prepare_ts_with_xtb import AdsorbatePlacer
 import os
 import sys
 from pathlib import Path
-
-
-from pathlib import Path
-cwd=Path.cwd().as_posix()
-path = Path(cwd).parents[2]
-sys.path.append(str(path))
-# import inputR2S
-
 import datetime
 from xtb import GFN1
 from ase.io import read, write
-from rmgcat_to_sella.prepare_ts_with_xtb import AdsorbatePlacer
+
+
+from pathlib import Path
+cwd = Path.cwd().as_posix()
+path = Path(cwd).parents[2]
+sys.path.append(str(path))
 
 
 geom = '{geom}'
 bonds = {bonds}
-avDists = {avDists}
-trajPath = '{trajPath}'
+av_dists_tuple = {av_dists_tuple}
+traj_path = '{traj_path}'
 slab = '../../../{slabopt}'
 repeats = {repeats}
 prefix = '{prefix}'
@@ -29,9 +28,9 @@ prefix = '{prefix}'
 
 adsorbed = read(geom)
 slab = read(slab)
-bigSlab = slab * repeats
-nbigSlab = len(bigSlab)
-TS_candidate = adsorbed[nbigSlab:]
+big_slab = slab * repeats
+nbig_slab = len(big_slab)
+ts_estimate = adsorbed[nbig_slab:]
 
 start = datetime.datetime.now()
 with open(prefix + '_time.log', 'w+') as f:
@@ -39,7 +38,6 @@ with open(prefix + '_time.log', 'w+') as f:
     f.write("\n")
 f.close()
 
-from xtb.ase.calculator import XTB
 adsplacer = AdsorbatePlacer(bigSlab, TS_candidate, bonds, avDists,
                             GFN1(accuracy=0.01,
                                  max_iterations=1000),
@@ -47,8 +45,8 @@ adsplacer = AdsorbatePlacer(bigSlab, TS_candidate, bonds, avDists,
 adsplacer.set_calculator(XTB(method="GFN1-xTB"))
 opt = adsplacer.optimize()
 # visualize end point of each trajectory
-write(trajPath[:-5] + '_final.png', read(trajPath))
-write(trajPath[:-5] + '_final.xyz', read(trajPath))
+write(traj_path[:-5] + '_final.png', read(traj_path))
+write(traj_path[:-5] + '_final.xyz', read(traj_path))
 
 end = datetime.datetime.now()
 with open(prefix + '_time.log', 'a+') as f:

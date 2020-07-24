@@ -2,8 +2,9 @@ from ase.io import read
 from pathlib import Path
 import os
 import matplotlib.pyplot as plt
+from matplotlib.ticker import AutoMinorLocator
 import numpy as np
-from scipy.interpolate import make_interp_spline
+# from scipy.interpolate import make_interp_spline
 
 
 class Results():
@@ -104,7 +105,7 @@ class Results():
         Returns:
         ________
 
-        activation_barriers : dict('str'='str')
+        activation_barriers : dict('str'=float)
             a dictonary with all barrier heights relatively
             to the most stable reactant (in kJ/mol)
 
@@ -122,11 +123,13 @@ class Results():
             if len(p_ener_list) >= len(r_ener_list):
                 barrier = (ts_ener - sum(r_ener_list)) * self.ev_to_kjmol
                 activation_barriers['TS_' + ts_name] = '{:.2f}'.format(barrier)
+                # activation_barriers['TS_' + ts_name] = barrier
             # e.g. O + H --> OH
             elif len(p_ener_list) < len(r_ener_list):
                 barrier = (ts_ener + slab_ener * nslabs -
                            sum(r_ener_list)) * self.ev_to_kjmol
                 activation_barriers['TS_' + ts_name] = '{:.2f}'.format(barrier)
+                # activation_barriers['TS_' + ts_name] = barrier
             else:
                 raise NotImplementedError(
                     'Not tested if r_ener_list=p_ener_list')
@@ -250,17 +253,21 @@ class Results():
 
         '''
         species_ener_dict = {}
-        species_out_file_path_list = Results.get_species_out_files(self,
-                                                                   species)
-        for spiecies_out_file_path in species_out_file_path_list:
-            with open(spiecies_out_file_path, 'r') as f:
-                data = f.readlines()
-                enerLine = data[-1]
-                enerVal = enerLine.split()
-                species_ener_dict[spiecies_out_file_path] = float(enerVal[3])
-                f.close()
-        lowest_species_ener = min(species_ener_dict.values())
-        return lowest_species_ener
+        try:
+            species_out_file_path_list = Results.get_species_out_files(self,
+                                                                       species)
+            for spiecies_out_file_path in species_out_file_path_list:
+                with open(spiecies_out_file_path, 'r') as f:
+                    data = f.readlines()
+                    enerLine = data[-1]
+                    enerVal = enerLine.split()
+                    species_ener_dict[spiecies_out_file_path] = float(
+                        enerVal[3])
+                    f.close()
+            lowest_species_ener = min(species_ener_dict.values())
+            return lowest_species_ener
+        except ValueError:
+            print('Check if minima .out files copied successfully')
 
     def get_ts_out_files(self):
         ''' Get TS .out files
@@ -336,46 +343,90 @@ class Results():
 
     def rxn_title(self):
         ''' Return rxn name with arrow between reactants and products'''
-        reactants = '+'.join([str(species) for species in self.reactants_list])
-        products = '+'.join([str(species) for species in self.products_list])
+        reactants = '+'.join([str(species) +
+                              '*' for species in self.reactants_list])
+        products = '+'.join([str(species) +
+                             '*' for species in self.products_list])
         rxn_name = reactants + ' --> ' + products
         return rxn_name
 
-    def plot(self):
+    def plot(self, plot_title=None, plot_filename=None,
+             apply_max_barrier=False):
         ''' Plot reaction energy diagram
 
         Parameters:
         ___________
-        activation_barriers : dict('str'='str')
-            a dictonary with all barrier heights relatively
-            to the most stable reactant (in kJ/mol)
-        reaction_energy : str
-            an energy of reaction calculated a difference between
-            the most stable product and the most stable reactant
+        plot_title : str
+            provide a title for the plot, optional
+        apply_max_barrier : bool
+            specify whether to apply a filter for a max barrier,
+            default = False
 
         '''
 
-        reaction_energy = Results.get_reaction_energy(self)
+        if not plot_filename:
+            plot_filename = 'plot.png'
+
+        reaction_energy = float(Results.get_reaction_energy(self))
         activation_barriers = Results.get_barrier(self)
+
+        if apply_max_barrier:
+            activation_barriers = {ts_name: float(barrier) for (
+                ts_name, barrier) in activation_barriers.items()
+                if float(barrier) < 300}
+
         rxn_name = Results.rxn_title(self)
+        energy_0 = 0
+        rxn_ener_position = reaction_energy + 5
+        rxn_ener_position_label = reaction_energy - 8
+
+        reactants, products = rxn_name.split(' --> ')
 
         for ts_name, barrier in activation_barriers.items():
-            # x = [1, 2, 3]
+            barrier = float(barrier)
             x = np.arange(6)
-            y = np.array([0, 0, float(barrier), float(barrier),
-                          float(reaction_energy), float(reaction_energy)])
-            # x_new = np.linspace(1, 5, 50)
-            # a_BSpline = make_interp_spline(x, y)
-            # y_new = a_BSpline(x_new)
+            y = np.array([0, 0, barrier, barrier,
+                          reaction_energy, reaction_energy])
             plt.plot(x, y, label=ts_name)
-            # for x_new, y_new in zip(x, y):
-            #     label = "{:.2f}".format(y_new)
-            #     plt.annotate(label,  # this is the text
-            #                  (x_new, y_new),  # this is the point to label
-            #                  textcoords="offset points",  # how to position the text
-            #                  # distance from text to points (x,y)
-            #                  xytext=(0, 10),
-            #                  ha='center')  # horizontal alignment can be left, right or center
+            plt.hlines(barrier, 0, 2.0, linestyles='dotted')
+            # add label with ener of the TS
+            # barrier_position = barrier + 5
+            # plt.annotate('{:.2f}'.format(barrier),
+            #              (2.5, barrier_position), ha='center')
+
+        # add lablel with the 0 ener for reactants
+        plt.annotate('{:.2f}'.format(energy_0), (0.5, 5), ha='center')
+        plt.annotate(reactants, (0.5, -8), ha='center')
+
+        # add lablel with the reaction energy for products
+        plt.annotate('{:.2f}'.format(reaction_energy),
+                     (4.5, rxn_ener_position), ha='center')
+        plt.annotate(products, (4.5, rxn_ener_position_label), ha='center')
+
+        ax = plt.axes()
+        # plt.gca().axes.get_xaxis().set_visible(False)
+        minor_locator = AutoMinorLocator(5)
+        plt.margins(x=0)
+        ax.xaxis.set_major_locator(plt.NullLocator())
+        ax.yaxis.set_minor_locator(minor_locator)
+        # labels
+        ax.set_ylabel('E (kJ/mol)')
+        ax.set_xlabel('reaction coordinate')
+
         plt.legend()
-        plt.title(rxn_name)
-        plt.show()
+        # plt.title(rxn_name)
+        plt.title(plot_title)
+        # plt.show()
+        plt.tight_layout()
+        plt.savefig(plot_filename)
+
+    # def get_latex_table(self):
+    #     reaction_energy = Results.get_reaction_energy(self)
+    #     activation_barriers = Results.get_barrier(self)
+    #     rxn_name = Results.rxn_title(self)
+    #     var = 1
+    #     bra = '{'
+    #     ket = '}'
+
+    #     for i in range(10):
+    #         print('{0}This is {2} in brackets{1}'.format(bra, ket, var))

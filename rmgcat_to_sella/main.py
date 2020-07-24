@@ -23,11 +23,12 @@ try:
     rotAngle = inputR2S.rotAngle
     scfactor = inputR2S.scfactor
     scfactor_surface = inputR2S.scfactor_surface
-    sp1 = inputR2S.sp1
-    sp2 = inputR2S.sp2
+    # sp1 = inputR2S.sp1
+    # sp2 = inputR2S.sp2
     scaled1 = inputR2S.scaled1
     scaled2 = inputR2S.scaled2
-    species_list = [sp1, sp2]
+    # species_list = [sp1, sp2]
+    species_list = inputR2S.species_list
     slab_opt = inputR2S.slab_opt_script
     SurfaceAdsorbate = inputR2S.SurfaceAdsorbateScript
     TSxtb = inputR2S.TSxtbScript
@@ -158,18 +159,18 @@ class WorkFlow:
     def set_up_TS_with_xtb(self, template, slab,
                            repeats, yamlfile, facetpath, rotAngle,
                            scfactor, scfactor_surface,
-                           pytemplate_xtb, sp1, sp2):
+                           pytemplate_xtb, species_list):
         ''' Create 02_set_up_TS_with_xtb.py file'''
         with open(template, 'r') as r:
             template_text = r.read()
             with open('02_set_up_TS_with_xtb.py', 'w') as c:
-                c.write(template_text.format(facetpath=facetpath, slab=slab,
-                                             repeats=repeats, yamlfile=yamlfile,
-                                             rotAngle=rotAngle, scfactor=scfactor,
-                                             scfactor_surface=scfactor_surface,
-                                             pytemplate_xtb=pytemplate_xtb, sp1=sp1,
-                                             sp2=sp2, scaled1=scaled1,
-                                             scaled2=scaled2))
+                c.write(template.format(facetpath=facetpath, slab=slab,
+                                        repeats=repeats, yamlfile=yamlfile,
+                                        rotAngle=rotAngle, scfactor=scfactor,
+                                        scfactor_surface=scfactor_surface,
+                                        pytemplate_xtb=pytemplate_xtb,
+                                        species_list=species_list,
+                                        scaled1=scaled1, scaled2=scaled2))
             c.close()
         r.close()
 
@@ -225,6 +226,7 @@ class WorkFlow:
 # Submit jobs and execute it #
 ##############################
     def exe(self, parent_job, job_script, cores=1):
+        ''' TODO Docstring to be written '''
         from balsam.launcher.dag import BalsamJob
         from os import getcwd
         cwd = getcwd()
@@ -259,7 +261,7 @@ class WorkFlow:
         return job_to_add
 
     def check_if_path_to_mimina_exists(self, WorkFlowDir, species):
-        ''' Check for the paths to previously calculated minima and return 
+        ''' Check for the paths to previously calculated minima and return
             a list with all valid paths '''
 
         pathlist = Path(WorkFlowDir).glob('**/minima/' + species)
@@ -271,37 +273,57 @@ class WorkFlow:
         if IndexError:
             return None
 
+    def check_if_path_to_out_files_exists(self, work_flow_dir, species):
+        ''' Check for the previously calculated *relax.out files for a given
+            species in a WorkFlowDir '''
+
+        keyphrase = os.path.join('minima/' + species + '*relax.out')
+        outfile_lists = Path(work_flow_dir).glob(keyphrase)
+        outfiles = []
+        for outfile in outfile_lists:
+            outfiles.append(str(outfile))
+        if not outfiles:
+            return(False, )
+        else:
+            return (True, outfiles)
+
     def check_if_minima_already_calculated(self, currentDir, species,
                                            facetpath):
         ''' Check for previously calculated minima '''
         WorkFlowDirs = []
-        uniqueMinimaDirs = []
-        if facetpath == 'Cu_211':
-            WorkFlowDirsList = Path(str(currentDir)).glob('*_Cu_211_methanol*')
-        elif facetpath == 'Cu_100':
-            WorkFlowDirsList = Path(str(currentDir)).glob('*_Cu_100_methanol*')
-        elif facetpath == 'Cu_111':
-            WorkFlowDirsList = Path(str(currentDir)).glob('*_Cu_methanol*')
-        else:
-            WorkFlowDirsList = Path(str(currentDir)).glob('*_Cu_methanol*')
-        # transforming posix path to regular string
+        keyphrase = '**/{}*/'.format(facetpath)
+        # keyphrase = '*{}*'.format(facetpath)
+        WorkFlowDirsList = Path(str(currentDir)).glob(keyphrase)
+        # find all dirs matching the keyphrase - should be something like
+        # '*/01_Cu_111_methanol_OH_O+H_rot_angle_24_struc/Cu_111/'
         for WorkFlowDir in WorkFlowDirsList:
             WorkFlowDirs.append(WorkFlowDir)
-        # expected e.g. -> WorkFlowDirs = ['00_Cu_methanol_CO+O_CO2',
-        # '01_Cu_methanol_OH_O+H', '02_Cu_methanol_CO+H_HCO']
+        # go through all dirs and look for the match
         for WorkFlowDir in WorkFlowDirs:
-            minimaDir = WorkFlow.check_if_path_to_mimina_exists(
-                WorkFlowDir, species)
-            if minimaDir is not None:
-                uniqueMinimaDirs.append(minimaDir)
-        if len(uniqueMinimaDirs) >= 1:
-            print('More than one possible path were found for the species {}. Choosing the following path: {}'.format(
-                species, uniqueMinimaDirs[0]))
-            return True, uniqueMinimaDirs[0]
-        elif IndexError:
-            print('Species {} was not yet calculated. Setting up new calculations.'.format(
-                species))
-            return (False, )
+            try:
+                check_out_files, path_to_outfiles = WorkFlow.check_if_path_to_out_files_exists(
+                    self, WorkFlowDir, species)
+                # if there is a match, break the loop
+                if check_out_files:
+                    break
+            except ValueError:
+                # if False, I have only one value to unpack, so a workaround
+                continue
+
+        # a directory to the DFT calculation (unique_minima_dir) for a given
+        # species is generated by combining the first element of the splitted
+        # path to outfiles,
+        # i.e.['*/Cu_111/minima/','H_01_relax.out'] so the ('*/Cu_111/minima/'
+        # part) with the name of the species. Finally the path is like:
+        # '*/Cu_111/minima/H'
+        unique_minima_dir = os.path.join(
+            os.path.split(path_to_outfiles[0])[0], species)
+
+        # If species were previously calculated, return True and paths
+        if path_to_outfiles:
+            return True, unique_minima_dir, path_to_outfiles
+        else:
+            (False, )
 
     def run_slab_optimization(self):
         ''' Submit slab_optimization_job '''
@@ -381,18 +403,25 @@ class WorkFlow:
 
     def execute(self):
         ''' The main executable '''
-        checksp1, checksp2 = self.check_all_species()
+        # Below, I have a list of tuples with all
+        all_species_checked = self.check_all_species()
+        # It more convenient to have a list of bools
+        sp_check_list = [
+            False for species in all_species_checked if not species[0]]
 
-        if optimize_slab is True:
+        if optimize_slab:
             # If the code cannot locate optimized slab .xyz file,
             # a slab optimization will be launched.
-            if self.check_if_slab_opt_exists()[0] is False:
+            if not self.check_if_slab_opt_exists():
                 self.run_slab_optimization()
-                # wait a bit in case the file write process is too slow
             else:
                 self.copy_slab_opt_file()
-            # check whether sp1 and sp2 was already cacluated
-            if checksp1[0] is False or checksp2[0] is False:
+            # check whether species were already cacluated)
+            if all(sp_check_list):
+                # If all are True, start by generating TS guesses and run
+                # the penalty function minimization
+                self.run_ts_estimate_no_depend()
+            else:
                 # If any of these is False
                 # run optimization of surface + reactants; surface + products
                 try:
@@ -401,32 +430,29 @@ class WorkFlow:
                     self.run_opt_surf_and_adsorbate_no_depend()
                 # run calculations to get TS guesses
                 self.run_ts_estimate('01')
-            else:
-                # If both are True, start by generating TS guesses and run
-                # the penalty function minimization
-                self.run_ts_estimate_no_depend()
-                # self.run_ts_estimate('00')
         else:
             # this is executed if user provide .xyz with the optimized slab
-            # check whether sp1 and sp2 was already cacluated
+            # check whether sp1 and sp2 was already calculated
             if self.check_if_slab_opt_exists():
                 pass
             else:
                 raise FileNotFoundError(
                     'It appears that there is no slab_opt.xyz file')
-
-            if checksp1[0] is False or checksp2[0] is False:
-                # run optimization of surface + reactants; surface + products
-                self.exe('', SurfaceAdsorbate)
-                # wait a bit in case the file write process is too slow
-                """ May need to put a post process on surface adsorbate to call the next step """
-                # wait until optimization of surface + reactants; surface + products
-                # finish and submit calculations to get TS guesses
-                self.exe('01', TSxtb)
-            else:
-                # If all minimas were calculated some time age for other reaction,
-                # rmgcat_to_sella will use that calculations.
+            if all(sp_check_list):
+                # If all minimas were calculated some time age for the other
+                # reactions, rmgcat_to_sella will use that calculations.
+                # The code can start from TSxtb
                 self.exe('', TSxtb)
+            else:
+                # run optimization of surface + reactants; surface + products
+                """ May need to put a post process on surface adsorbate to call the next step """
+                # wait until optimization of surface + reactants; surface
+                # + products finish and submit calculations to get TS guesses
+                self.exe('', SurfaceAdsorbate)
+                # wait until optimization of surface + reactants;
+                # surface + products finish and submit calculations
+                # to get TS guesses
+                self.exe('01', TSxtb)
         # search for the 1st order saddle point
         self.exe('02', TS)
         # for each distinct TS, run IRC calculations

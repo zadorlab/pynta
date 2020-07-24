@@ -1,5 +1,5 @@
 from catkit import Gratoms
-from catkit.gen.adsorption import AdsorptionSites, Builder
+from catkit.gen.adsorption import Builder
 from catkit.build import molecule
 from catkit.gen.molecules import get_3D_positions
 
@@ -8,16 +8,9 @@ from rmgcat_to_sella.graph_utils import node_test
 from rmgcat_to_sella.main import WorkFlow
 
 from ase.io import read, write
-from ase import Atoms
-from ase.optimize import LBFGS
-from ase.calculators.emt import EMT
-from ase.constraints import FixBondLength
 from ase.utils.structure_comparator import SymmetryEquivalenceCheck
 
 import numpy as np
-from xtb import GFN0, GFN1
-import itertools
-from scipy.optimize import minimize
 import yaml
 import os
 import shutil
@@ -106,9 +99,20 @@ class TS():
         TS.set_up_penalty_xtb(self, pytemplate_xtb,
                               species, scaled1, scaled2, scfactor_surface)
 
-    def get_uniq_rot_angle(self):
-        ''' Get unique angle of rotation of TS estimates on the surface
-            based on the symmetry of the slab '''
+    def get_max_rot_angle(self):
+        ''' Get the maximum angle of rotation for a given slab that will
+        generate all symmetrically distinct TS estimates.
+
+        Returns:
+        ________
+        max_rot_angle : float
+            a maximum angle of rotation of TS adducts on the given slab that
+            would generate symmetrically dostinct configurations
+            i.e. once the TS adduct is rotated by bigger angle than
+            max_rot_angle, some of the generated structures will be
+            symetrically equivalent to the others
+
+        '''
         # convert slab to ASE's Atom object
         slab = read(self.slab)
         # get all symmetry operations
@@ -118,61 +122,9 @@ class TS():
         # the angle of rotation is 360 devided by nrot/2 as thera are equal
         # number of symmetry operations around the z axis
         # (e.g. for Cu_111 therea are 6 z and 6 -z operations)
-        rot_angle = 360/(nrot/2)
-        return rot_angle
-
-    def get_rxn_name(self):
-        ''' Get the reaction name
-
-        Returns
-        _______
-        The name of the reaction in the following format:
-        OH_H+O
-        '''
-
-        with open(self.yamlfile, 'r') as f:
-            yamltxt = f.read()
-        reactions = yaml.safe_load(yamltxt)
-        # species_unique = dict()
-        speciesInd = []
-        bonds = []
-        # r_unique = []
-        # p_unique = []
-        # symbols_list = []
-        # unique_species = []
-        # unique_bonds = []
-        # images = []
-
-        put_adsorbates = Adsorbates(
-            self.facetpath, self.slab, self.repeats, self.yamlfile)
-
-        for rxn in reactions:
-            # transforming reactions data to gratom objects
-            reactants, rbonds = put_adsorbates.rmgcat_to_gratoms(
-                rxn['reactant'].split('\n'))
-            products, pbonds = put_adsorbates.rmgcat_to_gratoms(
-                rxn['product'].split('\n'))
-            speciesInd += reactants + products
-            bonds += rbonds + pbonds
-
-        # TODO :to be debbuged later
-        # for rp, uniquelist in ((reactants, r_unique), (products, p_unique)):
-        #     for species in rp:
-        #         symbols = str(species.symbols)
-        #         symbols_list.append(symbols)
-        #         speciesdir = os.path.join(
-        #             self.facetpath, 'minima_unique', symbols)
-        #         if symbols not in species_unique:
-        #             species_unique[symbols] = TS.get_all_species(self,
-        #                                                          speciesdir)
-        #         uniquelist.append(species_unique[symbols])
-        # print(uniquelist)
-
-        r_name = '+'.join([str(species.symbols) for species in reactants])
-        p_name = '+'.join([str(species.symbols) for species in products])
-
-        rxn_name = r_name + '_' + p_name
-        return rxn_name
+        max_rot_angle = 360/(nrot/2)
+        # max_rot_angle = 360/(nrot/4) # lets try 120 angle
+        return max_rot_angle
 
     def prepare_react_list(self):
         '''Convert yaml file to more useful format
@@ -190,18 +142,15 @@ class TS():
         with open(self.yamlfile, 'r') as f:
             yamltxt = f.read()
         reactions = yaml.safe_load(yamltxt)
-        # species_unique = dict()
         speciesInd = []
         bonds = []
-        # r_unique = []
-        # p_unique = []
-        # symbols_list = []
         unique_species = []
         unique_bonds = []
         images = []
 
         put_adsorbates = Adsorbates(
             self.facetpath, self.slab, self.repeats, self.yamlfile)
+
         for rxn in reactions:
             # transforming reactions data to gratom objects
             reactants, rbonds = put_adsorbates.rmgcat_to_gratoms(
@@ -211,6 +160,7 @@ class TS():
             speciesInd += reactants + products
             bonds += rbonds + pbonds
 
+        # TODO :to be debbuged later
         # for rp, uniquelist in ((reactants, r_unique), (products, p_unique)):
         #     for species in rp:
         #         symbols = str(species.symbols)
@@ -244,6 +194,22 @@ class TS():
         #     print('Products will be used to estimate TS')
         #     rpDir = 'products'
         return r_name_list, p_name_list, images
+
+    def get_rxn_name(self):
+        ''' Get the reaction name
+
+        Returns
+        _______
+        The name of the reaction in the following format:
+        OH_H+O
+        '''
+        r_name_list, p_name_list, _ = TS.prepare_react_list(self)
+
+        r_name = '+'.join([species for species in r_name_list])
+        p_name = '+'.join([species for species in p_name_list])
+
+        rxn_name = r_name + '_' + p_name
+        return rxn_name
 
     def TS_placer(self, scfactor, rotAngle, rxn_name,
                   r_name_list, p_name_list, images):
@@ -366,8 +332,15 @@ class TS():
         # building adsorbtion structures
         ads_builder = Builder(grslab)
 
-        max_angle = int(TS.get_uniq_rot_angle(self))
-
+        # max_angle = int(TS.get_max_rot_angle(self))
+        # do a full 360 degree rotation - bridge have different symmetry than
+        # hollows and top sites on Cu(111), so cannot use 60 degree for all
+        # of them. So the approach is to do a full 360 degree scan with
+        # 5 degree increment, check the symmetry using check_symm_before_xtb()
+        # method, run the penalty function minimization for the remaining
+        # structures. Once done, check symmetry again using check_symm() method
+        # That would avoid bugs if other surface is applied.
+        max_angle = 360
         angle = 0
         count = 0
         step_size = 5
@@ -424,7 +397,8 @@ class TS():
             e.g. OH_O+H
         '''
         ts_estimate_path = os.path.join(self.facetpath, self.ts_dir)
-        filtered_equivalen_sites = checkSymmBeforeXTB(ts_estimate_path)
+        filtered_equivalen_sites = TS.check_symm_before_xtb(
+            self, ts_estimate_path)
         for eqsites in filtered_equivalen_sites:
             try:
                 fileToRemove = os.path.join(
@@ -440,6 +414,10 @@ class TS():
                 ts_estimate_path, prefix + noneqsites[3:])
             os.rename(oldfname, newfname)
 
+    def get_average_distance_all(self, species, geom_path):
+        # probably do not need it - check
+        raise NotImplementedError
+
     def set_up_penalty_xtb(self, pytemplate, species_list,
                            scaled1, scaled2, scfactor_surface):
         ''' Prepare calculations of the penalty function
@@ -452,6 +430,7 @@ class TS():
         species_list : list(str)
             a list of max 2 species that take part in the reaction
             e.g. ['O', 'H'] or ['CO2', 'H']
+            TODO: remove this limitation
         scaled1 : bool
             specify whether use the optional scfactor_surface
             for the species 1 (sp1)
@@ -465,82 +444,220 @@ class TS():
             in TS, whereas for minima it is close to the surface
             e.g. 1.0
 
-        # TODO: Species3 is/should be optional '''
+        '''
         ts_estimate_path = os.path.join(self.facetpath, self.ts_dir)
-
-        # print(species3)
-        fPath = os.path.split(ts_estimate_path)
-        avPath = os.path.join(fPath[0], 'minima')
-        avDist1 = get_av_dist(
-            avPath, species_list[0], scfactor_surface, scaled1)
-        avDist2 = get_av_dist(
-            avPath, species_list[1], scfactor_surface, scaled2)
-        '''the code belowe does not work in the loop, probably two differet avPath variable needed to accouut for the possible scenario that one species was already calculated (other set of calculations - different reactions, whereas the second in calculated here for the first time) '''
-        # checkMinimaPath = os.path.dirname(os.getcwd())
-        # spList = [species1, species2]
-
-        # for species in spList:
-        #     is_it_calculated = CheckIfMinimasAlreadyCalculated(
-        #         checkMinimaPath, species)
-        #     if is_it_calculated is False:
-        #         fPath = os.path.split(path)
-        #         avPath = os.path.join(fPath[0], 'minima')
-        #     else:
-        #         avPath = is_it_calculated[1]
-
-        # species_list = [species1, species2, species3]
+        path_to_minima = os.path.join(self.facetpath, 'minima')
+        rxn_name = TS.get_rxn_name(self)
 
         with open(pytemplate, 'r') as f:
             pytemplate = f.read()
 
-        for geom in sorted(os.listdir(ts_estimate_path)):
-            if geom.endswith('.xyz'):
-                bonds = []
-                geomPath = os.path.join(ts_estimate_path, geom)
+        # get a list with the average distances (only symmetrically distinct
+        # sites considered) for all species. It can be done outside the nested
+        # loop, as it is enough to calculate it only once.
+        average_distance_list = []
+        for species in species_list:
+            av_dist = TS.get_av_dist(self, path_to_minima, species,
+                                     scfactor_surface, scaled1)
+            average_distance_list.append(av_dist)
 
+        # get all ts_estimatex_xyz files in alphabetic order
+        ts_estimates_xyz_files = sorted(os.listdir(ts_estimate_path))
+
+        # loop through all .xyz files
+        for prefix, xyz_file in enumerate(ts_estimates_xyz_files):
+            if xyz_file.endswith('.xyz'):
+                bonds = []
+                xyz_file_path = os.path.join(ts_estimate_path, xyz_file)
+                # loop through all species
                 for species in species_list:
-                    sp_index = get_index_adatom(species, geomPath)
-                    Cu_index = get_index_surface_atom(species, geomPath)
-                    # print(sp_index, Cu_index)
+                    sp_index = TS.get_index_adatom(
+                        self, species, xyz_file_path)
+                    Cu_index = TS.get_index_surface_atom(
+                        self, species, xyz_file_path)
                     bonds.append((sp_index, Cu_index))
 
-                # sp1_index = get_index_adatom(species1, geomPath)
-                # sp2_index = get_index_adatom(species2, geomPath)
-                # # sp3_index = get_index_adatom(species3, geomPath)
-                # Cu_index1 = get_index_surface_atom(species1, geomPath)
-                # Cu_index2 = get_index_surface_atom(species2, geomPath)
-                # # Cu_index3 = get_index_surface_atom(species3, geomPath)
-
-                prefix = geom.split('_')
-                calcDir = os.path.join(ts_estimate_path, prefix[0])
+                # set up variables
+                av_dists_tuple = tuple(average_distance_list)
+                prefix = str(prefix).zfill(3)
+                calcDir = os.path.join(ts_estimate_path, prefix)
                 os.makedirs(calcDir, exist_ok=True)
+                geom_name = prefix + '_' + rxn_name
+                traj_path = os.path.join(xyz_file[:-4] + '.traj')
+                fname = os.path.join(calcDir, xyz_file[:-4] + '.py')
 
-                geomName = geom[:-4]
-
-                # List of bonds we want O-Cu; H-Cu
-                # bonds = ((sp1_index, Cu_index1),
-                #          (sp2_index, Cu_index2))
-                # print(type(bonds))
-                avDists = (avDist1, avDist2)
-                trajPath = os.path.join(geom[:-4] + '.traj')
-                init_png = os.path.join(calcDir, geom[:-4] + '_initial.png')
-                write(init_png, read(geomPath))
-                fname = os.path.join(calcDir, geom[:-4] + '.py')
+                # create job_file
                 with open(fname, 'w') as f:
-                    f.write(pytemplate.format(geom=geom, bonds=bonds,
-                                              avDists=avDists, trajPath=trajPath,
-                                              repeats=self.repeats, prefix=prefix[0],
-                                              geomName=geomName, slabopt=self.slab))
+                    f.write(pytemplate.format(geom=xyz_file, bonds=bonds,
+                                              av_dists_tuple=av_dists_tuple,
+                                              traj_path=traj_path,
+                                              repeats=self.repeats,
+                                              prefix=prefix,
+                                              geom_name=geom_name,
+                                              slabopt=self.slab))
                 f.close()
-                shutil.move(geomPath, calcDir)
+                # write .png files
+                init_png = os.path.join(
+                    calcDir, xyz_file[:-4] + '_initial.png')
+                write(init_png, read(xyz_file_path))
+                # remove .xyz files
+                shutil.move(xyz_file_path, calcDir)
         f.close()
 
+        # remove initial_png directory, if it exists
         try:
             rmpath = os.path.join(ts_estimate_path, 'initial_png')
             shutil.rmtree(rmpath)
         except FileNotFoundError:
-            pass
             # print('No files to delete')
+            pass
+
+    def get_av_dist(self, path_to_minima, species, scfactor_surface,
+                    scaled=False):
+        ''' Get the average bond distance between adsorbate atom and
+        the nearest surface atom for all symmetrically distinct minima
+
+        Parameters:
+        ___________
+        path_to_minima : str
+            a path to minima
+            e.g. 'Cu_111/minima'
+        species : str
+            a species symbol
+            e.g. 'H' or 'CO'
+        scfactor_surface : float
+            a scaling factor to scale the target bond distance, i.e.
+            the average distance between adsorbed atom and the nearest
+            surface atom. Helpful e.g. when H is far away form the surface
+            in TS, whereas for minima it is close to the surface
+            e.g. 1.0
+        scaled : bool
+            specify whether to use the optional scfactor_surface
+            for the given species
+            default = False
+
+        Returns:
+        ________
+        av_dist : float
+            an average bond distance between the given species and the nearest
+            surface atom for all symmetrically dictinct minima
+
+        '''
+        surface_atoms_indices = []
+        adsorbate_atoms_indices = []
+        all_dists = []
+        TS.get_xyz_from_traj(self, path_to_minima, species)
+        species_path = os.path.join(path_to_minima, species)
+        # treat the special cases
+        if species in ['CH3O', 'CH2O']:
+            species = 'O'
+        # deal with the multiatomic molecules and look only for the surface
+        # bonded atom
+        if len(species) > 1:
+            sp_bonded = species[:1]
+        else:
+            # for one atomic species it is trivial
+            sp_bonded = species
+        # get unique minima indices
+        unique_minima_indices = TS.get_unique_minima_indicies_after_opt(self,
+                                                                        path_to_minima,
+                                                                        species)
+        # go through all indices of *final.xyz file
+        # e.g. 00_final.xyz, 01_final.xyz
+        for index in unique_minima_indices:
+            paths_to_uniq_minima_final_xyz = Path(
+                species_path).glob('{}*final.xyz'.format(index))
+            for unique_minimum_final_xyz in paths_to_uniq_minima_final_xyz:
+                unique_minimum_atom = read(unique_minimum_final_xyz)
+                # open the *final.xyz file as xyz_file
+                with open(unique_minimum_final_xyz, 'r') as f:
+                    xyz_file = f.readlines()
+                    # find all Cu atoms and adsorbate atoms
+                    for num, line in enumerate(xyz_file):
+                        # For Cu(111) we can put ' 1 ' instead of 'Cu ' to
+                        # limit calculations to surface Cu atoms only.
+                        # For Cu(211) ASE is not generating tags like this,
+                        # so full calculation have to be performed, i.e. all
+                        # surface atoms
+                        if 'Cu ' in line:
+                            surface_atoms_indices.append(num - 2)
+                        elif sp_bonded in line and not 'Cu ' in line:
+                            # We need to have additional statement
+                            # 'not 'Cu' in line'
+                            # because for C it does not work without it'''
+                            adsorbate_atoms_indices.append(num - 2)
+                f.close()
+                # find the shortest distance between the adsorbate
+                # and the surface
+                dist = float(min(unique_minimum_atom.get_distances(
+                    adsorbate_atoms_indices[0], surface_atoms_indices)))
+            all_dists.append(dist)
+        # apply scaling factor if required
+        if scaled:
+            av_dist = mean(all_dists) * scfactor_surface
+        else:
+            av_dist = mean(all_dists)
+        return av_dist
+
+    def get_xyz_from_traj(self, path_to_minima, species):
+        ''' Convert all ASE's traj files to .xyz files for a given species
+
+        Parameters:
+        ___________
+        path_to_minima : str
+            a path to minima
+            e.g. 'Cu_111/minima'
+        species : str
+            a species symbol
+            e.g. 'H' or 'CO'
+
+        '''
+        species_path = os.path.join(path_to_minima, species)
+        for traj in sorted(os.listdir(species_path), key=str):
+            if traj.endswith('.traj'):
+                src_traj_path = os.path.join(species_path, traj)
+                des_traj_path = os.path.join(
+                    species_path, traj[:-5] + '_final.xyz')
+                write(des_traj_path, read(src_traj_path))
+
+    def get_unique_minima_indicies_after_opt(self, path_to_minima, species):
+        ''' Get the indicies of the symmetrically distinct minima
+        for a given species
+
+        Parameters:
+        ___________
+        path_to_minima : str
+            a path to minima
+            e.g. 'Cu_111/minima'
+        species : str
+            a species symbol
+            e.g. 'H' or 'CO'
+
+        Returns:
+        ________
+
+        unique_minima_indices : list(str)
+            a list with indecies of all unique minima for a given species
+            e.g. ['01', '02', '04']
+
+        '''
+        good_minima = []
+        result_list = []
+        unique_minima_indices = []
+        path_to_species = os.path.join(path_to_minima, species)
+        trajlist = sorted(Path(path_to_species).glob('*final.xyz'), key=str)
+        for traj in trajlist:
+            minima = read(traj)
+            minima.pbc = True
+            comparator = SymmetryEquivalenceCheck()
+            result = comparator.compare(minima, good_minima)
+            result_list.append(result)
+            if result is False:
+                good_minima.append(minima)
+        for prefix, result in enumerate(result_list):
+            if result is False:
+                unique_minima_indices.append(str(prefix).zfill(2))
+        return unique_minima_indices
 
     def copy_minimas_prev_calculated(self, current_dir, species_list,
                                      minima_dir):
@@ -565,25 +682,24 @@ class TS():
         for species in species_list:
             is_it_calculated = WorkFlow().check_if_minima_already_calculated(
                 current_dir, species, self.facetpath)
-            if is_it_calculated is False:
+            if is_it_calculated[0] is False:
                 pass
             else:
                 try:
-                    copyPath = is_it_calculated[1]
-                    dstDir = os.path.join(minima_dir, species)
-                    shutil.copytree(copyPath, dstDir)
-                    dstDir = os.path.split(dstDir)[0]
+                    _, copy_path_dft, copy_path_outfiles = is_it_calculated
+                    dst_dir = os.path.join(minima_dir, species)
+                    # copy DFT files
+                    shutil.copytree(copy_path_dft, dst_dir)
+                    # copy Sella's .out files
+                    for outfile in copy_path_outfiles:
+                        shutil.copy2(outfile, minima_dir)
                 except FileExistsError:
-                    dstDir = os.path.split(dstDir)[0]
-                    print('All required files already exist.')
-                    pass
-                # is_it_calculated[1] is None when is_it_calculated[0] == False
-                except IndexError:
-                    pass
+                    raise FileExistsError('Files already copied')
 
     def create_unique_TS(self):
         ''' Create unique TS files for calculations '''
-        gd_ads_index = checkSymm(os.path.join(self.facetpath, self.ts_dir))
+        gd_ads_index = TS.check_symm(
+            self, os.path.join(self.facetpath, self.ts_dir))
         for i, index in enumerate(gd_ads_index):
             uniqueTSdir = os.path.join(
                 self.facetpath, self.ts_dir + '_unique', str(i).zfill(2))
@@ -638,345 +754,198 @@ class TS():
                         f.close()
         f.close()
 
+    def get_bond_dist(self, ads_atom, geom):
+        ''' Specify adsorbate atom symbol and bond distance with the closest
+            surface metal atom will be calculated.
 
-def gen_xyz_from_traj(avDistPath, species):
-    # if species == 'C':
-    #     speciesPath = os.path.join(avDistPath, species + 'O')
-    # else:
-    speciesPath = os.path.join(avDistPath, species)
-    for traj in sorted(os.listdir(speciesPath), key=str):
-        if traj.endswith('.traj'):
-            srcTrajPath = os.path.join(speciesPath, traj)
-            desTrajPath = os.path.join(speciesPath, traj[:-5] + '_final.xyz')
-            write(desTrajPath, read(srcTrajPath))
+        Parameters:
+        ___________
+        ads_atom : str
+            an atom of the species bonded to the surface, e.g. 'O' for OH
+        geom : str
+            a .xyz of .traj file name with geometry of the structure
+            to be analysed
 
+        Returns:
+        ________
+        dist_Cu_adsorbate : float
+            distance between ads_atom and the closest surface atom
 
-def get_av_dist(avDistPath, species, scfactor_surface, scaled=False):
-    # nslab = len(read(slab) * repeats)
-    surface_atoms_indices = []
-    adsorbate_atoms_indices = []
-    all_conf_dist = []
-    gen_xyz_from_traj(avDistPath, species)
-    speciesPath = os.path.join(avDistPath, species)
-    if species in ['CH3O', 'CH2O']:
-        species = 'O'
-    if len(species) > 1:
-        species = species[:1]
+        '''
+        surface_atom = []
+        adsorbate_atom = []
+        struc = read(geom)
+        if len(ads_atom) > 1:
+            ads_atom = ads_atom[:-1]
+        # if ads_atom == 'C':
+        #     ads_atom == 'CO'
+        with open(geom, 'r') as f:
+            xyz_geom_file = f.readlines()
+            for num, line in enumerate(xyz_geom_file):
+                if ' 1 ' in line:
+                    # TODO: possibly a bug when other surface is used,
+                    # e.g. Cu_211
+                    #
+                    # reading each line and adding only the one with tags = 1
+                    # (surface atoms). It is necessary to subtract 2 as indices
+                    # in atom object starts with 0 and we also have to take
+                    # into account that the first line in xyz file contains
+                    # non xyz information
+                    surface_atom.append(num - 2)
+                elif ads_atom in line:
+                    if not "Cu" in line:
+                        adsorbate_atom.append(num - 2)
+        f.close()
 
-    for xyz in sorted(os.listdir(speciesPath), key=str):
-        if xyz.endswith('_final.xyz'):
-            # if xyz.endswith('.traj'):
-            xyzPath = os.path.join(speciesPath, xyz)
-            # trajPath = os.path.join(speciesPath, xyz[:-10] + '.traj')
-            # print(trajPath)
-            conf = read(xyzPath)
-            # print(conf)
-        # if xyz.endswith('*traj'):
-            with open(xyzPath, 'r') as f:
-                xyzFile = f.readlines()
-                for num, line in enumerate(xyzFile):
-                    '''For Cu(111) we can put ' 1 ' instead of 'Cu ' to limit calculations to surface Cu atoms only. For Cu(211) ase is not generating tags like this, so full calculation have to be performed, i.e. all surface atoms'''
-                    if 'Cu ' in line:
-                        surface_atoms_indices.append(num - 2)
-                    elif species in line and not 'Cu' in line:
-                        ''' We need to have additional statement 'not 'Cu' in line' because for C it does not work without it'''
-                        adsorbate_atoms_indices.append(num - 2)
-            f.close()
-            dist = float(min(conf.get_distances(
-                adsorbate_atoms_indices[0], surface_atoms_indices)))
-            all_conf_dist.append(dist)
-            if scaled:
-                meanDist = mean(all_conf_dist) * scfactor_surface
-            else:
-                meanDist = mean(all_conf_dist)
-            return meanDist
+        if len(adsorbate_atom) > 1:
+            dist_Cu_adsorbate = min(struc.get_distances(
+                adsorbate_atom[0], surface_atom))
+            return dist_Cu_adsorbate
+        else:
+            dist_Cu_adsorbate = min(
+                struc.get_distances(adsorbate_atom, surface_atom))
+            return dist_Cu_adsorbate
 
+    def get_index_adatom(self, ads_atom, geom):
+        ''' Specify adsorbate atom symbol and its index will be returned.
 
-def get_bond_dist(ads_atom, geom):
-    ''' Specify adsorbate atom symbol and bond distance with the closest surface metal atom will be calculated '''
-    surface_atom = []
-    adsorbate_atom = []
-    struc = read(geom)
-    if len(ads_atom) > 1:
-        ads_atom = ads_atom[:-1]
-    # if ads_atom == 'C':
-    #     ads_atom == 'CO'
-    with open(geom, 'r') as f:
-        xyz_geom_file = f.readlines()
-        for num, line in enumerate(xyz_geom_file):
-            if ' 1 ' in line:
-                # reading each line and adding only the one with tags = 1
-                # (surface atoms). It is necessary to subtract 2 as indices in
-                # atom object starts with 0 and we also have to take into
-                # account that the first line in xyz file contains non xyz
-                # information
-                surface_atom.append(num - 2)
-            elif ads_atom in line:
-                if not "Cu" in line:
-                    adsorbate_atom.append(num - 2)
-    f.close()
+        Parameters:
+        ___________
+        ads_atom : str
+            an atom of the species bonded to the surface, e.g. 'O' for OH
+        geom : str
+            a .xyz of .traj file name with geometry of the structure
+            to be analysed
 
-    if len(adsorbate_atom) > 1:
-        dist_Cu_adsorbate = min(struc.get_distances(
-            adsorbate_atom[0], surface_atom))
-        return dist_Cu_adsorbate
-    else:
-        dist_Cu_adsorbate = min(
-            struc.get_distances(adsorbate_atom, surface_atom))
-        return dist_Cu_adsorbate
+        Returns:
+        ________
+        adsorbate_atom[0] : float
+            index of the adsorbed atom
 
+        '''
+        # TODO: currently it works only for one ads_atom, so it will return
+        # only index at [0]. In the future I plan to add support for many
+        # indices
+        adsorbate_atom = []
+        if len(ads_atom) > 1:
+            ads_atom = ads_atom[:1]
+        with open(geom, 'r') as f:
+            xyz_geom_file = f.readlines()
+            for num, line in enumerate(xyz_geom_file):
+                if ads_atom in line:
+                    if not 'Cu' in line:
+                        adsorbate_atom.append(num - 2)
+        f.close()
+        return adsorbate_atom[0]
 
-def get_index_adatom(ads_atom, geom):
-    ''' Specify adsorbate atom symbol and its index will be returned '''
-    adsorbate_atom = []
-    if len(ads_atom) > 1:
-        ads_atom = ads_atom[:1]
-    with open(geom, 'r') as f:
-        xyz_geom_file = f.readlines()
-        for num, line in enumerate(xyz_geom_file):
-            if ads_atom in line:
-                if not 'Cu' in line:
-                    adsorbate_atom.append(num - 2)
-    f.close()
-    return adsorbate_atom[0]
+    def get_index_surface_atom(self, ads_atom, geom):
+        ''' Specify adsorbate atom symbol and index of the nearest metal atom
+            will be returned. 
 
+        Parameters:
+        ___________
+        ads_atom : str
+            an atom of the species bonded to the surface, e.g. 'O' for OH
+        geom : str
+            a .xyz of .traj file name with geometry of the structure
+            to be analysed
 
-def get_index_surface_atom(ads_atom, geom):
-    ''' Specify adsorbate atom symbol and index of the neares metal atom will be returned '''
-    surface_atom = []
-    adsorbate_atom = []
-    if len(ads_atom) > 1:
-        ads_atom = ads_atom[:1]
-    # print(ads_atom)
-    struc = read(geom)
-    with open(geom, 'r') as f:
-        xyz_geom_file = f.readlines()
-        for num, line in enumerate(xyz_geom_file):
-            if 'Cu ' in line:
-                surface_atom.append(num - 2)
-            elif ads_atom in line:
-                if not 'Cu' in line:
-                    adsorbate_atom.append(num - 2)
-    f.close()
+        Returns:
+        ________
+        surface_atom[index[0][0]] : float
+            index of the metal atom to which ads_atom is bonded
 
-    all_dist_surface_adsorbate = struc.get_distances(
-        adsorbate_atom[0], surface_atom)
-    min_dist_surface_adsorbate = min(
-        struc.get_distances(adsorbate_atom[0], surface_atom))
-    # get index of the surface atom for which distance to adsorbate is the
-    # lowest
-    index = np.where(all_dist_surface_adsorbate == min_dist_surface_adsorbate)
+        '''
+        surface_atom = []
+        adsorbate_atom = []
+        if len(ads_atom) > 1:
+            ads_atom = ads_atom[:1]
+        struc = read(geom)
+        with open(geom, 'r') as f:
+            xyz_geom_file = f.readlines()
+            for num, line in enumerate(xyz_geom_file):
+                if 'Cu ' in line:
+                    surface_atom.append(num - 2)
+                elif ads_atom in line:
+                    if not 'Cu' in line:
+                        adsorbate_atom.append(num - 2)
+        f.close()
 
-    return surface_atom[index[0][0]]
+        all_dist_surface_adsorbate = struc.get_distances(
+            adsorbate_atom[0], surface_atom)
+        min_dist_surface_adsorbate = min(
+            struc.get_distances(adsorbate_atom[0], surface_atom))
+        # get index of the surface atom for which distance to adsorbate is the
+        # lowest
+        index = np.where(all_dist_surface_adsorbate ==
+                         min_dist_surface_adsorbate)
 
+        return surface_atom[index[0][0]]
 
-def checkSymm(path):
-    good_adsorbate = []
-    result_list = []
-    geomlist = sorted(Path(path).glob('**/*.traj'))
-    for geom in geomlist:
-        adsorbed = read(geom)
-        adsorbed.pbc = True
-        comparator = SymmetryEquivalenceCheck()
-        result = comparator.compare(adsorbed, good_adsorbate)
-        result_list.append(result)
-        if result is False:
-            good_adsorbate.append(adsorbed)
-    unique_index = []
-    for num, res in enumerate(result_list):
-        if res is False:
-            unique_index.append(str(num).zfill(3))
-    return unique_index
+    def check_symm(self, path):
+        ''' Check for the symmetry equivalent structures in the given path
 
+        Parameters:
+        ___________
+        path : str
+            a path to a directory where are files to be checked,
+            e.g. Cu_111/TS_estimate_unique
 
-''' The code below is rather useless - double check it '''
+        Returns:
+        ________
+        unique_index : list(str)
+            a list with prefixes of all symmetrically distinct sites
 
+        '''
+        good_adsorbate = []
+        result_list = []
+        geomlist = sorted(Path(path).glob('**/*.traj'))
+        for geom in geomlist:
+            adsorbed = read(geom)
+            adsorbed.pbc = True
+            comparator = SymmetryEquivalenceCheck()
+            result = comparator.compare(adsorbed, good_adsorbate)
+            result_list.append(result)
+            if result is False:
+                good_adsorbate.append(adsorbed)
+        unique_index = []
+        for num, res in enumerate(result_list):
+            if res is False:
+                unique_index.append(str(num).zfill(3))
+        return unique_index
 
-def checkSymmBeforeXTB(path):
-    good_adsorbate = []
-    result_list = []
-    geomlist = sorted(Path(path).glob('*.xyz'))
-    for geom in geomlist:
-        adsorbed = read(geom)
-        adsorbed.pbc = True
-        comparator = SymmetryEquivalenceCheck()
-        result = comparator.compare(adsorbed, good_adsorbate)
-        result_list.append(result)
-        if result is False:
-            good_adsorbate.append(adsorbed)
-    notunique_index = []
-    for num, res in enumerate(result_list):
-        if res is True:
-            ''' Better to have all symmetry equivalent site here in a list. The workflow will remove them in getTSestimate function keeping all symmetry distinct sites '''
-            notunique_index.append(str(num).zfill(3))
-    return notunique_index
+    def check_symm_before_xtb(self, path):
+        ''' Check for the symmetry equivalent structures in the given path
+            before executing penalty function minimization
 
+        Parameters:
+        ___________
+        path : str
+            a path to a directory where are files to be checked,
+            e.g. Cu_111/TS_estimate
 
-def create_all_TS(facetpath):
-    all_TS_candidate_path = os.path.join(facetpath, 'TS_candidate')
-    os.makedirs(all_TS_candidate_path, exist_ok=True)
-    gpath = os.path.join(facetpath, 'TS_estimate')
-    for geom in os.listdir(gpath):
-        geomDir = os.path.join(gpath, geom)
-        if os.path.isdir(geomDir):
-            for traj in sorted(os.listdir(geomDir)):
-                if traj.endswith('.traj'):
-                    # print(str(num/2).zfill(3))
-                    xyz_dir_path = os.path.join(
-                        all_TS_candidate_path, traj[:3])
-                    os.makedirs(xyz_dir_path, exist_ok=True)
-                    srcFile = os.path.join(geomDir, traj)
-                    destFile = os.path.join(xyz_dir_path, traj[:-5])
-                    write(destFile + '.xyz', read(srcFile))
-                    write(destFile + '_initial.png', read(srcFile))
+        Returns:
+        ________
+        not_unique_index : list(str)
+            a list with prefixes of all symmetry equivalent structures
 
-
-def create_all_TS_job_files(facetpath, pytemplate):
-    all_TS_candidate_path = os.path.join(facetpath, 'TS_candidate')
-    with open(pytemplate, 'r') as f:
-        pytemplate = f.read()
-
-    for struc in os.listdir(all_TS_candidate_path):
-        TSdir = os.path.join(all_TS_candidate_path, struc)
-        if os.path.isdir(TSdir):
-            TSpath = os.path.join(all_TS_candidate_path, struc)
-            for file in os.listdir(TSpath):
-                if file.endswith('.xyz'):
-                    fname = os.path.join(
-                        all_TS_candidate_path, f'{struc}_{file[:-4][4:]}_relax.py')
-                    with open(fname, 'w') as f:
-                        f.write(pytemplate.format(TS=os.path.join(
-                            struc, file), rxn=file[:-4][4:], prefix=file[:3]))
-                    f.close()
-    f.close()
-
-
-# def create_TS_unique_job_files(facetpath, TSdir, pytemplate):
-#     unique_TS_candidate_path = os.path.join(facetpath, TSdir + '_unique')
-#     with open(pytemplate, 'r') as f:
-#         pytemplate = f.read()
-
-#     for struc in os.listdir(unique_TS_candidate_path):
-#         TSdir = os.path.join(unique_TS_candidate_path, struc)
-#         if os.path.isdir(TSdir):
-#             TSpath = os.path.join(unique_TS_candidate_path, struc)
-#             for fl in os.listdir(TSpath):
-#                 if fl.endswith('.xyz'):
-#                     fname = os.path.join(
-#                         unique_TS_candidate_path, fl[:-4] + '.py')
-#                     with open(fname, 'w') as f:
-#                         f.write(pytemplate.format(TS=os.path.join(
-#                             struc, fl), rxn=fl[3:-7], prefix=fl[:2]))
-#                     f.close()
-#     f.close()
-
-
-# def set_up_penalty_xtb(path, pytemplate, repeats, slab, species_list, scfactor_surface, scaled1, scaled2):
-#     '''Species3 is/should be optional '''
-#     # print(species3)
-#     fPath = os.path.split(path)
-#     avPath = os.path.join(fPath[0], 'minima')
-#     avDist1 = get_av_dist(avPath, species_list[0], scfactor_surface, scaled1)
-#     avDist2 = get_av_dist(avPath, species_list[1], scfactor_surface, scaled2)
-#     '''the code belowe does not work in the loop, probably two differet avPath variable needed to accouut for the poscible scenaario that one species was already calculated (other set of calculations - different reactions, whereas the second in calculated here for the first time) '''
-#     # checkMinimaPath = os.path.dirname(os.getcwd())
-#     # spList = [species1, species2]
-
-#     # for species in spList:
-#     #     is_it_calculated = CheckIfMinimasAlreadyCalculated(
-#     #         checkMinimaPath, species)
-#     #     if is_it_calculated is False:
-#     #         fPath = os.path.split(path)
-#     #         avPath = os.path.join(fPath[0], 'minima')
-#     #     else:
-#     #         avPath = is_it_calculated[1]
-
-#     # species_list = [species1, species2, species3]
-
-#     with open(pytemplate, 'r') as f:
-#         pytemplate = f.read()
-
-#     for geom in sorted(os.listdir(path)):
-#         if geom.endswith('.xyz'):
-#             bonds = []
-#             geomPath = os.path.join(path, geom)
-
-#             for species in species_list:
-#                 sp_index = get_index_adatom(species, geomPath)
-#                 Cu_index = get_index_surface_atom(species, geomPath)
-#                 # print(sp_index, Cu_index)
-#                 bonds.append((sp_index, Cu_index))
-
-#             # sp1_index = get_index_adatom(species1, geomPath)
-#             # sp2_index = get_index_adatom(species2, geomPath)
-#             # # sp3_index = get_index_adatom(species3, geomPath)
-#             # Cu_index1 = get_index_surface_atom(species1, geomPath)
-#             # Cu_index2 = get_index_surface_atom(species2, geomPath)
-#             # # Cu_index3 = get_index_surface_atom(species3, geomPath)
-
-#             prefix = geom.split('_')
-#             calcDir = os.path.join(path, prefix[0])
-#             os.makedirs(calcDir, exist_ok=True)
-
-#             geomName = geom[:-4]
-
-#             # List of bonds we want O-Cu; H-Cu
-#             # bonds = ((sp1_index, Cu_index1),
-#             #          (sp2_index, Cu_index2))
-#             # print(type(bonds))
-#             avDists = (avDist1, avDist2)
-#             trajPath = os.path.join(geom[:-4] + '.traj')
-#             init_png = os.path.join(calcDir, geom[:-4] + '_initial.png')
-#             write(init_png, read(geomPath))
-#             fname = os.path.join(calcDir, geom[:-4] + '.py')
-#             with open(fname, 'w') as f:
-#                 f.write(pytemplate.format(geom=geom, bonds=bonds,
-#                                           avDists=avDists, trajPath=trajPath,
-#                                           repeats=repeats, prefix=prefix[0],
-#                                           geomName=geomName, slabopt=slab))
-#             f.close()
-#             shutil.move(geomPath, calcDir)
-#     f.close()
-
-#     try:
-#         rmpath = os.path.join(path, 'initial_png')
-#         shutil.rmtree(rmpath)
-#     except FileNotFoundError:
-#         pass
-#         # print('No files to delete')
-
-
-# # def create_unique_TS(facetpath, TSdir):
-# #     # checkSymmPath = os.path.join(path, 'TS_estimate')
-
-# #     # gd_ads_index = checkSymm(facetpath, TSdir)
-# #     # new checksym with globbing
-# #     gd_ads_index = checkSymm(os.path.join(facetpath, TSdir))
-# #     for i, index in enumerate(gd_ads_index):
-# #         uniqueTSdir = os.path.join(
-# #             facetpath, TSdir + '_unique', str(i).zfill(2))
-# #         if os.path.isdir(uniqueTSdir):
-# #             shutil.rmtree(uniqueTSdir)
-# #             os.makedirs(uniqueTSdir, exist_ok=True)
-# #         else:
-# #             os.makedirs(uniqueTSdir, exist_ok=True)
-# #         gpath = os.path.join(facetpath, TSdir)
-# #         for geom in os.listdir(gpath):
-# #             geomDir = os.path.join(gpath, geom)
-# #             if os.path.isdir(geomDir):
-# #                 for traj in sorted(os.listdir(geomDir)):
-# #                     if traj.startswith(gd_ads_index[i]) and traj.endswith('.traj'):
-# #                         srcFile = os.path.join(geomDir, traj)
-# #                         destFile = os.path.join(uniqueTSdir, traj[:-5] + '_ts')
-# #                         write(destFile + '.xyz', read(srcFile))
-# #                         write(destFile + '.png', read(srcFile))
-# #         #         shutil.copy2(os.path.join(path, geom), uniqueTSdir)
-# #         for ts in os.listdir(uniqueTSdir):
-# #             # if neb.endswith('.xyz'):
-# #             TS_xyz_Dir = os.path.join(uniqueTSdir, ts)
-# #             newTS_xyz_Dir = os.path.join(
-# #                 uniqueTSdir, str(i).zfill(2) + ts[3:])
-# #             # NEB_png_Dir = os.path.join(uniqueTSdir, str(
-# #             #     i).zfill(3) + neb[2:][:-4] + '.png')
-# #             os.rename(TS_xyz_Dir, newTS_xyz_Dir)
-# #             # write(NEB_png_Dir, read(newNEB_xyz_Dir))
+        '''
+        good_adsorbate = []
+        result_list = []
+        geomlist = sorted(Path(path).glob('*.xyz'))
+        for geom in geomlist:
+            adsorbed = read(geom)
+            adsorbed.pbc = True
+            comparator = SymmetryEquivalenceCheck()
+            result = comparator.compare(adsorbed, good_adsorbate)
+            result_list.append(result)
+            if result is False:
+                good_adsorbate.append(adsorbed)
+        not_unique_index = []
+        for num, res in enumerate(result_list):
+            if res is True:
+                # Better to have all symmetry equivalent site here in a list.
+                # The workflow will remove them in getTSestimate function
+                # keeping all symmetry distinct sites
+                not_unique_index.append(str(num).zfill(3))
+        return not_unique_index

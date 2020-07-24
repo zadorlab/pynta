@@ -1,11 +1,9 @@
 from typing import List, Tuple
 from ase import Atoms
 from ase.calculators.calculator import Calculator
-from ase.build import fcc111, molecule
 from ase.io.trajectory import Trajectory
 import numpy as np
 from scipy.optimize import minimize
-from xtb import GFN0, GFN1
 
 
 def skew(x: np.ndarray) -> np.ndarray:
@@ -141,14 +139,12 @@ class AdsorbatePlacer:
                         method='l-bfgs-b')
         y1 = res1['x']
 
-
         res2 = minimize(self.energy, y1, jac=self.gradient, method='bfgs',
                         options={'disp': True})
-        #res2 = minimize(self.energy, y1, jac=self.gradient, method='l-bfgs-b',
+        # res2 = minimize(self.energy, y1, jac=self.gradient, method='l-bfgs-b',
         #                options={'iprint': 1})
         print(res2)
 
         y2 = res2['x']
         self.set_y(y2)
         return self.ads_ref.copy()
-

@@ -408,6 +408,8 @@ class Adsorbates:
 
         '''
         minimapath = os.path.join(self.facetpath, 'minima')
+        if not os.path.exists(minimapath):
+            os.makedirs(minimapath)
         with open(pytemplate, 'r') as f:
             pytemplate = f.read()
 
