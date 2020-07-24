@@ -26,7 +26,7 @@ BalsamJob = BalsamJob
 pending_simulations = BalsamJob.objects.filter(workflow__contains=dependency_workflow_name).exclude(state=“JOB_FINISHED”)
 myPython, created= ApplicationDefinition.objects.get_or_create(
             name="Python",
-            executable="python")
+            executable="python3")
 myPython.save()
 cwd=Path.cwd().as_posix()
 for py_script in glob('{facetpath}/TS_estimate_unique/*.py'):

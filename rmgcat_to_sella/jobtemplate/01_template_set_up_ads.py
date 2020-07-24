@@ -22,7 +22,7 @@ from balsam.launcher.dag import BalsamJob
 from balsam.core.models import ApplicationDefinition
 myPython, created= ApplicationDefinition.objects.get_or_create(
             name="Python",
-            executable="python")
+            executable="python3")
 myPython.save()
 cwd=Path.cwd().as_posix()
 workflow_name    = yamlfile+facetpath+'01'
