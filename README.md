@@ -17,7 +17,7 @@ If you do not have admin priveleges (e.g. you use it on a supercomputer), do the
 python setup.py install --user
 ```
 ## How to run
-An example script:
+An example script (using `dev` branch - SLURM):
 ```python
 #!/usr/bin/env python3
 # your SBATCH options goes here
@@ -33,6 +33,29 @@ from rmgcat_to_sella.main import WorkFlow
 workflow = WorkFlow()
 workflow.gen_job_files()
 workflow.execute()
+```
+
+An example script (using `master` branch - BALSAM):
+
+```python
+#!/usr/bin/env python3
+import time
+import inputR2S
+from rmgcat_to_sella.main import WorkFlow
+
+workflow = WorkFlow()
+workflow.gen_job_files()
+workflow.execute()
+```
+and 
+```bash
+#!/bin/bash
+module load quantum-espresso/6.4.1
+balsam init ~/myWorkflow_bebop
+source balsamactivate ~/myWorkflow_bebop
+python3 $PWD/run_me.py
+balsam submit-launch -A whatever -q day-long-cpu -t 1200 -n 1 --job-mode=serial --sched-flags="-n 48"
+#watch balsam ls   #  follow status in realtime from co
 ```
 An example input files is located at `/example_run_files/inputR2S.py`. You will also need `reactions.yaml` which can be found in the same location. 
 
