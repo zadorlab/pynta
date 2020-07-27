@@ -50,7 +50,8 @@ with open(outdir + '_time.log', 'w+') as f:
 atoms = read(jobdir + '.xyz')
 atoms.set_constraint(FixAtoms([atom.index for atom in atoms if atom.position[2] < atoms.cell[2, 2] / 2.]))
 
-espresso = Espresso(command='/home/ehermes/local/bin/mpirun -np 48 /home/ehermes/local/bin/pw.x -inp PREFIX.pwi --ipi {{unixsocket}}:UNIX > PREFIX.pwo'
+espresso = Espresso(command='mpirun -np 48 pw.x -inp PREFIX.pwi --ipi {{unixsocket}}:UNIX > PREFIX.pwo'
+# espresso = Espresso(command='/home/ehermes/local/bin/mpirun -np 48 /home/ehermes/local/bin/pw.x -inp PREFIX.pwi --ipi {{unixsocket}}:UNIX > PREFIX.pwo'
                             .format(unixsocket=unixsocket),
                     label=outdir,
                     pseudopotentials={pseudopotentials},
