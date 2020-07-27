@@ -122,13 +122,15 @@ class Results():
             # e.g. OH --> O + H
             if len(p_ener_list) >= len(r_ener_list):
                 barrier = (ts_ener - sum(r_ener_list)) * self.ev_to_kjmol
-                activation_barriers['TS_' + ts_name] = '{:.2f}'.format(barrier)
+                activation_barriers['TS_' +
+                                    ts_name] = '{:.2f}'.format(barrier)
                 # activation_barriers['TS_' + ts_name] = barrier
             # e.g. O + H --> OH
             elif len(p_ener_list) < len(r_ener_list):
                 barrier = (ts_ener + slab_ener * nslabs -
                            sum(r_ener_list)) * self.ev_to_kjmol
-                activation_barriers['TS_' + ts_name] = '{:.2f}'.format(barrier)
+                activation_barriers['TS_' +
+                                    ts_name] = '{:.2f}'.format(barrier)
                 # activation_barriers['TS_' + ts_name] = barrier
             else:
                 raise NotImplementedError(
@@ -178,10 +180,20 @@ class Results():
             lowest_reactant_ener = Results.get_lowest_species_ener(
                 self, reactant)
             r_ener_list.append(lowest_reactant_ener)
+        if None in r_ener_list:
+            print('----')
+            print('Found None in reactants energy list. Missing .out files for reactants.')
+            print('----')
+            raise TypeError
         for product in self.products_list:
             lowest_product_ener = Results.get_lowest_species_ener(
                 self, product)
             p_ener_list.append(lowest_product_ener)
+        if None in p_ener_list:
+            print('----')
+            print('Found None in products energy list. Missing .out files for products.')
+            print('----')
+            raise TypeError
 
         slab_ener = Results.get_slab_ener(self)
         nslabs = abs(len(p_ener_list) - len(r_ener_list))
@@ -267,7 +279,8 @@ class Results():
             lowest_species_ener = min(species_ener_dict.values())
             return lowest_species_ener
         except ValueError:
-            print('Check if minima .out files copied successfully')
+            print('Minima .out files probably not copied successfully.')
+            print('Check minima .out files. If missing, copy it.')
 
     def get_ts_out_files(self):
         ''' Get TS .out files
