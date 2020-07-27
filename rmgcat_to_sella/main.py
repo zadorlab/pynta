@@ -423,33 +423,40 @@ class WorkFlow:
 
         TODO DEBUG -- it could be a bit buggy
         '''
-        # Below, I have a list of tuples with all
+        # all_species_checked is a list of tuples (bool, path), if bool=True
+        # otherwise (bool, )
         all_species_checked = self.check_all_species()
         # It more convenient to have a list of bools
         sp_check_list = [
             False for species in all_species_checked if not species[0]]
 
         if optimize_slab:
-            # If the code cannot locate optimized slab .xyz file,
-            # a slab optimization  will be launched.
-            if self.check_if_slab_opt_exists()[0]:
+            # check for slab
+            is_slab = self.check_if_slab_opt_exists()[0]
+            # if slab found in previous calculation, copy it
+            if is_slab:
                 self.copy_slab_opt_file()
-                print('right here')
             else:
+                # If the code cannot locate optimized slab .xyz file,
+                # a slab optimization will be launched.
                 self.run_slab_optimization()
-                print('run_slab_opt')
-            # check whether species were already cacluated
+            # check whether species were already calculated
             if all(sp_check_list):
                 # If all are True, start by generating TS guesses and run
                 # the penalty function minimization
                 self.run_ts_estimate_no_depend()
             else:
-                # If any of these is False
+                # If any of sp_check_list is False
                 # run optimization of surface + reactants; surface + products
-                try:
+                # check if slab was calculated in this run.
+                # If so, set up dependencies
+                if os.path.isfile('00_set_up_slab_opt.py.out'):
                     self.run_opt_surf_and_adsorbate()
-                except NameError:
+                    print('depend')
+                else:
+                    # Otherwise run without dependencies
                     self.run_opt_surf_and_adsorbate_no_depend()
+                    print('nodepend')
                 # run calculations to get TS guesses
                 self.run_ts_estimate('01')
         else:
