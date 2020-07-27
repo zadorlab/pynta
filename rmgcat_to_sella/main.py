@@ -305,10 +305,10 @@ class WorkFlow:
         # and no previous calculations
         # e.g. ['.../Cu_100_slab_opt.xyz', '.../Cu_100']
         # return (False, ) in that case
-        if len(WorkFlowDirs) >= 2 and is_xyz:
+        if len(WorkFlowDirs) <= 2 and is_xyz:
             print('only one element, probably .xyz of the slab. Yes')
             return (False, )
-        # error handling if there is no previous minima calculations 
+        # error handling if there is no previous minima calculations
         # and slab was not optimized
         if not WorkFlowDirs:
             return (False, )
@@ -409,12 +409,14 @@ class WorkFlow:
     def copy_slab_opt_file(self):
         ''' Copy .xyz of previously optimized slab '''
         self.slab_exists = self.check_if_slab_opt_exists()
-        print(self.slab_exists)
         if self.slab_exists[0]:
             src = self.slab_exists[1]
             dst = os.getcwd()
-            shutil.copy2(src, dst)
-            self.slab_opt_job = ''
+            try:
+                shutil.copy2(src, dst)
+                self.slab_opt_job = ''
+            except shutil.SameFileError:
+                pass
 
     def execute(self):
         ''' The main executable 
@@ -429,14 +431,14 @@ class WorkFlow:
 
         if optimize_slab:
             # If the code cannot locate optimized slab .xyz file,
-            # a slab optimization will be launched.
-            if self.check_if_slab_opt_exists():
-                print('here')
-                self.run_slab_optimization()
-            else:
+            # a slab optimization  will be launched.
+            if self.check_if_slab_opt_exists()[0]:
                 self.copy_slab_opt_file()
                 print('right here')
-            # check whether species were already cacluated)
+            else:
+                self.run_slab_optimization()
+                print('run_slab_opt')
+            # check whether species were already cacluated
             if all(sp_check_list):
                 # If all are True, start by generating TS guesses and run
                 # the penalty function minimization
@@ -453,7 +455,7 @@ class WorkFlow:
         else:
             # this is executed if user provide .xyz with the optimized slab
             # check whether sp1 and sp2 was already calculated
-            if self.check_if_slab_opt_exists():
+            if self.check_if_slab_opt_exists()[0]:
                 pass
             else:
                 raise FileNotFoundError(
