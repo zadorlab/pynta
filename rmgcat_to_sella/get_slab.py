@@ -111,8 +111,8 @@ class GetSlab:
         label = os.path.join(unixsocket, self.slab_name)
 
         # on Menten
-        # espresso = Espresso(command='/home/ehermes/local/bin/mpirun -np 8 /home/ehermes/local/bin/pw.x -inp PREFIX.pwi --ipi {{unixsocket}}:UNIX > PREFIX.pwo'
-        espresso = Espresso(command='mpirun -np 36 pw.x -inp PREFIX.pwi --ipi {{unixsocket}}:UNIX > PREFIX.pwo'
+        espresso = Espresso(command='/home/ehermes/local/bin/mpirun -np 8 /home/ehermes/local/bin/pw.x -inp PREFIX.pwi --ipi {{unixsocket}}:UNIX > PREFIX.pwo'
+        # espresso = Espresso(command='mpirun -np 36 pw.x -inp PREFIX.pwi --ipi {{unixsocket}}:UNIX > PREFIX.pwo'
                             .format(unixsocket=unixsocket),
                             label=label,
                             pseudopotentials=self.pseudopotentials,
