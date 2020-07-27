@@ -176,19 +176,23 @@ class Results():
         '''
         r_ener_list = []
         p_ener_list = []
+        # get the lowest energy for all reactants
         for reactant in self.reactants_list:
             lowest_reactant_ener = Results.get_lowest_species_ener(
                 self, reactant)
             r_ener_list.append(lowest_reactant_ener)
+        # check if .out files for reactants are copied
         if None in r_ener_list:
             print('----')
             print('Found None in reactants energy list. Missing .out files for reactants.')
             print('----')
             raise TypeError
+        # get the lowest energy for all products
         for product in self.products_list:
             lowest_product_ener = Results.get_lowest_species_ener(
                 self, product)
             p_ener_list.append(lowest_product_ener)
+        # check if .out files for products are copied
         if None in p_ener_list:
             print('----')
             print('Found None in products energy list. Missing .out files for products.')
