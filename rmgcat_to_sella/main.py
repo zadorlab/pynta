@@ -299,12 +299,16 @@ class WorkFlow:
         for WorkFlowDir in WorkFlowDirsList:
             WorkFlowDir = str(WorkFlowDir)
             WorkFlowDirs.append(WorkFlowDir)
-        
-        # error handling if only slab presented and no previous calculations
-        if len(WorkFlowDirs) == 1 and WorkFlowDirs[0].endswith('.xyz'):
+        print(WorkFlowDirs)
+        # check if there is a optimized slab in the WorkFlowDirs
+        is_xyz = any('xyz' in WorkFlowDir for WorkFlowDir in WorkFlowDirs)
+        # error handling if only slab and/or facetpath dir presented
+        # and no previous calculations
+        # e.g. ['.../Cu_100_slab_opt.xyz', '.../Cu_100']
+        # return (False, ) in that case
+        if len(WorkFlowDirs) >= 2 and is_xyz:
             print('only one element, probably .xyz of the slab. Yes')
             return (False, )
-
         # go through all dirs and look for the match
         for WorkFlowDir in WorkFlowDirs:
             try:
