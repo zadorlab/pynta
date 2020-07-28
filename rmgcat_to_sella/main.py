@@ -419,7 +419,7 @@ class WorkFlow:
                 pass
 
     def execute(self):
-        ''' The main executable 
+        ''' The main executable
 
         TODO DEBUG -- it could be a bit buggy
         '''
@@ -448,15 +448,24 @@ class WorkFlow:
             else:
                 # If any of sp_check_list is False
                 # run optimization of surface + reactants; surface + products
+                #
+                # TODO: To be debugged - I need to think about a method to run
+                # run_opt_surf_and_adsorbate() 
+                # or
+                # run_opt_surf_and_adsorbate_no_depend()
+                # depending whether slab opt was done perform by the workflow
                 # check if slab was calculated in this run.
-                # If so, set up dependencies
-                if os.path.isfile('00_set_up_slab_opt.py.out'):
+                try:
                     self.run_opt_surf_and_adsorbate()
-                    print('depend')
-                else:
-                    # Otherwise run without dependencies
+                except NameError:
                     self.run_opt_surf_and_adsorbate_no_depend()
-                    print('nodepend')
+                # if os.path.isfile('00_set_up_slab_opt.py.out'):
+                #     self.run_opt_surf_and_adsorbate()
+                #     print('depend')
+                # else:
+                #     # Otherwise run without dependencies
+                #     self.run_opt_surf_and_adsorbate_no_depend()
+                #     print('nodepend')
                 # run calculations to get TS guesses
                 self.run_ts_estimate('01')
         else:
