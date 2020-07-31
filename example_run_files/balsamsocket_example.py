@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from ase.build import molecule
 from ase.optimize import QuasiNewton
-from rmgcat_to_sella.balsamcalc import EspressoBalsam
+from rmgcat_to_sella.balsamcalc import EspressoBalsamSocketIO
 
 
 # Set up a small, simple system
@@ -10,7 +10,7 @@ atoms.rattle()
 atoms.center(vacuum=3)
 
 # The calculator
-atoms.calc = EspressoBalsam(
+atoms.calc = EspressoBalsamSocketIO(
     # Special BalsamCalculator keywords:
     workflow='qetest',
     job_kwargs={
@@ -32,3 +32,5 @@ atoms.calc = EspressoBalsam(
 # Just do a normal geometry minimization
 opt = QuasiNewton(atoms)
 opt.run(fmax=0.01)
+
+atoms.calc.close()
