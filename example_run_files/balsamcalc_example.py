@@ -8,6 +8,9 @@ from rmgcat_to_sella.balsamcalc import EspressoBalsamCalculator
 atoms = molecule('CH4')
 atoms.rattle()
 atoms.center(vacuum=3)
+EspressoBalsamCalculator.exe = '/soft/applications/quantum_espresso/6.4/bin/pw.x' 
+from pathlib import Path
+cwd = Path.cwd().as_posix()
 
 # The calculator
 atoms.calc = EspressoBalsamCalculator(
@@ -15,7 +18,10 @@ atoms.calc = EspressoBalsamCalculator(
     workflow='qetest',
     job_kwargs={
         'num_nodes': 1,
-        'ranks_per_node': 6
+        'ranks_per_node': 16,
+        'threads_per_rank': 4,
+        'threads_per_core': 1,
+        'user_workdir': cwd
     },
     # Regular ASE Calculator keywords:
     pseudopotentials={
@@ -28,6 +34,7 @@ atoms.calc = EspressoBalsamCalculator(
     tprnfor=True,
     label='test_espresso_balsam_calculator'
 )
+
 
 # Just do a normal geometry minimization
 opt = QuasiNewton(atoms)

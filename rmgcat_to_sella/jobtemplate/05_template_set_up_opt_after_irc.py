@@ -25,7 +25,7 @@ from balsam.launcher.dag import BalsamJob
 from balsam.core.models import ApplicationDefinition
 BalsamJob = BalsamJob
 pending_simulations = BalsamJob.objects.filter(workflow__contains=dependency_workflow_name).exclude(state=“JOB_FINISHED”)
-myPython= ApplicationDefinition.objects.get_or_create(
+myPython, created= ApplicationDefinition.objects.get_or_create(
             name="Python",
             executable="python3")
 myPython.save()

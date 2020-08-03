@@ -71,7 +71,7 @@ class BalsamCalculator(FileIOCalculator):
         """Creates a Balsam Application for this Calculator."""
         if cls.app is not None:
             return
-        cls.app = ApplicationDefinition(
+        cls.app, created = ApplicationDefinition.objects.get_or_create(
             name=cls.__name__,
             executable=cls.exe,
             preprocess=cls.preprocess,

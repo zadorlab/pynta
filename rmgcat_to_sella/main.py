@@ -347,7 +347,7 @@ class WorkFlow:
 
     def run_opt_surf_and_adsorbate(self):
         ''' Run optmization of adsorbates on the surface '''
-        return self.exe(slab_opt, SurfaceAdsorbate)
+        return self.exe(self.slab_opt_job, SurfaceAdsorbate)
 
     def run_opt_surf_and_adsorbate_no_depend(self):
         ''' Run optmization of adsorbates on the surface
