@@ -1,27 +1,21 @@
 #!/usr/bin/env python3
 from ase.build import molecule
 from ase.optimize import QuasiNewton
-from rmgcat_to_sella.balsamcalc import EspressoBalsam
+from rmgcat_to_sella.balsamcalc import EspressoBalsamSocketIO
 
 
 # Set up a small, simple system
 atoms = molecule('CH4')
 atoms.rattle()
 atoms.center(vacuum=3)
-EspressoBalsamCalculator.exe = '/soft/applications/quantum_espresso/6.4/bin/pw.x' 
-from pathlib import Path
-cwd = Path.cwd().as_posix()
 
 # The calculator
-atoms.calc = EspressoBalsam(
+atoms.calc = EspressoBalsamSocketIO(
     # Special BalsamCalculator keywords:
     workflow='qetest',
     job_kwargs={
         'num_nodes': 1,
-        'ranks_per_node': 16,
-        'threads_per_rank': 4,
-        'threads_per_core': 1,
-        'user_workdir': cwd
+        'ranks_per_node': 6
     },
     # Regular ASE Calculator keywords:
     pseudopotentials={
@@ -35,7 +29,8 @@ atoms.calc = EspressoBalsam(
     label='test_espresso_balsam_calculator'
 )
 
-
 # Just do a normal geometry minimization
 opt = QuasiNewton(atoms)
 opt.run(fmax=0.01)
+
+atoms.calc.close()
