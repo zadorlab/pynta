@@ -383,7 +383,7 @@ class Adsorbates:
                 # write(os.path.join(savedir, '{}.png'.format(str(j).zfill(2))), big_slab_ads, rotation='10z,-80x')
 
     def create_relax_jobs(self, pytemplate, pseudopotentials, pseudo_dir,
-                          shtemplate=None):
+                          executable,balsam_exe_settings,calc_keywords,shtemplate=None):
         ''' Create a submit scripts
 
         Parameters:
@@ -430,7 +430,10 @@ class Adsorbates:
                         f.write(pytemplate.format(adsorbate=species,
                                                   prefix=prefix,
                                                   pseudopotentials=pseudopotentials,
-                                                  pseudo_dir=pseudo_dir))
+                                                  pseudo_dir=pseudo_dir,
+                                                  executable=executable,
+                                                  balsam_exe_settings=balsam_exe_settings,
+                                                  calc_keywords=calc_keywords))
                     if shtemplate is None:
                         continue
                     # optional

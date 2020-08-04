@@ -731,7 +731,9 @@ class TS():
                 # write(NEB_png_Dir, read(newNEB_xyz_Dir))
 
     def create_TS_unique_job_files(self, pytemplate,
-                                   pseudopotentials, pseudo_dir):
+                                   pseudopotentials, pseudo_dir,
+                                   executable,balsam_exe_settings,
+                                   calc_keywords):
         ''' Create job submission files'''
         unique_TS_candidate_path = os.path.join(
             self.facetpath, self.ts_dir + '_unique')

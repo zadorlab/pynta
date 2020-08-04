@@ -12,10 +12,13 @@ pseudopotentials = {pseudopotentials}
 pseudo_dir       = '{pseudo_dir}'
 workflow_name    = yamlfile+facetpath+'03'
 dependency_workflow_name = yamlfile+facetpath+'02'
+executable       = {executable}
+balsam_exe_settings = {balsam_exe_settings}
+calc_keywords    = {calc_keywords}
 
 ts = TS(facetpath, slab, ts_dir, yamlfile, repeats)
 ts.create_unique_TS()
-ts.create_TS_unique_job_files(pytemplate, pseudopotentials, pseudo_dir)
+ts.create_TS_unique_job_files(pytemplate, pseudopotentials, pseudo_dir,executable,balsam_exe_settings,calc_keywords)
 
 from glob import glob
 from pathlib import Path

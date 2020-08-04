@@ -1,35 +1,23 @@
 #!/usr/bin/env python3
-#SBATCH -J {adsorbate}_{prefix}_relax
-#SBATCH -N 1
-#SBATCH -n 48
-#SBATCH -p day-long-cpu
-#SBATCH -t 1-00:00:00
-#SBATCH -e %x.err
-#SBATCH -o %x.out
 
 import os
 import shutil
-import getpass
 
 from ase.io import read, write
 from ase.constraints import FixAtoms
 
 from sella import Sella
 
-from ase.calculators.espresso import Espresso
-from ase.calculators.socketio import SocketIOCalculator
 
 import datetime
 
 adsorbate = '{adsorbate}'
 prefix = '{prefix}'
-
-user = getpass.getuser()
-
-unixsocket = '{{adsorbate}}_{{prefix}}'.format(adsorbate=adsorbate, prefix=prefix)
-socketpath = f'/tmp/ipi_{{unixsocket}}'
-if os.path.exists(socketpath):
-    os.remove(socketpath)
+pseudopotentials='{pseudopotentials}'
+pseudo_dir='{pseudo_dir}'
+executable='{executable}'
+balsam_exe_settings={balsam_exe_settings}
+calc_keywords={calc_keywords}
 
 jobdir = os.path.join(adsorbate, prefix)
 outdir = os.path.join(jobdir, prefix)
@@ -50,26 +38,26 @@ with open(outdir + '_time.log', 'w+') as f:
 atoms = read(jobdir + '.xyz')
 atoms.set_constraint(FixAtoms([atom.index for atom in atoms if atom.position[2] < atoms.cell[2, 2] / 2.]))
 
-espresso = Espresso(command='mpirun -np 48 pw.x -inp PREFIX.pwi --ipi {{unixsocket}}:UNIX > PREFIX.pwo'
-# espresso = Espresso(command='/home/ehermes/local/bin/mpirun -np 48 /home/ehermes/local/bin/pw.x -inp PREFIX.pwi --ipi {{unixsocket}}:UNIX > PREFIX.pwo'
-                            .format(unixsocket=unixsocket),
-                    label=outdir,
-                    pseudopotentials={pseudopotentials},
-                    pseudo_dir='{pseudo_dir}',
-                    kpts=(3, 3, 1),
-                    occupations='smearing',
-                    smearing='marzari-vanderbilt',
-                    degauss=0.01,  # Rydberg
-                    ecutwfc=40,  # Rydberg
-                    nosym=True,  # Allow symmetry breaking during optimization
-                    conv_thr=1e-11,
-                    mixing_mode='local-TF',
-                    )
+from pathlib import Path
+cwd = Path.cwd().as_posix()
+from rmgcat_to_sella.balsamcalc import EspressoBalsamSocketIO
+EspressoBalsamSocketIO.exe = executable
+job_kwargs=balsam_exe_settings.copy()
+job_kwargs.update([('user_workdir',cwd)])
+QE_keywords_slab=calc_keywords.copy()
+QE_keywords.update([('pseudopotentials',{pseudopotentials}),'pseudo_dir','{pseudo_dir}',('label',outdir)])
+Calc = EspressoBalsamSocketIO(
+    workflow='QE_Socket',
+    job_kwargs=job_kwargs,
+    pseudopotentials=self.pseudopotentials,
+    pseudo_dir=self.pseudo_dir,
+    **QE_keywords_slab
+    )
 
-with SocketIOCalculator(espresso, unixsocket=unixsocket) as calc:
-    atoms.calc = calc
-    opt = Sella(atoms, order=0, delta0=1e-2, trajectory=jobdir + '.traj')
-    opt.run(fmax=0.01)
+atoms.calc = Calc
+opt = Sella(atoms, order=0, delta0=1e-2, trajectory=jobdir + '.traj')
+opt.run(fmax=0.01)
+atoms.calc.close()
 
 pngWriteFile = os.path.join(jobdir + '_final.png')
 write(pngWriteFile, read(jobdir + '.traj'))

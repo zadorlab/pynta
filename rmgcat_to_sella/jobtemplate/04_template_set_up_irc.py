@@ -11,11 +11,14 @@ yamlfile         = '{yamlfile}'
 ts_dir           = 'TS_estimate'
 pseudopotentials = {pseudopotentials}
 pseudo_dir       = '{pseudo_dir}'
+executable       = {executable}
+balsam_exe_settings = {balsam_exe_settings}
+calc_keywords    = {calc_keywords}
 workflow_name    = yamlfile+facetpath+'04'
 dependency_workflow_name    = yamlfile+facetpath+'03'
 
 irc = IRC(facetpath, slab, repeats, ts_dir, yamlfile,
-          pseudopotentials, pseudo_dir)
+          pseudopotentials, pseudo_dir,QE_executable)
 irc.set_up_irc(pytemplate_f, pytemplate_r)
 
 from glob import glob

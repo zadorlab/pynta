@@ -30,8 +30,25 @@ slabopt          = 'Cu_100_slab_opt.xyz'
 ####################################################
 # Quantum Espresso pseudopotantials for DFT calculations
 #pseudo_dir = '/home/mgierad/espresso/pseudo'
-pseudo_dir = '/soft/espresso/pslibrary.1.0.0/pbe/PSEUDOPOTENTIALS'
+pseudo_dir = '/home/brossdh/espresso/pseudo'
 pseudopotentials = "dict(Cu='Cu.pbe-spn-kjpaw_psl.1.0.0.UPF', H='H.pbe-kjpaw_psl.1.0.0.UPF', O='O.pbe-n-kjpaw_psl.1.0.0.UPF', C='C.pbe-n-kjpaw_psl.1.0.0.UPF')"
+executable = '\'/soft/applications/quantum_espresso/6.4/bin/pw.x\''
+balsam_exe_settings = {'num_nodes': 1,
+        'ranks_per_node': 16,
+        'threads_per_rank': 4,
+        'threads_per_core': 1
+        }
+
+calc_keywords= {'kpts':(3, 3, 1),
+        'occupations':'smearing',
+        'smearing':'marzari-vanderbilt',
+        'degauss':0.01,  # Rydberg
+        'ecutwfc':40,  # Rydberg
+        'nosym':True,  # Allow symmetry breaking during optimization
+        'conv_thr':1e-11,
+        'mixing_mode':'local-TF'
+        }
+
 ####################################################
 # filename of the .yaml file with reactions
 yamlfile         = 'reactions.yaml'

@@ -13,9 +13,12 @@ pseudopotentials = {pseudopotentials}
 pseudo_dir       = '{pseudo_dir}'
 workflow_name    = yamlfile+facetpath+'05'
 dependency_workflow_name = yamlfile+facetpath+'04' 
+executable       = {executable}
+balsam_exe_settings = {balsam_exe_settings}
+calc_keywords    = {calc_keywords}
 
 irc = IRC(facetpath, slab, repeats, ts_dir, yamlfile,
-          pseudopotentials, pseudo_dir)
+          pseudopotentials, pseudo_dir,QE_executable)
 irc.opt_after_IRC(irc_dir, pytemplate)
 
 from glob import glob
