@@ -282,7 +282,7 @@ class WorkFlow:
             except ValueError:
                 dependency = str(int(parent_job[0:1]))
                 dependency_workflow_name = yamlfile+facetpath+dependency
-                print(dependency_workflow_name)
+                #print(dependency_workflow_name)
                 BalsamJob = BalsamJob
                 pending_simulations = BalsamJob.objects.filter(
                     workflow__contains=dependency_workflow_name).exclude(state='JOB_FINISHED')
@@ -361,14 +361,17 @@ class WorkFlow:
         # part) with the name of the species. 
         # Finally the path is like:
         # '*/Cu_111/minima/H'
-        unique_minima_dir = os.path.join(
-            os.path.split(path_to_outfiles[0])[0], species)
 
         # If species were previously calculated, return True and paths
-        if path_to_outfiles:
-            return True, unique_minima_dir, path_to_outfiles
-        else:
-            (False, )
+        try:
+            if path_to_outfiles:
+                unique_minima_dir = os.path.join(
+                        os.path.split(path_to_outfiles[0])[0], species)
+                return True, unique_minima_dir, path_to_outfiles
+            else:
+                return (False, )
+        except UnboundLocalError:
+            return (False, )
 
     def run_slab_optimization(self):
         ''' Submit slab_optimization_job '''
