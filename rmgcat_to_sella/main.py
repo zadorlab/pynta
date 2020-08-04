@@ -181,7 +181,7 @@ class WorkFlow:
         with open(template, 'r') as r:
             template_text = r.read()
             with open('02_set_up_TS_with_xtb.py', 'w') as c:
-                c.write(template.format(facetpath=facetpath, slab=slab,
+                c.write(template_text.format(facetpath=facetpath, slab=slab,
                                         repeats=repeats, yamlfile=yamlfile,
                                         rotAngle=rotAngle, scfactor=scfactor,
                                         scfactor_surface=scfactor_surface,

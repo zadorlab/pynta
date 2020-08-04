@@ -13,8 +13,6 @@ import datetime
 
 adsorbate = '{adsorbate}'
 prefix = '{prefix}'
-pseudopotentials='{pseudopotentials}'
-pseudo_dir='{pseudo_dir}'
 executable='{executable}'
 balsam_exe_settings={balsam_exe_settings}
 calc_keywords={calc_keywords}
@@ -43,15 +41,15 @@ cwd = Path.cwd().as_posix()
 from rmgcat_to_sella.balsamcalc import EspressoBalsamSocketIO
 EspressoBalsamSocketIO.exe = executable
 job_kwargs=balsam_exe_settings.copy()
-job_kwargs.update([('user_workdir',cwd)])
-QE_keywords_slab=calc_keywords.copy()
+#job_kwargs.update([('user_workdir',cwd)])
+QE_keywords=calc_keywords.copy()
 QE_keywords.update([('pseudopotentials',{pseudopotentials}),'pseudo_dir','{pseudo_dir}',('label',outdir)])
 Calc = EspressoBalsamSocketIO(
     workflow='QE_Socket',
     job_kwargs=job_kwargs,
     pseudopotentials=self.pseudopotentials,
     pseudo_dir=self.pseudo_dir,
-    **QE_keywords_slab
+    **QE_keywords
     )
 
 atoms.calc = Calc

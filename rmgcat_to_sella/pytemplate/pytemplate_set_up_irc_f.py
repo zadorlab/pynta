@@ -28,15 +28,15 @@ cwd = Path.cwd().as_posix()
 from rmgcat_to_sella.balsamcalc import EspressoBalsamSocketIO
 EspressoBalsamSocketIO.exe = executable
 job_kwargs=balsam_exe_settings.copy()
-job_kwargs.update([('user_workdir',cwd)])
-QE_keywords_slab=calc_keywords.copy()
+#job_kwargs.update([('user_workdir',cwd)])
+QE_keywords=calc_keywords.copy()
 QE_keywords.update([('pseudopotentials',{pseudopotentials}),'pseudo_dir','{pseudo_dir}',('label',label)])
 Calc = EspressoBalsamSocketIO(
     workflow='QE_Socket',
     job_kwargs=job_kwargs,
     pseudopotentials=self.pseudopotentials,
     pseudo_dir=self.pseudo_dir,
-    **QE_keywords_slab
+    **QE_keywords
     )
 
 
