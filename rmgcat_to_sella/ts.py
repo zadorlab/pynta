@@ -21,7 +21,7 @@ from spglib import get_symmetry
 
 
 class TS():
-    def __init__(self, facetpath, slab, ts_dir, yamlfile, repeats):
+    def __init__(self, facetpath, slab, ts_dir, yamlfile, repeats,creation_dir):
         ''' Initializing
 
         Parameters:
@@ -48,6 +48,7 @@ class TS():
         self.ts_dir = ts_dir
         self.yamlfile = yamlfile
         self.repeats = repeats
+        self.creation_dir=creation_dir
 
     def prepare_ts_estimate(self, scfactor, scfactor_surface,
                             rotAngle, pytemplate_xtb, species,
@@ -752,7 +753,9 @@ class TS():
                             f.write(pytemplate.format(TS=os.path.join(
                                 struc, fl), rxn=fl[3:-7], prefix=fl[:2],
                                 pseudopotentials=pseudopotentials,
-                                pseudo_dir=pseudo_dir))
+                                pseudo_dir=pseudo_dir, executable=executable,
+                                balsam_exe_settings=balsam_exe_settings,
+                                calc_keywords=calc_keywords, creation_dir=self.creation_dir))
                         f.close()
         f.close()
 

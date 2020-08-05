@@ -16,6 +16,7 @@ dependency_workflow_name = yamlfile+facetpath+'04'
 executable       = {executable}
 balsam_exe_settings = {balsam_exe_settings}
 calc_keywords    = {calc_keywords}
+creation_dir     = '{creation_dir}'
 
 irc = IRC(facetpath, slab, repeats, ts_dir, yamlfile,
           pseudopotentials, pseudo_dir,QE_executable)
@@ -34,12 +35,16 @@ myPython, created= ApplicationDefinition.objects.get_or_create(
 myPython.save()
 cwd=Path.cwd().as_posix()
 for py_script in glob('{facetpath}/IRC/irc*/*.py'):
-    #creation_dir=Path.cwd().as_posix()+'/'+'/'.join(py_script.strip().split('/')[:-1])
+    job_dir=Path.cwd().as_posix()+'/'+'/'.join(py_script.strip().split('/')[:-1])
+    script_name=py_script.strip().split('/')[-1]
     job_to_add = BalsamJob(
-            name = py_script,
+            name = script_name,
             workflow = workflow_name,
             application = myPython.name,
-            args = cwd+py_script,
+            args = cwd+'/'+py_script,
+            input_files='',
+            user_workdir=job_dir,
+            node_packing_count=64,
             ranks_per_node = 1,
             )
     job_to_add.save()

@@ -32,12 +32,10 @@ EspressoBalsamSocketIO.exe = executable
 job_kwargs=balsam_exe_settings.copy()
 #job_kwargs.update([('user_workdir',cwd)])
 QE_keywords=calc_keywords.copy()
-QE_keywords.update([('pseudopotentials',{pseudopotentials}),'pseudo_dir','{pseudo_dir}',('label',prefix)])
+QE_keywords.update([('pseudopotentials',{pseudopotentials}),('pseudo_dir','{pseudo_dir}'),('label',prefix)])
 Calc = EspressoBalsamSocketIO(
     workflow='QE_Socket',
     job_kwargs=job_kwargs,
-    pseudopotentials=self.pseudopotentials,
-    pseudo_dir=self.pseudo_dir,
     **QE_keywords
     )
 
@@ -47,7 +45,8 @@ geom_opt.set_constraint(FixAtoms(
     [atom.index for atom in geom_opt if atom.position[2] < geom_opt.cell[2, 2] / 2.]))
 
 geom_opt.calc = Calc
-opt = Sella(geom_opt, order=0, delta0=1e-2, trajectory=trajdir)
+from ase.optimize import BFGSLineSearch
+opt = BFGSLineSearch(atoms=geom_opt,trajectory=trajdir)
 opt.run(fmax=0.01)
 geom_opt.calc.close()
 

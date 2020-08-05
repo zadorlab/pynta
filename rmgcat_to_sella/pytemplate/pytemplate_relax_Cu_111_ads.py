@@ -16,6 +16,7 @@ prefix = '{prefix}'
 executable='{executable}'
 balsam_exe_settings={balsam_exe_settings}
 calc_keywords={calc_keywords}
+creation_dir='{creation_dir}'
 
 jobdir = os.path.join(adsorbate, prefix)
 outdir = os.path.join(jobdir, prefix)
@@ -43,17 +44,17 @@ EspressoBalsamSocketIO.exe = executable
 job_kwargs=balsam_exe_settings.copy()
 #job_kwargs.update([('user_workdir',cwd)])
 QE_keywords=calc_keywords.copy()
-QE_keywords.update([('pseudopotentials',{pseudopotentials}),'pseudo_dir','{pseudo_dir}',('label',outdir)])
+QE_keywords.update([('pseudopotentials',{pseudopotentials}),('pseudo_dir','{pseudo_dir}'),('label',outdir)])
 Calc = EspressoBalsamSocketIO(
     workflow='QE_Socket',
     job_kwargs=job_kwargs,
-    pseudopotentials=self.pseudopotentials,
-    pseudo_dir=self.pseudo_dir,
     **QE_keywords
     )
 
 atoms.calc = Calc
-opt = Sella(atoms, order=0, delta0=1e-2, trajectory=jobdir + '.traj')
+from ase.optimize import BFGSLineSearch
+opt = BFGSLineSearch(atoms=atoms,trajectory=jobdir+'.traj')
+#opt = Sella(atoms, order=0, delta0=1e-2, trajectory=jobdir + '.traj')
 opt.run(fmax=0.01)
 atoms.calc.close()
 

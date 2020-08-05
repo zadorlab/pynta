@@ -48,6 +48,8 @@ calc_keywords= {'kpts':(3, 3, 1),
         'conv_thr':1e-11,
         'mixing_mode':'local-TF'
         }
+from pathlib import Path
+creation_dir = Path.cwd().as_posix()
 
 ####################################################
 # filename of the .yaml file with reactions

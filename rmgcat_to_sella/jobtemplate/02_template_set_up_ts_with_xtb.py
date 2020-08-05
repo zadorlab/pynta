@@ -18,8 +18,9 @@ scaled2          = {scaled2}
 ts_dir           = 'TS_estimate'
 workflow_name    = yamlfile+facetpath+'02'
 dependency_workflow_name    = yamlfile+facetpath+'01'
+creation_dir     = '{creation_dir}'
 
-ts = TS(facetpath, slab, ts_dir, yamlfile, repeats)
+ts = TS(facetpath, slab, ts_dir, yamlfile, repeats,creation_dir)
 ts.copy_minimas_prev_calculated(current_dir, species, minima_dir)
 ts.prepare_ts_estimate(scfactor, scfactor_surface, rotAngle,
                        pytemplate_xtb, species, scaled1, scaled2)
@@ -37,13 +38,17 @@ BalsamJob = BalsamJob
 pending_simulations = BalsamJob.objects.filter(workflow__contains=dependency_workflow_name).exclude(state=“JOB_FINISHED”)
 cwd=Path.cwd().as_posix()
 for py_script in glob('{facetpath}/TS_estimate/*/*.py'):
-    #creation_dir=Path.cwd().as_posix()+'/'+'/'.join(py_script.strip().split('/')[:-1])
+    job_dir=Path.cwd().as_posix()+'/'+'/'.join(py_script.strip().split('/')[:-1])
+    script_name=py_script.strip().split('/')[-1]
     job_to_add = BalsamJob(
-            name = py_script,
+            name = script_name,
             workflow = workflow_name,
             application = myPython.name,
-            args = cwd+py_script,
+            args = cwd+'/'+py_script,
+            input_files='',
             ranks_per_node = 1,
+            node_packing_count=64,
+            user_workdir=job_dir,
             )
     job_to_add.save()
     for job in pending_simulations:

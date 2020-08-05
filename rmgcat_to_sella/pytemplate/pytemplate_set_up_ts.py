@@ -12,6 +12,7 @@ import datetime
 
 rxn = '{rxn}'
 prefix = '{prefix}'
+
 trajdir = os.path.join(prefix, prefix + '_' + rxn + '.traj')
 label = os.path.join(prefix, prefix)
 
@@ -37,7 +38,7 @@ EspressoBalsamSocketIO.exe = executable
 job_kwargs=balsam_exe_settings.copy()
 #job_kwargs.update([('user_workdir',cwd)])
 QE_keywords=calc_keywords.copy()
-QE_keywords.update([('pseudopotentials',{pseudopotentials}),'pseudo_dir','{pseudo_dir}',('label',label)])
+QE_keywords.update([('pseudopotentials',{pseudopotentials}),('pseudo_dir','{pseudo_dir}'),('label',prefix)])
 Calc = EspressoBalsamSocketIO(
     workflow='QE_Socket',
     job_kwargs=job_kwargs,

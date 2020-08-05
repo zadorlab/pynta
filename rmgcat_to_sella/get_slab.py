@@ -5,7 +5,7 @@ import shutil
 from ase.build import fcc111, fcc211, fcc100
 from ase.io import write
 
-from sella import Sella
+#from sella import Sella
 
 # from ase.optimize import LBFGS
 # from gpaw import GPAW, PW
@@ -16,7 +16,7 @@ from sella import Sella
 class GetSlab:
     def __init__(self, surface_type, symbol, a, repeats, vacuum, slab_name,
                  pseudopotentials, pseudo_dir,executable,balsam_exe_settings,
-                 calc_keywords):
+                 calc_keywords, creation_dir):
         ''' A class for preparing and optimizing a user defined slab
 
         Parameters
@@ -60,6 +60,7 @@ class GetSlab:
         self.executable=executable
         self.balsam_exe_settings=balsam_exe_settings
         self.calc_keywords=calc_keywords
+        self.creation_dir=creation_dir
 
     def run_slab_opt(self):
         ''' Run slab optimization '''
@@ -104,10 +105,12 @@ class GetSlab:
 
         from pathlib import Path
         cwd = Path.cwd().as_posix()
+        from sys.path import insert
+        insert(0,self.creation_dir)
         from rmgcat_to_sella.balsamcalc import EspressoBalsamSocketIO
         EspressoBalsamSocketIO.exe = self.executable
         job_kwargs=self.balsam_exe_settings.copy()
-        job_kwargs.update([('user_workdir',cwd)])
+        #job_kwargs.update([('user_workdir',cwd)])
         QE_keywords_slab=self.calc_keywords.copy()
         #QE_keywords.update([('kpts',self.repeats)]) Not sure of intended behavior, but an example to show you can change keys as necessary here
         Calc = EspressoBalsamSocketIO(
@@ -119,9 +122,9 @@ class GetSlab:
             )
         slab.calc = Calc
         label=self.slab_name
-        opt = Sella(slab, order=0, delta0=1e-2, trajectory=label + '.traj')
+        from ase.optimize import BFGSLineSearch
+        opt = BFGSLineSearch(atoms=slab,trajectory=label+'.traj')
         opt.run(fmax=0.01)
-            
         ener = slab.get_potential_energy()
         force = slab.get_forces()
         slab.calc.close()
