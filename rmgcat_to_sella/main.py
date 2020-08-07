@@ -106,7 +106,7 @@ class WorkFlow:
                 executable=executable
                 )
         self.myQE.save()
-        self.slab_opt_job=''
+        self.slab_opt_job = ''
 
     def gen_job_files(self):
         ''' Generate submt scripts for 6 stages of the workflow '''
