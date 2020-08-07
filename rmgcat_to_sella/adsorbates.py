@@ -5,15 +5,11 @@ import yaml
 import numpy as np
 import networkx as nx
 
-from ase import Atoms
 from ase.io import read, write
 from ase.data import covalent_radii
-from ase.build import bulk, fcc111
 
-from catkit.gen.utils import connectivity_to_edges, get_cutoff_neighbors, to_gratoms
 from catkit.gen.molecules import get_3D_positions
-from catkit.gen.adsorption import AdsorptionSites, Builder
-from catkit.gen.surface import SlabGenerator
+from catkit.gen.adsorption import Builder
 from catkit import Gratoms
 
 from .graph_utils import node_test
@@ -97,8 +93,10 @@ class Adsorbates:
             # code in ASE, located at ase/geometry/geometry.py
             latt_len = np.sqrt((cell**2).sum(1))
             V = slab_atom.get_volume()
-            padding = slab_atom.pbc * np.array(np.ceil(cutoff * np.prod(latt_len) /
-                                                       (V * latt_len)), dtype=int)
+            padding = slab_atom.pbc * np.array(np.ceil(
+                cutoff * np.prod(latt_len) / (V * latt_len)),
+                dtype=int
+            )
             offsets = np.mgrid[-padding[0]:padding[0]+1,
                                -padding[1]:padding[1]+1,
                                -padding[2]:padding[2]+1].T
@@ -243,7 +241,9 @@ class Adsorbates:
 
         gratoms_list = []
         bonds = []
-        for i, subgraph in enumerate(nx.connected_component_subgraphs(gratoms.graph)):
+        for i, subgraph in enumerate(
+            nx.connected_component_subgraphs(gratoms.graph)
+        ):
             indices = list(subgraph.nodes)
             symbols = gratoms[indices].symbols
             # new_gratoms = gratoms[indices].copy()
@@ -265,7 +265,9 @@ class Adsorbates:
                         bond.append(i)
                     else:
                         raise RuntimeError(
-                            'At most two bonds to the metal are allowed per adsorbate!')
+                            'At most two bonds to the metal are allowed '
+                            'per adsorbate!'
+                        )
                     tags[i] = abs(tags[i])
             new_gratoms.set_tags(tags)
             bonds.append(bond)
@@ -335,7 +337,9 @@ class Adsorbates:
                 continue
             try:
                 # print(key)
-                # for i, subgraph in enumerate(nx.connected_component_subgraphs(adsorbate.graph)):
+                # for i, subgraph in enumerate(
+                #     nx.connected_component_subgraphs(adsorbate.graph)
+                # ):
                 #     new_edges = []
                 #     for edge in subgraph.edges:
                 #         # newa = new_indices[edge[0]]
@@ -380,7 +384,11 @@ class Adsorbates:
                     str(j).zfill(2))), big_slab_ads)
                 write(os.path.join(savedir, '{}.png'.format(
                     str(j).zfill(2))), big_slab_ads)
-                # write(os.path.join(savedir, '{}.png'.format(str(j).zfill(2))), big_slab_ads, rotation='10z,-80x')
+                # write(os.path.join(savedir,
+                #     '{}.png'.format(str(j).zfill(2))),
+                #     big_slab_ads,
+                #     rotation='10z,-80x'
+                # )
 
     def create_relax_jobs(self, pytemplate, pseudopotentials, pseudo_dir,
                           shtemplate=None):
@@ -427,10 +435,12 @@ class Adsorbates:
                     fname = os.path.join(
                         minimapath, f'{species}_{prefix}_relax.py')
                     with open(fname, 'w') as f:
-                        f.write(pytemplate.format(adsorbate=species,
-                                                  prefix=prefix,
-                                                  pseudopotentials=pseudopotentials,
-                                                  pseudo_dir=pseudo_dir))
+                        f.write(pytemplate.format(
+                            adsorbate=species,
+                            prefix=prefix,
+                            pseudopotentials=pseudopotentials,
+                            pseudo_dir=pseudo_dir
+                        ))
                     if shtemplate is None:
                         continue
                     # optional
