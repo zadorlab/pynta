@@ -1,14 +1,12 @@
 #!/usr/bin/env python3
 import os
-import shutil
+import datetime
+
+from rmgcat_to_sella.balsamcalc import EspressoBalsamSocketIO
 
 from ase.io import read, write
-
-from sella import IRC
-
 from ase.constraints import FixAtoms
-
-import datetime
+from sella import IRC
 
 rxn = '{rxn}'
 prefix = '{prefix}'
@@ -25,7 +23,6 @@ with open(label + '_irc_r_time.log', 'w+') as f:
 # unixsocket = '_'.join([rxn, prefix])
 # unixsocket = '{prefix}/{prefix}'.format(prefix=prefix)
 
-from rmgcat_to_sella.balsamcalc import EspressoBalsamSocketIO
 EspressoBalsamSocketIO.exe = executable
 extra_calc_keywords = dict(
         pseudopotentials={pseudopotentials},
@@ -34,8 +31,9 @@ extra_calc_keywords = dict(
         )
 
 TS_geom = read('./{TS_xyz}')
-TS_geom.set_constraint(FixAtoms(
-    [atom.index for atom in TS_geom if atom.position[2] < TS_geom.cell[2, 2] / 2.]))
+TS_geom.set_constraint(FixAtoms([
+    x.index for x in TS_geom if x.position[2] < TS_geom.cell[2, 2] / 2.
+]))
 
 TS_geom.calc = EspressoBalsamSocketIO(
         workflow='QE_Socket',

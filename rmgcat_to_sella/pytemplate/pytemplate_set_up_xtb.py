@@ -1,16 +1,15 @@
 #!/usr/bin/env python3
 
-from xtb.ase.calculator import XTB
-from rmgcat_to_sella.prepare_ts_with_xtb import AdsorbatePlacer
-import os
 import sys
-from pathlib import Path
 import datetime
-from xtb import GFN1
-from ase.io import read, write
-
-
 from pathlib import Path
+
+from rmgcat_to_sella.prepare_ts_with_xtb import AdsorbatePlacer
+
+from ase.io import read, write
+from xtb import GFN1
+from xtb.ase.calculator import XTB
+
 cwd = Path.cwd().as_posix()
 path = Path(cwd).parents[2]
 sys.path.append(str(path))
@@ -38,10 +37,12 @@ with open(prefix + '_time.log', 'w+') as f:
     f.write("\n")
 f.close()
 
-adsplacer = AdsorbatePlacer(bigSlab, TS_candidate, bonds, avDists,
-                            GFN1(accuracy=0.01,
-                                 max_iterations=1000),
-                            trajectory=trajPath)
+adsplacer = AdsorbatePlacer(
+    big_slab, ts_estimate, bonds, av_dists_tuple,
+    GFN1(accuracy=0.01, max_iterations=1000),
+    trajectory=traj_path
+)
+
 adsplacer.set_calculator(XTB(method="GFN1-xTB"))
 opt = adsplacer.optimize()
 # visualize end point of each trajectory

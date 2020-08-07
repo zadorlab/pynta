@@ -3,20 +3,19 @@
 import os
 import shutil
 
+import datetime
+from rmgcat_to_sella.balsamcalc import EspressoBalsamSocketIO
+
 from ase.io import read, write
 from ase.constraints import FixAtoms
-
-from sella import Sella
-
-
-import datetime
+from ase.optimize import BFGSLineSearch
 
 adsorbate = '{adsorbate}'
 prefix = '{prefix}'
-executable='{executable}'
-balsam_exe_settings={balsam_exe_settings}
-calc_keywords={calc_keywords}
-creation_dir='{creation_dir}'
+executable = '{executable}'
+balsam_exe_settings = {balsam_exe_settings}
+calc_keywords = {calc_keywords}
+creation_dir = '{creation_dir}'
 
 jobdir = os.path.join(adsorbate, prefix)
 outdir = os.path.join(jobdir, prefix)
@@ -35,9 +34,10 @@ with open(outdir + '_time.log', 'w+') as f:
     f.close()
 
 atoms = read(jobdir + '.xyz')
-atoms.set_constraint(FixAtoms([atom.index for atom in atoms if atom.position[2] < atoms.cell[2, 2] / 2.]))
+atoms.set_constraint(FixAtoms([
+    atom.index for atom in atoms if atom.position[2] < atoms.cell[2, 2] / 2.
+]))
 
-from rmgcat_to_sella.balsamcalc import EspressoBalsamSocketIO
 EspressoBalsamSocketIO.exe = executable
 extra_calc_keywords = dict(
         pseudopotentials={pseudopotentials},
@@ -53,9 +53,8 @@ atoms.calc = EspressoBalsamSocketIO(
 
 atoms.calc.set(**extra_calc_keywords)
 
-from ase.optimize import BFGSLineSearch
 opt = BFGSLineSearch(atoms=atoms, trajectory=jobdir + '.traj')
-#opt = Sella(atoms, order=0, delta0=1e-2, trajectory=jobdir + '.traj')
+# opt = Sella(atoms, order=0, delta0=1e-2, trajectory=jobdir + '.traj')
 opt.run(fmax=0.01)
 atoms.calc.close()
 
@@ -70,4 +69,3 @@ with open(outdir + '_time.log', 'a+') as f:
     f.write(str(end - start))
     f.write("\n")
     f.close()
-

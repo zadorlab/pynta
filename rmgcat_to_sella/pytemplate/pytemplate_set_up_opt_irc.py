@@ -1,14 +1,13 @@
 #!/usr/bin/env python3
 import os
-import shutil
+import datetime
+from pathlib import Path
+
+from rmgcat_to_sella.balsamcalc import EspressoBalsamSocketIO
 
 from ase.io import read, write
-
-from sella import Sella
-
 from ase.constraints import FixAtoms
-
-import datetime
+from ase.optimize import BFGSLineSearch
 
 rxn = '{rxn}'
 prefix = '{prefix}'
@@ -25,9 +24,7 @@ with open(prefix + '_time.log', 'w+') as f:
 # unixsocket = '_'.join([rxn, prefix])
 # unixsocket = '{prefix}/{prefix}'.format(prefix=prefix)
 
-from pathlib import Path
 cwd = Path.cwd().as_posix()
-from rmgcat_to_sella.balsamcalc import EspressoBalsamSocketIO
 EspressoBalsamSocketIO.exe = executable
 extra_calc_keywords = dict(
         pseudopotentials={pseudopotentials},
@@ -36,8 +33,9 @@ extra_calc_keywords = dict(
         )
 
 geom_opt = read('{geom}')
-geom_opt.set_constraint(FixAtoms(
-    [atom.index for atom in geom_opt if atom.position[2] < geom_opt.cell[2, 2] / 2.]))
+geom_opt.set_constraint(FixAtoms([
+    x.index for x in geom_opt if x.position[2] < geom_opt.cell[2, 2] / 2.
+]))
 
 geom_opt.calc = EspressoBalsamSocketIO(
         workflow='QE_Socket',
@@ -47,8 +45,7 @@ geom_opt.calc = EspressoBalsamSocketIO(
 
 geom_opt.calc.set(**extra_calc_keywords)
 
-from ase.optimize import BFGSLineSearch
-opt = BFGSLineSearch(atoms=geom_opt,trajectory=trajdir)
+opt = BFGSLineSearch(atoms=geom_opt, trajectory=trajdir)
 opt.run(fmax=0.01)
 geom_opt.calc.close()
 
