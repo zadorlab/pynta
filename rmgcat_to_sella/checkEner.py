@@ -3,8 +3,8 @@ import os
 import shutil
 
 from ase.io import read, write
+from ase.units import kJ, mol
 
-from rmgcat_to_sella.adjacency_to_3d import rmgcat_to_gratoms
 
 def checkEner(path, treshHold):
     allSpecies = next(os.walk(path))[1]
@@ -22,7 +22,7 @@ def checkEner(path, treshHold):
                     data = f.readlines()
                     enerLine = data[-1]
                     enerVal = enerLine.split()
-                    dict_1[key] = float(enerVal[3])                
+                    dict_1[key] = float(enerVal[3])
             elif file.startswith(str(allSpecies[1]) + '_'):
                 tmpSplitter = file.split('_')
                 key = str(tmpSplitter[0] + '_' + tmpSplitter[1])
@@ -30,7 +30,7 @@ def checkEner(path, treshHold):
                     data = f.readlines()
                     enerLine = data[-1]
                     enerVal = enerLine.split()
-                    dict_2[key] = float(enerVal[3])  
+                    dict_2[key] = float(enerVal[3])
             elif file.startswith(str(allSpecies[2]) + '_'):
                 tmpSplitter = file.split('_')
                 key = str(tmpSplitter[0] + '_' + tmpSplitter[1])
@@ -40,45 +40,32 @@ def checkEner(path, treshHold):
                     enerVal = enerLine.split()
                     dict_3[key] = float(enerVal[3])
 
-    for item in dict_1.items():
-        comparator = item[1] - min(dict_1.values()) # calculate energy difference
-        print(item[0], '     ', "{0:.2e}".format(comparator), 'eV     ', "{:8.3f}".format(comparator * 23.06035 * 4.184) + ' kJ/mol')
-        if comparator > treshHold or comparator == 0:
-            species, prefix = item[0].split('_')
-            copyDestDir = os.path.join(path + '_unique_ener_based', species)
-            os.makedirs(copyDestDir, exist_ok=True)
-            copySrcFile = os.path.join(path, species, prefix + '.xyz')
-            shutil.copy2(copySrcFile, copyDestDir)
-            copySrcFile_traj = os.path.join(path, species, prefix + '.traj')
-            write(os.path.join(copyDestDir, prefix + '.png'), read(copySrcFile_traj))
-    print()
-
-    for item in dict_2.items():
-        comparator = item[1] - min(dict_2.values()) # calculate energy difference
-        print(item[0], '     ', "{0:.2e}".format(comparator), 'eV     ', "{:8.3f}".format(comparator * 23.06035 * 4.184) + ' kJ/mol')
-        if comparator > treshHold or comparator == 0:
-            species, prefix = item[0].split('_')
-            copyDestDir = os.path.join(path + '_unique_ener_based', species)
-            os.makedirs(copyDestDir, exist_ok=True)
-            copySrcFile = os.path.join(path, species, prefix + '.xyz')
-            shutil.copy2(copySrcFile, copyDestDir)
-            copySrcFile_traj = os.path.join(path, species, prefix + '.traj')
-            write(os.path.join(copyDestDir, prefix + '.png'), read(copySrcFile_traj))
-    print()
-
-    for item in dict_3.items():
-        comparator = item[1] - min(dict_3.values()) # calculate energy difference
-        print(item[0], '     ', "{0:.2e}".format(comparator), 'eV     ', "{:8.3f}".format(comparator * 23.06035 * 4.184) + ' kJ/mol')
-        if comparator > treshHold or comparator == 0:
-            species, prefix = item[0].split('_')
-            copyDestDir = os.path.join(path + '_unique_ener_based', species)
-            os.makedirs(copyDestDir, exist_ok=True)
-            copySrcFile = os.path.join(path, species, prefix + '.xyz')
-            shutil.copy2(copySrcFile, copyDestDir)       
-            copySrcFile_traj = os.path.join(path, species, prefix + '.traj')
-            write(os.path.join(copyDestDir, prefix + '.png'), read(copySrcFile_traj))
+    for collection in (dict_1, dict_2, dict_3):
+        e_min = min(collection.values())
+        for name, energy in collection.items():
+            delta_e = energy - e_min
+            print('{}     {:.2e}eV     {:8.3f} kJ/mol'.format(
+                energy,
+                delta_e,
+                delta_e * mol / kJ
+            ))
+            if delta_e > treshHold or delta_e == 0:
+                species, prefix = name.split('_')
+                copyDestDir = os.path.join(
+                    path + '_unique_ener_based', species
+                )
+                os.makedirs(copyDestDir, exist_ok=True)
+                copySrcFile = os.path.join(path, species, prefix + '.xyz')
+                shutil.copy2(copySrcFile, copyDestDir)
+                copySrcFile_traj = os.path.join(
+                    path, species, prefix + '.traj'
+                )
+                write(
+                    os.path.join(copyDestDir, prefix + '.png'),
+                    read(copySrcFile_traj)
+                )
+        print()
 
     # def findAllNebsEner():
 
     checkEner(path, treshHold)
-
