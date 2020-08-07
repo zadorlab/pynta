@@ -7,11 +7,11 @@ from rmgcat_to_sella.ts import TS
 
 class IRC():
     def __init__(
-            self, 
-            facetpath, 
-            slab, 
-            repeats, 
-            ts_dir, 
+            self,
+            facetpath,
+            slab,
+            repeats,
+            ts_dir,
             yamlfile,
             pseudopotentials,
             pseudo_dir,
@@ -128,7 +128,7 @@ class IRC():
             a template for irc_f or irc_r calculations
         which_irc : str
             what to add at the end of .py file, before '.py'?
-            e.g. 
+            e.g.
             '_irc_f.py'
         prefix : str
             a prefix for the given geometry
@@ -148,9 +148,9 @@ class IRC():
                 pseudopotentials=self.pseudopotentials,
                 pseudo_dir=self.pseudo_dir,
                 executable=self.executable,
-                balsam_exe_settings=self.balsam_exe_settings
+                balsam_exe_settings=self.balsam_exe_settings,
                 calc_keywords=self.calc_keywords
-                ))
+            ))
         f.close()
 
     def prepare_opt_irc(self, struc_path, irc, traj, pytemplate_irc_opt):
