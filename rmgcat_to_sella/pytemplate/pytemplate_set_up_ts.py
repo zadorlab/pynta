@@ -31,21 +31,22 @@ TS_est = read('{TS}')
 # fix bottom half of the slab
 TS_est.set_constraint(FixAtoms([atom.index for atom in TS_est if atom.position[2] < TS_est.cell[2, 2] / 2.]))
 
-from pathlib import Path
-cwd = Path.cwd().as_posix()
+extra_calc_keywords = dict(
+        pseudopotentials={pseudopotentials},
+        pseudo_dir='{pseudo_dir}',
+        label=prefix
+        )
+
 from rmgcat_to_sella.balsamcalc import EspressoBalsamSocketIO
 EspressoBalsamSocketIO.exe = executable
-job_kwargs=balsam_exe_settings.copy()
-#job_kwargs.update([('user_workdir',cwd)])
-QE_keywords=calc_keywords.copy()
-QE_keywords.update([('pseudopotentials',{pseudopotentials}),('pseudo_dir','{pseudo_dir}'),('label',prefix)])
-Calc = EspressoBalsamSocketIO(
-    workflow='QE_Socket',
-    job_kwargs=job_kwargs,
-    **QE_keywords
-    )
+TS_est.calc = EspressoBalsamSocketIO(
+        workflow='QE_Socket',
+        job_kwargs=balsam_exe_settings,
+        **calc_keywords
+        )
 
-TS_est.calc = Calc
+geom_opt.calc.set(**extra_calc_keywords)
+
 opt = Sella(TS_est, order=1, delta0=1e-2, gamma=1e-16, trajectory = trajdir)
 opt.run(fmax=0.01)
 TS_est.calc.close()

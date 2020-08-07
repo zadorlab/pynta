@@ -8,9 +8,8 @@ from rmgcat_to_sella.balsamcalc import EspressoBalsam
 atoms = molecule('CH4')
 atoms.rattle()
 atoms.center(vacuum=3)
-EspressoBalsamCalculator.exe = '/soft/applications/quantum_espresso/6.4/bin/pw.x' 
-from pathlib import Path
-cwd = Path.cwd().as_posix()
+#from pathlib import Path
+#cwd = Path.cwd().as_posix()
 
 # The calculator
 atoms.calc = EspressoBalsam(
@@ -18,9 +17,9 @@ atoms.calc = EspressoBalsam(
     workflow='qetest',
     job_kwargs={
         'num_nodes': 1,
-        'ranks_per_node': 16,
-        'threads_per_rank': 4,
-        'threads_per_core': 1,
+        'ranks_per_node': 1,
+        'threads_per_rank': 1, # OMP threading
+        'threads_per_core': 1, # hyperthreads
         'user_workdir': cwd
     },
     # Regular ASE Calculator keywords:

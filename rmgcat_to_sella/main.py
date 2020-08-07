@@ -99,6 +99,7 @@ class WorkFlow:
         self.myPython, self.app_created = ApplicationDefinition.objects.get_or_create(
             name="Python", executable="python3")
         self.myPython.save()
+        self.slab_opt_job = ''
         # envscript="/path/to/setup-envs.sh",
         #postprocess="python /path/to/post.py"
     # def __init__(self, facetpath):
@@ -385,10 +386,7 @@ class WorkFlow:
 
     def run_opt_surf_and_adsorbate(self):
         ''' Run optmization of adsorbates on the surface '''
-        try:
-            return self.exe(self.slab_opt_job, SurfaceAdsorbate)
-        except AttributeError:
-            return self.exe('', SurfaceAdsorbate)
+        return self.exe(self.slab_opt_job, SurfaceAdsorbate)
 
     def run_opt_surf_and_adsorbate_no_depend(self):
         ''' Run optmization of adsorbates on the surface

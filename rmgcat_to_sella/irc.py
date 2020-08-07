@@ -6,9 +6,19 @@ from rmgcat_to_sella.ts import TS
 
 
 class IRC():
-    def __init__(self, facetpath, slab, repeats, ts_dir, yamlfile,
-                 pseudopotentials, pseudo_dir,executable,
-                 balsam_exe_settings,calc_keywords):
+    def __init__(
+            self, 
+            facetpath, 
+            slab, 
+            repeats, 
+            ts_dir, 
+            yamlfile,
+            pseudopotentials,
+            pseudo_dir,
+            executable,
+            balsam_exe_settings,
+            calc_keywords
+            ):
         ''' Initializing
 
         Parameters:
@@ -49,9 +59,9 @@ class IRC():
         self.yamlfile = yamlfile
         self.pseudopotentials = pseudopotentials
         self.pseudo_dir = pseudo_dir
-        self.executable=executable
-        self.balsam_exe_settings=balsam_exe_settings
-        self.calc_keywords=calc_keywords
+        self.executable = executable
+        self.balsam_exe_settings = balsam_exe_settings
+        self.calc_keywords = calc_keywords
 
     def set_up_irc(self, pytemplate_f, pytemplate_r):
         ''' Set up IRC calculations
@@ -139,7 +149,8 @@ class IRC():
                 pseudo_dir=self.pseudo_dir,
                 executable=self.executable,
                 balsam_exe_settings=self.balsam_exe_settings
-                calc_keywords=self.calc_keywords))
+                calc_keywords=self.calc_keywords
+                ))
         f.close()
 
     def prepare_opt_irc(self, struc_path, irc, traj, pytemplate_irc_opt):

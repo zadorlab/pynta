@@ -23,27 +23,26 @@ with open(label + '_irc_f_time.log', 'w+') as f:
     f.close()
 
 
-from pathlib import Path
-cwd = Path.cwd().as_posix()
 from rmgcat_to_sella.balsamcalc import EspressoBalsamSocketIO
 EspressoBalsamSocketIO.exe = executable
-job_kwargs=balsam_exe_settings.copy()
-#job_kwargs.update([('user_workdir',cwd)])
-QE_keywords=calc_keywords.copy()
-QE_keywords.update([('pseudopotentials',{pseudopotentials}),('pseudo_dir','{pseudo_dir}'),('label',label)])
-Calc = EspressoBalsamSocketIO(
-    workflow='QE_Socket',
-    job_kwargs=job_kwargs,
-    **QE_keywords
-    )
-
-
+extra_calc_keywords = dict(
+        pseudopotentials={pseudopotentials},
+        pseudo_dir='{pseudo_dir}',
+        label=label
+        )
 
 TS_geom = read('./{TS_xyz}')
 TS_geom.set_constraint(FixAtoms(
     [atom.index for atom in TS_geom if atom.position[2] < TS_geom.cell[2, 2] / 2.]))
 
-TS_geom.calc = Calc
+TS_geom.calc = EspressoBalsamSocketIO(
+        workflow='QE_Socket',
+        job_kwargs=balsam_exe_settings,
+        **calc_keywords
+        )
+
+TS_geom.calc.set(**extra_calc_keywords)
+
 opt = IRC(TS_geom, trajectory=trajdir, dx=0.1, eta=1e-4, gamma=0.4)
 opt.run(fmax=0.1, steps=1000, direction='forward')
 

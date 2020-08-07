@@ -29,11 +29,12 @@ vacuum           = 8.0
 slabopt          = 'Cu_100_slab_opt.xyz'
 ####################################################
 # Quantum Espresso pseudopotantials for DFT calculations
-#pseudo_dir = '/home/mgierad/espresso/pseudo'
-pseudo_dir = '/home/brossdh/espresso/pseudo'
+from pathlib import Path
+home = str(Path.home())
+pseudo_dir = home + '/espresso/pseudo'
+
 pseudopotentials = "dict(Cu='Cu.pbe-spn-kjpaw_psl.1.0.0.UPF', H='H.pbe-kjpaw_psl.1.0.0.UPF', O='O.pbe-n-kjpaw_psl.1.0.0.UPF', C='C.pbe-n-kjpaw_psl.1.0.0.UPF')"
-executable = '\'/soft/applications/quantum_espresso/6.4/bin/pw.x\''
-#executable = '\'/projects/catalysis_aesp/brossdh/q-e_6.6/bin/pw.x\''
+executable = '\'pw.x\''
 balsam_exe_settings = {'num_nodes': 1,
         'ranks_per_node': 4,
         'threads_per_rank': 16,

@@ -29,22 +29,24 @@ from pathlib import Path
 cwd = Path.cwd().as_posix()
 from rmgcat_to_sella.balsamcalc import EspressoBalsamSocketIO
 EspressoBalsamSocketIO.exe = executable
-job_kwargs=balsam_exe_settings.copy()
-#job_kwargs.update([('user_workdir',cwd)])
-QE_keywords=calc_keywords.copy()
-QE_keywords.update([('pseudopotentials',{pseudopotentials}),('pseudo_dir','{pseudo_dir}'),('label',prefix)])
-Calc = EspressoBalsamSocketIO(
-    workflow='QE_Socket',
-    job_kwargs=job_kwargs,
-    **QE_keywords
-    )
-
+extra_calc_keywords = dict(
+        pseudopotentials={pseudopotentials},
+        pseudo_dir='{pseudo_dir}',
+        label=prefix
+        )
 
 geom_opt = read('{geom}')
 geom_opt.set_constraint(FixAtoms(
     [atom.index for atom in geom_opt if atom.position[2] < geom_opt.cell[2, 2] / 2.]))
 
-geom_opt.calc = Calc
+geom_opt.calc = EspressoBalsamSocketIO(
+        workflow='QE_Socket',
+        job_kwargs=balsam_exe_settings,
+        **calc_keywords
+        )
+
+geom_opt.calc.set(**extra_calc_keywords)
+
 from ase.optimize import BFGSLineSearch
 opt = BFGSLineSearch(atoms=geom_opt,trajectory=trajdir)
 opt.run(fmax=0.01)

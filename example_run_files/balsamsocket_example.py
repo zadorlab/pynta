@@ -2,7 +2,6 @@
 from ase.build import molecule
 from ase.optimize import QuasiNewton
 from rmgcat_to_sella.balsamcalc import EspressoBalsamSocketIO
-EspressoBalsamSocketIO.exe = '/soft/applications/quantum_espresso/6.4/bin/pw.x' 
 
 
 # Set up a small, simple system

@@ -18,5 +18,5 @@ creation_dir     = '{creation_dir}'
 
 get_slab = GetSlab(surface_type, symbol, a, repeats_surface, vacuum,
                    slab_name, pseudopotentials, pseudo_dir, executable,
-                   balsam_exe_settings,calc_keywords,creation_dir)
+                   balsam_exe_settings, calc_keywords, creation_dir)
 get_slab.run_slab_opt()
