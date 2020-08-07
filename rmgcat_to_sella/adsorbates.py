@@ -50,7 +50,7 @@ class Adsorbates:
         self.slab = slab
         self.repeats = repeats
         self.yamlfile = yamlfile
-        self.creation_dir= creation_dir
+        self.creation_dir = creation_dir
         # self.pytemplate = pytemplate
         # self.pseudopotentials = pseudopotentials
         # self.pseudo_dir = pseudo_dir
@@ -392,9 +392,9 @@ class Adsorbates:
                 # )
 
     def create_relax_jobs(
-            self, 
-            pytemplate, 
-            pseudopotentials, 
+            self,
+            pytemplate,
+            pseudopotentials,
             pseudo_dir,
             executable,
             balsam_exe_settings,
@@ -444,14 +444,16 @@ class Adsorbates:
                     fname = os.path.join(
                         minimapath, f'{species}_{prefix}_relax.py')
                     with open(fname, 'w') as f:
-                        f.write(pytemplate.format(adsorbate=species,
-                                                  prefix=prefix,
-                                                  pseudopotentials=pseudopotentials,
-                                                  pseudo_dir=pseudo_dir,
-                                                  executable=executable,
-                                                  balsam_exe_settings=balsam_exe_settings,
-                                                  calc_keywords=calc_keywords,
-                                                  creation_dir=self.creation_dir))
+                        f.write(pytemplate.format(
+                            adsorbate=species,
+                            prefix=prefix,
+                            pseudopotentials=pseudopotentials,
+                            pseudo_dir=pseudo_dir,
+                            executable=executable,
+                            balsam_exe_settings=balsam_exe_settings,
+                            calc_keywords=calc_keywords,
+                            creation_dir=self.creation_dir
+                        ))
                     if shtemplate is None:
                         continue
                     # optional
