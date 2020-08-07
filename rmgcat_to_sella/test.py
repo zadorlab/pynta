@@ -1,6 +1,7 @@
 import unittest
 import os
 
+
 class Test(unittest.TestCase):
 
     def test_jobtemplate(self):

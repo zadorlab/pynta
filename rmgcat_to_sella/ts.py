@@ -21,7 +21,9 @@ from spglib import get_symmetry
 
 
 class TS():
-    def __init__(self, facetpath, slab, ts_dir, yamlfile, repeats,creation_dir):
+    def __init__(
+        self, facetpath, slab, ts_dir, yamlfile, repeats, creation_dir
+    ):
         ''' Initializing
 
         Parameters:
@@ -48,7 +50,7 @@ class TS():
         self.ts_dir = ts_dir
         self.yamlfile = yamlfile
         self.repeats = repeats
-        self.creation_dir=creation_dir
+        self.creation_dir = creation_dir
 
     def prepare_ts_estimate(self, scfactor, scfactor_surface,
                             rotAngle, pytemplate_xtb, species,
@@ -295,7 +297,7 @@ class TS():
 
         # TS_candidate.set_distance(atom1, atom2, blen * scfactor, fix=0)
 
-        '''Final ridgid rotations to orientate the TS_candidate on the surface'''
+        # Final ridgid rotations to orientate the TS_candidate on the surface
         if len(TS_candidate.get_tags()) < 3:
             TS_candidate.rotate(90, 'y')
             TS_candidate.set_distance(
@@ -312,7 +314,9 @@ class TS():
             TS_candidate.set_angle(atom2, atom1, atom0, -45,
                                    indices=[0, 1, 2, 3, 4], add=True)
             TS_candidate.set_distance(
-                atom1, atom2, bondlen * scfactor, fix=1, indices=[0, 1, 2, 3, 4])
+                atom1, atom2, bondlen * scfactor, fix=1,
+                indices=[0, 1, 2, 3, 4]
+            )
             # indices=[0, 1, 2, 3, 4]
         elif TS_candidate.get_chemical_formula() == 'CHO2':
             TS_candidate.rotate(90, 'z')
@@ -357,7 +361,8 @@ class TS():
             for i, struc in enumerate(structs):
                 big_slab_ads = big_slab + struc[nslab:]
                 write(os.path.join(ts_estimate_path, '{}'.format(
-                    str(i + len(structs) * count).zfill(3)) + '_' + rxn_name + '.xyz'), big_slab_ads)
+                    str(i + len(structs) * count).zfill(3)
+                ) + '_' + rxn_name + '.xyz'), big_slab_ads)
 
             TS_candidate.rotate(step_size, 'z')
             angle += step_size
@@ -382,7 +387,8 @@ class TS():
         #     for i, struc in enumerate(structs):
         #         big_slab_ads = big_slab + struc[nslab:]
         #         write(os.path.join(ts_estimate_path, '{}'.format(
-        #             str(i + len(structs) * count).zfill(3)) + '_' + rxn_name + '.xyz'), big_slab_ads)
+        #             str(i + len(structs) * count).zfill(3)
+        #         ) + '_' + rxn_name + '.xyz'), big_slab_ads)
 
         #     TS_candidate.rotate(rotAngle, 'z')
         #     count += 1
@@ -408,7 +414,9 @@ class TS():
             except OSError:
                 print("Error while deleting file : ", fileToRemove)
 
-        for prefix, noneqsites in enumerate(sorted(os.listdir(ts_estimate_path))):
+        for prefix, noneqsites in enumerate(
+            sorted(os.listdir(ts_estimate_path))
+        ):
             prefix = str(prefix).zfill(3)
             oldfname = os.path.join(ts_estimate_path, noneqsites)
             newfname = os.path.join(
@@ -560,9 +568,9 @@ class TS():
             # for one atomic species it is trivial
             sp_bonded = species
         # get unique minima indices
-        unique_minima_indices = TS.get_unique_minima_indicies_after_opt(self,
-                                                                        path_to_minima,
-                                                                        species)
+        unique_minima_indices = TS.get_unique_minima_indicies_after_opt(
+            self, path_to_minima, species
+        )
         # go through all indices of *final.xyz file
         # e.g. 00_final.xyz, 01_final.xyz
         for index in unique_minima_indices:
@@ -582,7 +590,7 @@ class TS():
                         # surface atoms
                         if 'Cu ' in line:
                             surface_atoms_indices.append(num - 2)
-                        elif sp_bonded in line and not 'Cu ' in line:
+                        elif sp_bonded in line and 'Cu ' not in line:
                             # We need to have additional statement
                             # 'not 'Cu' in line'
                             # because for C it does not work without it'''
@@ -714,7 +722,10 @@ class TS():
                 geomDir = os.path.join(gpath, geom)
                 if os.path.isdir(geomDir):
                     for traj in sorted(os.listdir(geomDir)):
-                        if traj.startswith(gd_ads_index[i]) and traj.endswith('.traj'):
+                        if (
+                            traj.startswith(gd_ads_index[i])
+                            and traj.endswith('.traj')
+                        ):
                             srcFile = os.path.join(geomDir, traj)
                             destFile = os.path.join(
                                 uniqueTSdir, traj[:-5] + '_ts')
@@ -731,10 +742,12 @@ class TS():
                 os.rename(TS_xyz_Dir, newTS_xyz_Dir)
                 # write(NEB_png_Dir, read(newNEB_xyz_Dir))
 
-    def create_TS_unique_job_files(self, pytemplate,
-                                   pseudopotentials, pseudo_dir,
-                                   executable,balsam_exe_settings,
-                                   calc_keywords):
+    def create_TS_unique_job_files(
+        self, pytemplate,
+        pseudopotentials, pseudo_dir,
+        executable, balsam_exe_settings,
+        calc_keywords
+    ):
         ''' Create job submission files'''
         unique_TS_candidate_path = os.path.join(
             self.facetpath, self.ts_dir + '_unique')
@@ -753,9 +766,12 @@ class TS():
                             f.write(pytemplate.format(TS=os.path.join(
                                 struc, fl), rxn=fl[3:-7], prefix=fl[:2],
                                 pseudopotentials=pseudopotentials,
-                                pseudo_dir=pseudo_dir, executable=executable,
+                                pseudo_dir=pseudo_dir,
+                                executable=executable,
                                 balsam_exe_settings=balsam_exe_settings,
-                                calc_keywords=calc_keywords, creation_dir=self.creation_dir))
+                                calc_keywords=calc_keywords,
+                                creation_dir=self.creation_dir
+                            ))
                         f.close()
         f.close()
 
@@ -798,7 +814,7 @@ class TS():
                     # non xyz information
                     surface_atom.append(num - 2)
                 elif ads_atom in line:
-                    if not "Cu" in line:
+                    if "Cu" not in line:
                         adsorbate_atom.append(num - 2)
         f.close()
 
@@ -838,14 +854,14 @@ class TS():
             xyz_geom_file = f.readlines()
             for num, line in enumerate(xyz_geom_file):
                 if ads_atom in line:
-                    if not 'Cu' in line:
+                    if 'Cu' not in line:
                         adsorbate_atom.append(num - 2)
         f.close()
         return adsorbate_atom[0]
 
     def get_index_surface_atom(self, ads_atom, geom):
         ''' Specify adsorbate atom symbol and index of the nearest metal atom
-            will be returned. 
+            will be returned.
 
         Parameters:
         ___________
@@ -872,7 +888,7 @@ class TS():
                 if 'Cu ' in line:
                     surface_atom.append(num - 2)
                 elif ads_atom in line:
-                    if not 'Cu' in line:
+                    if 'Cu' not in line:
                         adsorbate_atom.append(num - 2)
         f.close()
 
