@@ -97,7 +97,7 @@ class WorkFlow:
         ''' Setup the balsam application for this workflow run, once we start using QE will want one app for QE, one for xtb most likely '''
         from balsam.core.models import ApplicationDefinition
         self.myPython, _ = ApplicationDefinition.objects.get_or_create(
-            name="python", 
+            name="python",
             executable="python3"
             )
         self.myPython.save()

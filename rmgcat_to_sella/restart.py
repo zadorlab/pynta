@@ -94,12 +94,11 @@ def restart(species, PathToSpecies, facetpath):
         # print(prefix)
         py_script =facetpath+ '/minima/'+ species + '_' + prefix + '_relax.py' 
         job_to_add = BalsamJob(
-                name = py_script
-                workflow = workflow_name,
-                application = 'python',
-                args = py_script
-                ranks_per_node = 1,
-            #data={"creation_dir": Path.cwd().as_posix()+'/{facetpath}/minima'}
+                name=py_script
+                workflow=workflow_name,
+                application='python',
+                args=py_script
+                ranks_per_node=1,
             )
         job_to_add.save()
 
@@ -114,13 +113,12 @@ def restartTS(PathToSpecies, facetpath):
         # print(prefix)
         py_script =facetpath+'/TS_estimate_unique/'+ prefix + '_' + rxn + '_ts.py'
         job_to_add = BalsamJob(
-                name = py_script
-                workflow = workflow_name,
-                application = 'python',
-                args = py_script
-                ranks_per_node = 1,
-            #data={"creation_dir": Path.cwd().as_posix()+'/{facetpath}/minima'}
-            )
+                name=py_script
+                workflow=workflow_name,
+                application='python',
+                args=py_script
+                ranks_per_node=1,
+                )
         job_to_add.save()
 
 
@@ -192,12 +190,11 @@ def restart_optIRC(PathToSpecies):
         # print(fname)
         # print(ircPath)
         job_to_add = BalsamJob(
-                name = py_script
-                workflow = workflow_name,
-                application = 'python',
-                args = py_script
-                ranks_per_node = 1,
-            #data={"creation_dir": Path.cwd().as_posix()+'/{facetpath}/minima'}
-            )
+                name=py_script
+                workflow=workflow_name,
+                application='python',
+                args=py_script
+                ranks_per_node=1,
+                )
         job_to_add.save()
 
