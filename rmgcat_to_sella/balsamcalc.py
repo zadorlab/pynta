@@ -65,6 +65,7 @@ class BalsamCalculator(FileIOCalculator):
         workflow: str,
         label: str = 'balsam',
         atoms: Atoms = None,
+        job_args: str = None,
         job_kwargs: Dict[str, Any] = dict(),
         **kwargs: Any
     ) -> None:
@@ -77,11 +78,15 @@ class BalsamCalculator(FileIOCalculator):
             **kwargs
         )
         self.workflow = workflow
+        self.job_args = job_args
         self.job_kwargs = job_kwargs
         self.create_application()
 
     def format_args(self) -> str:
-        return self.args.replace('PREFIX', self.prefix)
+        args = self.args.replace('PREFIX', self.prefix)
+        if self.job_args is not None:
+            args = self.job_args + ' ' + args
+        return args
 
     @classmethod
     def create_application(cls) -> None:
@@ -176,6 +181,7 @@ class BalsamSocketIOCalculator(BalsamCalculator, SocketIOCalculator):
         workflow: str,
         label: str = 'balsam',
         atoms: Atoms = None,
+        job_args: str = None,
         job_kwargs: Dict[str, Any] = dict(),
         **kwargs: Any
     ) -> None:
@@ -186,6 +192,7 @@ class BalsamSocketIOCalculator(BalsamCalculator, SocketIOCalculator):
             workflow=workflow,
             label=label,
             atoms=atoms,
+            job_args=job_args,
             job_kwargs=job_kwargs,
             **kwargs
         )
