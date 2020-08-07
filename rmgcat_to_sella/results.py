@@ -4,7 +4,6 @@ import os
 import matplotlib.pyplot as plt
 from matplotlib.ticker import AutoMinorLocator
 import numpy as np
-# from scipy.interpolate import make_interp_spline
 
 
 class Results():
@@ -22,7 +21,7 @@ class Results():
         slab_path : str
             a path to the slab
             e.g. 'Cu_111_slab_opt.xyz'
-        reactant_list : list(str) 
+        reactant_list : list(str)
             a list with all reactants
             e.g. ['OH']
         product_list : list(str)
@@ -65,11 +64,11 @@ class Results():
         r_ener_list, p_ener_list, slab_ener, nslabs = Results.get_data(self)
         # Depending how the reactants and products are defined,
         # there are three options here:
-        # e.g. OH --> O + H
+        # e.g. AB --> A + B
         if len(p_ener_list) > len(r_ener_list):
             reaction_energy = (sum(p_ener_list) - slab_ener * nslabs -
                                r_ener_list) * self.ev_to_kjmol
-        # e.g. O + H --> OH
+        # e.g. A + B --> AB
         elif len(p_ener_list) < len(r_ener_list):
             reaction_energy = (p_ener_list + slab_ener * nslabs -
                                sum(r_ener_list)) * self.ev_to_kjmol
@@ -124,14 +123,12 @@ class Results():
                 barrier = (ts_ener - sum(r_ener_list)) * self.ev_to_kjmol
                 activation_barriers['TS_' +
                                     ts_name] = '{:.2f}'.format(barrier)
-                # activation_barriers['TS_' + ts_name] = barrier
             # e.g. O + H --> OH
             elif len(p_ener_list) < len(r_ener_list):
                 barrier = (ts_ener + slab_ener * nslabs -
                            sum(r_ener_list)) * self.ev_to_kjmol
                 activation_barriers['TS_' +
                                     ts_name] = '{:.2f}'.format(barrier)
-                # activation_barriers['TS_' + ts_name] = barrier
             else:
                 raise NotImplementedError(
                     'Not tested if r_ener_list=p_ener_list')
@@ -436,14 +433,4 @@ class Results():
         # plt.show()
         plt.tight_layout()
         plt.savefig(plot_filename)
-
-    # def get_latex_table(self):
-    #     reaction_energy = Results.get_reaction_energy(self)
-    #     activation_barriers = Results.get_barrier(self)
-    #     rxn_name = Results.rxn_title(self)
-    #     var = 1
-    #     bra = '{'
-    #     ket = '}'
-
-    #     for i in range(10):
-    #         print('{0}This is {2} in brackets{1}'.format(bra, ket, var))
+        

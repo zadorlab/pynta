@@ -133,7 +133,6 @@ class AdsorbatePlacer:
         y0 = np.zeros(6)
         y0[:3] = self.ads_ref.positions[self.nslab:].mean(0)
         y0[3:] = 0.001
-        # y0[3:] = [0, np.pi/2, 0]
 
         res1 = minimize(self.penalty, y0, jac=self.penalty_jac,
                         method='l-bfgs-b')
