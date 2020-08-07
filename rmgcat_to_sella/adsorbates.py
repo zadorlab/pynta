@@ -335,22 +335,6 @@ class Adsorbates:
                 # if species was already calculated, do noting
                 continue
             try:
-                # print(key)
-                # for i, subgraph in enumerate(nx.connected_component_subgraphs(adsorbate.graph)):
-                #     new_edges = []
-                #     for edge in subgraph.edges:
-                #         # newa = new_indices[edge[0]]
-                #         # newb = new_indices[edge[1]]
-                #         new_edges.append((0, 1))
-                #         # new_edges.append((0, 2))
-                #         # new_edges.append((0, 3))
-                #         # new_edges.append((0, 2))
-                #         new_edges.append((0, 3))
-                #         # new_edges.append((1, 3))
-                #         new_edges.append((1, 2))
-                #         # new_edges.append((2, 1))
-                #     adsorbate = Gratoms(adsorbate, edges=new_edges)
-                #     print(adsorbate.edges)
                 if key == 'CHO2':  # connect through oxygen
                     bond = [2]
                     # print(adsorbate.set_angle(1, 0, 3, 90))
@@ -381,12 +365,11 @@ class Adsorbates:
                     str(j).zfill(2))), big_slab_ads)
                 write(os.path.join(savedir, '{}.png'.format(
                     str(j).zfill(2))), big_slab_ads)
-                # write(os.path.join(savedir, '{}.png'.format(str(j).zfill(2))), big_slab_ads, rotation='10z,-80x')
 
     def create_relax_jobs(
-            self, 
-            pytemplate, 
-            pseudopotentials, 
+            self,
+            pytemplate,
+            pseudopotentials,
             pseudo_dir,
             executable,
             balsam_exe_settings,
@@ -452,16 +435,3 @@ class Adsorbates:
                     with open(fname, 'w') as f:
                         f.write(shtemplate.format(adsorbate=species,
                                                   prefix=prefix))
-    # TODO: to be debugged later
-    # def get_all_species(self, path):
-    #     ''' '''
-    #     idx = 0
-    #     species = []
-    #     while True:
-    #         fname = '{}.xyz'.format(str(idx).zfill(2))
-    #         fpath = os.path.join(path, fname)
-    #         if os.path.isfile(fpath):
-    #             species.append(read(fpath))
-    #         else:
-    #             return species
-    #         idx += 1

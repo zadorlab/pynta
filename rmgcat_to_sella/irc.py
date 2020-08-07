@@ -1,7 +1,6 @@
 import os
 
 from ase.io import read, write
-# from pathlib import Path
 from rmgcat_to_sella.ts import TS
 
 
@@ -110,7 +109,6 @@ class IRC():
                     src_ts_xyz_path))
                 print('Skipping...')
                 pass
-                # raise
 
     def create_job_files_irc(self, irc_py_dir, ts_file_name, template,
                              which_irc, prefix, rxn, ts_file_name_xyz):
