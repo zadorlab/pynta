@@ -3,7 +3,6 @@ from typing import Any, List, Dict
 import socket
 
 from balsam.launcher.dag import BalsamJob
-from balsam.core.models import ApplicationDefinition
 
 from ase import Atoms
 from ase.io import read, write
@@ -78,24 +77,9 @@ class BalsamCalculator(FileIOCalculator):
         )
         self.workflow = workflow
         self.job_kwargs = job_kwargs
-        self.create_application()
 
     def format_args(self) -> str:
         return self.args.replace('PREFIX', self.prefix)
-
-    @classmethod
-    def create_application(cls) -> None:
-        """Creates a Balsam Application for this Calculator."""
-        if cls.app is not None:
-            return
-        cls.app, _ = ApplicationDefinition.objects.get_or_create(
-            name=cls.__name__,
-            executable=cls.exe,
-            preprocess=cls.preprocess,
-            postprocess=cls.postprocess,
-            description=cls.description,
-        )
-        cls.app.save()
 
     def write_input(
         self,
@@ -115,7 +99,7 @@ class BalsamCalculator(FileIOCalculator):
         return BalsamJob(
             name=self.prefix,
             workflow=self.workflow,
-            application=self.app.name,
+            application='EspressoBalsam',
             args=self.format_args(),
             **self.job_kwargs
         )

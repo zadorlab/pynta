@@ -96,14 +96,17 @@ class WorkFlow:
     def __init__(self):
         ''' Setup the balsam application for this workflow run, once we start using QE will want one app for QE, one for xtb most likely '''
         from balsam.core.models import ApplicationDefinition
-        self.myPython, self.app_created = ApplicationDefinition.objects.get_or_create(
-            name="Python", executable="python3")
+        self.myPython, _ = ApplicationDefinition.objects.get_or_create(
+            name="python", 
+            executable="python3"
+            )
         self.myPython.save()
-        self.slab_opt_job = ''
-        # envscript="/path/to/setup-envs.sh",
-        #postprocess="python /path/to/post.py"
-    # def __init__(self, facetpath):
-    #     self.facetpath = facetpath
+        self.myQE, _ = ApplicationDefinition.objects.get_or_create(
+                name='EspressoBalsam',
+                executable=executable
+                )
+        self.myQE.save()
+        self.slab_opt_job=''
 
     def gen_job_files(self):
         ''' Generate submt scripts for 6 stages of the workflow '''

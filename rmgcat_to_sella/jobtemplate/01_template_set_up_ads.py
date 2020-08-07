@@ -24,10 +24,6 @@ from pathlib import Path
 
 from balsam.launcher.dag import BalsamJob
 from balsam.core.models import ApplicationDefinition
-myPython, created= ApplicationDefinition.objects.get_or_create(
-            name="Python",
-            executable="python3")
-myPython.save()
 cwd=Path.cwd().as_posix()
 workflow_name    = yamlfile + facetpath + '01'
 for py_script in glob('{facetpath}/minima/*.py'):
@@ -36,7 +32,7 @@ for py_script in glob('{facetpath}/minima/*.py'):
     job_to_add = BalsamJob(
             name=script_name,
             workflow=workflow_name,
-            application=myPython.name,
+            application='python',
             args= cwd+'/'+py_script,
             input_files='',
             user_workdir=job_dir,

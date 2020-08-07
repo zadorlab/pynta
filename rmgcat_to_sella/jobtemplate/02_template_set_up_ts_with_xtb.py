@@ -30,10 +30,6 @@ from pathlib import Path
 
 from balsam.launcher.dag import BalsamJob
 from balsam.core.models import ApplicationDefinition
-myPython, created= ApplicationDefinition.objects.get_or_create(
-            name="Python",
-            executable="python3")
-myPython.save()
 BalsamJob = BalsamJob
 pending_simulations = BalsamJob.objects.filter(workflow__contains=dependency_workflow_name).exclude(state=“JOB_FINISHED”)
 cwd=Path.cwd().as_posix()
@@ -43,7 +39,7 @@ for py_script in glob('{facetpath}/TS_estimate/*/*.py'):
     job_to_add = BalsamJob(
             name=script_name,
             workflow=workflow_name,
-            application=myPython.name,
+            application='python',
             args=cwd + '/' + py_script,
             input_files='',
             ranks_per_node=1,
