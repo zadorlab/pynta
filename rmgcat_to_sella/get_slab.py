@@ -1,26 +1,25 @@
 #!/usr/bin/env python3
-import os
-import shutil
-
 from ase.build import fcc111, fcc211, fcc100
 from ase.io import write
 
-#from sella import Sella
+# from sella import Sella
 
 # from ase.optimize import LBFGS
 # from gpaw import GPAW, PW
 # os.environ['GPAW_SETUP_PATH']
-# avaiable options for slab build are: fcc100, fcc110, bcc100, bcc110, bcc111, fcc111, hcp0001, hcp10m10, diamond100, diamond111
+# avaiable options for slab build are:
+# fcc100, fcc110, bcc100, bcc110, bcc111, fcc111,
+# hcp0001, hcp10m10, diamond100, diamond111
 
 
 class GetSlab:
     def __init__(
-            self, 
-            surface_type, 
-            symbol, 
-            a, 
-            repeats, 
-            vacuum, 
+            self,
+            surface_type,
+            symbol,
+            a,
+            repeats,
+            vacuum,
             slab_name,
             pseudopotentials,
             pseudo_dir,
@@ -117,10 +116,12 @@ class GetSlab:
 
         from rmgcat_to_sella.balsamcalc import EspressoBalsamSocketIO
         EspressoBalsamSocketIO.exe = self.executable
-        job_kwargs=self.balsam_exe_settings.copy()
-        #job_kwargs.update([('user_workdir',cwd)])
-        QE_keywords_slab=self.calc_keywords.copy()
-        #QE_keywords.update([('kpts',self.repeats)]) Not sure of intended behavior, but an example to show you can change keys as necessary here
+        job_kwargs = self.balsam_exe_settings.copy()
+        # job_kwargs.update([('user_workdir',cwd)])
+        QE_keywords_slab = self.calc_keywords.copy()
+        # QE_keywords.update([('kpts',self.repeats)])
+        # Not sure of intended behavior, but an example to show
+        # you can change keys as necessary here
         slab.calc = EspressoBalsamSocketIO(
             workflow='QE_Socket',
             job_kwargs=job_kwargs,
@@ -128,11 +129,10 @@ class GetSlab:
             pseudo_dir=self.pseudo_dir,
             **QE_keywords_slab
             )
-        label=self.slab_name
+        label = self.slab_name
         from ase.optimize import BFGSLineSearch
         opt = BFGSLineSearch(atoms=slab, trajectory=label + '.traj')
         opt.run(fmax=0.01)
-        ener = slab.get_potential_energy()
-        force = slab.get_forces()
+        slab.get_forces()
         slab.calc.close()
         write(self.slab_name + '.xyz', slab)
