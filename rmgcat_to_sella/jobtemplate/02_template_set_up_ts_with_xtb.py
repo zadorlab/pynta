@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-import sys
 import os
 from glob import glob
 from pathlib import Path
@@ -8,7 +7,6 @@ from pathlib import Path
 from rmgcat_to_sella.ts import TS
 
 from balsam.launcher.dag import BalsamJob, add_dependency
-from balsam.core.models import ApplicationDefinition
 
 slab = '{slab}'
 repeats = {repeats}
@@ -33,11 +31,6 @@ ts.copy_minimas_prev_calculated(current_dir, species, minima_dir)
 ts.prepare_ts_estimate(scfactor, scfactor_surface, rotAngle,
                        pytemplate_xtb, species, scaled1, scaled2)
 
-myPython, created = ApplicationDefinition.objects.get_or_create(
-    name="Python",
-    executable=sys.executable
-)
-myPython.save()
 pending_simulations = BalsamJob.objects.filter(
     workflow__contains=dependency_workflow_name
 ).exclude(state="JOB_FINISHED")
@@ -50,7 +43,7 @@ for py_script in glob('{facetpath}/TS_estimate/*/*.py'):
     job_to_add = BalsamJob(
             name=script_name,
             workflow=workflow_name,
-            application=myPython.name,
+            application='python',
             args=cwd + '/' + py_script,
             input_files='',
             ranks_per_node=1,

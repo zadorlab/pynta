@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import os
+import sys
 import shutil
 from pathlib import Path
 from warnings import warn
@@ -98,11 +99,16 @@ class WorkFlow:
         one for xtb most likely
         """
         from balsam.core.models import ApplicationDefinition
-        self.myPython, self.app_created = \
-            ApplicationDefinition.objects.get_or_create(
-                name="Python", executable="python3"
-            )
+        self.myPython, _ = ApplicationDefinition.objects.get_or_create(
+            name="python",
+            executable=sys.executable
+        )
         self.myPython.save()
+        self.myQE, _ = ApplicationDefinition.objects.get_or_create(
+                name='EspressoBalsam',
+                executable=executable
+                )
+        self.myQE.save()
         self.slab_opt_job = ''
 
     def gen_job_files(self):

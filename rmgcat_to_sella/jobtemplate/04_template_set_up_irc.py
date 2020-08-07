@@ -1,13 +1,11 @@
 #!/usr/bin/env python3
 
-import sys
 from glob import glob
 from pathlib import Path
 
 from rmgcat_to_sella.irc import IRC
 
 from balsam.launcher.dag import BalsamJob, add_dependency
-from balsam.core.models import ApplicationDefinition
 
 slab = '{slab}'
 repeats = {repeats}
@@ -32,11 +30,6 @@ irc.set_up_irc(pytemplate_f, pytemplate_r)
 pending_simulations = BalsamJob.objects.filter(
     workflow__contains=dependency_workflow_name
 ).exclude(state="JOB_FINISHED")
-myPython, created = ApplicationDefinition.objects.get_or_create(
-    name="Python",
-    executable=sys.executable
-)
-myPython.save()
 cwd = Path.cwd().as_posix()
 for py_script in glob('{facetpath}/IRC/*.py'):
     job_dir = Path.cwd().as_posix() + '/' + '/'.join(
@@ -46,7 +39,7 @@ for py_script in glob('{facetpath}/IRC/*.py'):
     job_to_add = BalsamJob(
             name=script_name,
             workflow=workflow_name,
-            application=myPython.name,
+            application='python',
             args=cwd+'/'+py_script,
             input_files='',
             user_workdir=job_dir,
