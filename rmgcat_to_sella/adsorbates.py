@@ -31,7 +31,7 @@ from rmgcat_to_sella.main import WorkFlow
 class Adsorbates:
     ''' This class handles adsorbates and puts them on the surface'''
 
-    def __init__(self, facetpath, slab, repeats, yamlfile):
+    def __init__(self, facetpath, slab, repeats, yamlfile, creation_dir):
         ''' Initializing
 
         Parameters:
@@ -54,6 +54,7 @@ class Adsorbates:
         self.slab = slab
         self.repeats = repeats
         self.yamlfile = yamlfile
+        self.creation_dir= creation_dir
         # self.pytemplate = pytemplate
         # self.pseudopotentials = pseudopotentials
         # self.pseudo_dir = pseudo_dir
@@ -80,7 +81,7 @@ class Adsorbates:
 
         '''
 
-        slab_atom = read(self.slab)
+        slab_atom = read(self.creation_dir + '/' + self.slab)
         # If the Atoms object is periodic, we need to check connectivity
         # across the unit cell boundary as well.
         tvecs = np.array([[0., 0., 0.]])
@@ -276,7 +277,7 @@ class Adsorbates:
     def adjacency_to_3d(self):
         ''' Place adsorbates on the surface '''
         os.makedirs(self.facetpath, exist_ok=True)
-        with open(self.yamlfile, 'r') as f:
+        with open(self.creation_dir + '/' + self.yamlfile, 'r') as f:
             text = f.read()
         reactions = yaml.safe_load(text)
 
@@ -304,7 +305,7 @@ class Adsorbates:
                 unique_bonds.append(bond)
 
         slabedges, tags = Adsorbates.get_edges(self, True)
-        slab_atom = read(self.slab)
+        slab_atom = read(self.creation_dir + '/' + self.slab)
         # slab transfromed to gratom object
         grslab = Gratoms(numbers=slab_atom.numbers,
                          positions=slab_atom.positions,
@@ -382,8 +383,16 @@ class Adsorbates:
                     str(j).zfill(2))), big_slab_ads)
                 # write(os.path.join(savedir, '{}.png'.format(str(j).zfill(2))), big_slab_ads, rotation='10z,-80x')
 
-    def create_relax_jobs(self, pytemplate, pseudopotentials, pseudo_dir,
-                          shtemplate=None):
+    def create_relax_jobs(
+            self, 
+            pytemplate, 
+            pseudopotentials, 
+            pseudo_dir,
+            executable,
+            balsam_exe_settings,
+            calc_keywords,
+            shtemplate=None
+            ):
         ''' Create a submit scripts
 
         Parameters:
@@ -430,7 +439,11 @@ class Adsorbates:
                         f.write(pytemplate.format(adsorbate=species,
                                                   prefix=prefix,
                                                   pseudopotentials=pseudopotentials,
-                                                  pseudo_dir=pseudo_dir))
+                                                  pseudo_dir=pseudo_dir,
+                                                  executable=executable,
+                                                  balsam_exe_settings=balsam_exe_settings,
+                                                  calc_keywords=calc_keywords,
+                                                  creation_dir=self.creation_dir))
                     if shtemplate is None:
                         continue
                     # optional

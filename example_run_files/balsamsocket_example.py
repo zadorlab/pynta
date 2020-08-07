@@ -8,6 +8,8 @@ from rmgcat_to_sella.balsamcalc import EspressoBalsamSocketIO
 atoms = molecule('CH4')
 atoms.rattle()
 atoms.center(vacuum=3)
+from pathlib import Path
+cwd = Path.cwd().as_posix()
 
 # The calculator
 atoms.calc = EspressoBalsamSocketIO(
@@ -15,7 +17,10 @@ atoms.calc = EspressoBalsamSocketIO(
     workflow='qetest',
     job_kwargs={
         'num_nodes': 1,
-        'ranks_per_node': 6
+        'ranks_per_node': 16,
+        'threads_per_rank': 4,
+        'threads_per_core': 1,
+        'user_workdir': cwd
     },
     # Regular ASE Calculator keywords:
     pseudopotentials={

@@ -4,10 +4,8 @@ import shutil
 
 from ase.build import fcc111, fcc211, fcc100
 from ase.io import write
-from ase.calculators.espresso import Espresso
-from ase.calculators.socketio import SocketIOCalculator
 
-from sella import Sella
+#from sella import Sella
 
 # from ase.optimize import LBFGS
 # from gpaw import GPAW, PW
@@ -16,8 +14,21 @@ from sella import Sella
 
 
 class GetSlab:
-    def __init__(self, surface_type, symbol, a, repeats, vacuum, slab_name,
-                 pseudopotentials, pseudo_dir):
+    def __init__(
+            self, 
+            surface_type, 
+            symbol, 
+            a, 
+            repeats, 
+            vacuum, 
+            slab_name,
+            pseudopotentials,
+            pseudo_dir,
+            executable,
+            balsam_exe_settings,
+            calc_keywords,
+            creation_dir
+            ):
         ''' A class for preparing and optimizing a user defined slab
 
         Parameters
@@ -58,6 +69,10 @@ class GetSlab:
         self.slab_name = slab_name
         self.pseudopotentials = pseudopotentials
         self.pseudo_dir = pseudo_dir
+        self.executable = executable
+        self.balsam_exe_settings = balsam_exe_settings
+        self.calc_keywords = calc_keywords
+        self.creation_dir = creation_dir
 
     def run_slab_opt(self):
         ''' Run slab optimization '''
@@ -100,60 +115,24 @@ class GetSlab:
         # dyn = LBFGS(slab, trajectory = 'slab_Cu.traj')
         # dyn.run(fmax=0.01)
 
-        unixsocket = self.slab_name
-        socketpath = f'/tmp/ipi_{unixsocket}'
-        if os.path.exists(socketpath):
-            os.remove(socketpath)
-        if os.path.exists(unixsocket):
-            shutil.rmtree(unixsocket)
-        os.makedirs(unixsocket)
-
-        label = os.path.join(unixsocket, self.slab_name)
-
-        # on Menten
-        espresso = Espresso(command='mpirun -np 8 pw.x -inp PREFIX.pwi --ipi {{unixsocket}}:UNIX > PREFIX.pwo'
-        # espresso = Espresso(command='mpirun -np 36 pw.x -inp PREFIX.pwi --ipi {{unixsocket}}:UNIX > PREFIX.pwo'
-                            .format(unixsocket=unixsocket),
-                            label=label,
-                            pseudopotentials=self.pseudopotentials,
-                            pseudo_dir=self.pseudo_dir,
-                            kpts=(3, 3, 1),
-                            occupations='smearing',
-                            smearing='marzari-vanderbilt',
-                            degauss=0.01,  # Rydberg
-                            ecutwfc=40,  # Rydberg
-                            nosym=True,  # Allow symmetry breaking during optimization
-                            conv_thr=1e-11,
-                            mixing_mode='local-TF',
-                            )
-        with SocketIOCalculator(espresso, unixsocket=unixsocket) as calc:
-            slab.calc = calc
-            opt = Sella(slab, order=0, delta0=1e-2, trajectory=label + '.traj')
-            opt.run(fmax=0.01)
+        from rmgcat_to_sella.balsamcalc import EspressoBalsamSocketIO
+        EspressoBalsamSocketIO.exe = self.executable
+        job_kwargs=self.balsam_exe_settings.copy()
+        #job_kwargs.update([('user_workdir',cwd)])
+        QE_keywords_slab=self.calc_keywords.copy()
+        #QE_keywords.update([('kpts',self.repeats)]) Not sure of intended behavior, but an example to show you can change keys as necessary here
+        slab.calc = EspressoBalsamSocketIO(
+            workflow='QE_Socket',
+            job_kwargs=job_kwargs,
+            pseudopotentials=self.pseudopotentials,
+            pseudo_dir=self.pseudo_dir,
+            **QE_keywords_slab
+            )
+        label=self.slab_name
+        from ase.optimize import BFGSLineSearch
+        opt = BFGSLineSearch(atoms=slab, trajectory=label + '.traj')
+        opt.run(fmax=0.01)
         ener = slab.get_potential_energy()
         force = slab.get_forces()
+        slab.calc.close()
         write(self.slab_name + '.xyz', slab)
-
-        # To run quickly on my Mac
-        # espresso = Espresso(command='mpirun -np 8 /Users/mgierad/00_SANDIA_WORK/03_codes/build/q-e-qe-6.4.1/bin/pw.x -inp PREFIX.pwi --ipi {{unixsocket}}:UNIX > PREFIX.pwo'
-        #                 .format(unixsocket=unixsocket),
-        #                 label=label,
-        #                 pseudopotentials=self.pseudopotentials,
-        #                 pseudo_dir=self.pseudo_dir,
-        #                 kpts=(3, 3, 1),
-        #                 occupations='smearing',
-        #                 smearing='marzari-vanderbilt',
-        #                 degauss=0.01,  # Rydberg
-        #                 ecutwfc=40,  # Rydberg
-        #                 nosym=True,  # Allow symmetry breaking during optimization
-        #                 conv_thr=1e-11,
-        #                 mixing_mode='local-TF',
-        #                 )
-
-        # with SocketIOCalculator(espresso, unixsocket=unixsocket) as calc:
-        #     slab.calc = calc
-        #     opt = Sella(slab, order=0, delta0=1e-2, trajectory=label + '.traj')
-        #     opt.run(fmax=0.01)
-        # ener = slab.get_potential_energy()
-        # force = slab.get_forces()
-        # write(self.slab_name + '.xyz', slab)
