@@ -33,10 +33,12 @@ slabopt          = 'Cu_100_slab_opt.xyz'
 pseudo_dir = '/home/brossdh/espresso/pseudo'
 pseudopotentials = "dict(Cu='Cu.pbe-spn-kjpaw_psl.1.0.0.UPF', H='H.pbe-kjpaw_psl.1.0.0.UPF', O='O.pbe-n-kjpaw_psl.1.0.0.UPF', C='C.pbe-n-kjpaw_psl.1.0.0.UPF')"
 executable = '\'/soft/applications/quantum_espresso/6.4/bin/pw.x\''
+#executable = '\'/projects/catalysis_aesp/brossdh/q-e_6.6/bin/pw.x\''
 balsam_exe_settings = {'num_nodes': 1,
-        'ranks_per_node': 16,
-        'threads_per_rank': 4,
-        'threads_per_core': 1
+        'ranks_per_node': 4,
+        'threads_per_rank': 16,
+        'threads_per_core': 1,
+        'cpu_affinity': 'depth'
         }
 
 calc_keywords= {'kpts':(3, 3, 1),
