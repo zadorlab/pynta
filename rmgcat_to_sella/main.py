@@ -23,11 +23,8 @@ try:
     rotAngle = inputR2S.rotAngle
     scfactor = inputR2S.scfactor
     scfactor_surface = inputR2S.scfactor_surface
-    # sp1 = inputR2S.sp1
-    # sp2 = inputR2S.sp2
     scaled1 = inputR2S.scaled1
     scaled2 = inputR2S.scaled2
-    # species_list = [sp1, sp2]
     species_list = inputR2S.species_list
     slab_opt = inputR2S.slab_opt_script
     SurfaceAdsorbate = inputR2S.SurfaceAdsorbateScript
@@ -39,8 +36,6 @@ try:
     balsam_exe_settings = inputR2S.balsam_exe_settings
     calc_keywords= inputR2S.calc_keywords
     creation_dir = inputR2S.creation_dir
-#    from pathlib import Path
-#    creation_dir = Path.cwd().as_posix()
 
 except ImportError:
     print('Missing input file. You cannot run calculations but will be able to use most of the workflow.')
@@ -81,9 +76,6 @@ IRC = inputR2S.IRCScript
 IRCopt = inputR2S.IRCoptScript
 ##
 currentDir = os.path.dirname(os.getcwd())
-# sp1 = inputR2S.sp1
-# sp2 = inputR2S.sp2
-# facetpath = inputR2S.facetpath
 optimize_slab = inputR2S.optimize_slab
 
 ####################################################
@@ -100,10 +92,6 @@ class WorkFlow:
             name="Python", executable="python3")
         self.myPython.save()
         self.slab_opt_job = ''
-        # envscript="/path/to/setup-envs.sh",
-        #postprocess="python /path/to/post.py"
-    # def __init__(self, facetpath):
-    #     self.facetpath = facetpath
 
     def gen_job_files(self):
         ''' Generate submt scripts for 6 stages of the workflow '''
@@ -328,7 +316,6 @@ class WorkFlow:
         ''' Check for previously calculated minima '''
         WorkFlowDirs = []
         keyphrase = '**/{}*/'.format(facetpath)
-        # keyphrase = '*{}*'.format(facetpath)
         WorkFlowDirsList = Path(str(currentDir)).glob(keyphrase)
         # find all dirs matching the keyphrase - should be something like
         # '*/01_Cu_111_methanol_OH_O+H_rot_angle_24_struc/Cu_111/'
@@ -342,7 +329,9 @@ class WorkFlow:
         # e.g. ['.../Cu_100_slab_opt.xyz', '.../Cu_100']
         # return (False, ) in that case
         if len(WorkFlowDirs) <= 2 and is_xyz:
-            print('only one element, probably .xyz of the slab. Yes')
+            print('Checking for previously calculated'
+                'minima for {}'.format(species))
+            print('Only one element found, probably .xyz of the slab.')
             return (False, )
         # error handling if there is no previous minima calculations
         # and slab was not optimized
@@ -498,14 +487,6 @@ class WorkFlow:
                     self.run_opt_surf_and_adsorbate()
                 except NameError:
                     self.run_opt_surf_and_adsorbate_no_depend()
-                # if os.path.isfile('00_set_up_slab_opt.py.out'):
-                #     self.run_opt_surf_and_adsorbate()
-                #     print('depend')
-                # else:
-                #     # Otherwise run without dependencies
-                #     self.run_opt_surf_and_adsorbate_no_depend()
-                #     print('nodepend')
-                # run calculations to get TS guesses
                 self.run_ts_estimate('01')
         else:
             # this is executed if user provide .xyz with the optimized slab

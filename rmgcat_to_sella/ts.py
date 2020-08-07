@@ -161,18 +161,6 @@ class TS():
             speciesInd += reactants + products
             bonds += rbonds + pbonds
 
-        # TODO :to be debbuged later
-        # for rp, uniquelist in ((reactants, r_unique), (products, p_unique)):
-        #     for species in rp:
-        #         symbols = str(species.symbols)
-        #         symbols_list.append(symbols)
-        #         speciesdir = os.path.join(
-        #             self.facetpath, 'minima_unique', symbols)
-        #         if symbols not in species_unique:
-        #             species_unique[symbols] = get_all_species(
-        #                 self, speciesdir)
-        #         uniquelist.append(species_unique[symbols])
-
         # check if any products are the same as any reactants
         for species1, bond in zip(speciesInd, bonds):
             for species2 in unique_species:
@@ -186,14 +174,6 @@ class TS():
         r_name_list = [str(species.symbols) for species in reactants]
         p_name_list = [str(species.symbols) for species in products]
 
-        # It is easier to estimate TS starting from reactant/product with
-        # smaller numnber of species
-        # if len(r_name_list) < len(p_name_list):
-        #     print('Reactant structure will be used to estimate TS')
-        #     rpDir = 'reactants'
-        # else:
-        #     print('Products will be used to estimate TS')
-        #     rpDir = 'products'
         return r_name_list, p_name_list, images
 
     def get_rxn_name(self):
@@ -254,9 +234,7 @@ class TS():
         # the way yamlfile is converted to species - to be resolved
         if len(r_name_list) <= len(p_name_list):
             TS_candidate = molecule(r_name_list[0])[0]
-            # reactName = p_name
         else:
-            # TS_candidate = molecule(p_name_list[0])[0]
             # images[2] keeps info about product. It's a Gratom object.
             # Cannot use catkit's molecule method becouse it generates
             # gemetry based on wierd order chemical formula string. Sometimes
@@ -276,8 +254,6 @@ class TS():
             atom2 = 2
             bondedThrough = [0]
         elif TS_candidate.get_chemical_formula() == 'CHO2':
-            # atom1 = 0
-            # atom2 = 1
             bondedThrough = [2]  # connect through oxygen
 
         elif TS_candidate.get_chemical_formula() == 'C2H5O2':
@@ -286,14 +262,9 @@ class TS():
             atom2 = 5
             bondedThrough = [6]  # connect through oxygen
         else:
-            # atom2 = 1
             bondedThrough = [0]
 
         bondlen = TS_candidate.get_distance(atom1, atom2)
-        # bondlen = TS_candidate.get_distance(atom1, atom2)
-        # angle = TS_candidate.get_angle(0, 1, 5)
-
-        # TS_candidate.set_distance(atom1, atom2, blen * scfactor, fix=0)
 
         '''Final ridgid rotations to orientate the TS_candidate on the surface'''
         if len(TS_candidate.get_tags()) < 3:
@@ -362,31 +333,6 @@ class TS():
             TS_candidate.rotate(step_size, 'z')
             angle += step_size
             count += 1
-
-        ''' Old version
-        # # building adsorbtion structures
-        # ads_builder = Builder(grslab)
-
-        # possibleRotations = (360 / rotAngle) - 1
-        # count = 0
-
-        # while count <= possibleRotations:
-        #     structs = ads_builder.add_adsorbate(
-        #         TS_candidate, bondedThrough, -1, auto_construct=False)
-        #     # change to True will make bondedThrough work.
-        #     # Now it uses TS_candidate,rotate...
-        #     # to generate adsorbed strucutres
-        #     big_slab = slab * self.repeats
-        #     nslab = len(slab)
-
-        #     for i, struc in enumerate(structs):
-        #         big_slab_ads = big_slab + struc[nslab:]
-        #         write(os.path.join(ts_estimate_path, '{}'.format(
-        #             str(i + len(structs) * count).zfill(3)) + '_' + rxn_name + '.xyz'), big_slab_ads)
-
-        #     TS_candidate.rotate(rotAngle, 'z')
-        #     count += 1
-        '''
 
     def filtered_out_equiv_ts_estimate(self, rxn_name):
         '''Filtering out symmetry equivalent sites
@@ -510,7 +456,7 @@ class TS():
             rmpath = os.path.join(ts_estimate_path, 'initial_png')
             shutil.rmtree(rmpath)
         except FileNotFoundError:
-            # print('No files to delete')
+            print('No files to delete')
             pass
 
     def get_av_dist(self, path_to_minima, species, scfactor_surface,

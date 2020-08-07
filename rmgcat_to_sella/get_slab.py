@@ -5,14 +5,6 @@ import shutil
 from ase.build import fcc111, fcc211, fcc100
 from ase.io import write
 
-#from sella import Sella
-
-# from ase.optimize import LBFGS
-# from gpaw import GPAW, PW
-# os.environ['GPAW_SETUP_PATH']
-# avaiable options for slab build are: fcc100, fcc110, bcc100, bcc110, bcc111, fcc111, hcp0001, hcp10m10, diamond100, diamond111
-
-
 class GetSlab:
     def __init__(
             self, 
@@ -89,8 +81,6 @@ class GetSlab:
 
     def opt_fcc111(self):
         ''' Optimize fcc111 slab '''
-        # slab = fcc111(self.symbol, self.repeats, self.a,
-        #               self.vacuum, orthogonal=False, periodic=True)
         slab = fcc111(self.symbol, self.repeats, self.a,
                       self.vacuum)
         GetSlab.prepare_slab_opt(self, slab)
@@ -109,18 +99,15 @@ class GetSlab:
 
     def prepare_slab_opt(self, slab):
         ''' Prepare slab optimization with Quantum Espresso '''
-        # setting up calculator
-        # calc = GPAW(xc='PBE', mode = 'pw', kpts=(4, 4, 4))
-        # slab.set_calculator(calc)
-        # dyn = LBFGS(slab, trajectory = 'slab_Cu.traj')
-        # dyn.run(fmax=0.01)
 
         from rmgcat_to_sella.balsamcalc import EspressoBalsamSocketIO
         EspressoBalsamSocketIO.exe = self.executable
         job_kwargs=self.balsam_exe_settings.copy()
         #job_kwargs.update([('user_workdir',cwd)])
         QE_keywords_slab=self.calc_keywords.copy()
-        #QE_keywords.update([('kpts',self.repeats)]) Not sure of intended behavior, but an example to show you can change keys as necessary here
+        #QE_keywords.update([('kpts',self.repeats)])
+        # Not sure of intended behavior, but an example to show you can 
+        # change keys as necessary here
         slab.calc = EspressoBalsamSocketIO(
             workflow='QE_Socket',
             job_kwargs=job_kwargs,
