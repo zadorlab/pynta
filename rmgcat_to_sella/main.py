@@ -400,7 +400,7 @@ class WorkFlow:
             if path_to_outfiles:
                 unique_minima_dir = os.path.join(
                         os.path.split(path_to_outfiles[0])[0], species)
-                return (True, unique_minima_dir)
+                return (True, unique_minima_dir, path_to_outfiles)
             else:
                 return (False, )
         except UnboundLocalError:
