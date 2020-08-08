@@ -18,7 +18,7 @@ class GetSlab:
             balsam_exe_settings,
             calc_keywords,
             creation_dir
-            ):
+    ):
         ''' A class for preparing and optimizing a user defined slab
 
         Parameters
@@ -112,7 +112,7 @@ class GetSlab:
             pseudopotentials=self.pseudopotentials,
             pseudo_dir=self.pseudo_dir,
             **QE_keywords_slab
-            )
+        )
         label = self.slab_name
         from ase.optimize import BFGSLineSearch
         opt = BFGSLineSearch(atoms=slab, trajectory=label + '.traj')
