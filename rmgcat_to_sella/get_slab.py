@@ -14,11 +14,10 @@ class GetSlab:
             slab_name,
             pseudopotentials,
             pseudo_dir,
-            executable,
             balsam_exe_settings,
             calc_keywords,
             creation_dir
-            ):
+    ):
         ''' A class for preparing and optimizing a user defined slab
 
         Parameters
@@ -51,6 +50,7 @@ class GetSlab:
             '/home/mgierad/espresso/pseudo'
 
         '''
+        1234
         self.surface_type = surface_type
         self.symbol = symbol
         self.a = a
@@ -59,7 +59,6 @@ class GetSlab:
         self.slab_name = slab_name
         self.pseudopotentials = pseudopotentials
         self.pseudo_dir = pseudo_dir
-        self.executable = executable
         self.balsam_exe_settings = balsam_exe_settings
         self.calc_keywords = calc_keywords
         self.creation_dir = creation_dir
@@ -99,7 +98,6 @@ class GetSlab:
         ''' Prepare slab optimization with Quantum Espresso '''
 
         from rmgcat_to_sella.balsamcalc import EspressoBalsamSocketIO
-        EspressoBalsamSocketIO.exe = self.executable
         job_kwargs = self.balsam_exe_settings.copy()
         # job_kwargs.update([('user_workdir',cwd)])
         QE_keywords_slab = self.calc_keywords.copy()
@@ -112,7 +110,7 @@ class GetSlab:
             pseudopotentials=self.pseudopotentials,
             pseudo_dir=self.pseudo_dir,
             **QE_keywords_slab
-            )
+        )
         label = self.slab_name
         from ase.optimize import BFGSLineSearch
         opt = BFGSLineSearch(atoms=slab, trajectory=label + '.traj')

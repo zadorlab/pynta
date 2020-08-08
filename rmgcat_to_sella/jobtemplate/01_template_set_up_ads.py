@@ -14,7 +14,6 @@ yamlfile = '{yamlfile}'
 pytemplate = '{pytemplate}'
 pseudopotentials = {pseudopotentials}
 pseudo_dir = '{pseudo_dir}'
-executable = {executable}
 balsam_exe_settings = {balsam_exe_settings}
 calc_keywords = {calc_keywords}
 creation_dir = '{creation_dir}'
@@ -22,7 +21,7 @@ creation_dir = '{creation_dir}'
 put_adsorbates = Adsorbates(facetpath, slab, repeats, yamlfile, creation_dir)
 put_adsorbates.adjacency_to_3d()
 put_adsorbates.create_relax_jobs(
-    pytemplate, pseudopotentials, pseudo_dir, executable,
+    pytemplate, pseudopotentials, pseudo_dir, 
     balsam_exe_settings, calc_keywords
 )
 

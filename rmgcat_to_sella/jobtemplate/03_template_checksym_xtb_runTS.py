@@ -17,7 +17,6 @@ pseudopotentials = {pseudopotentials}
 pseudo_dir = '{pseudo_dir}'
 workflow_name = yamlfile+facetpath+'03'
 dependency_workflow_name = yamlfile+facetpath+'02'
-executable = {executable}
 balsam_exe_settings = {balsam_exe_settings}
 calc_keywords = {calc_keywords}
 creation_dir = '{creation_dir}'
@@ -25,7 +24,7 @@ creation_dir = '{creation_dir}'
 ts = TS(facetpath, slab, ts_dir, yamlfile, repeats)
 ts.create_unique_TS()
 ts.create_TS_unique_job_files(
-    pytemplate, pseudopotentials, pseudo_dir, executable,
+    pytemplate, pseudopotentials, pseudo_dir,
     balsam_exe_settings, calc_keywords
 )
 

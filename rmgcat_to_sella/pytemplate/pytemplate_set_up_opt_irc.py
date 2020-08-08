@@ -25,7 +25,6 @@ with open(prefix + '_time.log', 'w+') as f:
 # unixsocket = '{prefix}/{prefix}'.format(prefix=prefix)
 
 cwd = Path.cwd().as_posix()
-EspressoBalsamSocketIO.exe = executable
 extra_calc_keywords = dict(
         pseudopotentials={pseudopotentials},
         pseudo_dir='{pseudo_dir}',

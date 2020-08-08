@@ -14,10 +14,9 @@ class IRC():
             yamlfile,
             pseudopotentials,
             pseudo_dir,
-            executable,
             balsam_exe_settings,
             calc_keywords
-            ):
+    ):
         ''' Initializing
 
         Parameters:
@@ -58,7 +57,6 @@ class IRC():
         self.yamlfile = yamlfile
         self.pseudopotentials = pseudopotentials
         self.pseudo_dir = pseudo_dir
-        self.executable = executable
         self.balsam_exe_settings = balsam_exe_settings
         self.calc_keywords = calc_keywords
 
@@ -145,7 +143,6 @@ class IRC():
                 prefix=prefix, rxn=rxn, TS_xyz=ts_file_name_xyz,
                 pseudopotentials=self.pseudopotentials,
                 pseudo_dir=self.pseudo_dir,
-                executable=self.executable,
                 balsam_exe_settings=self.balsam_exe_settings,
                 calc_keywords=self.calc_keywords
             ))
@@ -197,15 +194,14 @@ class IRC():
                     self.yamlfile, self.repeats)
             rxn = ts.get_rxn_name()
             prefix = traj[:2]
-            fname = os.path.join(irc_opt_pth, prefix + '_' +
-                                 rxn + '_' + os.path.split(irc_opt_pth)[1]
+            fname = os.path.join(irc_opt_pth, prefix + '_'
+                                 + rxn + '_' + os.path.split(irc_opt_pth)[1]
                                  + '.py')
             with open(fname, 'w') as f:
                 f.write(pytemplate_irc_opt.format(
                     geom=geom, rxn=rxn, prefix=prefix,
                     pseudopotentials=self.pseudopotentials,
                     pseudo_dir=self.pseudo_dir,
-                    executable=self.executable,
                     balsam_exe_settings=self.balsam_exe_settings,
                     calc_keywords=self.calc_keywords))
             f.close()

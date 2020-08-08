@@ -11,12 +11,11 @@ slab_name = '{slab_name}'
 pseudopotentials = {pseudopotentials}
 pseudo_dir = '{pseudo_dir}'
 workflow_name = slab_name+'00'
-executable = {executable}
 balsam_exe_settings = {balsam_exe_settings}
 calc_keywords = {calc_keywords}
 creation_dir = '{creation_dir}'
 
 get_slab = GetSlab(surface_type, symbol, a, repeats_surface, vacuum,
-                   slab_name, pseudopotentials, pseudo_dir, executable,
+                   slab_name, pseudopotentials, pseudo_dir,
                    balsam_exe_settings, calc_keywords, creation_dir)
 get_slab.run_slab_opt()

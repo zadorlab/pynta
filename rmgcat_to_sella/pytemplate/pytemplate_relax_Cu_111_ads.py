@@ -12,7 +12,6 @@ from ase.optimize import BFGSLineSearch
 
 adsorbate = '{adsorbate}'
 prefix = '{prefix}'
-executable = '{executable}'
 balsam_exe_settings = {balsam_exe_settings}
 calc_keywords = {calc_keywords}
 creation_dir = '{creation_dir}'
@@ -38,7 +37,6 @@ atoms.set_constraint(FixAtoms([
     atom.index for atom in atoms if atom.position[2] < atoms.cell[2, 2] / 2.
 ]))
 
-EspressoBalsamSocketIO.exe = executable
 extra_calc_keywords = dict(
         pseudopotentials={pseudopotentials},
         pseudo_dir='{pseudo_dir}',
