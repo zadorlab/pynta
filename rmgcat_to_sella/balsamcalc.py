@@ -89,7 +89,11 @@ class BalsamCalculator(FileIOCalculator):
         if cls.app is not None:
             return
         cls.app, _ = ApplicationDefinition.objects.get_or_create(
-            name=cls.__name__ + str(os.getpid()),
+            name='_'.join([
+                cls.__name__,
+                socket.gethostname(),
+                str(os.getpid())
+            ]),
             executable=cls.exe,
             preprocess=cls.preprocess,
             postprocess=cls.postprocess,
