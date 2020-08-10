@@ -104,11 +104,6 @@ class WorkFlow:
             executable=sys.executable
         )
         self.myPython.save()
-        self.myQE, _ = ApplicationDefinition.objects.get_or_create(
-                name='EspressoBalsam',
-                executable=executable
-                )
-        self.myQE.save()
         self.slab_opt_job = ''
 
     def gen_job_files(self):

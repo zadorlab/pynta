@@ -1,8 +1,10 @@
+import os
 import time
 from typing import Any, List, Dict
 import socket
 
 from balsam.launcher.dag import BalsamJob
+from balsam.core.models import ApplicationDefinition
 
 from ase import Atoms
 from ase.io import read, write
@@ -10,6 +12,7 @@ from ase.calculators.calculator import (
     Calculator, FileIOCalculator, all_changes
 )
 from ase.calculators.socketio import SocketIOCalculator
+import atexit
 
 
 UNFINISHED_STATES = [
@@ -79,6 +82,26 @@ class BalsamCalculator(FileIOCalculator):
         self.workflow = workflow
         self.job_args = job_args
         self.job_kwargs = job_kwargs
+        self.create_application()
+
+    @classmethod
+    def create_application(cls) -> None:
+        if cls.app is not None:
+            return
+        cls.app, _ = ApplicationDefinition.objects.get_or_create(
+            name=cls.__name__ + str(os.getpid()),
+            executable=cls.exe,
+            preprocess=cls.preprocess,
+            postprocess=cls.postprocess,
+            description=cls.description,
+        )
+        cls.app.save()
+
+    @classmethod
+    def delete_application(cls) -> None:
+        if cls.app is None or cls.app.id is None:
+            return
+        cls.app.delete()
 
     def format_args(self) -> str:
         args = self.args.replace('PREFIX', self.prefix)
@@ -104,7 +127,7 @@ class BalsamCalculator(FileIOCalculator):
         return BalsamJob(
             name=self.prefix,
             workflow=self.workflow,
-            application='EspressoBalsam',
+            application=self.app.name,
             args=self.format_args(),
             **self.job_kwargs
         )
@@ -211,3 +234,7 @@ class EspressoBalsamSocketIO(BalsamSocketIOCalculator):
             .replace('HOSTNAME', socket.gethostname())
             .replace('PORT', str(self._port))
         )
+
+
+atexit.register(EspressoBalsam.delete_application)
+atexit.register(EspressoBalsamSocketIO.delete_application)
