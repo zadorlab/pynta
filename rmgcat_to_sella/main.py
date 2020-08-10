@@ -2,6 +2,7 @@
 import os
 import sys
 import shutil
+import yaml
 from pathlib import Path
 from warnings import warn
 try:
@@ -104,6 +105,11 @@ class WorkFlow:
             executable=sys.executable
         )
         self.myPython.save()
+        self.myQE, _ = ApplicationDefinition.objects.get_or_create(
+            name='EspressoBalsam',
+            executable=executable
+        )
+        self.myQE.save()
         self.slab_opt_job = ''
 
         # TODO: instead of directly importing EspressoBalsam, we should
@@ -547,3 +553,17 @@ class WorkFlow:
         self.exe('03', IRC)
         # run optimizataion of both IRC (forward, reverse) trajectory
         self.exe('04', IRCopt)
+
+    def split_yaml_file(self, yamlfile):
+        ''' Split .yaml file that contains many reactions into single
+        reaction yaml files '''
+
+        # read the yaml file with all reactions
+        with open(yamlfile, 'r') as f:
+            yamltxt = f.read()
+        all_rxns = yaml.safe_load(yamltxt)
+
+        # save each reaction as a seperate .yaml file
+        for rxn in range(len(all_rxns)):
+            with open('reaction_{}.yaml'.format(str(rxn).zfill(2)), 'w') as f:
+                yaml.safe_dump(all_rxns[rxn], f)
