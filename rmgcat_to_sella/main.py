@@ -2,6 +2,7 @@
 import os
 import sys
 import shutil
+import yaml
 from pathlib import Path
 from warnings import warn
 try:
@@ -105,9 +106,9 @@ class WorkFlow:
         )
         self.myPython.save()
         self.myQE, _ = ApplicationDefinition.objects.get_or_create(
-                name='EspressoBalsam',
-                executable=executable
-                )
+            name='EspressoBalsam',
+            executable=executable
+        )
         self.myQE.save()
         self.slab_opt_job = ''
 
@@ -293,14 +294,14 @@ class WorkFlow:
         except ValueError:
             workflow_name = yamlfile+facetpath
         job_to_add = BalsamJob(
-                name=job_script,
-                workflow=workflow_name,
-                application=self.myPython.name,
-                args=cwd+'/'+job_script,
-                ranks_per_node=cores,
-                input_files='',
-                node_packing_count=64,
-                user_workdir=cwd
+            name=job_script,
+            workflow=workflow_name,
+            application=self.myPython.name,
+            args=cwd+'/'+job_script,
+            ranks_per_node=cores,
+            input_files='',
+            node_packing_count=64,
+            user_workdir=cwd
         )
         job_to_add.save()
         if parent_job != '':
@@ -399,7 +400,7 @@ class WorkFlow:
         try:
             if path_to_outfiles:
                 unique_minima_dir = os.path.join(
-                        os.path.split(path_to_outfiles[0])[0], species)
+                    os.path.split(path_to_outfiles[0])[0], species)
                 return (True, unique_minima_dir, path_to_outfiles)
             else:
                 return (False, )
@@ -557,3 +558,17 @@ class WorkFlow:
         self.exe('03', IRC)
         # run optimizataion of both IRC (forward, reverse) trajectory
         self.exe('04', IRCopt)
+
+    def split_yaml_file(self, yamlfile):
+        ''' Split .yaml file that contains many reactions into single
+        reaction yaml files '''
+
+        # read the yaml file with all reactions
+        with open(yamlfile, 'r') as f:
+            yamltxt = f.read()
+        all_rxns = yaml.safe_load(yamltxt)
+
+        # save each reaction as a seperate .yaml file
+        for rxn in range(len(all_rxns)):
+            with open('reaction_{}.yaml'.format(str(rxn).zfill(2)), 'w') as f:
+                yaml.safe_dump(all_rxns[rxn], f)
