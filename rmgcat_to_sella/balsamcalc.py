@@ -88,12 +88,26 @@ class BalsamCalculator(FileIOCalculator):
     def create_application(cls) -> None:
         if cls.app is not None:
             return
+        name = '_'.join([
+            cls.__name__,
+            socket.gethostname(),
+            str(os.getpid()),
+        ])
+
+        # Check if name already exists in Balsam, and if it does, delete it
+        # (though this shouldn't actually ever happen).
+        # If multiple ApplicationDefinitions exist with the given name, then
+        # something has gone horribly wrong, and this will raise a
+        # MultipleObjectsReturned exception, which we won't catch.
+        try:
+            oldapp = ApplicationDefinition.objects.get(name=name)
+        except ApplicationDefinition.DoesNotExist:
+            pass
+        else:
+            oldapp.delete()
+
         cls.app, _ = ApplicationDefinition.objects.get_or_create(
-            name='_'.join([
-                cls.__name__,
-                socket.gethostname(),
-                str(os.getpid())
-            ]),
+            name=name,
             executable=cls.exe,
             preprocess=cls.preprocess,
             postprocess=cls.postprocess,
