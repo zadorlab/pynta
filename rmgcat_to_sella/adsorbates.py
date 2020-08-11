@@ -12,7 +12,7 @@ from catkit.gen.molecules import get_3D_positions
 from catkit.gen.adsorption import Builder
 from catkit import Gratoms
 
-from .graph_utils import node_test
+from rmgcat_to_sella.graph_utils import node_test
 from rmgcat_to_sella.main import WorkFlow
 
 # Instead of using CatKit's built in slab generator routines, we want to

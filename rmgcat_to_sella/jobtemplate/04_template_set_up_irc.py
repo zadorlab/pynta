@@ -20,6 +20,7 @@ balsam_exe_settings = {balsam_exe_settings}
 calc_keywords = {calc_keywords}
 workflow_name = yamlfile+facetpath+'04'
 dependency_workflow_name = yamlfile+facetpath+'03'
+dependent_workflow_name = yamlfile+facetpath+'05'
 creation_dir = '{creation_dir}'
 
 irc = IRC(facetpath, slab, repeats, ts_dir, yamlfile,
@@ -28,6 +29,9 @@ irc.set_up_irc(pytemplate_f, pytemplate_r)
 
 pending_simulations = BalsamJob.objects.filter(
     workflow__contains=dependency_workflow_name
+).exclude(state="JOB_FINISHED")
+pending_simulations_dep = BalsamJob.objects.filter(
+    workflow__contains=dependent_workflow_name
 ).exclude(state="JOB_FINISHED")
 cwd = Path.cwd().as_posix()
 for py_script in glob('{facetpath}/IRC/*.py'):
@@ -48,3 +52,6 @@ for py_script in glob('{facetpath}/IRC/*.py'):
     job_to_add.save()
     for job in pending_simulations:
         add_dependency(job, job_to_add)  # parent, child
+    for job in pending_simulations_dep:
+        add_dependency(job_to_add, job)  # parent, child
+

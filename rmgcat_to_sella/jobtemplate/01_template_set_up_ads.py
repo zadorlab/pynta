@@ -5,7 +5,7 @@ from pathlib import Path
 
 from rmgcat_to_sella.adsorbates import Adsorbates
 
-from balsam.launcher.dag import BalsamJob
+from balsam.launcher.dag import BalsamJob, add_dependency
 
 facetpath = '{facetpath}'
 slab = '{slabopt}'
@@ -27,6 +27,12 @@ put_adsorbates.create_relax_jobs(
 
 cwd = Path.cwd().as_posix()
 workflow_name = yamlfile + facetpath + '01'
+
+dependent_workflow_name = yamlfile+facetpath+'02'
+pending_simulations_dep = BalsamJob.objects.filter(
+    workflow__contains=dependent_workflow_name
+).exclude(state="JOB_FINISHED")
+
 for py_script in glob('{facetpath}/minima/*.py'):
     job_dir = cwd + '/' + '/'.join(py_script.strip().split('/')[:-1])
     script_name = py_script.strip().split('/')[-1]
@@ -41,3 +47,6 @@ for py_script in glob('{facetpath}/minima/*.py'):
             ranks_per_node=1,
             )
     job_to_add.save()
+    for job in pending_simulations_dep:
+        add_dependency(job_to_add, job)  # parent, child
+
