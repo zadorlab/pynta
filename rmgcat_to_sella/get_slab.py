@@ -50,7 +50,6 @@ class GetSlab:
             '/home/mgierad/espresso/pseudo'
 
         '''
-        1234
         self.surface_type = surface_type
         self.symbol = symbol
         self.a = a
