@@ -36,7 +36,6 @@ extra_calc_keywords = dict(
         label=prefix
         )
 
-EspressoBalsamSocketIO.exe = executable
 TS_est.calc = EspressoBalsamSocketIO(
         workflow='QE_Socket',
         job_kwargs=balsam_exe_settings,

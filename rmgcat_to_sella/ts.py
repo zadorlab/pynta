@@ -125,7 +125,7 @@ class TS():
         # the angle of rotation is 360 devided by nrot/2 as thera are equal
         # number of symmetry operations around the z axis
         # (e.g. for Cu_111 therea are 6 z and 6 -z operations)
-        max_rot_angle = 360/(nrot/2)
+        max_rot_angle = 360 / (nrot / 2)
         # max_rot_angle = 360/(nrot/4) # lets try 120 angle
         return max_rot_angle
 
@@ -690,7 +690,7 @@ class TS():
     def create_TS_unique_job_files(
         self, pytemplate,
         pseudopotentials, pseudo_dir,
-        executable, balsam_exe_settings,
+        balsam_exe_settings,
         calc_keywords
     ):
         ''' Create job submission files'''
@@ -712,7 +712,6 @@ class TS():
                                 struc, fl), rxn=fl[3:-7], prefix=fl[:2],
                                 pseudopotentials=pseudopotentials,
                                 pseudo_dir=pseudo_dir,
-                                executable=executable,
                                 balsam_exe_settings=balsam_exe_settings,
                                 calc_keywords=calc_keywords,
                                 creation_dir=self.creation_dir
@@ -843,8 +842,8 @@ class TS():
             struc.get_distances(adsorbate_atom[0], surface_atom))
         # get index of the surface atom for which distance to adsorbate is the
         # lowest
-        index = np.where(all_dist_surface_adsorbate ==
-                         min_dist_surface_adsorbate)
+        index = np.where(all_dist_surface_adsorbate
+                         == min_dist_surface_adsorbate)
 
         return surface_atom[index[0][0]]
 

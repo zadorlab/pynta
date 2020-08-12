@@ -12,7 +12,7 @@ from catkit.gen.molecules import get_3D_positions
 from catkit.gen.adsorption import Builder
 from catkit import Gratoms
 
-from .graph_utils import node_test
+from rmgcat_to_sella.graph_utils import node_test
 from rmgcat_to_sella.main import WorkFlow
 
 # Instead of using CatKit's built in slab generator routines, we want to
@@ -98,9 +98,9 @@ class Adsorbates:
                 cutoff * np.prod(latt_len) / (V * latt_len)),
                 dtype=int
             )
-            offsets = np.mgrid[-padding[0]:padding[0]+1,
-                               -padding[1]:padding[1]+1,
-                               -padding[2]:padding[2]+1].T
+            offsets = np.mgrid[-padding[0]:padding[0] + 1,
+                               -padding[1]:padding[1] + 1,
+                               -padding[2]:padding[2] + 1].T
             tvecs = np.dot(offsets, cell).reshape(-1, 3)
 
         edges = []
@@ -118,9 +118,9 @@ class Adsorbates:
                 # 1.25 times the sum of the covalent radii was chosen based
                 # on trial and error. Too small, and you miss neighbors.
                 # Too big, and you start including next-nearest-neighbors.
-                cutoff = 1.25 * \
-                    (covalent_radii[atomi.number] +
-                     covalent_radii[atomj.number])
+                cutoff = 1.25 * (
+                    covalent_radii[atomi.number] + covalent_radii[atomj.number]
+                )
                 # xij is the direct displacement vector in the central unit
                 # cell.
                 xij = atomj.position - atomi.position
@@ -373,7 +373,6 @@ class Adsorbates:
             pytemplate,
             pseudopotentials,
             pseudo_dir,
-            executable,
             balsam_exe_settings,
             calc_keywords,
             shtemplate=None
@@ -426,7 +425,6 @@ class Adsorbates:
                             prefix=prefix,
                             pseudopotentials=pseudopotentials,
                             pseudo_dir=pseudo_dir,
-                            executable=executable,
                             balsam_exe_settings=balsam_exe_settings,
                             calc_keywords=calc_keywords,
                             creation_dir=self.creation_dir

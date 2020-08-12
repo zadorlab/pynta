@@ -18,13 +18,12 @@ pseudopotentials = {pseudopotentials}
 pseudo_dir = '{pseudo_dir}'
 workflow_name = yamlfile+facetpath+'05'
 dependency_workflow_name = yamlfile+facetpath+'04'
-executable = {executable}
 balsam_exe_settings = {balsam_exe_settings}
 calc_keywords = {calc_keywords}
 creation_dir = '{creation_dir}'
 
 irc = IRC(facetpath, slab, repeats, ts_dir, yamlfile,
-          pseudopotentials, pseudo_dir, executable)
+          pseudopotentials, pseudo_dir)
 irc.opt_after_IRC(irc_dir, pytemplate)
 
 BalsamJob = BalsamJob

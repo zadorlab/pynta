@@ -31,6 +31,11 @@ ts.copy_minimas_prev_calculated(current_dir, species, minima_dir)
 ts.prepare_ts_estimate(scfactor, scfactor_surface, rotAngle,
                        pytemplate_xtb, species, scaled1, scaled2)
 
+dependent_workflow_name = yamlfile+facetpath+'03'
+pending_simulations_dep = BalsamJob.objects.filter(
+    workflow__contains=dependent_workflow_name
+).exclude(state="JOB_FINISHED")
+
 pending_simulations = BalsamJob.objects.filter(
     workflow__contains=dependency_workflow_name
 ).exclude(state="JOB_FINISHED")
@@ -53,3 +58,6 @@ for py_script in glob('{facetpath}/TS_estimate/*/*.py'):
     job_to_add.save()
     for job in pending_simulations:
         add_dependency(job, job_to_add)  # parent, child
+    for job in pending_simulations_dep:
+        add_dependency(job_to_add, job)  # parent, child
+

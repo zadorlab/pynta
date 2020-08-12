@@ -23,7 +23,6 @@ with open(label + '_irc_r_time.log', 'w+') as f:
 # unixsocket = '_'.join([rxn, prefix])
 # unixsocket = '{prefix}/{prefix}'.format(prefix=prefix)
 
-EspressoBalsamSocketIO.exe = executable
 extra_calc_keywords = dict(
         pseudopotentials={pseudopotentials},
         pseudo_dir='{pseudo_dir}',
