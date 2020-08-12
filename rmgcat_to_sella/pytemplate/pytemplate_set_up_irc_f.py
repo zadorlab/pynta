@@ -22,7 +22,6 @@ with open(label + '_irc_f_time.log', 'w+') as f:
     f.close()
 
 
-EspressoBalsamSocketIO.exe = executable
 extra_calc_keywords = dict(
         pseudopotentials={pseudopotentials},
         pseudo_dir='{pseudo_dir}',

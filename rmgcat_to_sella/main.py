@@ -119,11 +119,11 @@ class WorkFlow:
         ''' Generate submt scripts for 6 stages of the workflow '''
         self.set_up_slab(template_slab_opt, surface_type, symbol, a,
                          repeats_surface, vacuum, slab_name,
-                         pseudopotentials, pseudo_dir, executable,
+                         pseudopotentials, pseudo_dir,
                          balsam_exe_settings, calc_keywords, creation_dir)
         self.set_up_ads(template_ads, facetpath, slabopt,
                         repeats, yamlfile, pytemplate_relax_ads,
-                        pseudopotentials, pseudo_dir, executable,
+                        pseudopotentials, pseudo_dir,
                         balsam_exe_settings, calc_keywords, creation_dir)
         self.set_up_TS_with_xtb(template_set_up_ts_with_xtb, slabopt,
                                 repeats, yamlfile, facetpath, rotAngle,
@@ -131,16 +131,16 @@ class WorkFlow:
                                 species_list, creation_dir)
         self.set_up_run_TS(template_set_up_ts, facetpath, slabopt,
                            repeats, yamlfile, pytemplate_set_up_ts,
-                           pseudopotentials, pseudo_dir, executable,
+                           pseudopotentials, pseudo_dir,
                            balsam_exe_settings, calc_keywords, creation_dir)
         self.set_up_run_IRC(template_set_up_IRC, facetpath, slabopt,
                             repeats, pytemplate_f, pytemplate_r, yamlfile,
-                            pseudopotentials, pseudo_dir, executable,
+                            pseudopotentials, pseudo_dir,
                             balsam_exe_settings, calc_keywords, creation_dir)
         self.set_up_opt_IRC(template_set_up_optIRC,
                             facetpath, slabopt, repeats,
                             pytemplate_optIRC,
-                            pseudopotentials, pseudo_dir, executable,
+                            pseudopotentials, pseudo_dir,
                             balsam_exe_settings, calc_keywords, creation_dir)
 
 ###########################
@@ -149,7 +149,7 @@ class WorkFlow:
 
     def set_up_slab(self, template, surface_type, symbol, a, repeats_surface,
                     vacuum, slab_name, pseudopotentials, pseudo_dir,
-                    executable, balsam_exe_settings, calc_keywords,
+                    balsam_exe_settings, calc_keywords,
                     creation_dir):
         ''' Create 00_set_up_slab_opt.py file '''
         with open(template, 'r') as r:
@@ -162,7 +162,6 @@ class WorkFlow:
                     vacuum=vacuum, slab_name=slab_name,
                     pseudopotentials=pseudopotentials,
                     pseudo_dir=pseudo_dir,
-                    executable=executable,
                     balsam_exe_settings=balsam_exe_settings,
                     calc_keywords=calc_keywords, creation_dir=creation_dir
                 ))
@@ -171,7 +170,7 @@ class WorkFlow:
 
     def set_up_ads(
         self, template, facetpath, slabopt, repeats, yamlfile,
-        pytemplate, pseudopotentials, pseudo_dir, executable,
+        pytemplate, pseudopotentials, pseudo_dir,
         balsam_exe_settings, calc_keywords, creation_dir
     ):
         ''' Create 01_set_up_ads.py file '''
@@ -184,7 +183,6 @@ class WorkFlow:
                     pytemplate=pytemplate,
                     pseudopotentials=pseudopotentials,
                     pseudo_dir=pseudo_dir,
-                    executable=executable,
                     balsam_exe_settings=balsam_exe_settings,
                     calc_keywords=calc_keywords,
                     creation_dir=creation_dir
@@ -214,7 +212,7 @@ class WorkFlow:
 
     def set_up_run_TS(
         self, template, facetpath, slab, repeats, yamlfile,
-        pytemplate, pseudopotentials, pseudo_dir, executable,
+        pytemplate, pseudopotentials, pseudo_dir,
         balsam_exe_settings, calc_keywords, creation_dir
     ):
         ''' Create 03_checksym_xtb_runTS.py file '''
@@ -227,7 +225,6 @@ class WorkFlow:
                     pytemplate=pytemplate,
                     pseudo_dir=pseudo_dir,
                     pseudopotentials=pseudopotentials,
-                    executable=executable,
                     balsam_exe_settings=balsam_exe_settings,
                     calc_keywords=calc_keywords, creation_dir=creation_dir
                 ))
@@ -236,7 +233,7 @@ class WorkFlow:
 
     def set_up_run_IRC(self, template, facetpath, slab, repeats,
                        pytemplate_f, pytemplate_r, yamlfile,
-                       pseudopotentials, pseudo_dir, executable,
+                       pseudopotentials, pseudo_dir,
                        balsam_exe_setting, calc_keywords, creation_dir):
         ''' Create 04_set_up_irc.py file '''
         with open(template, 'r') as r:
@@ -251,7 +248,6 @@ class WorkFlow:
                     yamlfile=yamlfile,
                     pseudo_dir=pseudo_dir,
                     pseudopotentials=pseudopotentials,
-                    executable=executable,
                     balsam_exe_settings=balsam_exe_settings,
                     calc_keywords=calc_keywords, creation_dir=creation_dir
                 ))
@@ -260,7 +256,7 @@ class WorkFlow:
 
     def set_up_opt_IRC(
         self, template, facetpath, slab, repeats, pytemplate,
-        pseudopotentials, pseudo_dir, executable, balsam_exe_setting,
+        pseudopotentials, pseudo_dir, balsam_exe_setting,
         calc_keywords, creation_dir
     ):
         ''' Create 05_set_up_opt_after_irc.py file'''
@@ -275,7 +271,6 @@ class WorkFlow:
                     yamlfile=yamlfile,
                     pseudo_dir=pseudo_dir,
                     pseudopotentials=pseudopotentials,
-                    executable=executable,
                     balsam_exe_settings=balsam_exe_settings,
                     calc_keywords=calc_keywords,
                     creation_dir=creation_dir
@@ -292,19 +287,19 @@ class WorkFlow:
         from os import getcwd
         cwd = getcwd()
         try:
-            job_number = str(int(job_script[0:1]))
-            workflow_name = yamlfile+facetpath+job_number
+            int(job_script[0:2])
+            workflow_name = yamlfile + facetpath + job_script[0:2]
         except ValueError:
-            workflow_name = yamlfile+facetpath
+            workflow_name = yamlfile + facetpath
         job_to_add = BalsamJob(
-                name=job_script,
-                workflow=workflow_name,
-                application=self.myPython.name,
-                args=cwd+'/'+job_script,
-                ranks_per_node=cores,
-                input_files='',
-                node_packing_count=64,
-                user_workdir=cwd
+            name=job_script,
+            workflow=workflow_name,
+            application=self.myPython.name,
+            args=cwd + '/' + job_script,
+            ranks_per_node=cores,
+            input_files='',
+            node_packing_count=64,
+            user_workdir=cwd
         )
         job_to_add.save()
         if parent_job != '':
@@ -312,8 +307,8 @@ class WorkFlow:
             try:
                 add_dependency(parent_job, job_to_add)  # parent, child
             except ValueError:
-                dependency = str(int(parent_job[0:1]))
-                dependency_workflow_name = yamlfile+facetpath+dependency
+                dependency = str(parent_job[0:2])
+                dependency_workflow_name = yamlfile + facetpath + dependency
                 # print(dependency_workflow_name)
                 BalsamJob = BalsamJob
                 pending_simulations = BalsamJob.objects.filter(
@@ -346,7 +341,7 @@ class WorkFlow:
         for outfile in outfile_lists:
             outfiles.append(str(outfile))
         if not outfiles:
-            return(False, )
+            return(False, '')
         else:
             return (True, outfiles)
 
@@ -378,19 +373,13 @@ class WorkFlow:
             return (False, )
         # go through all dirs and look for the match
         for WorkFlowDir in WorkFlowDirs:
-            try:
-                results = self.check_if_path_to_out_files_exists(
-                    WorkFlowDir, species
-                )
-            except ValueError:
-                # if False, I have only one value to unpack, so a workaround
-                # check_out_files = ''
-                continue
-            else:
-                check_out_files, path_to_outfiles = results
-                # if there is a match, break the loop
-                if check_out_files:
-                    break
+            check_out_files, path_to_outfiles = (
+                self.check_if_path_to_out_files_exists(
+                    WorkFlowDir, species)
+            )
+            # if there is a match, break the loop
+            if check_out_files:
+                break
         # a directory to the DFT calculation (unique_minima_dir) for a given
         # species is generated by combining the first element of the splitted
         # path to outfiles,
@@ -400,15 +389,12 @@ class WorkFlow:
         # '*/Cu_111/minima/H'
 
         # If species were previously calculated, return True and paths
-        try:
-            if path_to_outfiles:
-                unique_minima_dir = os.path.join(
-                        os.path.split(path_to_outfiles[0])[0], species)
-                return (True, unique_minima_dir, path_to_outfiles)
-            else:
-                return (False, )
-        except UnboundLocalError:
-            return (False, )
+        if path_to_outfiles:
+            unique_minima_dir = os.path.join(
+                os.path.split(path_to_outfiles[0])[0], species)
+            return(True, unique_minima_dir, path_to_outfiles)
+        else:
+            return (False, '')
 
     def run_slab_optimization(self):
         ''' Submit slab_optimization_job '''
