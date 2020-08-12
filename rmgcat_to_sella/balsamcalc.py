@@ -1,4 +1,3 @@
-import os
 import time
 from typing import Any, List, Dict
 import socket
@@ -12,7 +11,6 @@ from ase.calculators.calculator import (
     Calculator, FileIOCalculator, all_changes
 )
 from ase.calculators.socketio import SocketIOCalculator
-import atexit
 
 
 UNFINISHED_STATES = [
@@ -41,17 +39,17 @@ class BalsamCalculator(FileIOCalculator):
     exe = None
 
     # Naming scheme for the input file written by the calculator
-    inpname = None
+    inp_name = None
     # ASE IO format of the input file
     inp_format = None
     # Naming scheme for the output file read by the calculator
-    outname = None
+    out_name = None
     # ASE IO format of the output file
     out_format = None
 
     # Extra calculation-specific arguments to provide to Balsam
     args = None
-    # The Balsam App for this type of calculation
+    # The Balsam App/app name for this type of calculation
     app = None
 
     # Extra information for the Balsam App
@@ -88,38 +86,14 @@ class BalsamCalculator(FileIOCalculator):
     def create_application(cls) -> None:
         if cls.app is not None:
             return
-        name = '_'.join([
-            cls.__name__,
-            socket.gethostname(),
-            str(os.getpid()),
-        ])
-
-        # Check if name already exists in Balsam, and if it does, delete it
-        # (though this shouldn't actually ever happen).
-        # If multiple ApplicationDefinitions exist with the given name, then
-        # something has gone horribly wrong, and this will raise a
-        # MultipleObjectsReturned exception, which we won't catch.
-        try:
-            oldapp = ApplicationDefinition.objects.get(name=name)
-        except ApplicationDefinition.DoesNotExist:
-            pass
-        else:
-            oldapp.delete()
-
         cls.app, _ = ApplicationDefinition.objects.get_or_create(
-            name=name,
+            name=cls.__name__,
             executable=cls.exe,
             preprocess=cls.preprocess,
             postprocess=cls.postprocess,
             description=cls.description,
         )
         cls.app.save()
-
-    @classmethod
-    def delete_application(cls) -> None:
-        if cls.app is None or cls.app.id is None:
-            return
-        cls.app.delete()
 
     def format_args(self) -> str:
         args = self.args.replace('PREFIX', self.prefix)
@@ -135,7 +109,7 @@ class BalsamCalculator(FileIOCalculator):
     ) -> None:
         FileIOCalculator.write_input(self, atoms, properties, system_changes)
         write(
-            self.inpname.replace('PREFIX', self.label),
+            self.inp_name.replace('PREFIX', self.label),
             atoms,
             format=self.inp_format,
             **self.parameters
@@ -181,7 +155,7 @@ class BalsamCalculator(FileIOCalculator):
 
     def read_results(self) -> None:
         out = read(
-            self.outname.replace('PREFIX', self.label), format=self.out_format
+            self.out_name.replace('PREFIX', self.label), format=self.out_format
         )
         self.out_calc = out.calc
         self.results = out.calc.results
@@ -190,11 +164,11 @@ class BalsamCalculator(FileIOCalculator):
 class EspressoBalsam(BalsamCalculator):
     implemented_properties = ['energy', 'forces', 'stress', 'magmoms']
     exe = 'pw.x'
-    inpname = 'PREFIX.pwi'
+    inp_name = 'PREFIX.pwi'
     inp_format = 'espresso-in'
-    outname = 'PREFIX.out'
+    out_name = 'PREFIX.out'
     out_format = 'espresso-out'
-    args = f'-in {inpname}'
+    args = f'-in {inp_name}'
     ignore_fail = True
 
 
@@ -239,11 +213,11 @@ class BalsamSocketIOCalculator(BalsamCalculator, SocketIOCalculator):
 
 class EspressoBalsamSocketIO(BalsamSocketIOCalculator):
     exe = 'pw.x'
-    inpname = 'PREFIX.pwi'
+    inp_name = 'PREFIX.pwi'
     inp_format = 'espresso-in'
-    outname = 'PREFIX.out'
+    out_name = 'PREFIX.out'
     out_format = 'espresso-out'
-    args = f'--ipi HOSTNAME:PORT -in {inpname}'
+    args = f'--ipi HOSTNAME:PORT -in {inp_name}'
     ignore_fail = True
 
     def format_args(self) -> str:
@@ -252,7 +226,3 @@ class EspressoBalsamSocketIO(BalsamSocketIOCalculator):
             .replace('HOSTNAME', socket.gethostname())
             .replace('PORT', str(self._port))
         )
-
-
-atexit.register(EspressoBalsam.delete_application)
-atexit.register(EspressoBalsamSocketIO.delete_application)
