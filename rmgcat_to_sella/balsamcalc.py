@@ -49,8 +49,6 @@ class BalsamCalculator(FileIOCalculator):
 
     # Extra calculation-specific arguments to provide to Balsam
     args = None
-    # The Balsam App/app name for this type of calculation
-    app = None
 
     # Extra information for the Balsam App
     preprocess = ''
@@ -84,16 +82,15 @@ class BalsamCalculator(FileIOCalculator):
 
     @classmethod
     def create_application(cls) -> None:
-        if cls.app is not None:
-            return
-        cls.app, _ = ApplicationDefinition.objects.get_or_create(
+        app, created = ApplicationDefinition.objects.get_or_create(
             name=cls.__name__,
             executable=cls.exe,
             preprocess=cls.preprocess,
             postprocess=cls.postprocess,
             description=cls.description,
         )
-        cls.app.save()
+        if created:
+            app.save()
 
     def format_args(self) -> str:
         args = self.args.replace('PREFIX', self.prefix)
@@ -119,7 +116,7 @@ class BalsamCalculator(FileIOCalculator):
         return BalsamJob(
             name=self.prefix,
             workflow=self.workflow,
-            application=self.app.name,
+            application=self.__class__.__name__,
             args=self.format_args(),
             **self.job_kwargs
         )
