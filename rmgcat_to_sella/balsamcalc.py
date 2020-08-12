@@ -3,7 +3,7 @@ from typing import Any, List, Dict
 import socket
 import atexit
 
-from balsam.launcher.dag import BalsamJob
+from balsam.launcher.dag import BalsamJob, kill
 
 from ase import Atoms
 from ase.io import read, write
@@ -83,7 +83,7 @@ class BalsamCalculator(FileIOCalculator):
         self.workflow = workflow
         self.job_args = job_args
         self.job_kwargs = job_kwargs
-        atexit.register(self.delete_job)
+        atexit.register(self.kill_job)
 
     def format_args(self) -> str:
         args = self.args.replace('PREFIX', self.prefix)
@@ -114,16 +114,11 @@ class BalsamCalculator(FileIOCalculator):
             **self.job_kwargs
         )
 
-    def delete_job(self) -> None:
+    def kill_job(self) -> None:
         if self.job is None:
             return
-        if self.job.state == 'JOB_FINISHED':
-            return
-        # NOTE: we probably don't want to actually *DELETE* the job from
-        # Balsam, we just want to kill it if its still running, or put it in a
-        # non-runnable state if it is preparing to run (i.e. in
-        # UNFINISHED_STATE above). I don't know how to do that though.
-        self.job.delete()
+        if self.job.state in UNFINISHED_STATES:
+            kill(self.job)
 
     def job_running(self, state: str) -> bool:
         if state in UNFINISHED_STATES:
