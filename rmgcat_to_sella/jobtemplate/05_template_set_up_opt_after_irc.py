@@ -40,7 +40,7 @@ for py_script in glob('{facetpath}/IRC/irc*/*.py'):
             name=script_name,
             workflow=workflow_name,
             application='python',
-            args=cwd+'/'+py_script,
+            args=cwd + '/' + py_script,
             input_files='',
             user_workdir=job_dir,
             node_packing_count=64,

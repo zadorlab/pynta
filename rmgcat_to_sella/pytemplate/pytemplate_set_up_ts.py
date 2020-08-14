@@ -10,6 +10,8 @@ from sella import Sella
 
 rxn = '{rxn}'
 prefix = '{prefix}'
+balsam_exe_settings = {balsam_exe_settings}
+calc_keywords = {calc_keywords}
 
 trajdir = os.path.join(prefix, prefix + '_' + rxn + '.traj')
 label = os.path.join(prefix, prefix)

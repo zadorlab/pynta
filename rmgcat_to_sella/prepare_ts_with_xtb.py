@@ -1,6 +1,5 @@
 from typing import List, Tuple
 from ase import Atoms
-from ase.calculators.calculator import Calculator
 from ase.io.trajectory import Trajectory
 import numpy as np
 from scipy.optimize import minimize
@@ -22,7 +21,6 @@ class AdsorbatePlacer:
                  adsorbate: Atoms,
                  bonds: List[Tuple[int, int]],
                  dists: List[float],
-                 calc: Calculator,
                  initial_height: float = 1.0,
                  weight: float = 1.0,
                  scale: float = 1.0,
@@ -34,7 +32,6 @@ class AdsorbatePlacer:
         zmin_ads = np.min(self.adsorbate.positions[:, 2])
         self.adsorbate.positions[:, 2] += initial_height + zmax_slab - zmin_ads
         self.ads_ref = self.slab + self.adsorbate
-        self.ads_ref.calc = calc
 
         self.bonds = bonds
         self.dists = dists
