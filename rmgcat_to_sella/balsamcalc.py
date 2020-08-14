@@ -1,8 +1,9 @@
 import time
 from typing import Any, List, Dict
 import socket
+import atexit
 
-from balsam.launcher.dag import BalsamJob
+from balsam.launcher.dag import BalsamJob, kill
 from balsam.core.models import ApplicationDefinition
 
 from ase import Atoms
@@ -58,6 +59,9 @@ class BalsamCalculator(FileIOCalculator):
     # Ignore when Balsam jobs fail (needed for QE in socket-mode)
     ignore_fail = False
 
+    # Balsam job object
+    job = None
+
     def __init__(
         self,
         workflow: str,
@@ -78,6 +82,7 @@ class BalsamCalculator(FileIOCalculator):
         self.workflow = workflow
         self.job_args = job_args
         self.job_kwargs = job_kwargs
+        atexit.register(self.kill_job)
         self.create_application()
 
     @classmethod
@@ -121,6 +126,12 @@ class BalsamCalculator(FileIOCalculator):
             **self.job_kwargs
         )
 
+    def kill_job(self) -> None:
+        if self.job is None:
+            return
+        if self.job.state in UNFINISHED_STATES:
+            kill(self.job)
+
     def job_running(self, state: str) -> bool:
         if state in UNFINISHED_STATES:
             return True
@@ -139,14 +150,14 @@ class BalsamCalculator(FileIOCalculator):
         system_changes: List[str] = all_changes
     ) -> None:
         Calculator.calculate(self, atoms, properties, system_changes)
-        job = self.create_job()
-        self.directory = job.working_directory
+        self.job = self.create_job()
+        self.directory = self.job.working_directory
         self.write_input(self.atoms, properties, system_changes)
-        job.save()
+        self.job.save()
 
-        while self.job_running(job.state):
+        while self.job_running(self.job.state):
             time.sleep(10)
-            job.refresh_from_db()
+            self.job.refresh_from_db()
 
         self.read_results()
 
