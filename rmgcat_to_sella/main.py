@@ -564,8 +564,7 @@ class Input():
     ''' A class to handle input preparations '''
 
     def __init__(self,
-                 big_yaml_file,
-                 yaml_template):
+                 big_yaml_file):
         '''
         Parameters:
         ___________
@@ -578,7 +577,6 @@ class Input():
 
         '''
         self.big_yaml_file = big_yaml_file
-        self.yaml_template = yaml_template
 
     def fix_format(self,
                    reactant):
@@ -651,7 +649,11 @@ class Input():
 
 
         '''
-        with open(self.yaml_template, 'r') as f:
+        path = os.path.abspath(__file__)
+        dir_path = os.path.dirname(path)
+        yaml_template = os.path.join(dir_path, 'yaml_template', 'yaml_template.yaml')
+
+        with open(yaml_template, 'r') as f:
             template = f.read()
         return template
 
