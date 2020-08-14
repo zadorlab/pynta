@@ -646,7 +646,8 @@ class Input():
         '''
         path = os.path.abspath(__file__)
         dir_path = os.path.dirname(path)
-        yaml_template = os.path.join(dir_path, 'yaml_template', 'yaml_template.yaml')
+        yaml_template = os.path.join(
+            dir_path, 'yaml_template', 'yaml_template.py')
 
         with open(yaml_template, 'r') as f:
             template = f.read()
