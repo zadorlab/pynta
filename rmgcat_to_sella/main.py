@@ -567,17 +567,16 @@ class Input():
         big_yaml_file : str
             path to the yaml file with all reactions
 
-        yaml_template : str
-            path to the yaml template file
-
         '''
         self.big_yaml_file = big_yaml_file
 
     def split_yaml_file(self):
         ''' Split big_yaml_file that contains many reactions into
             single reaction yaml files'''
-
+        
+        # load all-reaction .yaml file
         all_rxns = self.open_big_yaml_file()
+        # load .yaml template
         template = self.open_template_yaml_file()
 
         # go through all reactions and creates single reaction .yaml files
@@ -666,7 +665,8 @@ class Input():
         ________
 
         template : list[dict[str: str]]
-            loaded template yaml file
+            loaded template yaml file that is used to generate one-reaction
+            .yanl files
 
         '''
         path = os.path.abspath(__file__)
