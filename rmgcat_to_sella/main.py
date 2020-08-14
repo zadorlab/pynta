@@ -556,7 +556,7 @@ class WorkFlow:
 
 
 class Input():
-    ''' A class to handle input preparations '''
+    ''' A class to handle input preparations - Currently only .yaml file '''
 
     def __init__(self,
                  big_yaml_file):
@@ -572,6 +572,32 @@ class Input():
 
         '''
         self.big_yaml_file = big_yaml_file
+
+    def split_yaml_file(self):
+        ''' Split big_yaml_file that contains many reactions into
+            single reaction yaml files'''
+
+        all_rxns = self.open_big_yaml_file()
+        template = self.open_template_yaml_file()
+
+        # go through all reactions and creates single reaction .yaml files
+        for rxn in all_rxns:
+            index = rxn['index']
+            reaction = rxn['reaction']
+            reaction_family = rxn['reaction_family']
+            reactant = self.fix_format(rxn['reactant'].split('\n'))
+            product = self.fix_format(rxn['product'].split('\n'))
+
+            # name of the .yaml file to be created
+            new_yaml = 'reaction_{}.yaml'.format(str(index).zfill(2))
+
+            with open(new_yaml, 'w') as f:
+                f.write(template.format(
+                    index=index,
+                    reaction=reaction,
+                    reaction_family=reaction_family,
+                    reactant=reactant,
+                    product=product))
 
     def fix_format(self,
                    reactant):
@@ -642,7 +668,6 @@ class Input():
         template : list[dict[str: str]]
             loaded template yaml file
 
-
         '''
         path = os.path.abspath(__file__)
         dir_path = os.path.dirname(path)
@@ -652,29 +677,3 @@ class Input():
         with open(yaml_template, 'r') as f:
             template = f.read()
         return template
-
-    def split_yaml_file(self):
-        ''' Split big_yaml_file that contains many reactions into
-            single reaction yaml files'''
-
-        all_rxns = self.open_big_yaml_file()
-        template = self.open_template_yaml_file()
-
-        # go through all reactions and creates single reaction .yaml files
-        for rxn in all_rxns:
-            index = rxn['index']
-            reaction = rxn['reaction']
-            reaction_family = rxn['reaction_family']
-            reactant = self.fix_format(rxn['reactant'].split('\n'))
-            product = self.fix_format(rxn['product'].split('\n'))
-
-            # name of the .yaml file to be created
-            new_yaml = 'reaction_{}.yaml'.format(str(index).zfill(2))
-
-            with open(new_yaml, 'w') as f:
-                f.write(template.format(
-                    index=index,
-                    reaction=reaction,
-                    reaction_family=reaction_family,
-                    reactant=reactant,
-                    product=product))
