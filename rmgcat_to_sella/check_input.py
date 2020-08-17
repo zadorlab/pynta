@@ -33,10 +33,13 @@ class InputChecker():
 
     def check(self):
         ''' Print info about checking input files '''
-        print('Checking input')
+        print('Checking input...')
         print('---')
         if not self.is_input_file():
+            print('---')
             print('Error')
+            print('Make sure all input files are '
+                  'in your working directory')
             exit()
         else:
             print('Passed')
@@ -48,20 +51,20 @@ class InputChecker():
 
         # check inputs
         if not os.path.isfile(self.yamlfile):
-            print('    .yaml file is not in '
-                  'your working directory: \n'.format(working_dir))
+            print('!    .yaml file is not in '
+                  'your working directory: \n{}'.format(working_dir))
             return False
         elif not os.path.isfile(self.slab):
-            print('    .xyz file with optimized slab is not in '
-                  'your working directory: \n {}'.format(working_dir))
+            print('!    .xyz file with optimized slab is not in '
+                  'your working directory: \n{}'.format(working_dir))
             return False
         elif not os.path.isfile(self.inputR2S):
-            print('    inputR2S.py file is not in '
-                  'your current working directory: \n {}'.format(working_dir))
+            print('!    inputR2S.py file is not in '
+                  'your current working directory: \n{}'.format(working_dir))
             return False
         elif not os.path.isfile(self.run_me):
-            print('    run_me.py file is not in '
-                  'your current working directory: \n {}'.format(working_dir))
+            print('!    run_me.py file is not in '
+                  'your current working directory: \n{}'.format(working_dir))
             return False
         else:
             return True
