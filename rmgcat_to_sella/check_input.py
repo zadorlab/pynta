@@ -82,7 +82,11 @@ class Input():
         # go through each line of the reactant and add 4 spaces
         # at the beginning
         for line in reactant:
-            fixed_format.append('        ' + line)
+            # oh! the multiplicity line has to be indentate differently
+            if line.startswith('multiplicity'):
+                fixed_format.append('   ' + line)
+            else:
+                fixed_format.append('        ' + line)
 
         # join every element of the list into a single string using new line
         # character as a separator
