@@ -553,4 +553,3 @@ class WorkFlow:
         self.exe('03', IRC)
         # run optimizataion of both IRC (forward, reverse) trajectory
         self.exe('04', IRCopt)
-
