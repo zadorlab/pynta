@@ -21,8 +21,8 @@ creation_dir = '{creation_dir}'
 put_adsorbates = Adsorbates(facetpath, slab, repeats, yamlfile, creation_dir)
 put_adsorbates.adjacency_to_3d()
 put_adsorbates.create_relax_jobs(
-    pytemplate, pseudopotentials, pseudo_dir, 
-    balsam_exe_settings, calc_keywords
+    pytemplate, pseudopotentials, pseudo_dir,
+    balsam_exe_settings, calc_keywords, creation_dir
 )
 
 cwd = Path.cwd().as_posix()
