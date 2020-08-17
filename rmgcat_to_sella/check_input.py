@@ -18,7 +18,7 @@ class YamlSplitter():
         self.big_yaml_file = big_yaml_file
 
     def split(self):
-        ''' Split big_yaml_file that contains many reactions into
+        ''' Split big_yaml_file that contains many react8cSZRZdJions into
             single reaction yaml files'''
 
         # load all-reaction .yaml file

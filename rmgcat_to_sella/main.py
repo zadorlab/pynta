@@ -2,7 +2,6 @@
 import os
 import sys
 import shutil
-import yaml
 from pathlib import Path
 from warnings import warn
 try:
@@ -105,10 +104,6 @@ class WorkFlow:
             executable=sys.executable
         )
         self.myPython.save()
-        self.myQE, _ = ApplicationDefinition.objects.get_or_create(
-            name='EspressoBalsam',
-            executable=executable
-        )
         self.myQE.save()
         self.slab_opt_job = ''
 
