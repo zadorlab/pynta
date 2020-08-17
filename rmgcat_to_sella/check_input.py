@@ -2,7 +2,7 @@ import yaml
 import os
 
 
-class Input():
+class YamlSplitter():
     ''' A class to handle input preparations - Currently only .yaml file '''
 
     def __init__(self,
@@ -17,7 +17,7 @@ class Input():
         '''
         self.big_yaml_file = big_yaml_file
 
-    def split_yaml_file(self):
+    def split(self):
         ''' Split big_yaml_file that contains many reactions into
             single reaction yaml files'''
 
