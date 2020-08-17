@@ -104,7 +104,6 @@ class WorkFlow:
             executable=sys.executable
         )
         self.myPython.save()
-        self.myQE.save()
         self.slab_opt_job = ''
 
         # TODO: instead of directly importing EspressoBalsam, we should
