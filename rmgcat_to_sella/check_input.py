@@ -4,11 +4,13 @@ import os
 class InputChecker():
     ''' A class to check for input files '''
 
-    def __init__(self,
-                 yamlfile,
-                 slab,
-                 inputR2S,
-                 run_me):
+    def __init__(
+            self,
+            yamlfile,
+            slab,
+            inputR2S,
+            run_me):
+
         ''' Initialize
 
         Parameters:
@@ -59,22 +61,24 @@ class InputChecker():
         check_list.append(check_inputR2S)
         check_run_me = self.check_run_me()
         check_list.append(check_run_me)
-        
+
         # There is an error if at least one element of check_list is False
-        if any(check_list):
-            return False
-        else:
+        if all(check_list):
             return True
+        else:
+            return False
 
     def check_yaml(self):
+        ''' Check for .yaml file '''
         if not os.path.isfile(self.yamlfile):
-            print('!    .yaml file is not in '
-                  'your working directory: \n{}'.format(self.working_dir))
+            print('!    .yaml file ({}) is not in your working '
+                  'directory: \n{}'.format(self.yamlfile, self.working_dir))
             return False
         else:
             return True
 
     def check_slab(self):
+        ''' Check for slab .xyz file '''
         if not os.path.isfile(self.slab):
             print('!    .xyz file with optimized slab is not in '
                   'your working directory: \n{}'.format(self.working_dir))
@@ -83,6 +87,7 @@ class InputChecker():
             return True
 
     def check_inputR2S(self):
+        ''' Check for inputR2S file '''
         if not os.path.isfile(self.inputR2S):
             print('!    inputR2S.py file is not in your current'
                   ' working directory: \n{}'.format(self.working_dir))
@@ -91,6 +96,7 @@ class InputChecker():
             return True
 
     def check_run_me(self):
+        ''' Check for run_me.py file '''
         if not os.path.isfile(self.run_me):
             print('!    run_me.py file is not in your current'
                   ' working directory: \n{}'.format(self.working_dir))
