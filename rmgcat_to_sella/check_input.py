@@ -10,7 +10,6 @@ class InputChecker():
             slab,
             inputR2S,
             run_me):
-
         ''' Initialize
 
         Parameters:
@@ -80,8 +79,9 @@ class InputChecker():
     def check_slab(self):
         ''' Check for slab .xyz file '''
         if not os.path.isfile(self.slab):
-            print('!    .xyz file with optimized slab is not in '
-                  'your working directory: \n{}'.format(self.working_dir))
+            print('!    .xyz file ({}) with optimized slab is not in your '
+                  'working directory: '
+                  '\n{}'.format(self.slab, self.working_dir))
             return False
         else:
             return True
@@ -89,8 +89,8 @@ class InputChecker():
     def check_inputR2S(self):
         ''' Check for inputR2S file '''
         if not os.path.isfile(self.inputR2S):
-            print('!    inputR2S.py file is not in your current'
-                  ' working directory: \n{}'.format(self.working_dir))
+            print('!    inputR2S.py file ({}) is not in your current working '
+                  'directory: \n{}'.format(self.inputR2S, self.working_dir))
             return False
         else:
             return True
@@ -98,8 +98,8 @@ class InputChecker():
     def check_run_me(self):
         ''' Check for run_me.py file '''
         if not os.path.isfile(self.run_me):
-            print('!    run_me.py file is not in your current'
-                  ' working directory: \n{}'.format(self.working_dir))
+            print('!    run_me.py file ({}) is not in your current working '
+                  'directory: \n{}'.format(self.run_me, self.working_dir))
             return False
         else:
             return True
