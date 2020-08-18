@@ -59,8 +59,8 @@ class InputChecker():
         check_list.append(check_inputR2S)
         check_run_me = self.check_run_me()
         check_list.append(check_run_me)
-
         
+        # There is an error if at least one element of check_list is False
         if any(check_list):
             return False
         else:
