@@ -10,6 +10,7 @@ class InputChecker():
             slab,
             inputR2S,
             run_me):
+            
         ''' Initialize
 
         Parameters:
