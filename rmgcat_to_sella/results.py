@@ -7,8 +7,12 @@ import numpy as np
 
 
 class Results():
-    def __init__(self, minima_path, ts_path, slab_path,
-                 reactants_list, products_list):
+    def __init__(self,
+                 minima_path,
+                 ts_path,
+                 slab_path,
+                 reactants_list,
+                 products_list):
         '''
         Parameters:
         ___________
@@ -61,7 +65,7 @@ class Results():
             the most stable product and the most stable reactant
 
         '''
-        r_ener_list, p_ener_list, slab_ener, nslabs = Results.get_data(self)
+        r_ener_list, p_ener_list, slab_ener, nslabs = self.get_data()
         # Depending how the reactants and products are defined,
         # there are three options here:
         # e.g. AB --> A + B
@@ -110,9 +114,9 @@ class Results():
 
         '''
 
-        r_ener_list, p_ener_list, slab_ener, nslabs = Results.get_data(self)
-        tss_ener = Results.get_ts_ener(self)
-        tss_name = Results.format_TS_name(self)
+        r_ener_list, p_ener_list, slab_ener, nslabs = self.get_data()
+        tss_ener = self.get_ts_ener()
+        tss_name = self.format_TS_name()
 
         activation_barriers = {}
         for ts_ener, ts_name in zip(tss_ener, tss_name):
@@ -175,28 +179,29 @@ class Results():
         p_ener_list = []
         # get the lowest energy for all reactants
         for reactant in self.reactants_list:
-            lowest_reactant_ener = Results.get_lowest_species_ener(
-                self, reactant)
+            lowest_reactant_ener = self.get_lowest_species_ener(reactant)
             r_ener_list.append(lowest_reactant_ener)
         # check if .out files for reactants are copied
         if None in r_ener_list:
             print('----')
-            print('Found None in reactants energy list. Missing .out files for reactants.')
+            print(
+                'Found None in reactants energy list. Missing .out files '
+                'for reactants.')
             print('----')
             raise TypeError
         # get the lowest energy for all products
         for product in self.products_list:
-            lowest_product_ener = Results.get_lowest_species_ener(
-                self, product)
+            lowest_product_ener = self.get_lowest_species_ener(product)
             p_ener_list.append(lowest_product_ener)
         # check if .out files for products are copied
         if None in p_ener_list:
             print('----')
-            print('Found None in products energy list. Missing .out files for products.')
+            print('Found None in products energy list. Missing .out files'
+                  'for products.')
             print('----')
             raise TypeError
 
-        slab_ener = Results.get_slab_ener(self)
+        slab_ener = self.get_slab_ener()
         nslabs = abs(len(p_ener_list) - len(r_ener_list))
 
         return r_ener_list, p_ener_list, slab_ener, nslabs
@@ -236,7 +241,7 @@ class Results():
 
         '''
         ts_ener_dict = {}
-        tss = Results.get_ts_out_files(self)
+        tss = self.get_ts_out_files()
         for ts in tss:
             with open(ts, 'r') as f:
                 data = f.readlines()
@@ -246,7 +251,8 @@ class Results():
         ts_ener_list = list(ts_ener_dict.values())
         return ts_ener_list
 
-    def get_lowest_species_ener(self, species):
+    def get_lowest_species_ener(self,
+                                species):
         ''' Get the lowest energy of the most stable species
 
         Parameters:
@@ -267,8 +273,7 @@ class Results():
         '''
         species_ener_dict = {}
         try:
-            species_out_file_path_list = Results.get_species_out_files(self,
-                                                                       species)
+            species_out_file_path_list = self.get_species_out_files(species)
             for spiecies_out_file_path in species_out_file_path_list:
                 with open(spiecies_out_file_path, 'r') as f:
                     data = f.readlines()
@@ -304,7 +309,8 @@ class Results():
             ts_out_file_list.append(str(ts_out_file))
         return sorted(ts_out_file_list)
 
-    def get_species_out_files(self, species):
+    def get_species_out_files(self,
+                              species):
         ''' Get .out files for each reactants
 
         Parameters:
@@ -319,7 +325,7 @@ class Results():
         Returns:
         ________
         species_out_file_path_list : list(str)
-            a list with paths to all minima Sella's *out files for given 
+            a list with paths to all minima Sella's *out files for given
             species
             e.g. ['Cu_111/minima/OH_01_relax.out',
             'Cu_111/minima/OH_00_relax.out',
@@ -349,7 +355,7 @@ class Results():
             a list with all prefixes for TSs
         '''
         prefix_list = []
-        ts_out_file_list = Results.get_ts_out_files(self)
+        ts_out_file_list = self.get_ts_out_files()
         for ts_out_file in ts_out_file_list:
             prefix = os.path.split(ts_out_file)[1].split('_')[0]
             prefix_list.append(prefix)
@@ -364,7 +370,9 @@ class Results():
         rxn_name = reactants + ' --> ' + products
         return rxn_name
 
-    def plot(self, plot_title=None, plot_filename=None,
+    def plot(self,
+             plot_title=None,
+             plot_filename=None,
              apply_max_barrier=False):
         ''' Plot reaction energy diagram
 
@@ -381,15 +389,15 @@ class Results():
         if not plot_filename:
             plot_filename = 'plot.png'
 
-        reaction_energy = float(Results.get_reaction_energy(self))
-        activation_barriers = Results.get_barrier(self)
+        reaction_energy = float(self.get_reaction_energy()
+        activation_barriers = self.get_barrier()
 
         if apply_max_barrier:
             activation_barriers = {ts_name: float(barrier) for (
                 ts_name, barrier) in activation_barriers.items()
                 if float(barrier) < 300}
 
-        rxn_name = Results.rxn_title(self)
+        rxn_name = self.rxn_title()
         energy_0 = 0
         rxn_ener_position = reaction_energy + 5
         rxn_ener_position_label = reaction_energy - 8
@@ -433,4 +441,3 @@ class Results():
         # plt.show()
         plt.tight_layout()
         plt.savefig(plot_filename)
-        
