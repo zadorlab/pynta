@@ -1,8 +1,10 @@
 import time
 from typing import Any, List, Dict
 import socket
+import atexit
 
-from balsam.launcher.dag import BalsamJob
+from balsam.launcher.dag import BalsamJob, kill
+from balsam.core.models import ApplicationDefinition
 
 from ase import Atoms
 from ase.io import read, write
@@ -38,18 +40,16 @@ class BalsamCalculator(FileIOCalculator):
     exe = None
 
     # Naming scheme for the input file written by the calculator
-    inpname = None
+    inp_name = None
     # ASE IO format of the input file
     inp_format = None
     # Naming scheme for the output file read by the calculator
-    outname = None
+    out_name = None
     # ASE IO format of the output file
     out_format = None
 
     # Extra calculation-specific arguments to provide to Balsam
     args = None
-    # The Balsam App for this type of calculation
-    app = None
 
     # Extra information for the Balsam App
     preprocess = ''
@@ -58,6 +58,9 @@ class BalsamCalculator(FileIOCalculator):
 
     # Ignore when Balsam jobs fail (needed for QE in socket-mode)
     ignore_fail = False
+
+    # Balsam job object
+    job = None
 
     def __init__(
         self,
@@ -79,6 +82,20 @@ class BalsamCalculator(FileIOCalculator):
         self.workflow = workflow
         self.job_args = job_args
         self.job_kwargs = job_kwargs
+        atexit.register(self.kill_job)
+        self.create_application()
+
+    @classmethod
+    def create_application(cls) -> None:
+        app, created = ApplicationDefinition.objects.get_or_create(
+            name=cls.__name__,
+            executable=cls.exe,
+            preprocess=cls.preprocess,
+            postprocess=cls.postprocess,
+            description=cls.description,
+        )
+        if created:
+            app.save()
 
     def format_args(self) -> str:
         args = self.args.replace('PREFIX', self.prefix)
@@ -94,7 +111,7 @@ class BalsamCalculator(FileIOCalculator):
     ) -> None:
         FileIOCalculator.write_input(self, atoms, properties, system_changes)
         write(
-            self.inpname.replace('PREFIX', self.label),
+            self.inp_name.replace('PREFIX', self.label),
             atoms,
             format=self.inp_format,
             **self.parameters
@@ -104,10 +121,16 @@ class BalsamCalculator(FileIOCalculator):
         return BalsamJob(
             name=self.prefix,
             workflow=self.workflow,
-            application='EspressoBalsam',
+            application=self.__class__.__name__,
             args=self.format_args(),
             **self.job_kwargs
         )
+
+    def kill_job(self) -> None:
+        if self.job is None:
+            return
+        if self.job.state in UNFINISHED_STATES:
+            kill(self.job)
 
     def job_running(self, state: str) -> bool:
         if state in UNFINISHED_STATES:
@@ -127,20 +150,20 @@ class BalsamCalculator(FileIOCalculator):
         system_changes: List[str] = all_changes
     ) -> None:
         Calculator.calculate(self, atoms, properties, system_changes)
-        job = self.create_job()
-        self.directory = job.working_directory
+        self.job = self.create_job()
+        self.directory = self.job.working_directory
         self.write_input(self.atoms, properties, system_changes)
-        job.save()
+        self.job.save()
 
-        while self.job_running(job.state):
+        while self.job_running(self.job.state):
             time.sleep(10)
-            job.refresh_from_db()
+            self.job.refresh_from_db()
 
         self.read_results()
 
     def read_results(self) -> None:
         out = read(
-            self.outname.replace('PREFIX', self.label), format=self.out_format
+            self.out_name.replace('PREFIX', self.label), format=self.out_format
         )
         self.out_calc = out.calc
         self.results = out.calc.results
@@ -149,11 +172,11 @@ class BalsamCalculator(FileIOCalculator):
 class EspressoBalsam(BalsamCalculator):
     implemented_properties = ['energy', 'forces', 'stress', 'magmoms']
     exe = 'pw.x'
-    inpname = 'PREFIX.pwi'
+    inp_name = 'PREFIX.pwi'
     inp_format = 'espresso-in'
-    outname = 'PREFIX.out'
+    out_name = 'PREFIX.out'
     out_format = 'espresso-out'
-    args = f'-in {inpname}'
+    args = f'-in {inp_name}'
     ignore_fail = True
 
 
@@ -198,11 +221,11 @@ class BalsamSocketIOCalculator(BalsamCalculator, SocketIOCalculator):
 
 class EspressoBalsamSocketIO(BalsamSocketIOCalculator):
     exe = 'pw.x'
-    inpname = 'PREFIX.pwi'
+    inp_name = 'PREFIX.pwi'
     inp_format = 'espresso-in'
-    outname = 'PREFIX.out'
+    out_name = 'PREFIX.out'
     out_format = 'espresso-out'
-    args = f'--ipi HOSTNAME:PORT -in {inpname}'
+    args = f'--ipi HOSTNAME:PORT -in {inp_name}'
     ignore_fail = True
 
     def format_args(self) -> str:
