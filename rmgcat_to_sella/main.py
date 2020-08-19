@@ -104,12 +104,16 @@ class WorkFlow:
             executable=sys.executable
         )
         self.myPython.save()
-        self.myQE, _ = ApplicationDefinition.objects.get_or_create(
-            name='EspressoBalsam',
-            executable=executable
-        )
-        self.myQE.save()
         self.slab_opt_job = ''
+
+        # TODO: instead of directly importing EspressoBalsam, we should
+        # write a function which returns the appropriate class from
+        # balsamcalc.py based on the user-provided input file
+        from rmgcat_to_sella.balsamcalc import (
+            EspressoBalsam, EspressoBalsamSocketIO
+        )
+        EspressoBalsam.create_application()
+        EspressoBalsamSocketIO.create_application()
 
     def gen_job_files(self):
         ''' Generate submt scripts for 6 stages of the workflow '''
@@ -337,7 +341,7 @@ class WorkFlow:
         for outfile in outfile_lists:
             outfiles.append(str(outfile))
         if not outfiles:
-            return(False, '')
+            return(False, None)
         else:
             return (True, outfiles)
 
@@ -385,12 +389,12 @@ class WorkFlow:
         # '*/Cu_111/minima/H'
 
         # If species were previously calculated, return True and paths
-        if path_to_outfiles:
+        if path_to_outfiles is None:
+            return (False, )
+        else:
             unique_minima_dir = os.path.join(
                 os.path.split(path_to_outfiles[0])[0], species)
             return(True, unique_minima_dir, path_to_outfiles)
-        else:
-            return (False, '')
 
     def run_slab_optimization(self):
         ''' Submit slab_optimization_job '''
