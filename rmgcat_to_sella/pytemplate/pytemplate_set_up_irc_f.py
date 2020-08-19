@@ -11,6 +11,9 @@ from sella import IRC
 
 rxn = '{rxn}'
 prefix = '{prefix}'
+balsam_exe_settings={balsam_exe_settings}
+calc_keywords={calc_keywords}
+
 trajdir = os.path.join(prefix, prefix + '_' + rxn + '_irc_f.traj')
 # jobdir = os.path.join()
 label = os.path.join(prefix, prefix)
@@ -41,7 +44,7 @@ TS_geom.calc = EspressoBalsamSocketIO(
 
 TS_geom.calc.set(**extra_calc_keywords)
 
-opt = IRC(TS_geom, trajectory=trajdir, dx=0.1, eta=1e-4, gamma=0.4)
+opt = IRC(TS_geom, trajectory=trajdir, dx=0.1, eta=1e-4, gamma=1e-3)
 opt.run(fmax=0.1, steps=1000, direction='forward')
 
 TS_geom.calc.close()
