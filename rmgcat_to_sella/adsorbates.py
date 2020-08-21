@@ -339,7 +339,6 @@ class Adsorbates:
             try:
                 if key == 'CHO2':  # connect through oxygen
                     bond = [2]
-                    # print(adsorbate.set_angle(1, 0, 3, 90))
                 elif key == 'CH3O':
                     bond = [1]
                 elif key == 'CH2O':
