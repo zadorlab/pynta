@@ -1,5 +1,8 @@
 # rmgcat_to_sella
 
+<!-- ![workflow_idea](./workflow_idea.png) -->
+<center><img src='./workflow_idea.png' style="width:600px"></center>
+<br>
 A work-flow that reads the .yaml files from the previous RMGCat calculations, puts reactants and products on the surface, calculates TSs and gives reaction energies as well as barriers heights represented as a free energy reaction path diagrams.
 
 ## 1. How to install
