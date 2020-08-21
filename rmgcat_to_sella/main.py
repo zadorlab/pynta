@@ -112,6 +112,8 @@ class WorkFlow:
         from rmgcat_to_sella.balsamcalc import (
             EspressoBalsam, EspressoBalsamSocketIO
         )
+        EspressoBalsam.exe = executable
+        EspressoBalsamSocketIO.exe = executable
         EspressoBalsam.create_application()
         EspressoBalsamSocketIO.create_application()
 
