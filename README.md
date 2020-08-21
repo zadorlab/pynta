@@ -2,7 +2,7 @@
 
 A work-flow that reads the .yaml files from the previous RMGCat calculations, puts reactants and products on the surface, calculates TSs and gives reaction energies as well as barriers heights represented as a free energy reaction path diagrams.
 
-## How to install
+## 1. How to install
 
 Make sure all dependencies are correctly installed. List of all dependencies will be here:
 
@@ -27,8 +27,8 @@ python setup.py install --user
 ```
 You should be ready to go now!
 
-## How to run
-### Using Balsam
+## 2. How to run
+### 2.1 Using Balsam
 
 You will need 4 files to run the workflow:
 - `run_me.py` a python script that executes the workflow
@@ -56,10 +56,10 @@ An example `run_me.sh` file:
 #SBATCH --partition=queue  # queue name e.g. queue = day-long-cpu
 #SBATCH --nodes=x          # number of nodes e.g. x = 2
 #SBATCH --ntasks=y         # number of CPUs e.g. 2 x 48 = y = 96
-#SBATCH -e %x.err
-#SBATCH -o %x.out
+#SBATCH -e %x.err          # error file name
+#SBATCH -o %x.out          # out file name
 
-# load quantum espresso, e.g.
+# load your quantum chemistry calculation package, e.g.
 module load espresso/6.6_nostress
 # activate balsam environment, e.g.
 source balsamactivate ~/myWorkflow_bebop
@@ -69,22 +69,22 @@ python3 $PWD/run_me.py
 export SLURM_HOSTS=$(scontrol show hostname)
 # launch serial jobs (required)
 balsam launcher --job-mode=serial --wf-filter reactions.yaml --limit-nodes=1 --num-transition-threads=1 &
-# give some time 
+# give some time to prevent time out before the sockets are ready for the quantum chemistry application, e.g. pw.x for Quantum Espresso
 sleep 100
 # launch mpi jobs (required)
 balsam launcher --job-mode=mpi --wf-filter QE_Sock --offset-nodes=1 --num-transition-threads=1 &
-# wait unitl finished
+# wait until finished
 wait
 # deactivate balsam environment
 source balsamdeactivate
 ```
 An example input files is located at `/example_run_files/inputR2S.py`. You will also need `reactions.yaml` which can be found in the same location. 
 
-If do not hava a `.yaml` file with the reaction list but still want to use the work-flow, let me know. Also, stay tuned, as a version of rmgcat_to_sella that can work without `.yaml` file is currently under development
+If do not have a `.yaml` file with the reaction list but still want to use the work-flow, let me know. Also, stay tuned, as a version of rmgcat_to_sella that can work without `.yaml` file is currently under development
 
 If you are using rmgcat_to_sella or you wish to use it, let me know!
 
-### Using SLURM only
+### 2.2 Using SLURM only
 **Warning**
 `dev` branch uses SLURM scheduler to deal with the job dependencies. Be aware that it might be a bit buggy and do not fully support all the features implemented in the `master` branch
 
@@ -106,7 +106,7 @@ workflow.gen_job_files()
 workflow.execute()
 ```
 
-## Documentation
+## 3. Documentation
 
 Documentation is currently under development.
 
