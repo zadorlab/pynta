@@ -1,13 +1,15 @@
 # rmgcat_to_sella
 
 <!-- ![workflow_idea](./workflow_idea.png) -->
-<center><img src='./workflow_idea.png' style="width:600px"></center>
+The work-flow designed to automate search for transition states and reaction paths on various surfaces.
+
+`rmgcat_to_sella` reads the .yaml files from the previous RMGCat calculations, puts reactants and products on the surface, calculates TSs and returns reaction energies as well as barriers heights represented as a free energy reaction path diagrams. The general idea of the code can be summarized in the following figure.
+<center><img src='./workflow_idea.png' style="width:400px"></center>
 <br>
-A work-flow that reads the .yaml files from the previous RMGCat calculations, puts reactants and products on the surface, calculates TSs and gives reaction energies as well as barriers heights represented as a free energy reaction path diagrams.
 
 ## 1. How to install
 
-Make sure all dependencies are correctly installed. List of all dependencies will be here:
+Make sure all dependencies are correctly installed. List of all dependencies will be here \[later\]:
 
 Clone the project in your preferable location.
 
@@ -81,6 +83,44 @@ wait
 # deactivate balsam environment
 source balsamdeactivate
 ```
+
+An example `reactions.yaml` file:
+```yaml
+  - index: 0
+    reaction: OHX + X <=> OX + HX
+    reaction_family: Surface_Abstraction
+    reactant: |
+        multiplicity -187
+        1 *1 O u0 p0 c0 {2,S} {4,S}
+        2 *2 H u0 p0 c0 {1,S}
+        3 *3 X u0 p0 c0 
+        4    X u0 p0 c0 {1,S}
+    product: |
+        multiplicity -187
+        1 *1 O u0 p0 c0 {4,S}
+        2 *2 H u0 p0 c0 {3,S}
+        3 *3 X u0 p0 c0 {2,S}
+        4    X u0 p0 c0 {1,S}
+    - index: 1
+    reaction: H2OX + X <=> OHX + HX
+    reaction_family: Surface_Abstraction
+    reactant: |
+        multiplicity -187
+        1 *1 O u0 p0 c0 {2,S} {3,S} {4,S}
+        2 *2 H u0 p0 c0 {1,S}
+        3    H u0 p0 c0 {1,S}
+        4    X u0 p0 c0 {1,S}
+        5 *3 X u0 p0 c0 
+    product: |
+        multiplicity -187
+        1 *1 O u0 p0 c0 {2,S} {4,S}
+        2 *2 H u0 p0 c0 {1,S}
+        3    H u0 p0 c0 {5,S}
+        4    X u0 p0 c0 {1,S}
+        5 *3 X u0 p0 c0 {3,S}
+```
+
+
 An example input files is located at `/example_run_files/inputR2S.py`. You will also need `reactions.yaml` which can be found in the same location. 
 
 If do not have a `.yaml` file with the reaction list but still want to use the work-flow, let me know. Also, stay tuned, as a version of rmgcat_to_sella that can work without `.yaml` file is currently under development
@@ -88,24 +128,36 @@ If do not have a `.yaml` file with the reaction list but still want to use the w
 If you are using rmgcat_to_sella or you wish to use it, let me know!
 
 ### 2.2 Using SLURM only
-**Warning**
-`dev` branch uses SLURM scheduler to deal with the job dependencies. Be aware that it might be a bit buggy and do not fully support all the features implemented in the `master` branch
+**Warning `dev` branch uses SLURM scheduler to deal with the job dependencies. Be aware that it might be a bit buggy and do not fully support all the features implemented in the `master` branch.**
 
 An example script (using `dev` branch - SLURM):
 ```python
 #!/usr/bin/env python3
-# your SBATCH options goes here
-#SBATCH ...
+#SBATCH -J job_name        # name of the job e.g job_name = rmgcat_to_sella_workflow
+#SBATCH --partition=queue  # queue name e.g. queue = day-long-cpu
+#SBATCH --nodes=x          # number of nodes e.g. x = 2
+#SBATCH --ntasks=y         # number of CPUs e.g. 2 x 48 = y = 96
+#SBATCH -e %x.err          # error file name
+#SBATCH -o %x.out          # out file name
+
 import os
 import sys
-submitDir = os.environ['SLURM_SUBMIT_DIR']
-os.chdir(submitDir)
-sys.path.append(os.getcwd())
-import inputR2S
-from rmgcat_to_sella.main import WorkFlow
 
+# get environmental variable
+submitDir = os.environ['SLURM_SUBMIT_DIR']
+# change directory to $SLURM_SUBMIT_DIR
+os.chdir(submitDir)
+# add current working directory to the path
+sys.path.append(os.getcwd())
+# import input file with - can be done only after sys.path.append(os.getcwd())
+import inputR2S
+# import executable class of rmgcat_to_sella
+from rmgcat_to_sella.main import WorkFlow
+# instantiate the WorkFlow class
 workflow = WorkFlow()
+# generate input files
 workflow.gen_job_files()
+# execute the work-flow
 workflow.execute()
 ```
 
