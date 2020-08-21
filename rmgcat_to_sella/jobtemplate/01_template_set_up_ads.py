@@ -43,7 +43,7 @@ for py_script in glob('{facetpath}/minima/*.py'):
             args=cwd + '/' + py_script,
             input_files='',
             user_workdir=job_dir,
-            node_packing_count=64,
+            node_packing_count=48,
             ranks_per_node=1,
             )
     job_to_add.save()
