@@ -16,7 +16,7 @@ git clone https://gitlab-ex.sandia.gov/mgierad/rmgcat_to_sella.git
 ```
 Usually, `master` branch should be fine. If somehow it is not working, make sure to switch to the latest stable version by checking the tags and looking for `stable`.
 
-1.2. Go to `rmgcat_to_sella`.
+1.2. Go to `rmgcat_to_sella`
 ```
 cd rmgcat_to_sella
 ```
@@ -54,7 +54,7 @@ deactivate
 ## 2. How to run
 ### 2.1 Using Balsam
 
-You will need 4 files to run the workflow:
+You will need **4** files to run the workflow:
 - `run_me.py` a python script that executes the workflow
 - `run_me.sh` a bash script that submits job to the SLURM scheduler
 - `inputR2S.py` a python script holding all user-modifiable parameters 
@@ -140,11 +140,11 @@ An example `reactions.yaml` file:
 ```
 
 
-An example input files is located at `/example_run_files/inputR2S.py`. You will also need `reactions.yaml` which can be found in the same location. 
+An example input files are located at `/example_run_files/`.
 
-If do not have a `.yaml` file with the reaction list but still want to use the work-flow, let me know. Also, stay tuned, as a version of rmgcat_to_sella that can work without `.yaml` file is currently under development
+If do not have a `.yaml` file with the reaction list but still want to use the work-flow, let me know. Also, stay tuned, as a version of `rmgcat_to_sella` that can work without `.yaml` file is currently under development
 
-If you are using rmgcat_to_sella or you wish to use it, let me know!
+If you are using `rmgcat_to_sella` or you wish to use it, let me know!
 
 ### 2.2 Using SLURM only
 **Warning `dev` branch uses SLURM scheduler to deal with the job dependencies. Be aware that it might be a bit buggy and do not fully support all the features implemented in the `master` branch.**
