@@ -9,28 +9,47 @@ The work-flow designed to automate search for transition states and reaction pat
 
 ## 1. How to install
 
-Make sure all dependencies are correctly installed. List of all dependencies will be here \[later\]:
-
-Clone the project in your preferable location.
+1.1 Clone the project in your preferable location.
 
 ```
 git clone https://gitlab-ex.sandia.gov/mgierad/rmgcat_to_sella.git
 ```
 Usually, `master` branch should be fine. If somehow it is not working, make sure to switch to the latest stable version by checking the tags and looking for `stable`.
 
-Go to `rmgcat_to_sella`.
+1.2. Go to `rmgcat_to_sella`.
 ```
 cd rmgcat_to_sella
 ```
-Run the following:
+
+1.3. Create virtual environment:
+```
+virtualenv venv
+```
+
+1.4. Activate your virtual environment:
+```
+source venv/bin/activate
+```
+
+1.5. Install all dependencies and make sure they are fine. List of all dependencies will be here \[later\]:
+
+1.6a Install `rmgcat_to_sella`:
 ```
 python setup.py install
 ```
-If you do not have admin privileges (e.g. you use it on a supercomputer), do the following instead:
+
+1.6b (optional) If you do not have admin privileges (e.g. you use it on a supercomputer), do the following instead:
 ```
 python setup.py install --user
 ```
-You should be ready to go now!
+
+**You should be ready to go now!**
+
+Once finished using the workflow:
+```
+cd rmgcat_to_sella
+deactivate
+```
 
 ## 2. How to run
 ### 2.1 Using Balsam
