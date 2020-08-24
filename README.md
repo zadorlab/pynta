@@ -21,7 +21,7 @@ Usually, `master` branch should be fine. If somehow it is not working, make sure
 cd rmgcat_to_sella
 ```
 
-1.3. Create virtual environment:
+1.3. Create a virtual environment:
 ```
 virtualenv venv
 ```
@@ -38,7 +38,7 @@ source venv/bin/activate
 python setup.py install
 ```
 
-1.6b (optional) If you do not have admin privileges (e.g. you use it on a supercomputer), do the following instead:
+1.6b (optional) If you do not have admin privileges (e.g. you use it on a supercomputer), do the following instead of 1.6a:
 ```
 python setup.py install --user
 ```
@@ -140,11 +140,10 @@ An example `reactions.yaml` file:
 ```
 
 
-An example input files are located at `/example_run_files/`.
+An example input files are also located at `./rmgcat_to_sella/example_run_files/`.
 
-If do not have a `.yaml` file with the reaction list but still want to use the work-flow, let me know. Also, stay tuned, as a version of `rmgcat_to_sella` that can work without `.yaml` file is currently under development
+If you do not have a `.yaml` file with the reaction list but still want to use the work-flow, let me know. Also, stay tuned, as a version of `rmgcat_to_sella` that can work without `.yaml` file is currently under development
 
-If you are using `rmgcat_to_sella` or you wish to use it, let me know!
 
 ### 2.2 Using SLURM only
 **Warning `dev` branch uses SLURM scheduler to deal with the job dependencies. Be aware that it might be a bit buggy and do not fully support all the features implemented in the `master` branch.**
@@ -185,6 +184,8 @@ workflow.execute()
 Documentation is currently under development.
 
 ## Acknowledgments
+
+If you are using `rmgcat_to_sella` or you wish to use it, let me know!
 
 This work was supported by the U.S. Department of Energy, Office of Science, Basic Energy Sciences, Chemical Sciences, Geosciences and Biosciences Division, as part of the Computational Chemistry Sciences Program.
 
