@@ -1,5 +1,4 @@
 import os
-
 from ase.io import read, write
 from rmgcat_to_sella.ts import TS
 

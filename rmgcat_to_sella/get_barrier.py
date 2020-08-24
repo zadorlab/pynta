@@ -1,6 +1,6 @@
+import re
 import os
 from ase.io import read
-import re
 from pathlib import Path
 
 
