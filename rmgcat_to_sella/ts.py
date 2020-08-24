@@ -1,7 +1,6 @@
-from catkit import Gratoms
-from catkit.gen.adsorption import Builder
-from catkit.build import molecule
-from catkit.gen.molecules import get_3D_positions
+from rmgcat_to_sella.gratoms import Gratoms
+from rmgcat_to_sella.adsorption import Builder
+from rmgcat_to_sella.molecules import molecule, get_3D_positions
 
 from rmgcat_to_sella.adsorbates import Adsorbates
 from rmgcat_to_sella.graph_utils import node_test
@@ -152,7 +151,9 @@ class TS():
         images = []
 
         put_adsorbates = Adsorbates(
-            self.facetpath, self.slab, self.repeats, self.yamlfile)
+            self.facetpath, self.slab, self.repeats, self.yamlfile,
+            self.creation_dir
+        )
 
         for rxn in reactions:
             # transforming reactions data to gratom objects
@@ -295,7 +296,9 @@ class TS():
                 atom1, atom2, bondlen * scfactor, fix=0)
         # double check this
         put_adsorbates = Adsorbates(
-            self.facetpath, self.slab, self.repeats, self.yamlfile)
+            self.facetpath, self.slab, self.repeats, self.yamlfile,
+            self.creation_dir
+        )
         slabedges, tags = put_adsorbates.get_edges(self)
         # double check this
         grslab = Gratoms(numbers=slab.numbers,

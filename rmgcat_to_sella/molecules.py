@@ -1,3 +1,33 @@
+def molecule(species, bond_index=None, vacuum=0):
+    """Return list of enumerated gas-phase molecule structures based
+    on species and topology.
+
+    Parameters
+    ----------
+    species : str
+        The chemical symbols to construct a molecule from.
+    bond_index : int
+        Construct the molecule as though it were adsorbed to a surface
+        parallel to the z-axis. Will bond by the atom index given.
+    vacuum : float
+        Angstroms of vacuum to pad the molecules with.
+
+    Returns
+    -------
+    images : list of Gratoms objects
+        3D structures of the requested chemical species and topologies.
+    """
+    molecule_graphs = catkit.gen.molecules.get_topologies(species)
+
+    images = []
+    for atoms in molecule_graphs:
+        atoms = catkit.gen.molecules.get_3D_positions(atoms, bond_index)
+        atoms.center(vacuum)
+        images += [atoms]
+
+    return images
+
+
 def get_3D_positions(atoms, bond_index=None):
     """Return an estimation of the 3D structure of a Gratoms object
     based on its graph.
@@ -45,4 +75,3 @@ def get_3D_positions(atoms, bond_index=None):
         atoms.positions[nodes] = positions
 
     return atoms
-    
