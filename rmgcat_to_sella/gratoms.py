@@ -2,6 +2,10 @@ import networkx as nx
 import numpy as np
 import ase
 import copy
+<<<<<<< HEAD
+=======
+import warnings
+>>>>>>> added gratoms - needs debbuging
 try:
     from builtins import super
 except(ImportError):
