@@ -64,8 +64,6 @@ An example `run_me.py` file:
 
 ```python
 #!/usr/bin/env python3
-import time
-import inputR2S
 from rmgcat_to_sella.main import WorkFlow
 
 workflow = WorkFlow()
