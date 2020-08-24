@@ -169,7 +169,7 @@ class TS():
             images):
 == == == =
     def prepare_react_list(self):
-        '''Convert yaml file to more useful format
+    '''Convert yaml file to more useful format
 
         Returns
         _______
@@ -181,7 +181,7 @@ class TS():
             a list of CatKit's Gratom object (both reactants and products)
 
         '''
-        with open(self.yamlfile, 'r') as f:
+       with open(self.yamlfile, 'r') as f:
             yamltxt = f.read()
         reactions = yaml.safe_load(yamltxt)
         speciesInd = []

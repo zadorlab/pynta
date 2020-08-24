@@ -19,6 +19,6 @@ setup(name='rmgcat_to_sella',
                 'rmgcat_to_sella.pytemplate',
                 'rmgcat_to_sella.jobtemplate', ],
       python_requires='>=3.6',
-      install_requires=['numpy', 'ase', 'catkit',
-                        'spglib', 'matplotlib<3.2', 'networkx<2.4'],
+      install_requires=['numpy', 'ase', 'spglib',
+                        'matplotlib<3.2', 'networkx<2.4'],
       )
