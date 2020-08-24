@@ -51,7 +51,7 @@ atoms.calc = EspressoBalsamSocketIO(
 
 atoms.calc.set(**extra_calc_keywords)
 
-opt = BFGSLineSearch(atoms=atoms, trajectory=jobdir + '.traj')
+opt = BFGSLineSearch(atoms=atoms, maxstep=0.05, trajectory=jobdir + '.traj')
 # opt = Sella(atoms, order=0, delta0=1e-2, trajectory=jobdir + '.traj')
 opt.run(fmax=0.01)
 atoms.calc.close()
