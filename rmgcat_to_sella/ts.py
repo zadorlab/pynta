@@ -21,7 +21,12 @@ from spglib import get_symmetry
 
 class TS():
     def __init__(
-        self, facetpath, slab, ts_dir, yamlfile, repeats, creation_dir
+            self,
+            facetpath,
+            slab, ts_dir,
+            yamlfile,
+            repeats,
+            creation_dir
     ):
         ''' Initializing
 
