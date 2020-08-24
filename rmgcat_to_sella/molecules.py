@@ -5,6 +5,7 @@ from ase.data import chemical_symbols
 from networkx import dfs_successors, is_connected, from_numpy_matrix
 from itertools import combinations
 import numpy as np
+
 import re
 
 
