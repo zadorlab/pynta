@@ -2,7 +2,6 @@ import networkx as nx
 import numpy as np
 import ase
 import copy
-import warnings
 try:
     from builtins import super
 except(ImportError):
