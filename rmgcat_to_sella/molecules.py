@@ -380,4 +380,9 @@ class Molecule():
             positions = self.branch_molecule(atoms, branch, basis, bond_index)
             atoms.positions[nodes] = positions
 
-        return atoms
+
+<< << << < HEAD
+return atoms
+== == == =
+return atoms
+>>>>>> > fixed ts.py
