@@ -10,6 +10,7 @@ from ase.io import read, write
 from ase.utils.structure_comparator import SymmetryEquivalenceCheck
 
 import numpy as np
+import yaml
 import os
 import shutil
 from statistics import mean
@@ -157,55 +158,55 @@ class TS():
         return max_rot_angle
 
     def prepare_react_list(self):
-    '''Convert yaml file to more useful format
+        '''Convert yaml file to more useful format
 
-        Returns
-        _______
-        r_name_list : list(str)
-            a list with all reactants for the given reaction
-        p_name_list : list(str)
-            a list with all products for the given reaction
-        images : list(Gratoms)
-            a list of CatKit's Gratom object (both reactants and products)
+            Returns
+            _______
+            r_name_list : list(str)
+                a list with all reactants for the given reaction
+            p_name_list : list(str)
+                a list with all products for the given reaction
+            images : list(Gratoms)
+                a list of CatKit's Gratom object (both reactants and products)
 
-        '''
-       with open(self.yamlfile, 'r') as f:
+            '''
+        with open(self.yamlfile, 'r') as f:
             yamltxt = f.read()
-        reactions = yaml.safe_load(yamltxt)
-        speciesInd = []
-        bonds = []
-        unique_species = []
-        unique_bonds = []
-        images = []
+            reactions = yaml.safe_load(yamltxt)
+            speciesInd = []
+            bonds = []
+            unique_species = []
+            unique_bonds = []
+            images = []
 
-        put_adsorbates = Adsorbates(
-            self.facetpath, self.slab, self.repeats, self.yamlfile,
-            self.creation_dir
-        )
+            put_adsorbates = Adsorbates(
+                self.facetpath, self.slab, self.repeats, self.yamlfile,
+                self.creation_dir
+            )
 
-        for rxn in reactions:
-            # transforming reactions data to gratom objects
-            reactants, rbonds = put_adsorbates.rmgcat_to_gratoms(
-                rxn['reactant'].split('\n'))
-            products, pbonds = put_adsorbates.rmgcat_to_gratoms(
-                rxn['product'].split('\n'))
-            speciesInd += reactants + products
-            bonds += rbonds + pbonds
+            for rxn in reactions:
+                # transforming reactions data to gratom objects
+                reactants, rbonds = put_adsorbates.rmgcat_to_gratoms(
+                    rxn['reactant'].split('\n'))
+                products, pbonds = put_adsorbates.rmgcat_to_gratoms(
+                    rxn['product'].split('\n'))
+                speciesInd += reactants + products
+                bonds += rbonds + pbonds
 
-        # check if any products are the same as any reactants
-        for species1, bond in zip(speciesInd, bonds):
-            for species2 in unique_species:
-                if nx.is_isomorphic(species1.graph, species2.graph, node_test):
-                    break
-            else:
-                images.append(get_3D_positions(species1))
-                unique_species.append(species1)
-                unique_bonds.append(bond)
+            # check if any products are the same as any reactants
+            for species1, bond in zip(speciesInd, bonds):
+                for species2 in unique_species:
+                    if nx.is_isomorphic(species1.graph, species2.graph, node_test):
+                        break
+                else:
+                    images.append(get_3D_positions(species1))
+                    unique_species.append(species1)
+                    unique_bonds.append(bond)
 
-        r_name_list = [str(species.symbols) for species in reactants]
-        p_name_list = [str(species.symbols) for species in products]
+            r_name_list = [str(species.symbols) for species in reactants]
+            p_name_list = [str(species.symbols) for species in products]
 
-        return r_name_list, p_name_list, images
+            return r_name_list, p_name_list, images
 
     def get_rxn_name(self):
         ''' Get the reaction name
