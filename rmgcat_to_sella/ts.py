@@ -103,8 +103,8 @@ class TS():
             self.TS_placer(scfactor, rotAngle, rxn_name, r_name_list,
                            p_name_list, images)
             self.filtered_out_equiv_ts_estimate(rxn_name)
-        # TS.set_up_penalty_xtb(self, pytemplate_xtb,
-        #                       species, scaled1, scaled2, scfactor_surface)
+            self.set_up_penalty_xtb(rxn_name, pytemplate_xtb, species, scaled1,
+                                    scaled2, scfactor_surface)
 
     def get_max_rot_angle(self):
         ''' Get the maximum angle of rotation for a given slab that will
@@ -259,7 +259,7 @@ class TS():
         # This part here is a bit hard coded, especially when dealing with
         # reactants with >= 3 atoms. The code works for couple of species
         # included in if else statement below. Probably will fail for other
-        # species. This is becouse ase.build.molecule function numbers atoms
+        # species. This is becouse ase.build.molecule method numbers atoms
         # very diferently depending on the molecule specify.
         # To be resolved somehow.
 
@@ -416,8 +416,14 @@ class TS():
         # probably do not need it - check
         raise NotImplementedError
 
-    def set_up_penalty_xtb(self, pytemplate, species_list,
-                           scaled1, scaled2, scfactor_surface):
+    def set_up_penalty_xtb(
+            self,
+            rxn_name,
+            pytemplate,
+            species_list,
+            scaled1,
+            scaled2,
+            scfactor_surface):
         ''' Prepare calculations of the penalty function
 
         Parameters
@@ -443,9 +449,8 @@ class TS():
             e.g. 1.0
 
         '''
-        ts_estimate_path = os.path.join(self.facetpath, self.ts_dir)
+        ts_estimate_path = os.path.join(self.facetpath, self.ts_dir, rxn_name)
         path_to_minima = os.path.join(self.facetpath, 'minima')
-        rxn_name = TS.get_rxn_name(self)
 
         with open(pytemplate, 'r') as f:
             pytemplate = f.read()
@@ -454,9 +459,10 @@ class TS():
         # sites considered) for all species. It can be done outside the nested
         # loop, as it is enough to calculate it only once.
         average_distance_list = []
+
         for species in species_list:
-            av_dist = TS.get_av_dist(self, path_to_minima, species,
-                                     scfactor_surface, scaled1)
+            av_dist = self.get_av_dist(path_to_minima, species,
+                                       scfactor_surface, scaled1)
             average_distance_list.append(av_dist)
 
         # get all ts_estimatex_xyz files in alphabetic order
@@ -469,10 +475,9 @@ class TS():
                 xyz_file_path = os.path.join(ts_estimate_path, xyz_file)
                 # loop through all species
                 for species in species_list:
-                    sp_index = TS.get_index_adatom(
-                        self, species, xyz_file_path)
-                    Cu_index = TS.get_index_surface_atom(
-                        self, species, xyz_file_path)
+                    sp_index = self.get_index_adatom(species, xyz_file_path)
+                    Cu_index = self.get_index_surface_atom(species,
+                                                           xyz_file_path)
                     bonds.append((sp_index, Cu_index))
 
                 # set up variables
@@ -501,14 +506,6 @@ class TS():
                 # remove .xyz files
                 shutil.move(xyz_file_path, calcDir)
         f.close()
-
-        # remove initial_png directory, if it exists
-        try:
-            rmpath = os.path.join(ts_estimate_path, 'initial_png')
-            shutil.rmtree(rmpath)
-        except FileNotFoundError:
-            print('No files to delete')
-            pass
 
     def get_av_dist(self, path_to_minima, species, scfactor_surface,
                     scaled=False):
