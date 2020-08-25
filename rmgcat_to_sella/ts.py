@@ -53,7 +53,7 @@ class TS():
         self.creation_dir = creation_dir
 
     def prepare_ts_estimate(self, scfactor, scfactor_surface,
-                            rotAngle, pytemplate_xtb, species,
+                            rotAngle, pytemplate_xtb, species_dict,
                             scaled1, scaled2):
         ''' Prepare TS estimates for subsequent xTB calculations
 
@@ -97,14 +97,14 @@ class TS():
             yamltxt = f.read()
         reactions = yaml.safe_load(yamltxt)
 
-        for rxn in reactions:
+        for rxn, species_list in zip(reactions, species_dict.values()):
             r_name_list, p_name_list, images = self.prepare_react_list(rxn)
             rxn_name = self.get_rxn_name(rxn)
             self.TS_placer(scfactor, rotAngle, rxn_name, r_name_list,
                            p_name_list, images)
-            self.filtered_out_equiv_ts_estimate(rxn_name)
-            self.set_up_penalty_xtb(rxn_name, pytemplate_xtb, species, scaled1,
-                                    scaled2, scfactor_surface)
+            # self.filtered_out_equiv_ts_estimate(rxn_name)
+            self.set_up_penalty_xtb(rxn_name, pytemplate_xtb, species_list,
+                                    scaled1, scaled2, scfactor_surface)
 
     def get_max_rot_angle(self):
         ''' Get the maximum angle of rotation for a given slab that will
