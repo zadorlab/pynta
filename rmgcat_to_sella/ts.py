@@ -84,7 +84,7 @@ class TS():
             specify whether use the optional scfactor_surface
             for the species 2 (sp2)
         '''
-
+        # create TS_estimate directory
         ts_estimate_path = os.path.join(self.facetpath, self.ts_dir)
         if os.path.exists(ts_estimate_path):
             shutil.rmtree(ts_estimate_path)
@@ -92,15 +92,21 @@ class TS():
         else:
             os.makedirs(ts_estimate_path)
 
-        r_name_list, p_name_list, images = TS.prepare_react_list(self)
-        rxn_name = TS.get_rxn_name(self)
+        with open(self.yamlfile, 'r') as f:
+            yamltxt = f.read()
+        reactions = yaml.safe_load(yamltxt)
 
-        TS.TS_placer(self, scfactor, rotAngle,
-                     rxn_name, r_name_list, p_name_list, images)
+        for rxn in reactions:
+            r_name_list, p_name_list, images = self.prepare_react_list(rxn)
+            rxn_name = self.get_rxn_name(rxn)
+            print(rxn_name)
 
-        TS.filtered_out_equiv_ts_estimate(self, rxn_name)
-        TS.set_up_penalty_xtb(self, pytemplate_xtb,
-                              species, scaled1, scaled2, scfactor_surface)
+        # TS.TS_placer(self, scfactor, rotAngle,
+        #              rxn_name, r_name_list, p_name_list, images)
+
+        # TS.filtered_out_equiv_ts_estimate(self, rxn_name)
+        # TS.set_up_penalty_xtb(self, pytemplate_xtb,
+        #                       species, scaled1, scaled2, scfactor_surface)
 
     def get_max_rot_angle(self):
         ''' Get the maximum angle of rotation for a given slab that will
@@ -129,7 +135,7 @@ class TS():
         # max_rot_angle = 360/(nrot/4) # lets try 120 angle
         return max_rot_angle
 
-    def prepare_react_list(self):
+    def prepare_react_list(self, rxn):
         '''Convert yaml file to more useful format
 
         Returns
@@ -142,9 +148,10 @@ class TS():
             a list of CatKit's Gratom object (both reactants and products)
 
         '''
-        with open(self.yamlfile, 'r') as f:
-            yamltxt = f.read()
-        reactions = yaml.safe_load(yamltxt)
+        # with open(self.yamlfile, 'r') as f:
+        #     yamltxt = f.read()
+        # reactions = yaml.safe_load(yamltxt)
+        # print(reactions)
         speciesInd = []
         bonds = []
         unique_species = []
@@ -158,14 +165,14 @@ class TS():
             self.yamlfile,
             self.creation_dir)
 
-        for rxn in reactions:
-            # transforming reactions data to gratom objects
-            reactants, rbonds = put_adsorbates.rmgcat_to_gratoms(
-                rxn['reactant'].split('\n'))
-            products, pbonds = put_adsorbates.rmgcat_to_gratoms(
-                rxn['product'].split('\n'))
-            speciesInd += reactants + products
-            bonds += rbonds + pbonds
+        # for rxn in reactions:
+        # transforming reactions data to gratom objects
+        reactants, rbonds = put_adsorbates.rmgcat_to_gratoms(
+            rxn['reactant'].split('\n'))
+        products, pbonds = put_adsorbates.rmgcat_to_gratoms(
+            rxn['product'].split('\n'))
+        speciesInd += reactants + products
+        bonds += rbonds + pbonds
 
         # check if any products are the same as any reactants
         for species1, bond in zip(speciesInd, bonds):
@@ -182,7 +189,7 @@ class TS():
 
         return r_name_list, p_name_list, images
 
-    def get_rxn_name(self):
+    def get_rxn_name(self, rxn):
         ''' Get the reaction name
 
         Returns
@@ -190,7 +197,7 @@ class TS():
         The name of the reaction in the following format:
         OH_H+O
         '''
-        r_name_list, p_name_list, _ = TS.prepare_react_list(self)
+        r_name_list, p_name_list, _ = TS.prepare_react_list(self, rxn)
 
         r_name = '+'.join([species for species in r_name_list])
         p_name = '+'.join([species for species in p_name_list])
