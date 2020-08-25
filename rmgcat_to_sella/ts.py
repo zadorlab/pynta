@@ -84,14 +84,15 @@ class TS():
             specify whether use the optional scfactor_surface
             for the species 2 (sp2)
         '''
-        # create TS_estimate directory
-        ts_estimate_path = os.path.join(self.facetpath, self.ts_dir)
-        if os.path.exists(ts_estimate_path):
-            shutil.rmtree(ts_estimate_path)
-            os.makedirs(ts_estimate_path)
-        else:
-            os.makedirs(ts_estimate_path)
+        # # create TS_estimate directory
+        # ts_estimate_path = os.path.join(self.facetpath, self.ts_dir)
+        # if os.path.exists(ts_estimate_path):
+        #     shutil.rmtree(ts_estimate_path)
+        #     os.makedirs(ts_estimate_path)
+        # else:
+        #     os.makedirs(ts_estimate_path)
 
+        # open .yaml file
         with open(self.yamlfile, 'r') as f:
             yamltxt = f.read()
         reactions = yaml.safe_load(yamltxt)
@@ -99,12 +100,9 @@ class TS():
         for rxn in reactions:
             r_name_list, p_name_list, images = self.prepare_react_list(rxn)
             rxn_name = self.get_rxn_name(rxn)
-            print(rxn_name)
-
-        # TS.TS_placer(self, scfactor, rotAngle,
-        #              rxn_name, r_name_list, p_name_list, images)
-
-        # TS.filtered_out_equiv_ts_estimate(self, rxn_name)
+            self.TS_placer(scfactor, rotAngle, rxn_name, r_name_list,
+                           p_name_list, images)
+            self.filtered_out_equiv_ts_estimate(rxn_name)
         # TS.set_up_penalty_xtb(self, pytemplate_xtb,
         #                       species, scaled1, scaled2, scfactor_surface)
 
@@ -138,7 +136,15 @@ class TS():
     def prepare_react_list(self, rxn):
         '''Convert yaml file to more useful format
 
-        Returns
+        Paremeters:
+        ___________
+
+        rxn : dict(yaml[str:str])
+            a dictionary with info about the paricular reaction. This can be
+            view as a splitted many reaction .yaml file to a single reaction
+            .yaml file
+
+        Returns:
         _______
         r_name_list : list(str)
             a list with all reactants for the given reaction
@@ -148,10 +154,7 @@ class TS():
             a list of CatKit's Gratom object (both reactants and products)
 
         '''
-        # with open(self.yamlfile, 'r') as f:
-        #     yamltxt = f.read()
-        # reactions = yaml.safe_load(yamltxt)
-        # print(reactions)
+
         speciesInd = []
         bonds = []
         unique_species = []
@@ -165,7 +168,6 @@ class TS():
             self.yamlfile,
             self.creation_dir)
 
-        # for rxn in reactions:
         # transforming reactions data to gratom objects
         reactants, rbonds = put_adsorbates.rmgcat_to_gratoms(
             rxn['reactant'].split('\n'))
@@ -192,10 +194,19 @@ class TS():
     def get_rxn_name(self, rxn):
         ''' Get the reaction name
 
-        Returns
+        Paremeters:
+        ___________
+
+        rxn : dict(yaml[str:str])
+            a dictionary with info about the paricular reaction. This can be
+            view as a splitted many reaction .yaml file to a single reaction
+            .yaml file
+
+        Returns:
         _______
-        The name of the reaction in the following format:
-        OH_H+O
+        rxn_name : str
+            The name of the reaction in the following format:
+            OH_H+O
         '''
         r_name_list, p_name_list, _ = TS.prepare_react_list(self, rxn)
 
@@ -205,8 +216,14 @@ class TS():
         rxn_name = r_name + '_' + p_name
         return rxn_name
 
-    def TS_placer(self, scfactor, rotAngle, rxn_name,
-                  r_name_list, p_name_list, images):
+    def TS_placer(
+            self,
+            scfactor,
+            rotAngle,
+            rxn_name,
+            r_name_list,
+            p_name_list,
+            images):
         ''' Place adsorbates on the surface to estimate TS
 
         Parameters
@@ -229,7 +246,13 @@ class TS():
             a list of CatKit's Gratom object (both reactants and products)
 
         '''
-        ts_estimate_path = os.path.join(self.facetpath, self.ts_dir)
+        # create TS_estimate directory
+        ts_estimate_path = os.path.join(self.facetpath, self.ts_dir, rxn_name)
+        if os.path.exists(ts_estimate_path):
+            shutil.rmtree(ts_estimate_path)
+            os.makedirs(ts_estimate_path)
+        else:
+            os.makedirs(ts_estimate_path)
         slab = read(self.slab)
         slab.pbc = (True, True, False)
         # ADSORBATES
@@ -355,7 +378,8 @@ class TS():
             count += 1
 
     def filtered_out_equiv_ts_estimate(self, rxn_name):
-        '''Filtering out symmetry equivalent sites
+        '''Filtered out symmetry equivalent sites and remove them keeping
+            only symmetry disctinct structures.
 
         Parameters
         __________
@@ -363,10 +387,14 @@ class TS():
             a reaction name
             e.g. OH_O+H
         '''
-        ts_estimate_path = os.path.join(self.facetpath, self.ts_dir)
-        filtered_equivalen_sites = TS.check_symm_before_xtb(
-            self, ts_estimate_path)
-        for eqsites in filtered_equivalen_sites:
+        ts_estimate_path = os.path.join(self.facetpath, self.ts_dir, rxn_name)
+
+        # check the symmetry
+        filtered_equivalent_sites = self.check_symm_before_xtb(
+            ts_estimate_path)
+
+        # remove all symmetry equivalent structures
+        for eqsites in filtered_equivalent_sites:
             try:
                 fileToRemove = os.path.join(
                     ts_estimate_path, eqsites + '_' + rxn_name + '.xyz')
@@ -374,6 +402,7 @@ class TS():
             except OSError:
                 print("Error while deleting file : ", fileToRemove)
 
+        # rename and organize ymmetry disctinct structures
         for prefix, noneqsites in enumerate(
             sorted(os.listdir(ts_estimate_path))
         ):
