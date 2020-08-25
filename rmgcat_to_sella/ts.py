@@ -22,7 +22,7 @@ from spglib import get_symmetry
 
 class TS():
     def __init__(
-        self, facetpath, slab, ts_dir, yamlfile, repeats, creation_dir
+        self, facetpath, slab, ts_estimate_dir, yamlfile, repeats, creation_dir
     ):
         ''' Initializing
 
@@ -35,7 +35,7 @@ class TS():
             a '.xyz' file name with the optimized slab
             e.g.
             'Cu_111_slab_opt.xyz'
-        ts_dir : str
+        ts_estimate_dir : str
             a path to directory with TSs
             e.g. 'TS_estimate'
         yamlfile : str
@@ -47,7 +47,7 @@ class TS():
         '''
         self.facetpath = facetpath
         self.slab = slab
-        self.ts_dir = ts_dir
+        self.ts_estimate_dir = ts_estimate_dir
         self.yamlfile = yamlfile
         self.repeats = repeats
         self.creation_dir = creation_dir
@@ -241,7 +241,8 @@ class TS():
 
         '''
         # create TS_estimate directory
-        ts_estimate_path = os.path.join(self.facetpath, rxn_name, self.ts_dir)
+        ts_estimate_path = os.path.join(
+            self.facetpath, rxn_name, self.ts_estimate_dir)
         if os.path.exists(ts_estimate_path):
             shutil.rmtree(ts_estimate_path)
             os.makedirs(ts_estimate_path)
@@ -381,7 +382,8 @@ class TS():
             a reaction name
             e.g. OH_O+H
         '''
-        ts_estimate_path = os.path.join(self.facetpath, rxn_name, self.ts_dir)
+        ts_estimate_path = os.path.join(
+            self.facetpath, rxn_name, self.ts_estimate_dir)
 
         # check the symmetry
         filtered_equivalent_sites = self.check_symm_before_xtb(
@@ -443,7 +445,8 @@ class TS():
             e.g. 1.0
 
         '''
-        ts_estimate_path = os.path.join(self.facetpath, rxn_name, self.ts_dir)
+        ts_estimate_path = os.path.join(
+            self.facetpath, rxn_name, self.ts_estimate_dir)
         path_to_minima = os.path.join(self.facetpath, 'minima')
 
         with open(pytemplate, 'r') as f:
@@ -685,19 +688,105 @@ class TS():
                 except FileExistsError:
                     raise FileExistsError('Files already copied')
 
+    def create_unique_ts_all(self, pytemplate, pseudopotentials, pseudo_dir):
+        ''' Create TS_estimate_unique files '''
+
+        # load .yaml file
+        with open(self.yamlfile, 'r') as f:
+            yamltxt = f.read()
+        reactions = yaml.safe_load(yamltxt)
+
+        for rxn in reactions:
+            rxn_name = self.get_rxn_name(rxn)
+            ts_estimate_path = os.path.join(self.facetpath, rxn_name,
+                                            self.ts_estimate_dir)
+            print(ts_estimate_path)
+            # create .xyz and .png files
+            self.create_unique_ts_xyz_and_png(ts_estimate_path)
+            # self.create_ts_unique_py_file(pytemplate, pseudopotentials,
+            #                               pseudo_dir, ts_estimate_path)
+
+    def create_unique_ts_xyz_and_png(self, ts_estimate_path):
+        ''' Create unique TS files for saddle point calculations
+            for a given scfactor
+        '''
+        # check symmetry of all TS estimates in ts_estimate_path
+        gd_ads_index = self.check_symm(ts_estimate_path)
+
+        for i, index in enumerate(gd_ads_index):
+            # name of the directory with unique TS_estimates for which saddle
+            # point calculations are to be perfomed
+            ts_estimate_unique_path = os.path.join(ts_estimate_path +
+                                                   '_unique', str(i).zfill(2))
+            # create TS_estimate_unique directory
+            if os.path.isdir(ts_estimate_unique_path):
+                shutil.rmtree(ts_estimate_unique_path)
+                os.makedirs(ts_estimate_unique_path, exist_ok=True)
+            else:
+                os.makedirs(ts_estimate_unique_path, exist_ok=True)
+
+            # search for trajectories of symmetry distinct structures
+            uq_traj_search = '**/{}*traj'.format(gd_ads_index[i])
+            trajs = Path(ts_estimate_path).glob(uq_traj_search)
+            # loop through all unique trajectory and create .xyz and .png
+            for traj in trajs:
+                traj = str(traj)
+                # split the path, get file name, remove last 5 characters and
+                # add sufix '_ts'
+                fname = os.path.split(traj)[1][:-5] + '_ts'
+                uq_ts_file = os.path.join(ts_estimate_unique_path, fname)
+                write(uq_ts_file + '.xyz', read(traj))
+                write(uq_ts_file + '.png', read(traj))
+            # rename TS to have prefixes in order with no gaps
+            # e.g. was 027_OH_O+H_ts.xyz; is 03_OH_O+H_ts.png
+            for ts in os.listdir(ts_estimate_unique_path):
+                old_ts_name = os.path.join(ts_estimate_unique_path, ts)
+                new_ts_name = os.path.join(
+                    ts_estimate_unique_path, str(i).zfill(2) + ts[3:])
+                os.rename(old_ts_name, new_ts_name)
+
+    def create_ts_unique_py_file(self, pytemplate, pseudopotentials,
+                                 pseudo_dir, scfactor, ts_estimate_path):
+        ''' Create job submission files'''
+        ts_estimate_unique_path = ts_estimate_path + '_unique'
+
+        with open(pytemplate, 'r') as f:
+            pytemplate = f.read()
+        try:
+            for struc in os.listdir(ts_estimate_unique_path):
+                TSdir = os.path.join(ts_estimate_unique_path, struc)
+                if os.path.isdir(TSdir):
+                    TSpath = os.path.join(ts_estimate_unique_path, struc)
+                    for fl in os.listdir(TSpath):
+                        if fl.endswith('.xyz'):
+                            fname = os.path.join(
+                                ts_estimate_unique_path, fl[:-4] + '.py')
+                            with open(fname, 'w') as f:
+                                f.write(pytemplate.format(TS=os.path.join(
+                                    struc, fl), rxn=fl[3:-7], prefix=fl[:2],
+                                    pseudopotentials=pseudopotentials,
+                                    pseudo_dir=pseudo_dir))
+                            f.close()
+            f.close()
+        except FileNotFoundError:
+            print(
+                'Missing output files of TS_estimate calculations sf = {:.1f}'.format(scfactor))
+            pass
+
     def create_unique_TS(self):
         ''' Create unique TS files for calculations '''
-        gd_ads_index = TS.check_symm(
-            self, os.path.join(self.facetpath, self.ts_dir))
+        gd_ads_index = self.check_symm(
+            os.path.join(self.facetpath, self.ts_estimate_dir))
+
         for i, index in enumerate(gd_ads_index):
             uniqueTSdir = os.path.join(
-                self.facetpath, self.ts_dir + '_unique', str(i).zfill(2))
+                self.facetpath, self.ts_estimate_dir + '_unique', str(i).zfill(2))
             if os.path.isdir(uniqueTSdir):
                 shutil.rmtree(uniqueTSdir)
                 os.makedirs(uniqueTSdir, exist_ok=True)
             else:
                 os.makedirs(uniqueTSdir, exist_ok=True)
-            gpath = os.path.join(self.facetpath, self.ts_dir)
+            gpath = os.path.join(self.facetpath, self.ts_estimate_dir)
             for geom in os.listdir(gpath):
                 geomDir = os.path.join(gpath, geom)
                 if os.path.isdir(geomDir):
@@ -711,16 +800,11 @@ class TS():
                                 uniqueTSdir, traj[:-5] + '_ts')
                             write(destFile + '.xyz', read(srcFile))
                             write(destFile + '.png', read(srcFile))
-            #         shutil.copy2(os.path.join(path, geom), uniqueTSdir)
             for ts in os.listdir(uniqueTSdir):
-                # if neb.endswith('.xyz'):
                 TS_xyz_Dir = os.path.join(uniqueTSdir, ts)
                 newTS_xyz_Dir = os.path.join(
                     uniqueTSdir, str(i).zfill(2) + ts[3:])
-                # NEB_png_Dir = os.path.join(uniqueTSdir, str(
-                #     i).zfill(3) + neb[2:][:-4] + '.png')
                 os.rename(TS_xyz_Dir, newTS_xyz_Dir)
-                # write(NEB_png_Dir, read(newNEB_xyz_Dir))
 
     def create_TS_unique_job_files(
         self, pytemplate,
@@ -730,7 +814,7 @@ class TS():
     ):
         ''' Create job submission files'''
         unique_TS_candidate_path = os.path.join(
-            self.facetpath, self.ts_dir + '_unique')
+            self.facetpath, self.ts_estimate_dir + '_unique')
         with open(pytemplate, 'r') as f:
             pytemplate = f.read()
 
