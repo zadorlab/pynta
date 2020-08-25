@@ -241,7 +241,7 @@ class TS():
 
         '''
         # create TS_estimate directory
-        ts_estimate_path = os.path.join(self.facetpath, self.ts_dir, rxn_name)
+        ts_estimate_path = os.path.join(self.facetpath, rxn_name, self.ts_dir)
         if os.path.exists(ts_estimate_path):
             shutil.rmtree(ts_estimate_path)
             os.makedirs(ts_estimate_path)
@@ -381,7 +381,7 @@ class TS():
             a reaction name
             e.g. OH_O+H
         '''
-        ts_estimate_path = os.path.join(self.facetpath, self.ts_dir, rxn_name)
+        ts_estimate_path = os.path.join(self.facetpath, rxn_name, self.ts_dir)
 
         # check the symmetry
         filtered_equivalent_sites = self.check_symm_before_xtb(
@@ -443,7 +443,7 @@ class TS():
             e.g. 1.0
 
         '''
-        ts_estimate_path = os.path.join(self.facetpath, self.ts_dir, rxn_name)
+        ts_estimate_path = os.path.join(self.facetpath, rxn_name, self.ts_dir)
         path_to_minima = os.path.join(self.facetpath, 'minima')
 
         with open(pytemplate, 'r') as f:
