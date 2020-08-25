@@ -152,9 +152,11 @@ class TS():
         images = []
 
         put_adsorbates = Adsorbates(
-            self.facetpath, self.slab, self.repeats, self.yamlfile,
-            self.creation_dir
-        )
+            self.facetpath,
+            self.slab,
+            self.repeats,
+            self.yamlfile,
+            self.creation_dir)
 
         for rxn in reactions:
             # transforming reactions data to gratom objects
@@ -297,9 +299,11 @@ class TS():
                 atom1, atom2, bondlen * scfactor, fix=0)
         # double check this
         put_adsorbates = Adsorbates(
-            self.facetpath, self.slab, self.repeats, self.yamlfile,
-            self.creation_dir
-        )
+            self.facetpath,
+            self.slab,
+            self.repeats,
+            self.yamlfile,
+            self.creation_dir)
         slabedges, tags = put_adsorbates.get_edges(self)
         # double check this
         grslab = Gratoms(numbers=slab.numbers,
