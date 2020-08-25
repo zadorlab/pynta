@@ -35,7 +35,7 @@ else:
     scfactor_surface = inputR2S.scfactor_surface
     scaled1 = inputR2S.scaled1
     scaled2 = inputR2S.scaled2
-    species_list = inputR2S.species_list
+    species_dict = inputR2S.species_dict
     slab_opt = inputR2S.slab_opt_script
     SurfaceAdsorbate = inputR2S.SurfaceAdsorbateScript
     TSxtb = inputR2S.TSxtbScript
@@ -131,7 +131,7 @@ class WorkFlow:
         self.set_up_TS_with_xtb(template_set_up_ts_with_xtb, slabopt,
                                 repeats, yamlfile, facetpath, rotAngle,
                                 scfactor, scfactor_surface, pytemplate_xtb,
-                                species_list, creation_dir)
+                                species_dict, creation_dir)
         self.set_up_run_TS(template_set_up_ts, facetpath, slabopt,
                            repeats, yamlfile, pytemplate_set_up_ts,
                            pseudopotentials, pseudo_dir,
@@ -196,7 +196,7 @@ class WorkFlow:
     def set_up_TS_with_xtb(self, template, slab,
                            repeats, yamlfile, facetpath, rotAngle,
                            scfactor, scfactor_surface,
-                           pytemplate_xtb, species_list, creation_dir):
+                           pytemplate_xtb, species_dict, creation_dir):
         ''' Create 02_set_up_TS_with_xtb.py file'''
         with open(template, 'r') as r:
             template_text = r.read()
@@ -207,7 +207,7 @@ class WorkFlow:
                     rotAngle=rotAngle, scfactor=scfactor,
                     scfactor_surface=scfactor_surface,
                     pytemplate_xtb=pytemplate_xtb,
-                    species_list=species_list,
+                    species_dict=species_dict,
                     scaled1=scaled1, scaled2=scaled2, creation_dir=creation_dir
                 ))
             c.close()
@@ -437,7 +437,7 @@ class WorkFlow:
             (False, )
         '''
         all_sp_checked = []
-        for species in species_list:
+        for species in species_dict:
             check_sp = self.check_if_minima_already_calculated(
                 currentDir, species, facetpath)
             all_sp_checked.append(check_sp)

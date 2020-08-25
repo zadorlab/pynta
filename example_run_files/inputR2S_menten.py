@@ -74,7 +74,7 @@ scfactor = 1.4
 scfactor_surface = 1.0
 ####################################################
 # species list
-species_list = ['O', 'H']
+species_dict = {'rxn1': ['O', 'H'], 'rxn2': ['C', 'H']}
 ####################################################
 # do you want to apply the scfactor_surface to the species 1?
 scaled1 = False

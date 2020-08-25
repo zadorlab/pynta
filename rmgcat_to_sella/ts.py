@@ -74,9 +74,10 @@ class TS():
             e.g. 60
         pytemplate_xtb : python script
             a template file for penalty function minimization job
-        species : list(str)
-            a list of max 2 species that take part in the reaction
-            e.g. ['O', 'H'] or ['CO2', 'H']
+        species_dict : dict(str:list[str])
+            a dictionary where vaules are lists of max 2 species that take
+            part in the reaction
+            e.g. {'rxn1': ['O', 'H'], 'rxn2': ['C', 'H']}
         scaled1 : bool
             specify whether use the optional scfactor_surface
             for the species 1 (sp1)
@@ -84,25 +85,18 @@ class TS():
             specify whether use the optional scfactor_surface
             for the species 2 (sp2)
         '''
-        # # create TS_estimate directory
-        # ts_estimate_path = os.path.join(self.facetpath, self.ts_dir)
-        # if os.path.exists(ts_estimate_path):
-        #     shutil.rmtree(ts_estimate_path)
-        #     os.makedirs(ts_estimate_path)
-        # else:
-        #     os.makedirs(ts_estimate_path)
-
         # open .yaml file
         with open(self.yamlfile, 'r') as f:
             yamltxt = f.read()
         reactions = yaml.safe_load(yamltxt)
 
+        # preapare inputs for all reactions
         for rxn, species_list in zip(reactions, species_dict.values()):
             r_name_list, p_name_list, images = self.prepare_react_list(rxn)
             rxn_name = self.get_rxn_name(rxn)
             self.TS_placer(scfactor, rotAngle, rxn_name, r_name_list,
                            p_name_list, images)
-            # self.filtered_out_equiv_ts_estimate(rxn_name)
+            self.filtered_out_equiv_ts_estimate(rxn_name)
             self.set_up_penalty_xtb(rxn_name, pytemplate_xtb, species_list,
                                     scaled1, scaled2, scfactor_surface)
 
@@ -155,7 +149,7 @@ class TS():
 
         '''
 
-        speciesInd = []
+        species_ind = []
         bonds = []
         unique_species = []
         unique_bonds = []
@@ -173,11 +167,11 @@ class TS():
             rxn['reactant'].split('\n'))
         products, pbonds = put_adsorbates.rmgcat_to_gratoms(
             rxn['product'].split('\n'))
-        speciesInd += reactants + products
+        species_ind += reactants + products
         bonds += rbonds + pbonds
 
         # check if any products are the same as any reactants
-        for species1, bond in zip(speciesInd, bonds):
+        for species1, bond in zip(species_ind, bonds):
             for species2 in unique_species:
                 if nx.is_isomorphic(species1.graph, species2.graph, node_test):
                     break

@@ -13,4 +13,19 @@
         2 *2 H u0 p0 c0 {3,S}
         3 *3 X u0 p0 c0 {2,S}
         4    X u0 p0 c0 {1,S}
+  - index: 1
+    reaction: CHX + X <=> CX + HX
+    reaction_family: Surface_Abstraction
+    reactant: |
+        multiplicity -187
+        1 *1 C u0 p0 c0 {2,S} {3,S}
+        2 *2 H u0 p0 c0 {1,S}
+        3    X u0 p0 c0 {1,S}
+        4 *3 X u0 p0 c0
+    product: |
+        multiplicity -187
+        1 *1 C u0 p0 c0 {3,S} {4,S} {3,D}
+        2 *2 H u0 p0 c0 {4,S}
+        3    X u0 p0 c0 {1,D}
+        4 *3 X u0 p0 c0 {2,S}
 
