@@ -19,7 +19,7 @@ geom = '{geom}'
 bonds = {bonds}
 av_dists_tuple = {av_dists_tuple}
 traj_path = '{traj_path}'
-slab = '../../../{slabopt}'
+slab = '../../../../{slabopt}'
 repeats = {repeats}
 prefix = '{prefix}'
 
