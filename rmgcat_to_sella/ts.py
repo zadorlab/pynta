@@ -695,7 +695,31 @@ class TS():
             pseudo_dir,
             balsam_exe_settings,
             calc_keywords):
-        ''' Create TS_estimate_unique files '''
+        ''' Create all TS_estimate_unique files
+
+        Parameters:
+        ___________
+
+        pytemplate : python script
+            a template file for saddle point minimization with Sella
+        pseudopotentials : dict(str: str)
+            a dictionary with QE pseudopotentials for all species.
+            e.g.
+            dict(Cu='Cu.pbe-spn-kjpaw_psl.1.0.0.UPF',
+                H='H.pbe-kjpaw_psl.1.0.0.UPF',
+                O='O.pbe-n-kjpaw_psl.1.0.0.UPF',
+                C='C.pbe-n-kjpaw_psl.1.0.0.UPF',
+                )
+        pseudo_dir : str
+            a path to the QE's pseudopotentials main directory
+            e.g.
+            '/home/mgierad/espresso/pseudo'
+        balsam_exe_settings : dict(str:str)
+            a dictionary with balsam settings
+        calc_keywords : dict(str:str)
+            a dictionary with keywords to Quantum Espresso calculations
+
+        '''
 
         # load .yaml file
         with open(self.yamlfile, 'r') as f:
@@ -708,6 +732,7 @@ class TS():
                                             self.ts_estimate_dir)
             # create .xyz and .png files
             self.create_unique_ts_xyz_and_png(ts_estimate_path)
+            # create job files (.py scripts)
             self.create_ts_unique_py_file(pytemplate,
                                           pseudopotentials,
                                           pseudo_dir,
@@ -719,6 +744,13 @@ class TS():
     def create_unique_ts_xyz_and_png(self, ts_estimate_path):
         ''' Create unique TS files for saddle point calculations
             for a given scfactor
+
+        Parameters:
+        ___________
+
+        ts_estimate_path : str
+            a path to TS_estimate_directory for a given reaction
+
         '''
         # check symmetry of all TS estimates in ts_estimate_path
         gd_ads_index = self.check_symm(ts_estimate_path)
@@ -763,7 +795,33 @@ class TS():
             ts_estimate_path,
             balsam_exe_settings,
             calc_keywords):
-        ''' Create job submission files'''
+        ''' Create job submission files
+
+        Parameters:
+        ___________
+
+        pytemplate : python script
+            a template file for saddle point minimization with Sella
+        pseudopotentials : dict(str: str)
+            a dictionary with QE pseudopotentials for all species.
+            e.g.
+            dict(Cu='Cu.pbe-spn-kjpaw_psl.1.0.0.UPF',
+                H='H.pbe-kjpaw_psl.1.0.0.UPF',
+                O='O.pbe-n-kjpaw_psl.1.0.0.UPF',
+                C='C.pbe-n-kjpaw_psl.1.0.0.UPF',
+                )
+        pseudo_dir : str
+            a path to the QE's pseudopotentials main directory
+            e.g.
+            '/home/mgierad/espresso/pseudo'
+        ts_estimate_path : str
+            a path to TS_estimate_directory for a given reaction
+        balsam_exe_settings : dict(str:str)
+            a dictionary with balsam settings
+        calc_keywords : dict(str:str)
+            a dictionary with keywords to Quantum Espresso calculations
+
+        '''
 
         ts_estimate_unique_path = ts_estimate_path + '_unique'
 
@@ -786,38 +844,6 @@ class TS():
                                 calc_keywords=calc_keywords,
                                 creation_dir=self.creation_dir
                             ))
-
-    def create_TS_unique_job_files(
-        self, pytemplate,
-        pseudopotentials, pseudo_dir,
-        balsam_exe_settings,
-        calc_keywords
-    ):
-        ''' Create job submission files'''
-        unique_TS_candidate_path = os.path.join(
-            self.facetpath, self.ts_estimate_dir + '_unique')
-        with open(pytemplate, 'r') as f:
-            pytemplate = f.read()
-
-        for struc in os.listdir(unique_TS_candidate_path):
-            TSdir = os.path.join(unique_TS_candidate_path, struc)
-            if os.path.isdir(TSdir):
-                ts_path = os.path.join(unique_TS_candidate_path, struc)
-                for fl in os.listdir(ts_path):
-                    if fl.endswith('.xyz'):
-                        fname = os.path.join(
-                            unique_TS_candidate_path, fl[:-4] + '.py')
-                        with open(fname, 'w') as f:
-                            f.write(pytemplate.format(TS=os.path.join(
-                                struc, fl), rxn=fl[3:-7], prefix=fl[:2],
-                                pseudopotentials=pseudopotentials,
-                                pseudo_dir=pseudo_dir,
-                                balsam_exe_settings=balsam_exe_settings,
-                                calc_keywords=calc_keywords,
-                                creation_dir=self.creation_dir
-                            ))
-                        f.close()
-        f.close()
 
     def get_bond_dist(self, ads_atom, geom):
         ''' Specify adsorbate atom symbol and bond distance with the closest
