@@ -44,7 +44,7 @@ TS_est.calc = EspressoBalsamSocketIO(
 
 TS_est.calc.set(**extra_calc_keywords)
 
-opt = Sella(TS_est, order=1, delta0=1e-2, gamma=1e-16, trajectory=trajdir)
+opt = Sella(TS_est, order=1, delta0=1e-2, gamma=1e-3, trajectory=trajdir)
 opt.run(fmax=0.01)
 TS_est.calc.close()
 
