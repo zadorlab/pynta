@@ -1040,3 +1040,39 @@ class TS():
                 # keeping all symmetry distinct sites
                 not_unique_index.append(str(num).zfill(3))
         return not_unique_index
+
+    def depends_on(self):
+        ''' Returns a list of adsorbate + surface calculations (step 01) that
+        has to be finished before starting step 02
+
+        Parameters:
+        ___________
+
+        rxn : str
+            a name of the reactions
+
+        '''
+        path_to_minima = os.path.join(self.facetpath, 'minima')
+
+        with open(self.yamlfile, 'r') as f:
+            yamltxt = f.read()
+        reactions = yaml.safe_load(yamltxt)
+
+        dependancy_dict = {}
+
+        for rxn in reactions:
+            r_name_list, p_name_list, _ = self.prepare_react_list(rxn)
+            rxn_name = self.get_rxn_name(rxn)
+            minima_py_list = []
+            for reactant in r_name_list:
+                lookup_phrase = reactant + '_??_relax.py'
+                minima_py_files = Path(path_to_minima).glob(lookup_phrase)
+                for minima_py_file in minima_py_files:
+                    minima_py_list.append(str(minima_py_file))
+                # dependancy_dict[rxn_name] = minima_py_list
+            for product in p_name_list:
+                lookup_phrase = product + '_??_relax.py'
+                minima_py_files = Path(path_to_minima).glob(lookup_phrase)
+                for minima_py_file in minima_py_files:
+                    minima_py_list.append(str(minima_py_file))
+            dependancy_dict[rxn_name] = minima_py_list
