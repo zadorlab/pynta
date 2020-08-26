@@ -27,7 +27,7 @@ dependency_workflow_name = yamlfile+facetpath+'01'
 creation_dir = '{creation_dir}'
 
 ts = TS(facetpath, slab, ts_dir, yamlfile, repeats, creation_dir)
-ts.copy_minimas_prev_calculated(current_dir, species, minima_dir)
+# ts.copy_minimas_prev_calculated(current_dir, species, minima_dir)
 ts.prepare_ts_estimate(scfactor, scfactor_surface, rotAngle,
                        pytemplate_xtb, species, scaled1, scaled2)
 
