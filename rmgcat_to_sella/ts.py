@@ -1042,14 +1042,18 @@ class TS():
         return not_unique_index
 
     def depends_on(self):
-        ''' Returns a list of adsorbate + surface calculations (step 01) that
-        has to be finished before starting step 02
+        ''' Returns a dictionary of adsorbate + surface calculations
+        (step 01; .py files) that has to be finished before starting step 02
+        for a particular reaction
 
-        Parameters:
-        ___________
+        Returns:
+        ________
 
-        rxn : str
-            a name of the reactions
+        dependancy_dict : [str:list(str)]
+            a dictionary with keys being reaction names and values are lists
+            of .py files for step 01 that have to be finished to start 02 step
+            for a given reaction
+            e.g.
 
         '''
         path_to_minima = os.path.join(self.facetpath, 'minima')
@@ -1076,3 +1080,4 @@ class TS():
                 for minima_py_file in minima_py_files:
                     minima_py_list.append(str(minima_py_file))
             dependancy_dict[rxn_name] = minima_py_list
+        return dependancy_dict
