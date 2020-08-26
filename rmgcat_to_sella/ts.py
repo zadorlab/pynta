@@ -688,7 +688,13 @@ class TS():
                 except FileExistsError:
                     raise FileExistsError('Files already copied')
 
-    def create_unique_ts_all(self, pytemplate, pseudopotentials, pseudo_dir):
+    def create_unique_ts_all(
+            self,
+            pytemplate,
+            pseudopotentials,
+            pseudo_dir,
+            balsam_exe_settings,
+            calc_keywords):
         ''' Create TS_estimate_unique files '''
 
         # load .yaml file
@@ -700,11 +706,15 @@ class TS():
             rxn_name = self.get_rxn_name(rxn)
             ts_estimate_path = os.path.join(self.facetpath, rxn_name,
                                             self.ts_estimate_dir)
-            print(ts_estimate_path)
             # create .xyz and .png files
             self.create_unique_ts_xyz_and_png(ts_estimate_path)
-            # self.create_ts_unique_py_file(pytemplate, pseudopotentials,
-            #                               pseudo_dir, ts_estimate_path)
+            self.create_ts_unique_py_file(pytemplate,
+                                          pseudopotentials,
+                                          pseudo_dir,
+                                          ts_estimate_path,
+                                          balsam_exe_settings,
+                                          calc_keywords
+                                          )
 
     def create_unique_ts_xyz_and_png(self, ts_estimate_path):
         ''' Create unique TS files for saddle point calculations
@@ -745,66 +755,37 @@ class TS():
                     ts_estimate_unique_path, str(i).zfill(2) + ts[3:])
                 os.rename(old_ts_name, new_ts_name)
 
-    def create_ts_unique_py_file(self, pytemplate, pseudopotentials,
-                                 pseudo_dir, scfactor, ts_estimate_path):
+    def create_ts_unique_py_file(
+            self,
+            pytemplate,
+            pseudopotentials,
+            pseudo_dir,
+            ts_estimate_path,
+            balsam_exe_settings,
+            calc_keywords):
         ''' Create job submission files'''
+
         ts_estimate_unique_path = ts_estimate_path + '_unique'
 
         with open(pytemplate, 'r') as f:
             pytemplate = f.read()
-        try:
-            for struc in os.listdir(ts_estimate_unique_path):
-                TSdir = os.path.join(ts_estimate_unique_path, struc)
-                if os.path.isdir(TSdir):
-                    TSpath = os.path.join(ts_estimate_unique_path, struc)
-                    for fl in os.listdir(TSpath):
-                        if fl.endswith('.xyz'):
-                            fname = os.path.join(
-                                ts_estimate_unique_path, fl[:-4] + '.py')
-                            with open(fname, 'w') as f:
-                                f.write(pytemplate.format(TS=os.path.join(
-                                    struc, fl), rxn=fl[3:-7], prefix=fl[:2],
-                                    pseudopotentials=pseudopotentials,
-                                    pseudo_dir=pseudo_dir))
-                            f.close()
-            f.close()
-        except FileNotFoundError:
-            print(
-                'Missing output files of TS_estimate calculations sf = {:.1f}'.format(scfactor))
-            pass
-
-    def create_unique_TS(self):
-        ''' Create unique TS files for calculations '''
-        gd_ads_index = self.check_symm(
-            os.path.join(self.facetpath, self.ts_estimate_dir))
-
-        for i, index in enumerate(gd_ads_index):
-            uniqueTSdir = os.path.join(
-                self.facetpath, self.ts_estimate_dir + '_unique', str(i).zfill(2))
-            if os.path.isdir(uniqueTSdir):
-                shutil.rmtree(uniqueTSdir)
-                os.makedirs(uniqueTSdir, exist_ok=True)
-            else:
-                os.makedirs(uniqueTSdir, exist_ok=True)
-            gpath = os.path.join(self.facetpath, self.ts_estimate_dir)
-            for geom in os.listdir(gpath):
-                geomDir = os.path.join(gpath, geom)
-                if os.path.isdir(geomDir):
-                    for traj in sorted(os.listdir(geomDir)):
-                        if (
-                            traj.startswith(gd_ads_index[i])
-                            and traj.endswith('.traj')
-                        ):
-                            srcFile = os.path.join(geomDir, traj)
-                            destFile = os.path.join(
-                                uniqueTSdir, traj[:-5] + '_ts')
-                            write(destFile + '.xyz', read(srcFile))
-                            write(destFile + '.png', read(srcFile))
-            for ts in os.listdir(uniqueTSdir):
-                TS_xyz_Dir = os.path.join(uniqueTSdir, ts)
-                newTS_xyz_Dir = os.path.join(
-                    uniqueTSdir, str(i).zfill(2) + ts[3:])
-                os.rename(TS_xyz_Dir, newTS_xyz_Dir)
+        for struc in os.listdir(ts_estimate_unique_path):
+            TSdir = os.path.join(ts_estimate_unique_path, struc)
+            if os.path.isdir(TSdir):
+                ts_path = os.path.join(ts_estimate_unique_path, struc)
+                for fl in os.listdir(ts_path):
+                    if fl.endswith('.xyz'):
+                        fname = os.path.join(
+                            ts_estimate_unique_path, fl[:-4] + '.py')
+                        with open(fname, 'w') as f:
+                            f.write(pytemplate.format(TS=os.path.join(
+                                struc, fl), rxn=fl[3:-7], prefix=fl[:2],
+                                pseudopotentials=pseudopotentials,
+                                pseudo_dir=pseudo_dir,
+                                balsam_exe_settings=balsam_exe_settings,
+                                calc_keywords=calc_keywords,
+                                creation_dir=self.creation_dir
+                            ))
 
     def create_TS_unique_job_files(
         self, pytemplate,
@@ -821,8 +802,8 @@ class TS():
         for struc in os.listdir(unique_TS_candidate_path):
             TSdir = os.path.join(unique_TS_candidate_path, struc)
             if os.path.isdir(TSdir):
-                TSpath = os.path.join(unique_TS_candidate_path, struc)
-                for fl in os.listdir(TSpath):
+                ts_path = os.path.join(unique_TS_candidate_path, struc)
+                for fl in os.listdir(ts_path):
                     if fl.endswith('.xyz'):
                         fname = os.path.join(
                             unique_TS_candidate_path, fl[:-4] + '.py')
