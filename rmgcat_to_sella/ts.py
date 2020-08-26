@@ -1058,26 +1058,41 @@ class TS():
         '''
         path_to_minima = os.path.join(self.facetpath, 'minima')
 
+        # get reactions from. .yaml file
         with open(self.yamlfile, 'r') as f:
             yamltxt = f.read()
         reactions = yaml.safe_load(yamltxt)
 
         dependancy_dict = {}
 
+        # loop through all reactions
         for rxn in reactions:
+            # get list of reactant and product
             r_name_list, p_name_list, _ = self.prepare_react_list(rxn)
+            # get reaction name
             rxn_name = self.get_rxn_name(rxn)
             minima_py_list = []
+            # loop through all reactants
             for reactant in r_name_list:
+                # ?? are needed to prevent returning e.g.
+                # OH_00_relax.py and O_00_relax.py
+                # while
+                # reactant or product = O
                 lookup_phrase = reactant + '_??_relax.py'
+                # find matching reatants
                 minima_py_files = Path(path_to_minima).glob(lookup_phrase)
+                # append a list with minima that have to be calculated to
+                # run 02 step
                 for minima_py_file in minima_py_files:
                     minima_py_list.append(str(minima_py_file))
-                # dependancy_dict[rxn_name] = minima_py_list
+            # loop through all products and do the same as for reactants
             for product in p_name_list:
                 lookup_phrase = product + '_??_relax.py'
                 minima_py_files = Path(path_to_minima).glob(lookup_phrase)
                 for minima_py_file in minima_py_files:
                     minima_py_list.append(str(minima_py_file))
+
+            # create a dictionary
+            # {'reaction_name':[list_with_py_files_have_to_be_calculated]}
             dependancy_dict[rxn_name] = minima_py_list
         return dependancy_dict
