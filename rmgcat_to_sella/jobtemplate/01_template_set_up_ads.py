@@ -39,68 +39,77 @@ dependancy_dict = ts.depends_on()
 def jobs_to_be_finished(dependancy_dict, rxn_name):
     print('---')
     print('Reaction : {}'.format(rxn_name))
-    print('Jobs to be finished: ')
+    print('Jobs to be finished, i.e. dependancy: ')
     jobs_to_be_finished = dependancy_dict[rxn_name]
     print(jobs_to_be_finished)
     return jobs_to_be_finished
 
 
-def submit_all_jobs(dependancy_dict):
-    all_jobs = []
-    for rxn_name in dependancy_dict.keys():
-        for job in jobs_to_be_finished(dependancy_dict, rxn_name):
-            if job not in all_jobs:
-                all_jobs.append(job)
+# def all_unique_01_jobs(dependancy_dict):
+#     ''' All unique 01 jobs to be submitted '''
+#     all_jobs = []
+#     for rxn_name in dependancy_dict.keys():
+#         for job in jobs_to_be_finished(dependancy_dict, rxn_name):
+#             if job not in all_jobs:
+#                 all_jobs.append(job)
 
-    print('===')
-    print('All jobs to be submitted:')
-    print(all_jobs)
-    return all_jobs
-
-
-submit_all_jobs(dependancy_dict)
+#     print('===')
+#     print('All jobs to be submitted:')
+#     print(all_jobs)
+#     return all_jobs
 
 
-def run_01(dependancy_dict, rxn_name):
-    all_jobs = submit_all_jobs(dependancy_dict)
+# all_unique_01_jobs(dependancy_dict)
+
+
+def run_01(dependancy_dict):
+    # all_jobs = all_unique_01_jobs(dependancy_dict)
     cwd = Path.cwd().as_posix()
     workflow_name = yamlfile + facetpath + '01'
+
+    # keep track of all submitted jobs (all unique)
+    all_submitted_jobs = []
+
     # specify dependant 02 for given reactions
-    dependent_workflow_name = yamlfile+facetpath+'02'+rxn_name
+    for rxn_name in dependancy_dict.keys():
+        dependent_workflow_name = yamlfile+facetpath+'02'+rxn_name
 
-    # have to find a way to specify dependancy which species have to be
-    # calculated for a given reaction
-    pending_simulations_dep = BalsamJob.objects.filter(
-        workflow__contains=dependent_workflow_name
-    ).exclude(state="JOB_FINISHED")
+        # have to find a way to specify dependancy which species have to be
+        # calculated for a given reaction
+        # pending_simulations_dep = BalsamJob.objects.filter(
+        #     workflow__contains=dependent_workflow_name
+        # ).exclude(state="JOB_FINISHED")
 
-    # pending_simulations_dep = BalsamJob.objects.filter(
-    #     workflow__contains=dependent_workflow_name).exclude(state="JOB_FINISHED")
-
-    # lookup_phrase = os.path.join(facetpath, 'minima', rxn_name, '*py')
-    # for py_script in glob(lookup_phrase):
-
-    # make a list with all jobs that have to be finished for a given reaction
-    # make sure be submit jobs only once
-    for py_script in jobs_to_be_finished(dependancy_dict, rxn_name):
-        job_dir = cwd + '/' + '/'.join(py_script.strip().split('/')[:-1])
-        script_name = py_script.strip().split('/')[-1]
-        job_to_add = BalsamJob(
-            name=script_name,
-            workflow=workflow_name,
-            application='python',
-            args=cwd + '/' + py_script,
-            input_files='',
-            user_workdir=job_dir,
-            node_packing_count=64,
-            ranks_per_node=1,
-        )
-        job_to_add.save()
-        for job in pending_simulations_dep:
-            add_dependency(job_to_add, job)  # parent, child
+        # for each reaction keep track of its dependencies
+        # e.g. for OH --> O + H those have to be finished OH, O and H
+        # Make sure each species is calculated only once
+        # e.g. H in CH --> C + H and OH --> O + H
+        new_unique_submission = []
+        for py_script in jobs_to_be_finished(dependancy_dict, rxn_name):
+            job_dir = cwd + '/' + '/'.join(py_script.strip().split('/')[:-1])
+            if py_script not in all_submitted_jobs:
+                new_unique_submission.append(py_script)
+                all_submitted_jobs.append(py_script)
+        print('New jobs to be submitted: ')
+        print(new_unique_submission)
+        # job_to_add = BalsamJob(
+        #     name=script_name,
+        #     workflow=workflow_name,
+        #     application='python',
+        #     args=cwd + '/' + py_script,
+        #     input_files='',
+        #     user_workdir=job_dir,
+        #     node_packing_count=64,
+        #     ranks_per_node=1,
+        # )
+        # job_to_add.save()
+        # for job in pending_simulations_dep:
+        #     add_dependency(job_to_add, job)  # parent, child
 
         # job_to_add should be for O, H, OH for 02 job OH_O+H
 
+
+run_01(dependancy_dict)
 
 '''
 Or better, a pseudocode here
