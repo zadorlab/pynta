@@ -1074,7 +1074,7 @@ class TS():
             minima_py_list = []
             # loop through all reactants
             for reactant in r_name_list:
-                # ?? are needed to prevent returning e.g.
+                # ?? is needed to prevent returning e.g.
                 # OH_00_relax.py and O_00_relax.py
                 # while
                 # reactant or product = O
@@ -1092,7 +1092,7 @@ class TS():
                 for minima_py_file in minima_py_files:
                     minima_py_list.append(str(minima_py_file))
 
-            # create a dictionary
+            # create a dictionary with dependencies
             # {'reaction_name':[list_with_py_files_have_to_be_calculated]}
             dependancy_dict[rxn_name] = minima_py_list
         return dependancy_dict
