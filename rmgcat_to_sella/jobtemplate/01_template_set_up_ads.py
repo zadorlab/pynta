@@ -76,18 +76,18 @@ def run_01(dependancy_dict):
         # print('New jobs to be submitted: ')
         print(new_unique_submission)
         # submit all unique jobs
-        # for py_script in new_unique_submission:
-        #     job_to_add = BalsamJob(
-        #         name=py_script,
-        #         workflow=workflow_name,
-        #         application='python',
-        #         args=cwd + '/' + py_script,
-        #         input_files='',
-        #         user_workdir=job_dir,
-        #         node_packing_count=48,
-        #         ranks_per_node=1,
-        #     )
-        #     job_to_add.save()
+        for py_script in new_unique_submission:
+            job_to_add = BalsamJob(
+                name=py_script,
+                workflow=workflow_name,
+                application='python',
+                args=cwd + '/' + py_script,
+                input_files='',
+                user_workdir=job_dir,
+                node_packing_count=48,
+                ranks_per_node=1,
+            )
+            job_to_add.save()
 
         # for job in jobs_to_be_finished(dependancy_dict, rxn_name):
         # for job in pending_simulations_dep:
@@ -98,62 +98,4 @@ def run_01(dependancy_dict):
         # job_to_add should be for O, H, OH for 02 job OH_O+H
 
 
-# run_01(dependancy_dict)
-
-'''
-Or better, a pseudocode here
-
-def check_for_status(args):
-    ts = TS(facetpath, slab, ts_dir, yamlfile, repeats, creation_dir)
-    dependancy_dict = ts.depends_on()
-
-    finished_jobs = []
-
-    for jobs in dependancy_dict.values()
-        for job in jobs:
-            if jobs.status('FINISHED'):
-                finished_jobs.append(job)
-        if all(finished_jobs):
-            run_01(...)
-
-def run_01(...):
-    arguments = ...
-
-    put_adsorbates = Adsorbates(
-        facetpath, slab, repeats, yamlfile, creation_dir)
-    put_adsorbates.adjacency_to_3d()
-    put_adsorbates.create_relax_jobs(
-        pytemplate, pseudopotentials, pseudo_dir,
-        balsam_exe_settings, calc_keywords
-    )
-
-    cwd = Path.cwd().as_posix()
-    workflow_name = yamlfile + facetpath + '01'
-
-    dependent_workflow_name = yamlfile+facetpath+'02'
-    pending_simulations_dep = BalsamJob.objects.filter(
-        workflow__contains=dependent_workflow_name
-    ).exclude(state="JOB_FINISHED")
-
-    lookup_phrase = os.path.join(facetpath, 'minima', rxn_name, '*py')
-    # for py_script in glob('Cu_111/minima/*.py'):
-    for py_script in glob(lookup_phrase):
-        job_dir = cwd + '/' + '/'.join(py_script.strip().split('/')[:-1])
-        script_name = py_script.strip().split('/')[-1]
-        job_to_add = BalsamJob(
-            name=script_name,
-            workflow=workflow_name,
-            application='python',
-            args=cwd + '/' + py_script,
-            input_files='',
-            user_workdir=job_dir,
-            node_packing_count=64,
-            ranks_per_node=1,
-        )
-        job_to_add.save()
-        for job in pending_simulations_dep:
-            add_dependency(job_to_add, job)  # parent, child
-
-
-
-'''
+run_01(dependancy_dict)
