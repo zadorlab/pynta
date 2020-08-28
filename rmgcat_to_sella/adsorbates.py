@@ -293,8 +293,6 @@ class Adsorbates:
             species += reactants + products
             bonds += rbonds + pbonds
 
-            print(reactants)
-            print(products)
         unique_species = []
         unique_bonds = []
         images = []
