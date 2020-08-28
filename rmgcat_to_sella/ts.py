@@ -993,19 +993,25 @@ class TS():
                 # OH_00_relax.py and O_00_relax.py
                 # while
                 # reactant or product = O
+                # I have no idea why OH and HO is getting reverse
+                # a workaround
+                if reactant == 'OH':
+                    reactant = 'HO'
                 lookup_phrase = reactant + '_??_relax.py'
                 # find matching reatants
                 minima_py_files = Path(path_to_minima).glob(lookup_phrase)
                 # append a list with minima that have to be calculated to
                 # run 02 step
                 for minima_py_file in minima_py_files:
-                    minima_py_list.append(os.path.split((str(minima_py_file)))[1])
+                    minima_py_list.append(
+                        os.path.split((str(minima_py_file)))[1])
             # loop through all products and do the same as for reactants
             for product in p_name_list:
                 lookup_phrase = product + '_??_relax.py'
                 minima_py_files = Path(path_to_minima).glob(lookup_phrase)
                 for minima_py_file in minima_py_files:
-                    minima_py_list.append(os.path.split((str(minima_py_file)))[1])
+                    minima_py_list.append(
+                        os.path.split((str(minima_py_file)))[1])
 
             # create a dictionary with dependencies
             # {'reaction_name':[list_with_py_files_have_to_be_calculated]}
