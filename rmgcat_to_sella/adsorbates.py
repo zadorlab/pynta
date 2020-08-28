@@ -293,6 +293,8 @@ class Adsorbates:
             species += reactants + products
             bonds += rbonds + pbonds
 
+            print(reactants)
+            print(products)
         unique_species = []
         unique_bonds = []
         images = []
@@ -327,15 +329,15 @@ class Adsorbates:
             if bond is None:
                 bond = [0]
             key = adsorbate.get_chemical_formula()
-            is_it_calculated = WorkFlow().check_if_minima_already_calculated(
-                currentDir, key, self.facetpath)
-            if not is_it_calculated[0]:
-                # if species was not already calculated,
-                # prepare a new set of calculations
-                pass
-            else:
-                # if species was already calculated, do noting
-                continue
+            # is_it_calculated = WorkFlow().check_if_minima_already_calculated(
+            #     currentDir, key, self.facetpath)
+            # if not is_it_calculated[0]:
+            #     # if species was not already calculated,
+            #     # prepare a new set of calculations
+            #     pass
+            # else:
+            #     # if species was already calculated, do noting
+            #     continue
             try:
                 if key == 'CHO2':  # connect through oxygen
                     bond = [2]
