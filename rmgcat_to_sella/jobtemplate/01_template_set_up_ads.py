@@ -24,42 +24,25 @@ calc_keywords = {'kpts': (3, 3, 1), 'occupations': 'smearing', 'smearing': 'marz
 creation_dir = '/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/00_code_test/code_test_yaml_parser/'
 ts_dir = 'TS_estimate'
 
-# put_adsorbates = Adsorbates(
-#     facetpath, slab, repeats, yamlfile, creation_dir)
-# put_adsorbates.adjacency_to_3d()
-# put_adsorbates.create_relax_jobs(
-#     pytemplate, pseudopotentials, pseudo_dir,
-#     balsam_exe_settings, calc_keywords
-# )
+put_adsorbates = Adsorbates(
+    facetpath, slab, repeats, yamlfile, creation_dir)
+put_adsorbates.adjacency_to_3d()
+put_adsorbates.create_relax_jobs(
+    pytemplate, pseudopotentials, pseudo_dir,
+    balsam_exe_settings, calc_keywords
+)
 
 ts = TS(facetpath, slab, ts_dir, yamlfile, repeats, creation_dir)
 dependancy_dict = ts.depends_on()
 
 
 def jobs_to_be_finished(dependancy_dict, rxn_name):
-    print('---')
-    print('Reaction : {}'.format(rxn_name))
-    print('Jobs to be finished, i.e. dependancy: ')
+    # print('---')
+    # print('Reaction : {}'.format(rxn_name))
+    # print('Jobs to be finished, i.e. dependancy: ')
     jobs_to_be_finished = dependancy_dict[rxn_name]
-    print(jobs_to_be_finished)
+    # print(jobs_to_be_finished)
     return jobs_to_be_finished
-
-
-# def all_unique_01_jobs(dependancy_dict):
-#     ''' All unique 01 jobs to be submitted '''
-#     all_jobs = []
-#     for rxn_name in dependancy_dict.keys():
-#         for job in jobs_to_be_finished(dependancy_dict, rxn_name):
-#             if job not in all_jobs:
-#                 all_jobs.append(job)
-
-#     print('===')
-#     print('All jobs to be submitted:')
-#     print(all_jobs)
-#     return all_jobs
-
-
-# all_unique_01_jobs(dependancy_dict)
 
 
 def run_01(dependancy_dict):
@@ -90,26 +73,32 @@ def run_01(dependancy_dict):
             if py_script not in all_submitted_jobs:
                 new_unique_submission.append(py_script)
                 all_submitted_jobs.append(py_script)
-        print('New jobs to be submitted: ')
+        # print('New jobs to be submitted: ')
         print(new_unique_submission)
-        # job_to_add = BalsamJob(
-        #     name=script_name,
-        #     workflow=workflow_name,
-        #     application='python',
-        #     args=cwd + '/' + py_script,
-        #     input_files='',
-        #     user_workdir=job_dir,
-        #     node_packing_count=64,
-        #     ranks_per_node=1,
-        # )
-        # job_to_add.save()
+        # submit all unique jobs
+        # for py_script in new_unique_submission:
+        #     job_to_add = BalsamJob(
+        #         name=py_script,
+        #         workflow=workflow_name,
+        #         application='python',
+        #         args=cwd + '/' + py_script,
+        #         input_files='',
+        #         user_workdir=job_dir,
+        #         node_packing_count=48,
+        #         ranks_per_node=1,
+        #     )
+        #     job_to_add.save()
+
+        # for job in jobs_to_be_finished(dependancy_dict, rxn_name):
         # for job in pending_simulations_dep:
-        #     add_dependency(job_to_add, job)  # parent, child
+            # add_dependency(job_to_add, job)  # parent, child
+        # for job in pending_simulations_dep:
+            # add_dependency(job_to_add, job)  # parent, child
 
         # job_to_add should be for O, H, OH for 02 job OH_O+H
 
 
-run_01(dependancy_dict)
+# run_01(dependancy_dict)
 
 '''
 Or better, a pseudocode here
