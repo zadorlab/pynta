@@ -8,7 +8,6 @@ from rmgcat_to_sella.balsamcalc import EspressoBalsamSocketIO
 
 from ase.io import read, write
 from ase.constraints import FixAtoms
-# from ase.optimize import BFGSLineSearch
 from ase.optimize import QuasiNewton
 
 adsorbate = '{adsorbate}'
