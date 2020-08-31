@@ -99,24 +99,24 @@ class WorkFlow:
         Once we start using QE will want one app for QE,
         one for xtb most likely
         """
-        # from balsam.core.models import ApplicationDefinition
-        # self.myPython, _ = ApplicationDefinition.objects.get_or_create(
-        #     name="python",
-        #     executable=sys.executable
-        # )
-        # self.myPython.save()
-        # self.slab_opt_job = ''
+        from balsam.core.models import ApplicationDefinition
+        self.myPython, _ = ApplicationDefinition.objects.get_or_create(
+            name="python",
+            executable=sys.executable
+        )
+        self.myPython.save()
+        self.slab_opt_job = ''
 
-        # # TODO: instead of directly importing EspressoBalsam, we should
-        # # write a function which returns the appropriate class from
-        # # balsamcalc.py based on the user-provided input file
-        # from rmgcat_to_sella.balsamcalc import (
-        #     EspressoBalsam, EspressoBalsamSocketIO
-        # )
-        # EspressoBalsam.exe = executable
-        # EspressoBalsamSocketIO.exe = executable
-        # EspressoBalsam.create_application()
-        # EspressoBalsamSocketIO.create_application()
+        # TODO: instead of directly importing EspressoBalsam, we should
+        # write a function which returns the appropriate class from
+        # balsamcalc.py based on the user-provided input file
+        from rmgcat_to_sella.balsamcalc import (
+            EspressoBalsam, EspressoBalsamSocketIO
+        )
+        EspressoBalsam.exe = executable
+        EspressoBalsamSocketIO.exe = executable
+        EspressoBalsam.create_application()
+        EspressoBalsamSocketIO.create_application()
 
     def gen_job_files(self):
         ''' Generate submt scripts for 6 stages of the workflow '''
