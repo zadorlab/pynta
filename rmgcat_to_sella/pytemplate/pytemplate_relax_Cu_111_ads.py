@@ -52,7 +52,7 @@ atoms.calc = EspressoBalsamSocketIO(
 
 atoms.calc.set(**extra_calc_keywords)
 
-opt = QuasiNewton(atoms=atoms, maxstep=0.01, trajectory=jobdir + '.traj')
+opt = QuasiNewton(atoms=atoms, maxstep=0.005, trajectory=jobdir + '.traj')
 # opt = Sella(atoms, order=0, delta0=1e-2, trajectory=jobdir + '.traj')
 opt.run(fmax=0.01)
 atoms.calc.close()
