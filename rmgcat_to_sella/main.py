@@ -7,7 +7,7 @@ from warnings import warn
 try:
     import inputR2S
     """
-    User defined parameters.
+    User defined parameters
 
     Here we only read them. They are set up in inputR2S.py (submit directory)
     """
