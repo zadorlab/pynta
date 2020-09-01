@@ -390,6 +390,7 @@ class WorkFlow:
         # Finally the path is like:
         # '*/Cu_111/minima/H'
 
+
         # If species were previously calculated, return True and paths
         if path_to_outfiles is None:
             return (False, )
