@@ -22,7 +22,7 @@ balsam_exe_settings = {balsam_exe_settings}
 calc_keywords = {calc_keywords}
 creation_dir = '{creation_dir}'
 
-ts = TS(facetpath, slab, ts_dir, yamlfile, repeats)
+ts = TS(facetpath, slab, ts_dir, yamlfile, repeats, creation_dir)
 ts.create_unique_TS()
 ts.create_TS_unique_job_files(
     pytemplate, pseudopotentials, pseudo_dir,
@@ -47,7 +47,7 @@ for py_script in glob('{facetpath}/TS_estimate_unique/*.py'):
             name=script_name,
             workflow=workflow_name,
             application='python',
-            args=cwd+py_script,
+            args=cwd+ '/' + py_script,
             input_files='',
             user_workdir=job_dir,
             node_packing_count=64,

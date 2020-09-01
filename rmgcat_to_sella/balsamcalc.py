@@ -87,15 +87,20 @@ class BalsamCalculator(FileIOCalculator):
 
     @classmethod
     def create_application(cls) -> None:
-        app, created = ApplicationDefinition.objects.get_or_create(
-            name=cls.__name__,
-            executable=cls.exe,
-            preprocess=cls.preprocess,
-            postprocess=cls.postprocess,
-            description=cls.description,
-        )
-        if created:
-            app.save()
+        try:
+            app = ApplicationDefinition.objects.get(
+                name=cls.__name__
+            )
+        except ApplicationDefinition.DoesNotExist:
+            app, created = ApplicationDefinition.objects.get_or_create(
+                name=cls.__name__,
+                executable=cls.exe,
+                preprocess=cls.preprocess,
+                postprocess=cls.postprocess,
+                description=cls.description,
+            )
+            if created:
+                app.save()
 
     def format_args(self) -> str:
         args = self.args.replace('PREFIX', self.prefix)

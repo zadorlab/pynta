@@ -65,11 +65,11 @@ class GetSlab:
     def run_slab_opt(self):
         ''' Run slab optimization '''
         if self.surface_type == 'fcc111':
-            GetSlab.opt_fcc111(self)
+            self.opt_fcc111()
         elif self.surface_type == 'fcc211':
-            GetSlab.opt_fcc211(self)
+            self.opt_fcc211()
         elif self.surface_type == 'fcc100':
-            GetSlab.opt_fcc100(self)
+            self.opt_fcc100()
         else:
             print('{} not implemented. Avaiable parameters are:'.format(
                 self.surface_type))
@@ -79,19 +79,19 @@ class GetSlab:
         ''' Optimize fcc111 slab '''
         slab = fcc111(self.symbol, self.repeats, self.a,
                       self.vacuum)
-        GetSlab.prepare_slab_opt(self, slab)
+        self.prepare_slab_opt(slab)
 
     def opt_fcc211(self):
         ''' Optimize fcc211 slab '''
         slab = fcc211(self.symbol, self.repeats, self.a,
                       self.vacuum)
-        GetSlab.prepare_slab_opt(self, slab, )
+        self.prepare_slab_opt(slab)
 
     def opt_fcc100(self):
         ''' Optimize fcc100 slab '''
         slab = fcc100(self.symbol, self.repeats, self.a,
                       self.vacuum)
-        GetSlab.prepare_slab_opt(self, slab)
+        self.prepare_slab_opt(slab)
 
     def prepare_slab_opt(self, slab):
         ''' Prepare slab optimization with Quantum Espresso '''

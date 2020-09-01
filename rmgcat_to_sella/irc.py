@@ -15,7 +15,8 @@ class IRC():
             pseudopotentials,
             pseudo_dir,
             balsam_exe_settings,
-            calc_keywords
+            calc_keywords,
+            creation_dir
     ):
         ''' Initializing
 
@@ -59,6 +60,7 @@ class IRC():
         self.pseudo_dir = pseudo_dir
         self.balsam_exe_settings = balsam_exe_settings
         self.calc_keywords = calc_keywords
+        self.creation_dir = creation_dir
 
     def set_up_irc(self, pytemplate_f, pytemplate_r):
         ''' Set up IRC calculations
@@ -72,7 +74,7 @@ class IRC():
         ts_path = os.path.join(self.facetpath, self.ts_dir)
         ts_uq_dir = ts_path + '_unique'
         ts = TS(self.facetpath, self.slab, self.ts_dir,
-                self.yamlfile, self.repeats)
+                self.yamlfile, self.repeats, self.creation_dir)
         rxn = ts.get_rxn_name()
         unique_ts_index = ts.check_symm(ts_uq_dir)
 

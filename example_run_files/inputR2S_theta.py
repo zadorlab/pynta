@@ -34,7 +34,7 @@ home = str(Path.home())
 pseudo_dir = home + '/espresso/pseudo'
 
 pseudopotentials = "dict(Cu='Cu.pbe-spn-kjpaw_psl.1.0.0.UPF', H='H.pbe-kjpaw_psl.1.0.0.UPF', O='O.pbe-n-kjpaw_psl.1.0.0.UPF', C='C.pbe-n-kjpaw_psl.1.0.0.UPF')"
-executable = '\'pw.x\''
+executable = 'pw.x'
 balsam_exe_settings = {'num_nodes': 1,
         'ranks_per_node': 4,
         'threads_per_rank': 16,
@@ -50,6 +50,7 @@ calc_keywords= {'kpts':(3, 3, 1),
         'nosym':True,  # Allow symmetry breaking during optimization
         'conv_thr':1e-11,
         'mixing_mode':'local-TF'
+        #'job_args':'-nk 5' # args passed to pw.x when run
         }
 from pathlib import Path
 creation_dir = Path.cwd().as_posix()
