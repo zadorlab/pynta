@@ -30,6 +30,7 @@ ts = TS(facetpath, slab, ts_dir, yamlfile, repeats, creation_dir)
 # ts.copy_minimas_prev_calculated(current_dir, species, minima_dir)
 ts.prepare_ts_estimate(scfactor, scfactor_surface, rotAngle,
                        pytemplate_xtb, species, scaled1, scaled2)
+all_rxns = ts.get_list_all_rxns_names()
 
 dependent_workflow_name = yamlfile+facetpath+'03'
 pending_simulations_dep = BalsamJob.objects.filter(
@@ -40,24 +41,27 @@ pending_simulations = BalsamJob.objects.filter(
     workflow__contains=dependency_workflow_name
 ).exclude(state="JOB_FINISHED")
 cwd = Path.cwd().as_posix()
-for py_script in glob('{facetpath}/TS_estimate/*/*.py'):
-    job_dir = Path.cwd().as_posix() + '/' + '/'.join(
-        py_script.strip().split('/')[:-1]
-    )
-    script_name = py_script.strip().split('/')[-1]
-    job_to_add = BalsamJob(
-            name=script_name,
-            workflow=workflow_name,
-            application='python',
-            args=cwd + '/' + py_script,
-            input_files='',
-            ranks_per_node=1,
-            node_packing_count=64,
-            user_workdir=job_dir,
-            )
-    job_to_add.save()
-    for job in pending_simulations:
-        add_dependency(job, job_to_add)  # parent, child
-    for job in pending_simulations_dep:
-        add_dependency(job_to_add, job)  # parent, child
+
+for rxn in all_rxns:
+    lookup_phrase = {facetpath} + rxn + '/TS_estimate/*/*.py'
+    for py_script in glob(lookup_phrase):
+        job_dir = Path.cwd().as_posix() + '/' + '/'.join(
+            py_script.strip().split('/')[:-1]
+        )
+        script_name = py_script.strip().split('/')[-1]
+        job_to_add = BalsamJob(
+                name=script_name,
+                workflow=workflow_name,
+                application='python',
+                args=cwd + '/' + py_script,
+                input_files='',
+                ranks_per_node=1,
+                node_packing_count=64,
+                user_workdir=job_dir,
+                )
+        job_to_add.save()
+        for job in pending_simulations:
+            add_dependency(job, job_to_add)  # parent, child
+        for job in pending_simulations_dep:
+            add_dependency(job_to_add, job)  # parent, child
 

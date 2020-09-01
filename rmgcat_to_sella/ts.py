@@ -210,6 +210,20 @@ class TS():
         rxn_name = r_name + '_' + p_name
         return rxn_name
 
+    def get_list_all_rxns_names(self):
+        ''' Get a list with all reactions names '''
+
+        # open .yaml file
+        with open(self.yamlfile, 'r') as f:
+            yamltxt = f.read()
+        reactions = yaml.safe_load(yamltxt)
+
+        all_rxns = []
+        for rxn in reactions:
+            rxn_name = self.get_rxn_name(rxn)
+            all_rxns.append(rxn_name)
+        return all_rxns
+
     def TS_placer(
             self,
             scfactor,
