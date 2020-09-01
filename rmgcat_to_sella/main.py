@@ -491,14 +491,15 @@ class WorkFlow:
 
         if optimize_slab:
             # check for slab
-            # is_slab = self.check_if_slab_opt_exists()[0]
-            # if slab found in previous calculation, copy it
-            # if is_slab:
+            is_slab = self.check_if_slab_opt_exists()[0]
+            # if slab found in previous calculation, copy it or do nothing
+            if is_slab:
+                pass
                 # self.copy_slab_opt_file()
-            # else:
+            else:
                 # If the code cannot locate optimized slab .xyz file,
                 # a slab optimization will be launched.
-            self.run_slab_optimization()
+                self.run_slab_optimization()
             # check whether species were already calculated
             if all(sp_check_list):
                 # If all are True, start by generating TS guesses and run
