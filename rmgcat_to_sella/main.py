@@ -93,30 +93,30 @@ optimize_slab = inputR2S.optimize_slab
 
 class WorkFlow:
 
-    # def __init__(self):
-    #     """Setup the balsam application for this workflow run.
+    def __init__(self):
+        """Setup the balsam application for this workflow run.
 
-    #     Once we start using QE will want one app for QE,
-    #     one for xtb most likely
-    #     """
-    #     from balsam.core.models import ApplicationDefinition
-    #     self.myPython, _ = ApplicationDefinition.objects.get_or_create(
-    #         name="python",
-    #         executable=sys.executable
-    #     )
-    #     self.myPython.save()
-    #     self.slab_opt_job = ''
+        Once we start using QE will want one app for QE,
+        one for xtb most likely
+        """
+        from balsam.core.models import ApplicationDefinition
+        self.myPython, _ = ApplicationDefinition.objects.get_or_create(
+            name="python",
+            executable=sys.executable
+        )
+        self.myPython.save()
+        self.slab_opt_job = ''
 
-    #     # TODO: instead of directly importing EspressoBalsam, we should
-    #     # write a function which returns the appropriate class from
-    #     # balsamcalc.py based on the user-provided input file
-    #     from rmgcat_to_sella.balsamcalc import (
-    #         EspressoBalsam, EspressoBalsamSocketIO
-    #     )
-    #     EspressoBalsam.exe = executable
-    #     EspressoBalsamSocketIO.exe = executable
-    #     EspressoBalsam.create_application()
-    #     EspressoBalsamSocketIO.create_application()
+        # TODO: instead of directly importing EspressoBalsam, we should
+        # write a function which returns the appropriate class from
+        # balsamcalc.py based on the user-provided input file
+        from rmgcat_to_sella.balsamcalc import (
+            EspressoBalsam, EspressoBalsamSocketIO
+        )
+        EspressoBalsam.exe = executable
+        EspressoBalsamSocketIO.exe = executable
+        EspressoBalsam.create_application()
+        EspressoBalsamSocketIO.create_application()
 
     def gen_job_files(self):
         ''' Generate submt scripts for 6 stages of the workflow '''
@@ -348,30 +348,38 @@ class WorkFlow:
         else:
             return (True, outfiles)
 
-    def check_if_minima_already_calculated(self, currentDir, species,
-                                           facetpath):
+    def check_if_minima_already_calculated(
+            self,
+            currentDir,
+            species,
+            facetpath):
         ''' Check for previously calculated minima '''
         WorkFlowDirs = []
-        keyphrase = '**/{}*/'.format(facetpath)
+        # by changing the keyprase one can specify where to look for
+        # previous minima calculations. The code below is a bit overengineered
+        # but I keep it for a while. Currently, it looks only for calculation
+        # in main directory of the workflow
+        keyphrase = '*/{}/minima'.format(facetpath)
         WorkFlowDirsList = Path(str(currentDir)).glob(keyphrase)
         # find all dirs matching the keyphrase - should be something like
         # '*/01_Cu_111_methanol_OH_O+H_rot_angle_24_struc/Cu_111/'
         for WorkFlowDir in WorkFlowDirsList:
             WorkFlowDir = str(WorkFlowDir)
             WorkFlowDirs.append(WorkFlowDir)
-        # check if there is a optimized slab in the WorkFlowDirs
+        # check if there is a optimized slab in the WorkFlowDirs,
+        # as it potentially can be there
         is_xyz = any('xyz' in WorkFlowDir for WorkFlowDir in WorkFlowDirs)
         # error handling if only slab and/or facetpath dir presented
         # and no previous calculations
-        # e.g. ['.../Cu_100_slab_opt.xyz', '.../Cu_100']
+        # e.g. ['... ./Cu_100_slab_opt.xyz', '... ./Cu_100']
         # return (False, ) in that case
         if len(WorkFlowDirs) <= 2 and is_xyz:
             print('Checking for previously calculated '
                   'minima for {}'.format(species))
             print('Only one element found, probably .xyz of the slab.')
             return (False, )
-        # error handling if there is no previous minima calculations
-        # and slab was not optimized
+        # if there is no previous minima calculations and
+        # slab was not optimized
         if not WorkFlowDirs:
             return (False, )
         # go through all dirs and look for the match
@@ -391,7 +399,8 @@ class WorkFlow:
         # Finally the path is like:
         # '*/Cu_111/minima/H'
 
-        # If species were previously calculated, return True and paths
+        # If species were previously calculated, return True and paths to
+        # unique_minima_dir and path_to_outfile.
         if path_to_outfiles is None:
             return (False, )
         else:
@@ -424,9 +433,9 @@ class WorkFlow:
         TSxtb = inputR2S.TSxtbScript
         return self.exe('', TSxtb)
 
-    def check_all_species(self):
-        ''' Check all species to find whether there are previous calculation
-            the code can use
+    def check_all_species(self, species_list):
+        ''' Check all species for a given reaction to find whether
+            there are previous calculation the code can use
 
         Return:
         _______
@@ -437,7 +446,9 @@ class WorkFlow:
             (False, )
         '''
         all_sp_checked = []
-        for species in species_dict:
+        # for species_list in species_dict.values():
+        for species in species_list:
+            print(species)
             check_sp = self.check_if_minima_already_calculated(
                 currentDir, species, facetpath)
             all_sp_checked.append(check_sp)
@@ -486,71 +497,75 @@ class WorkFlow:
         '''
         # all_species_checked is a list of tuples (bool, path), if bool=True
         # otherwise (bool, )
-        # all_species_checked = self.check_all_species()
-        # It more convenient to have a list of bools
-        # sp_check_list = [
-        #     False for species in all_species_checked if not species[0]]
+        all_species_checked = []
+        for species_list in species_dict.values():
+            all_species_checked.append(self.check_all_species(species_list))
+        print(all_species_checked)
+        # # It more convenient to have a list of bools
+        sp_check_list = [
+            False for species in all_species_checked if not species[0]]
+
+        # print(sp_check_list)
 
         if optimize_slab:
             # check for slab
             is_slab = self.check_if_slab_opt_exists()
-            print(is_slab)
-            # if slab found in previous calculation, copy it or do nothing
-            # if is_slab:
-                # pass
+            # if slab found in previous calculation, do nothing
+            if is_slab:
+                pass
                 # self.copy_slab_opt_file()
-            # else:
+            else:
                 # If the code cannot locate optimized slab .xyz file,
                 # a slab optimization will be launched.
-        #     self.run_slab_optimization()
-        #     # check whether species were already calculated
-        #     if all(sp_check_list):
-        #         # If all are True, start by generating TS guesses and run
-        #         # the penalty function minimization
-        #         self.run_ts_estimate_no_depend()
-        #     else:
-        #         # If any of sp_check_list is False
-        #         # run optimization of surface + reactants; surface + products
-        #         #
-        #         # TODO: To be debugged - I need to think about a method to run
-        #         # run_opt_surf_and_adsorbate()
-        #         # or
-        #         # run_opt_surf_and_adsorbate_no_depend()
-        #         # depending whether slab opt was done perform by the workflow
-        #         # check if slab was calculated in this run.
-        #         try:
-        #             self.run_opt_surf_and_adsorbate()
-        #         except NameError:
-        #             self.run_opt_surf_and_adsorbate_no_depend()
-        #         self.run_ts_estimate('01')
-        # else:
-        #     # this is executed if user provide .xyz with the optimized slab
-        #     # check whether sp1 and sp2 was already calculated
-        #     if self.check_if_slab_opt_exists()[0]:
-        #         pass
-        #     else:
-        #         raise FileNotFoundError(
-        #             'It appears that there is no slab_opt.xyz file'
-        #         )
-        #     if all(sp_check_list):
-        #         # If all minimas were calculated some time age for the other
-        #         # reactions, rmgcat_to_sella will use that calculations.
-        #         # The code can start from TSxtb
-        #         self.exe('', TSxtb)
-        #     else:
-        #         # run optimization of surface + reactants; surface + products
-        #         # May need to put a post process on surface adsorbate
-        #         # to call the next step
-        #         # wait until optimization of surface + reactants; surface
-        #         # + products finish and submit calculations to get TS guesses
-        #         self.exe('', SurfaceAdsorbate)
-        #         # wait until optimization of surface + reactants;
-        #         # surface + products finish and submit calculations
-        #         # to get TS guesses
-        #         self.exe('01', TSxtb)
-        # # search for the 1st order saddle point
-        # self.exe('02', TS)
-        # # for each distinct TS, run IRC calculations
-        # self.exe('03', IRC)
-        # # run optimizataion of both IRC (forward, reverse) trajectory
-        # self.exe('04', IRCopt)
+                self.run_slab_optimization()
+            # check whether species were already calculated
+            if all(sp_check_list):
+                # If all are True, start by generating TS guesses and run
+                # the penalty function minimization
+                self.run_ts_estimate_no_depend()
+            else:
+                # If any of sp_check_list is False
+                # run optimization of surface + reactants; surface + products
+                #
+                # TODO: To be debugged - I need to think about a method to run
+                # run_opt_surf_and_adsorbate()
+                # or
+                # run_opt_surf_and_adsorbate_no_depend()
+                # depending whether slab opt was done perform by the workflow
+                # check if slab was calculated in this run.
+                try:
+                    self.run_opt_surf_and_adsorbate()
+                except NameError:
+                    self.run_opt_surf_and_adsorbate_no_depend()
+                self.run_ts_estimate('01')
+        else:
+            # this is executed if user provide .xyz with the optimized slab
+            # check whether sp1 and sp2 was already calculated
+            if self.check_if_slab_opt_exists()[0]:
+                pass
+            else:
+                raise FileNotFoundError(
+                    'It appears that there is no slab_opt.xyz file'
+                )
+            if all(sp_check_list):
+                # If all minimas were calculated some time age for the other
+                # reactions, rmgcat_to_sella will use that calculations.
+                # The code can start from TSxtb
+                self.exe('', TSxtb)
+            else:
+                # run optimization of surface + reactants; surface + products
+                # May need to put a post process on surface adsorbate
+                # to call the next step
+                # wait until optimization of surface + reactants; surface
+                # + products finish and submit calculations to get TS guesses
+                self.exe('', SurfaceAdsorbate)
+                # wait until optimization of surface + reactants;
+                # surface + products finish and submit calculations
+                # to get TS guesses
+                self.exe('01', TSxtb)
+        # search for the 1st order saddle point
+        self.exe('02', TS)
+        # for each distinct TS, run IRC calculations
+        self.exe('03', IRC)
+        # run optimizataion of both IRC (forward, reverse) trajectory
+        self.exe('04', IRCopt)

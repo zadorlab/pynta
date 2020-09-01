@@ -193,7 +193,7 @@ class TS():
 
         rxn : dict(yaml[str:str])
             a dictionary with info about the paricular reaction. This can be
-            view as a splitted many reaction .yaml file to a single reaction
+            view as a splitted many reaction .yaml file into a single reaction
             .yaml file
 
         Returns:
