@@ -373,6 +373,16 @@ class WorkFlow:
         TSxtb = inputR2S.TSxtbScript
         return self.exe('', TSxtb)
 
+    def check_species(self, yamlfile):
+        io = IO()
+        checked_species = {}
+        all_species = io.get_all_species(yamlfile)
+        for species in all_species:
+            checked_species[species] = self.check_for_minima_dir(species)
+            minima_out = self.check_for_minima_outfiles(species)
+            print(minima_out)
+        # print(checked_species)
+
     def check_for_minima_dir(self, species):
         ''' Return True if directory for a given species exists in
             {facepath}/minima. Otherwise False '''
@@ -381,8 +391,19 @@ class WorkFlow:
             return True
         return False
 
-    def check_for_out_files(self, species):
-        out_file = os.path.join(facetpath, 'minima', species + '*.out')
+    def check_for_minima_outfiles(self, species):
+        ''' Check for the previously calculated *relax.out files for a given
+        species in a WorkFlowDir '''
+        minima_dir = os.path.join(facetpath, 'minima')
+        search_for_outfiles = Path(minima_dir).glob(species + '_??_*out')
+        outfiles = []
+        for outfile in search_for_outfiles:
+            outfiles.append(str(outfile))
+        if not outfiles:
+            return(False, None)
+        else:
+            return (True, outfiles)
+
 
         # def check_if_minima_already_calculated(
         #         self,
@@ -501,13 +522,6 @@ class WorkFlow:
             except shutil.SameFileError:
                 pass
 
-    def check_species(self, yamlfile):
-        io = IO()
-        checked_species = {}
-        all_species = io.get_all_species(yamlfile)
-        for species in all_species:
-            checked_species[species] = self.check_for_minima_dir(species)
-        print(checked_species)
 
     def execute(self):
         ''' The main executable
