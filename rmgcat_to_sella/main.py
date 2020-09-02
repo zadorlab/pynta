@@ -452,7 +452,8 @@ class WorkFlow:
 
         TODO DEBUG -- it could be a bit buggy
         '''
-        self.check_all_species(yamlfile)
+        if all(self.check_all_species(yamlfile).values()):
+            print('Everything is calculated')
         # all_species_checked is a list of tuples (bool, path), if bool=True
         # otherwise (bool, )
         # all_species_checked = []
