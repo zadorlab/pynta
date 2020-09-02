@@ -6,6 +6,7 @@ from catkit.gen.molecules import get_3D_positions
 from rmgcat_to_sella.adsorbates import Adsorbates
 from rmgcat_to_sella.graph_utils import node_test
 from rmgcat_to_sella.main import WorkFlow
+from rmgcat_to_sella.io import IO
 
 from ase.io import read, write
 from ase.utils.structure_comparator import SymmetryEquivalenceCheck
@@ -39,7 +40,7 @@ class TS():
             a path to directory with TSs
             e.g. 'TS_estimate'
         yamlfile : str
-            a name of the .yaml file with reaction list
+            a name of the .yaml file with a reaction list
         repeats: tuple
             specify reapeats in (x, y, z) direction,
             eg. (3, 3, 1)
@@ -51,6 +52,7 @@ class TS():
         self.yamlfile = yamlfile
         self.repeats = repeats
         self.creation_dir = creation_dir
+        self.io = IO()
 
     def prepare_ts_estimate(self, scfactor, scfactor_surface,
                             rotAngle, pytemplate_xtb, species_dict,
@@ -86,14 +88,12 @@ class TS():
             for the species 2 (sp2)
         '''
         # open .yaml file
-        with open(self.yamlfile, 'r') as f:
-            yamltxt = f.read()
-        reactions = yaml.safe_load(yamltxt)
+        reactions = self.io.open_yaml_file(self.yamlfile)
 
         # preapare inputs for all reactions
         for rxn, species_list in zip(reactions, species_dict.values()):
-            r_name_list, p_name_list, images = self.prepare_react_list(rxn)
-            rxn_name = self.get_rxn_name(rxn)
+            r_name_list, p_name_list, images = self.io.prepare_react_list(rxn)
+            rxn_name = self.io.get_rxn_name(rxn)
             self.TS_placer(scfactor, rotAngle, rxn_name, r_name_list,
                            p_name_list, images)
             self.filtered_out_equiv_ts_estimate(rxn_name)
@@ -126,103 +126,6 @@ class TS():
         max_rot_angle = 360 / (nrot / 2)
         # max_rot_angle = 360/(nrot/4) # lets try 120 angle
         return max_rot_angle
-
-    def prepare_react_list(self, rxn):
-        '''Convert yaml file to more useful format
-
-        Paremeters:
-        ___________
-
-        rxn : dict(yaml[str:str])
-            a dictionary with info about the paricular reaction. This can be
-            view as a splitted many reaction .yaml file to a single reaction
-            .yaml file
-
-        Returns:
-        _______
-        r_name_list : list(str)
-            a list with all reactants for the given reaction
-        p_name_list : list(str)
-            a list with all products for the given reaction
-        images : list(Gratoms)
-            a list of CatKit's Gratom object (both reactants and products)
-
-        '''
-
-        species_ind = []
-        bonds = []
-        unique_species = []
-        unique_bonds = []
-        images = []
-
-        put_adsorbates = Adsorbates(
-            self.facetpath,
-            self.slab,
-            self.repeats,
-            self.yamlfile,
-            self.creation_dir)
-
-        # transforming reactions data to gratom objects
-        reactants, rbonds = put_adsorbates.rmgcat_to_gratoms(
-            rxn['reactant'].split('\n'))
-        products, pbonds = put_adsorbates.rmgcat_to_gratoms(
-            rxn['product'].split('\n'))
-        species_ind += reactants + products
-        bonds += rbonds + pbonds
-
-        # check if any products are the same as any reactants
-        for species1, bond in zip(species_ind, bonds):
-            for species2 in unique_species:
-                if nx.is_isomorphic(species1.graph, species2.graph, node_test):
-                    break
-            else:
-                images.append(get_3D_positions(species1))
-                unique_species.append(species1)
-                unique_bonds.append(bond)
-
-        r_name_list = [str(species.symbols) for species in reactants]
-        p_name_list = [str(species.symbols) for species in products]
-
-        return r_name_list, p_name_list, images
-
-    def get_rxn_name(self, rxn):
-        ''' Get the reaction name
-
-        Paremeters:
-        ___________
-
-        rxn : dict(yaml[str:str])
-            a dictionary with info about the paricular reaction. This can be
-            view as a splitted many reaction .yaml file into a single reaction
-            .yaml file
-
-        Returns:
-        _______
-        rxn_name : str
-            The name of the reaction in the following format:
-            OH_H+O
-        '''
-        r_name_list, p_name_list, _ = TS.prepare_react_list(self, rxn)
-
-        r_name = '+'.join([species for species in r_name_list])
-        p_name = '+'.join([species for species in p_name_list])
-
-        rxn_name = r_name + '_' + p_name
-        return rxn_name
-
-    def get_list_all_rxns_names(self):
-        ''' Get a list with all reactions names '''
-
-        # open .yaml file
-        with open(self.yamlfile, 'r') as f:
-            yamltxt = f.read()
-        reactions = yaml.safe_load(yamltxt)
-
-        all_rxns = []
-        for rxn in reactions:
-            rxn_name = self.get_rxn_name(rxn)
-            all_rxns.append(rxn_name)
-        return all_rxns
 
     def TS_placer(
             self,
@@ -423,7 +326,7 @@ class TS():
             os.rename(oldfname, newfname)
 
     def get_average_distance_all(self, species, geom_path):
-        # probably do not need it - check
+        # probably do not need it or already have it somewhere else - check
         raise NotImplementedError
 
     def set_up_penalty_xtb(
@@ -518,8 +421,12 @@ class TS():
                 shutil.move(xyz_file_path, calcDir)
         f.close()
 
-    def get_av_dist(self, path_to_minima, species, scfactor_surface,
-                    scaled=False):
+    def get_av_dist(
+            self,
+            path_to_minima,
+            species,
+            scfactor_surface,
+            scaled=False):
         ''' Get the average bond distance between adsorbate atom and
         the nearest surface atom for all symmetrically distinct minima
 
@@ -552,7 +459,7 @@ class TS():
         surface_atoms_indices = []
         adsorbate_atoms_indices = []
         all_dists = []
-        TS.get_xyz_from_traj(self, path_to_minima, species)
+        self.io.get_xyz_from_traj(path_to_minima, species)
         species_path = os.path.join(path_to_minima, species)
         # treat the special cases
         if species in ['CH3O', 'CH2O']:
@@ -565,8 +472,8 @@ class TS():
             # for one atomic species it is trivial
             sp_bonded = species
         # get unique minima indices
-        unique_minima_indices = TS.get_unique_minima_indicies_after_opt(
-            self, path_to_minima, species
+        unique_minima_indices = self.get_unique_minima_indicies_after_opt(
+            path_to_minima, species
         )
         # go through all indices of *final.xyz file
         # e.g. 00_final.xyz, 01_final.xyz
@@ -604,27 +511,6 @@ class TS():
         else:
             av_dist = mean(all_dists)
         return av_dist
-
-    def get_xyz_from_traj(self, path_to_minima, species):
-        ''' Convert all ASE's traj files to .xyz files for a given species
-
-        Parameters:
-        ___________
-        path_to_minima : str
-            a path to minima
-            e.g. 'Cu_111/minima'
-        species : str
-            a species symbol
-            e.g. 'H' or 'CO'
-
-        '''
-        species_path = os.path.join(path_to_minima, species)
-        for traj in sorted(os.listdir(species_path), key=str):
-            if traj.endswith('.traj'):
-                src_traj_path = os.path.join(species_path, traj)
-                des_traj_path = os.path.join(
-                    species_path, traj[:-5] + '_final.xyz')
-                write(des_traj_path, read(src_traj_path))
 
     def get_unique_minima_indicies_after_opt(self, path_to_minima, species):
         ''' Get the indicies of the symmetrically distinct minima
@@ -665,8 +551,11 @@ class TS():
                 unique_minima_indices.append(str(prefix).zfill(2))
         return unique_minima_indices
 
-    def copy_minimas_prev_calculated(self, current_dir, species_list,
-                                     minima_dir):
+    def copy_minimas_prev_calculated(
+            self,
+            current_dir,
+            species_list,
+            minima_dir):
         ''' If minimas have been already calculated in different set of
          reactions, they are copied to the current workflow and used instead
          of calculating it again
@@ -734,14 +623,11 @@ class TS():
             a dictionary with keywords to Quantum Espresso calculations
 
         '''
-
-        # load .yaml file
-        with open(self.yamlfile, 'r') as f:
-            yamltxt = f.read()
-        reactions = yaml.safe_load(yamltxt)
+        # open .yaml file
+        reactions = self.io.open_yaml_file(self.yamlfile)
 
         for rxn in reactions:
-            rxn_name = self.get_rxn_name(rxn)
+            rxn_name = self.io.get_rxn_name(rxn)
             ts_estimate_path = os.path.join(self.facetpath, rxn_name,
                                             self.ts_estimate_dir)
             # create .xyz and .png files
@@ -755,7 +641,9 @@ class TS():
                                           calc_keywords
                                           )
 
-    def create_unique_ts_xyz_and_png(self, ts_estimate_path):
+    def create_unique_ts_xyz_and_png(
+            self,
+            ts_estimate_path):
         ''' Create unique TS files for saddle point calculations
             for a given scfactor
 
@@ -859,7 +747,10 @@ class TS():
                                 creation_dir=self.creation_dir
                             ))
 
-    def get_bond_dist(self, ads_atom, geom):
+    def get_bond_dist(
+            self,
+            ads_atom,
+            geom):
         ''' Specify adsorbate atom symbol and bond distance with the closest
             surface metal atom will be calculated.
 
@@ -911,7 +802,10 @@ class TS():
                 struc.get_distances(adsorbate_atom, surface_atom))
             return dist_Cu_adsorbate
 
-    def get_index_adatom(self, ads_atom, geom):
+    def get_index_adatom(
+            self,
+            ads_atom,
+            geom):
         ''' Specify adsorbate atom symbol and its index will be returned.
 
         Parameters:
@@ -943,7 +837,10 @@ class TS():
         f.close()
         return adsorbate_atom[0]
 
-    def get_index_surface_atom(self, ads_atom, geom):
+    def get_index_surface_atom(
+            self,
+            ads_atom,
+            geom):
         ''' Specify adsorbate atom symbol and index of the nearest metal atom
             will be returned.
 
@@ -987,7 +884,9 @@ class TS():
 
         return surface_atom[index[0][0]]
 
-    def check_symm(self, path):
+    def check_symm(
+            self,
+            path):
         ''' Check for the symmetry equivalent structures in the given path
 
         Parameters:
@@ -1019,7 +918,9 @@ class TS():
                 unique_index.append(str(num).zfill(3))
         return unique_index
 
-    def check_symm_before_xtb(self, path):
+    def check_symm_before_xtb(
+            self,
+            path):
         ''' Check for the symmetry equivalent structures in the given path
             before executing penalty function minimization
 
