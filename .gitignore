@@ -14,3 +14,4 @@ dist
 .vscode/
 rmgcat_to_sella.egg-info/
 rmgcat_to_sella_package.tar.gz
+gitlistobjecbysizer.sh
