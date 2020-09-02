@@ -378,7 +378,7 @@ class WorkFlow:
         ___________
         species : str
             a species symbol
-            e.g. 'H' or 'CO'    
+            e.g. 'H' or 'CO'
 
         '''
         species_minima_dir = os.path.join(facetpath, 'minima', species)

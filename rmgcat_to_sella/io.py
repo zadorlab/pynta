@@ -7,23 +7,49 @@ from rmgcat_to_sella.graph_utils import node_test
 
 class IO():
     def open_yaml_file(self, yamlfile):
+        ''' Open yaml file with list of reactions
+
+        Parameters:
+        ___________
+        yamlfile : str
+            a name of the .yaml file with a reaction list
+
+        Returns:
+        __________
+        reactions : list[dict{str:str}]
+            a list with each reaction details stored as a dictionary
+
+        '''
         with open(yamlfile, 'r') as f:
             yamltxt = f.read()
         reactions = yaml.safe_load(yamltxt)
         return reactions
 
     def get_all_species(self, yamlfile):
+        ''' Generate a list with all unique species for all reactions
+            combined
+
+        Parameters:
+        ___________
+        yamlfile : str
+            a name of the .yaml file with a reaction list
+
+        Returns:
+        ________
+
+        all_species_unique : list[str]
+            a list with all unique species
+
+        '''
         reactions = self.open_yaml_file(yamlfile)
         all_species = []
         for rxn in reactions:
             r_name_list, p_name_list, _ = self.prepare_react_list(rxn)
-            # species_this_rxn = r_name_list + p_name_list
-            # all_species.append(species_this_rxn)
             all_species.append(r_name_list)
             all_species.append(p_name_list)
             all_species_unique = list(
                 set([sp for sublist in all_species for sp in sublist]))
-        return(all_species_unique)
+        return all_species_unique
 
     def prepare_react_list(self, rxn):
         '''Convert yaml file to more useful format
