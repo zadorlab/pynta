@@ -5,6 +5,7 @@ from glob import glob
 from pathlib import Path
 
 from rmgcat_to_sella.ts import TS
+from rmgcat_to_sella.io import IO
 
 from balsam.launcher.dag import BalsamJob, add_dependency
 
@@ -30,7 +31,7 @@ ts = TS(facetpath, slab, ts_dir, yamlfile, repeats, creation_dir)
 # ts.copy_minimas_prev_calculated(current_dir, species, minima_dir)
 ts.prepare_ts_estimate(scfactor, scfactor_surface, rotAngle,
                        pytemplate_xtb, species, scaled1, scaled2)
-all_rxns = ts.get_list_all_rxns_names()
+all_rxns = IO().get_list_all_rxns_names(yamlfile)
 
 dependent_workflow_name = yamlfile+facetpath+'03'
 pending_simulations_dep = BalsamJob.objects.filter(
