@@ -378,10 +378,10 @@ class WorkFlow:
         checked_species = {}
         all_species = io.get_all_species(yamlfile)
         for species in all_species:
-            checked_species[species] = self.check_for_minima_dir(species)
-            minima_out = self.check_for_minima_outfiles(species)
-            print(minima_out)
-        # print(checked_species)
+            # checked_species[species] = self.check_for_minima_dir(species)
+            checked_species[species] = self.check_for_minima_outfiles(species)
+
+        print(checked_species)
 
     def check_for_minima_dir(self, species):
         ''' Return True if directory for a given species exists in
@@ -395,14 +395,15 @@ class WorkFlow:
         ''' Check for the previously calculated *relax.out files for a given
         species in a WorkFlowDir '''
         minima_dir = os.path.join(facetpath, 'minima')
-        search_for_outfiles = Path(minima_dir).glob(species + '_??_*out')
-        outfiles = []
-        for outfile in search_for_outfiles:
-            outfiles.append(str(outfile))
-        if not outfiles:
-            return(False, None)
-        else:
-            return (True, outfiles)
+        if self.check_for_minima_dir(species):
+            search_for_outfiles = Path(minima_dir).glob(species + '_??_*out')
+            outfiles = []
+            for outfile in search_for_outfiles:
+                outfiles.append(str(outfile))
+            if not outfiles:
+                return False
+            return True
+        return False
 
 
         # def check_if_minima_already_calculated(
