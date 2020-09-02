@@ -39,7 +39,7 @@ class TS():
             a path to directory with TSs
             e.g. 'TS_estimate'
         yamlfile : str
-            a name of the .yaml file with reaction list
+            a name of the .yaml file with a reaction list
         repeats: tuple
             specify reapeats in (x, y, z) direction,
             eg. (3, 3, 1)
