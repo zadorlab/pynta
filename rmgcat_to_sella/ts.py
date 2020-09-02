@@ -641,7 +641,9 @@ class TS():
                                           calc_keywords
                                           )
 
-    def create_unique_ts_xyz_and_png(self, ts_estimate_path):
+    def create_unique_ts_xyz_and_png(
+            self,
+            ts_estimate_path):
         ''' Create unique TS files for saddle point calculations
             for a given scfactor
 
@@ -745,7 +747,10 @@ class TS():
                                 creation_dir=self.creation_dir
                             ))
 
-    def get_bond_dist(self, ads_atom, geom):
+    def get_bond_dist(
+            self,
+            ads_atom,
+            geom):
         ''' Specify adsorbate atom symbol and bond distance with the closest
             surface metal atom will be calculated.
 
@@ -797,7 +802,10 @@ class TS():
                 struc.get_distances(adsorbate_atom, surface_atom))
             return dist_Cu_adsorbate
 
-    def get_index_adatom(self, ads_atom, geom):
+    def get_index_adatom(
+            self,
+            ads_atom,
+            geom):
         ''' Specify adsorbate atom symbol and its index will be returned.
 
         Parameters:
@@ -829,7 +837,10 @@ class TS():
         f.close()
         return adsorbate_atom[0]
 
-    def get_index_surface_atom(self, ads_atom, geom):
+    def get_index_surface_atom(
+            self,
+            ads_atom,
+            geom):
         ''' Specify adsorbate atom symbol and index of the nearest metal atom
             will be returned.
 
@@ -873,7 +884,9 @@ class TS():
 
         return surface_atom[index[0][0]]
 
-    def check_symm(self, path):
+    def check_symm(
+            self,
+            path):
         ''' Check for the symmetry equivalent structures in the given path
 
         Parameters:
@@ -905,7 +918,9 @@ class TS():
                 unique_index.append(str(num).zfill(3))
         return unique_index
 
-    def check_symm_before_xtb(self, path):
+    def check_symm_before_xtb(
+            self,
+            path):
         ''' Check for the symmetry equivalent structures in the given path
             before executing penalty function minimization
 
