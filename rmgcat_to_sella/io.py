@@ -1,11 +1,19 @@
+import os
 import yaml
 import networkx as nx
+
 from catkit import Gratoms
 from catkit.gen.molecules import get_3D_positions
+
 from rmgcat_to_sella.graph_utils import node_test
+
+from ase.io import read, write
 
 
 class IO():
+    """ Class for handling Input/Output and transforming it to more usefull
+        format for the rmgcat_to_sella """
+
     def open_yaml_file(self, yamlfile):
         ''' Open yaml file with list of reactions
 
@@ -101,6 +109,43 @@ class IO():
         p_name_list = [str(species.symbols) for species in products]
 
         return r_name_list, p_name_list, images
+
+    def get_rxn_name(self, rxn):
+        ''' Get the reaction name
+
+        Paremeters:
+        ___________
+
+        rxn : dict(yaml[str:str])
+            a dictionary with info about the paricular reaction. This can be
+            view as a splitted many reaction .yaml file into a single reaction
+            .yaml file
+
+        Returns:
+        _______
+        rxn_name : str
+            The name of the reaction in the following format:
+            OH_H+O
+        '''
+        r_name_list, p_name_list, _ = self.prepare_react_list(rxn)
+
+        r_name = '+'.join([species for species in r_name_list])
+        p_name = '+'.join([species for species in p_name_list])
+
+        rxn_name = r_name + '_' + p_name
+        return rxn_name
+
+    def get_list_all_rxns_names(self, yamlfile):
+        ''' Get a list with all reactions names '''
+
+        # open .yaml file
+        reactions = self.open_yaml_file(yamlfile)
+
+        all_rxns = []
+        for rxn in reactions:
+            rxn_name = self.get_rxn_name(rxn)
+            all_rxns.append(rxn_name)
+        return all_rxns
 
     def rmgcat_to_gratoms(self, adjtxt):
         ''' Convert a slice of .yaml file to Catkit's Gratoms object
@@ -219,3 +264,24 @@ class IO():
             gratoms_list.append(new_gratoms)
 
         return gratoms_list, bonds
+
+    def get_xyz_from_traj(self, path_to_minima, species):
+        ''' Convert all ASE's traj files to .xyz files for a given species
+
+        Parameters:
+        ___________
+        path_to_minima : str
+            a path to minima
+            e.g. 'Cu_111/minima'
+        species : str
+            a species symbol
+            e.g. 'H' or 'CO'
+
+        '''
+        species_path = os.path.join(path_to_minima, species)
+        for traj in sorted(os.listdir(species_path), key=str):
+            if traj.endswith('.traj'):
+                src_traj_path = os.path.join(species_path, traj)
+                des_traj_path = os.path.join(
+                    species_path, traj[:-5] + '_final.xyz')
+                write(des_traj_path, read(src_traj_path))
