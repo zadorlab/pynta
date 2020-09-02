@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import os
+import sys
 import shutil
 from pathlib import Path
 from warnings import warn
@@ -93,30 +94,30 @@ optimize_slab = inputR2S.optimize_slab
 
 class WorkFlow:
 
-    # def __init__(self):
-    #     """Setup the balsam application for this workflow run.
+    def __init__(self):
+        """Setup the balsam application for this workflow run.
 
-    #     Once we start using QE will want one app for QE,
-    #     one for xtb most likely
-    #     """
-    #     from balsam.core.models import ApplicationDefinition
-    #     self.myPython, _ = ApplicationDefinition.objects.get_or_create(
-    #         name="python",
-    #         executable=sys.executable
-    #     )
-    #     self.myPython.save()
-    #     self.slab_opt_job = ''
+        Once we start using QE will want one app for QE,
+        one for xtb most likely
+        """
+        from balsam.core.models import ApplicationDefinition
+        self.myPython, _ = ApplicationDefinition.objects.get_or_create(
+            name="python",
+            executable=sys.executable
+        )
+        self.myPython.save()
+        self.slab_opt_job = ''
 
-    #     # TODO: instead of directly importing EspressoBalsam, we should
-    #     # write a function which returns the appropriate class from
-    #     # balsamcalc.py based on the user-provided input file
-    #     from rmgcat_to_sella.balsamcalc import (
-    #         EspressoBalsam, EspressoBalsamSocketIO
-    #     )
-    #     EspressoBalsam.exe = executable
-    #     EspressoBalsamSocketIO.exe = executable
-    #     EspressoBalsam.create_application()
-    #     EspressoBalsamSocketIO.create_application()
+        # TODO: instead of directly importing EspressoBalsam, we should
+        # write a function which returns the appropriate class from
+        # balsamcalc.py based on the user-provided input file
+        from rmgcat_to_sella.balsamcalc import (
+            EspressoBalsam, EspressoBalsamSocketIO
+        )
+        EspressoBalsam.exe = executable
+        EspressoBalsamSocketIO.exe = executable
+        EspressoBalsam.create_application()
+        EspressoBalsamSocketIO.create_application()
 
     def gen_job_files(self):
         ''' Generate submt scripts for 6 stages of the workflow '''
@@ -367,6 +368,9 @@ class WorkFlow:
         checked_species = {}
         all_species = io.get_all_species(yamlfile)
         for species in all_species:
+            # a bug to be resolved - why it inverts the name?
+            if species == 'OH':
+                species = 'HO'
             checked_species[species] = self.check_for_minima_outfiles(species)
         return checked_species
 
@@ -453,6 +457,7 @@ class WorkFlow:
         TODO DEBUG -- it could be a bit buggy
         '''
 
+        print(self.check_all_species(yamlfile))
         if optimize_slab:
             # if slab found in previous calculation, do nothing
             if self.check_if_slab_opt_exists()[0]:

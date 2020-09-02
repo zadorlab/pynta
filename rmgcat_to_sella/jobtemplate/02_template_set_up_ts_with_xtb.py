@@ -43,7 +43,7 @@ pending_simulations = BalsamJob.objects.filter(
 cwd = Path.cwd().as_posix()
 
 for rxn in all_rxns:
-    lookup_phrase = {facetpath} + rxn + '/TS_estimate/*/*.py'
+    lookup_phrase = facetpath + rxn + '/TS_estimate/*/*.py'
     for py_script in glob(lookup_phrase):
         job_dir = Path.cwd().as_posix() + '/' + '/'.join(
             py_script.strip().split('/')[:-1]
