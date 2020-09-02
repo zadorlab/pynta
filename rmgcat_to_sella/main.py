@@ -321,33 +321,6 @@ class WorkFlow:
                     add_dependency(job, job_to_add)  # parent, child
         return job_to_add
 
-    def check_if_path_to_mimina_exists(self, WorkFlowDir, species):
-        ''' Check for the paths to previously calculated minima and return
-            a list with all valid paths '''
-
-        pathlist = Path(WorkFlowDir).glob('**/minima/' + species)
-        paths = []
-        for path in pathlist:
-            # path = str(path)
-            paths.append(str(path))
-            return paths[0]
-        if IndexError:
-            return None
-
-    def check_if_path_to_out_files_exists(self, work_flow_dir, species):
-        ''' Check for the previously calculated *relax.out files for a given
-            species in a WorkFlowDir '''
-
-        keyphrase = os.path.join('minima/' + species + '*relax.out')
-        outfile_lists = Path(work_flow_dir).glob(keyphrase)
-        outfiles = []
-        for outfile in outfile_lists:
-            outfiles.append(str(outfile))
-        if not outfiles:
-            return(False, None)
-        else:
-            return (True, outfiles)
-
     def run_slab_optimization(self):
         ''' Submit slab_optimization_job '''
         self.slab_opt_job = self.exe('', slab_opt, cores=1)
@@ -373,7 +346,7 @@ class WorkFlow:
         TSxtb = inputR2S.TSxtbScript
         return self.exe('', TSxtb)
 
-    def check_species(self, yamlfile):
+    def check_all_species(self, yamlfile):
         ''' Check all species (all reactions) to find whether
             there are previous calculation the code can use
 
@@ -479,7 +452,7 @@ class WorkFlow:
 
         TODO DEBUG -- it could be a bit buggy
         '''
-        self.check_species(yamlfile)
+        self.check_all_species(yamlfile)
         # all_species_checked is a list of tuples (bool, path), if bool=True
         # otherwise (bool, )
         # all_species_checked = []
