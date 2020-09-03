@@ -13,7 +13,7 @@ facetpath = '{facetpath}'
 pytemplate_f = '{pytemplate_f}'
 pytemplate_r = '{pytemplate_r}'
 yamlfile = '{yamlfile}'
-ts_dir = 'TS_estimate'
+ts_estimate_dir = 'TS_estimate'
 pseudopotentials = {pseudopotentials}
 pseudo_dir = '{pseudo_dir}'
 balsam_exe_settings = {balsam_exe_settings}
@@ -23,10 +23,10 @@ dependency_workflow_name = yamlfile+facetpath+'03'
 dependent_workflow_name = yamlfile+facetpath+'05'
 creation_dir = '{creation_dir}'
 
-irc = IRC(facetpath, slab, repeats, ts_dir, yamlfile,
+irc = IRC(facetpath, slab, repeats, ts_estimate_dir, yamlfile,
           pseudopotentials, pseudo_dir, balsam_exe_settings,
           calc_keywords, creation_dir)
-irc.set_up_irc(pytemplate_f, pytemplate_r)
+irc.set_up_irc_all(pytemplate_f, pytemplate_r)
 
 pending_simulations = BalsamJob.objects.filter(
     workflow__contains=dependency_workflow_name

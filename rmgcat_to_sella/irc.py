@@ -98,24 +98,22 @@ class IRC():
                 self.facetpath, rxn_name, 'IRC', prefix)
             irc_dir, _ = os.path.split(irc_dir_prefix)
             ts_file_name = os.path.join(prefix + '_' + rxn_name + '_ts')
-            print(ts_file_name)
             ts_file_name_xyz = os.path.join(prefix, ts_file_name + '.xyz')
-            print(ts_file_name_xyz)
             os.makedirs(irc_dir_prefix, exist_ok=True)
             src_ts_xyz_path = os.path.join(
                 ts_uq_dir, prefix, prefix + '_' + rxn_name + '_ts_final.xyz')
-            dest_ts_path = os.path.join(irc_dir, ts_file_name)
+            dest_ts_path = os.path.join(irc_dir_prefix, ts_file_name)
             try:
                 write(dest_ts_path + '.xyz', read(src_ts_xyz_path))
                 write(dest_ts_path + '.png', read(src_ts_xyz_path))
-                self.create_job_files_irc(irc_py_dir,
+                self.create_job_files_irc(irc_dir,
                                           ts_file_name,
                                           template_f,
                                           '_irc_f.py',
                                           prefix,
                                           rxn_name,
                                           ts_file_name_xyz)
-                self.create_job_files_irc(irc_py_dir,
+                self.create_job_files_irc(irc_dir,
                                           ts_file_name,
                                           template_r,
                                           '_irc_r.py',
@@ -129,13 +127,13 @@ class IRC():
                 print('Skipping...')
                 pass
 
-    def create_job_files_irc(self, irc_py_dir, ts_file_name, template,
+    def create_job_files_irc(self, irc_dir, ts_file_name, template,
                              which_irc, prefix, rxn_name, ts_file_name_xyz):
         ''' Create python scripts to submit jobs
 
         Parameters:
         __________
-        irc_py_dir : str
+        irc_dir : str
             a path to directory where .py scripts are to be saved
             e.g. 'Cu_111/IRC/'
         ts_file_name : str
@@ -158,10 +156,10 @@ class IRC():
             e.g. '00/00_CO2+H_CHO2_ts.xyz'
 
         '''
-        job_name = os.path.join(irc_py_dir, ts_file_name[:-3] + which_irc)
+        job_name = os.path.join(irc_dir, ts_file_name[:-3] + which_irc)
         with open(job_name, 'w') as f:
             f.write(template.format(
-                prefix=prefix, rxn=rxn_name, TS_xyz=ts_file_name_xyz,
+                prefix=prefix, rxn=rxn_name, ts_xyz=ts_file_name_xyz,
                 pseudopotentials=self.pseudopotentials,
                 pseudo_dir=self.pseudo_dir,
                 balsam_exe_settings=self.balsam_exe_settings,
