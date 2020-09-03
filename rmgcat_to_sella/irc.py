@@ -66,17 +66,35 @@ class IRC():
         self.creation_dir = creation_dir
         self.io = IO()
 
-    def set_up_irc_all(self, pytemplate_f, pytemplate_r):
-        ''' Set up IRC calculations for all reactions '''
+    def set_up_irc_all(
+            self,
+            pytemplate_f,
+            pytemplate_r):
+        ''' Set up IRC calculations for all reactions
+
+        Parameters
+        __________
+        pytemplate_f, pytemplate_r : python scripts
+            python scripts templates for irc calculations
+
+        '''
         reactions = self.io.open_yaml_file(self.yamlfile)
         for rxn in reactions:
             self.set_up_irc(rxn, pytemplate_f, pytemplate_r)
 
-    def set_up_irc(self, rxn, pytemplate_f, pytemplate_r):
+    def set_up_irc(
+            self,
+            rxn,
+            pytemplate_f,
+            pytemplate_r):
         ''' Set up IRC calculations
 
-        Parameters
+        Parameters:
         __________
+        rxn : dict(yaml[str:str])
+            a dictionary with info about the paricular reaction. This can be
+            view as a splitted many reaction .yaml file into a single reaction
+            .yaml file
         pytemplate_f, pytemplate_r : python scripts
             python scripts templates for irc calculations
 
@@ -129,8 +147,15 @@ class IRC():
                 print('Skipping...')
                 pass
 
-    def create_job_files_irc(self, irc_dir, ts_file_name, template,
-                             which_irc, prefix, rxn_name, ts_file_name_xyz):
+    def create_job_files_irc(
+            self,
+            irc_dir,
+            ts_file_name,
+            template,
+            which_irc,
+            prefix,
+            rxn_name,
+            ts_file_name_xyz):
         ''' Create python scripts to submit jobs
 
         Parameters:
@@ -184,7 +209,7 @@ class IRC():
         reactions = self.io.open_yaml_file(self.yamlfile)
         for rxn in reactions:
             try:
-                self.preset_opt_irc(rxn, pytemplate_irc_opt)
+                self.check_irc_finished(rxn, pytemplate_irc_opt)
             except FileNotFoundError:
                 irc_error = irc_path.split('/')[1]
                 print('IRC calculations for {} '
@@ -192,7 +217,10 @@ class IRC():
                 print('Skipping...')
                 pass
 
-    def preset_opt_irc(self, rxn, pytemplate_irc_opt, irc_name):
+    def check_irc_finished(
+            self,
+            rxn,
+            pytemplate_irc_opt):
         ''' Preset opt irc calculations
 
         Parameter:
@@ -201,9 +229,6 @@ class IRC():
             a dictionary with info about the paricular reaction. This can be
             view as a splitted many reaction .yaml file into a single reaction
             .yaml file
-        irc_name : str
-            specify 'irc_f' or 'irc_r' depending which type of calculations to
-            set up
         pytemplate_irc_opt : python script
             template file for IRC optimization job
 
@@ -249,25 +274,25 @@ class IRC():
         struc_path, irc_traj = os.path.split(irc_traj_path)
         irc_opt_path = os.path.join(struc_path, irc_name + '_opt')
         os.makedirs(irc_opt_path, exist_ok=True)
-        init_xyz = os.path.join(irc_traj_path, irc_traj[:-5])
 
+        init_xyz = os.path.join(irc_traj_path, irc_traj[:-5])
         write(init_xyz + '.xyz', read(irc_traj_path))
         write(init_xyz + '_initial.png', read(irc_traj_path))
 
-        geom = os.path.jpin(irc_traj_path[:-4] + 'xyz')
+        xyz_geom_file = os.path.jpin(irc_traj_path[:-4] + 'xyz')
         self.create_job_files(rxn_name,
                               pytemplate_irc_opt,
                               irc_opt_path,
                               irc_traj_path,
-                              geom)
+                              xyz_geom_file)
 
     def create_job_files(
             self,
             rxn_name,
             pytemplate_irc_opt,
             irc_opt_path,
-            traj,
-            geom):
+            irc_traj_path,
+            xyz_geom_file):
         ''' Create slurm files for IRC optimization
 
         Parameters
@@ -280,22 +305,22 @@ class IRC():
         irc_opt_path : str
             directory where irc optimization will we placed,
             e.g Cu_111/IRC/00/irc_r_opt
-        traj : ase trajectory file
+        irc_traj_path : ase trajectory file
             e.g *irc_f.traj from previous irc calculation
-        geom : str
+        xyz_geom_file : str
             a name of a .xyz file with the coordinates of the TS
 
         '''
         with open(pytemplate_irc_opt, 'r') as f:
             pytemplate_irc_opt = f.read()
-            prefix = traj[:2]
+            prefix = irc_traj_path[:2]
             fname = os.path.join(irc_opt_path, prefix + '_'
                                  + rxn_name + '_' +
                                  os.path.split(irc_opt_path)[1]
                                  + '.py')
             with open(fname, 'w') as f:
                 f.write(pytemplate_irc_opt.format(
-                    geom=geom, rxn=rxn_name, prefix=prefix,
+                    geom=xyz_geom_file, rxn=rxn_name, prefix=prefix,
                     pseudopotentials=self.pseudopotentials,
                     pseudo_dir=self.pseudo_dir,
                     balsam_exe_settings=self.balsam_exe_settings,

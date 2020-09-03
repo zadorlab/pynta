@@ -38,6 +38,7 @@ pending_simulations = BalsamJob.objects.filter(
 pending_simulations_dep = BalsamJob.objects.filter(
     workflow__contains=dependent_workflow_name
 ).exclude(state="JOB_FINISHED")
+
 cwd = Path.cwd().as_posix()
 
 for rxn in all_rxns:
