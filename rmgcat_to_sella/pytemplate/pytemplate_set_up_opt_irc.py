@@ -12,17 +12,12 @@ from ase.optimize import BFGSLineSearch
 rxn = '{rxn}'
 prefix = '{prefix}'
 trajdir = os.path.join(prefix + '_' + rxn + '.traj')
-# jobdir = os.path.join()
-# label = os.path.join(prefix, prefix)
 
 start = datetime.datetime.now()
 with open(prefix + '_time.log', 'w+') as f:
     f.write(str(start))
     f.write("\n")
     f.close()
-
-# unixsocket = '_'.join([rxn, prefix])
-# unixsocket = '{prefix}/{prefix}'.format(prefix=prefix)
 
 cwd = Path.cwd().as_posix()
 extra_calc_keywords = dict(

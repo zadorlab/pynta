@@ -37,8 +37,8 @@ pending_simulations_dep = BalsamJob.objects.filter(
     workflow__contains=dependent_workflow_name
 ).exclude(state="JOB_FINISHED")
 
-
 cwd = Path.cwd().as_posix()
+
 for rxn in all_rxns:
     path_to_ts_estimate_uq = os.path.join(facetpath, rxn, 'TS_estimate_unique')
     for py_script in Path(path_to_ts_estimate_uq).glob('*.py'):
