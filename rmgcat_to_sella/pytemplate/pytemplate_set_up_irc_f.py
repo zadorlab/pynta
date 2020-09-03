@@ -8,14 +8,11 @@ from ase.io import read, write
 from ase.constraints import FixAtoms
 from sella import IRC
 
-
 rxn = '{rxn}'
 prefix = '{prefix}'
 balsam_exe_settings = {balsam_exe_settings}
 calc_keywords = {calc_keywords}
-
 trajdir = os.path.join(prefix, prefix + '_' + rxn + '_irc_f.traj')
-# jobdir = os.path.join()
 label = os.path.join(prefix, prefix)
 
 start = datetime.datetime.now()
