@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import os
-from glob import glob
 from pathlib import Path
 
 from rmgcat_to_sella.ts import TS
@@ -44,20 +43,18 @@ pending_simulations = BalsamJob.objects.filter(
 cwd = Path.cwd().as_posix()
 
 for rxn in all_rxns:
-    lookup_phrase = facetpath + rxn + '/TS_estimate/*/*.py'
-    for py_script in glob(lookup_phrase):
-        job_dir = Path.cwd().as_posix() + '/' + '/'.join(
-            py_script.strip().split('/')[:-1]
-        )
-        script_name = py_script.strip().split('/')[-1]
+    path_to_ts_estimate = os.path.join(facetpath, rxn, 'TS_estimate')
+    for py_script in Path(path_to_ts_estimate).glob('**/*.py'):
+        print(py_script)
+        job_dir, script_name = os.path.split(str(py_script))
         job_to_add = BalsamJob(
                 name=script_name,
                 workflow=workflow_name,
                 application='python',
-                args=cwd + '/' + py_script,
+                args=cwd + '/' + str(py_script),
                 input_files='',
                 ranks_per_node=1,
-                node_packing_count=64,
+                node_packing_count=48,
                 user_workdir=job_dir,
                 )
         job_to_add.save()
@@ -65,4 +62,4 @@ for rxn in all_rxns:
             add_dependency(job, job_to_add)  # parent, child
         for job in pending_simulations_dep:
             add_dependency(job_to_add, job)  # parent, child
-
+            
