@@ -2,6 +2,7 @@ import os
 
 from ase.io import read, write
 from rmgcat_to_sella.ts import TS
+from rmgcat_to_sella.io import IO
 
 
 class IRC():
@@ -10,7 +11,7 @@ class IRC():
             facetpath,
             slab,
             repeats,
-            ts_dir,
+            ts_estimate_dir,
             yamlfile,
             pseudopotentials,
             pseudo_dir,
@@ -32,7 +33,7 @@ class IRC():
         repeats: tuple
             specify reapeats in (x, y, z) direction,
             eg. (3, 3, 1)
-        ts_dir : str
+        ts_estimate_dir : str
             a path to directory with TSs
             e.g. 'TS_estimate'
         yamlfile : str
@@ -54,28 +55,35 @@ class IRC():
         self.facetpath = facetpath
         self.slab = slab
         self.repeats = repeats
-        self.ts_dir = ts_dir
+        self.ts_estimate_dir = ts_estimate_dir
         self.yamlfile = yamlfile
         self.pseudopotentials = pseudopotentials
         self.pseudo_dir = pseudo_dir
         self.balsam_exe_settings = balsam_exe_settings
         self.calc_keywords = calc_keywords
         self.creation_dir = creation_dir
+        self.io = IO()
 
-    def set_up_irc(self, pytemplate_f, pytemplate_r):
+    def set_up_irc_all(self, pytemplate_f, pytemplate_r):
+        ''' Set up IRC calculations for all reactions '''
+        reactions = self.io.open_yaml_file(self.yamlfile)
+        for rxn in reactions:
+            self.set_up_irc(rxn, pytemplate_f, pytemplate_r)
+
+    def set_up_irc(self, rxn, pytemplate_f, pytemplate_r):
         ''' Set up IRC calculations
 
         Parameters
         __________
         pytemplate_f, pytemplate_r : python scripts
             python scripts templates for irc calculations
-        '''
 
-        ts_path = os.path.join(self.facetpath, self.ts_dir)
+        '''
+        rxn_name = self.io.get_rxn_name(rxn)
+        ts_path = os.path.join(self.facetpath, rxn_name, self.ts_estimate_dir)
         ts_uq_dir = ts_path + '_unique'
-        ts = TS(self.facetpath, self.slab, self.ts_dir,
+        ts = TS(self.facetpath, self.slab, self.ts_estimate_dir,
                 self.yamlfile, self.repeats, self.creation_dir)
-        rxn = ts.get_rxn_name()
         unique_ts_index = ts.check_symm(ts_uq_dir)
 
         # load templates for irc_f and irc_r calculations
@@ -86,23 +94,34 @@ class IRC():
 
         for i, prefix in enumerate(unique_ts_index):
             prefix = prefix[1:]
-            irc_dir = os.path.join(self.facetpath, 'IRC', prefix)
-            irc_py_dir = os.path.join(self.facetpath, 'IRC')
-            ts_file_name = os.path.join(prefix + '_' + rxn + '_ts')
+            irc_dir_prefix = os.path.join(
+                self.facetpath, rxn_name, 'IRC', prefix)
+            irc_dir, _ = os.path.split(irc_dir_prefix)
+            ts_file_name = os.path.join(prefix + '_' + rxn_name + '_ts')
+            print(ts_file_name)
             ts_file_name_xyz = os.path.join(prefix, ts_file_name + '.xyz')
-            os.makedirs(irc_dir, exist_ok=True)
+            print(ts_file_name_xyz)
+            os.makedirs(irc_dir_prefix, exist_ok=True)
             src_ts_xyz_path = os.path.join(
-                ts_uq_dir, prefix, prefix + '_' + rxn + '_ts_final.xyz')
+                ts_uq_dir, prefix, prefix + '_' + rxn_name + '_ts_final.xyz')
             dest_ts_path = os.path.join(irc_dir, ts_file_name)
             try:
                 write(dest_ts_path + '.xyz', read(src_ts_xyz_path))
                 write(dest_ts_path + '.png', read(src_ts_xyz_path))
-                IRC.create_job_files_irc(self, irc_py_dir, ts_file_name,
-                                         template_f, '_irc_f.py', prefix, rxn,
-                                         ts_file_name_xyz)
-                IRC.create_job_files_irc(self, irc_py_dir, ts_file_name,
-                                         template_r, '_irc_r.py', prefix, rxn,
-                                         ts_file_name_xyz)
+                self.create_job_files_irc(irc_py_dir,
+                                          ts_file_name,
+                                          template_f,
+                                          '_irc_f.py',
+                                          prefix,
+                                          rxn_name,
+                                          ts_file_name_xyz)
+                self.create_job_files_irc(irc_py_dir,
+                                          ts_file_name,
+                                          template_r,
+                                          '_irc_r.py',
+                                          prefix,
+                                          rxn_name,
+                                          ts_file_name_xyz)
             except FileNotFoundError:
                 # skip the file because calculation did not finished
                 print('Calculations for {} probably did not finish'.format(
@@ -111,7 +130,7 @@ class IRC():
                 pass
 
     def create_job_files_irc(self, irc_py_dir, ts_file_name, template,
-                             which_irc, prefix, rxn, ts_file_name_xyz):
+                             which_irc, prefix, rxn_name, ts_file_name_xyz):
         ''' Create python scripts to submit jobs
 
         Parameters:
@@ -131,7 +150,7 @@ class IRC():
         prefix : str
             a prefix for the given geometry
             e.g. '00'
-        rxn : str
+        rxn_name : str
             name of the reaction
             e.g. 'O+H_OH'
         ts_file_name.xyz : str
@@ -142,7 +161,7 @@ class IRC():
         job_name = os.path.join(irc_py_dir, ts_file_name[:-3] + which_irc)
         with open(job_name, 'w') as f:
             f.write(template.format(
-                prefix=prefix, rxn=rxn, TS_xyz=ts_file_name_xyz,
+                prefix=prefix, rxn=rxn_name, TS_xyz=ts_file_name_xyz,
                 pseudopotentials=self.pseudopotentials,
                 pseudo_dir=self.pseudo_dir,
                 balsam_exe_settings=self.balsam_exe_settings,
@@ -192,7 +211,7 @@ class IRC():
         '''
         with open(pytemplate_irc_opt, 'r') as f:
             pytemplate_irc_opt = f.read()
-            ts = TS(self.facetpath, self.slab, self.ts_dir,
+            ts = TS(self.facetpath, self.slab, self.ts_estimate_dir,
                     self.yamlfile, self.repeats)
             rxn = ts.get_rxn_name()
             prefix = traj[:2]
