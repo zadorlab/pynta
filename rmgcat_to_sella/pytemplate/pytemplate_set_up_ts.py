@@ -33,16 +33,16 @@ TS_est.set_constraint(FixAtoms([
 ]))
 
 extra_calc_keywords = dict(
-        pseudopotentials={pseudopotentials},
-        pseudo_dir='{pseudo_dir}',
-        label=prefix
-        )
+    pseudopotentials={pseudopotentials},
+    pseudo_dir='{pseudo_dir}',
+    label=prefix
+)
 
 TS_est.calc = EspressoBalsamSocketIO(
-        workflow='QE_Socket',
-        job_kwargs=balsam_exe_settings,
-        **calc_keywords
-        )
+    workflow='QE_Socket',
+    job_kwargs=balsam_exe_settings,
+    **calc_keywords
+)
 
 TS_est.calc.set(**extra_calc_keywords)
 
