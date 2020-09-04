@@ -37,7 +37,6 @@ dependancy_dict = ts.depends_on()
 
 
 def jobs_to_be_finished(dependancy_dict, rxn_name):
-    # print('---')
     # print('Reaction : {}'.format(rxn_name))
     # print('Jobs to be finished, i.e. dependancy: ')
     jobs_to_be_finished = dependancy_dict[rxn_name]
