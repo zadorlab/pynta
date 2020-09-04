@@ -1,6 +1,7 @@
 import os
 import yaml
 import networkx as nx
+from pathlib import Path
 
 from catkit import Gratoms
 from catkit.gen.molecules import get_3D_positions
@@ -285,3 +286,63 @@ class IO():
                 des_traj_path = os.path.join(
                     species_path, traj[:-5] + '_final.xyz')
                 write(des_traj_path, read(src_traj_path))
+
+    def depends_on(self, facetpath, yamlfile):
+        ''' Returns a dictionary of adsorbate + surface calculations
+        (step 01; .py files) that has to be finished before starting step 02
+        for a particular reaction
+
+        Returns:
+        ________
+
+        dependancy_dict : [str:list(str)]
+            a dictionary with keys being reaction names and values are lists
+            of .py files for step 01 that have to be finished to start 02 step
+            for a given reaction
+            e.g.
+
+        '''
+        path_to_minima = os.path.join(facetpath, 'minima')
+
+        # get reactions from. .yaml file
+        reactions = self.open_yaml_file(yamlfile)
+
+        dependancy_dict = {}
+
+        # loop through all reactions
+        for rxn in reactions:
+            # get list of reactant and product
+            r_name_list, p_name_list, _ = self.prepare_react_list(rxn)
+            # get reaction name
+            rxn_name = self.get_rxn_name(rxn)
+            minima_py_list = []
+            # loop through all reactants
+            for reactant in r_name_list:
+                # ?? is needed to prevent returning e.g.
+                # OH_00_relax.py and O_00_relax.py
+                # while
+                # reactant or product = O
+                # I have no idea why OH and HO is getting reverse
+                # a workaround
+                if reactant == 'OH':
+                    reactant = 'HO'
+                lookup_phrase = reactant + '_??_relax.py'
+                # find matching reatants
+                minima_py_files = Path(path_to_minima).glob(lookup_phrase)
+                # append a list with minima that have to be calculated to
+                # run 02 step
+                for minima_py_file in minima_py_files:
+                    minima_py_list.append(
+                        os.path.split((str(minima_py_file)))[1])
+            # loop through all products and do the same as for reactants
+            for product in p_name_list:
+                lookup_phrase = product + '_??_relax.py'
+                minima_py_files = Path(path_to_minima).glob(lookup_phrase)
+                for minima_py_file in minima_py_files:
+                    minima_py_list.append(
+                        os.path.split((str(minima_py_file)))[1])
+
+            # create a dictionary with dependencies
+            # {'reaction_name':[list_with_py_files_have_to_be_calculated]}
+            dependancy_dict[rxn_name] = minima_py_list
+        return dependancy_dict
