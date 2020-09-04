@@ -54,7 +54,7 @@ class TS():
         self.creation_dir = creation_dir
         self.io = IO()
 
-    def prepare_ts_estimate(self, rxn, scfactor, scfactor_surface,
+    def prepare_ts_estimate(self, rxn, rxn_no, scfactor, scfactor_surface,
                             rotAngle, pytemplate_xtb, species_dict,
                             scaled1, scaled2):
         ''' Prepare TS estimates for subsequent xTB calculations
@@ -91,7 +91,7 @@ class TS():
         # reactions = self.io.open_yaml_file(self.yamlfile)
 
         # preapare inputs for all reactions
-        for species_list in species_dict.values():
+        for species_list in species_dict['rxn' + str(rxn_no)]:
             r_name_list, p_name_list, images = self.io.prepare_react_list(rxn)
             rxn_name = self.io.get_rxn_name(rxn)
             self.TS_placer(scfactor, rotAngle, rxn_name, r_name_list,
