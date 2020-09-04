@@ -54,7 +54,7 @@ class TS():
         self.creation_dir = creation_dir
         self.io = IO()
 
-    def prepare_ts_estimate(self, scfactor, scfactor_surface,
+    def prepare_ts_estimate(self, rxn, scfactor, scfactor_surface,
                             rotAngle, pytemplate_xtb, species_dict,
                             scaled1, scaled2):
         ''' Prepare TS estimates for subsequent xTB calculations
@@ -88,10 +88,10 @@ class TS():
             for the species 2 (sp2)
         '''
         # open .yaml file
-        reactions = self.io.open_yaml_file(self.yamlfile)
+        # reactions = self.io.open_yaml_file(self.yamlfile)
 
         # preapare inputs for all reactions
-        for rxn, species_list in zip(reactions, species_dict.values()):
+        for species_list in species_dict.values():
             r_name_list, p_name_list, images = self.io.prepare_react_list(rxn)
             rxn_name = self.io.get_rxn_name(rxn)
             self.TS_placer(scfactor, rotAngle, rxn_name, r_name_list,
@@ -955,4 +955,3 @@ class TS():
                 # keeping all symmetry distinct sites
                 not_unique_index.append(str(num).zfill(3))
         return not_unique_index
-
