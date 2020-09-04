@@ -4,7 +4,7 @@ from glob import glob
 from pathlib import Path
 
 from rmgcat_to_sella.adsorbates import Adsorbates
-from rmgcat_to_sella.ts import TS
+from rmgcat_to_sella.io import IO
 
 # from balsam.launcher.dag import BalsamJob, add_dependency
 
@@ -32,8 +32,8 @@ put_adsorbates.create_relax_jobs(
     balsam_exe_settings, calc_keywords
 )
 
-ts = TS(facetpath, slab, ts_dir, yamlfile, repeats, creation_dir)
-dependancy_dict = ts.depends_on()
+io = IO()
+dependancy_dict = io.depends_on(facetpath, yamlfile)
 
 
 def jobs_to_be_finished(dependancy_dict, rxn_name):
@@ -69,30 +69,42 @@ def run_01(dependancy_dict):
         new_unique_submission = []
         for py_script in jobs_to_be_finished(dependancy_dict, rxn_name):
             job_dir = cwd + '/' + '/'.join(py_script.strip().split('/')[:-1])
+            # get all unique submission
             if py_script not in all_submitted_jobs:
                 new_unique_submission.append(py_script)
                 all_submitted_jobs.append(py_script)
-        # print('New jobs to be submitted: ')
-        print(new_unique_submission)
-        # submit all unique jobs
-        for py_script in new_unique_submission:
-            job_to_add = BalsamJob(
-                name=py_script,
-                workflow=workflow_name,
-                application='python',
-                args=cwd + '/' + py_script,
-                input_files='',
-                user_workdir=job_dir,
-                node_packing_count=48,
-                ranks_per_node=1,
-            )
-            job_to_add.save()
-
+            if py_script in new_unique_submission:
+                job_to_add = BalsamJob(
+                    name=py_script,
+                    workflow=workflow_name,
+                    application='python',
+                    args=cwd + '/' + py_script,
+                    input_files='',
+                    user_workdir=job_dir,
+                    node_packing_count=48,
+                    ranks_per_node=1,
+                )
+                job_to_add.save()
+                for job in pending_simulations_dep:
+                    add_dependency(job_to_add, job) # parent, child
+            else:
+                job_to_add = BalsamJob(
+                    name=py_script,
+                    workflow=workflow_name,
+                    application='python',
+                    args=cwd + '/' + py_script,
+                    input_files='',
+                    user_workdir=job_dir,
+                    node_packing_count=48,
+                    ranks_per_node=1,
+                )
+                # job_to_add.save()
+                for job in pending_simulations_dep:
+                    add_dependency(job_to_add, job) # parent, child
+                    
         # for job in jobs_to_be_finished(dependancy_dict, rxn_name):
-        # for job in pending_simulations_dep:
-            # add_dependency(job_to_add, job)  # parent, child
-        # for job in pending_simulations_dep:
-            # add_dependency(job_to_add, job)  # parent, child
+        #     print(rxn_name, job)
+            # add_dependency(job, pending_simulations_dep)  # parent, child
 
         # job_to_add should be for O, H, OH for 02 job OH_O+H
 
