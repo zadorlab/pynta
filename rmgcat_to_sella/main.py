@@ -175,9 +175,18 @@ class WorkFlow:
         r.close()
 
     def set_up_ads(
-        self, template, facetpath, slabopt, repeats, yamlfile,
-        pytemplate, pseudopotentials, pseudo_dir,
-        balsam_exe_settings, calc_keywords, creation_dir
+        self,
+        template,
+        facetpath,
+        slabopt,
+        repeats,
+        yamlfile,
+        pytemplate,
+        pseudopotentials,
+        pseudo_dir,
+        balsam_exe_settings,
+        calc_keywords,
+        creation_dir
     ):
         ''' Create 01_set_up_ads.py file '''
         with open(template, 'r') as r:
@@ -196,11 +205,65 @@ class WorkFlow:
             c.close()
         r.close()
 
-    def set_up_TS_with_xtb(self, rxn, template, slab,
-                           repeats, yamlfile, facetpath, rotAngle,
-                           scfactor, scfactor_surface,
-                           pytemplate_xtb, species_dict, creation_dir):
-        ''' Create 02_set_up_TS_with_xtb.py file'''
+    def set_up_TS_with_xtb(
+            self,
+            rxn,
+            template,
+            slab,
+            repeats,
+            yamlfile,
+            facetpath,
+            rotAngle,
+            scfactor,
+            scfactor_surface,
+            pytemplate_xtb,
+            species_dict,
+            creation_dir):
+        ''' Create 02_set_up_TS_with_xtb_{rxn_name}.py files
+
+        Parameters:
+        ___________
+
+        rxn : dict(yaml[str:str])
+            a dictionary with info about the paricular reaction. This can be
+            view as a splitted many reaction .yaml file to a single reaction
+            .yaml file
+        template : py file
+            a template to set up 02 job for a particular reaction
+        slab : str
+            a '.xyz' file name with the optimized slab
+            e.g.
+            'Cu_111_slab_opt.xyz'
+        repeats : tuple(int, int, int)
+            how to replicate unit cell in (x, y, z) direction
+        yamlfile : str
+            a name of the .yaml file with a reaction list
+        facetpath : str
+            a path to the workflow's main dir
+            e.g. 'Cu_111'
+        rotAngle : float
+            an angle (deg) of rotation  of the TS guess adduct on the surface
+            e.g. 60.0 (to be removed - not really necessary)
+        scfator : float
+            a scaling factor to scale a bond distance between
+            atoms taking part in the reaction
+            e.g. 1.4
+        scfactor_surface : float
+            a scaling factor to scale the target bond distance, i.e.
+            the average distance between adsorbed atom and the nearest
+            surface atom. Helpful e.g. when H is far away form the surface
+            in TS, whereas for minima it is close to the surface
+            e.g. 1.0
+        pytemplate_xtb : python script
+            a template file for penalty function minimization job
+        species_dict : dict{str:list[str]}
+            a dictionary holding info about particular reaction and key species
+            for that reaction
+            e.g. {'rxn1': ['O', 'H'], 'rxn2': ['C', 'H']}
+        creation_dir : posix
+            a posix path to the working directory
+
+        '''
         with open(template, 'r') as r:
             template_text = r.read()
             rxn_name = IO().get_rxn_name(rxn)

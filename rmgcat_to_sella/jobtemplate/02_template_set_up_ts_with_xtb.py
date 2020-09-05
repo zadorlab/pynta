@@ -4,7 +4,6 @@ import os
 from pathlib import Path
 
 from rmgcat_to_sella.ts import TS
-from rmgcat_to_sella.io import IO
 
 from balsam.launcher.dag import BalsamJob, add_dependency
 
@@ -28,7 +27,12 @@ creation_dir = '{creation_dir}'
 rxn = {rxn}
 rxn_name = '{rxn_name}'
 
-ts = TS(facetpath, slab, ts_dir, yamlfile, repeats, creation_dir)
+ts = TS(
+    facetpath,
+    slab, ts_dir,
+    yamlfile,
+    repeats,
+    creation_dir)
 # ts.copy_minimas_prev_calculated(current_dir, species, minima_dir)
 ts.prepare_ts_estimate(
     rxn,

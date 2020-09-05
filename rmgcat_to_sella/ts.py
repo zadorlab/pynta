@@ -76,10 +76,10 @@ class TS():
             e.g. 60
         pytemplate_xtb : python script
             a template file for penalty function minimization job
-        species_dict : dict(str:list[str])
-            a dictionary where vaules are lists of max 2 species that take
+        species_list : list[str]
+            a lists of max 2 species that take
             part in the reaction
-            e.g. {'rxn1': ['O', 'H'], 'rxn2': ['C', 'H']}
+            e.g. ['O', 'H']
         scaled1 : bool
             specify whether use the optional scfactor_surface
             for the species 1 (sp1)
