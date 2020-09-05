@@ -153,10 +153,20 @@ class WorkFlow:
 #   Create submit files   #
 ###########################
 
-    def set_up_slab(self, template, surface_type, symbol, a, repeats_surface,
-                    vacuum, slab_name, pseudopotentials, pseudo_dir,
-                    balsam_exe_settings, calc_keywords,
-                    creation_dir):
+    def set_up_slab(
+            self,
+            template,
+            surface_type,
+            symbol,
+            a,
+            repeats_surface,
+            vacuum,
+            slab_name,
+            pseudopotentials,
+            pseudo_dir,
+            balsam_exe_settings,
+            calc_keywords,
+            creation_dir):
         ''' Create 00_set_up_slab_opt.py file '''
         with open(template, 'r') as r:
             template_text = r.read()
@@ -188,7 +198,45 @@ class WorkFlow:
         calc_keywords,
         creation_dir
     ):
-        ''' Create 01_set_up_ads.py file '''
+        ''' Create 01_set_up_ads.py file
+
+        Parameters:
+        ___________
+        template : py file
+            a template to set up 01 job
+        facetpath : str
+            a path to the workflow's main dir
+            e.g. 'Cu_111'
+        slabopt : str
+            a path to .xyz file with optimized slab
+        repeats : tuple(int, int, int)
+            how to replicate unit cell in (x, y, z) direction
+        yamlfile : str
+            a name of the .yaml file with a reaction list
+        pytemplate : python file
+            a template to prepare submission scripts
+            for adsorbate+surface minimization
+        pseudopotentials : dict(str: str)
+            a dictionary with QE pseudopotentials for all species.
+            e.g.
+            dict(Cu='Cu.pbe-spn-kjpaw_psl.1.0.0.UPF',
+                H='H.pbe-kjpaw_psl.1.0.0.UPF',
+                O='O.pbe-n-kjpaw_psl.1.0.0.UPF',
+                C='C.pbe-n-kjpaw_psl.1.0.0.UPF',
+                )
+        pseudo_dir : str
+            a path to the QE's pseudopotentials main directory
+            e.g.
+            '/home/mgierad/espresso/pseudo'
+        balsam_exe_settings : dict{'str':int}
+            a dictionary with balsam execute parameters (cores, nodes, etc.)
+        calc_keywords : dict{'str':'str'}
+            a dictionary with parameters to run DFT package. Quantume Espresso
+            is used as default
+        creation_dir : posix
+            a posix path to the working directory
+
+        '''
         with open(template, 'r') as r:
             template_text = r.read()
             with open('01_set_up_ads.py', 'w') as c:
