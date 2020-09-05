@@ -121,33 +121,92 @@ class WorkFlow:
 
     def gen_job_files(self):
         ''' Generate submt scripts for 6 stages of the workflow '''
-        self.set_up_slab(template_slab_opt, surface_type, symbol, a,
-                         repeats_surface, vacuum, slab_name,
-                         pseudopotentials, pseudo_dir,
-                         balsam_exe_settings, calc_keywords, creation_dir)
-        self.set_up_ads(template_ads, facetpath, slabopt,
-                        repeats, yamlfile, pytemplate_relax_ads,
-                        pseudopotentials, pseudo_dir,
-                        balsam_exe_settings, calc_keywords, creation_dir)
+        self.set_up_slab(
+            template_slab_opt,
+            surface_type,
+            symbol,
+            a,
+            repeats_surface,
+            vacuum,
+            slab_name,
+            pseudopotentials,
+            pseudo_dir,
+            balsam_exe_settings,
+            calc_keywords,
+            creation_dir
+        )
+        self.set_up_ads(
+            template_ads,
+            facetpath,
+            slabopt,
+            repeats,
+            yamlfile,
+            pytemplate_relax_ads,
+            pseudopotentials,
+            pseudo_dir,
+            balsam_exe_settings,
+            calc_keywords,
+            creation_dir
+        )
+
         reactions = IO().open_yaml_file(yamlfile)
         for rxn in reactions:
-            self.set_up_TS_with_xtb(rxn, template_set_up_ts_with_xtb, slabopt,
-                                    repeats, yamlfile, facetpath, rotAngle,
-                                    scfactor, scfactor_surface, pytemplate_xtb,
-                                    species_dict, creation_dir)
-        self.set_up_run_TS(template_set_up_ts, facetpath, slabopt,
-                           repeats, yamlfile, pytemplate_set_up_ts,
-                           pseudopotentials, pseudo_dir,
-                           balsam_exe_settings, calc_keywords, creation_dir)
-        self.set_up_run_IRC(template_set_up_IRC, facetpath, slabopt,
-                            repeats, pytemplate_f, pytemplate_r, yamlfile,
-                            pseudopotentials, pseudo_dir,
-                            balsam_exe_settings, calc_keywords, creation_dir)
-        self.set_up_opt_IRC(template_set_up_optIRC,
-                            facetpath, slabopt, repeats,
-                            pytemplate_optIRC,
-                            pseudopotentials, pseudo_dir,
-                            balsam_exe_settings, calc_keywords, creation_dir)
+            self.set_up_TS_with_xtb(
+                rxn,
+                template_set_up_ts_with_xtb,
+                slabopt,
+                repeats,
+                yamlfile,
+                facetpath,
+                rotAngle,
+                scfactor,
+                scfactor_surface,
+                pytemplate_xtb,
+                species_dict,
+                creation_dir
+            )
+
+        self.set_up_run_TS(
+            template_set_up_ts,
+            facetpath,
+            slabopt,
+            repeats,
+            yamlfile,
+            pytemplate_set_up_ts,
+            pseudopotentials,
+            pseudo_dir,
+            balsam_exe_settings,
+            calc_keywords,
+            creation_dir
+        )
+
+        self.set_up_run_IRC(
+            template_set_up_IRC,
+            facetpath,
+            slabopt,
+            repeats,
+            pytemplate_f,
+            pytemplate_r,
+            yamlfile,
+            pseudopotentials,
+            pseudo_dir,
+            balsam_exe_settings,
+            calc_keywords,
+            creation_dir
+        )
+
+        self.set_up_opt_IRC(
+            template_set_up_optIRC,
+            facetpath,
+            slabopt,
+            repeats,
+            pytemplate_optIRC,
+            pseudopotentials,
+            pseudo_dir,
+            balsam_exe_settings,
+            calc_keywords,
+            creation_dir
+        )
 
 ###########################
 #   Create submit files   #
@@ -429,16 +488,40 @@ class WorkFlow:
 ##############################
 # Submit jobs and execute it #
 ##############################
-    def exe(self, parent_job, job_script, cores=1):
-        ''' TODO Docstring to be written '''
+
+    def exe(self,
+            parent_job,
+            job_script,
+            cores=1):
+        ''' Execute a py script
+
+        Parameters:
+        ___________
+
+        parent_job : str
+            a parent job on which subbmited jobs depends
+        job_script : str
+            a script that is about to be submitted
+        cores : int
+            number of cores for exe job
+
+        Returns:
+        ________
+
+        job_to_add : balsam job
+            job that will be submitted to balsam queue/database
+
+        '''
         from balsam.launcher.dag import BalsamJob
         from os import getcwd
         cwd = getcwd()
+
         try:
             int(job_script[0:2])
             workflow_name = yamlfile + facetpath + job_script[0:2]
         except ValueError:
             workflow_name = yamlfile + facetpath
+
         job_to_add = BalsamJob(
             name=job_script,
             workflow=workflow_name,
@@ -450,6 +533,7 @@ class WorkFlow:
             user_workdir=cwd
         )
         job_to_add.save()
+        # if there is a parent job, specify dependency
         if parent_job != '':
             from balsam.launcher.dag import add_dependency
             try:
