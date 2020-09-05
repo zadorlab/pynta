@@ -94,30 +94,30 @@ optimize_slab = inputR2S.optimize_slab
 
 class WorkFlow:
 
-    def __init__(self):
-        """Setup the balsam application for this workflow run.
+    # def __init__(self):
+    #     """Setup the balsam application for this workflow run.
 
-        Once we start using QE will want one app for QE,
-        one for xtb most likely
-        """
-        from balsam.core.models import ApplicationDefinition
-        self.myPython, _ = ApplicationDefinition.objects.get_or_create(
-            name="python",
-            executable=sys.executable
-        )
-        self.myPython.save()
-        self.slab_opt_job = ''
+    #     Once we start using QE will want one app for QE,
+    #     one for xtb most likely
+    #     """
+    #     from balsam.core.models import ApplicationDefinition
+    #     self.myPython, _ = ApplicationDefinition.objects.get_or_create(
+    #         name="python",
+    #         executable=sys.executable
+    #     )
+    #     self.myPython.save()
+    #     self.slab_opt_job = ''
 
-        # TODO: instead of directly importing EspressoBalsam, we should
-        # write a function which returns the appropriate class from
-        # balsamcalc.py based on the user-provided input file
-        from rmgcat_to_sella.balsamcalc import (
-            EspressoBalsam, EspressoBalsamSocketIO
-        )
-        EspressoBalsam.exe = executable
-        EspressoBalsamSocketIO.exe = executable
-        EspressoBalsam.create_application()
-        EspressoBalsamSocketIO.create_application()
+    #     # TODO: instead of directly importing EspressoBalsam, we should
+    #     # write a function which returns the appropriate class from
+    #     # balsamcalc.py based on the user-provided input file
+    #     from rmgcat_to_sella.balsamcalc import (
+    #         EspressoBalsam, EspressoBalsamSocketIO
+    #     )
+    #     EspressoBalsam.exe = executable
+    #     EspressoBalsamSocketIO.exe = executable
+    #     EspressoBalsam.create_application()
+    #     EspressoBalsamSocketIO.create_application()
 
     def gen_job_files(self):
         ''' Generate submt scripts for 6 stages of the workflow '''
@@ -129,10 +129,12 @@ class WorkFlow:
                         repeats, yamlfile, pytemplate_relax_ads,
                         pseudopotentials, pseudo_dir,
                         balsam_exe_settings, calc_keywords, creation_dir)
-        self.set_up_TS_with_xtb(template_set_up_ts_with_xtb, slabopt,
-                                repeats, yamlfile, facetpath, rotAngle,
-                                scfactor, scfactor_surface, pytemplate_xtb,
-                                species_dict, creation_dir)
+        reactions = IO().open_yaml_file(yamlfile)
+        for rxn in reactions:
+            self.set_up_TS_with_xtb(rxn, template_set_up_ts_with_xtb, slabopt,
+                                    repeats, yamlfile, facetpath, rotAngle,
+                                    scfactor, scfactor_surface, pytemplate_xtb,
+                                    species_dict, creation_dir)
         self.set_up_run_TS(template_set_up_ts, facetpath, slabopt,
                            repeats, yamlfile, pytemplate_set_up_ts,
                            pseudopotentials, pseudo_dir,
@@ -194,25 +196,29 @@ class WorkFlow:
             c.close()
         r.close()
 
-    def set_up_TS_with_xtb(self, template, slab,
+    def set_up_TS_with_xtb(self, rxn, template, slab,
                            repeats, yamlfile, facetpath, rotAngle,
                            scfactor, scfactor_surface,
                            pytemplate_xtb, species_dict, creation_dir):
         ''' Create 02_set_up_TS_with_xtb.py file'''
         with open(template, 'r') as r:
             template_text = r.read()
-            with open('02_set_up_TS_with_xtb.py', 'w') as c:
+            rxn_name = IO().get_rxn_name(rxn)
+            rxn_no = rxn['index'] + 1
+            fname = '02_set_up_TS_with_xtb_{}.py'.format(rxn_name)
+            with open(fname, 'w') as c:
                 c.write(template_text.format(
                     facetpath=facetpath, slab=slab,
                     repeats=repeats, yamlfile=yamlfile,
                     rotAngle=rotAngle, scfactor=scfactor,
                     scfactor_surface=scfactor_surface,
                     pytemplate_xtb=pytemplate_xtb,
-                    species_dict=species_dict,
-                    scaled1=scaled1, scaled2=scaled2, creation_dir=creation_dir
+                    species_list=species_dict['rxn' + str(rxn_no)],
+                    scaled1=scaled1, scaled2=scaled2,
+                    creation_dir=creation_dir,
+                    rxn=rxn,
+                    rxn_name=rxn_name
                 ))
-            c.close()
-        r.close()
 
     def set_up_run_TS(
         self, template, facetpath, slab, repeats, yamlfile,

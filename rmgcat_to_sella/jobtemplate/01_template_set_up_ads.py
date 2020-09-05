@@ -1,31 +1,25 @@
 #!/usr/bin/env python3
-import os
+
 from glob import glob
 from pathlib import Path
 
 from rmgcat_to_sella.adsorbates import Adsorbates
 from rmgcat_to_sella.io import IO
 
-# from balsam.launcher.dag import BalsamJob, add_dependency
+from balsam.launcher.dag import BalsamJob, add_dependency
 
+facetpath = '{facetpath}'
+slab = '{slabopt}'
+repeats = {repeats}
+yamlfile = '{yamlfile}'
+pytemplate = '{pytemplate}'
+pseudopotentials = {pseudopotentials}
+pseudo_dir = '{pseudo_dir}'
+balsam_exe_settings = {balsam_exe_settings}
+calc_keywords = {calc_keywords}
+creation_dir = '{creation_dir}'
 
-facetpath = 'Cu_111'
-slab = 'Cu_111_slab_opt.xyz'
-repeats = (3, 3, 1)
-yamlfile = 'reactions.yaml'
-pytemplate = '/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/rmgcat_to_sella/pytemplate/pytemplate_relax_Cu_111_ads.py'
-pseudopotentials = dict(Cu='Cu.pbe-spn-kjpaw_psl.1.0.0.UPF', H='H.pbe-kjpaw_psl.1.0.0.UPF',
-                        O='O.pbe-n-kjpaw_psl.1.0.0.UPF', C='C.pbe-n-kjpaw_psl.1.0.0.UPF')
-pseudo_dir = '/home/mgierad/espresso/pseudo'
-balsam_exe_settings = {'num_nodes': 1,
-                       'ranks_per_node': 48, 'threads_per_rank': 1}
-calc_keywords = {'kpts': (3, 3, 1), 'occupations': 'smearing', 'smearing': 'marzari-vanderbilt',
-                 'degauss': 0.01, 'ecutwfc': 40, 'nosym': True, 'conv_thr': 1e-11, 'mixing_mode': 'local-TF'}
-creation_dir = '/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/test/rmgcat_to_sella/00_code_test/code_test_yaml_parser/'
-ts_dir = 'TS_estimate'
-
-put_adsorbates = Adsorbates(
-    facetpath, slab, repeats, yamlfile, creation_dir)
+put_adsorbates = Adsorbates(facetpath, slab, repeats, yamlfile, creation_dir)
 put_adsorbates.adjacency_to_3d()
 put_adsorbates.create_relax_jobs(
     pytemplate, pseudopotentials, pseudo_dir,
@@ -35,12 +29,12 @@ put_adsorbates.create_relax_jobs(
 io = IO()
 dependancy_dict = io.depends_on(facetpath, yamlfile)
 
+cwd = Path.cwd().as_posix()
+workflow_name = yamlfile + facetpath + '01'
+
 
 def jobs_to_be_finished(dependancy_dict, rxn_name):
-    # print('Reaction : {}'.format(rxn_name))
-    # print('Jobs to be finished, i.e. dependancy: ')
     jobs_to_be_finished = dependancy_dict[rxn_name]
-    # print(jobs_to_be_finished)
     return jobs_to_be_finished
 
 
@@ -58,9 +52,9 @@ def run_01(dependancy_dict):
 
         # have to find a way to specify dependancy which species have to be
         # calculated for a given reaction
-        # pending_simulations_dep = BalsamJob.objects.filter(
-        #     workflow__contains=dependent_workflow_name
-        # ).exclude(state="JOB_FINISHED")
+        pending_simulations_dep = BalsamJob.objects.filter(
+            workflow__contains=dependent_workflow_name
+        ).exclude(state="JOB_FINISHED")
 
         # for each reaction keep track of its dependencies
         # e.g. for OH --> O + H those have to be finished OH, O and H
@@ -86,7 +80,7 @@ def run_01(dependancy_dict):
                 )
                 job_to_add.save()
                 for job in pending_simulations_dep:
-                    add_dependency(job_to_add, job) # parent, child
+                    add_dependency(job_to_add, job)  # parent, child
             else:
                 job_to_add = BalsamJob(
                     name=py_script,
@@ -100,13 +94,4 @@ def run_01(dependancy_dict):
                 )
                 # job_to_add.save()
                 for job in pending_simulations_dep:
-                    add_dependency(job_to_add, job) # parent, child
-                    
-        # for job in jobs_to_be_finished(dependancy_dict, rxn_name):
-        #     print(rxn_name, job)
-            # add_dependency(job, pending_simulations_dep)  # parent, child
-
-        # job_to_add should be for O, H, OH for 02 job OH_O+H
-
-
-run_01(dependancy_dict)
+                    add_dependency(job_to_add, job)  # parent, child
