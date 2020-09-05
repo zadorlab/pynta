@@ -181,8 +181,6 @@ class WorkFlow:
                     balsam_exe_settings=balsam_exe_settings,
                     calc_keywords=calc_keywords, creation_dir=creation_dir
                 ))
-            c.close()
-        r.close()
 
     def set_up_ads(
         self,
@@ -254,19 +252,20 @@ class WorkFlow:
         r.close()
 
     def set_up_TS_with_xtb(
-            self,
-            rxn,
-            template,
-            slab,
-            repeats,
-            yamlfile,
-            facetpath,
-            rotAngle,
-            scfactor,
-            scfactor_surface,
-            pytemplate_xtb,
-            species_dict,
-            creation_dir):
+        self,
+        rxn,
+        template,
+        slab,
+        repeats,
+        yamlfile,
+        facetpath,
+        rotAngle,
+        scfactor,
+        scfactor_surface,
+        pytemplate_xtb,
+        species_dict,
+        creation_dir
+    ):
         ''' Create 02_set_up_TS_with_xtb_{rxn_name}.py files
 
         Parameters:
@@ -332,9 +331,18 @@ class WorkFlow:
                 ))
 
     def set_up_run_TS(
-        self, template, facetpath, slab, repeats, yamlfile,
-        pytemplate, pseudopotentials, pseudo_dir,
-        balsam_exe_settings, calc_keywords, creation_dir
+        self,
+        template,
+        facetpath,
+        slab,
+        repeats,
+        yamlfile,
+        pytemplate,
+        pseudopotentials,
+        pseudo_dir,
+        balsam_exe_settings,
+        calc_keywords,
+        creation_dir
     ):
         ''' Create 03_checksym_xtb_runTS.py file '''
         with open(template, 'r') as r:
@@ -352,10 +360,21 @@ class WorkFlow:
             c.close()
         r.close()
 
-    def set_up_run_IRC(self, template, facetpath, slab, repeats,
-                       pytemplate_f, pytemplate_r, yamlfile,
-                       pseudopotentials, pseudo_dir,
-                       balsam_exe_setting, calc_keywords, creation_dir):
+    def set_up_run_IRC(
+        self,
+        template,
+        facetpath,
+        slab,
+        repeats,
+        pytemplate_f,
+        pytemplate_r,
+        yamlfile,
+        pseudopotentials,
+        pseudo_dir,
+        balsam_exe_setting,
+        calc_keywords,
+        creation_dir
+    ):
         ''' Create 04_set_up_irc.py file '''
         with open(template, 'r') as r:
             template_text = r.read()
@@ -376,9 +395,17 @@ class WorkFlow:
         r.close()
 
     def set_up_opt_IRC(
-        self, template, facetpath, slab, repeats, pytemplate,
-        pseudopotentials, pseudo_dir, balsam_exe_setting,
-        calc_keywords, creation_dir
+        self,
+        template,
+        facetpath,
+        slab,
+        repeats,
+        pytemplate,
+        pseudopotentials,
+        pseudo_dir,
+        balsam_exe_setting,
+        calc_keywords,
+        creation_dir
     ):
         ''' Create 05_set_up_opt_after_irc.py file'''
         with open(template, 'r') as r:
