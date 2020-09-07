@@ -278,20 +278,19 @@ class IRC():
         write(init_xyz + '.xyz', read(irc_traj_path))
         write(init_xyz + '_initial.png', read(irc_traj_path))
 
-        xyz_geom_file = os.path.join(str(irc_traj_path)[:-4] + 'xyz')
         self.create_job_files(rxn_name,
                               pytemplate_irc_opt,
                               irc_opt_path,
-                              irc_traj_path,
-                              xyz_geom_file)
+                              irc_traj_path
+                              )
 
     def create_job_files(
             self,
             rxn_name,
             pytemplate_irc_opt,
             irc_opt_path,
-            irc_traj_path,
-            xyz_geom_file):
+            irc_traj_path
+    ):
         ''' Create slurm files for IRC optimization
 
         Parameters
@@ -306,13 +305,12 @@ class IRC():
             e.g Cu_111/IRC/00/irc_r_opt
         irc_traj_path : posix path to ase trajectory file
             e.g *irc_f.traj from previous irc calculation
-        xyz_geom_file : str
-            a name of a .xyz file with the coordinates of the TS
 
         '''
         with open(pytemplate_irc_opt, 'r') as f:
             pytemplate_irc_opt = f.read()
             _, traj_file_name = os.path.split(irc_traj_path)
+            xyz_geom_file = traj_file_name[:-4] + '.xyz'
             prefix = str(traj_file_name)[:2]
             py_f_name = os.path.join(irc_opt_path, prefix + '_'
                                      + rxn_name + '_' +
