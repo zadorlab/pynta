@@ -4,10 +4,11 @@ import sys
 import shutil
 from pathlib import Path
 from warnings import warn
+from rmgcat_to_sella.io import IO
 try:
     import inputR2S
     """
-    User defined parameters.
+    User defined parameters
 
     Here we only read them. They are set up in inputR2S.py (submit directory)
     """
@@ -16,6 +17,7 @@ except ImportError:
         'Missing input file. You cannot run calculations '
         'but will be able to use most of the workflow.'
     )
+
 else:
     facetpath = inputR2S.facetpath
     slab_name = inputR2S.slab_name
@@ -34,7 +36,7 @@ else:
     scfactor_surface = inputR2S.scfactor_surface
     scaled1 = inputR2S.scaled1
     scaled2 = inputR2S.scaled2
-    species_list = inputR2S.species_list
+    species_dict = inputR2S.species_dict
     slab_opt = inputR2S.slab_opt_script
     SurfaceAdsorbate = inputR2S.SurfaceAdsorbateScript
     TSxtb = inputR2S.TSxtbScript
@@ -130,7 +132,7 @@ class WorkFlow:
         self.set_up_TS_with_xtb(template_set_up_ts_with_xtb, slabopt,
                                 repeats, yamlfile, facetpath, rotAngle,
                                 scfactor, scfactor_surface, pytemplate_xtb,
-                                species_list, creation_dir)
+                                species_dict, creation_dir)
         self.set_up_run_TS(template_set_up_ts, facetpath, slabopt,
                            repeats, yamlfile, pytemplate_set_up_ts,
                            pseudopotentials, pseudo_dir,
@@ -195,7 +197,7 @@ class WorkFlow:
     def set_up_TS_with_xtb(self, template, slab,
                            repeats, yamlfile, facetpath, rotAngle,
                            scfactor, scfactor_surface,
-                           pytemplate_xtb, species_list, creation_dir):
+                           pytemplate_xtb, species_dict, creation_dir):
         ''' Create 02_set_up_TS_with_xtb.py file'''
         with open(template, 'r') as r:
             template_text = r.read()
@@ -206,7 +208,7 @@ class WorkFlow:
                     rotAngle=rotAngle, scfactor=scfactor,
                     scfactor_surface=scfactor_surface,
                     pytemplate_xtb=pytemplate_xtb,
-                    species_list=species_list,
+                    species_dict=species_dict,
                     scaled1=scaled1, scaled2=scaled2, creation_dir=creation_dir
                 ))
             c.close()
@@ -320,85 +322,6 @@ class WorkFlow:
                     add_dependency(job, job_to_add)  # parent, child
         return job_to_add
 
-    def check_if_path_to_mimina_exists(self, WorkFlowDir, species):
-        ''' Check for the paths to previously calculated minima and return
-            a list with all valid paths '''
-
-        pathlist = Path(WorkFlowDir).glob('**/minima/' + species)
-        paths = []
-        for path in pathlist:
-            # path = str(path)
-            paths.append(str(path))
-            return paths[0]
-        if IndexError:
-            return None
-
-    def check_if_path_to_out_files_exists(self, work_flow_dir, species):
-        ''' Check for the previously calculated *relax.out files for a given
-            species in a WorkFlowDir '''
-
-        keyphrase = os.path.join('minima/' + species + '*relax.out')
-        outfile_lists = Path(work_flow_dir).glob(keyphrase)
-        outfiles = []
-        for outfile in outfile_lists:
-            outfiles.append(str(outfile))
-        if not outfiles:
-            return(False, None)
-        else:
-            return (True, outfiles)
-
-    def check_if_minima_already_calculated(self, currentDir, species,
-                                           facetpath):
-        ''' Check for previously calculated minima '''
-        WorkFlowDirs = []
-        keyphrase = '**/{}*/'.format(facetpath)
-        WorkFlowDirsList = Path(str(currentDir)).glob(keyphrase)
-        # find all dirs matching the keyphrase - should be something like
-        # '*/01_Cu_111_methanol_OH_O+H_rot_angle_24_struc/Cu_111/'
-        for WorkFlowDir in WorkFlowDirsList:
-            WorkFlowDir = str(WorkFlowDir)
-            WorkFlowDirs.append(WorkFlowDir)
-        # check if there is a optimized slab in the WorkFlowDirs
-        is_xyz = any('xyz' in WorkFlowDir for WorkFlowDir in WorkFlowDirs)
-        # error handling if only slab and/or facetpath dir presented
-        # and no previous calculations
-        # e.g. ['.../Cu_100_slab_opt.xyz', '.../Cu_100']
-        # return (False, ) in that case
-        if len(WorkFlowDirs) <= 2 and is_xyz:
-            print('Checking for previously calculated'
-                  'minima for {}'.format(species))
-            print('Only one element found, probably .xyz of the slab.')
-            return (False, )
-        # error handling if there is no previous minima calculations
-        # and slab was not optimized
-        if not WorkFlowDirs:
-            return (False, )
-        # go through all dirs and look for the match
-        for WorkFlowDir in WorkFlowDirs:
-            check_out_files, path_to_outfiles = (
-                self.check_if_path_to_out_files_exists(
-                    WorkFlowDir, species)
-            )
-            # if there is a match, break the loop
-            if check_out_files:
-                break
-        # a directory to the DFT calculation (unique_minima_dir) for a given
-        # species is generated by combining the first element of the splitted
-        # path to outfiles,
-        # i.e.['*/Cu_111/minima/','H_01_relax.out'] so the ('*/Cu_111/minima/'
-        # part) with the name of the species.
-        # Finally the path is like:
-        # '*/Cu_111/minima/H'
-
-
-        # If species were previously calculated, return True and paths
-        if path_to_outfiles is None:
-            return (False, )
-        else:
-            unique_minima_dir = os.path.join(
-                os.path.split(path_to_outfiles[0])[0], species)
-            return(True, unique_minima_dir, path_to_outfiles)
-
     def run_slab_optimization(self):
         ''' Submit slab_optimization_job '''
         self.slab_opt_job = self.exe('', slab_opt, cores=1)
@@ -424,29 +347,80 @@ class WorkFlow:
         TSxtb = inputR2S.TSxtbScript
         return self.exe('', TSxtb)
 
-    def check_all_species(self):
-        ''' Check all species to find whether there are previous calculation
-            the code can use
+    def check_all_species(self, yamlfile):
+        ''' Check all species (all reactions) to find whether
+            there are previous calculation the code can use
+
+        Parameters:
+        ___________
+        yamlfile : str
+            a name of the .yaml file with a reaction list
 
         Return:
         _______
-        all_sp_checked : list(tuple(bool, str=None))
-            a list of tuples with info whether a species were calculated
-            (True, path_to_prev_calc)
-            or not
-            (False, )
+        checked_species : dict(str:bool)
+            a dictionary with True/False values for every species (keys)
+            True if there are previous calculation, otherwise False
+            e.g. {'C': True, 'H': True, 'O': False, 'OH': True, 'CH': True}
+
         '''
-        all_sp_checked = []
-        for species in species_list:
-            check_sp = self.check_if_minima_already_calculated(
-                currentDir, species, facetpath)
-            all_sp_checked.append(check_sp)
-        return all_sp_checked
+        io = IO()
+        checked_species = {}
+        all_species = io.get_all_species(yamlfile)
+        for species in all_species:
+            # a bug to be resolved - why it inverts the name?
+            if species == 'OH':
+                species = 'HO'
+            checked_species[species] = self.check_for_minima_outfiles(species)
+        return checked_species
+
+    def check_for_minima_dir(self, species):
+        ''' Return True if directory for a given species exists in
+            {facepath}/minima. Otherwise, False
+
+        Parameters:
+        ___________
+        species : str
+            a species symbol
+            e.g. 'H' or 'CO'
+
+        '''
+        species_minima_dir = os.path.join(facetpath, 'minima', species)
+        if os.path.isdir(species_minima_dir):
+            return True
+        return False
+
+    def check_for_minima_outfiles(self, species):
+        ''' Check for the previously calculated *relax.out files for a given
+            species. Return True if there are previous calculations. Otherwise,
+            False.
+
+        Parameters:
+        ___________
+        species : str
+            a species symbol
+            e.g. 'H' or 'CO'
+
+        '''
+        minima_dir = os.path.join(facetpath, 'minima')
+        # if minima dir exists, check for outfiles
+        if self.check_for_minima_dir(species):
+            search_for_outfiles = Path(minima_dir).glob(species + '_??_*out')
+            outfiles = []
+            for outfile in search_for_outfiles:
+                outfiles.append(str(outfile))
+            # empty list
+            if not outfiles:
+                return False
+            return True
+        return False
 
     def check_if_slab_opt_exists(self):
         ''' Check whether slab has been already optimized
 
-        Returns : tuple(bool, str=None):
+        Returns:
+        ________
+        tuple(bool, str=None):
             True if there are previous calculations
                 (True, path_to_prev_calc)
             False otherwise
@@ -456,7 +430,7 @@ class WorkFlow:
         slab_opt_path_str = []
         # the code will look for anything like Cu_111*.xyz starting from the
         # facetpath directory including all subdirectories.
-        keyphrase = '**/*' + str(facetpath) + '*.xyz'
+        keyphrase = '*/*' + str(facetpath) + '*.xyz'
         slab_opt_path_posix = Path(str(currentDir)).glob(keyphrase)
         for slab_opt_path in slab_opt_path_posix:
             slab_opt_path_str.append(slab_opt_path)
@@ -478,29 +452,19 @@ class WorkFlow:
                 pass
 
     def execute(self):
-        ''' The main executable
-
-        TODO DEBUG -- it could be a bit buggy
-        '''
-        # all_species_checked is a list of tuples (bool, path), if bool=True
-        # otherwise (bool, )
-        all_species_checked = self.check_all_species()
-        # It more convenient to have a list of bools
-        sp_check_list = [
-            False for species in all_species_checked if not species[0]]
+        # ''' The main executable
 
         if optimize_slab:
-            # check for slab
-            is_slab = self.check_if_slab_opt_exists()[0]
-            # if slab found in previous calculation, copy it
-            if is_slab:
-                self.copy_slab_opt_file()
+            # if slab found in previous calculation, do nothing
+            if self.check_if_slab_opt_exists()[0]:
+                pass
+                # self.copy_slab_opt_file()
             else:
                 # If the code cannot locate optimized slab .xyz file,
                 # a slab optimization will be launched.
                 self.run_slab_optimization()
-            # check whether species were already calculated
-            if all(sp_check_list):
+            # check if  species were already calculated
+            if all(self.check_all_species(yamlfile).values()):
                 # If all are True, start by generating TS guesses and run
                 # the penalty function minimization
                 self.run_ts_estimate_no_depend()
@@ -521,17 +485,16 @@ class WorkFlow:
                 self.run_ts_estimate('01')
         else:
             # this is executed if user provide .xyz with the optimized slab
-            # check whether sp1 and sp2 was already calculated
+            # and explicitly define oiptimize_slab = False
             if self.check_if_slab_opt_exists()[0]:
                 pass
             else:
                 raise FileNotFoundError(
                     'It appears that there is no slab_opt.xyz file'
                 )
-            if all(sp_check_list):
-                # If all minimas were calculated some time age for the other
-                # reactions, rmgcat_to_sella will use that calculations.
-                # The code can start from TSxtb
+            if all(self.check_all_species(yamlfile).values()):
+                # If all minimas were calculated some time age rmgcat_to_sella
+                # will use that calculations. Start from TSxtb step
                 self.exe('', TSxtb)
             else:
                 # run optimization of surface + reactants; surface + products

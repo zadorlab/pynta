@@ -6,6 +6,7 @@ from catkit.gen.molecules import get_3D_positions
 from rmgcat_to_sella.adsorbates import Adsorbates
 from rmgcat_to_sella.graph_utils import node_test
 from rmgcat_to_sella.main import WorkFlow
+from rmgcat_to_sella.io import IO
 
 from ase.io import read, write
 from ase.utils.structure_comparator import SymmetryEquivalenceCheck
@@ -22,7 +23,7 @@ from spglib import get_symmetry
 
 class TS():
     def __init__(
-        self, facetpath, slab, ts_dir, yamlfile, repeats, creation_dir
+        self, facetpath, slab, ts_estimate_dir, yamlfile, repeats, creation_dir
     ):
         ''' Initializing
 
@@ -35,11 +36,11 @@ class TS():
             a '.xyz' file name with the optimized slab
             e.g.
             'Cu_111_slab_opt.xyz'
-        ts_dir : str
+        ts_estimate_dir : str
             a path to directory with TSs
             e.g. 'TS_estimate'
         yamlfile : str
-            a name of the .yaml file with reaction list
+            a name of the .yaml file with a reaction list
         repeats: tuple
             specify reapeats in (x, y, z) direction,
             eg. (3, 3, 1)
@@ -47,13 +48,14 @@ class TS():
         '''
         self.facetpath = facetpath
         self.slab = slab
-        self.ts_dir = ts_dir
+        self.ts_estimate_dir = ts_estimate_dir
         self.yamlfile = yamlfile
         self.repeats = repeats
         self.creation_dir = creation_dir
+        self.io = IO()
 
     def prepare_ts_estimate(self, scfactor, scfactor_surface,
-                            rotAngle, pytemplate_xtb, species,
+                            rotAngle, pytemplate_xtb, species_dict,
                             scaled1, scaled2):
         ''' Prepare TS estimates for subsequent xTB calculations
 
@@ -74,9 +76,10 @@ class TS():
             e.g. 60
         pytemplate_xtb : python script
             a template file for penalty function minimization job
-        species : list(str)
-            a list of max 2 species that take part in the reaction
-            e.g. ['O', 'H'] or ['CO2', 'H']
+        species_dict : dict(str:list[str])
+            a dictionary where vaules are lists of max 2 species that take
+            part in the reaction
+            e.g. {'rxn1': ['O', 'H'], 'rxn2': ['C', 'H']}
         scaled1 : bool
             specify whether use the optional scfactor_surface
             for the species 1 (sp1)
@@ -84,23 +87,18 @@ class TS():
             specify whether use the optional scfactor_surface
             for the species 2 (sp2)
         '''
+        # open .yaml file
+        reactions = self.io.open_yaml_file(self.yamlfile)
 
-        ts_estimate_path = os.path.join(self.facetpath, self.ts_dir)
-        if os.path.exists(ts_estimate_path):
-            shutil.rmtree(ts_estimate_path)
-            os.makedirs(ts_estimate_path)
-        else:
-            os.makedirs(ts_estimate_path)
-
-        r_name_list, p_name_list, images = TS.prepare_react_list(self)
-        rxn_name = TS.get_rxn_name(self)
-
-        TS.TS_placer(self, scfactor, rotAngle,
-                     rxn_name, r_name_list, p_name_list, images)
-
-        TS.filtered_out_equiv_ts_estimate(self, rxn_name)
-        TS.set_up_penalty_xtb(self, pytemplate_xtb,
-                              species, scaled1, scaled2, scfactor_surface)
+        # preapare inputs for all reactions
+        for rxn, species_list in zip(reactions, species_dict.values()):
+            r_name_list, p_name_list, images = self.io.prepare_react_list(rxn)
+            rxn_name = self.io.get_rxn_name(rxn)
+            self.TS_placer(scfactor, rotAngle, rxn_name, r_name_list,
+                           p_name_list, images)
+            self.filtered_out_equiv_ts_estimate(rxn_name)
+            self.set_up_penalty_xtb(rxn_name, pytemplate_xtb, species_list,
+                                    scaled1, scaled2, scfactor_surface)
 
     def get_max_rot_angle(self):
         ''' Get the maximum angle of rotation for a given slab that will
@@ -129,75 +127,14 @@ class TS():
         # max_rot_angle = 360/(nrot/4) # lets try 120 angle
         return max_rot_angle
 
-    def prepare_react_list(self):
-        '''Convert yaml file to more useful format
-
-        Returns
-        _______
-        r_name_list : list(str)
-            a list with all reactants for the given reaction
-        p_name_list : list(str)
-            a list with all products for the given reaction
-        images : list(Gratoms)
-            a list of CatKit's Gratom object (both reactants and products)
-
-        '''
-        with open(self.yamlfile, 'r') as f:
-            yamltxt = f.read()
-        reactions = yaml.safe_load(yamltxt)
-        speciesInd = []
-        bonds = []
-        unique_species = []
-        unique_bonds = []
-        images = []
-
-        put_adsorbates = Adsorbates(
-            self.facetpath, self.slab, self.repeats, self.yamlfile,
-            self.creation_dir
-        )
-
-        for rxn in reactions:
-            # transforming reactions data to gratom objects
-            reactants, rbonds = put_adsorbates.rmgcat_to_gratoms(
-                rxn['reactant'].split('\n'))
-            products, pbonds = put_adsorbates.rmgcat_to_gratoms(
-                rxn['product'].split('\n'))
-            speciesInd += reactants + products
-            bonds += rbonds + pbonds
-
-        # check if any products are the same as any reactants
-        for species1, bond in zip(speciesInd, bonds):
-            for species2 in unique_species:
-                if nx.is_isomorphic(species1.graph, species2.graph, node_test):
-                    break
-            else:
-                images.append(get_3D_positions(species1))
-                unique_species.append(species1)
-                unique_bonds.append(bond)
-
-        r_name_list = [str(species.symbols) for species in reactants]
-        p_name_list = [str(species.symbols) for species in products]
-
-        return r_name_list, p_name_list, images
-
-    def get_rxn_name(self):
-        ''' Get the reaction name
-
-        Returns
-        _______
-        The name of the reaction in the following format:
-        OH_H+O
-        '''
-        r_name_list, p_name_list, _ = TS.prepare_react_list(self)
-
-        r_name = '+'.join([species for species in r_name_list])
-        p_name = '+'.join([species for species in p_name_list])
-
-        rxn_name = r_name + '_' + p_name
-        return rxn_name
-
-    def TS_placer(self, scfactor, rotAngle, rxn_name,
-                  r_name_list, p_name_list, images):
+    def TS_placer(
+            self,
+            scfactor,
+            rotAngle,
+            rxn_name,
+            r_name_list,
+            p_name_list,
+            images):
         ''' Place adsorbates on the surface to estimate TS
 
         Parameters
@@ -220,14 +157,21 @@ class TS():
             a list of CatKit's Gratom object (both reactants and products)
 
         '''
-        ts_estimate_path = os.path.join(self.facetpath, self.ts_dir)
+        # create TS_estimate directory
+        ts_estimate_path = os.path.join(
+            self.facetpath, rxn_name, self.ts_estimate_dir)
+        if os.path.exists(ts_estimate_path):
+            shutil.rmtree(ts_estimate_path)
+            os.makedirs(ts_estimate_path)
+        else:
+            os.makedirs(ts_estimate_path)
         slab = read(self.slab)
         slab.pbc = (True, True, False)
         # ADSORBATES
         # This part here is a bit hard coded, especially when dealing with
         # reactants with >= 3 atoms. The code works for couple of species
         # included in if else statement below. Probably will fail for other
-        # species. This is becouse ase.build.molecule function numbers atoms
+        # species. This is becouse ase.build.molecule method numbers atoms
         # very diferently depending on the molecule specify.
         # To be resolved somehow.
 
@@ -297,9 +241,11 @@ class TS():
                 atom1, atom2, bondlen * scfactor, fix=0)
         # double check this
         put_adsorbates = Adsorbates(
-            self.facetpath, self.slab, self.repeats, self.yamlfile,
-            self.creation_dir
-        )
+            self.facetpath,
+            self.slab,
+            self.repeats,
+            self.yamlfile,
+            self.creation_dir)
         slabedges, tags = put_adsorbates.get_edges(self)
         # double check this
         grslab = Gratoms(numbers=slab.numbers,
@@ -344,7 +290,8 @@ class TS():
             count += 1
 
     def filtered_out_equiv_ts_estimate(self, rxn_name):
-        '''Filtering out symmetry equivalent sites
+        '''Filtered out symmetry equivalent sites and remove them keeping
+            only symmetry disctinct structures.
 
         Parameters
         __________
@@ -352,10 +299,15 @@ class TS():
             a reaction name
             e.g. OH_O+H
         '''
-        ts_estimate_path = os.path.join(self.facetpath, self.ts_dir)
-        filtered_equivalen_sites = TS.check_symm_before_xtb(
-            self, ts_estimate_path)
-        for eqsites in filtered_equivalen_sites:
+        ts_estimate_path = os.path.join(
+            self.facetpath, rxn_name, self.ts_estimate_dir)
+
+        # check the symmetry
+        filtered_equivalent_sites = self.check_symm_before_xtb(
+            ts_estimate_path)
+
+        # remove all symmetry equivalent structures
+        for eqsites in filtered_equivalent_sites:
             try:
                 fileToRemove = os.path.join(
                     ts_estimate_path, eqsites + '_' + rxn_name + '.xyz')
@@ -363,6 +315,7 @@ class TS():
             except OSError:
                 print("Error while deleting file : ", fileToRemove)
 
+        # rename and organize ymmetry disctinct structures
         for prefix, noneqsites in enumerate(
             sorted(os.listdir(ts_estimate_path))
         ):
@@ -373,11 +326,17 @@ class TS():
             os.rename(oldfname, newfname)
 
     def get_average_distance_all(self, species, geom_path):
-        # probably do not need it - check
+        # probably do not need it or already have it somewhere else - check
         raise NotImplementedError
 
-    def set_up_penalty_xtb(self, pytemplate, species_list,
-                           scaled1, scaled2, scfactor_surface):
+    def set_up_penalty_xtb(
+            self,
+            rxn_name,
+            pytemplate,
+            species_list,
+            scaled1,
+            scaled2,
+            scfactor_surface):
         ''' Prepare calculations of the penalty function
 
         Parameters
@@ -403,9 +362,9 @@ class TS():
             e.g. 1.0
 
         '''
-        ts_estimate_path = os.path.join(self.facetpath, self.ts_dir)
+        ts_estimate_path = os.path.join(
+            self.facetpath, rxn_name, self.ts_estimate_dir)
         path_to_minima = os.path.join(self.facetpath, 'minima')
-        rxn_name = TS.get_rxn_name(self)
 
         with open(pytemplate, 'r') as f:
             pytemplate = f.read()
@@ -414,9 +373,10 @@ class TS():
         # sites considered) for all species. It can be done outside the nested
         # loop, as it is enough to calculate it only once.
         average_distance_list = []
+
         for species in species_list:
-            av_dist = TS.get_av_dist(self, path_to_minima, species,
-                                     scfactor_surface, scaled1)
+            av_dist = self.get_av_dist(path_to_minima, species,
+                                       scfactor_surface, scaled1)
             average_distance_list.append(av_dist)
 
         # get all ts_estimatex_xyz files in alphabetic order
@@ -429,10 +389,9 @@ class TS():
                 xyz_file_path = os.path.join(ts_estimate_path, xyz_file)
                 # loop through all species
                 for species in species_list:
-                    sp_index = TS.get_index_adatom(
-                        self, species, xyz_file_path)
-                    Cu_index = TS.get_index_surface_atom(
-                        self, species, xyz_file_path)
+                    sp_index = self.get_index_adatom(species, xyz_file_path)
+                    Cu_index = self.get_index_surface_atom(species,
+                                                           xyz_file_path)
                     bonds.append((sp_index, Cu_index))
 
                 # set up variables
@@ -462,16 +421,12 @@ class TS():
                 shutil.move(xyz_file_path, calcDir)
         f.close()
 
-        # remove initial_png directory, if it exists
-        try:
-            rmpath = os.path.join(ts_estimate_path, 'initial_png')
-            shutil.rmtree(rmpath)
-        except FileNotFoundError:
-            print('No files to delete')
-            pass
-
-    def get_av_dist(self, path_to_minima, species, scfactor_surface,
-                    scaled=False):
+    def get_av_dist(
+            self,
+            path_to_minima,
+            species,
+            scfactor_surface,
+            scaled=False):
         ''' Get the average bond distance between adsorbate atom and
         the nearest surface atom for all symmetrically distinct minima
 
@@ -504,7 +459,7 @@ class TS():
         surface_atoms_indices = []
         adsorbate_atoms_indices = []
         all_dists = []
-        TS.get_xyz_from_traj(self, path_to_minima, species)
+        self.io.get_xyz_from_traj(path_to_minima, species)
         species_path = os.path.join(path_to_minima, species)
         # treat the special cases
         if species in ['CH3O', 'CH2O']:
@@ -517,8 +472,8 @@ class TS():
             # for one atomic species it is trivial
             sp_bonded = species
         # get unique minima indices
-        unique_minima_indices = TS.get_unique_minima_indicies_after_opt(
-            self, path_to_minima, species
+        unique_minima_indices = self.get_unique_minima_indicies_after_opt(
+            path_to_minima, species
         )
         # go through all indices of *final.xyz file
         # e.g. 00_final.xyz, 01_final.xyz
@@ -556,27 +511,6 @@ class TS():
         else:
             av_dist = mean(all_dists)
         return av_dist
-
-    def get_xyz_from_traj(self, path_to_minima, species):
-        ''' Convert all ASE's traj files to .xyz files for a given species
-
-        Parameters:
-        ___________
-        path_to_minima : str
-            a path to minima
-            e.g. 'Cu_111/minima'
-        species : str
-            a species symbol
-            e.g. 'H' or 'CO'
-
-        '''
-        species_path = os.path.join(path_to_minima, species)
-        for traj in sorted(os.listdir(species_path), key=str):
-            if traj.endswith('.traj'):
-                src_traj_path = os.path.join(species_path, traj)
-                des_traj_path = os.path.join(
-                    species_path, traj[:-5] + '_final.xyz')
-                write(des_traj_path, read(src_traj_path))
 
     def get_unique_minima_indicies_after_opt(self, path_to_minima, species):
         ''' Get the indicies of the symmetrically distinct minima
@@ -617,8 +551,11 @@ class TS():
                 unique_minima_indices.append(str(prefix).zfill(2))
         return unique_minima_indices
 
-    def copy_minimas_prev_calculated(self, current_dir, species_list,
-                                     minima_dir):
+    def copy_minimas_prev_calculated(
+            self,
+            current_dir,
+            species_list,
+            minima_dir):
         ''' If minimas have been already calculated in different set of
          reactions, they are copied to the current workflow and used instead
          of calculating it again
@@ -654,63 +591,152 @@ class TS():
                 except FileExistsError:
                     raise FileExistsError('Files already copied')
 
-    def create_unique_TS(self):
-        ''' Create unique TS files for calculations '''
-        gd_ads_index = TS.check_symm(
-            self, os.path.join(self.facetpath, self.ts_dir))
-        for i, index in enumerate(gd_ads_index):
-            uniqueTSdir = os.path.join(
-                self.facetpath, self.ts_dir + '_unique', str(i).zfill(2))
-            if os.path.isdir(uniqueTSdir):
-                shutil.rmtree(uniqueTSdir)
-                os.makedirs(uniqueTSdir, exist_ok=True)
-            else:
-                os.makedirs(uniqueTSdir, exist_ok=True)
-            gpath = os.path.join(self.facetpath, self.ts_dir)
-            for geom in os.listdir(gpath):
-                geomDir = os.path.join(gpath, geom)
-                if os.path.isdir(geomDir):
-                    for traj in sorted(os.listdir(geomDir)):
-                        if (
-                            traj.startswith(gd_ads_index[i])
-                            and traj.endswith('.traj')
-                        ):
-                            srcFile = os.path.join(geomDir, traj)
-                            destFile = os.path.join(
-                                uniqueTSdir, traj[:-5] + '_ts')
-                            write(destFile + '.xyz', read(srcFile))
-                            write(destFile + '.png', read(srcFile))
-            #         shutil.copy2(os.path.join(path, geom), uniqueTSdir)
-            for ts in os.listdir(uniqueTSdir):
-                # if neb.endswith('.xyz'):
-                TS_xyz_Dir = os.path.join(uniqueTSdir, ts)
-                newTS_xyz_Dir = os.path.join(
-                    uniqueTSdir, str(i).zfill(2) + ts[3:])
-                # NEB_png_Dir = os.path.join(uniqueTSdir, str(
-                #     i).zfill(3) + neb[2:][:-4] + '.png')
-                os.rename(TS_xyz_Dir, newTS_xyz_Dir)
-                # write(NEB_png_Dir, read(newNEB_xyz_Dir))
+    def create_unique_ts_all(
+            self,
+            pytemplate,
+            pseudopotentials,
+            pseudo_dir,
+            balsam_exe_settings,
+            calc_keywords):
+        ''' Create all TS_estimate_unique files
 
-    def create_TS_unique_job_files(
-        self, pytemplate,
-        pseudopotentials, pseudo_dir,
-        balsam_exe_settings,
-        calc_keywords
-    ):
-        ''' Create job submission files'''
-        unique_TS_candidate_path = os.path.join(
-            self.facetpath, self.ts_dir + '_unique')
+        Parameters:
+        ___________
+
+        pytemplate : python script
+            a template file for saddle point minimization with Sella
+        pseudopotentials : dict(str: str)
+            a dictionary with QE pseudopotentials for all species.
+            e.g.
+            dict(Cu='Cu.pbe-spn-kjpaw_psl.1.0.0.UPF',
+                H='H.pbe-kjpaw_psl.1.0.0.UPF',
+                O='O.pbe-n-kjpaw_psl.1.0.0.UPF',
+                C='C.pbe-n-kjpaw_psl.1.0.0.UPF',
+                )
+        pseudo_dir : str
+            a path to the QE's pseudopotentials main directory
+            e.g.
+            '/home/mgierad/espresso/pseudo'
+        balsam_exe_settings : dict(str:str)
+            a dictionary with balsam settings
+        calc_keywords : dict(str:str)
+            a dictionary with keywords to Quantum Espresso calculations
+
+        '''
+        # open .yaml file
+        reactions = self.io.open_yaml_file(self.yamlfile)
+
+        for rxn in reactions:
+            rxn_name = self.io.get_rxn_name(rxn)
+            ts_estimate_path = os.path.join(self.facetpath, rxn_name,
+                                            self.ts_estimate_dir)
+            # create .xyz and .png files
+            self.create_unique_ts_xyz_and_png(ts_estimate_path)
+            # create job files (.py scripts)
+            self.create_ts_unique_py_file(pytemplate,
+                                          pseudopotentials,
+                                          pseudo_dir,
+                                          ts_estimate_path,
+                                          balsam_exe_settings,
+                                          calc_keywords
+                                          )
+
+    def create_unique_ts_xyz_and_png(
+            self,
+            ts_estimate_path):
+        ''' Create unique TS files for saddle point calculations
+            for a given scfactor
+
+        Parameters:
+        ___________
+
+        ts_estimate_path : str
+            a path to TS_estimate_directory for a given reaction
+
+        '''
+        # check symmetry of all TS estimates in ts_estimate_path
+        gd_ads_index = self.check_symm(ts_estimate_path)
+
+        for i, index in enumerate(gd_ads_index):
+            # name of the directory with unique TS_estimates for which saddle
+            # point calculations are to be perfomed
+            ts_estimate_unique_path = os.path.join(ts_estimate_path +
+                                                   '_unique', str(i).zfill(2))
+            # create TS_estimate_unique directory
+            if os.path.isdir(ts_estimate_unique_path):
+                shutil.rmtree(ts_estimate_unique_path)
+                os.makedirs(ts_estimate_unique_path, exist_ok=True)
+            else:
+                os.makedirs(ts_estimate_unique_path, exist_ok=True)
+
+            # search for trajectories of symmetry distinct structures
+            uq_traj_search = '**/{}*traj'.format(gd_ads_index[i])
+            trajs = Path(ts_estimate_path).glob(uq_traj_search)
+            # loop through all unique trajectory and create .xyz and .png
+            for traj in trajs:
+                traj = str(traj)
+                # split the path, get file name, remove last 5 characters and
+                # add sufix '_ts'
+                fname = os.path.split(traj)[1][:-5] + '_ts'
+                uq_ts_file = os.path.join(ts_estimate_unique_path, fname)
+                write(uq_ts_file + '.xyz', read(traj))
+                write(uq_ts_file + '.png', read(traj))
+            # rename TS to have prefixes in order with no gaps
+            # e.g. was 027_OH_O+H_ts.xyz; is 03_OH_O+H_ts.png
+            for ts in os.listdir(ts_estimate_unique_path):
+                old_ts_name = os.path.join(ts_estimate_unique_path, ts)
+                new_ts_name = os.path.join(
+                    ts_estimate_unique_path, str(i).zfill(2) + ts[3:])
+                os.rename(old_ts_name, new_ts_name)
+
+    def create_ts_unique_py_file(
+            self,
+            pytemplate,
+            pseudopotentials,
+            pseudo_dir,
+            ts_estimate_path,
+            balsam_exe_settings,
+            calc_keywords):
+        ''' Create job submission files
+
+        Parameters:
+        ___________
+
+        pytemplate : python script
+            a template file for saddle point minimization with Sella
+        pseudopotentials : dict(str: str)
+            a dictionary with QE pseudopotentials for all species.
+            e.g.
+            dict(Cu='Cu.pbe-spn-kjpaw_psl.1.0.0.UPF',
+                H='H.pbe-kjpaw_psl.1.0.0.UPF',
+                O='O.pbe-n-kjpaw_psl.1.0.0.UPF',
+                C='C.pbe-n-kjpaw_psl.1.0.0.UPF',
+                )
+        pseudo_dir : str
+            a path to the QE's pseudopotentials main directory
+            e.g.
+            '/home/mgierad/espresso/pseudo'
+        ts_estimate_path : str
+            a path to TS_estimate_directory for a given reaction
+        balsam_exe_settings : dict(str:str)
+            a dictionary with balsam settings
+        calc_keywords : dict(str:str)
+            a dictionary with keywords to Quantum Espresso calculations
+
+        '''
+
+        ts_estimate_unique_path = ts_estimate_path + '_unique'
+
         with open(pytemplate, 'r') as f:
             pytemplate = f.read()
-
-        for struc in os.listdir(unique_TS_candidate_path):
-            TSdir = os.path.join(unique_TS_candidate_path, struc)
+        for struc in os.listdir(ts_estimate_unique_path):
+            TSdir = os.path.join(ts_estimate_unique_path, struc)
             if os.path.isdir(TSdir):
-                TSpath = os.path.join(unique_TS_candidate_path, struc)
-                for fl in os.listdir(TSpath):
+                ts_path = os.path.join(ts_estimate_unique_path, struc)
+                for fl in os.listdir(ts_path):
                     if fl.endswith('.xyz'):
                         fname = os.path.join(
-                            unique_TS_candidate_path, fl[:-4] + '.py')
+                            ts_estimate_unique_path, fl[:-4] + '.py')
                         with open(fname, 'w') as f:
                             f.write(pytemplate.format(TS=os.path.join(
                                 struc, fl), rxn=fl[3:-7], prefix=fl[:2],
@@ -720,10 +746,11 @@ class TS():
                                 calc_keywords=calc_keywords,
                                 creation_dir=self.creation_dir
                             ))
-                        f.close()
-        f.close()
 
-    def get_bond_dist(self, ads_atom, geom):
+    def get_bond_dist(
+            self,
+            ads_atom,
+            geom):
         ''' Specify adsorbate atom symbol and bond distance with the closest
             surface metal atom will be calculated.
 
@@ -775,7 +802,10 @@ class TS():
                 struc.get_distances(adsorbate_atom, surface_atom))
             return dist_Cu_adsorbate
 
-    def get_index_adatom(self, ads_atom, geom):
+    def get_index_adatom(
+            self,
+            ads_atom,
+            geom):
         ''' Specify adsorbate atom symbol and its index will be returned.
 
         Parameters:
@@ -807,7 +837,10 @@ class TS():
         f.close()
         return adsorbate_atom[0]
 
-    def get_index_surface_atom(self, ads_atom, geom):
+    def get_index_surface_atom(
+            self,
+            ads_atom,
+            geom):
         ''' Specify adsorbate atom symbol and index of the nearest metal atom
             will be returned.
 
@@ -851,7 +884,9 @@ class TS():
 
         return surface_atom[index[0][0]]
 
-    def check_symm(self, path):
+    def check_symm(
+            self,
+            path):
         ''' Check for the symmetry equivalent structures in the given path
 
         Parameters:
@@ -883,7 +918,9 @@ class TS():
                 unique_index.append(str(num).zfill(3))
         return unique_index
 
-    def check_symm_before_xtb(self, path):
+    def check_symm_before_xtb(
+            self,
+            path):
         ''' Check for the symmetry equivalent structures in the given path
             before executing penalty function minimization
 

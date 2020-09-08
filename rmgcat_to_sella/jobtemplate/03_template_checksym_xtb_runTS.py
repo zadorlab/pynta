@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 
-from glob import glob
+import os
+
 from pathlib import Path
 
 from rmgcat_to_sella.ts import TS
+from rmgcat_to_sella.io import IO
 
 from balsam.launcher.dag import BalsamJob, add_dependency
 
@@ -12,7 +14,7 @@ repeats = {repeats}
 yamlfile = '{yamlfile}'
 facetpath = '{facetpath}'
 pytemplate = '{pytemplate}'
-ts_dir = 'TS_estimate'
+ts_estimate_dir = 'TS_estimate'
 pseudopotentials = {pseudopotentials}
 pseudo_dir = '{pseudo_dir}'
 workflow_name = yamlfile+facetpath+'03'
@@ -22,12 +24,10 @@ balsam_exe_settings = {balsam_exe_settings}
 calc_keywords = {calc_keywords}
 creation_dir = '{creation_dir}'
 
-ts = TS(facetpath, slab, ts_dir, yamlfile, repeats, creation_dir)
-ts.create_unique_TS()
-ts.create_TS_unique_job_files(
-    pytemplate, pseudopotentials, pseudo_dir,
-    balsam_exe_settings, calc_keywords
-)
+ts = TS(facetpath, slab, ts_estimate_dir, yamlfile, repeats, creation_dir)
+ts.create_unique_ts_all(pytemplate, pseudopotentials,
+                        pseudo_dir, balsam_exe_settings, calc_keywords)
+all_rxns = IO().get_list_all_rxns_names(yamlfile)
 
 pending_simulations = BalsamJob.objects.filter(
     workflow__contains=dependency_workflow_name
@@ -38,24 +38,24 @@ pending_simulations_dep = BalsamJob.objects.filter(
 ).exclude(state="JOB_FINISHED")
 
 cwd = Path.cwd().as_posix()
-for py_script in glob('{facetpath}/TS_estimate_unique/*.py'):
-    job_dir = Path.cwd().as_posix() + '/' + '/'.join(
-        py_script.strip().split('/')[:-1]
-    )
-    script_name = py_script.strip().split('/')[-1]
-    job_to_add = BalsamJob(
+
+for rxn in all_rxns:
+    path_to_ts_estimate_uq = os.path.join(facetpath, rxn, 'TS_estimate_unique')
+    for py_script in Path(path_to_ts_estimate_uq).glob('*.py'):
+        print(py_script)
+        job_dir, script_name = os.path.split(str(py_script))
+        job_to_add = BalsamJob(
             name=script_name,
             workflow=workflow_name,
             application='python',
-            args=cwd+ '/' + py_script,
+            args=cwd + '/' + str(py_script),
             input_files='',
             user_workdir=job_dir,
-            node_packing_count=64,
+            node_packing_count=48,
             ranks_per_node=1,
-            )
-    job_to_add.save()
-    for job in pending_simulations:
-        add_dependency(job, job_to_add)  # parent, child
-    for job in pending_simulations_dep:
-        add_dependency(job_to_add, job)  # parent, child
-
+        )
+        job_to_add.save()
+        for job in pending_simulations:
+            add_dependency(job, job_to_add)  # parent, child
+        for job in pending_simulations_dep:
+            add_dependency(job_to_add, job)  # parent, child

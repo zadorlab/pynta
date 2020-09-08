@@ -1,7 +1,10 @@
 import os
 
+from pathlib import Path
+
 from ase.io import read, write
 from rmgcat_to_sella.ts import TS
+from rmgcat_to_sella.io import IO
 
 
 class IRC():
@@ -10,7 +13,7 @@ class IRC():
             facetpath,
             slab,
             repeats,
-            ts_dir,
+            ts_estimate_dir,
             yamlfile,
             pseudopotentials,
             pseudo_dir,
@@ -32,7 +35,7 @@ class IRC():
         repeats: tuple
             specify reapeats in (x, y, z) direction,
             eg. (3, 3, 1)
-        ts_dir : str
+        ts_estimate_dir : str
             a path to directory with TSs
             e.g. 'TS_estimate'
         yamlfile : str
@@ -54,28 +57,53 @@ class IRC():
         self.facetpath = facetpath
         self.slab = slab
         self.repeats = repeats
-        self.ts_dir = ts_dir
+        self.ts_estimate_dir = ts_estimate_dir
         self.yamlfile = yamlfile
         self.pseudopotentials = pseudopotentials
         self.pseudo_dir = pseudo_dir
         self.balsam_exe_settings = balsam_exe_settings
         self.calc_keywords = calc_keywords
         self.creation_dir = creation_dir
+        self.io = IO()
 
-    def set_up_irc(self, pytemplate_f, pytemplate_r):
-        ''' Set up IRC calculations
+    def set_up_irc_all(
+            self,
+            pytemplate_f,
+            pytemplate_r):
+        ''' Set up IRC calculations for all reactions
 
         Parameters
         __________
         pytemplate_f, pytemplate_r : python scripts
             python scripts templates for irc calculations
-        '''
 
-        ts_path = os.path.join(self.facetpath, self.ts_dir)
+        '''
+        reactions = self.io.open_yaml_file(self.yamlfile)
+        for rxn in reactions:
+            self.set_up_irc(rxn, pytemplate_f, pytemplate_r)
+
+    def set_up_irc(
+            self,
+            rxn,
+            pytemplate_f,
+            pytemplate_r):
+        ''' Set up IRC calculations
+
+        Parameters:
+        __________
+        rxn : dict(yaml[str:str])
+            a dictionary with info about the paricular reaction. This can be
+            view as a splitted many reaction .yaml file into a single reaction
+            .yaml file
+        pytemplate_f, pytemplate_r : python scripts
+            python scripts templates for irc calculations
+
+        '''
+        rxn_name = self.io.get_rxn_name(rxn)
+        ts_path = os.path.join(self.facetpath, rxn_name, self.ts_estimate_dir)
         ts_uq_dir = ts_path + '_unique'
-        ts = TS(self.facetpath, self.slab, self.ts_dir,
+        ts = TS(self.facetpath, self.slab, self.ts_estimate_dir,
                 self.yamlfile, self.repeats, self.creation_dir)
-        rxn = ts.get_rxn_name()
         unique_ts_index = ts.check_symm(ts_uq_dir)
 
         # load templates for irc_f and irc_r calculations
@@ -86,23 +114,32 @@ class IRC():
 
         for i, prefix in enumerate(unique_ts_index):
             prefix = prefix[1:]
-            irc_dir = os.path.join(self.facetpath, 'IRC', prefix)
-            irc_py_dir = os.path.join(self.facetpath, 'IRC')
-            ts_file_name = os.path.join(prefix + '_' + rxn + '_ts')
+            irc_dir_prefix = os.path.join(
+                self.facetpath, rxn_name, 'IRC', prefix)
+            irc_dir, _ = os.path.split(irc_dir_prefix)
+            ts_file_name = os.path.join(prefix + '_' + rxn_name + '_ts')
             ts_file_name_xyz = os.path.join(prefix, ts_file_name + '.xyz')
-            os.makedirs(irc_dir, exist_ok=True)
+            os.makedirs(irc_dir_prefix, exist_ok=True)
             src_ts_xyz_path = os.path.join(
-                ts_uq_dir, prefix, prefix + '_' + rxn + '_ts_final.xyz')
-            dest_ts_path = os.path.join(irc_dir, ts_file_name)
+                ts_uq_dir, prefix, prefix + '_' + rxn_name + '_ts_final.xyz')
+            dest_ts_path = os.path.join(irc_dir_prefix, ts_file_name)
             try:
                 write(dest_ts_path + '.xyz', read(src_ts_xyz_path))
                 write(dest_ts_path + '.png', read(src_ts_xyz_path))
-                IRC.create_job_files_irc(self, irc_py_dir, ts_file_name,
-                                         template_f, '_irc_f.py', prefix, rxn,
-                                         ts_file_name_xyz)
-                IRC.create_job_files_irc(self, irc_py_dir, ts_file_name,
-                                         template_r, '_irc_r.py', prefix, rxn,
-                                         ts_file_name_xyz)
+                self.create_job_files_irc(irc_dir,
+                                          ts_file_name,
+                                          template_f,
+                                          '_irc_f.py',
+                                          prefix,
+                                          rxn_name,
+                                          ts_file_name_xyz)
+                self.create_job_files_irc(irc_dir,
+                                          ts_file_name,
+                                          template_r,
+                                          '_irc_r.py',
+                                          prefix,
+                                          rxn_name,
+                                          ts_file_name_xyz)
             except FileNotFoundError:
                 # skip the file because calculation did not finished
                 print('Calculations for {} probably did not finish'.format(
@@ -110,13 +147,20 @@ class IRC():
                 print('Skipping...')
                 pass
 
-    def create_job_files_irc(self, irc_py_dir, ts_file_name, template,
-                             which_irc, prefix, rxn, ts_file_name_xyz):
+    def create_job_files_irc(
+            self,
+            irc_dir,
+            ts_file_name,
+            template,
+            which_irc,
+            prefix,
+            rxn_name,
+            ts_file_name_xyz):
         ''' Create python scripts to submit jobs
 
         Parameters:
         __________
-        irc_py_dir : str
+        irc_dir : str
             a path to directory where .py scripts are to be saved
             e.g. 'Cu_111/IRC/'
         ts_file_name : str
@@ -131,7 +175,7 @@ class IRC():
         prefix : str
             a prefix for the given geometry
             e.g. '00'
-        rxn : str
+        rxn_name : str
             name of the reaction
             e.g. 'O+H_OH'
         ts_file_name.xyz : str
@@ -139,120 +183,144 @@ class IRC():
             e.g. '00/00_CO2+H_CHO2_ts.xyz'
 
         '''
-        job_name = os.path.join(irc_py_dir, ts_file_name[:-3] + which_irc)
+        job_name = os.path.join(irc_dir, ts_file_name[:-3] + which_irc)
         with open(job_name, 'w') as f:
             f.write(template.format(
-                prefix=prefix, rxn=rxn, TS_xyz=ts_file_name_xyz,
+                prefix=prefix, rxn=rxn_name, ts_xyz=ts_file_name_xyz,
                 pseudopotentials=self.pseudopotentials,
                 pseudo_dir=self.pseudo_dir,
                 balsam_exe_settings=self.balsam_exe_settings,
                 calc_keywords=self.calc_keywords
             ))
-        f.close()
 
-    def prepare_opt_irc(self, struc_path, irc, traj, pytemplate_irc_opt):
+    def opt_after_IRC(
+            self,
+            pytemplate_irc_opt):
+        ''' Create opt IRC calculations for reactions
+
+        Parameters:
+        ___________
+
+        pytemplate_irc_opt : python script
+            template file for IRC optimization job
+
+        '''
+
+        reactions = self.io.open_yaml_file(self.yamlfile)
+        for rxn in reactions:
+            try:
+                self.check_irc_finished(rxn, pytemplate_irc_opt)
+            except FileNotFoundError:
+                # TODO: error handling
+                # irc_error = irc_path.split('/')[1]
+                # print('IRC calculations for {} '
+                #       'did not finished.'.format(irc_error))
+                # print('Skipping...')
+                pass
+
+    def check_irc_finished(
+            self,
+            rxn,
+            pytemplate_irc_opt):
+        ''' Preset opt irc calculations
+
+        Parameter:
+        __________
+        rxn : dict(yaml[str:str])
+            a dictionary with info about the paricular reaction. This can be
+            view as a splitted many reaction .yaml file into a single reaction
+            .yaml file
+        pytemplate_irc_opt : python script
+            template file for IRC optimization job
+
+        '''
+        rxn_name = self.io.get_rxn_name(rxn)
+        irc_path = os.path.join(self.facetpath, rxn_name, 'IRC')
+        for irc_name in ['irc_f', 'irc_r']:
+            irc_traj_paths = Path(irc_path).glob(
+                '**/*{}.traj'.format(irc_name))
+            for irc_traj_path in irc_traj_paths:
+                # if file is empty, there is somethig wrong with calculation
+                # skip at this moment
+                if os.stat(irc_traj_path).st_size == 0:
+                    pass
+                else:
+                    self.prepare_opt_irc(irc_traj_path, irc_name,
+                                         pytemplate_irc_opt, rxn_name)
+
+    def prepare_opt_irc(
+            self,
+            irc_traj_path,
+            irc_name,
+            pytemplate_irc_opt,
+            rxn_name):
         ''' Preapare files for IRC optimization
 
         Parameters
         __________
-        struc_path :
-            path to all sets of IRC calculations, eg. IRC/00, IRC/01 ...
-        irc : str
-            specify between irc_f and irc_r
-        traj : ase trajectory file
+        irc_traj_path : posix path to ase trajectory file
             e.g *irc_f.traj from previous irc calculation
+        irc_name : str
+            specify 'irc_f' or 'irc_r' depending which type of calculations to
+            set up
         pytemplate_irc_opt : python script
             template file for IRC optimization job
+        rxn_name : str
+            The name of the reaction in the following format:
+            'OH_H+O'
 
         '''
-        irc_opt_pth = os.path.join(struc_path, irc + '_opt')
-        os.makedirs(irc_opt_pth, exist_ok=True)
-        trajPath = os.path.join(struc_path, traj)
-        initXYZ = os.path.join(irc_opt_pth, traj[:-5])
-        write(initXYZ + '.xyz', read(trajPath))
-        write(initXYZ + '_initial.png', read(trajPath))
-        geom = os.path.join(traj[:-4] + 'xyz')
-        IRC.create_job_files(self, pytemplate_irc_opt, irc_opt_pth, traj, geom)
+        # get path to set of IRC calculations, eg. ../IRC/00, ../IRC/01
+        struc_path, irc_traj = os.path.split(irc_traj_path)
+        irc_opt_path = os.path.join(struc_path, irc_name + '_opt')
+        os.makedirs(irc_opt_path, exist_ok=True)
 
-    def create_job_files(self, pytemplate_irc_opt, irc_opt_pth, traj, geom):
+        init_xyz = os.path.join(irc_opt_path, irc_traj[:-5])
+        write(init_xyz + '.xyz', read(irc_traj_path))
+        write(init_xyz + '_initial.png', read(irc_traj_path))
+
+        self.create_job_files(rxn_name,
+                              pytemplate_irc_opt,
+                              irc_opt_path,
+                              irc_traj_path
+                              )
+
+    def create_job_files(
+            self,
+            rxn_name,
+            pytemplate_irc_opt,
+            irc_opt_path,
+            irc_traj_path
+    ):
         ''' Create slurm files for IRC optimization
 
         Parameters
         __________
+        rxn_name : str
+            The name of the reaction in the following format:
+            'OH_H+O'
         pytemplate_irc_opt : python script
             template file for IRC optimization job
-        irc_opt_pth : str
+        irc_opt_path : str
             directory where irc optimization will we placed,
             e.g Cu_111/IRC/00/irc_r_opt
-        traj : ase trajectory file
+        irc_traj_path : posix path to ase trajectory file
             e.g *irc_f.traj from previous irc calculation
-        geom : str
-            a name of a .xyz file with the coordinates of the TS
 
         '''
         with open(pytemplate_irc_opt, 'r') as f:
             pytemplate_irc_opt = f.read()
-            ts = TS(self.facetpath, self.slab, self.ts_dir,
-                    self.yamlfile, self.repeats)
-            rxn = ts.get_rxn_name()
-            prefix = traj[:2]
-            fname = os.path.join(irc_opt_pth, prefix + '_'
-                                 + rxn + '_' + os.path.split(irc_opt_pth)[1]
-                                 + '.py')
-            with open(fname, 'w') as f:
+            _, traj_file_name = os.path.split(irc_traj_path)
+            xyz_geom_file = traj_file_name[:-5] + '.xyz'
+            prefix = str(traj_file_name)[:2]
+            py_f_name = os.path.join(irc_opt_path, prefix + '_'
+                                     + rxn_name + '_' +
+                                     os.path.split(irc_opt_path)[1]
+                                     + '.py')
+            with open(py_f_name, 'w') as f:
                 f.write(pytemplate_irc_opt.format(
-                    geom=geom, rxn=rxn, prefix=prefix,
+                    geom=xyz_geom_file, rxn=rxn_name, prefix=prefix,
                     pseudopotentials=self.pseudopotentials,
                     pseudo_dir=self.pseudo_dir,
                     balsam_exe_settings=self.balsam_exe_settings,
                     calc_keywords=self.calc_keywords))
-            f.close()
-        f.close()
-
-    def opt_after_IRC(self, irc_dir, pytemplate_irc_opt):
-        ''' Set up optimization to minimas after IRC calculation
-
-        Parameters
-        __________
-        facetpath : str
-            a path to main directory
-            e.g. Cu_111/
-        irc_dir : str
-            a path to main IRC directory
-        pytemplate_irc_opt : python script
-            slurm template for IRC optimization
-
-        The function checks if *traj files containing IRC trajectories exists
-        and have some content. If so, a minimum optimization will be set up.
-        Otherwise, the given geometry is skipped.
-
-        '''
-        irc_path = os.path.join(self.facetpath, irc_dir)
-        for struc in sorted(os.listdir(irc_path), key=str):
-            struc_path = os.path.join(irc_path, struc)
-            if os.path.isdir(struc_path):
-                for traj in os.listdir(struc_path):
-                    if traj.endswith('irc_f.traj'):
-                        trajPath = os.path.join(struc_path, traj)
-                        if os.stat(trajPath).st_size == 0:
-                            pass
-                        else:
-                            try:
-                                IRC.prepare_opt_irc(
-                                    self, struc_path, 'irc_f', traj,
-                                    pytemplate_irc_opt)
-                            except FileNotFoundError:
-                                # Error handling to be developed
-                                raise
-                    elif traj.endswith('irc_r.traj'):
-                        trajPath = os.path.join(struc_path, traj)
-                        if os.stat(trajPath).st_size == 0:
-                            pass
-                        else:
-                            try:
-                                IRC.prepare_opt_irc(
-                                    self, struc_path, 'irc_r', traj,
-                                    pytemplate_irc_opt)
-                            except FileNotFoundError:
-                                # Error handling to be developed
-                                raise

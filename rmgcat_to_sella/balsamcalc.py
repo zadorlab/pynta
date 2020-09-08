@@ -2,7 +2,6 @@ import time
 from typing import Any, List, Dict
 import socket
 import atexit
-
 from balsam.launcher.dag import BalsamJob, kill
 from balsam.core.models import ApplicationDefinition
 
