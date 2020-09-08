@@ -5,6 +5,12 @@ import shutil
 from pathlib import Path
 from warnings import warn
 from rmgcat_to_sella.io import IO
+from rmgcat_to_sella.check_input import InputChecker
+
+# check if all necessary input files are in your working directory
+InputChecker('reactions.yaml', 'inputR2S.py',
+             'run_me.py', 'run_me.sh').check_all()
+
 try:
     import inputR2S
     """
@@ -47,7 +53,6 @@ else:
     balsam_exe_settings = inputR2S.balsam_exe_settings
     calc_keywords = inputR2S.calc_keywords
     creation_dir = inputR2S.creation_dir
-
 
 # These template and pytemplate scripts can be modified by users to tune
 # them to given calculation setup, i.e. calculator, method, queue menager,

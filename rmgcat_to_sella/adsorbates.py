@@ -38,7 +38,7 @@ class Adsorbates:
         slab : str
             a '.xyz' file name with the optimized slab
             e.g.
-            'Cu_100_slab_opt.xyz'
+            'Cu_111_slab_opt.xyz'
         repeats: tuple
             specify reapeats in (x, y, z) direction,
             eg. (3, 3, 1)
