@@ -1,4 +1,5 @@
 import os
+import sys
 
 
 class InputChecker():
@@ -7,10 +8,9 @@ class InputChecker():
     def __init__(
             self,
             yamlfile,
-            slab,
             inputR2S,
-            run_me):
-            
+            run_me_py,
+            run_me_sh):
         ''' Initialize
 
         Parameters:
@@ -29,9 +29,9 @@ class InputChecker():
 
         '''
         self.yamlfile = yamlfile
-        self.slab = slab
         self.inputR2S = inputR2S
-        self.run_me = run_me
+        self.run_me_py = run_me_py
+        self.run_me_sh = run_me_sh
         # Get the path to the working directory
         self.working_dir = os.getcwd()
 
@@ -44,6 +44,8 @@ class InputChecker():
             print('Error')
             print('Make sure all input files are '
                   'in your working directory')
+            # exit if at least one error
+            sys.exit()
         else:
             print('Passed')
 
@@ -55,12 +57,12 @@ class InputChecker():
         # check inputs
         check_yaml = self.check_yaml()
         check_list.append(check_yaml)
-        check_slab = self.check_slab()
-        check_list.append(check_slab)
         check_inputR2S = self.check_inputR2S()
         check_list.append(check_inputR2S)
-        check_run_me = self.check_run_me()
-        check_list.append(check_run_me)
+        check_run_me_py = self.check_run_me_py()
+        check_list.append(check_run_me_py)
+        check_run_me_sh = self.check_run_me_sh()
+        check_list.append(check_run_me_sh)
 
         # There is an error if at least one element of check_list is False
         if all(check_list):
@@ -96,11 +98,20 @@ class InputChecker():
         else:
             return True
 
-    def check_run_me(self):
+    def check_run_me_py(self):
         ''' Check for run_me.py file '''
-        if not os.path.isfile(self.run_me):
+        if not os.path.isfile(self.run_me_py):
             print('!    run_me.py file ({}) is not in your current working '
-                  'directory: \n{}'.format(self.run_me, self.working_dir))
+                  'directory: \n{}'.format(self.run_me_py, self.working_dir))
+            return False
+        else:
+            return True
+
+    def check_run_me_sh(self):
+        ''' Check for run_me.sh file '''
+        if not os.path.isfile(self.run_me_sh):
+            print('!    run_me.sh file ({}) is not in your current working '
+                  'directory: \n{}'.format(self.run_me_sh, self.working_dir))
             return False
         else:
             return True
