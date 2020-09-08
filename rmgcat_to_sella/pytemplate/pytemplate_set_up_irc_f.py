@@ -21,7 +21,6 @@ with open(label + '_irc_f_time.log', 'w+') as f:
     f.write("\n")
     f.close()
 
-
 extra_calc_keywords = dict(
     pseudopotentials={pseudopotentials},
     pseudo_dir='{pseudo_dir}',

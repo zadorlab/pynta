@@ -29,11 +29,10 @@ irc = IRC(facetpath, slab, repeats, ts_estimate_dir, yamlfile,
 irc.opt_after_IRC(pytemplate)
 all_rxns = IO().get_list_all_rxns_names(yamlfile)
 
-# BalsamJob = BalsamJob
-
 pending_simulations = BalsamJob.objects.filter(
     workflow__contains=dependency_workflow_name
 ).exclude(state="JOB_FINISHED")
+
 cwd = Path.cwd().as_posix()
 
 for rxn in all_rxns:
@@ -48,7 +47,7 @@ for rxn in all_rxns:
             args=cwd + '/' + str(py_script),
             input_files='',
             user_workdir=job_dir,
-            node_packing_count=64,
+            node_packing_count=48,
             ranks_per_node=1,
         )
         job_to_add.save()

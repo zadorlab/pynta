@@ -49,4 +49,3 @@ for py_script in glob('{facetpath}/minima/*.py'):
     job_to_add.save()
     for job in pending_simulations_dep:
         add_dependency(job_to_add, job)  # parent, child
-

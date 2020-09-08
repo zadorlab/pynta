@@ -211,10 +211,11 @@ class IRC():
             try:
                 self.check_irc_finished(rxn, pytemplate_irc_opt)
             except FileNotFoundError:
-                irc_error = irc_path.split('/')[1]
-                print('IRC calculations for {} '
-                      'did not finished.'.format(irc_error))
-                print('Skipping...')
+                # TODO: error handling
+                # irc_error = irc_path.split('/')[1]
+                # print('IRC calculations for {} '
+                #       'did not finished.'.format(irc_error))
+                # print('Skipping...')
                 pass
 
     def check_irc_finished(
@@ -310,7 +311,7 @@ class IRC():
         with open(pytemplate_irc_opt, 'r') as f:
             pytemplate_irc_opt = f.read()
             _, traj_file_name = os.path.split(irc_traj_path)
-            xyz_geom_file = traj_file_name[:-4] + '.xyz'
+            xyz_geom_file = traj_file_name[:-5] + '.xyz'
             prefix = str(traj_file_name)[:2]
             py_f_name = os.path.join(irc_opt_path, prefix + '_'
                                      + rxn_name + '_' +
