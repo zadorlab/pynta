@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
-
-from glob import glob
 from pathlib import Path
+import os
 
 from rmgcat_to_sella.adsorbates import Adsorbates
 from rmgcat_to_sella.io import IO
@@ -38,50 +37,53 @@ def jobs_to_be_finished(dependancy_dict, rxn_name):
     return jobs_to_be_finished
 
 
-def run_01(dependancy_dict):
-    # all_jobs = all_unique_01_jobs(dependancy_dict)
-    cwd = Path.cwd().as_posix()
-    workflow_name = yamlfile + facetpath + '01'
+# all_jobs = all_unique_01_jobs(dependancy_dict)
+cwd = Path.cwd().as_posix()
+workflow_name = yamlfile + facetpath + '01'
 
-    # keep track of all submitted jobs (all unique)
-    all_submitted_jobs = []
+# keep track of all submitted jobs (all unique)
+all_submitted_jobs = []
 
-    # specify dependant 02 for given reactions
-    for rxn_name in dependancy_dict.keys():
-        dependent_workflow_name = yamlfile+facetpath+'02'+rxn_name
+# specify dependant 02 for given reactions
+for rxn_name in dependancy_dict.keys():
+    dependent_workflow_name = yamlfile+facetpath+'02'+rxn_name
 
-        # have to find a way to specify dependancy which species have to be
-        # calculated for a given reaction
-        pending_simulations_dep = BalsamJob.objects.filter(
-            workflow__contains=dependent_workflow_name
-        ).exclude(state="JOB_FINISHED")
+    # have to find a way to specify dependancy which species have to be
+    # calculated for a given reaction
+    pending_simulations_dep = BalsamJob.objects.filter(
+        workflow__contains=dependent_workflow_name
+    ).exclude(state="JOB_FINISHED")
 
-        # for each reaction keep track of its dependencies
-        # e.g. for OH --> O + H those have to be finished OH, O and H
-        # Make sure each species is calculated only once
-        # e.g. H in CH --> C + H and OH --> O + H
-        new_unique_submission = []
-        for py_script in jobs_to_be_finished(dependancy_dict, rxn_name):
-            job_dir = cwd + '/' + '/'.join(py_script.strip().split('/')[:-1])
-            # get all unique submission
-            if py_script not in all_submitted_jobs:
-                new_unique_submission.append(py_script)
-                all_submitted_jobs.append(py_script)
+    # for each reaction keep track of its dependencies
+    # e.g. for OH --> O + H those have to be finished OH, O and H
+    # Make sure each species is calculated only once
+    # e.g. H in CH --> C + H and OH --> O + H
+    new_unique_submission = []
+    for py_script in jobs_to_be_finished(dependancy_dict, rxn_name):
+        py_script_dir = os.path.join(cwd, facetpath, 'minima', py_script)
+        # job_dir = cwd + '/' + '/'.join(py_script_dir.strip().split('/')[:-1])
+        print(py_script_dir)
+        # get all unique submission
+        if py_script not in all_submitted_jobs:
+            new_unique_submission.append(py_script)
+            all_submitted_jobs.append(py_script)
 
-            job_to_add = BalsamJob(
-                name=py_script,
-                workflow=workflow_name,
-                application='python',
-                args=cwd + '/' + py_script,
-                input_files='',
-                user_workdir=job_dir,
-                node_packing_count=48,
-                ranks_per_node=1,
-            )
-            if py_script in new_unique_submission:
-                job_to_add.save()
-                for job in pending_simulations_dep:
-                    add_dependency(job_to_add, job)  # parent, child
-            else:
-                for job in pending_simulations_dep:
-                    add_dependency(job_to_add, job)  # parent, child
+        job_to_add = BalsamJob(
+            name=py_script,
+            workflow=workflow_name,
+            application='python',
+            args=cwd + '/' + py_script,
+            input_files='',
+            user_workdir=py_script_dir,
+            node_packing_count=48,
+            ranks_per_node=1,
+        )
+        if py_script in new_unique_submission:
+            job_to_add.save()
+            for job in pending_simulations_dep:
+                add_dependency(job_to_add, job)  # parent, child
+        else:
+            for job in pending_simulations_dep:
+                add_dependency(job_to_add, job)  # parent, child
+
+

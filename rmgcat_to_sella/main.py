@@ -84,7 +84,6 @@ TS = inputR2S.TSScript
 IRC = inputR2S.IRCScript
 IRCopt = inputR2S.IRCoptScript
 ##
-currentDir = os.path.dirname(os.getcwd())
 optimize_slab = inputR2S.optimize_slab
 
 ####################################################
@@ -94,30 +93,30 @@ optimize_slab = inputR2S.optimize_slab
 
 class WorkFlow:
 
-    # def __init__(self):
-    #     """Setup the balsam application for this workflow run.
+    def __init__(self):
+        """Setup the balsam application for this workflow run.
 
-    #     Once we start using QE will want one app for QE,
-    #     one for xtb most likely
-    #     """
-    #     from balsam.core.models import ApplicationDefinition
-    #     self.myPython, _ = ApplicationDefinition.objects.get_or_create(
-    #         name="python",
-    #         executable=sys.executable
-    #     )
-    #     self.myPython.save()
-    #     self.slab_opt_job = ''
+        Once we start using QE will want one app for QE,
+        one for xtb most likely
+        """
+        from balsam.core.models import ApplicationDefinition
+        self.myPython, _ = ApplicationDefinition.objects.get_or_create(
+            name="python",
+            executable=sys.executable
+        )
+        self.myPython.save()
+        self.slab_opt_job = ''
 
-    #     # TODO: instead of directly importing EspressoBalsam, we should
-    #     # write a function which returns the appropriate class from
-    #     # balsamcalc.py based on the user-provided input file
-    #     from rmgcat_to_sella.balsamcalc import (
-    #         EspressoBalsam, EspressoBalsamSocketIO
-    #     )
-    #     EspressoBalsam.exe = executable
-    #     EspressoBalsamSocketIO.exe = executable
-    #     EspressoBalsam.create_application()
-    #     EspressoBalsamSocketIO.create_application()
+        # TODO: instead of directly importing EspressoBalsam, we should
+        # write a function which returns the appropriate class from
+        # balsamcalc.py based on the user-provided input file
+        from rmgcat_to_sella.balsamcalc import (
+            EspressoBalsam, EspressoBalsamSocketIO
+        )
+        EspressoBalsam.exe = executable
+        EspressoBalsamSocketIO.exe = executable
+        EspressoBalsam.create_application()
+        EspressoBalsamSocketIO.create_application()
 
     def gen_job_files(self):
         ''' Generate submt scripts for 6 stages of the workflow '''
@@ -658,14 +657,13 @@ class WorkFlow:
         slab_opt_path_str = []
         # the code will look for anything like Cu_111*.xyz starting from the
         # facetpath directory including all subdirectories.
-        keyphrase = '*/*' + str(facetpath) + '*.xyz'
-        slab_opt_path_posix = Path(str(currentDir)).glob(keyphrase)
+        keyphrase = str(facetpath) + '*.xyz'
+        slab_opt_path_posix = Path(str(os.getcwd())).glob(keyphrase)
         for slab_opt_path in slab_opt_path_posix:
             slab_opt_path_str.append(slab_opt_path)
         if len(slab_opt_path_str) >= 1:
             return True, slab_opt_path_str[0]
-        else:
-            return (False, )
+        return (False, )
 
     def copy_slab_opt_file(self):
         ''' Copy .xyz of previously optimized slab '''
@@ -742,6 +740,6 @@ class WorkFlow:
         # search for the 1st order saddle point
         self.exe('02', TS)
         # for each distinct TS, run IRC calculations
-        self.exe('03', IRC)
-        # run optimizataion of both IRC (forward, reverse) trajectory
-        self.exe('04', IRCopt)
+        # self.exe('03', IRC)
+        # # run optimizataion of both IRC (forward, reverse) trajectory
+        # self.exe('04', IRCopt)
