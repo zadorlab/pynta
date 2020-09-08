@@ -61,6 +61,7 @@ for rxn_name in dependancy_dict.keys():
     new_unique_submission = []
     for py_script in jobs_to_be_finished(dependancy_dict, rxn_name):
         py_script_dir = os.path.join(cwd, facetpath, 'minima', py_script)
+        job_dir, _ = os.path.split(py_script_dir)
         # job_dir = cwd + '/' + '/'.join(py_script_dir.strip().split('/')[:-1])
         print(py_script_dir)
         # get all unique submission
@@ -72,9 +73,9 @@ for rxn_name in dependancy_dict.keys():
             name=py_script,
             workflow=workflow_name,
             application='python',
-            args=cwd + '/' + py_script,
+            args=py_script_dir,
             input_files='',
-            user_workdir=py_script_dir,
+            user_workdir=job_dir,
             node_packing_count=48,
             ranks_per_node=1,
         )
