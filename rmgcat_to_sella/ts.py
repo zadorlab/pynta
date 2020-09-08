@@ -91,7 +91,7 @@ class TS():
         # reactions = self.io.open_yaml_file(self.yamlfile)
 
         # preapare inputs for all reactions
-        rxn_no = rxn['index'] + 1
+        # rxn_no = rxn['index'] + 1s
         for species in species_list:
             r_name_list, p_name_list, images = self.io.prepare_react_list(rxn)
             rxn_name = self.io.get_rxn_name(rxn)
