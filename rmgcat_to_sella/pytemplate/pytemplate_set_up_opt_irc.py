@@ -24,7 +24,7 @@ with open(prefix + '_time.log', 'w+') as f:
 extra_calc_keywords = dict(
     pseudopotentials={pseudopotentials},
     pseudo_dir='{pseudo_dir}',
-    label=prefix
+    label=label
 )
 
 geom_opt = read('{geom}')
