@@ -138,6 +138,16 @@ class WorkFlow:
             ts_sella_py_script_list.append(fname)
         return ts_sella_py_script_list
 
+    def get_irc_jobs(self):
+        ''' Get a list with all 04 jobs, irc_f and irc_r '''
+        reactions = IO().open_yaml_file(yamlfile)
+        irc_py_script_list = []
+        for rxn in reactions:
+            rxn_name = IO().get_rxn_name(rxn)
+            fname = '04_set_up_irc_{}.py'.format(rxn_name)
+            irc_py_script_list.append(fname)
+        return irc_py_script_list
+
     def gen_job_files(self):
         ''' Generate submt scripts for 6 stages of the workflow '''
         self.set_up_slab(
@@ -200,20 +210,21 @@ class WorkFlow:
                 creation_dir
             )
 
-        self.set_up_run_IRC(
-            template_set_up_IRC,
-            facetpath,
-            slabopt,
-            repeats,
-            pytemplate_f,
-            pytemplate_r,
-            yamlfile,
-            pseudopotentials,
-            pseudo_dir,
-            balsam_exe_settings,
-            calc_keywords,
-            creation_dir
-        )
+            self.set_up_run_IRC(
+                rxn,
+                template_set_up_IRC,
+                facetpath,
+                slabopt,
+                repeats,
+                pytemplate_f,
+                pytemplate_r,
+                yamlfile,
+                pseudopotentials,
+                pseudo_dir,
+                balsam_exe_settings,
+                calc_keywords,
+                creation_dir
+            )
 
         self.set_up_opt_IRC(
             template_set_up_optIRC,
@@ -451,6 +462,7 @@ class WorkFlow:
 
     def set_up_run_IRC(
         self,
+        rxn,
         template,
         facetpath,
         slab,
@@ -467,7 +479,9 @@ class WorkFlow:
         ''' Create 04_set_up_irc.py file '''
         with open(template, 'r') as r:
             template_text = r.read()
-            with open('04_set_up_irc.py', 'w') as c:
+            rxn_name = IO().get_rxn_name(rxn)
+            fname = '04_set_up_irc_{}.py'.format(rxn_name)
+            with open(fname, 'w') as c:
                 c.write(template_text.format(
                     facetpath=facetpath,
                     slab=slab,
@@ -478,7 +492,9 @@ class WorkFlow:
                     pseudo_dir=pseudo_dir,
                     pseudopotentials=pseudopotentials,
                     balsam_exe_settings=balsam_exe_settings,
-                    calc_keywords=calc_keywords, creation_dir=creation_dir
+                    calc_keywords=calc_keywords, creation_dir=creation_dir,
+                    rxn=rxn,
+                    rxn_name=rxn_name
                 ))
             c.close()
         r.close()
@@ -618,6 +634,12 @@ class WorkFlow:
         ts_sella_py_script_list = self.get_ts_estimate_unique()
         for ts_sella in ts_sella_py_script_list:
             self.exe(dependant_job, ts_sella)
+
+    def run_irc(self, dependant_job):
+        ''' Run IRC calculations '''
+        irc_py_script_list = self.get_irc_jobs()
+        for irc in irc_py_script_list:
+            self.exe(dependant_job, irc)
 
     def check_all_species(self, yamlfile):
         ''' Check all species (all reactions) to find whether
@@ -779,6 +801,7 @@ class WorkFlow:
         # self.exe('02', TS)
         self.run_ts_with_sella('02')
         # for each distinct TS, run IRC calculations
-        # self.exe('03', IRC)
+        # # self.exe('03', IRC)
+        # self.run_irc('03')
         # # run optimizataion of both IRC (forward, reverse) trajectory
         # self.exe('04', IRCopt)

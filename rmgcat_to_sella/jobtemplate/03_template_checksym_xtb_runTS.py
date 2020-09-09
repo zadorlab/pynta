@@ -5,7 +5,6 @@ import os
 from pathlib import Path
 
 from rmgcat_to_sella.ts import TS
-from rmgcat_to_sella.io import IO
 
 from balsam.launcher.dag import BalsamJob, add_dependency
 
