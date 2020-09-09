@@ -56,9 +56,9 @@ deactivate
 
 You will need **4** files to run the workflow:
 - `run_me.py` a python script that executes the workflow
-- `run_me.sh` a bash script that submits job to the SLURM scheduler
-- `inputR2S.py` a python script holding all user-modifiable parameters 
-- `reactions.yaml` a yaml file with all reactions
+- `run_me.sh` a bash script that submits jobs to the `balsam` database
+- `inputR2S.py` a python script holding all user-modifiable parameters of the `rmgcat_to_sella` 
+- `reactions.yaml` a yaml file with all reactions to be studied
 
 An example `run_me.py` file:
 
@@ -81,8 +81,8 @@ An example `run_me.sh` file:
 #SBATCH -e %x.err          # error file name
 #SBATCH -o %x.out          # out file name
 
-# load your quantum chemistry calculation package, e.g.
-module load espresso/6.6_nostress
+# load your quantum chemistry calculation package. Alternatively, provide a path to the preferred executable in 'inputR2S.py', e.g.
+module load espresso
 # activate balsam environment, e.g.
 source balsamactivate ~/myWorkflow_bebop
 # run python executable script
@@ -94,7 +94,7 @@ balsam launcher --job-mode=serial --wf-filter reactions.yaml --limit-nodes=1 --n
 # give some time to prevent time out before the sockets are ready for the quantum chemistry application, e.g. pw.x for Quantum Espresso
 sleep 45
 # launch mpi jobs (required)
-balsam launcher --job-mode=mpi --wf-filter QE_Sock --offset-nodes=1 --num-transition-threads=1 &
+balsam launcher --job-mode=mpi --wf-filter QE_Sock --offset-nodes=x-1 --num-transition-threads=1 &
 # wait until finished
 wait
 # deactivate balsam environment
@@ -149,16 +149,16 @@ from pathlib import Path
 ####################################################
 # specify the name of the main directory with
 # calculations
-facetpath = 'Cu_100'
+facetpath = 'Cu_111'
 ####################################################
 # do you want to run surface optimization
 optimize_slab = True
 ####################################################
 # specify name of the slab
-slab_name = 'Cu_100_slab_opt'
+slab_name = 'Cu_111_slab_opt'
 ####################################################
 # specify facet orientation
-surface_type = 'fcc100'
+surface_type = 'fcc111'
 ####################################################
 # surface atoms
 symbol = 'Cu'
@@ -170,7 +170,7 @@ a = 3.6
 vacuum = 8.0
 ####################################################
 # filename of the optimized surface slab
-slabopt = 'Cu_100_slab_opt.xyz'
+slabopt = 'Cu_111_slab_opt.xyz'
 ####################################################
 # Quantum Espresso pseudopotantials and exe settings
 # for DFT calculations
@@ -207,11 +207,11 @@ yamlfile = 'reactions.yaml'
 ####################################################
 # specify repeats of the surface in (x, y, z)
 # direction
-repeats_surface = (1, 1, 4)
+repeats_surface = (1, 1, 3)
 ####################################################
 # specify repeats of the surface in (x, y, z)
 # direction
-repeats = (3, 4, 1)
+repeats = (3, 3, 1)
 ####################################################
 # specify the angle of TS estimate adduct rotation
 rotAngle = 60
@@ -227,7 +227,7 @@ scfactor = 1.4
 scfactor_surface = 1.0
 ####################################################
 # species list
-species_list = ['O', 'H']
+species_dict = {'rxn1': ['O', 'H'], 'rxn2': ['O', 'H']}
 ####################################################
 # do you want to apply the scfactor_surface to the
 # species 1?
