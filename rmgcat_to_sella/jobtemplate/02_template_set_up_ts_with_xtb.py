@@ -25,8 +25,8 @@ creation_dir = '{creation_dir}'
 rxn = {rxn}
 rxn_name = '{rxn_name}'
 
+dependency_workflow_name = yamlfile+facetpath+'01'+rxn_name
 workflow_name = yamlfile+facetpath+'02'+rxn_name
-# dependency_workflow_name = yamlfile+facetpath+'01'
 
 ts = TS(
     facetpath,
@@ -34,7 +34,7 @@ ts = TS(
     yamlfile,
     repeats,
     creation_dir)
-    
+
 ts.prepare_ts_estimate(
     rxn,
     scfactor,
@@ -54,6 +54,10 @@ pending_simulations_dep = BalsamJob.objects.filter(
 #     workflow__contains=dependency_workflow_name
 # ).exclude(state="JOB_FINISHED")
 
+# pending_simulations = BalsamJob.objects.filter(
+#     name__contains=py_script
+# ).exclude(state="JOB_FINISHED")
+
 cwd = Path.cwd().as_posix()
 path_to_ts_estimate = os.path.join(facetpath, rxn_name, 'TS_estimate')
 for py_script in Path(path_to_ts_estimate).glob('**/*.py'):
@@ -70,7 +74,7 @@ for py_script in Path(path_to_ts_estimate).glob('**/*.py'):
         user_workdir=job_dir,
     )
     job_to_add.save()
-    # for job in pending_simulations:
-    #     add_dependency(job, job_to_add)  # parent, child
+    for job in pending_simulations:
+        add_dependency(job, job_to_add)  # parent, child
     for job in pending_simulations_dep:
         add_dependency(job_to_add, job)  # parent, child

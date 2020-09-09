@@ -39,16 +39,16 @@ def jobs_to_be_finished(dependancy_dict, rxn_name):
 
 # all_jobs = all_unique_01_jobs(dependancy_dict)
 cwd = Path.cwd().as_posix()
-workflow_name = yamlfile + facetpath + '01'
 
 # keep track of all submitted jobs (all unique)
 all_submitted_jobs = []
 
 # specify dependant 02 for given reactions
 for rxn_name in dependancy_dict.keys():
-    dependent_workflow_name = yamlfile+facetpath+'02'+rxn_name
+    workflow_name = yamlfile + facetpath + '01' + rxn_name
+    dependent_workflow_name = yamlfile + facetpath + '02' + rxn_name
 
-    # have to find a way to specify dependancy which species have to be
+    # have to find a way to specify dependancy which species have toc be
     # calculated for a given reaction
     pending_simulations_dep = BalsamJob.objects.filter(
         workflow__contains=dependent_workflow_name
@@ -86,5 +86,3 @@ for rxn_name in dependancy_dict.keys():
         else:
             for job in pending_simulations_dep:
                 add_dependency(job_to_add, job)  # parent, child
-
-
