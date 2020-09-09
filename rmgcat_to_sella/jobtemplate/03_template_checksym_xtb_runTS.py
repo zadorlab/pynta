@@ -23,11 +23,23 @@ dependent_workflow_name = yamlfile+facetpath+'04'
 balsam_exe_settings = {balsam_exe_settings}
 calc_keywords = {calc_keywords}
 creation_dir = '{creation_dir}'
+rxn = {rxn}
+rxn_name = '{rxn_name}'
 
-ts = TS(facetpath, slab, ts_estimate_dir, yamlfile, repeats, creation_dir)
-ts.create_unique_ts_all(pytemplate, pseudopotentials,
-                        pseudo_dir, balsam_exe_settings, calc_keywords)
-all_rxns = IO().get_list_all_rxns_names(yamlfile)
+ts = TS(
+    facetpath,
+    slab,
+    ts_estimate_dir,
+    yamlfile,
+    repeats,
+    creation_dir)
+    
+ts.create_unique_ts_all(
+    pytemplate,
+    pseudopotentials,
+    pseudo_dir,
+    balsam_exe_settings,
+    calc_keywords)
 
 pending_simulations = BalsamJob.objects.filter(
     workflow__contains=dependency_workflow_name

@@ -77,7 +77,7 @@ for py_script in Path(path_to_ts_estimate).glob('**/*.py'):
     )
     job_to_add.save()
 
-    # all job_to_add_ are childs of 01 job
+    # all job_to_add_ are childs of 01 job, as from jobs_to_be_finished
     for job in pending_simulations:
         add_dependency(job, job_to_add)  # parent, child
     # do not run 03 until all 02 for a given reaction are done

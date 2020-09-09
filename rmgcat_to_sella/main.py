@@ -93,30 +93,30 @@ optimize_slab = inputR2S.optimize_slab
 
 class WorkFlow:
 
-    def __init__(self):
-        """Setup the balsam application for this workflow run.
+    # def __init__(self):
+    #     """Setup the balsam application for this workflow run.
 
-        Once we start using QE will want one app for QE,
-        one for xtb most likely
-        """
-        from balsam.core.models import ApplicationDefinition
-        self.myPython, _ = ApplicationDefinition.objects.get_or_create(
-            name="python",
-            executable=sys.executable
-        )
-        self.myPython.save()
-        self.slab_opt_job = ''
+    #     Once we start using QE will want one app for QE,
+    #     one for xtb most likely
+    #     """
+    #     from balsam.core.models import ApplicationDefinition
+    #     self.myPython, _ = ApplicationDefinition.objects.get_or_create(
+    #         name="python",
+    #         executable=sys.executable
+    #     )
+    #     self.myPython.save()
+    #     self.slab_opt_job = ''
 
-        # TODO: instead of directly importing EspressoBalsam, we should
-        # write a function which returns the appropriate class from
-        # balsamcalc.py based on the user-provided input file
-        from rmgcat_to_sella.balsamcalc import (
-            EspressoBalsam, EspressoBalsamSocketIO
-        )
-        EspressoBalsam.exe = executable
-        EspressoBalsamSocketIO.exe = executable
-        EspressoBalsam.create_application()
-        EspressoBalsamSocketIO.create_application()
+    #     # TODO: instead of directly importing EspressoBalsam, we should
+    #     # write a function which returns the appropriate class from
+    #     # balsamcalc.py based on the user-provided input file
+    #     from rmgcat_to_sella.balsamcalc import (
+    #         EspressoBalsam, EspressoBalsamSocketIO
+    #     )
+    #     EspressoBalsam.exe = executable
+    #     EspressoBalsamSocketIO.exe = executable
+    #     EspressoBalsam.create_application()
+    #     EspressoBalsamSocketIO.create_application()
 
     def get_ts_xtb_py_script_list(self):
         ''' Get a list with all 02 job scripts '''
@@ -127,6 +127,16 @@ class WorkFlow:
             fname = '02_set_up_TS_with_xtb_{}.py'.format(rxn_name)
             ts_with_xtb_py_script_list.append(fname)
         return ts_with_xtb_py_script_list
+
+    def get_ts_estimate_unique(self):
+        ''' Get a list with all 03 job scripts '''
+        reactions = IO().open_yaml_file(yamlfile)
+        ts_sella_py_script_list = []
+        for rxn in reactions:
+            rxn_name = IO().get_rxn_name(rxn)
+            fname = '03_checksym_xtb_run_TS_{}.py'.format(rxn_name)
+            ts_sella_py_script_list.append(fname)
+        return ts_sella_py_script_list
 
     def gen_job_files(self):
         ''' Generate submt scripts for 6 stages of the workflow '''
@@ -175,19 +185,20 @@ class WorkFlow:
                 creation_dir
             )
 
-        self.set_up_run_TS(
-            template_set_up_ts,
-            facetpath,
-            slabopt,
-            repeats,
-            yamlfile,
-            pytemplate_set_up_ts,
-            pseudopotentials,
-            pseudo_dir,
-            balsam_exe_settings,
-            calc_keywords,
-            creation_dir
-        )
+            self.set_up_run_TS(
+                rxn,
+                template_set_up_ts,
+                facetpath,
+                slabopt,
+                repeats,
+                yamlfile,
+                pytemplate_set_up_ts,
+                pseudopotentials,
+                pseudo_dir,
+                balsam_exe_settings,
+                calc_keywords,
+                creation_dir
+            )
 
         self.set_up_run_IRC(
             template_set_up_IRC,
@@ -386,13 +397,17 @@ class WorkFlow:
             fname = '02_set_up_TS_with_xtb_{}.py'.format(rxn_name)
             with open(fname, 'w') as c:
                 c.write(template_text.format(
-                    facetpath=facetpath, slab=slab,
-                    repeats=repeats, yamlfile=yamlfile,
-                    rotAngle=rotAngle, scfactor=scfactor,
+                    facetpath=facetpath,
+                    slab=slab,
+                    repeats=repeats,
+                    yamlfile=yamlfile,
+                    rotAngle=rotAngle,
+                    scfactor=scfactor,
                     scfactor_surface=scfactor_surface,
                     pytemplate_xtb=pytemplate_xtb,
                     species_list=species_dict['rxn' + str(rxn_no)],
-                    scaled1=scaled1, scaled2=scaled2,
+                    scaled1=scaled1,
+                    scaled2=scaled2,
                     creation_dir=creation_dir,
                     rxn=rxn,
                     rxn_name=rxn_name
@@ -400,6 +415,7 @@ class WorkFlow:
 
     def set_up_run_TS(
         self,
+        rxn,
         template,
         facetpath,
         slab,
@@ -412,21 +428,26 @@ class WorkFlow:
         calc_keywords,
         creation_dir
     ):
-        ''' Create 03_checksym_xtb_runTS.py file '''
+        ''' Create 03_checksym_xtb_run_TS.py file '''
         with open(template, 'r') as r:
             template_text = r.read()
-            with open('03_checksym_xtb_runTS.py', 'w') as c:
+            rxn_name = IO().get_rxn_name(rxn)
+            fname = '03_checksym_xtb_run_TS_{}.py'.format(rxn_name)
+            with open(fname, 'w') as c:
                 c.write(template_text.format(
-                    facetpath=facetpath, slab=slab,
-                    repeats=repeats, yamlfile=yamlfile,
+                    facetpath=facetpath,
+                    slab=slab,
+                    repeats=repeats,
+                    yamlfile=yamlfile,
                     pytemplate=pytemplate,
                     pseudo_dir=pseudo_dir,
                     pseudopotentials=pseudopotentials,
                     balsam_exe_settings=balsam_exe_settings,
-                    calc_keywords=calc_keywords, creation_dir=creation_dir
+                    calc_keywords=calc_keywords,
+                    creation_dir=creation_dir,
+                    rxn=rxn,
+                    rxn_name=rxn_name
                 ))
-            c.close()
-        r.close()
 
     def set_up_run_IRC(
         self,
@@ -583,7 +604,6 @@ class WorkFlow:
     def run_ts_estimate(self, dependent_job):
         ''' Run TS estimation calculations '''
         ts_xtb_py_script_list = self.get_ts_xtb_py_script_list()
-        print(ts_xtb_py_script_list)
         for ts_xtb in ts_xtb_py_script_list:
             self.exe(dependent_job, ts_xtb)
 
@@ -592,6 +612,12 @@ class WorkFlow:
             no dependency on other jobs '''
         TSxtb = inputR2S.TSxtbScript
         return self.exe('', TSxtb)
+
+    def run_ts_with_sella(self, dependant_job):
+        ''' Run TS minimization with Sella '''
+        ts_sella_py_script_list = self.get_ts_estimate_unique()
+        for ts_sella in ts_sella_py_script_list:
+            self.exe(dependant_job, ts_sella)
 
     def check_all_species(self, yamlfile):
         ''' Check all species (all reactions) to find whether
@@ -720,13 +746,6 @@ class WorkFlow:
             else:
                 # If any of sp_check_list is False
                 # run optimization of surface + reactants; surface + products
-                #
-                # TODO: To be debugged - I need to think about a method to run
-                # run_opt_surf_and_adsorbate()
-                # or
-                # run_opt_surf_and_adsorbate_no_depend()
-                # depending whether slab opt was done perform by the workflow
-                # check if slab was calculated in this run.
                 try:
                     self.run_opt_surf_and_adsorbate()
                 except NameError:
@@ -757,7 +776,8 @@ class WorkFlow:
                 # to get TS guesses
                 self.exe('01', TSxtb)
         # search for the 1st order saddle point
-        self.exe('02', TS)
+        # self.exe('02', TS)
+        self.run_ts_with_sella('02')
         # for each distinct TS, run IRC calculations
         # self.exe('03', IRC)
         # # run optimizataion of both IRC (forward, reverse) trajectory
