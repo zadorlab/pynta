@@ -48,22 +48,23 @@ ts.prepare_ts_estimate(
     scaled1,
     scaled2)
 
-# io = IO()
-# dependancy_dict = io.depends_on(facetpath, yamlfile)
-# jobs_to_be_finished = dependancy_dict[rxn_name]
+dependancy_dict = IO().depends_on(facetpath, yamlfile)
+jobs_to_be_finished = dependancy_dict[rxn_name]
 
 dependent_workflow_name = yamlfile+facetpath+'03'
 pending_simulations_dep = BalsamJob.objects.filter(
     workflow__contains=dependent_workflow_name
 ).exclude(state="JOB_FINISHED")
 
-pending_simulations = BalsamJob.objects.filter(
-    workflow__contains=dependency_workflow_name
-).exclude(state="JOB_FINISHED")
-
 # pending_simulations = BalsamJob.objects.filter(
-#     name__contains=py_script
+#     workflow__contains=dependency_workflow_name
 # ).exclude(state="JOB_FINISHED")
+
+pending_simulations = []
+
+for dep_job in jobs_to_be_finished:
+    pending_simulations.append(BalsamJob.objects.filter(
+        name=dep_job).exclude(state="JOB_FINISHED"))
 
 path_to_ts_estimate = os.path.join(facetpath, rxn_name, 'TS_estimate')
 for py_script in Path(path_to_ts_estimate).glob('**/*.py'):
