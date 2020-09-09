@@ -148,6 +148,17 @@ class WorkFlow:
             irc_py_script_list.append(fname)
         return irc_py_script_list
 
+    def get_irc_opt_scripts(self):
+        ''' Get a list with all 05 jobs, irc_f_opt and irc_r_opt '''
+        reactions = IO().open_yaml_file(yamlfile)
+        irc_opt_py_list = []
+        for rxn in reactions:
+            rxn_name = IO().get_rxn_name(rxn)
+            fname = '05_set_up_opt_after_irc_{}.py'.format(rxn_name)
+            irc_opt_py_list.append(fname)
+        return irc_opt_py_list
+
+
     def gen_job_files(self):
         ''' Generate submt scripts for 6 stages of the workflow '''
         self.set_up_slab(
@@ -226,18 +237,19 @@ class WorkFlow:
                 creation_dir
             )
 
-        self.set_up_opt_IRC(
-            template_set_up_optIRC,
-            facetpath,
-            slabopt,
-            repeats,
-            pytemplate_optIRC,
-            pseudopotentials,
-            pseudo_dir,
-            balsam_exe_settings,
-            calc_keywords,
-            creation_dir
-        )
+            self.set_up_opt_IRC(
+                rxn,
+                template_set_up_optIRC,
+                facetpath,
+                slabopt,
+                repeats,
+                pytemplate_optIRC,
+                pseudopotentials,
+                pseudo_dir,
+                balsam_exe_settings,
+                calc_keywords,
+                creation_dir
+            )
 
 ###########################
 #   Create submit files   #
@@ -501,6 +513,7 @@ class WorkFlow:
 
     def set_up_opt_IRC(
         self,
+        rxn,
         template,
         facetpath,
         slab,
@@ -515,7 +528,9 @@ class WorkFlow:
         ''' Create 05_set_up_opt_after_irc.py file'''
         with open(template, 'r') as r:
             template_text = r.read()
-            with open('05_set_up_opt_after_irc.py', 'w') as c:
+            rxn_name = IO().get_rxn_name(rxn)
+            fname = '05_set_up_opt_after_irc_{}.py'.format(rxn_name)
+            with open(fname, 'w') as c:
                 c.write(template_text.format(
                     facetpath=facetpath,
                     slab=slab,
@@ -526,7 +541,9 @@ class WorkFlow:
                     pseudopotentials=pseudopotentials,
                     balsam_exe_settings=balsam_exe_settings,
                     calc_keywords=calc_keywords,
-                    creation_dir=creation_dir
+                    creation_dir=creation_dir,
+                    rxn=rxn,
+                    rxn_name=rxn_name
                 ))
             c.close()
         r.close()
@@ -640,6 +657,12 @@ class WorkFlow:
         irc_py_script_list = self.get_irc_jobs()
         for irc in irc_py_script_list:
             self.exe(dependant_job, irc)
+
+    def run_irc_opt(self, dependant_job):
+        ''' Run minimization of IRC basins calculations '''
+        irc_opt_py_scripts = self.get_irc_opt_scripts()
+        for irc_opt in irc_opt_py_scripts:
+            self.exe(dependant_job, irc_opt)
 
     def check_all_species(self, yamlfile):
         ''' Check all species (all reactions) to find whether
@@ -804,4 +827,5 @@ class WorkFlow:
         # # self.exe('03', IRC)
         # self.run_irc('03')
         # # run optimizataion of both IRC (forward, reverse) trajectory
-        # self.exe('04', IRCopt)
+        # # self.exe('04', IRCopt)
+        # self.run_irc_opt('04')

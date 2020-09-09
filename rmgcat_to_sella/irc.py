@@ -66,21 +66,6 @@ class IRC():
         self.creation_dir = creation_dir
         self.io = IO()
 
-    # def set_up_irc_all(
-    #         self,
-    #         rxn,
-    #         pytemplate_f,
-    #         pytemplate_r):
-    #     ''' Set up IRC calculations for all reactions
-
-    #     Parameters
-    #     __________
-    #     pytemplate_f, pytemplate_r : python scripts
-    #         python scripts templates for irc calculations
-
-    #     '''
-    #     self.set_up_irc(rxn, pytemplate_f, pytemplate_r)
-
     def set_up_irc(
             self,
             rxn,

@@ -14,7 +14,6 @@ yamlfile = '{yamlfile}'
 facetpath = '{facetpath}'
 pytemplate = '{pytemplate}'
 ts_dir = 'TS_estimate_unique'
-# irc_dir = 'IRC'
 pseudopotentials = {pseudopotentials}
 pseudo_dir = '{pseudo_dir}'
 workflow_name = yamlfile+facetpath+'05'
@@ -22,6 +21,10 @@ dependency_workflow_name = yamlfile+facetpath+'04'
 balsam_exe_settings = {balsam_exe_settings}
 calc_keywords = {calc_keywords}
 creation_dir = '{creation_dir}'
+rxn = {rxn}
+rxn_name = '{rxn_name}'
+cwd = Path.cwd().as_posix()
+path_to_irc = os.path.join(facetpath, rxn_name, 'IRC')
 
 irc = IRC(facetpath, slab, repeats, ts_dir, yamlfile,
           pseudopotentials, pseudo_dir)
@@ -35,21 +38,20 @@ pending_simulations = BalsamJob.objects.filter(
 ).exclude(state="JOB_FINISHED")
 cwd = Path.cwd().as_posix()
 
-for rxn in all_rxns:
-    path_to_irc_opt = os.path.join(facetpath, rxn, 'IRC')
-    for py_script in Path(path_to_irc_opt).glob('*_opt.py'):
-        print(py_script)
-        job_dir, script_name = os.path.split(str(py_script))
-        job_to_add = BalsamJob(
-            name=script_name,
-            workflow=workflow_name,
-            application='python',
-            args=cwd + '/' + str(py_script),
-            input_files='',
-            user_workdir=job_dir,
-            node_packing_count=64,
-            ranks_per_node=1,
-        )
-        job_to_add.save()
-        for job in pending_simulations:
-            add_dependency(job, job_to_add)  # parent, child
+path_to_irc_opt = os.path.join(facetpath, rxn, 'IRC')
+for py_script in Path(path_to_irc_opt).glob('*_opt.py'):
+    print(py_script)
+    job_dir, script_name = os.path.split(str(py_script))
+    job_to_add = BalsamJob(
+        name=script_name,
+        workflow=workflow_name,
+        application='python',
+        args=cwd + '/' + str(py_script),
+        input_files='',
+        user_workdir=job_dir,
+        node_packing_count=64,
+        ranks_per_node=1,
+    )
+    job_to_add.save()
+    for job in pending_simulations:
+        add_dependency(job, job_to_add)  # parent, child
