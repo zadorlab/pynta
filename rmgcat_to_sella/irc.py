@@ -179,27 +179,30 @@ class IRC():
 
     def opt_after_IRC(
             self,
+            rxn,
             pytemplate_irc_opt):
         ''' Create opt IRC calculations for reactions
 
         Parameters:
         ___________
-
+        rxn : dict(yaml[str:str])
+            a dictionary with info about the paricular reaction. This can be
+            view as a splitted many reaction .yaml file into a single reaction
+            .yaml file
         pytemplate_irc_opt : python script
             template file for IRC optimization job
 
         '''
 
-        reactions = self.io.open_yaml_file(self.yamlfile)
-        for rxn in reactions:
-            try:
-                self.check_irc_finished(rxn, pytemplate_irc_opt)
-            except FileNotFoundError:
-                irc_error = irc_path.split('/')[1]
-                print('IRC calculations for {} '
-                      'did not finished.'.format(irc_error))
-                print('Skipping...')
-                pass
+        try:
+            self.check_irc_finished(rxn, pytemplate_irc_opt)
+        except FileNotFoundError:
+            # irc_error = irc_path.split('/')[1]
+            irc_error = '? I needd to fix this ?'
+            print('IRC calculations for {} '
+                  'did not finished.'.format(irc_error))
+            print('Skipping...')
+            # pass
 
     def check_irc_finished(
             self,
@@ -223,7 +226,6 @@ class IRC():
             irc_traj_paths = Path(irc_path).glob(
                 '**/*{}.traj'.format(irc_name))
             for irc_traj_path in irc_traj_paths:
-                print(irc_traj_path)
                 # if file is empty, there is somethig wrong with calculation
                 # skip at this moment
                 if os.stat(irc_traj_path).st_size == 0:
@@ -259,24 +261,24 @@ class IRC():
         irc_opt_path = os.path.join(struc_path, irc_name + '_opt')
         os.makedirs(irc_opt_path, exist_ok=True)
 
-        init_xyz = os.path.join(irc_traj_path, irc_traj[:-5])
+        init_xyz = os.path.join(irc_opt_path, irc_traj[:-5])
+        irc_traj_path = str(irc_traj_path)
         write(init_xyz + '.xyz', read(irc_traj_path))
         write(init_xyz + '_initial.png', read(irc_traj_path))
 
-        xyz_geom_file = os.path.jpin(irc_traj_path[:-4] + 'xyz')
         self.create_job_files(rxn_name,
                               pytemplate_irc_opt,
                               irc_opt_path,
-                              irc_traj_path,
-                              xyz_geom_file)
+                              irc_traj_path
+                              )
 
     def create_job_files(
             self,
             rxn_name,
             pytemplate_irc_opt,
             irc_opt_path,
-            irc_traj_path,
-            xyz_geom_file):
+            irc_traj_path
+    ):
         ''' Create slurm files for IRC optimization
 
         Parameters
@@ -289,22 +291,24 @@ class IRC():
         irc_opt_path : str
             directory where irc optimization will we placed,
             e.g Cu_111/IRC/00/irc_r_opt
-        irc_traj_path : ase trajectory file
+        irc_traj_path : posix path to ase trajectory file
             e.g *irc_f.traj from previous irc calculation
-        xyz_geom_file : str
-            a name of a .xyz file with the coordinates of the TS
 
         '''
         with open(pytemplate_irc_opt, 'r') as f:
             pytemplate_irc_opt = f.read()
-            prefix = irc_traj_path[:2]
-            fname = os.path.join(irc_opt_path, prefix + '_'
-                                 + rxn_name + '_' +
-                                 os.path.split(irc_opt_path)[1]
-                                 + '.py')
-            with open(fname, 'w') as f:
+            _, traj_file_name = os.path.split(irc_traj_path)
+            xyz_geom_file = traj_file_name[:-5] + '.xyz'
+            prefix = str(traj_file_name)[:2]
+            py_f_name = os.path.join(irc_opt_path, prefix + '_'
+                                     + rxn_name + '_' +
+                                     os.path.split(irc_opt_path)[1]
+                                     + '.py')
+            with open(py_f_name, 'w') as f:
                 f.write(pytemplate_irc_opt.format(
-                    geom=xyz_geom_file, rxn=rxn_name, prefix=prefix,
+                    geom=xyz_geom_file,
+                    rxn=rxn_name,
+                    prefix=prefix,
                     pseudopotentials=self.pseudopotentials,
                     pseudo_dir=self.pseudo_dir,
                     balsam_exe_settings=self.balsam_exe_settings,

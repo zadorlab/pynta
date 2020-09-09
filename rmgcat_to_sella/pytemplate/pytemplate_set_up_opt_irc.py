@@ -21,10 +21,10 @@ with open(prefix + '_time.log', 'w+') as f:
 
 cwd = Path.cwd().as_posix()
 extra_calc_keywords = dict(
-        pseudopotentials={pseudopotentials},
-        pseudo_dir='{pseudo_dir}',
-        label=prefix
-        )
+    pseudopotentials={pseudopotentials},
+    pseudo_dir='{pseudo_dir}',
+    label=prefix
+)
 
 geom_opt = read('{geom}')
 geom_opt.set_constraint(FixAtoms([
@@ -32,10 +32,10 @@ geom_opt.set_constraint(FixAtoms([
 ]))
 
 geom_opt.calc = EspressoBalsamSocketIO(
-        workflow='QE_Socket',
-        job_kwargs=balsam_exe_settings,
-        **calc_keywords
-        )
+    workflow='QE_Socket',
+    job_kwargs=balsam_exe_settings,
+    **calc_keywords
+)
 
 geom_opt.calc.set(**extra_calc_keywords)
 
@@ -43,9 +43,9 @@ opt = BFGSLineSearch(atoms=geom_opt, trajectory=trajdir)
 opt.run(fmax=0.01)
 geom_opt.calc.close()
 
-WriteDir = os.path.join(prefix + '_' + rxn + '_final')
-write(WriteDir + '.png', read(trajdir))
-write(WriteDir + '.xyz', read(trajdir))
+writedir = os.path.join(prefix + '_' + rxn + '_final')
+write(writedir + '.png', read(trajdir))
+write(writedir + '.xyz', read(trajdir))
 
 end = datetime.datetime.now()
 with open(prefix + '_time.log', 'a+') as f:
