@@ -575,9 +575,10 @@ class WorkFlow:
 
     def run_ts_estimate(self, dependent_job):
         ''' Run TS estimation calculations '''
-        ts_xtb_py_script_list = self.get_set_up_TS_with_xtb()
+        ts_xtb_py_script_list = self.get_ts_xtb_py_script_list()
+        print(ts_xtb_py_script_list)
         for ts_xtb in ts_xtb_py_script_list:
-            self.exe(dependent_job, TSxtb)
+            self.exe(dependent_job, ts_xtb)
 
     def run_ts_estimate_no_depend(self):
         ''' Run TS estimate calculations if there is
