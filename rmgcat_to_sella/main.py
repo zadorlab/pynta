@@ -525,9 +525,16 @@ class WorkFlow:
         from os import getcwd
         cwd = getcwd()
 
+        # get rxn_name from job_script by spliting and joining job_script name
+        # exeption for two first jobs
+        if job_script in [SurfaceAdsorbate, slab_opt]:
+            rxn_name = ''
+        else:
+            rxn_name = '_'.join(job_script.split('_')[-2:])[:-3]
+
         try:
             int(job_script[0:2])
-            workflow_name = yamlfile + facetpath + job_script[0:2]
+            workflow_name = yamlfile + facetpath + job_script[0:2] + rxn_name
         except ValueError:
             workflow_name = yamlfile + facetpath
 

@@ -4,6 +4,7 @@ import os
 from pathlib import Path
 
 from rmgcat_to_sella.ts import TS
+from rmgcat_to_sella.io import IO
 
 from balsam.launcher.dag import BalsamJob, add_dependency
 
@@ -25,8 +26,10 @@ creation_dir = '{creation_dir}'
 rxn = {rxn}
 rxn_name = '{rxn_name}'
 
-dependency_workflow_name = yamlfile+facetpath+'01'+rxn_name
-workflow_name = yamlfile+facetpath+'02'+rxn_name
+dependency_workflow_name = yamlfile + facetpath + '01' + rxn_name
+workflow_name = yamlfile + facetpath + '02' + rxn_name
+
+cwd = Path.cwd().as_posix()
 
 ts = TS(
     facetpath,
@@ -45,20 +48,23 @@ ts.prepare_ts_estimate(
     scaled1,
     scaled2)
 
+# io = IO()
+# dependancy_dict = io.depends_on(facetpath, yamlfile)
+# jobs_to_be_finished = dependancy_dict[rxn_name]
+
 dependent_workflow_name = yamlfile+facetpath+'03'
 pending_simulations_dep = BalsamJob.objects.filter(
     workflow__contains=dependent_workflow_name
 ).exclude(state="JOB_FINISHED")
 
-# pending_simulations = BalsamJob.objects.filter(
-#     workflow__contains=dependency_workflow_name
-# ).exclude(state="JOB_FINISHED")
+pending_simulations = BalsamJob.objects.filter(
+    workflow__contains=dependency_workflow_name
+).exclude(state="JOB_FINISHED")
 
 # pending_simulations = BalsamJob.objects.filter(
 #     name__contains=py_script
 # ).exclude(state="JOB_FINISHED")
 
-cwd = Path.cwd().as_posix()
 path_to_ts_estimate = os.path.join(facetpath, rxn_name, 'TS_estimate')
 for py_script in Path(path_to_ts_estimate).glob('**/*.py'):
     print(py_script)

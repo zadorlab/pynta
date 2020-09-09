@@ -29,7 +29,7 @@ io = IO()
 dependancy_dict = io.depends_on(facetpath, yamlfile)
 
 cwd = Path.cwd().as_posix()
-workflow_name = yamlfile + facetpath + '01'
+# workflow_name = yamlfile + facetpath + '01'
 
 
 def jobs_to_be_finished(dependancy_dict, rxn_name):
