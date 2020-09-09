@@ -25,19 +25,8 @@ put_adsorbates.create_relax_jobs(
     balsam_exe_settings, calc_keywords
 )
 
-io = IO()
-dependancy_dict = io.depends_on(facetpath, yamlfile)
+dependancy_dict = IO().depends_on(facetpath, yamlfile)
 
-cwd = Path.cwd().as_posix()
-# workflow_name = yamlfile + facetpath + '01'
-
-
-def jobs_to_be_finished(dependancy_dict, rxn_name):
-    jobs_to_be_finished = dependancy_dict[rxn_name]
-    return jobs_to_be_finished
-
-
-# all_jobs = all_unique_01_jobs(dependancy_dict)
 cwd = Path.cwd().as_posix()
 
 # keep track of all submitted jobs (all unique)
@@ -48,8 +37,7 @@ for rxn_name in dependancy_dict.keys():
     workflow_name = yamlfile + facetpath + '01' + rxn_name
     dependent_workflow_name = yamlfile + facetpath + '02' + rxn_name
 
-    # have to find a way to specify dependancy which species have toc be
-    # calculated for a given reaction
+    # get all dependant workflow BalsamJobs objects (should be one)
     pending_simulations_dep = BalsamJob.objects.filter(
         workflow__contains=dependent_workflow_name
     ).exclude(state="JOB_FINISHED")
@@ -60,17 +48,19 @@ for rxn_name in dependancy_dict.keys():
     # e.g. H in CH --> C + H and OH --> O + H
     new_unique_submission = []
     dependancy = []
-    for py_script in jobs_to_be_finished(dependancy_dict, rxn_name):
+
+    jobs_to_be_finished = dependancy_dict[rxn_name]
+
+    for py_script in jobs_to_be_finished:
         py_script_dir = os.path.join(cwd, facetpath, 'minima', py_script)
         job_dir, _ = os.path.split(py_script_dir)
-        # job_dir = cwd + '/' + '/'.join(py_script_dir.strip().split('/')[:-1])
-        print(py_script_dir)
+
         # get all unique submission
         if py_script not in all_submitted_jobs:
             new_unique_submission.append(py_script)
             all_submitted_jobs.append(py_script)
 
-        # if py_script in new_unique_submission:
+            # create a BalsamJob object, i.e. submit all unique jobs
             job_to_add = BalsamJob(
                 name=py_script,
                 workflow=workflow_name,
@@ -83,6 +73,7 @@ for rxn_name in dependancy_dict.keys():
             )
             job_to_add.save()
 
+        # for a given rxn_name, get all BalsamJob objects that it depends on
         dependancy.append(BalsamJob.objects.filter(
             name=py_script).exclude(state="JOB_FINISHED"))
 
@@ -90,6 +81,3 @@ for rxn_name in dependancy_dict.keys():
     for job in pending_simulations_dep:
         for adding_job in dependancy:
             add_dependency(adding_job, job)  # parent, child
-        # # else:
-        # #     for job in pending_simulations_dep:
-        # #         add_dependency(job_to_add, job)  # parent, child

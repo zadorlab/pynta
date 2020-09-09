@@ -25,11 +25,8 @@ ts_dir = 'TS_estimate'
 creation_dir = '{creation_dir}'
 rxn = {rxn}
 rxn_name = '{rxn_name}'
-
-dependency_workflow_name = yamlfile + facetpath + '01' + rxn_name
-workflow_name = yamlfile + facetpath + '02' + rxn_name
-
 cwd = Path.cwd().as_posix()
+path_to_ts_estimate = os.path.join(facetpath, rxn_name, 'TS_estimate')
 
 ts = TS(
     facetpath,
@@ -51,24 +48,22 @@ ts.prepare_ts_estimate(
 dependancy_dict = IO().depends_on(facetpath, yamlfile)
 jobs_to_be_finished = dependancy_dict[rxn_name]
 
-dependent_workflow_name = yamlfile+facetpath+'03'
+dependency_workflow_name = yamlfile + facetpath + '01' + rxn_name
+workflow_name = yamlfile + facetpath + '02' + rxn_name
+dependent_workflow_name = yamlfile + facetpath + '03' + rxn_name
+
 pending_simulations_dep = BalsamJob.objects.filter(
     workflow__contains=dependent_workflow_name
 ).exclude(state="JOB_FINISHED")
 
-# pending_simulations = BalsamJob.objects.filter(
-#     workflow__contains=dependency_workflow_name
-# ).exclude(state="JOB_FINISHED")
-
+# for a given rxn_name, get all BalsamJob objects that it depends on
 pending_simulations = []
-
 for dep_job in jobs_to_be_finished:
     pending_simulations.append(BalsamJob.objects.filter(
         name=dep_job).exclude(state="JOB_FINISHED"))
 
-path_to_ts_estimate = os.path.join(facetpath, rxn_name, 'TS_estimate')
+# create BalsamJob objects
 for py_script in Path(path_to_ts_estimate).glob('**/*.py'):
-    print(py_script)
     job_dir, script_name = os.path.split(str(py_script))
     job_to_add = BalsamJob(
         name=script_name,
@@ -81,7 +76,10 @@ for py_script in Path(path_to_ts_estimate).glob('**/*.py'):
         user_workdir=job_dir,
     )
     job_to_add.save()
+
+    # all job_to_add_ are childs of 01 job
     for job in pending_simulations:
         add_dependency(job, job_to_add)  # parent, child
+    # do not run 03 until all 02 for a given reaction are done
     for job in pending_simulations_dep:
         add_dependency(job_to_add, job)  # parent, child
