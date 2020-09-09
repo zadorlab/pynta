@@ -69,20 +69,22 @@ for rxn_name in dependancy_dict.keys():
             new_unique_submission.append(py_script)
             all_submitted_jobs.append(py_script)
 
-        job_to_add = BalsamJob(
-            name=py_script,
-            workflow=workflow_name,
-            application='python',
-            args=py_script_dir,
-            input_files='',
-            user_workdir=job_dir,
-            node_packing_count=48,
-            ranks_per_node=1,
-        )
-    if py_script in new_unique_submission:
-        job_to_add.save()
-        for job in pending_simulations_dep:
-            add_dependency(job_to_add, job)  # parent, child
-    else:
-        for job in pending_simulations_dep:
-            add_dependency(job_to_add, job)  # parent, child
+        # if py_script in new_unique_submission:
+            job_to_add = BalsamJob(
+                name=py_script,
+                workflow=workflow_name,
+                application='python',
+                args=py_script_dir,
+                input_files='',
+                user_workdir=job_dir,
+                node_packing_count=48,
+                ranks_per_node=1,
+            )
+            job_to_add.save()
+        # add dependencies
+        
+        # for job in pending_simulations_dep:
+        #     add_dependency(job_to_add, job)  # parent, child
+        # # else:
+        # #     for job in pending_simulations_dep:
+        # #         add_dependency(job_to_add, job)  # parent, child
