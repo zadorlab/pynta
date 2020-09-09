@@ -33,8 +33,9 @@ ts = TS(
     yamlfile,
     repeats,
     creation_dir)
-    
+
 ts.create_unique_ts_all(
+    rxn,
     pytemplate,
     pseudopotentials,
     pseudo_dir,
