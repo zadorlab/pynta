@@ -37,7 +37,8 @@ irc = IRC(
     calc_keywords,
     creation_dir)
 
-irc.set_up_irc_all(
+irc.set_up_irc(
+    rxn,
     pytemplate_f,
     pytemplate_r)
 
