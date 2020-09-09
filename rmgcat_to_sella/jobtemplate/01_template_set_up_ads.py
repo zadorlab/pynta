@@ -59,6 +59,7 @@ for rxn_name in dependancy_dict.keys():
     # Make sure each species is calculated only once
     # e.g. H in CH --> C + H and OH --> O + H
     new_unique_submission = []
+    dependancy = []
     for py_script in jobs_to_be_finished(dependancy_dict, rxn_name):
         py_script_dir = os.path.join(cwd, facetpath, 'minima', py_script)
         job_dir, _ = os.path.split(py_script_dir)
@@ -81,10 +82,14 @@ for rxn_name in dependancy_dict.keys():
                 ranks_per_node=1,
             )
             job_to_add.save()
-        # add dependencies
-        
-        # for job in pending_simulations_dep:
-        #     add_dependency(job_to_add, job)  # parent, child
+
+        dependancy.append(BalsamJob.objects.filter(
+            name=py_script).exclude(state="JOB_FINISHED"))
+
+    # add dependencies
+    for job in pending_simulations_dep:
+        for adding_job in dependancy:
+            add_dependency(adding_job, job)  # parent, child
         # # else:
         # #     for job in pending_simulations_dep:
         # #         add_dependency(job_to_add, job)  # parent, child
