@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-
 import os
 from pathlib import Path
 
@@ -49,7 +48,7 @@ ts.prepare_ts_estimate(
 dependancy_dict = IO().depends_on(facetpath, yamlfile)
 jobs_to_be_finished = dependancy_dict[rxn_name]
 
-dependency_workflow_name = facetpath + '_01_' + rxn_name
+dependency_workflow_name = facetpath + '_01' + rxn_name
 workflow_name = facetpath + '_02_' + rxn_name
 dependent_workflow_name = facetpath + '_03_' + rxn_name
 

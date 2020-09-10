@@ -589,7 +589,7 @@ class WorkFlow:
             int(job_script[0:2])
             workflow_name = facetpath + '_' + job_script[0:2] + '_' + rxn_name
         except ValueError:
-            workflow_name = yamlfile + facetpath
+            workflow_name = facetpath + '_error'
 
         job_to_add = BalsamJob(
             name=job_script,
@@ -609,8 +609,8 @@ class WorkFlow:
                 add_dependency(parent_job, job_to_add)  # parent, child
             except ValueError:
                 dependency = str(parent_job[0:2])
-                dependency_workflow_name = facetpath + dependency
-                # print(dependency_workflow_name)
+                dependency_workflow_name = os.path.join(
+                    facetpath + '_' + dependency + '_' + rxn_name)
                 BalsamJob = BalsamJob
                 pending_simulations = BalsamJob.objects.filter(
                     workflow__contains=dependency_workflow_name
