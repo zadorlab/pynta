@@ -34,8 +34,8 @@ all_submitted_jobs = []
 
 # specify dependant 02 for given reactions
 for rxn_name in dependancy_dict.keys():
-    workflow_name = yamlfile + facetpath + '01' + rxn_name
-    dependent_workflow_name = yamlfile + facetpath + '02' + rxn_name
+    workflow_name = facetpath + '_01_' + rxn_name
+    dependent_workflow_name = facetpath + '_02_' + rxn_name
 
     # get all dependant workflow BalsamJobs objects (should be one)
     pending_simulations_dep = BalsamJob.objects.filter(

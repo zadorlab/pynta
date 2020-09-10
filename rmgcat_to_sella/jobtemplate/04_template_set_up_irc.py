@@ -42,9 +42,9 @@ irc.set_up_irc(
     pytemplate_f,
     pytemplate_r)
 
-workflow_name = yamlfile + facetpath + '04' + rxn_name
-dependency_workflow_name = yamlfile + facetpath + '03' + rxn_name
-dependent_workflow_name = yamlfile + facetpath + '05' + rxn_name
+workflow_name = facetpath + '_04_' + rxn_name
+dependency_workflow_name = facetpath + '_03_' + rxn_name
+dependent_workflow_name = facetpath + '_05_' + rxn_name
 
 pending_simulations = BalsamJob.objects.filter(
     workflow__contains=dependency_workflow_name
