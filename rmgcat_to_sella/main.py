@@ -825,8 +825,8 @@ class WorkFlow:
         # self.exe('02', TS)
         self.run_ts_with_sella('02')
         # for each distinct TS, run IRC calculations
-        # # self.exe('03', IRC)
-        # self.run_irc('03')
-        # # run optimizataion of both IRC (forward, reverse) trajectory
-        # # self.exe('04', IRCopt)
-        # self.run_irc_opt('04')
+        # self.exe('03', IRC)
+        self.run_irc('03')
+        # run optimizataion of both IRC (forward, reverse) trajectory
+        # self.exe('04', IRCopt)
+        self.run_irc_opt('04')
