@@ -39,8 +39,8 @@ irc.opt_after_IRC(
     rxn,
     pytemplate)
 
-workflow_name = yamlfile + facetpath + '05' + rxn_name
-dependency_workflow_name = yamlfile + facetpath + '04' + rxn_name
+workflow_name = facetpath + '_05_' + rxn_name
+dependency_workflow_name = facetpath + '_04_' + rxn_name
 
 pending_simulations = BalsamJob.objects.filter(
     workflow__contains=dependency_workflow_name

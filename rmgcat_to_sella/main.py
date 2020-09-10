@@ -158,7 +158,6 @@ class WorkFlow:
             irc_opt_py_list.append(fname)
         return irc_opt_py_list
 
-
     def gen_job_files(self):
         ''' Generate submt scripts for 6 stages of the workflow '''
         self.set_up_slab(
@@ -588,7 +587,7 @@ class WorkFlow:
 
         try:
             int(job_script[0:2])
-            workflow_name = yamlfile + facetpath + job_script[0:2] + rxn_name
+            workflow_name = facetpath + '_' + job_script[0:2] + '_' + rxn_name
         except ValueError:
             workflow_name = yamlfile + facetpath
 
@@ -599,7 +598,7 @@ class WorkFlow:
             args=cwd + '/' + job_script,
             ranks_per_node=cores,
             input_files='',
-            node_packing_count=64,
+            node_packing_count=48,
             user_workdir=cwd
         )
         job_to_add.save()
@@ -610,7 +609,7 @@ class WorkFlow:
                 add_dependency(parent_job, job_to_add)  # parent, child
             except ValueError:
                 dependency = str(parent_job[0:2])
-                dependency_workflow_name = yamlfile + facetpath + dependency
+                dependency_workflow_name = facetpath + dependency
                 # print(dependency_workflow_name)
                 BalsamJob = BalsamJob
                 pending_simulations = BalsamJob.objects.filter(
