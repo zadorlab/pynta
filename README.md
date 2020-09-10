@@ -1,4 +1,5 @@
 # rmgcat_to_sella
+[![Download](https://poser.pugx.org/ali-irawan/xtra/d/total.svg)](https://poser.pugx.org/ali-irawan/xtra/d/total.svg)
 
 <!-- ![workflow_idea](./workflow_idea.png) -->
 The work-flow designed to automate search for transition states and reaction paths on various surfaces.
