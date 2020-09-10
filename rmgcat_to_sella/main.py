@@ -93,30 +93,30 @@ optimize_slab = inputR2S.optimize_slab
 
 class WorkFlow:
 
-    # def __init__(self):
-    #     """Setup the balsam application for this workflow run.
+    def __init__(self):
+        """Setup the balsam application for this workflow run.
 
-    #     Once we start using QE will want one app for QE,
-    #     one for xtb most likely
-    #     """
-    #     from balsam.core.models import ApplicationDefinition
-    #     self.myPython, _ = ApplicationDefinition.objects.get_or_create(
-    #         name="python",
-    #         executable=sys.executable
-    #     )
-    #     self.myPython.save()
-    #     self.slab_opt_job = ''
+        Once we start using QE will want one app for QE,
+        one for xtb most likely
+        """
+        from balsam.core.models import ApplicationDefinition
+        self.myPython, _ = ApplicationDefinition.objects.get_or_create(
+            name="python",
+            executable=sys.executable
+        )
+        self.myPython.save()
+        self.slab_opt_job = ''
 
-    #     # TODO: instead of directly importing EspressoBalsam, we should
-    #     # write a function which returns the appropriate class from
-    #     # balsamcalc.py based on the user-provided input file
-    #     from rmgcat_to_sella.balsamcalc import (
-    #         EspressoBalsam, EspressoBalsamSocketIO
-    #     )
-    #     EspressoBalsam.exe = executable
-    #     EspressoBalsamSocketIO.exe = executable
-    #     EspressoBalsam.create_application()
-    #     EspressoBalsamSocketIO.create_application()
+        # TODO: instead of directly importing EspressoBalsam, we should
+        # write a function which returns the appropriate class from
+        # balsamcalc.py based on the user-provided input file
+        from rmgcat_to_sella.balsamcalc import (
+            EspressoBalsam, EspressoBalsamSocketIO
+        )
+        EspressoBalsam.exe = executable
+        EspressoBalsamSocketIO.exe = executable
+        EspressoBalsam.create_application()
+        EspressoBalsamSocketIO.create_application()
 
     def get_ts_xtb_py_script_list(self):
         ''' Get a list with all 02 job scripts '''
@@ -643,8 +643,9 @@ class WorkFlow:
     def run_ts_estimate_no_depend(self):
         ''' Run TS estimate calculations if there is
             no dependency on other jobs '''
-        TSxtb = inputR2S.TSxtbScript
-        return self.exe('', TSxtb)
+        ts_xtb_py_script_list = self.get_ts_xtb_py_script_list()
+        for ts_xtb in ts_xtb_py_script_list:
+            self.exe('', ts_xtb)
 
     def run_ts_with_sella(self, dependant_job):
         ''' Run TS minimization with Sella '''

@@ -78,8 +78,12 @@ for py_script in Path(path_to_ts_estimate).glob('**/*.py'):
     job_to_add.save()
 
     # all job_to_add_ are childs of 01 job, as from jobs_to_be_finished
+    # nested for loop becouse BalsamJob.objects.filter(name=dep_job) returns
+    # django.query object for a single dep_job, e.g. (H_00_relax.py)
+    # no nested loop required if workflow__contains=dependent_workflow_name
     for job in pending_simulations:
-        add_dependency(job, job_to_add)  # parent, child
+        for sub_job in job:
+            add_dependency(sub_job, job_to_add)  # parent, child
     # do not run 03 until all 02 for a given reaction are done
     for job in pending_simulations_dep:
         add_dependency(job_to_add, job)  # parent, child
