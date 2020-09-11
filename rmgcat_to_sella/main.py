@@ -435,14 +435,13 @@ class WorkFlow:
         slab_opt_path_str = []
         # the code will look for anything like Cu_111*.xyz starting from the
         # facetpath directory including all subdirectories.
-        keyphrase = '*/*' + str(facetpath) + '*.xyz'
-        slab_opt_path_posix = Path(str(currentDir)).glob(keyphrase)
+        keyphrase = str(facetpath) + '*.xyz'
+        slab_opt_path_posix = Path(str(os.getcwd())).glob(keyphrase)
         for slab_opt_path in slab_opt_path_posix:
             slab_opt_path_str.append(slab_opt_path)
         if len(slab_opt_path_str) >= 1:
             return True, slab_opt_path_str[0]
-        else:
-            return (False, )
+        return (False, )
 
     def copy_slab_opt_file(self):
         ''' Copy .xyz of previously optimized slab '''
