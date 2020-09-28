@@ -128,7 +128,7 @@ class WorkFlow:
             ts_with_xtb_py_script_list.append(fname)
         return ts_with_xtb_py_script_list
 
-    def get_ts_estimate_unique(self):
+    def get_ts_estimate_unique_list(self):
         ''' Get a list with all 03 job scripts '''
         reactions = IO().open_yaml_file(yamlfile)
         ts_sella_py_script_list = []
@@ -561,7 +561,8 @@ class WorkFlow:
         ___________
 
         parent_job : str
-            a parent job on which subbmited jobs depends
+            a parent job on which subbmited jobs depends on. Formatted as:
+            00 or 01 or 02 or 03 or 04, depending on the job
         job_script : str
             a script that is about to be submitted
         cores : int
@@ -584,9 +585,7 @@ class WorkFlow:
             rxn_name = ''
         else:
             rxn_name = '_'.join(job_script.split('_')[-2:])[:-3]
-
         try:
-            int(job_script[0:2])
             workflow_name = facetpath + '_' + job_script[0:2] + '_' + rxn_name
         except ValueError:
             workflow_name = facetpath + '_error'
@@ -602,21 +601,33 @@ class WorkFlow:
             user_workdir=cwd
         )
         job_to_add.save()
+
         # if there is a parent job, specify dependency
         if parent_job != '':
             from balsam.launcher.dag import add_dependency
+
             try:
                 add_dependency(parent_job, job_to_add)  # parent, child
             except ValueError:
                 dependency = str(parent_job[0:2])
-                dependency_workflow_name = os.path.join(
-                    facetpath + '_' + dependency + '_' + rxn_name)
+
+                # a special case for 01 where there is on job script for all
+                # reactionsß
+                if parent_job == '01':
+                    dependency_workflow_name = os.path.join(
+                        facetpath + '_' + dependency + '_')
+                else:
+                    dependency_workflow_name = os.path.join(
+                        facetpath + '_' + dependency + '_' + rxn_name)
+
                 BalsamJob = BalsamJob
                 pending_simulations = BalsamJob.objects.filter(
                     workflow__contains=dependency_workflow_name
                 ).exclude(state='JOB_FINISHED')
+
                 for job in pending_simulations:
                     add_dependency(job, job_to_add)  # parent, child
+
         return job_to_add
 
     def run_slab_optimization(self):
@@ -648,7 +659,7 @@ class WorkFlow:
 
     def run_ts_with_sella(self, dependant_job):
         ''' Run TS minimization with Sella '''
-        ts_sella_py_script_list = self.get_ts_estimate_unique()
+        ts_sella_py_script_list = self.get_ts_estimate_unique_list()
         for ts_sella in ts_sella_py_script_list:
             self.exe(dependant_job, ts_sella)
 
@@ -768,12 +779,8 @@ class WorkFlow:
                 pass
 
     def execute(self):
-        ''' The main executable
+        ''' The main executable '''
 
-        TODO DEBUG -- it could be a bit buggy
-        '''
-
-        print(self.check_all_species(yamlfile))
         if optimize_slab:
             # if slab found in previous calculation, do nothing
             if self.check_if_slab_opt_exists()[0]:
@@ -783,7 +790,7 @@ class WorkFlow:
                 # If the code cannot locate optimized slab .xyz file,
                 # a slab optimization will be launched.
                 self.run_slab_optimization()
-            # check if  species were already calculated
+            # check if species were already calculated
             if all(self.check_all_species(yamlfile).values()):
                 # If all are True, start by generating TS guesses and run
                 # the penalty function minimization
@@ -821,11 +828,8 @@ class WorkFlow:
                 # to get TS guesses
                 self.exe('01', TSxtb)
         # search for the 1st order saddle point
-        # self.exe('02', TS)
         self.run_ts_with_sella('02')
         # for each distinct TS, run IRC calculations
-        # self.exe('03', IRC)
         self.run_irc('03')
         # run optimizataion of both IRC (forward, reverse) trajectory
-        # self.exe('04', IRCopt)
         self.run_irc_opt('04')
