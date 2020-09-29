@@ -34,12 +34,11 @@ source venv/bin/activate
 pip3 install numpy ase catkit spglib matplotlib<3.2 networkx<2.4
 ```
 
-1.1.4 Download [`PostgreSQL`] (https://www.enterprisedb.com/download-postgresql-binaries) precompiled librarires that suits your system and add bin to your `PATH`
+1.1.4 Download [`PostgreSQL`] (https://www.enterprisedb.com/download-postgresql-binaries) precompiled binaries that suits your system and add `/bin` to your `PATH`
 
 ```
 export PATH=path_to_PostgreSQL/pgsql/bin:$PATH
 ```
-
 
 1.1.5 Install [`mpi4py`] (https://github.com/mpi4py/mpi4py.git):
 ```
@@ -67,7 +66,7 @@ cd ../
 ```
 Make sure it works by running tests posted on the `balsam` GitHub page.
 
-1.1.7 Install [`xtb-python`] (https://github.com/grimme-lab/xtb-python) following instruction provided there. Make sure to correctly link all required libraries, e.g. with OpenBlass and gcc.
+1.1.7 Install [`xtb-python`] (https://github.com/grimme-lab/xtb-python) following instruction provided there. Make sure to correctly link all required libraries, e.g. with `OpenBlas` and `GCC`.
 ```
 LDFLAGS="-L/opt/custom/OpenBLAS/0.3.7/lib" meson setup build --prefix=$PWD --libdir=xtb/xtb --buildtype release --optimization 2 -Dla_backend=openblas
 ```
