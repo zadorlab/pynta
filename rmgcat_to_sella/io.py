@@ -1,4 +1,5 @@
 import os
+import shutil
 import yaml
 import networkx as nx
 from pathlib import Path
@@ -346,3 +347,19 @@ class IO():
             # {'reaction_name':[list_with_py_files_have_to_be_calculated]}
             dependancy_dict[rxn_name] = minima_py_list
         return dependancy_dict
+
+    def clean_finished_subjobs():
+        ''' Move finished subjob files to finised_tmp_scripts directory '''
+        dir_name = 'finished_tmp_scripts'
+        os.makedirs(dir_name, exist_ok=True)
+        for prefix in range(0, 6):
+            prefix = str(prefix).zfill(2)
+            keyphrase = prefix + '*out'
+            files = Path(os.getcwd()).glob(keyphrase)
+            for file in files:
+                file = str(file)
+                if os.path.getsize(file) != 0:
+                    # move all not empty .out files
+                    shutil.move(file, dir_name)
+                    # and corresponding .py.out files
+                    shutil.move(file[:-4], dir_name)
