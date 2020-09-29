@@ -11,9 +11,37 @@ The work-flow designed to automate search for transition states and reaction pat
 
 **Instalation can be a bit tricky because `rmgcat_to_sella` depends on a several different packages that are under constant development (`balsam`, `xtb-python`)**
 
+The following instruction assumes that you have several softwares installed on your system, such as:
+- `Slurm`
+- `OpenMPI`
+- `OpenBlas`
+- `GCC`
+
 ## 1.1 Install all prerequisites
 
-1.1.1 Install [`mpi4py`] (https://github.com/mpi4py/mpi4py.git):
+1.1.1 Create a virtual environment:
+```
+virtualenv venv
+```
+
+1.1.2 Activate your virtual environment:
+```
+source venv/bin/activate
+```
+
+1.1.3 (*Optional*) Install required python packages (If not done here, `rmgcat_to_sella` installer will do it later)
+```
+pip3 install numpy ase catkit spglib matplotlib<3.2 networkx<2.4
+```
+
+1.1.4 Download [`PostgreSQL`] (https://www.enterprisedb.com/download-postgresql-binaries) precompiled librarires that suits your system and add bin to your `PATH`
+
+```
+export PATH=path_to_PostgreSQL/pgsql/bin:$PATH
+```
+
+
+1.1.5 Install [`mpi4py`] (https://github.com/mpi4py/mpi4py.git):
 ```
 git clone https://github.com/mpi4py/mpi4py.git
 cd mpi4py
@@ -30,7 +58,7 @@ Which should give
 1
 ```
 
-1.1.2 Install [`balsam`] (https://github.com/balsam-alcf/balsam.git) using `serial-mode-perf` branch.
+1.1.6 Install [`balsam`] (https://github.com/balsam-alcf/balsam.git) using `serial-mode-perf` branch.
 ```
 git clone https://github.com/balsam-alcf/balsam.git -b serial-mode-perf
 cd balsam
@@ -39,11 +67,11 @@ cd ../
 ```
 Make sure it works by running tests posted on the `balsam` GitHub page.
 
-1.1.3 Install [`xtb-python`] (https://github.com/grimme-lab/xtb-python) following instruction provided there. Make sure to correctly link all required libraries, e.g. with OpenBlass and gcc.
+1.1.7 Install [`xtb-python`] (https://github.com/grimme-lab/xtb-python) following instruction provided there. Make sure to correctly link all required libraries, e.g. with OpenBlass and gcc.
 ```
 LDFLAGS="-L/opt/custom/OpenBLAS/0.3.7/lib" meson setup build --prefix=$PWD --libdir=xtb/xtb --buildtype release --optimization 2 -Dla_backend=openblas
 ```
-Make sure it works
+Make sure it works.
 
 
 ## 1.2 Install `rmgcat_to_sella`
@@ -60,24 +88,12 @@ Usually, `master` branch should be fine. If somehow it is not working, make sure
 cd rmgcat_to_sella
 ```
 
-1.2.3 Create a virtual environment:
-```
-virtualenv venv
-```
-
-1.2.4 Activate your virtual environment:
-```
-source venv/bin/activate
-```
-
-1.2.5 Install all dependencies and make sure they are fine. List of all dependencies will be here \[later\]:
-
-1.2.6a Install `rmgcat_to_sella`:
+1.2.3a Install `rmgcat_to_sella`:
 ```
 python setup.py install
 ```
 
-1.2.6b (optional) If you do not have admin privileges (e.g. you use it on a supercomputer), do the following instead of 1.6a:
+1.2.3b (optional) If you do not have admin privileges (e.g. you use it on a supercomputer), do the following instead of 1.6a:
 ```
 python setup.py install --user
 ```
