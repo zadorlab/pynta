@@ -85,7 +85,8 @@ class GetSlab:
         else:
             print('{} not implemented. Avaiable parameters are:'.format(
                 self.surface_type))
-            print('fcc111, fcc100, fcc211, bcc111, bcc110, hcp0001, diamond111')
+            print('fcc111, fcc100, fcc211, bcc111, bcc110, hcp0001, '
+                  'diamond111, diamond100')
 
     def opt_fcc111(self):
         ''' Optimize fcc111 slab '''
