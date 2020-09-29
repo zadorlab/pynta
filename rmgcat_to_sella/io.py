@@ -348,7 +348,7 @@ class IO():
             dependancy_dict[rxn_name] = minima_py_list
         return dependancy_dict
 
-    def clean_finished_subjobs():
+    def clean_finished_subjobs(self):
         ''' Move finished subjob files to finised_tmp_scripts directory '''
         dir_name = 'finished_tmp_scripts'
         os.makedirs(dir_name, exist_ok=True)
