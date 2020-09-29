@@ -612,7 +612,7 @@ class WorkFlow:
                 dependency = str(parent_job[0:2])
 
                 # a special case for 01 where there is on job script for all
-                # reactionsß
+                # reactions
                 if parent_job == '01':
                     dependency_workflow_name = os.path.join(
                         facetpath + '_' + dependency + '_')
@@ -813,7 +813,7 @@ class WorkFlow:
                     'It appears that there is no slab_opt.xyz file'
                 )
             if all(self.check_all_species(yamlfile).values()):
-                # If all minimas were calculated some time age rmgcat_to_sella
+                # If all minima were calculated some time age rmgcat_to_sella
                 # will use that calculations. Start from TSxtb step
                 self.exe('', TSxtb)
             else:
