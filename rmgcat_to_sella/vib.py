@@ -12,7 +12,13 @@ import os
 
 
 class AfterTS():
-    def __init__(self, facetpath, yamlfile, slab, repeats):
+    def __init__(
+            self,
+            facetpath,
+            yamlfile,
+            slab,
+            repeats):
+
         self.facetpath = facetpath
         self.yamlfile = yamlfile
         self.slab = slab
@@ -54,18 +60,31 @@ class AfterTS():
         index_forward = int(floor(nimages/4))
         index_reverse = int(nimages - index_forward)
 
+        vib_traj_path, _ = os.path.split(fname_forward)
+
         traj_atom = read(traj)
         traj_atom.calc = EMT()
-        vib = Vibrations(traj_atom)
+        name_vib_files = os.path.join(vib_traj_path, 'vib')
+        vib = Vibrations(traj_atom, name=name_vib_files)
         vib.run()
         vib.summary()
         vib.clean()
         vib.write_mode(n=n, nimages=nimages)
+        traj_list = []
+        for vtraj in os.listdir(vib_traj_path):
+            if vtraj.endswith('traj'):
+                vib_traj = os.path.join(vib_traj_path, vtraj)
+                traj_list.append(vib_traj)
+        if len(traj_list) > 1:
+            print('!!!')
+            print('Only one vibrational trajectory is allowed.')
+            print('!!!')
+            raise ValueError
 
-        write(fname_forward + '.xyz', read(traj, index=index_forward))
-        write(fname_forward + '.png', read(traj, index=index_forward))
-        write(fname_reverse + '.xyz', read(traj, index=index_reverse))
-        write(fname_reverse + '.png', read(traj, index=index_reverse))
+        write(fname_forward + '.xyz', read(vib_traj, index=index_forward))
+        write(fname_forward + '.png', read(vib_traj, index=index_forward))
+        write(fname_reverse + '.xyz', read(vib_traj, index=index_reverse))
+        write(fname_reverse + '.png', read(vib_traj, index=index_reverse))
 
     def get_all_distances(self):
         ''' Get distances between reacting species for ts, forward and
