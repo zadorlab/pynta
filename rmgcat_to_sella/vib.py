@@ -43,6 +43,7 @@ class AfterTS():
             traj,
             fname_forward,
             fname_reverse,
+            n=0,
             nimages=30):
         ''' Get forward and reverse .xyz file by nudging TS towards imaginary
         mode of oscilations '''
@@ -56,8 +57,37 @@ class AfterTS():
         vib.run()
         vib.summary()
         vib.clean()
-        vib.write_mode(0, nimages=nimages)
+        vib.write_mode(n=n, nimages=nimages)
+
         write(fname_forward + '.xyz', read(traj, index=index_forward))
         write(fname_forward + '.png', read(traj, index=index_forward))
         write(fname_reverse + '.xyz', read(traj, index=index_reverse))
         write(fname_reverse + '.png', read(traj, index=index_reverse))
+
+    def get_all_distances(self):
+        ''' Get distances between reacting species for ts, forward and
+        reverse structure '''
+        all_rxn_names = IO().get_list_all_rxns_names(self.yamlfile)
+        for rxn_name in all_rxn_names:
+            # ts_estimate_unique_dir = os.path.join(
+            #     self.facetpath, rxn_name, 'TS_estimate_unique')
+            # traj_files = Path(ts_estimate_unique_dir).glob('**/*traj')
+            # for traj in sorted(traj_files):
+            #     print(traj)
+            ts_dist = self.get_ts_dist(rxn_name)
+            print(ts_dist)
+            # forward_dist = self.get_forward_dist()
+            # reverse_dist = self.get_reverse_dist()
+
+    def get_ts_dist(self, rxn_name):
+        ts_dist_dict = {}
+        ts_estimate_unique_dir = os.path.join(
+            self.facetpath, rxn_name, 'TS_estimate_unique')
+        traj_files = Path(ts_estimate_unique_dir).glob('**/*traj')
+        for traj in sorted(traj_files):
+            traj = str(traj)
+            traj_atom = read(traj)
+            dist = traj_atom.get_distance(0, 1)
+            traj_fname = traj.split('/')[-1]
+            ts_dist_dict[traj_fname] = dist
+        return ts_dist_dict
