@@ -33,18 +33,17 @@ class AfterTS():
                 self.facetpath, rxn_name, 'after_TS', prefix)
             os.makedirs(after_ts_dir, exist_ok=True)
 
-            fname_forward = os.path.join(after_ts_dir, 'forward.xyz')
-            fname_reverse = os.path.join(after_ts_dir, 'reverse.xyz')
+            fname_forward = os.path.join(after_ts_dir, 'forward_in')
+            fname_reverse = os.path.join(after_ts_dir, 'reverse_in')
 
-            self.get_forward_and_reverse(traj, fname_forward, index_forward)
-            self.get_forward_and_reverse(traj, fname_reverse, index_reverse)
+            self.get_forward_and_reverse(traj, fname_forward, fname_reverse)
 
-        # for ts in os.listdir(ts_estimate_unique_dir):
-        #     ts_path = os.path.join(ts_estimate_unique_dir, ts)
-        #     if os.path.isdir(ts_path):
-        #         prefix = ts_path
-
-    def get_forward_and_reverse(self, traj, fname, index, nimages=30):
+    def get_forward_and_reverse(
+            self,
+            traj,
+            fname_forward,
+            fname_reverse,
+            nimages=30):
         ''' Get forward and reverse .xyz file by nudging TS towards imaginary
         mode of oscilations '''
 
@@ -52,10 +51,13 @@ class AfterTS():
         index_reverse = int(nimages - index_forward)
 
         traj_atom = read(traj)
-        traj_atom.calc(EMT())
+        traj_atom.calc = EMT()
         vib = Vibrations(traj_atom)
         vib.run()
         vib.summary()
         vib.clean()
         vib.write_mode(0, nimages=nimages)
-        write(fname, read(traj, index=index))
+        write(fname_forward + '.xyz', read(traj, index=index_forward))
+        write(fname_forward + '.png', read(traj, index=index_forward))
+        write(fname_reverse + '.xyz', read(traj, index=index_reverse))
+        write(fname_reverse + '.png', read(traj, index=index_reverse))
