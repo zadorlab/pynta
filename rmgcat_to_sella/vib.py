@@ -12,9 +12,12 @@ import os
 
 
 class AfterTS():
-    def __init__(self, facetpath, yamlfile):
+    def __init__(self, facetpath, yamlfile, slab, repeats):
         self.facetpath = facetpath
         self.yamlfile = yamlfile
+        self.slab = slab
+        self.repeats = repeats
+        self.nslab = len(read(self.slab)*self.repeats)
 
     def prepare_all(self):
         all_rxn_names = IO().get_list_all_rxns_names(self.yamlfile)
@@ -84,7 +87,7 @@ class AfterTS():
 
         for traj in sorted(traj_files):
             traj = str(traj)
-            traj_atom = read(traj)[27:]
+            traj_atom = read(traj)[self.nslab:]
             dist = traj_atom.get_distance(0, 1)
             traj_fname = traj.split('/')[-1]
             ts_dist_dict[traj_fname] = dist
@@ -102,6 +105,6 @@ class AfterTS():
         for xyz in sorted(xyz_files):
             xyz = str(xyz)
             if 'reverse' in xyz:
-                xyz_atom = read(xyz)[27:]
+                xyz_atom = read(xyz)[self.nslab:]
                 dist = xyz_atom.get_distance(0, 1)
                 print(dist)
