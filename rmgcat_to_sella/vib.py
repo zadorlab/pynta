@@ -72,10 +72,22 @@ class AfterTS():
         reverse structure '''
         all_rxn_names = IO().get_list_all_rxns_names(self.yamlfile)
         for rxn_name in all_rxn_names:
-            ts_dist = self.get_ts_dist(rxn_name)
-            print(ts_dist)
-            # forward_dist, reverse_dist = self.get_forward_and_reverse_dist()
-            # self.get_forward_and_reverse_dist(rxn_name)
+            ts_dist_dict = self.get_ts_dist(rxn_name)
+            forward_dist_dict, reverse_dist_dict = self.get_forward_and_reverse_dist(
+                rxn_name)
+            self.print_table(ts_dist_dict, forward_dist_dict,
+                             reverse_dist_dict)
+
+    def print_table(self, ts_dist_dict, forward_dist_dict, reverse_dist_dict):
+        keys = ts_dist_dict.keys()
+        ts_val = ts_dist_dict.values()
+        f_val = forward_dist_dict.values()
+        r_val = reverse_dist_dict.values()
+
+        print('TS \t \t TS_dist \t F_dist \t R_dist')
+        for key, ts, f, r in zip(keys, ts_val, f_val, r_val):
+
+            print('{} \t {:2f} \t {:2f} \t {:2f}'.format(key, ts, f, r))
 
     def get_ts_dist(self, rxn_name):
         ts_dist_dict = {}
@@ -104,7 +116,12 @@ class AfterTS():
 
         for xyz in sorted(xyz_files):
             xyz = str(xyz)
-            if 'reverse' in xyz:
+            if 'forward' in xyz:
                 xyz_atom = read(xyz)[self.nslab:]
                 dist = xyz_atom.get_distance(0, 1)
-                print(dist)
+                forward_dist_dict[xyz] = dist
+            elif 'reverse' in xyz:
+                xyz_atom = read(xyz)[self.nslab:]
+                dist = xyz_atom.get_distance(0, 1)
+                reverse_dist_dict[xyz] = dist
+        return forward_dist_dict, reverse_dist_dict
