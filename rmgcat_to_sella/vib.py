@@ -69,25 +69,39 @@ class AfterTS():
         reverse structure '''
         all_rxn_names = IO().get_list_all_rxns_names(self.yamlfile)
         for rxn_name in all_rxn_names:
-            # ts_estimate_unique_dir = os.path.join(
-            #     self.facetpath, rxn_name, 'TS_estimate_unique')
-            # traj_files = Path(ts_estimate_unique_dir).glob('**/*traj')
-            # for traj in sorted(traj_files):
-            #     print(traj)
             ts_dist = self.get_ts_dist(rxn_name)
             print(ts_dist)
-            # forward_dist = self.get_forward_dist()
-            # reverse_dist = self.get_reverse_dist()
+            # forward_dist, reverse_dist = self.get_forward_and_reverse_dist()
+            # self.get_forward_and_reverse_dist(rxn_name)
 
     def get_ts_dist(self, rxn_name):
         ts_dist_dict = {}
+
         ts_estimate_unique_dir = os.path.join(
             self.facetpath, rxn_name, 'TS_estimate_unique')
+
         traj_files = Path(ts_estimate_unique_dir).glob('**/*traj')
+
         for traj in sorted(traj_files):
             traj = str(traj)
-            traj_atom = read(traj)
+            traj_atom = read(traj)[27:]
             dist = traj_atom.get_distance(0, 1)
             traj_fname = traj.split('/')[-1]
             ts_dist_dict[traj_fname] = dist
         return ts_dist_dict
+
+    def get_forward_and_reverse_dist(self, rxn_name):
+        forward_dist_dict = {}
+        reverse_dist_dict = {}
+
+        after_ts_dir = os.path.join(
+            self.facetpath, rxn_name, 'after_TS')
+
+        xyz_files = Path(after_ts_dir).glob('**/*xyz')
+
+        for xyz in sorted(xyz_files):
+            xyz = str(xyz)
+            if 'reverse' in xyz:
+                xyz_atom = read(xyz)[27:]
+                dist = xyz_atom.get_distance(0, 1)
+                print(dist)
