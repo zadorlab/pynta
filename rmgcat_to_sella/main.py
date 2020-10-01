@@ -142,6 +142,16 @@ class WorkFlow:
             ts_sella_py_script_list.append(fname)
         return ts_sella_py_script_list
 
+    def get_after_ts_py_scripts(self):
+        ''' Get a list with all 04 job scripts '''
+        reactions = IO().open_yaml_file(yamlfile)
+        after_ts_py_scripts_list = []
+        for rxn in reactions:
+            rxn_name = IO().get_rxn_name(rxn)
+            fname = '04_set_up_after_TS_{}.py'.format(rxn_name)
+            after_ts_py_scripts_list.append(fname)
+        return after_ts_py_scripts_list
+
     # def get_irc_jobs(self):
     #     ''' Get a list with all 04 jobs, irc_f and irc_r '''
     #     reactions = IO().open_yaml_file(yamlfile)
@@ -730,10 +740,12 @@ class WorkFlow:
     #     for irc_opt in irc_opt_py_scripts:
     #         self.exe(dependant_job, irc_opt)
 
-    def run_opt_after_TS(self, dependant_job):
+    def run_opt_after_ts(self, dependant_job):
         ''' Run minimization of minima obtained as nudging TS structure
         towards imaginary mode of oscilation'''
-        pass
+        after_irc_py_scripts = self.get_after_ts_py_scripts()
+        for after_irc in after_irc_py_scripts:
+            self.exe(dependant_job, after_irc)
 
     def check_all_species(self, yamlfile):
         ''' Check all species (all reactions) to find whether
@@ -890,7 +902,7 @@ class WorkFlow:
         # search for the 1st order saddle point
         self.run_ts_with_sella('02')
         # for each distinct TS, run IRC calculations
-        self.run_opt_after_TS('03')
+        self.run_opt_after_ts('03')
         # self.run_irc('03')
         # # run optimizataion of both IRC (forward, reverse) trajectory
         # self.run_irc_opt('04')
