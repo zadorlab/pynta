@@ -24,7 +24,9 @@ path_to_after_TS = os.path.join(
     facetpath, rxn_name, 'after_TS')
 
 after_ts = AfterTS(facetpath, yamlfile, slab, repeats)
-after_ts.prepare_all(rxn)
+after_ts.prepare_opt_after_ts(rxn, pytemplate, balsam_exe_settings,
+                              calc_keywords, creation_dir, pseudopotentials,
+                              pseudo_dir)
 
 workflow_name = facetpath + '_04_' + rxn_name
 dependency_workflow_name = facetpath + '_03_' + rxn_name

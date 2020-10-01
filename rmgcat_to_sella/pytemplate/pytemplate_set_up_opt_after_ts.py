@@ -10,29 +10,28 @@ from ase.io import read, write
 from ase.constraints import FixAtoms
 from ase.optimize import QuasiNewton
 
-adsorbate = '{adsorbate}'
-prefix = '{prefix}'
+geom = '{geom}'
 balsam_exe_settings = {balsam_exe_settings}
 calc_keywords = {calc_keywords}
 creation_dir = '{creation_dir}'
 
-jobdir = os.path.join(adsorbate, prefix)
-outdir = os.path.join(jobdir, prefix)
+# jobdir = os.path.join(minimum, prefix)
+# outdir = os.path.join(jobdir, prefix)
 
-if os.path.exists(jobdir):
-    shutil.rmtree(jobdir)
-os.mkdir(jobdir)
+# if os.path.exists(jobdir):
+#     shutil.rmtree(jobdir)
+# os.mkdir(jobdir)
 
-label = os.path.join(jobdir, prefix)
+# label = os.path.join(g)
 
-start = datetime.datetime.now()
+# start = datetime.datetime.now()
 
-with open(outdir + '_time.log', 'w+') as f:
-    f.write(str(start))
-    f.write("\n")
-    f.close()
+# with open(outdir + '_time.log', 'w+') as f:
+#     f.write(str(start))
+#     f.write("\n")
+#     f.close()
 
-atoms = read(jobdir + '.xyz')
+atoms = read(geom + '.xyz')
 atoms.set_constraint(FixAtoms([
     atom.index for atom in atoms if atom.position[2] < atoms.cell[2, 2] / 2.
 ]))
@@ -40,7 +39,7 @@ atoms.set_constraint(FixAtoms([
 extra_calc_keywords = dict(
     pseudopotentials={pseudopotentials},
     pseudo_dir='{pseudo_dir}',
-    label=label
+    label=geom
 )
 
 atoms.calc = EspressoBalsamSocketIO(

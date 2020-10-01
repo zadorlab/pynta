@@ -704,7 +704,7 @@ class TS():
             ts_estimate_path,
             balsam_exe_settings,
             calc_keywords):
-        ''' Create job submission files
+        ''' Create job submission files for TS calculation with Sella
 
         Parameters:
         ___________
