@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import os
-import shutil
 
 import datetime
 from rmgcat_to_sella.balsamcalc import EspressoBalsamSocketIO
@@ -11,27 +10,19 @@ from ase.constraints import FixAtoms
 from ase.optimize import QuasiNewton
 
 geom = '{geom}'
+prefix = geom[:2]
 balsam_exe_settings = {balsam_exe_settings}
 calc_keywords = {calc_keywords}
 creation_dir = '{creation_dir}'
 
-# jobdir = os.path.join(minimum, prefix)
-# outdir = os.path.join(jobdir, prefix)
+start = datetime.datetime.now()
 
-# if os.path.exists(jobdir):
-#     shutil.rmtree(jobdir)
-# os.mkdir(jobdir)
+with open(geom + '_time.log', 'w+') as f:
+    f.write(str(start))
+    f.write("\n")
+    f.close()
 
-# label = os.path.join(g)
-
-# start = datetime.datetime.now()
-
-# with open(outdir + '_time.log', 'w+') as f:
-#     f.write(str(start))
-#     f.write("\n")
-#     f.close()
-
-atoms = read(geom + '.xyz')
+atoms = read(os.path.join(prefix, geom + '.xyz'))
 atoms.set_constraint(FixAtoms([
     atom.index for atom in atoms if atom.position[2] < atoms.cell[2, 2] / 2.
 ]))
@@ -50,17 +41,17 @@ atoms.calc = EspressoBalsamSocketIO(
 
 atoms.calc.set(**extra_calc_keywords)
 
-opt = QuasiNewton(atoms=atoms, trajectory=jobdir + '.traj')
+opt = QuasiNewton(atoms=atoms, trajectory=geom + '.traj')
 # opt = Sella(atoms, order=0, delta0=1e-2, trajectory=jobdir + '.traj')
 opt.run(fmax=0.01)
 atoms.calc.close()
 
-pngWriteFile = os.path.join(jobdir + '_final.png')
-write(pngWriteFile, read(jobdir + '.traj'))
+png_write_file = os.path.join(geom + '_final.png')
+write(png_write_file, read(geom + '.traj'))
 
 end = datetime.datetime.now()
 
-with open(outdir + '_time.log', 'a+') as f:
+with open(geom + '_time.log', 'a+') as f:
     f.write(str(end))
     f.write("\n")
     f.write(str(end - start))

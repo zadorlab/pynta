@@ -53,7 +53,7 @@ class AfterTS():
             fname_reverse = os.path.join(
                 after_ts_dir, prefix + '_' + rxn_name + '_after_ts_r')
 
-            # self.get_forward_and_reverse(traj, fname_forward, fname_reverse)
+            self.get_forward_and_reverse(traj, fname_forward, fname_reverse)
             self.create_after_ts_py_files(
                 pytemplate, fname_forward, fname_reverse, balsam_exe_settings,
                 calc_keywords, creation_dir, pseudopotentials, pseudo_dir)
@@ -74,10 +74,11 @@ class AfterTS():
         with open(pytemplate, 'r') as f:
             pytemplate = f.read()
         for fn in [fname_forward, fname_reverse]:
-            fname = fn + '.py'
+            tmp, geom = os.path.split(fn)
+            fname = os.path.join(os.path.split(tmp)[0], geom + '.py')
             with open(fname, 'w') as f:
                 f.write(pytemplate.format(
-                    geom=fn+'xyz',
+                    geom=geom,
                     balsam_exe_settings=balsam_exe_settings,
                     calc_keywords=calc_keywords,
                     creation_dir=creation_dir,
