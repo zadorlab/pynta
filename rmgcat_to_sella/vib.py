@@ -24,13 +24,10 @@ class AfterTS():
         self.slab = slab
         self.repeats = repeats
         self.nslab = len(read(self.slab)*self.repeats)
+        self.io = IO()
 
-    def prepare_all(self):
-        all_rxn_names = IO().get_list_all_rxns_names(self.yamlfile)
-        for rxn_name in all_rxn_names:
-            self.prepare_after_ts(rxn_name)
-
-    def prepare_after_ts(self, rxn_name):
+    def prepare_all(self, rxn):
+        rxn_name = self.io.get_rxn_name(rxn)
         ts_estimate_unique_dir = os.path.join(
             self.facetpath, rxn_name, 'TS_estimate_unique')
         traj_files = Path(ts_estimate_unique_dir).glob('**/*traj')

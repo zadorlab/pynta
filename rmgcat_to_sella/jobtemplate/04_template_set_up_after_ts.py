@@ -24,7 +24,7 @@ path_to_after_TS = os.path.join(
     facetpath, rxn_name, 'after_TS')
 
 after_ts = AfterTS(facetpath, yamlfile, slab, repeats)
-after_ts.prepare_all()
+after_ts.prepare_all(rxn)
 
 workflow_name = facetpath + '_04_' + rxn_name
 dependency_workflow_name = facetpath + '_03_' + rxn_name
