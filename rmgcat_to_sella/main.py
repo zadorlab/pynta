@@ -41,8 +41,8 @@ else:
     SurfaceAdsorbate = inputR2S.SurfaceAdsorbateScript
     TSxtb = inputR2S.TSxtbScript
     TS = inputR2S.TSScript
-    IRC = inputR2S.IRCScript
-    IRCopt = inputR2S.IRCoptScript
+    # IRC = inputR2S.IRCScript
+    # IRCopt = inputR2S.IRCoptScript
     executable = inputR2S.executable
     balsam_exe_settings = inputR2S.balsam_exe_settings
     calc_keywords = inputR2S.calc_keywords
@@ -64,25 +64,29 @@ template_set_up_ts_with_xtb = os.path.join(
     path_template + '02_template_set_up_ts_with_xtb.py')
 template_set_up_ts = os.path.join(
     path_template + '03_template_checksym_xtb_runTS.py')
-template_set_up_IRC = os.path.join(path_template + '04_template_set_up_irc.py')
-template_set_up_optIRC = os.path.join(
-    path_template + '05_template_set_up_opt_after_irc.py')
+template_set_up_after_ts = os.path.join(
+    path_template + '04_template_set_up_after_ts.py')
+# template_set_up_IRC = os.path.join(path_template + '04_template_set_up_irc.py')
+# template_set_up_optIRC = os.path.join(
+#     path_template + '05_template_set_up_opt_after_irc.py')
 pytemplate_relax_ads = os.path.join(
     path_pytemplate + 'pytemplate_relax_Cu_111_ads.py')
 pytemplate_xtb = os.path.join(path_pytemplate + 'pytemplate_set_up_xtb.py')
 pytemplate_set_up_ts = os.path.join(
     path_pytemplate + 'pytemplate_set_up_ts.py')
-pytemplate_f = os.path.join(path_pytemplate + 'pytemplate_set_up_irc_f.py')
-pytemplate_r = os.path.join(path_pytemplate + 'pytemplate_set_up_irc_r.py')
-pytemplate_optIRC = os.path.join(
-    path_pytemplate + 'pytemplate_set_up_opt_irc.py')
+# pytemplate_f = os.path.join(path_pytemplate + 'pytemplate_set_up_irc_f.py')
+# pytemplate_r = os.path.join(path_pytemplate + 'pytemplate_set_up_irc_r.py')
+# pytemplate_optIRC = os.path.join(
+#     path_pytemplate + 'pytemplate_set_up_opt_irc.py')
+pytemplate_set_up_after_ts = os.path.join(
+    path_pytemplate + 'pytemplate_set_up_opt_after_ts.py')
 
 slab_opt = inputR2S.slab_opt_script
 SurfaceAdsorbate = inputR2S.SurfaceAdsorbateScript
 TSxtb = inputR2S.TSxtbScript
 TS = inputR2S.TSScript
-IRC = inputR2S.IRCScript
-IRCopt = inputR2S.IRCoptScript
+# IRC = inputR2S.IRCScript
+# IRCopt = inputR2S.IRCoptScript
 ##
 optimize_slab = inputR2S.optimize_slab
 
@@ -93,30 +97,30 @@ optimize_slab = inputR2S.optimize_slab
 
 class WorkFlow:
 
-    def __init__(self):
-        """Setup the balsam application for this workflow run.
+    # def __init__(self):
+    #     """Setup the balsam application for this workflow run.
 
-        Once we start using QE will want one app for QE,
-        one for xtb most likely
-        """
-        from balsam.core.models import ApplicationDefinition
-        self.myPython, _ = ApplicationDefinition.objects.get_or_create(
-            name="python",
-            executable=sys.executable
-        )
-        self.myPython.save()
-        self.slab_opt_job = ''
+    #     Once we start using QE will want one app for QE,
+    #     one for xtb most likely
+    #     """
+    #     from balsam.core.models import ApplicationDefinition
+    #     self.myPython, _ = ApplicationDefinition.objects.get_or_create(
+    #         name="python",
+    #         executable=sys.executable
+    #     )
+    #     self.myPython.save()
+    #     self.slab_opt_job = ''
 
-        # TODO: instead of directly importing EspressoBalsam, we should
-        # write a function which returns the appropriate class from
-        # balsamcalc.py based on the user-provided input file
-        from rmgcat_to_sella.balsamcalc import (
-            EspressoBalsam, EspressoBalsamSocketIO
-        )
-        EspressoBalsam.exe = executable
-        EspressoBalsamSocketIO.exe = executable
-        EspressoBalsam.create_application()
-        EspressoBalsamSocketIO.create_application()
+    #     # TODO: instead of directly importing EspressoBalsam, we should
+    #     # write a function which returns the appropriate class from
+    #     # balsamcalc.py based on the user-provided input file
+    #     from rmgcat_to_sella.balsamcalc import (
+    #         EspressoBalsam, EspressoBalsamSocketIO
+    #     )
+    #     EspressoBalsam.exe = executable
+    #     EspressoBalsamSocketIO.exe = executable
+    #     EspressoBalsam.create_application()
+    #     EspressoBalsamSocketIO.create_application()
 
     def get_ts_xtb_py_script_list(self):
         ''' Get a list with all 02 job scripts '''
@@ -138,25 +142,25 @@ class WorkFlow:
             ts_sella_py_script_list.append(fname)
         return ts_sella_py_script_list
 
-    def get_irc_jobs(self):
-        ''' Get a list with all 04 jobs, irc_f and irc_r '''
-        reactions = IO().open_yaml_file(yamlfile)
-        irc_py_script_list = []
-        for rxn in reactions:
-            rxn_name = IO().get_rxn_name(rxn)
-            fname = '04_set_up_irc_{}.py'.format(rxn_name)
-            irc_py_script_list.append(fname)
-        return irc_py_script_list
+    # def get_irc_jobs(self):
+    #     ''' Get a list with all 04 jobs, irc_f and irc_r '''
+    #     reactions = IO().open_yaml_file(yamlfile)
+    #     irc_py_script_list = []
+    #     for rxn in reactions:
+    #         rxn_name = IO().get_rxn_name(rxn)
+    #         fname = '04_set_up_irc_{}.py'.format(rxn_name)
+    #         irc_py_script_list.append(fname)
+    #     return irc_py_script_list
 
-    def get_irc_opt_scripts(self):
-        ''' Get a list with all 05 jobs, irc_f_opt and irc_r_opt '''
-        reactions = IO().open_yaml_file(yamlfile)
-        irc_opt_py_list = []
-        for rxn in reactions:
-            rxn_name = IO().get_rxn_name(rxn)
-            fname = '05_set_up_opt_after_irc_{}.py'.format(rxn_name)
-            irc_opt_py_list.append(fname)
-        return irc_opt_py_list
+    # def get_irc_opt_scripts(self):
+    #     ''' Get a list with all 05 jobs, irc_f_opt and irc_r_opt '''
+    #     reactions = IO().open_yaml_file(yamlfile)
+    #     irc_opt_py_list = []
+    #     for rxn in reactions:
+    #         rxn_name = IO().get_rxn_name(rxn)
+    #         fname = '05_set_up_opt_after_irc_{}.py'.format(rxn_name)
+    #         irc_opt_py_list.append(fname)
+    #     return irc_opt_py_list
 
     def gen_job_files(self):
         ''' Generate submt scripts for 6 stages of the workflow '''
@@ -220,15 +224,14 @@ class WorkFlow:
                 creation_dir
             )
 
-            self.set_up_run_IRC(
+            self.set_up_opt_after_TS(
                 rxn,
-                template_set_up_IRC,
+                template_set_up_after_ts,
                 facetpath,
                 slabopt,
                 repeats,
-                pytemplate_f,
-                pytemplate_r,
                 yamlfile,
+                pytemplate_set_up_after_ts,
                 pseudopotentials,
                 pseudo_dir,
                 balsam_exe_settings,
@@ -236,19 +239,35 @@ class WorkFlow:
                 creation_dir
             )
 
-            self.set_up_opt_IRC(
-                rxn,
-                template_set_up_optIRC,
-                facetpath,
-                slabopt,
-                repeats,
-                pytemplate_optIRC,
-                pseudopotentials,
-                pseudo_dir,
-                balsam_exe_settings,
-                calc_keywords,
-                creation_dir
-            )
+            # self.set_up_run_IRC(
+            #     rxn,
+            #     template_set_up_IRC,
+            #     facetpath,
+            #     slabopt,
+            #     repeats,
+            #     pytemplate_f,
+            #     pytemplate_r,
+            #     yamlfile,
+            #     pseudopotentials,
+            #     pseudo_dir,
+            #     balsam_exe_settings,
+            #     calc_keywords,
+            #     creation_dir
+            # )
+
+            # self.set_up_opt_IRC(
+            #     rxn,
+            #     template_set_up_optIRC,
+            #     facetpath,
+            #     slabopt,
+            #     repeats,
+            #     pytemplate_optIRC,
+            #     pseudopotentials,
+            #     pseudo_dir,
+            #     balsam_exe_settings,
+            #     calc_keywords,
+            #     creation_dir
+            # )
 
 ###########################
 #   Create submit files   #
@@ -471,71 +490,109 @@ class WorkFlow:
                     rxn_name=rxn_name
                 ))
 
-    def set_up_run_IRC(
-        self,
-        rxn,
-        template,
-        facetpath,
-        slab,
-        repeats,
-        pytemplate_f,
-        pytemplate_r,
-        yamlfile,
-        pseudopotentials,
-        pseudo_dir,
-        balsam_exe_setting,
-        calc_keywords,
-        creation_dir
-    ):
-        ''' Create 04_set_up_irc.py file '''
-        with open(template, 'r') as r:
-            template_text = r.read()
-            rxn_name = IO().get_rxn_name(rxn)
-            fname = '04_set_up_irc_{}.py'.format(rxn_name)
-            with open(fname, 'w') as c:
-                c.write(template_text.format(
-                    facetpath=facetpath,
-                    slab=slab,
-                    repeats=repeats,
-                    pytemplate_f=pytemplate_f,
-                    pytemplate_r=pytemplate_r,
-                    yamlfile=yamlfile,
-                    pseudo_dir=pseudo_dir,
-                    pseudopotentials=pseudopotentials,
-                    balsam_exe_settings=balsam_exe_settings,
-                    calc_keywords=calc_keywords, creation_dir=creation_dir,
-                    rxn=rxn,
-                    rxn_name=rxn_name
-                ))
-            c.close()
-        r.close()
+    # def set_up_run_IRC(
+    #     self,
+    #     rxn,
+    #     template,
+    #     facetpath,
+    #     slab,
+    #     repeats,
+    #     pytemplate_f,
+    #     pytemplate_r,
+    #     yamlfile,
+    #     pseudopotentials,
+    #     pseudo_dir,
+    #     balsam_exe_setting,
+    #     calc_keywords,
+    #     creation_dir
+    # ):
+    #     ''' Create 04_set_up_irc.py file '''
+    #     with open(template, 'r') as r:
+    #         template_text = r.read()
+    #         rxn_name = IO().get_rxn_name(rxn)
+    #         fname = '04_set_up_irc_{}.py'.format(rxn_name)
+    #         with open(fname, 'w') as c:
+    #             c.write(template_text.format(
+    #                 facetpath=facetpath,
+    #                 slab=slab,
+    #                 repeats=repeats,
+    #                 pytemplate_f=pytemplate_f,
+    #                 pytemplate_r=pytemplate_r,
+    #                 yamlfile=yamlfile,
+    #                 pseudo_dir=pseudo_dir,
+    #                 pseudopotentials=pseudopotentials,
+    #                 balsam_exe_settings=balsam_exe_settings,
+    #                 calc_keywords=calc_keywords, creation_dir=creation_dir,
+    #                 rxn=rxn,
+    #                 rxn_name=rxn_name
+    #             ))
+    #         c.close()
+    #     r.close()
 
-    def set_up_opt_IRC(
+    # def set_up_opt_IRC(
+    #     self,
+    #     rxn,
+    #     template,
+    #     facetpath,
+    #     slab,
+    #     repeats,
+    #     pytemplate,
+    #     pseudopotentials,
+    #     pseudo_dir,
+    #     balsam_exe_setting,
+    #     calc_keywords,
+    #     creation_dir
+    # ):
+    #     ''' Create 05_set_up_opt_after_irc.py file'''
+    #     with open(template, 'r') as r:
+    #         template_text = r.read()
+    #         rxn_name = IO().get_rxn_name(rxn)
+    #         fname = '05_set_up_opt_after_irc_{}.py'.format(rxn_name)
+    #         with open(fname, 'w') as c:
+    #             c.write(template_text.format(
+    #                 facetpath=facetpath,
+    #                 slab=slab,
+    #                 repeats=repeats,
+    #                 pytemplate=pytemplate,
+    #                 yamlfile=yamlfile,
+    #                 pseudo_dir=pseudo_dir,
+    #                 pseudopotentials=pseudopotentials,
+    #                 balsam_exe_settings=balsam_exe_settings,
+    #                 calc_keywords=calc_keywords,
+    #                 creation_dir=creation_dir,
+    #                 rxn=rxn,
+    #                 rxn_name=rxn_name
+    #             ))
+    #         c.close()
+    #     r.close()
+
+    def set_up_opt_after_TS(
         self,
         rxn,
         template,
         facetpath,
         slab,
         repeats,
+        yamlfile,
         pytemplate,
         pseudopotentials,
         pseudo_dir,
-        balsam_exe_setting,
+        balsam_exe_settings,
         calc_keywords,
         creation_dir
     ):
-        ''' Create 05_set_up_opt_after_irc.py file'''
+        ''' Create 03_checksym_xtb_run_TS.py file '''
         with open(template, 'r') as r:
             template_text = r.read()
             rxn_name = IO().get_rxn_name(rxn)
-            fname = '05_set_up_opt_after_irc_{}.py'.format(rxn_name)
+            fname = '04_set_up_after_TS_{}.py'.format(rxn_name)
             with open(fname, 'w') as c:
                 c.write(template_text.format(
                     facetpath=facetpath,
                     slab=slab,
                     repeats=repeats,
-                    pytemplate=pytemplate,
                     yamlfile=yamlfile,
+                    pytemplate=pytemplate,
                     pseudo_dir=pseudo_dir,
                     pseudopotentials=pseudopotentials,
                     balsam_exe_settings=balsam_exe_settings,
@@ -544,8 +601,6 @@ class WorkFlow:
                     rxn=rxn,
                     rxn_name=rxn_name
                 ))
-            c.close()
-        r.close()
 
 ##############################
 # Submit jobs and execute it #
@@ -663,17 +718,22 @@ class WorkFlow:
         for ts_sella in ts_sella_py_script_list:
             self.exe(dependant_job, ts_sella)
 
-    def run_irc(self, dependant_job):
-        ''' Run IRC calculations '''
-        irc_py_script_list = self.get_irc_jobs()
-        for irc in irc_py_script_list:
-            self.exe(dependant_job, irc)
+    # def run_irc(self, dependant_job):
+    #     ''' Run IRC calculations '''
+    #     irc_py_script_list = self.get_irc_jobs()
+    #     for irc in irc_py_script_list:
+    #         self.exe(dependant_job, irc)
 
-    def run_irc_opt(self, dependant_job):
-        ''' Run minimization of IRC basins calculations '''
-        irc_opt_py_scripts = self.get_irc_opt_scripts()
-        for irc_opt in irc_opt_py_scripts:
-            self.exe(dependant_job, irc_opt)
+    # def run_irc_opt(self, dependant_job):
+    #     ''' Run minimization of IRC basins calculations '''
+    #     irc_opt_py_scripts = self.get_irc_opt_scripts()
+    #     for irc_opt in irc_opt_py_scripts:
+    #         self.exe(dependant_job, irc_opt)
+
+    def run_opt_after_TS(self, dependant_job):
+        ''' Run minimization of minima obtained as nudging TS structure
+        towards imaginary mode of oscilation'''
+        pass
 
     def check_all_species(self, yamlfile):
         ''' Check all species (all reactions) to find whether
@@ -830,6 +890,7 @@ class WorkFlow:
         # search for the 1st order saddle point
         self.run_ts_with_sella('02')
         # for each distinct TS, run IRC calculations
-        self.run_irc('03')
-        # run optimizataion of both IRC (forward, reverse) trajectory
-        self.run_irc_opt('04')
+        self.run_opt_after_TS('03')
+        # self.run_irc('03')
+        # # run optimizataion of both IRC (forward, reverse) trajectory
+        # self.run_irc_opt('04')
