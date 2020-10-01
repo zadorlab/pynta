@@ -66,22 +66,6 @@ class IRC():
         self.creation_dir = creation_dir
         self.io = IO()
 
-    def set_up_irc_all(
-            self,
-            pytemplate_f,
-            pytemplate_r):
-        ''' Set up IRC calculations for all reactions
-
-        Parameters
-        __________
-        pytemplate_f, pytemplate_r : python scripts
-            python scripts templates for irc calculations
-
-        '''
-        reactions = self.io.open_yaml_file(self.yamlfile)
-        for rxn in reactions:
-            self.set_up_irc(rxn, pytemplate_f, pytemplate_r)
-
     def set_up_irc(
             self,
             rxn,
@@ -195,28 +179,30 @@ class IRC():
 
     def opt_after_IRC(
             self,
+            rxn,
             pytemplate_irc_opt):
         ''' Create opt IRC calculations for reactions
 
         Parameters:
         ___________
-
+        rxn : dict(yaml[str:str])
+            a dictionary with info about the paricular reaction. This can be
+            view as a splitted many reaction .yaml file into a single reaction
+            .yaml file
         pytemplate_irc_opt : python script
             template file for IRC optimization job
 
         '''
 
-        reactions = self.io.open_yaml_file(self.yamlfile)
-        for rxn in reactions:
-            try:
-                self.check_irc_finished(rxn, pytemplate_irc_opt)
-            except FileNotFoundError:
-                # TODO: error handling
-                # irc_error = irc_path.split('/')[1]
-                # print('IRC calculations for {} '
-                #       'did not finished.'.format(irc_error))
-                # print('Skipping...')
-                pass
+        try:
+            self.check_irc_finished(rxn, pytemplate_irc_opt)
+        except FileNotFoundError:
+            # irc_error = irc_path.split('/')[1]
+            irc_error = '? I needd to fix this ?'
+            print('IRC calculations for {} '
+                  'did not finished.'.format(irc_error))
+            print('Skipping...')
+            # pass
 
     def check_irc_finished(
             self,
@@ -276,6 +262,7 @@ class IRC():
         os.makedirs(irc_opt_path, exist_ok=True)
 
         init_xyz = os.path.join(irc_opt_path, irc_traj[:-5])
+        irc_traj_path = str(irc_traj_path)
         write(init_xyz + '.xyz', read(irc_traj_path))
         write(init_xyz + '_initial.png', read(irc_traj_path))
 
@@ -319,7 +306,9 @@ class IRC():
                                      + '.py')
             with open(py_f_name, 'w') as f:
                 f.write(pytemplate_irc_opt.format(
-                    geom=xyz_geom_file, rxn=rxn_name, prefix=prefix,
+                    geom=xyz_geom_file,
+                    rxn=rxn_name,
+                    prefix=prefix,
                     pseudopotentials=self.pseudopotentials,
                     pseudo_dir=self.pseudo_dir,
                     balsam_exe_settings=self.balsam_exe_settings,

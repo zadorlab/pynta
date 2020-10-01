@@ -24,7 +24,7 @@ with open(prefix + '_time.log', 'w+') as f:
 extra_calc_keywords = dict(
     pseudopotentials={pseudopotentials},
     pseudo_dir='{pseudo_dir}',
-    label=label
+    label=prefix
 )
 
 geom_opt = read('{geom}')
@@ -44,9 +44,9 @@ opt = QuasiNewton(atoms=geom_opt, trajectory=traj_dir)
 opt.run(fmax=0.01)
 geom_opt.calc.close()
 
-write_dir = os.path.join(prefix + '_' + rxn + '_final')
-write(write_dir + '.png', read(traj_dir))
-write(write_dir + '.xyz', read(traj_dir))
+writedir = os.path.join(prefix + '_' + rxn + '_final')
+write(writedir + '.png', read(trajdir))
+write(writedir + '.xyz', read(trajdir))
 
 end = datetime.datetime.now()
 with open(prefix + '_time.log', 'a+') as f:

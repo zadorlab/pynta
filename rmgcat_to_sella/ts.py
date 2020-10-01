@@ -23,7 +23,13 @@ from spglib import get_symmetry
 
 class TS():
     def __init__(
-        self, facetpath, slab, ts_estimate_dir, yamlfile, repeats, creation_dir
+        self,
+        facetpath,
+        slab,
+        ts_estimate_dir,
+        yamlfile,
+        repeats,
+        creation_dir
     ):
         ''' Initializing
 
@@ -54,9 +60,16 @@ class TS():
         self.creation_dir = creation_dir
         self.io = IO()
 
-    def prepare_ts_estimate(self, scfactor, scfactor_surface,
-                            rotAngle, pytemplate_xtb, species_dict,
-                            scaled1, scaled2):
+    def prepare_ts_estimate(
+            self,
+            rxn,
+            scfactor,
+            scfactor_surface,
+            rotAngle,
+            pytemplate_xtb,
+            species_list,
+            scaled1,
+            scaled2):
         ''' Prepare TS estimates for subsequent xTB calculations
 
         Parameters:
@@ -76,10 +89,10 @@ class TS():
             e.g. 60
         pytemplate_xtb : python script
             a template file for penalty function minimization job
-        species_dict : dict(str:list[str])
-            a dictionary where vaules are lists of max 2 species that take
+        species_list : list[str]
+            a lists of max 2 species that take
             part in the reaction
-            e.g. {'rxn1': ['O', 'H'], 'rxn2': ['C', 'H']}
+            e.g. ['O', 'H']
         scaled1 : bool
             specify whether use the optional scfactor_surface
             for the species 1 (sp1)
@@ -87,11 +100,7 @@ class TS():
             specify whether use the optional scfactor_surface
             for the species 2 (sp2)
         '''
-        # open .yaml file
-        reactions = self.io.open_yaml_file(self.yamlfile)
-
-        # preapare inputs for all reactions
-        for rxn, species_list in zip(reactions, species_dict.values()):
+        for species in species_list:
             r_name_list, p_name_list, images = self.io.prepare_react_list(rxn)
             rxn_name = self.io.get_rxn_name(rxn)
             self.TS_placer(scfactor, rotAngle, rxn_name, r_name_list,
@@ -593,6 +602,7 @@ class TS():
 
     def create_unique_ts_all(
             self,
+            rxn,
             pytemplate,
             pseudopotentials,
             pseudo_dir,
@@ -623,23 +633,20 @@ class TS():
             a dictionary with keywords to Quantum Espresso calculations
 
         '''
-        # open .yaml file
-        reactions = self.io.open_yaml_file(self.yamlfile)
 
-        for rxn in reactions:
-            rxn_name = self.io.get_rxn_name(rxn)
-            ts_estimate_path = os.path.join(self.facetpath, rxn_name,
-                                            self.ts_estimate_dir)
-            # create .xyz and .png files
-            self.create_unique_ts_xyz_and_png(ts_estimate_path)
-            # create job files (.py scripts)
-            self.create_ts_unique_py_file(pytemplate,
-                                          pseudopotentials,
-                                          pseudo_dir,
-                                          ts_estimate_path,
-                                          balsam_exe_settings,
-                                          calc_keywords
-                                          )
+        rxn_name = self.io.get_rxn_name(rxn)
+        ts_estimate_path = os.path.join(self.facetpath, rxn_name,
+                                        self.ts_estimate_dir)
+        # create .xyz and .png files
+        self.create_unique_ts_xyz_and_png(ts_estimate_path)
+        # create job files (.py scripts)
+        self.create_ts_unique_py_file(pytemplate,
+                                      pseudopotentials,
+                                      pseudo_dir,
+                                      ts_estimate_path,
+                                      balsam_exe_settings,
+                                      calc_keywords
+                                      )
 
     def create_unique_ts_xyz_and_png(
             self,

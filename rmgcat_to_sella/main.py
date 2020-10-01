@@ -89,7 +89,6 @@ TS = inputR2S.TSScript
 IRC = inputR2S.IRCScript
 IRCopt = inputR2S.IRCoptScript
 ##
-currentDir = os.path.dirname(os.getcwd())
 optimize_slab = inputR2S.optimize_slab
 
 ####################################################
@@ -124,42 +123,156 @@ class WorkFlow:
         EspressoBalsam.create_application()
         EspressoBalsamSocketIO.create_application()
 
+    def get_ts_xtb_py_script_list(self):
+        ''' Get a list with all 02 job scripts '''
+        reactions = IO().open_yaml_file(yamlfile)
+        ts_with_xtb_py_script_list = []
+        for rxn in reactions:
+            rxn_name = IO().get_rxn_name(rxn)
+            fname = '02_set_up_TS_with_xtb_{}.py'.format(rxn_name)
+            ts_with_xtb_py_script_list.append(fname)
+        return ts_with_xtb_py_script_list
+
+    def get_ts_estimate_unique_list(self):
+        ''' Get a list with all 03 job scripts '''
+        reactions = IO().open_yaml_file(yamlfile)
+        ts_sella_py_script_list = []
+        for rxn in reactions:
+            rxn_name = IO().get_rxn_name(rxn)
+            fname = '03_checksym_xtb_run_TS_{}.py'.format(rxn_name)
+            ts_sella_py_script_list.append(fname)
+        return ts_sella_py_script_list
+
+    def get_irc_jobs(self):
+        ''' Get a list with all 04 jobs, irc_f and irc_r '''
+        reactions = IO().open_yaml_file(yamlfile)
+        irc_py_script_list = []
+        for rxn in reactions:
+            rxn_name = IO().get_rxn_name(rxn)
+            fname = '04_set_up_irc_{}.py'.format(rxn_name)
+            irc_py_script_list.append(fname)
+        return irc_py_script_list
+
+    def get_irc_opt_scripts(self):
+        ''' Get a list with all 05 jobs, irc_f_opt and irc_r_opt '''
+        reactions = IO().open_yaml_file(yamlfile)
+        irc_opt_py_list = []
+        for rxn in reactions:
+            rxn_name = IO().get_rxn_name(rxn)
+            fname = '05_set_up_opt_after_irc_{}.py'.format(rxn_name)
+            irc_opt_py_list.append(fname)
+        return irc_opt_py_list
+
     def gen_job_files(self):
         ''' Generate submt scripts for 6 stages of the workflow '''
-        self.set_up_slab(template_slab_opt, surface_type, symbol, a,
-                         repeats_surface, vacuum, slab_name,
-                         pseudopotentials, pseudo_dir,
-                         balsam_exe_settings, calc_keywords, creation_dir)
-        self.set_up_ads(template_ads, facetpath, slabopt,
-                        repeats, yamlfile, pytemplate_relax_ads,
-                        pseudopotentials, pseudo_dir,
-                        balsam_exe_settings, calc_keywords, creation_dir)
-        self.set_up_TS_with_xtb(template_set_up_ts_with_xtb, slabopt,
-                                repeats, yamlfile, facetpath, rotAngle,
-                                scfactor, scfactor_surface, pytemplate_xtb,
-                                species_dict, creation_dir)
-        self.set_up_run_TS(template_set_up_ts, facetpath, slabopt,
-                           repeats, yamlfile, pytemplate_set_up_ts,
-                           pseudopotentials, pseudo_dir,
-                           balsam_exe_settings, calc_keywords, creation_dir)
-        self.set_up_run_IRC(template_set_up_IRC, facetpath, slabopt,
-                            repeats, pytemplate_f, pytemplate_r, yamlfile,
-                            pseudopotentials, pseudo_dir,
-                            balsam_exe_settings, calc_keywords, creation_dir)
-        self.set_up_opt_IRC(template_set_up_optIRC,
-                            facetpath, slabopt, repeats,
-                            pytemplate_optIRC,
-                            pseudopotentials, pseudo_dir,
-                            balsam_exe_settings, calc_keywords, creation_dir)
+        self.set_up_slab(
+            template_slab_opt,
+            surface_type,
+            symbol,
+            a,
+            repeats_surface,
+            vacuum,
+            slab_name,
+            pseudopotentials,
+            pseudo_dir,
+            balsam_exe_settings,
+            calc_keywords,
+            creation_dir
+        )
+        self.set_up_ads(
+            template_ads,
+            facetpath,
+            slabopt,
+            repeats,
+            yamlfile,
+            pytemplate_relax_ads,
+            pseudopotentials,
+            pseudo_dir,
+            balsam_exe_settings,
+            calc_keywords,
+            creation_dir
+        )
+
+        reactions = IO().open_yaml_file(yamlfile)
+        for rxn in reactions:
+            self.set_up_TS_with_xtb(
+                rxn,
+                template_set_up_ts_with_xtb,
+                slabopt,
+                repeats,
+                yamlfile,
+                facetpath,
+                rotAngle,
+                scfactor,
+                scfactor_surface,
+                pytemplate_xtb,
+                species_dict,
+                creation_dir
+            )
+
+            self.set_up_run_TS(
+                rxn,
+                template_set_up_ts,
+                facetpath,
+                slabopt,
+                repeats,
+                yamlfile,
+                pytemplate_set_up_ts,
+                pseudopotentials,
+                pseudo_dir,
+                balsam_exe_settings,
+                calc_keywords,
+                creation_dir
+            )
+
+            self.set_up_run_IRC(
+                rxn,
+                template_set_up_IRC,
+                facetpath,
+                slabopt,
+                repeats,
+                pytemplate_f,
+                pytemplate_r,
+                yamlfile,
+                pseudopotentials,
+                pseudo_dir,
+                balsam_exe_settings,
+                calc_keywords,
+                creation_dir
+            )
+
+            self.set_up_opt_IRC(
+                rxn,
+                template_set_up_optIRC,
+                facetpath,
+                slabopt,
+                repeats,
+                pytemplate_optIRC,
+                pseudopotentials,
+                pseudo_dir,
+                balsam_exe_settings,
+                calc_keywords,
+                creation_dir
+            )
 
 ###########################
 #   Create submit files   #
 ###########################
 
-    def set_up_slab(self, template, surface_type, symbol, a, repeats_surface,
-                    vacuum, slab_name, pseudopotentials, pseudo_dir,
-                    balsam_exe_settings, calc_keywords,
-                    creation_dir):
+    def set_up_slab(
+            self,
+            template,
+            surface_type,
+            symbol,
+            a,
+            repeats_surface,
+            vacuum,
+            slab_name,
+            pseudopotentials,
+            pseudo_dir,
+            balsam_exe_settings,
+            calc_keywords,
+            creation_dir):
         ''' Create 00_set_up_slab_opt.py file '''
         with open(template, 'r') as r:
             template_text = r.read()
@@ -174,15 +287,60 @@ class WorkFlow:
                     balsam_exe_settings=balsam_exe_settings,
                     calc_keywords=calc_keywords, creation_dir=creation_dir
                 ))
-            c.close()
-        r.close()
 
     def set_up_ads(
-        self, template, facetpath, slabopt, repeats, yamlfile,
-        pytemplate, pseudopotentials, pseudo_dir,
-        balsam_exe_settings, calc_keywords, creation_dir
+        self,
+        template,
+        facetpath,
+        slabopt,
+        repeats,
+        yamlfile,
+        pytemplate,
+        pseudopotentials,
+        pseudo_dir,
+        balsam_exe_settings,
+        calc_keywords,
+        creation_dir
     ):
-        ''' Create 01_set_up_ads.py file '''
+        ''' Create 01_set_up_ads.py file
+
+        Parameters:
+        ___________
+        template : py file
+            a template to set up 01 job
+        facetpath : str
+            a path to the workflow's main dir
+            e.g. 'Cu_111'
+        slabopt : str
+            a path to .xyz file with optimized slab
+        repeats : tuple(int, int, int)
+            how to replicate unit cell in (x, y, z) direction
+        yamlfile : str
+            a name of the .yaml file with a reaction list
+        pytemplate : python file
+            a template to prepare submission scripts
+            for adsorbate+surface minimization
+        pseudopotentials : dict(str: str)
+            a dictionary with QE pseudopotentials for all species.
+            e.g.
+            dict(Cu='Cu.pbe-spn-kjpaw_psl.1.0.0.UPF',
+                H='H.pbe-kjpaw_psl.1.0.0.UPF',
+                O='O.pbe-n-kjpaw_psl.1.0.0.UPF',
+                C='C.pbe-n-kjpaw_psl.1.0.0.UPF',
+                )
+        pseudo_dir : str
+            a path to the QE's pseudopotentials main directory
+            e.g.
+            '/home/mgierad/espresso/pseudo'
+        balsam_exe_settings : dict{'str':int}
+            a dictionary with balsam execute parameters (cores, nodes, etc.)
+        calc_keywords : dict{'str':'str'}
+            a dictionary with parameters to run DFT package. Quantume Espresso
+            is used as default
+        creation_dir : posix
+            a posix path to the working directory
+
+        '''
         with open(template, 'r') as r:
             template_text = r.read()
             with open('01_set_up_ads.py', 'w') as c:
@@ -199,55 +357,147 @@ class WorkFlow:
             c.close()
         r.close()
 
-    def set_up_TS_with_xtb(self, template, slab,
-                           repeats, yamlfile, facetpath, rotAngle,
-                           scfactor, scfactor_surface,
-                           pytemplate_xtb, species_dict, creation_dir):
-        ''' Create 02_set_up_TS_with_xtb.py file'''
+    def set_up_TS_with_xtb(
+        self,
+        rxn,
+        template,
+        slab,
+        repeats,
+        yamlfile,
+        facetpath,
+        rotAngle,
+        scfactor,
+        scfactor_surface,
+        pytemplate_xtb,
+        species_dict,
+        creation_dir
+    ):
+        ''' Create 02_set_up_TS_with_xtb_{rxn_name}.py files
+
+        Parameters:
+        ___________
+
+        rxn : dict(yaml[str:str])
+            a dictionary with info about the paricular reaction. This can be
+            view as a splitted many reaction .yaml file to a single reaction
+            .yaml file
+        template : py file
+            a template to set up 02 job for a particular reaction
+        slab : str
+            a '.xyz' file name with the optimized slab
+            e.g.
+            'Cu_111_slab_opt.xyz'
+        repeats : tuple(int, int, int)
+            how to replicate unit cell in (x, y, z) direction
+        yamlfile : str
+            a name of the .yaml file with a reaction list
+        facetpath : str
+            a path to the workflow's main dir
+            e.g. 'Cu_111'
+        rotAngle : float
+            an angle (deg) of rotation  of the TS guess adduct on the surface
+            e.g. 60.0 (to be removed - not really necessary)
+        scfator : float
+            a scaling factor to scale a bond distance between
+            atoms taking part in the reaction
+            e.g. 1.4
+        scfactor_surface : float
+            a scaling factor to scale the target bond distance, i.e.
+            the average distance between adsorbed atom and the nearest
+            surface atom. Helpful e.g. when H is far away form the surface
+            in TS, whereas for minima it is close to the surface
+            e.g. 1.0
+        pytemplate_xtb : python script
+            a template file for penalty function minimization job
+        species_dict : dict{str:list[str]}
+            a dictionary holding info about particular reaction and key species
+            for that reaction
+            e.g. {'rxn1': ['O', 'H'], 'rxn2': ['C', 'H']}
+        creation_dir : posix
+            a posix path to the working directory
+
+        '''
         with open(template, 'r') as r:
             template_text = r.read()
-            with open('02_set_up_TS_with_xtb.py', 'w') as c:
+            rxn_name = IO().get_rxn_name(rxn)
+            rxn_no = rxn['index'] + 1
+            fname = '02_set_up_TS_with_xtb_{}.py'.format(rxn_name)
+            with open(fname, 'w') as c:
                 c.write(template_text.format(
-                    facetpath=facetpath, slab=slab,
-                    repeats=repeats, yamlfile=yamlfile,
-                    rotAngle=rotAngle, scfactor=scfactor,
+                    facetpath=facetpath,
+                    slab=slab,
+                    repeats=repeats,
+                    yamlfile=yamlfile,
+                    rotAngle=rotAngle,
+                    scfactor=scfactor,
                     scfactor_surface=scfactor_surface,
                     pytemplate_xtb=pytemplate_xtb,
-                    species_dict=species_dict,
-                    scaled1=scaled1, scaled2=scaled2, creation_dir=creation_dir
+                    species_list=species_dict['rxn' + str(rxn_no)],
+                    scaled1=scaled1,
+                    scaled2=scaled2,
+                    creation_dir=creation_dir,
+                    rxn=rxn,
+                    rxn_name=rxn_name
                 ))
-            c.close()
-        r.close()
 
     def set_up_run_TS(
-        self, template, facetpath, slab, repeats, yamlfile,
-        pytemplate, pseudopotentials, pseudo_dir,
-        balsam_exe_settings, calc_keywords, creation_dir
+        self,
+        rxn,
+        template,
+        facetpath,
+        slab,
+        repeats,
+        yamlfile,
+        pytemplate,
+        pseudopotentials,
+        pseudo_dir,
+        balsam_exe_settings,
+        calc_keywords,
+        creation_dir
     ):
-        ''' Create 03_checksym_xtb_runTS.py file '''
+        ''' Create 03_checksym_xtb_run_TS.py file '''
         with open(template, 'r') as r:
             template_text = r.read()
-            with open('03_checksym_xtb_runTS.py', 'w') as c:
+            rxn_name = IO().get_rxn_name(rxn)
+            fname = '03_checksym_xtb_run_TS_{}.py'.format(rxn_name)
+            with open(fname, 'w') as c:
                 c.write(template_text.format(
-                    facetpath=facetpath, slab=slab,
-                    repeats=repeats, yamlfile=yamlfile,
+                    facetpath=facetpath,
+                    slab=slab,
+                    repeats=repeats,
+                    yamlfile=yamlfile,
                     pytemplate=pytemplate,
                     pseudo_dir=pseudo_dir,
                     pseudopotentials=pseudopotentials,
                     balsam_exe_settings=balsam_exe_settings,
-                    calc_keywords=calc_keywords, creation_dir=creation_dir
+                    calc_keywords=calc_keywords,
+                    creation_dir=creation_dir,
+                    rxn=rxn,
+                    rxn_name=rxn_name
                 ))
-            c.close()
-        r.close()
 
-    def set_up_run_IRC(self, template, facetpath, slab, repeats,
-                       pytemplate_f, pytemplate_r, yamlfile,
-                       pseudopotentials, pseudo_dir,
-                       balsam_exe_setting, calc_keywords, creation_dir):
+    def set_up_run_IRC(
+        self,
+        rxn,
+        template,
+        facetpath,
+        slab,
+        repeats,
+        pytemplate_f,
+        pytemplate_r,
+        yamlfile,
+        pseudopotentials,
+        pseudo_dir,
+        balsam_exe_setting,
+        calc_keywords,
+        creation_dir
+    ):
         ''' Create 04_set_up_irc.py file '''
         with open(template, 'r') as r:
             template_text = r.read()
-            with open('04_set_up_irc.py', 'w') as c:
+            rxn_name = IO().get_rxn_name(rxn)
+            fname = '04_set_up_irc_{}.py'.format(rxn_name)
+            with open(fname, 'w') as c:
                 c.write(template_text.format(
                     facetpath=facetpath,
                     slab=slab,
@@ -258,20 +508,33 @@ class WorkFlow:
                     pseudo_dir=pseudo_dir,
                     pseudopotentials=pseudopotentials,
                     balsam_exe_settings=balsam_exe_settings,
-                    calc_keywords=calc_keywords, creation_dir=creation_dir
+                    calc_keywords=calc_keywords, creation_dir=creation_dir,
+                    rxn=rxn,
+                    rxn_name=rxn_name
                 ))
             c.close()
         r.close()
 
     def set_up_opt_IRC(
-        self, template, facetpath, slab, repeats, pytemplate,
-        pseudopotentials, pseudo_dir, balsam_exe_setting,
-        calc_keywords, creation_dir
+        self,
+        rxn,
+        template,
+        facetpath,
+        slab,
+        repeats,
+        pytemplate,
+        pseudopotentials,
+        pseudo_dir,
+        balsam_exe_setting,
+        calc_keywords,
+        creation_dir
     ):
         ''' Create 05_set_up_opt_after_irc.py file'''
         with open(template, 'r') as r:
             template_text = r.read()
-            with open('05_set_up_opt_after_irc.py', 'w') as c:
+            rxn_name = IO().get_rxn_name(rxn)
+            fname = '05_set_up_opt_after_irc_{}.py'.format(rxn_name)
+            with open(fname, 'w') as c:
                 c.write(template_text.format(
                     facetpath=facetpath,
                     slab=slab,
@@ -282,7 +545,9 @@ class WorkFlow:
                     pseudopotentials=pseudopotentials,
                     balsam_exe_settings=balsam_exe_settings,
                     calc_keywords=calc_keywords,
-                    creation_dir=creation_dir
+                    creation_dir=creation_dir,
+                    rxn=rxn,
+                    rxn_name=rxn_name
                 ))
             c.close()
         r.close()
@@ -290,16 +555,46 @@ class WorkFlow:
 ##############################
 # Submit jobs and execute it #
 ##############################
-    def exe(self, parent_job, job_script, cores=1):
-        ''' TODO Docstring to be written '''
+
+    def exe(self,
+            parent_job,
+            job_script,
+            cores=1):
+        ''' Execute a py script
+
+        Parameters:
+        ___________
+
+        parent_job : str
+            a parent job on which subbmited jobs depends on. Formatted as:
+            00 or 01 or 02 or 03 or 04, depending on the job
+        job_script : str
+            a script that is about to be submitted
+        cores : int
+            number of cores for exe job
+
+        Returns:
+        ________
+
+        job_to_add : balsam job
+            job that will be submitted to balsam queue/database
+
+        '''
         from balsam.launcher.dag import BalsamJob
         from os import getcwd
         cwd = getcwd()
+
+        # get rxn_name from job_script by spliting and joining job_script name
+        # exeption for two first jobs
+        if job_script in [SurfaceAdsorbate, slab_opt]:
+            rxn_name = ''
+        else:
+            rxn_name = '_'.join(job_script.split('_')[-2:])[:-3]
         try:
-            int(job_script[0:2])
-            workflow_name = yamlfile + facetpath + job_script[0:2]
+            workflow_name = facetpath + '_' + job_script[0:2] + '_' + rxn_name
         except ValueError:
-            workflow_name = yamlfile + facetpath
+            workflow_name = facetpath + '_error'
+
         job_to_add = BalsamJob(
             name=job_script,
             workflow=workflow_name,
@@ -307,24 +602,37 @@ class WorkFlow:
             args=cwd + '/' + job_script,
             ranks_per_node=cores,
             input_files='',
-            node_packing_count=64,
+            node_packing_count=48,
             user_workdir=cwd
         )
         job_to_add.save()
+
+        # if there is a parent job, specify dependency
         if parent_job != '':
             from balsam.launcher.dag import add_dependency
+
             try:
                 add_dependency(parent_job, job_to_add)  # parent, child
             except ValueError:
                 dependency = str(parent_job[0:2])
-                dependency_workflow_name = yamlfile + facetpath + dependency
-                # print(dependency_workflow_name)
+
+                # a special case for 01 where there is on job script for all
+                # reactions
+                if parent_job == '01':
+                    dependency_workflow_name = os.path.join(
+                        facetpath + '_' + dependency + '_')
+                else:
+                    dependency_workflow_name = os.path.join(
+                        facetpath + '_' + dependency + '_' + rxn_name)
+
                 BalsamJob = BalsamJob
                 pending_simulations = BalsamJob.objects.filter(
                     workflow__contains=dependency_workflow_name
                 ).exclude(state='JOB_FINISHED')
+
                 for job in pending_simulations:
                     add_dependency(job, job_to_add)  # parent, child
+
         return job_to_add
 
     def run_slab_optimization(self):
@@ -343,14 +651,34 @@ class WorkFlow:
 
     def run_ts_estimate(self, dependent_job):
         ''' Run TS estimation calculations '''
-        TSxtb = inputR2S.TSxtbScript
-        return self.exe(dependent_job, TSxtb)
+        ts_xtb_py_script_list = self.get_ts_xtb_py_script_list()
+        for ts_xtb in ts_xtb_py_script_list:
+            self.exe(dependent_job, ts_xtb)
 
     def run_ts_estimate_no_depend(self):
         ''' Run TS estimate calculations if there is
             no dependency on other jobs '''
-        TSxtb = inputR2S.TSxtbScript
-        return self.exe('', TSxtb)
+        ts_xtb_py_script_list = self.get_ts_xtb_py_script_list()
+        for ts_xtb in ts_xtb_py_script_list:
+            self.exe('', ts_xtb)
+
+    def run_ts_with_sella(self, dependant_job):
+        ''' Run TS minimization with Sella '''
+        ts_sella_py_script_list = self.get_ts_estimate_unique_list()
+        for ts_sella in ts_sella_py_script_list:
+            self.exe(dependant_job, ts_sella)
+
+    def run_irc(self, dependant_job):
+        ''' Run IRC calculations '''
+        irc_py_script_list = self.get_irc_jobs()
+        for irc in irc_py_script_list:
+            self.exe(dependant_job, irc)
+
+    def run_irc_opt(self, dependant_job):
+        ''' Run minimization of IRC basins calculations '''
+        irc_opt_py_scripts = self.get_irc_opt_scripts()
+        for irc_opt in irc_opt_py_scripts:
+            self.exe(dependant_job, irc_opt)
 
     def check_all_species(self, yamlfile):
         ''' Check all species (all reactions) to find whether
@@ -456,7 +784,7 @@ class WorkFlow:
                 pass
 
     def execute(self):
-        # ''' The main executable
+        ''' The main executable '''
 
         if optimize_slab:
             # if slab found in previous calculation, do nothing
@@ -467,7 +795,7 @@ class WorkFlow:
                 # If the code cannot locate optimized slab .xyz file,
                 # a slab optimization will be launched.
                 self.run_slab_optimization()
-            # check if  species were already calculated
+            # check if species were already calculated
             if all(self.check_all_species(yamlfile).values()):
                 # If all are True, start by generating TS guesses and run
                 # the penalty function minimization
@@ -475,13 +803,6 @@ class WorkFlow:
             else:
                 # If any of sp_check_list is False
                 # run optimization of surface + reactants; surface + products
-                #
-                # TODO: To be debugged - I need to think about a method to run
-                # run_opt_surf_and_adsorbate()
-                # or
-                # run_opt_surf_and_adsorbate_no_depend()
-                # depending whether slab opt was done perform by the workflow
-                # check if slab was calculated in this run.
                 try:
                     self.run_opt_surf_and_adsorbate()
                 except NameError:
@@ -497,7 +818,7 @@ class WorkFlow:
                     'It appears that there is no slab_opt.xyz file'
                 )
             if all(self.check_all_species(yamlfile).values()):
-                # If all minimas were calculated some time age rmgcat_to_sella
+                # If all minima were calculated some time age rmgcat_to_sella
                 # will use that calculations. Start from TSxtb step
                 self.exe('', TSxtb)
             else:
@@ -512,8 +833,8 @@ class WorkFlow:
                 # to get TS guesses
                 self.exe('01', TSxtb)
         # search for the 1st order saddle point
-        self.exe('02', TS)
+        self.run_ts_with_sella('02')
         # for each distinct TS, run IRC calculations
-        self.exe('03', IRC)
+        self.run_irc('03')
         # run optimizataion of both IRC (forward, reverse) trajectory
-        self.exe('04', IRCopt)
+        self.run_irc_opt('04')
