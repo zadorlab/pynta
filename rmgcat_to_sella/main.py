@@ -279,7 +279,7 @@ class WorkFlow:
         pytemplate : python file
             a template to prepare submission scripts
             for adsorbate+surface minimization
-        pseudopotentials : dict(str: str)
+        pseudopotentials : dict{str:str}
             a dictionary with QE pseudopotentials for all species.
             e.g.
             dict(Cu='Cu.pbe-spn-kjpaw_psl.1.0.0.UPF',
@@ -291,11 +291,20 @@ class WorkFlow:
             a path to the QE's pseudopotentials main directory
             e.g.
             '/home/mgierad/espresso/pseudo'
-        balsam_exe_settings : dict{'str':int}
-            a dictionary with balsam execute parameters (cores, nodes, etc.)
-        calc_keywords : dict{'str':'str'}
-            a dictionary with parameters to run DFT package. Quantume Espresso
-            is used as default
+        balsam_exe_settings : dict{str:int}
+            a dictionary with balsam execute parameters (cores, nodes, etc.),
+            e.g.
+            balsam_exe_settings = {'num_nodes': 1,
+                                   'ranks_per_node': 48,
+                                   'threads_per_rank': 1}
+        calc_keywords : dict{str:str}
+            a dictionary with parameters to run DFT package. Quantum Espresso
+            is used as default, e.g.
+
+            calc_keywords = {'kpts': (3, 3, 1), 'occupations': 'smearing',
+                            'smearing':  'marzari-vanderbilt',
+                            'degauss': 0.01, 'ecutwfc': 40, 'nosym': True,
+                            'conv_thr': 1e-11, 'mixing_mode': 'local-TF'}
         creation_dir : posix
             a posix path to the working directory
 

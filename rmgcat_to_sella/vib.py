@@ -35,6 +35,44 @@ class AfterTS():
             creation_dir,
             pseudopotentials,
             pseudo_dir):
+        ''' Create files for after_TS calculations - to verify TS structures
+            and get corresponding reactant and product minima[summary]
+
+        Parameters
+        ----------
+        rxn : dict(yaml[str:str])
+            a dictionary with info about the paricular reaction. This can be
+            view as a splitted many reaction .yaml file to a single reaction
+            .yaml file
+        pytemplate : python script
+            a template for after_TS calculations
+        balsam_exe_settings : dict{str:int}
+            a dictionary with balsam execute parameters (cores, nodes, etc.),
+            e.g.
+            balsam_exe_settings = {'num_nodes': 1,
+                                   'ranks_per_node': 48,
+                                   'threads_per_rank': 1}
+        calc_keywords : dict{str:str}
+            a dictionary with parameters to run DFT package. Quantum Espresso
+            is used as default, e.g.
+
+            calc_keywords = {'kpts': (3, 3, 1), 'occupations': 'smearing',
+                            'smearing':  'marzari-vanderbilt',
+                            'degauss': 0.01, 'ecutwfc': 40, 'nosym': True,
+                            'conv_thr': 1e-11, 'mixing_mode': 'local-TF'}
+        pseudopotentials : dict{str:str}
+            a dictionary with QE pseudopotentials for all species.
+            e.g.
+            dict(Cu='Cu.pbe-spn-kjpaw_psl.1.0.0.UPF',
+                H='H.pbe-kjpaw_psl.1.0.0.UPF',
+                O='O.pbe-n-kjpaw_psl.1.0.0.UPF',
+                C='C.pbe-n-kjpaw_psl.1.0.0.UPF',
+                )
+        pseudo_dir : str
+            a path to the QE's pseudopotentials main directory
+            e.g.
+            '/home/mgierad/espresso/pseudo'
+        '''
 
         rxn_name = self.io.get_rxn_name(rxn)
         ts_estimate_unique_dir = os.path.join(
@@ -69,7 +107,43 @@ class AfterTS():
             pseudopotentials,
             pseudo_dir):
         ''' Create job submission files for minimization displaced structures
-            after TS '''
+            after TS
+
+        Parameters
+        ----------
+        pytemplate : python script
+            a template for after_TS calculations
+        fname_forward : str
+            a path for forward calculations
+        fname_reverse : str
+            a path for reverse calculations
+        balsam_exe_settings : dict{str:int}
+            a dictionary with balsam execute parameters (cores, nodes, etc.),
+            e.g.
+            balsam_exe_settings = {'num_nodes': 1,
+                                'ranks_per_node': 48,
+                                'threads_per_rank': 1}
+        calc_keywords : dict{str:str}
+            a dictionary with parameters to run DFT package. Quantum Espresso
+            is used as default, e.g.
+
+            calc_keywords = {'kpts': (3, 3, 1), 'occupations': 'smearing',
+                            'smearing':  'marzari-vanderbilt',
+                            'degauss': 0.01, 'ecutwfc': 40, 'nosym': True,
+                            'conv_thr': 1e-11, 'mixing_mode': 'local-TF'}
+        pseudopotentials : dict{str:str}
+            a dictionary with QE pseudopotentials for all species.
+            e.g.
+            dict(Cu='Cu.pbe-spn-kjpaw_psl.1.0.0.UPF',
+                H='H.pbe-kjpaw_psl.1.0.0.UPF',
+                O='O.pbe-n-kjpaw_psl.1.0.0.UPF',
+                C='C.pbe-n-kjpaw_psl.1.0.0.UPF',
+                )
+        pseudo_dir : str
+            a path to the QE's pseudopotentials main directory
+            e.g.
+            '/home/mgierad/espresso/pseudo'
+        '''
 
         with open(pytemplate, 'r') as f:
             pytemplate = f.read()
@@ -94,7 +168,27 @@ class AfterTS():
             n=0,
             nimages=30):
         ''' Get forward and reverse .xyz file by nudging TS towards imaginary
-        mode of oscilations '''
+        mode of oscilations summary
+
+        Parameters
+        ----------
+        traj : [type]
+            [description]
+        fname_forward : str
+            a path for forward calculations
+        fname_reverse : str
+            a path for reverse calculations
+            [description]
+        n : int, optional
+            mode of oscilation, by default 0
+        nimages : int, optional
+            [description], by default 30
+
+        Raises
+        ------
+        ValueError
+            [description]
+        '''
 
         index_forward = int(floor(nimages/4))
         index_reverse = int(nimages - index_forward)
