@@ -20,7 +20,7 @@ creation_dir = '{creation_dir}'
 rxn = {rxn}
 rxn_name = '{rxn_name}'
 cwd = Path.cwd().as_posix()
-path_to_after_TS = os.path.join(
+path_to_after_ts = os.path.join(
     facetpath, rxn_name, 'after_TS')
 
 after_ts = AfterTS(facetpath, yamlfile, slab, repeats)
@@ -36,7 +36,7 @@ pending_simulations = BalsamJob.objects.filter(
 ).exclude(state="JOB_FINISHED")
 
 
-for py_script in Path(path_to_ts_estimate_uq).glob('*.py'):
+for py_script in Path(path_to_after_ts).glob('*.py'):
     job_dir, script_name = os.path.split(str(py_script))
     job_to_add = BalsamJob(
         name=script_name,
