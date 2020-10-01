@@ -72,8 +72,8 @@ class AfterTS():
             a path to the QE's pseudopotentials main directory
             e.g.
             '/home/mgierad/espresso/pseudo'
-        '''
 
+        '''
         rxn_name = self.io.get_rxn_name(rxn)
         ts_estimate_unique_dir = os.path.join(
             self.facetpath, rxn_name, 'TS_estimate_unique')
@@ -117,13 +117,13 @@ class AfterTS():
             a path for forward calculations
         fname_reverse : str
             a path for reverse calculations
-        balsam_exe_settings : dict{str:int}
+        balsam_exe_settings : dict(str:int)
             a dictionary with balsam execute parameters (cores, nodes, etc.),
             e.g.
             balsam_exe_settings = {'num_nodes': 1,
                                 'ranks_per_node': 48,
                                 'threads_per_rank': 1}
-        calc_keywords : dict{str:str}
+        calc_keywords : dict(str:str)
             a dictionary with parameters to run DFT package. Quantum Espresso
             is used as default, e.g.
 
@@ -131,7 +131,7 @@ class AfterTS():
                             'smearing':  'marzari-vanderbilt',
                             'degauss': 0.01, 'ecutwfc': 40, 'nosym': True,
                             'conv_thr': 1e-11, 'mixing_mode': 'local-TF'}
-        pseudopotentials : dict{str:str}
+        pseudopotentials : dict(str:str)
             a dictionary with QE pseudopotentials for all species.
             e.g.
             dict(Cu='Cu.pbe-spn-kjpaw_psl.1.0.0.UPF',
@@ -143,8 +143,8 @@ class AfterTS():
             a path to the QE's pseudopotentials main directory
             e.g.
             '/home/mgierad/espresso/pseudo'
-        '''
 
+        '''
         with open(pytemplate, 'r') as f:
             pytemplate = f.read()
         for fn in [fname_forward, fname_reverse]:
@@ -172,24 +172,25 @@ class AfterTS():
 
         Parameters
         ----------
-        traj : [type]
-            [description]
+        traj : str
+            a path to trajectory file with optimized TS
         fname_forward : str
             a path for forward calculations
         fname_reverse : str
             a path for reverse calculations
             [description]
         n : int, optional
-            mode of oscilation, by default 0
+            mode of oscilation 0 is the first (imaginary), by default 0
         nimages : int, optional
-            [description], by default 30
+            how many strucutres to use to construct a trajectory visualizing
+            oscilations, by default 30
 
         Raises
         ------
         ValueError
-            [description]
-        '''
+            raised if there are more than one *traj file visualizing vibrations
 
+        '''
         index_forward = int(floor(nimages/4))
         index_reverse = int(nimages - index_forward)
 
@@ -221,16 +222,33 @@ class AfterTS():
 
     def get_all_distances(self):
         ''' Get distances between reacting species for ts, forward and
-        reverse structure '''
+        reverse structure
+
+        '''
         all_rxn_names = IO().get_list_all_rxns_names(self.yamlfile)
         for rxn_name in all_rxn_names:
             ts_dist_dict = self.get_ts_dist(rxn_name)
-            forward_dist_dict, reverse_dist_dict = self.get_forward_and_reverse_dist(
+            f_dist_dict, r_dist_dict = self.get_forward_and_reverse_dist(
                 rxn_name)
-            self.print_table(ts_dist_dict, forward_dist_dict,
-                             reverse_dist_dict)
+            self.print_table(ts_dist_dict, f_dist_dict, r_dist_dict)
 
     def print_table(self, ts_dist_dict, forward_dist_dict, reverse_dist_dict):
+        ''' Print information about bond distances (reacting atoms) for TS,
+        forward and reverse .xyz file
+
+        Parameters
+        ----------
+        ts_dist_dict : dict(str:float)
+            a dictionary with keys being TS file names while values are
+            bond distance beteween of reacting species
+        f_dist_dict : dict(str:float)
+            a dictionary with keys being paths to forward files while values
+            are bond distance beteween of reacting species
+        r_dist_dict : dict(str:float)
+            a dictionary with keys being paths to reverse files while values
+            are bond distance beteween of reacting species
+
+        '''
         keys = ts_dist_dict.keys()
         ts_val = ts_dist_dict.values()
         f_val = forward_dist_dict.values()
@@ -242,6 +260,22 @@ class AfterTS():
             print('{} \t {:2f} \t {:2f} \t {:2f}'.format(key, ts, f, r))
 
     def get_ts_dist(self, rxn_name):
+        ''' For given rxn_name get distances between reacting species
+            in TS structure
+
+        Parameters
+        ----------
+        rxn_name : str
+            a name of the reaction in the following format:
+            'OH_H+O'
+
+        Returns
+        -------
+        ts_dist_dict : dict(str:float)
+            a dictionary with keys being TS file names while values are
+            bond distance beteween of reacting species
+
+        '''
         ts_dist_dict = {}
 
         ts_estimate_unique_dir = os.path.join(
@@ -258,8 +292,27 @@ class AfterTS():
         return ts_dist_dict
 
     def get_forward_and_reverse_dist(self, rxn_name):
-        forward_dist_dict = {}
-        reverse_dist_dict = {}
+        ''' For given rxn_name get distances between reacting species in
+            forward and reverse .xyz file
+
+        Parameters
+        ----------
+        rxn_name : str
+            a name of the reaction in the following format:
+            'OH_H+O'
+
+        Returns
+        -------
+        f_dist_dict : dict(str:float)
+            a dictionary with keys being paths to forward files while values
+            are bond distance beteween of reacting species
+        r_dist_dict : dict(str:float)
+            a dictionary with keys being paths to reverse files while values
+            are bond distance beteween of reacting species
+
+        '''
+        f_dist_dict = {}
+        r_dist_dict = {}
 
         after_ts_dir = os.path.join(
             self.facetpath, rxn_name, 'after_TS')
@@ -271,9 +324,9 @@ class AfterTS():
             if 'forward' in xyz:
                 xyz_atom = read(xyz)[self.nslab:]
                 dist = xyz_atom.get_distance(0, 1)
-                forward_dist_dict[xyz] = dist
+                f_dist_dict[xyz] = dist
             elif 'reverse' in xyz:
                 xyz_atom = read(xyz)[self.nslab:]
                 dist = xyz_atom.get_distance(0, 1)
-                reverse_dist_dict[xyz] = dist
-        return forward_dist_dict, reverse_dist_dict
+                r_dist_dict[xyz] = dist
+        return f_dist_dict, r_dist_dict
