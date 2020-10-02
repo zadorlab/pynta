@@ -29,7 +29,12 @@ class AfterTS():
     def set_up_ts_vib(
             self,
             rxn,
-            pytemplate):
+            pytemplate,
+            balsam_exe_settings,
+            calc_keywords,
+            creation_dir,
+            pseudopotentials,
+            pseudo_dir):
 
         rxn_name = self.io.get_rxn_name(rxn)
         ts_estimate_unique_dir = os.path.join(
@@ -38,13 +43,40 @@ class AfterTS():
         for traj in traj_files:
             traj = str(traj)
             prefix = traj.split('/')[-2]
-
             ts_vib_dir = os.path.join(
                 self.facetpath, rxn_name, 'TS_estimate_unique_vib', prefix)
             os.makedirs(ts_vib_dir, exist_ok=True)
+            py_fname = os.path.join(ts_vib_dir + '_' + rxn_name + '_ts_vib.py')
+            self.create_ts_vib_py_files(
+                pytemplate, traj, py_fname, balsam_exe_settings,
+                calc_keywords, creation_dir, pseudopotentials, pseudo_dir)
 
-            fname_vib = os.path.join(
-                ts_vib_dir, prefix + '_' + rxn_name + '_vib')
+    def create_ts_vib_py_files(
+            self,
+            pytemplate,
+            traj,
+            py_fname,
+            balsam_exe_settings,
+            calc_keywords,
+            creation_dir,
+            pseudopotentials,
+            pseudo_dir,
+            nimages=30,
+            n=0):
+
+        with open(pytemplate, 'r') as f:
+            pytemplate = f.read()
+        with open(py_fname, 'w') as f:
+            f.write(pytemplate.format(
+                geom=traj,
+                balsam_exe_settings=balsam_exe_settings,
+                calc_keywords=calc_keywords,
+                creation_dir=creation_dir,
+                pseudopotentials=pseudopotentials,
+                pseudo_dir=pseudo_dir,
+                nimages=nimages,
+                n=n,
+            ))
 
     def prepare_opt_after_ts(
             self,

@@ -17,6 +17,7 @@ balsam_exe_settings = {balsam_exe_settings}
 calc_keywords = {calc_keywords}
 creation_dir = '{creation_dir}'
 nimages = {nimages}
+n = {n}
 
 start = datetime.datetime.now()
 
@@ -62,7 +63,7 @@ vib.summary()
 vib.clean()
 
 # write the first vibration mode to vib.0.traj file (default) - imaginary freq
-vib.write_mode(0, nimages=nimages)
+vib.write_mode(n=n, nimages=nimages)
 
 # should be one traj file, though
 for traj in os.listdir(os.getcwd()):
