@@ -21,7 +21,7 @@ n = {n}
 
 start = datetime.datetime.now()
 
-with open(geom + '_time.log', 'w+') as f:
+with open(geom[:-4] + '_time.log', 'w+') as f:
     f.write(str(start))
     f.write("\n")
     f.close()
@@ -34,7 +34,7 @@ with open(geom + '_time.log', 'w+') as f:
 index_forward = int(floor(nimages/4))
 index_reverse = int(nimages - index_forward)
 
-atoms = read(os.path.join(prefix, geom + '.xyz'))
+atoms = read(os.path.join(prefix, geom))
 
 # freeze all surface atoms
 atoms.set_constraint(FixAtoms(

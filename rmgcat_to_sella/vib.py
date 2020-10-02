@@ -10,6 +10,8 @@ from numpy import floor
 
 import os
 
+import shutil
+
 
 class AfterTS():
     def __init__(
@@ -39,22 +41,27 @@ class AfterTS():
         rxn_name = self.io.get_rxn_name(rxn)
         ts_estimate_unique_dir = os.path.join(
             self.facetpath, rxn_name, 'TS_estimate_unique')
-        traj_files = Path(ts_estimate_unique_dir).glob('**/*traj')
-        for traj in traj_files:
-            traj = str(traj)
-            prefix = traj.split('/')[-2]
+        ts_final_geoms = Path(ts_estimate_unique_dir).glob('**/*final.xyz')
+        for ts_final_geom in ts_final_geoms:
+            ts_final_geom = str(ts_final_geom)
+            prefix = ts_final_geom.split('/')[-2]
             ts_vib_dir = os.path.join(
                 self.facetpath, rxn_name, 'TS_estimate_unique_vib', prefix)
             os.makedirs(ts_vib_dir, exist_ok=True)
+
+            # copy *ts_final.xyz files to ts_vib_dir - for debug purposes
+            shutil.copy2(ts_final_geom, ts_vib_dir)
+            _, geom = os.path.split(ts_final_geom)
+
             py_fname = os.path.join(ts_vib_dir + '_' + rxn_name + '_ts_vib.py')
             self.create_ts_vib_py_files(
-                pytemplate, traj, py_fname, balsam_exe_settings,
+                pytemplate, geom, py_fname, balsam_exe_settings,
                 calc_keywords, creation_dir, pseudopotentials, pseudo_dir)
 
     def create_ts_vib_py_files(
             self,
             pytemplate,
-            traj,
+            geom,
             py_fname,
             balsam_exe_settings,
             calc_keywords,
@@ -68,7 +75,7 @@ class AfterTS():
             pytemplate = f.read()
         with open(py_fname, 'w') as f:
             f.write(pytemplate.format(
-                geom=traj,
+                geom=geom,
                 balsam_exe_settings=balsam_exe_settings,
                 calc_keywords=calc_keywords,
                 creation_dir=creation_dir,
