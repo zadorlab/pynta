@@ -26,6 +26,26 @@ class AfterTS():
         self.nslab = len(read(self.slab)*self.repeats)
         self.io = IO()
 
+    def set_up_ts_vib(
+            self,
+            rxn,
+            pytemplate):
+
+        rxn_name = self.io.get_rxn_name(rxn)
+        ts_estimate_unique_dir = os.path.join(
+            self.facetpath, rxn_name, 'TS_estimate_unique')
+        traj_files = Path(ts_estimate_unique_dir).glob('**/*traj')
+        for traj in traj_files:
+            traj = str(traj)
+            prefix = traj.split('/')[-2]
+
+            ts_vib_dir = os.path.join(
+                self.facetpath, rxn_name, 'TS_estimate_unique_vib', prefix)
+            os.makedirs(ts_vib_dir, exist_ok=True)
+
+            fname_vib = os.path.join(
+                ts_vib_dir, prefix + '_' + rxn_name + '_vib')
+
     def prepare_opt_after_ts(
             self,
             rxn,

@@ -9,8 +9,6 @@ from ase.io import read, write
 from ase.constraints import FixAtoms
 from ase.vibrations import Vibrations
 
-from sella import Sella
-
 from numpy import floor
 
 geom = '{geom}'
@@ -26,7 +24,6 @@ with open(geom + '_time.log', 'w+') as f:
     f.write(str(start))
     f.write("\n")
     f.close()
-
 
 # the first and nimages/2 are the same structures - no displacement.
 # for inmages = 16 it would be like this

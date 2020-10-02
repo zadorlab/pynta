@@ -7,21 +7,21 @@ from rmgcat_to_sella.vib import AfterTS
 
 from balsam.launcher.dag import BalsamJob, add_dependency
 
+facetpath = '{facetpath}'
 slab = '{slab}'
 repeats = {repeats}
 yamlfile = '{yamlfile}'
-facetpath = '{facetpath}'
 pytemplate = '{pytemplate}'
-pseudopotentials = {pseudopotentials}
 pseudo_dir = '{pseudo_dir}'
+pseudopotentials = {pseudopotentials}
 balsam_exe_settings = {balsam_exe_settings}
 calc_keywords = {calc_keywords}
 creation_dir = '{creation_dir}'
 rxn = {rxn}
 rxn_name = '{rxn_name}'
 cwd = Path.cwd().as_posix()
-path_to_after_ts = os.path.join(
-    facetpath, rxn_name, 'after_TS')
+path_to_ts_vib = os.path.join(
+    facetpath, rxn_name, 'TS_estimate_unique_vib')
 
 after_ts = AfterTS(facetpath, yamlfile, slab, repeats)
 after_ts.prepare_opt_after_ts(rxn, pytemplate, balsam_exe_settings,
@@ -36,7 +36,7 @@ pending_simulations = BalsamJob.objects.filter(
 ).exclude(state="JOB_FINISHED")
 
 
-for py_script in Path(path_to_after_ts).glob('*.py'):
+for py_script in Path(path_to_ts_vib).glob('*.py'):
     job_dir, script_name = os.path.split(str(py_script))
     job_to_add = BalsamJob(
         name=script_name,

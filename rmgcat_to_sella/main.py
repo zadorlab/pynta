@@ -63,13 +63,17 @@ template_set_up_ts_with_xtb = os.path.join(
     path_template + '02_template_set_up_ts_with_xtb.py')
 template_set_up_ts = os.path.join(
     path_template + '03_template_checksym_xtb_runTS.py')
+template_set_up_ts_vib = os.path.join(
+    path_template + '04_template_set_up_TS_vib.py')
 template_set_up_after_ts = os.path.join(
-    path_template + '04_template_set_up_after_ts.py')
+    path_template + '05_template_set_up_after_ts.py')
 pytemplate_relax_ads = os.path.join(
     path_pytemplate + 'pytemplate_relax_Cu_111_ads.py')
 pytemplate_xtb = os.path.join(path_pytemplate + 'pytemplate_set_up_xtb.py')
 pytemplate_set_up_ts = os.path.join(
     path_pytemplate + 'pytemplate_set_up_ts.py')
+pytemplate_set_up_ts_vib = os.path.join(
+    path_pytemplate + 'pytemplate_set_up_ts_vib.py')
 pytemplate_set_up_after_ts = os.path.join(
     path_pytemplate + 'pytemplate_set_up_opt_after_ts.py')
 slab_opt = '00_set_up_slab_opt.py'
@@ -82,30 +86,30 @@ SurfaceAdsorbate = '01_set_up_ads.py'
 
 class WorkFlow:
 
-    def __init__(self):
-        """Setup the balsam application for this workflow run.
+    # def __init__(self):
+    #     """Setup the balsam application for this workflow run.
 
-        Once we start using QE will want one app for QE,
-        one for xtb most likely
-        """
-        from balsam.core.models import ApplicationDefinition
-        self.myPython, _ = ApplicationDefinition.objects.get_or_create(
-            name="python",
-            executable=sys.executable
-        )
-        self.myPython.save()
-        self.slab_opt_job = ''
+    #     Once we start using QE will want one app for QE,
+    #     one for xtb most likely
+    #     """
+    #     from balsam.core.models import ApplicationDefinition
+    #     self.myPython, _ = ApplicationDefinition.objects.get_or_create(
+    #         name="python",
+    #         executable=sys.executable
+    #     )
+    #     self.myPython.save()
+    #     self.slab_opt_job = ''
 
-        # TODO: instead of directly importing EspressoBalsam, we should
-        # write a function which returns the appropriate class from
-        # balsamcalc.py based on the user-provided input file
-        from rmgcat_to_sella.balsamcalc import (
-            EspressoBalsam, EspressoBalsamSocketIO
-        )
-        EspressoBalsam.exe = executable
-        EspressoBalsamSocketIO.exe = executable
-        EspressoBalsam.create_application()
-        EspressoBalsamSocketIO.create_application()
+    #     # TODO: instead of directly importing EspressoBalsam, we should
+    #     # write a function which returns the appropriate class from
+    #     # balsamcalc.py based on the user-provided input file
+    #     from rmgcat_to_sella.balsamcalc import (
+    #         EspressoBalsam, EspressoBalsamSocketIO
+    #     )
+    #     EspressoBalsam.exe = executable
+    #     EspressoBalsamSocketIO.exe = executable
+    #     EspressoBalsam.create_application()
+    #     EspressoBalsamSocketIO.create_application()
 
     def get_ts_xtb_py_script_list(self):
         ''' Get a list with all 02 job scripts '''
@@ -127,18 +131,28 @@ class WorkFlow:
             ts_sella_py_script_list.append(fname)
         return ts_sella_py_script_list
 
-    def get_after_ts_py_scripts(self):
+    def get_ts_vib_list(self):
         ''' Get a list with all 04 job scripts '''
+        reactions = IO().open_yaml_file(yamlfile)
+        ts_vib_py_scripts_list = []
+        for rxn in reactions:
+            rxn_name = IO().get_rxn_name(rxn)
+            fname = '04_set_up_TS_vib_{}.py'.format(rxn_name)
+            ts_vib_py_scripts_list.append(fname)
+        return ts_vib_py_scripts_list
+
+    def get_after_ts_py_scripts(self):
+        ''' Get a list with all 05 job scripts '''
         reactions = IO().open_yaml_file(yamlfile)
         after_ts_py_scripts_list = []
         for rxn in reactions:
             rxn_name = IO().get_rxn_name(rxn)
-            fname = '04_set_up_after_TS_{}.py'.format(rxn_name)
+            fname = '05_set_up_after_TS_{}.py'.format(rxn_name)
             after_ts_py_scripts_list.append(fname)
         return after_ts_py_scripts_list
 
     def gen_job_files(self):
-        ''' Generate submt scripts for 6 stages of the workflow '''
+        ''' Generate submit scripts for 6 stages of the workflow '''
         self.set_up_slab(
             template_slab_opt,
             surface_type,
@@ -192,6 +206,21 @@ class WorkFlow:
                 repeats,
                 yamlfile,
                 pytemplate_set_up_ts,
+                pseudopotentials,
+                pseudo_dir,
+                balsam_exe_settings,
+                calc_keywords,
+                creation_dir
+            )
+
+            self.set_up_TS_vib(
+                rxn,
+                template_set_up_ts_vib,
+                facetpath,
+                slabopt,
+                repeats,
+                yamlfile,
+                pytemplate_set_up_ts_vib,
                 pseudopotentials,
                 pseudo_dir,
                 balsam_exe_settings,
@@ -444,6 +473,42 @@ class WorkFlow:
                     rxn_name=rxn_name
                 ))
 
+    def set_up_TS_vib(
+        self,
+        rxn,
+        template,
+        facetpath,
+        slab,
+        repeats,
+        yamlfile,
+        pytemplate,
+        pseudopotentials,
+        pseudo_dir,
+        balsam_exe_settings,
+        calc_keywords,
+        creation_dir
+    ):
+        ''' Create '04_set_up_TS_vib_{rxn_name}.py file '''
+        with open(template, 'r') as r:
+            template_text = r.read()
+            rxn_name = IO().get_rxn_name(rxn)
+            fname = '04_set_up_TS_vib_{}.py'.format(rxn_name)
+            with open(fname, 'w') as c:
+                c.write(template_text.format(
+                    facetpath=facetpath,
+                    slab=slab,
+                    repeats=repeats,
+                    yamlfile=yamlfile,
+                    pytemplate=pytemplate,
+                    pseudo_dir=pseudo_dir,
+                    pseudopotentials=pseudopotentials,
+                    balsam_exe_settings=balsam_exe_settings,
+                    calc_keywords=calc_keywords,
+                    creation_dir=creation_dir,
+                    rxn=rxn,
+                    rxn_name=rxn_name
+                ))
+
     def set_up_opt_after_TS(
         self,
         rxn,
@@ -459,11 +524,11 @@ class WorkFlow:
         calc_keywords,
         creation_dir
     ):
-        ''' Create 03_checksym_xtb_run_TS.py file '''
+        ''' Create '05_set_up_after_TS_{rxn_name}.py file '''
         with open(template, 'r') as r:
             template_text = r.read()
             rxn_name = IO().get_rxn_name(rxn)
-            fname = '04_set_up_after_TS_{}.py'.format(rxn_name)
+            fname = '05_set_up_after_TS_{}.py'.format(rxn_name)
             with open(fname, 'w') as c:
                 c.write(template_text.format(
                     facetpath=facetpath,
@@ -595,6 +660,12 @@ class WorkFlow:
         ts_sella_py_script_list = self.get_ts_estimate_unique_list()
         for ts_sella in ts_sella_py_script_list:
             self.exe(dependant_job, ts_sella)
+
+    def run_ts_vib(self, dependant_job):
+        ''' Run frequency calculations for TS '''
+        ts_vib_py_script_list = self.get_ts_vib_list()
+        for ts_vib in ts_vib_py_script_list:
+            self.exe(dependant_job, ts_vib)
 
     def run_opt_after_ts(self, dependant_job):
         ''' Run minimization of minima obtained as nudging TS structure
@@ -757,6 +828,8 @@ class WorkFlow:
                 self.run_ts_estimate('01')
         # search for the 1st order saddle point
         self.run_ts_with_sella('02')
+        # run frequencies calculations for all TSs
+        self.run_ts_vib('03')
         # for each distinct TS, nudge towards imaginary frequency and
         # optimize to minima
-        self.run_opt_after_ts('03')
+        self.run_opt_after_ts('04')
