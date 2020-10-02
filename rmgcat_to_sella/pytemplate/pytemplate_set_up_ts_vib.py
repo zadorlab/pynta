@@ -18,10 +18,11 @@ calc_keywords = {calc_keywords}
 creation_dir = '{creation_dir}'
 nimages = {nimages}
 n = {n}
+vib_files_loc = os.path.join(os.getcwd(), prefix, 'vib')
 
 start = datetime.datetime.now()
 
-with open(geom[:-4] + '_time.log', 'w+') as f:
+with open(os.path.join(prefix, geom[:-10] + '_time.log'), 'w+') as f:
     f.write(str(start))
     f.write("\n")
     f.close()
@@ -57,7 +58,7 @@ atoms.calc = EspressoBalsamSocketIO(
 atoms.calc.set(**extra_calc_keywords)
 
 # start vibrations calculations
-vib = Vibrations(atoms, indices=indices, name=prefix)
+vib = Vibrations(atoms, indices=indices, name=vib_files_loc)
 vib.run()
 vib.summary()
 # vib.clean()
@@ -66,7 +67,7 @@ vib.summary()
 vib.write_mode(n=n, nimages=nimages)
 
 # should be one traj file, though
-for traj in os.listdir(os.getcwd()):
+for traj in os.listdir(vib_files_loc):
     if traj.startswith('vib') and traj.endswith('traj'):
         # get forward displacement
         write('forward.xyz', read(traj, index=index_forward))
@@ -75,7 +76,7 @@ for traj in os.listdir(os.getcwd()):
 
 end = datetime.datetime.now()
 
-with open(geom + '_time.log', 'a+') as f:
+with open(os.path.join(prefix, geom[:-10] + '_time.log'), 'a+') as f:
     f.write(str(end))
     f.write("\n")
     f.write(str(end - start))

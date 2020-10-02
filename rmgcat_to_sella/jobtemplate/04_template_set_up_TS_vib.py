@@ -30,9 +30,14 @@ after_ts.set_up_ts_vib(rxn, pytemplate, balsam_exe_settings,
 
 workflow_name = facetpath + '_04_' + rxn_name
 dependency_workflow_name = facetpath + '_03_' + rxn_name
+dependent_workflow_name = facetpath + '_05_' + rxn_name
 
 pending_simulations = BalsamJob.objects.filter(
     workflow__contains=dependency_workflow_name
+).exclude(state="JOB_FINISHED")
+
+pending_simulations_dep = BalsamJob.objects.filter(
+    workflow__contains=dependent_workflow_name
 ).exclude(state="JOB_FINISHED")
 
 
@@ -49,6 +54,9 @@ for py_script in Path(path_to_ts_vib).glob('*.py'):
         ranks_per_node=1,
     )
     job_to_add.save()
-    # all job_to_add_ are childs of 02 job for a given reaction
+    # all job_to_add_ are childs of 03 job for a given reaction
     for job in pending_simulations:
         add_dependency(job, job_to_add)  # parent, child
+    # do not run 05 until all 04 for a given reaction are done
+    for job in pending_simulations_dep:
+        add_dependency(job_to_add, job)  # parent, child
