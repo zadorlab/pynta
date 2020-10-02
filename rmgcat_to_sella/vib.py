@@ -196,10 +196,12 @@ class AfterTS():
 
         vib_traj_path, _ = os.path.split(fname_forward)
 
-        traj_atom = read(traj)
-        traj_atom.calc = EMT()
+        traj_atoms = read(traj)
+        traj_atoms.calc = EMT()
+        # vibrate only adsorbates, not surface
+        indices = [atom.index for atom in traj_atoms if atom.symbol != 'Cu']
         name_vib_files = os.path.join(vib_traj_path, 'vib')
-        vib = Vibrations(traj_atom, name=name_vib_files)
+        vib = Vibrations(traj_atoms, indices=indices, name=name_vib_files)
         vib.run()
         vib.summary()
         vib.clean()
@@ -285,8 +287,8 @@ class AfterTS():
 
         for traj in sorted(traj_files):
             traj = str(traj)
-            traj_atom = read(traj)[self.nslab:]
-            dist = traj_atom.get_distance(0, 1)
+            traj_atoms = read(traj)[self.nslab:]
+            dist = traj_atoms.get_distance(0, 1)
             traj_fname = traj.split('/')[-1]
             ts_dist_dict[traj_fname] = dist
         return ts_dist_dict
