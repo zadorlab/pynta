@@ -1,7 +1,5 @@
 from rmgcat_to_sella.io import IO
 
-from ase.calculators.emt import EMT
-from ase.vibrations import Vibrations
 from ase.io import read, write
 
 from pathlib import Path
@@ -25,7 +23,7 @@ class AfterTS():
         self.yamlfile = yamlfile
         self.slab = slab
         self.repeats = repeats
-        self.nslab = len(read(self.slab)*self.repeats)
+        self.nslab = len(read(self.slab) * self.repeats)
         self.io = IO()
 
     def set_up_ts_vib(
@@ -158,31 +156,28 @@ class AfterTS():
 
             self.get_forward_and_reverse(
                 vib_traj, fname_forward, fname_reverse)
-            # self.create_after_ts_py_files(
-            #     pytemplate, fname_forward, fname_reverse, balsam_exe_settings,
-            #     calc_keywords, creation_dir, pseudopotentials, pseudo_dir)
+            self.create_after_ts_py_files(
+                pytemplate, fname_forward, fname_reverse, balsam_exe_settings,
+                calc_keywords, creation_dir, pseudopotentials, pseudo_dir)
 
     def get_forward_and_reverse(
             self,
             vib_traj,
             fname_forward,
             fname_reverse,
-            n=0,
             nimages=30):
         ''' Get forward and reverse .xyz file by nudging TS towards imaginary
         mode of oscilations summary
 
         Parameters
         ----------
-        traj : str
+        vib_traj : str
             a path to trajectory file with optimized TS
         fname_forward : str
             a path for forward calculations
         fname_reverse : str
             a path for reverse calculations
             [description]
-        n : int, optional
-            mode of oscilation 0 is the first (imaginary), by default 0
         nimages : int, optional
             how many strucutres to use to construct a trajectory visualizing
             oscilations, by default 30
