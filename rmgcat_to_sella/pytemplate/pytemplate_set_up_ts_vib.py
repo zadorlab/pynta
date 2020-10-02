@@ -57,10 +57,10 @@ atoms.calc = EspressoBalsamSocketIO(
 atoms.calc.set(**extra_calc_keywords)
 
 # start vibrations calculations
-vib = Vibrations(atoms, indices=indices)
+vib = Vibrations(atoms, indices=indices, name=prefix)
 vib.run()
 vib.summary()
-vib.clean()
+# vib.clean()
 
 # write the first vibration mode to vib.0.traj file (default) - imaginary freq
 vib.write_mode(n=n, nimages=nimages)
