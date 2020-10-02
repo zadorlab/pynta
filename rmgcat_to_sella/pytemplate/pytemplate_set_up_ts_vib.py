@@ -7,6 +7,7 @@ from rmgcat_to_sella.balsamcalc import EspressoBalsamSocketIO
 
 from ase.constraints import FixAtoms
 from ase.vibrations import Vibrations
+from ase.io import read
 
 geom = '{geom}'
 prefix = geom[:2]
