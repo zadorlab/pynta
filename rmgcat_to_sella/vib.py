@@ -39,21 +39,26 @@ class AfterTS():
             pseudo_dir):
 
         rxn_name = self.io.get_rxn_name(rxn)
+
         ts_estimate_unique_dir = os.path.join(
             self.facetpath, rxn_name, 'TS_estimate_unique')
+        ts_vib_dir = os.path.join(
+            self.facetpath, rxn_name, 'TS_estimate_unique_vib')
+
         ts_final_geoms = Path(ts_estimate_unique_dir).glob('**/*final.xyz')
+
         for ts_final_geom in ts_final_geoms:
             ts_final_geom = str(ts_final_geom)
             prefix = ts_final_geom.split('/')[-2]
-            ts_vib_dir = os.path.join(
-                self.facetpath, rxn_name, 'TS_estimate_unique_vib', prefix)
-            os.makedirs(ts_vib_dir, exist_ok=True)
+            ts_vib_dir_prefix = os.path.join(ts_vib_dir, prefix)
+            os.makedirs(ts_vib_dir_prefix, exist_ok=True)
 
-            # copy *ts_final.xyz files to ts_vib_dir - for debug purposes
-            shutil.copy2(ts_final_geom, ts_vib_dir)
+            # copy *ts_final.xyz files to ts_vib_dir_prefix - for debug
+            shutil.copy2(ts_final_geom, ts_vib_dir_prefix)
             _, geom = os.path.split(ts_final_geom)
 
-            py_fname = os.path.join(ts_vib_dir + '_' + rxn_name + '_ts_vib.py')
+            py_fname = ts_vib_dir_prefix + '_' + rxn_name + '_ts_vib.py'
+
             self.create_ts_vib_py_files(
                 pytemplate, geom, py_fname, balsam_exe_settings,
                 calc_keywords, creation_dir, pseudopotentials, pseudo_dir)
@@ -134,12 +139,13 @@ class AfterTS():
 
         '''
         rxn_name = self.io.get_rxn_name(rxn)
-        ts_estimate_unique_dir = os.path.join(
-            self.facetpath, rxn_name, 'TS_estimate_unique')
-        traj_files = Path(ts_estimate_unique_dir).glob('**/*traj')
-        for traj in traj_files:
-            traj = str(traj)
-            prefix = traj.split('/')[-2]
+        ts_vib_dir = os.path.join(
+            self.facetpath, rxn_name, 'TS_estimate_unique_vib')
+
+        vib_traj_files = Path(ts_vib_dir).glob('**/*traj')
+        for vib_traj in vib_traj_files:
+            vib_traj = str(vib_traj)
+            prefix = vib_traj.split('/')[-2]
 
             after_ts_dir = os.path.join(
                 self.facetpath, rxn_name, 'after_TS', prefix)
@@ -150,10 +156,60 @@ class AfterTS():
             fname_reverse = os.path.join(
                 after_ts_dir, prefix + '_' + rxn_name + '_after_ts_r')
 
-            self.get_forward_and_reverse(traj, fname_forward, fname_reverse)
-            self.create_after_ts_py_files(
-                pytemplate, fname_forward, fname_reverse, balsam_exe_settings,
-                calc_keywords, creation_dir, pseudopotentials, pseudo_dir)
+            self.get_forward_and_reverse(
+                vib_traj, fname_forward, fname_reverse)
+            # self.create_after_ts_py_files(
+            #     pytemplate, fname_forward, fname_reverse, balsam_exe_settings,
+            #     calc_keywords, creation_dir, pseudopotentials, pseudo_dir)
+
+    def get_forward_and_reverse(
+            self,
+            vib_traj,
+            fname_forward,
+            fname_reverse,
+            n=0,
+            nimages=30):
+        ''' Get forward and reverse .xyz file by nudging TS towards imaginary
+        mode of oscilations summary
+
+        Parameters
+        ----------
+        traj : str
+            a path to trajectory file with optimized TS
+        fname_forward : str
+            a path for forward calculations
+        fname_reverse : str
+            a path for reverse calculations
+            [description]
+        n : int, optional
+            mode of oscilation 0 is the first (imaginary), by default 0
+        nimages : int, optional
+            how many strucutres to use to construct a trajectory visualizing
+            oscilations, by default 30
+
+        Raises
+        ------
+        ValueError
+            raised if there are more than one *traj file visualizing vibrations
+
+        '''
+
+        # vib_.traj file contains nimages structures visualizing imaginary
+        # frequency mode. 0 and nimages/2 are the same structures - no
+        # displacement. Max and min displacement is defined as
+        # floor(nimages/4) and nimages - floor(nimages/4), respectively.
+        # for inmages = 16 it would be like this
+        # start...max...start...min...
+        index_forward = int(floor(nimages/4))
+        index_reverse = int(nimages - index_forward)
+
+        # get forward displacement
+        write(fname_forward + '.xyz', read(vib_traj, index=index_forward))
+        write(fname_forward + '.png', read(vib_traj, index=index_forward))
+
+        # get reverse displacement
+        write(fname_reverse + '.xyz', read(vib_traj, index=index_reverse))
+        write(fname_reverse + '.png', read(vib_traj, index=index_reverse))
 
     def create_after_ts_py_files(
             self,
@@ -218,68 +274,6 @@ class AfterTS():
                     pseudopotentials=pseudopotentials,
                     pseudo_dir=pseudo_dir
                 ))
-
-    def get_forward_and_reverse(
-            self,
-            traj,
-            fname_forward,
-            fname_reverse,
-            n=0,
-            nimages=30):
-        ''' Get forward and reverse .xyz file by nudging TS towards imaginary
-        mode of oscilations summary
-
-        Parameters
-        ----------
-        traj : str
-            a path to trajectory file with optimized TS
-        fname_forward : str
-            a path for forward calculations
-        fname_reverse : str
-            a path for reverse calculations
-            [description]
-        n : int, optional
-            mode of oscilation 0 is the first (imaginary), by default 0
-        nimages : int, optional
-            how many strucutres to use to construct a trajectory visualizing
-            oscilations, by default 30
-
-        Raises
-        ------
-        ValueError
-            raised if there are more than one *traj file visualizing vibrations
-
-        '''
-        index_forward = int(floor(nimages/4))
-        index_reverse = int(nimages - index_forward)
-
-        vib_traj_path, _ = os.path.split(fname_forward)
-
-        traj_atoms = read(traj)
-        traj_atoms.calc = EMT()
-        # vibrate only adsorbates, not surface
-        indices = [atom.index for atom in traj_atoms if atom.symbol != 'Cu']
-        name_vib_files = os.path.join(vib_traj_path, 'vib')
-        vib = Vibrations(traj_atoms, indices=indices, name=name_vib_files)
-        vib.run()
-        vib.summary()
-        vib.clean()
-        vib.write_mode(n=n, nimages=nimages)
-        traj_list = []
-        for vtraj in os.listdir(vib_traj_path):
-            if vtraj.endswith('traj'):
-                vib_traj = os.path.join(vib_traj_path, vtraj)
-                traj_list.append(vib_traj)
-        if len(traj_list) > 1:
-            print('!!!')
-            print('Only one vibrational trajectory is allowed.')
-            print('!!!')
-            raise ValueError
-
-        write(fname_forward + '.xyz', read(vib_traj, index=index_forward))
-        write(fname_forward + '.png', read(vib_traj, index=index_forward))
-        write(fname_reverse + '.xyz', read(vib_traj, index=index_reverse))
-        write(fname_reverse + '.png', read(vib_traj, index=index_reverse))
 
     def get_all_distances(self):
         ''' Get distances between reacting species for ts, forward and

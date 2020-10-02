@@ -5,11 +5,8 @@ import os
 import datetime
 from rmgcat_to_sella.balsamcalc import EspressoBalsamSocketIO
 
-from ase.io import read, write
 from ase.constraints import FixAtoms
 from ase.vibrations import Vibrations
-
-from numpy import floor
 
 geom = '{geom}'
 prefix = geom[:2]
@@ -26,14 +23,6 @@ with open(os.path.join(prefix, geom[:-10] + '_time.log'), 'w+') as f:
     f.write(str(start))
     f.write("\n")
     f.close()
-
-# the first and nimages/2 are the same structures - no displacement.
-# for inmages = 16 it would be like this
-# start...max...start...min...
-# floor(nimages/4) is a maximum in one direction (max displacement),
-# nimages - floor(nimages/4) is a minimum in the another one (min displacement)
-index_forward = int(floor(nimages/4))
-index_reverse = int(nimages - index_forward)
 
 atoms = read(os.path.join(prefix, geom))
 
@@ -65,14 +54,6 @@ vib.summary()
 
 # write the first vibration mode to vib.0.traj file (default) - imaginary freq
 vib.write_mode(n=n, nimages=nimages)
-
-# should be one traj file, though
-for traj in os.listdir(vib_files_loc):
-    if traj.startswith('vib') and traj.endswith('traj'):
-        # get forward displacement
-        write('forward.xyz', read(traj, index=index_forward))
-        # get reverse displacement
-        write('reverse.xyz', read(traj, index=index_reverse))
 
 end = datetime.datetime.now()
 
