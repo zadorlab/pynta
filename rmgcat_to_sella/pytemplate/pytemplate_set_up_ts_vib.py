@@ -17,10 +17,11 @@ creation_dir = '{creation_dir}'
 nimages = {nimages}
 n = {n}
 vib_files_loc = os.path.join(os.getcwd(), prefix, 'vib')
+geom_prefix = os.path.join(prefix, geom[:-10])
 
 start = datetime.datetime.now()
 
-with open(os.path.join(prefix, geom[:-10] + '_time.log'), 'w+') as f:
+with open(geom_prefix + '_time.log', 'w+') as f:
     f.write(str(start))
     f.write("\n")
     f.close()
