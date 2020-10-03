@@ -261,7 +261,65 @@ class WorkFlow:
             balsam_exe_settings,
             calc_keywords,
             creation_dir):
-        ''' Create 00_set_up_slab_opt.py file '''
+        ''' Create 00_set_up_slab_opt.py file
+
+        Parameters
+        ----------
+        template : py file
+            a template for 00 job (slab optimization)
+        surface_type : str
+            type of the surface. Available options are:
+            fcc111, fcc211, fcc100, bcc111, bcc110, hcp0001, diamond111,
+            diamond100
+        symbol : str
+            atomic symbol of the studied metal surface
+            e.g. 'Cu'
+        a : float
+            a lattice constant
+        repeats_surface : tuple
+            specify reapeats in (x, y, z) direction,
+            eg. (3, 3, 1)
+        vacuum : float
+            amount of vacuum in the z direction (Units: Angstrem)
+        slab_name : str
+            a user defined name of the slab
+        repeats_surface : tuple(int, int, int)
+            surface multiplication in (x, y, z) direction
+        vacuum : float
+            amout of empty space in z direction (Angstrem)
+        slab_name : str
+            name of the slab file (no extintion) that is about to be created
+            e.g.
+            slab_name = 'Cu_111_slab_opt'
+        pseudopotentials : dict{str:str}
+            a dictionary with QE pseudopotentials for all species.
+            e.g.
+            dict(Cu='Cu.pbe-spn-kjpaw_psl.1.0.0.UPF',
+                H='H.pbe-kjpaw_psl.1.0.0.UPF',
+                O='O.pbe-n-kjpaw_psl.1.0.0.UPF',
+                C='C.pbe-n-kjpaw_psl.1.0.0.UPF',
+                )
+        pseudo_dir : str
+            a path to the QE's pseudopotentials main directory
+            e.g.
+            '/home/mgierad/espresso/pseudo'
+        balsam_exe_settings : dict{str:int}
+            a dictionary with balsam execute parameters (cores, nodes, etc.),
+            e.g.
+            balsam_exe_settings = {'num_nodes': 1,
+                                   'ranks_per_node': 48,
+                                   'threads_per_rank': 1}
+        calc_keywords : dict{str:str}
+            a dictionary with parameters to run DFT package. Quantum Espresso
+            is used as default, e.g.
+
+            calc_keywords = {'kpts': (3, 3, 1), 'occupations': 'smearing',
+                            'smearing':  'marzari-vanderbilt',
+                            'degauss': 0.01, 'ecutwfc': 40, 'nosym': True,
+                            'conv_thr': 1e-11, 'mixing_mode': 'local-TF'}
+        creation_dir : posix
+            a posix path to the working directory
+        '''
         with open(template, 'r') as r:
             template_text = r.read()
             with open('00_set_up_slab_opt.py', 'w') as c:
