@@ -35,7 +35,44 @@ class AfterTS():
             creation_dir,
             pseudopotentials,
             pseudo_dir):
+        '''Set up files for TSs vibration calculations
 
+        Parameters
+        ----------
+        rxn : dict(yaml[str:str])
+            a dictionary with info about the paricular reaction. This can be
+            view as a splitted many reaction .yaml file to a single reaction
+            .yaml file
+        pytemplate : python script
+            a template for TS_vib calculations
+        balsam_exe_settings : dict{str:int}
+            a dictionary with balsam execute parameters (cores, nodes, etc.),
+            e.g.
+            balsam_exe_settings = {'num_nodes': 1,
+                                   'ranks_per_node': 48,
+                                   'threads_per_rank': 1}
+        calc_keywords : dict{str:str}
+            a dictionary with parameters to run DFT package. Quantum Espresso
+            is used as default, e.g.
+
+            calc_keywords = {'kpts': (3, 3, 1), 'occupations': 'smearing',
+                            'smearing':  'marzari-vanderbilt',
+                            'degauss': 0.01, 'ecutwfc': 40, 'nosym': True,
+                            'conv_thr': 1e-11, 'mixing_mode': 'local-TF'}
+        pseudopotentials : dict{str:str}
+            a dictionary with QE pseudopotentials for all species.
+            e.g.
+            dict(Cu='Cu.pbe-spn-kjpaw_psl.1.0.0.UPF',
+                H='H.pbe-kjpaw_psl.1.0.0.UPF',
+                O='O.pbe-n-kjpaw_psl.1.0.0.UPF',
+                C='C.pbe-n-kjpaw_psl.1.0.0.UPF',
+                )
+        pseudo_dir : str
+            a path to the QE's pseudopotentials main directory
+            e.g.
+            '/home/mgierad/espresso/pseudo'
+
+        '''
         rxn_name = self.io.get_rxn_name(rxn)
 
         ts_estimate_unique_dir = os.path.join(
@@ -73,7 +110,49 @@ class AfterTS():
             pseudo_dir,
             nimages=30,
             n=0):
+        ''' Create job submission .py files for frequency calculation of TSs
 
+        Parameters
+        ----------
+        pytemplate : python script
+            a template for TS_vib calculations
+        py_fname : str
+            path to the the .py (including the .py file name) file that is
+            about to be created
+        balsam_exe_settings : dict(str:int)
+            a dictionary with balsam execute parameters (cores, nodes, etc.),
+            e.g.
+            balsam_exe_settings = {'num_nodes': 1,
+                                'ranks_per_node': 48,
+                                'threads_per_rank': 1}
+        calc_keywords : dict(str:str)
+            a dictionary with parameters to run DFT package. Quantum Espresso
+            is used as default, e.g.
+
+            calc_keywords = {'kpts': (3, 3, 1), 'occupations': 'smearing',
+                            'smearing':  'marzari-vanderbilt',
+                            'degauss': 0.01, 'ecutwfc': 40, 'nosym': True,
+                            'conv_thr': 1e-11, 'mixing_mode': 'local-TF'}
+        pseudopotentials : dict(str:str)
+            a dictionary with QE pseudopotentials for all species.
+            e.g.
+            dict(Cu='Cu.pbe-spn-kjpaw_psl.1.0.0.UPF',
+                H='H.pbe-kjpaw_psl.1.0.0.UPF',
+                O='O.pbe-n-kjpaw_psl.1.0.0.UPF',
+                C='C.pbe-n-kjpaw_psl.1.0.0.UPF',
+                )
+        pseudo_dir : str
+            a path to the QE's pseudopotentials main directory
+            e.g.
+            '/home/mgierad/espresso/pseudo'
+        nimages : int, optional
+            how many strucutres to use to construct a trajectory visualizing
+            oscilations, by default 30
+        n : int, optional
+            mode of oscilation, i.e. which vibration to analyze.
+            0 is the first vibration, should be imaginary, by default 0
+
+        '''
         with open(pytemplate, 'r') as f:
             pytemplate = f.read()
         with open(py_fname, 'w') as f:
@@ -282,7 +361,11 @@ class AfterTS():
                 rxn_name)
             self.print_table(ts_dist_dict, f_dist_dict, r_dist_dict)
 
-    def print_table(self, ts_dist_dict, forward_dist_dict, reverse_dist_dict):
+    def print_table(
+            self,
+            ts_dist_dict,
+            forward_dist_dict,
+            reverse_dist_dict):
         ''' Print information about bond distances (reacting atoms) for TS,
         forward and reverse .xyz file
 
@@ -309,7 +392,9 @@ class AfterTS():
 
             print('{} \t {:2f} \t {:2f} \t {:2f}'.format(key, ts, f, r))
 
-    def get_ts_dist(self, rxn_name):
+    def get_ts_dist(
+            self,
+            rxn_name):
         ''' For given rxn_name get distances between reacting species
             in TS structure
 
@@ -341,7 +426,9 @@ class AfterTS():
             ts_dist_dict[traj_fname] = dist
         return ts_dist_dict
 
-    def get_forward_and_reverse_dist(self, rxn_name):
+    def get_forward_and_reverse_dist(
+            self,
+            rxn_name):
         ''' For given rxn_name get distances between reacting species in
             forward and reverse .xyz file
 
