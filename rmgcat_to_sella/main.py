@@ -780,55 +780,55 @@ class WorkFlow:
     def execute(self):
         ''' The main executable '''
 
-        # if optimize_slab:
-        #     # if slab found in previous calculation, do nothing
-        #     if self.check_if_slab_opt_exists()[0]:
-        #         pass
-        #         # self.copy_slab_opt_file()
-        #     else:
-        #         # If the code cannot locate optimized slab .xyz file,
-        #         # a slab optimization will be launched.
-        #         self.run_slab_optimization()
-        #     # check if species were already calculated
-        #     if all(self.check_all_species(yamlfile).values()):
-        #         # If all are True, start by generating TS guesses and run
-        #         # the penalty function minimization
-        #         self.run_ts_estimate_no_depend()
-        #     else:
-        #         # If any of sp_check_list is False
-        #         # run optimization of surface + reactants; surface + products
-        #         try:
-        #             self.run_opt_surf_and_adsorbate()
-        #         except NameError:
-        #             self.run_opt_surf_and_adsorbate_no_depend()
-        #         self.run_ts_estimate('01')
-        # else:
-        #     # this is executed if user provide .xyz with the optimized slab
-        #     # and explicitly define oiptimize_slab = False
-        #     if self.check_if_slab_opt_exists()[0]:
-        #         pass
-        #     else:
-        #         raise FileNotFoundError(
-        #             'It appears that there is no slab_opt.xyz file'
-        #         )
-        #     if all(self.check_all_species(yamlfile).values()):
-        #         # If all minima were calculated some time age rmgcat_to_sella
-        #         # will use that calculations. Start from 02 step
-        #         self.run_ts_estimate_no_depend()
-        #     else:
-        #         # run optimization of surface + reactants; surface + products
-        #         # May need to put a post process on surface adsorbate
-        #         # to call the next step
-        #         # wait until optimization of surface + reactants; surface
-        #         # + products finish and submit calculations to get TS guesses
-        #         try:
-        #             self.run_opt_surf_and_adsorbate()
-        #         except NameError:
-        #             self.run_opt_surf_and_adsorbate_no_depend()
-        #         self.run_ts_estimate('01')
-        # # search for the 1st order saddle point
-        # self.run_ts_with_sella('02')
-        # # run frequencies calculations for all TSs
+        if optimize_slab:
+            # if slab found in previous calculation, do nothing
+            if self.check_if_slab_opt_exists()[0]:
+                pass
+                # self.copy_slab_opt_file()
+            else:
+                # If the code cannot locate optimized slab .xyz file,
+                # a slab optimization will be launched.
+                self.run_slab_optimization()
+            # check if species were already calculated
+            if all(self.check_all_species(yamlfile).values()):
+                # If all are True, start by generating TS guesses and run
+                # the penalty function minimization
+                self.run_ts_estimate_no_depend()
+            else:
+                # If any of sp_check_list is False
+                # run optimization of surface + reactants; surface + products
+                try:
+                    self.run_opt_surf_and_adsorbate()
+                except NameError:
+                    self.run_opt_surf_and_adsorbate_no_depend()
+                self.run_ts_estimate('01')
+        else:
+            # this is executed if user provide .xyz with the optimized slab
+            # and explicitly define oiptimize_slab = False
+            if self.check_if_slab_opt_exists()[0]:
+                pass
+            else:
+                raise FileNotFoundError(
+                    'It appears that there is no slab_opt.xyz file'
+                )
+            if all(self.check_all_species(yamlfile).values()):
+                # If all minima were calculated some time age rmgcat_to_sella
+                # will use that calculations. Start from 02 step
+                self.run_ts_estimate_no_depend()
+            else:
+                # run optimization of surface + reactants; surface + products
+                # May need to put a post process on surface adsorbate
+                # to call the next step
+                # wait until optimization of surface + reactants; surface
+                # + products finish and submit calculations to get TS guesses
+                try:
+                    self.run_opt_surf_and_adsorbate()
+                except NameError:
+                    self.run_opt_surf_and_adsorbate_no_depend()
+                self.run_ts_estimate('01')
+        # search for the 1st order saddle point
+        self.run_ts_with_sella('02')
+        # run frequencies calculations for all TSs
         self.run_ts_vib('03')
         # for each distinct TS, nudge towards imaginary frequency and
         # optimize to minima
