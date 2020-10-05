@@ -12,7 +12,6 @@ slab = '{slab}'
 repeats = {repeats}
 yamlfile = '{yamlfile}'
 facetpath = '{facetpath}'
-rotAngle = {rotAngle}
 scfactor = {scfactor}
 scfactor_surface = {scfactor_surface}
 pytemplate_xtb = '{pytemplate_xtb}'
