@@ -163,14 +163,17 @@ class WorkFlow:
 
         '''
         # Create a dictinary to store six (00-05) main *py job files
-        job_files_dir = 'job_files'
-        os.makedirs(job_files_dir)
+        py_job_dir = 'job_files'
+        os.makedirs(py_job_dir)
 
         for facetpath, surface_type in zip(facetpaths, surface_types):
             slab_name = facetpath + '_slab_opt'
             slabopt = slab_name + '.xyz'
+
             self.set_up_slab(
                 template_slab_opt,
+                py_job_dir,
+                facetpath,
                 surface_type,
                 symbol,
                 a,
@@ -181,7 +184,7 @@ class WorkFlow:
                 pseudo_dir,
                 balsam_exe_settings,
                 calc_keywords,
-                creation_dir
+                creation_dir,
             )
             self.set_up_ads(
                 template_ads,
@@ -265,6 +268,8 @@ class WorkFlow:
     def set_up_slab(
             self,
             template,
+            py_job_dir,
+            facetpath,
             surface_type,
             symbol,
             a,
@@ -337,7 +342,9 @@ class WorkFlow:
         '''
         with open(template, 'r') as r:
             template_text = r.read()
-            with open('00_set_up_slab_opt.py', 'w') as c:
+            py_job_fname = os.path.join(
+                py_job_dir, '00_{}_set_up_slab_opt.py'.format(facetpath))
+            with open(py_job_fname, 'w') as c:
                 c.write(template_text.format(
                     surface_type=surface_type,
                     symbol=symbol, a=a,
