@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
+from rmgcat_to_sella.balsamcalc import EspressoBalsamSocketIO
+
 from ase.build import fcc111, fcc211, fcc100
 from ase.build import bcc111, bcc110, hcp0001
 from ase.build import diamond111, diamond100
+from ase.optimize import BFGSLineSearch
 from ase.io import write
 
 
@@ -91,38 +94,33 @@ class GetSlab:
 
     def opt_fcc111(self):
         ''' Optimize fcc111 slab '''
-        slab = fcc111(self.symbol, self.repeats_surface, self.a,
-                      self.vacuum)
+        slab = fcc111(self.symbol, self.repeats_surface, self.a, self.vacuum)
         self.prepare_slab_opt(slab)
 
     def opt_fcc211(self):
         ''' Optimize fcc211 slab '''
-        slab = fcc211(self.symbol, self.repeats_surface, self.a,
-                      self.vacuum)
+        slab = fcc211(self.symbol, self.repeats_surface, self.a, self.vacuum)
         self.prepare_slab_opt(slab)
 
     def opt_fcc100(self):
         ''' Optimize fcc100 slab '''
-        slab = fcc100(self.symbol, self.repeats_surface, self.a,
-                      self.vacuum)
+        slab = fcc100(self.symbol, self.repeats_surface, self.a, self.vacuum)
         self.prepare_slab_opt(slab)
 
     def opt_bcc111(self):
         ''' Optimize bcc111 slab '''
-        slab = bcc111(self.symbol, self.repeats_surface, self.a,
-                      self.vacuum)
+        slab = bcc111(self.symbol, self.repeats_surface, self.a, self.vacuum)
         self.prepare_slab_opt(slab)
 
     def opt_bcc110(self):
         ''' Optimize bcc110 slab '''
-        slab = bcc110(self.symbol, self.repeats_surface, self.a,
-                      self.vacuum)
+        slab = bcc110(self.symbol, self.repeats_surface, self.a, self.vacuum)
         self.prepare_slab_opt(slab)
 
     def opt_hcp0001(self, c=None):
         ''' Optimize hcp0001 slab '''
-        slab = hcp0001(self.symbol, self.repeats_surface, self.a,
-                       c, self.vacuum)
+        slab = hcp0001(self.symbol, self.repeats_surface, self.a, c,
+                       self.vacuum)
         self.prepare_slab_opt(slab)
 
     def opt_diamond111(self):
@@ -140,13 +138,9 @@ class GetSlab:
     def prepare_slab_opt(self, slab):
         ''' Prepare slab optimization with Quantum Espresso '''
 
-        from rmgcat_to_sella.balsamcalc import EspressoBalsamSocketIO
         job_kwargs = self.balsam_exe_settings.copy()
-        # job_kwargs.update([('user_workdir',cwd)])
         QE_keywords_slab = self.calc_keywords.copy()
-        # QE_keywords.update([('kpts',self.repeats_surface)])
-        # Not sure of intended behavior, but an example to show
-        # you can change keys as necessary here
+
         slab.calc = EspressoBalsamSocketIO(
             workflow='QE_Socket',
             job_kwargs=job_kwargs,
@@ -156,7 +150,6 @@ class GetSlab:
         )
         label = self.slab_name
 
-        from ase.optimize import BFGSLineSearch
         opt = BFGSLineSearch(atoms=slab, trajectory=label + '.traj')
         opt.run(fmax=0.01)
         slab.get_forces()

@@ -16,6 +16,21 @@ class IO():
     """ Class for handling Input/Output and transforming it to more usefull
         format for the rmgcat_to_sella """
 
+    def get_facetpaths(self, symbol, surface_types):
+        facetpaths = []
+        for stype in surface_types:
+            nums = []
+            for num in stype:
+                try:
+                    int(num)
+                except ValueError:
+                    continue
+                nums.append(num)
+            facet = ''.join(nums)
+            facetpath = symbol + '_' + facet
+            facetpaths.append(facetpath)
+        return facetpaths
+
     def open_yaml_file(self, yamlfile):
         ''' Open yaml file with list of reactions
 
