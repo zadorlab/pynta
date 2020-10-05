@@ -19,10 +19,9 @@ except ImportError:
     )
 
 else:
-    facetpath = inputR2S.facetpath
     optimize_slab = inputR2S.optimize_slab
     slab_name = inputR2S.slab_name
-    surface_type = inputR2S.surface_type
+    surface_types = inputR2S.surface_types
     symbol = inputR2S.symbol
     a = inputR2S.a
     vacuum = inputR2S.vacuum
@@ -42,6 +41,7 @@ else:
     balsam_exe_settings = inputR2S.balsam_exe_settings
     calc_keywords = inputR2S.calc_keywords
     creation_dir = inputR2S.creation_dir
+    facetpaths = IO().get_facetpaths(symbol, surface_types)
 
 ####################################################
 #                    Scripts                       #
@@ -86,30 +86,31 @@ SurfaceAdsorbate = '01_set_up_ads.py'
 
 class WorkFlow:
 
-    def __init__(self):
-        """Setup the balsam application for this workflow run.
+    # def __init__(self):
 
-        Once we start using QE will want one app for QE,
-        one for xtb most likely
-        """
-        from balsam.core.models import ApplicationDefinition
-        self.myPython, _ = ApplicationDefinition.objects.get_or_create(
-            name="python",
-            executable=sys.executable
-        )
-        self.myPython.save()
-        self.slab_opt_job = ''
+        #     """Setup the balsam application for this workflow run.
 
-        # TODO: instead of directly importing EspressoBalsam, we should
-        # write a function which returns the appropriate class from
-        # balsamcalc.py based on the user-provided input file
-        from rmgcat_to_sella.balsamcalc import (
-            EspressoBalsam, EspressoBalsamSocketIO
-        )
-        EspressoBalsam.exe = executable
-        EspressoBalsamSocketIO.exe = executable
-        EspressoBalsam.create_application()
-        EspressoBalsamSocketIO.create_application()
+        #     Once we start using QE will want one app for QE,
+        #     one for xtb most likely
+        #     """
+        #     from balsam.core.models import ApplicationDefinition
+        #     self.myPython, _ = ApplicationDefinition.objects.get_or_create(
+        #         name="python",
+        #         executable=sys.executable
+        #     )
+        #     self.myPython.save()
+        #     self.slab_opt_job = ''
+
+        #     # TODO: instead of directly importing EspressoBalsam, we should
+        #     # write a function which returns the appropriate class from
+        #     # balsamcalc.py based on the user-provided input file
+        #     from rmgcat_to_sella.balsamcalc import (
+        #         EspressoBalsam, EspressoBalsamSocketIO
+        #     )
+        #     EspressoBalsam.exe = executable
+        #     EspressoBalsamSocketIO.exe = executable
+        #     EspressoBalsam.create_application()
+        #     EspressoBalsamSocketIO.create_application()
 
     def get_ts_xtb_py_script_list(self):
         ''' Get a list with all 02 job scripts '''
