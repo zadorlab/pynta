@@ -46,8 +46,9 @@ opt = QuasiNewton(atoms=atoms, trajectory=geom_prefix + '.traj')
 opt.run(fmax=0.01)
 atoms.calc.close()
 
-png_write_file = os.path.join(geom_prefix + '_final.png')
-write(png_write_file, read(geom_prefix + '.traj'))
+write_file = os.path.join(geom_prefix + '_final')
+write(write_file + '.png', read(geom_prefix + '.traj'))
+write(write_file + '.xyz', read(geom_prefix + '.traj'))
 
 end = datetime.datetime.now()
 
