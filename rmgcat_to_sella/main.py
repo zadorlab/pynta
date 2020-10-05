@@ -20,18 +20,15 @@ except ImportError:
 
 else:
     optimize_slab = inputR2S.optimize_slab
-    slab_name = inputR2S.slab_name
     surface_types = inputR2S.surface_types
     symbol = inputR2S.symbol
     a = inputR2S.a
     vacuum = inputR2S.vacuum
     pseudo_dir = inputR2S.pseudo_dir
     pseudopotentials = inputR2S.pseudopotentials
-    slabopt = inputR2S.slabopt
     yamlfile = inputR2S.yamlfile
     repeats = inputR2S.repeats
     repeats_surface = inputR2S.repeats_surface
-    rotAngle = inputR2S.rotAngle
     scfactor = inputR2S.scfactor
     scfactor_surface = inputR2S.scfactor_surface
     scaled1 = inputR2S.scaled1
@@ -42,8 +39,8 @@ else:
     calc_keywords = inputR2S.calc_keywords
     creation_dir = inputR2S.creation_dir
     facetpaths = IO().get_facetpaths(symbol, surface_types)
-    slab_names = [facetpath + '_slab_opt' for facetpath in facetpaths]
-    slabopt = [slab_name + '.xyz' for slab_name in slab_names]
+    # slab_names = [facetpath + '_slab_opt' for facetpath in facetpaths]
+    # slabopt = [slab_name + '.xyz' for slab_name in slab_names]
 
 ####################################################
 #                    Scripts                       #
@@ -154,61 +151,39 @@ class WorkFlow:
             after_ts_py_scripts_list.append(fname)
         return after_ts_py_scripts_list
 
-    def gen_job_files(self):
-        ''' Generate submit scripts for 6 stages of the workflow '''
-        self.set_up_slab(
-            template_slab_opt,
-            surface_type,
-            symbol,
-            a,
-            repeats_surface,
-            vacuum,
-            slab_name,
-            pseudopotentials,
-            pseudo_dir,
-            balsam_exe_settings,
-            calc_keywords,
-            creation_dir
-        )
-        self.set_up_ads(
-            template_ads,
-            facetpath,
-            slabopt,
-            repeats,
-            yamlfile,
-            pytemplate_relax_ads,
-            pseudopotentials,
-            pseudo_dir,
-            balsam_exe_settings,
-            calc_keywords,
-            creation_dir
-        )
+    def create_job_files(self):
+        ''' For each surface type and for each reaction
+            generate submit scripts for 6 stages of the workflow
 
-        reactions = IO().open_yaml_file(yamlfile)
-        for rxn in reactions:
-            self.set_up_TS_with_xtb(
-                rxn,
-                template_set_up_ts_with_xtb,
-                slabopt,
-                repeats,
-                yamlfile,
-                facetpath,
-                rotAngle,
-                scfactor,
-                scfactor_surface,
-                pytemplate_xtb,
-                species_dict,
+        '''
+        # Create a dictinary to store six (00-05) main *py job files
+        job_files_dir = 'job_files'
+        os.makedirs(job_files_dir)
+
+        for facetpath, surface_type in zip(facetpaths, surface_types):
+            slab_name = facetpath + '_slab_opt'
+            slabopt = slab_name + '.xyz'
+            self.set_up_slab(
+                template_slab_opt,
+                surface_type,
+                symbol,
+                a,
+                repeats_surface,
+                vacuum,
+                slab_name,
+                pseudopotentials,
+                pseudo_dir,
+                balsam_exe_settings,
+                calc_keywords,
                 creation_dir
             )
-
-            self.set_up_run_TS(
-                rxn,
-                template_set_up_ts,
+            self.set_up_ads(
+                template_ads,
                 facetpath,
                 slabopt,
                 repeats,
                 yamlfile,
-                pytemplate_set_up_ts,
+                pytemplate_relax_ads,
                 pseudopotentials,
                 pseudo_dir,
                 balsam_exe_settings,
@@ -216,35 +191,66 @@ class WorkFlow:
                 creation_dir
             )
 
-            self.set_up_TS_vib(
-                rxn,
-                template_set_up_ts_vib,
-                facetpath,
-                slabopt,
-                repeats,
-                yamlfile,
-                pytemplate_set_up_ts_vib,
-                pseudopotentials,
-                pseudo_dir,
-                balsam_exe_settings,
-                calc_keywords,
-                creation_dir
-            )
+            reactions = IO().open_yaml_file(yamlfile)
+            for rxn in reactions:
+                self.set_up_TS_with_xtb(
+                    rxn,
+                    template_set_up_ts_with_xtb,
+                    slabopt,
+                    repeats,
+                    yamlfile,
+                    facetpath,
+                    scfactor,
+                    scfactor_surface,
+                    pytemplate_xtb,
+                    species_dict,
+                    creation_dir
+                )
 
-            self.set_up_opt_after_TS(
-                rxn,
-                template_set_up_after_ts,
-                facetpath,
-                slabopt,
-                repeats,
-                yamlfile,
-                pytemplate_set_up_after_ts,
-                pseudopotentials,
-                pseudo_dir,
-                balsam_exe_settings,
-                calc_keywords,
-                creation_dir
-            )
+                self.set_up_run_TS(
+                    rxn,
+                    template_set_up_ts,
+                    facetpath,
+                    slabopt,
+                    repeats,
+                    yamlfile,
+                    pytemplate_set_up_ts,
+                    pseudopotentials,
+                    pseudo_dir,
+                    balsam_exe_settings,
+                    calc_keywords,
+                    creation_dir
+                )
+
+                self.set_up_TS_vib(
+                    rxn,
+                    template_set_up_ts_vib,
+                    facetpath,
+                    slabopt,
+                    repeats,
+                    yamlfile,
+                    pytemplate_set_up_ts_vib,
+                    pseudopotentials,
+                    pseudo_dir,
+                    balsam_exe_settings,
+                    calc_keywords,
+                    creation_dir
+                )
+
+                self.set_up_opt_after_TS(
+                    rxn,
+                    template_set_up_after_ts,
+                    facetpath,
+                    slabopt,
+                    repeats,
+                    yamlfile,
+                    pytemplate_set_up_after_ts,
+                    pseudopotentials,
+                    pseudo_dir,
+                    balsam_exe_settings,
+                    calc_keywords,
+                    creation_dir
+                )
 
 ###########################
 #   Create submit files   #
@@ -423,7 +429,6 @@ class WorkFlow:
         repeats,
         yamlfile,
         facetpath,
-        rotAngle,
         scfactor,
         scfactor_surface,
         pytemplate_xtb,
@@ -452,9 +457,6 @@ class WorkFlow:
         facetpath : str
             a path to the workflow's main dir
             e.g. 'Cu_111'
-        rotAngle : float
-            an angle (deg) of rotation  of the TS guess adduct on the surface
-            e.g. 60.0 (to be removed - not really necessary)
         scfator : float
             a scaling factor to scale a bond distance between
             atoms taking part in the reaction
@@ -486,7 +488,6 @@ class WorkFlow:
                     slab=slab,
                     repeats=repeats,
                     yamlfile=yamlfile,
-                    rotAngle=rotAngle,
                     scfactor=scfactor,
                     scfactor_surface=scfactor_surface,
                     pytemplate_xtb=pytemplate_xtb,
