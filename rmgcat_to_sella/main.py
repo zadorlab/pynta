@@ -26,6 +26,7 @@ except ImportError:
 
 else:
     facetpath = inputR2S.facetpath
+    optimize_slab = inputR2S.optimize_slab
     slab_name = inputR2S.slab_name
     surface_type = inputR2S.surface_type
     symbol = inputR2S.symbol
@@ -43,19 +44,18 @@ else:
     scaled1 = inputR2S.scaled1
     scaled2 = inputR2S.scaled2
     species_dict = inputR2S.species_dict
-    slab_opt = inputR2S.slab_opt_script
-    SurfaceAdsorbate = inputR2S.SurfaceAdsorbateScript
-    TSxtb = inputR2S.TSxtbScript
-    TS = inputR2S.TSScript
-    IRC = inputR2S.IRCScript
-    IRCopt = inputR2S.IRCoptScript
     executable = inputR2S.executable
     balsam_exe_settings = inputR2S.balsam_exe_settings
     calc_keywords = inputR2S.calc_keywords
     creation_dir = inputR2S.creation_dir
 
-# These template and pytemplate scripts can be modified by users to tune
-# them to given calculation setup, i.e. calculator, method, queue menager,
+####################################################
+#                    Scripts                       #
+####################################################
+
+# These template and pytemplate scripts can be modified by users
+# (np intended, though) to tune them to given calculation setup,
+# i.e. calculator, method, queue system,
 # etc. The current version works for SLURM and Quantum Espresso.
 
 path = os.path.abspath(__file__)
@@ -69,27 +69,21 @@ template_set_up_ts_with_xtb = os.path.join(
     path_template + '02_template_set_up_ts_with_xtb.py')
 template_set_up_ts = os.path.join(
     path_template + '03_template_checksym_xtb_runTS.py')
-template_set_up_IRC = os.path.join(path_template + '04_template_set_up_irc.py')
-template_set_up_optIRC = os.path.join(
-    path_template + '05_template_set_up_opt_after_irc.py')
+template_set_up_ts_vib = os.path.join(
+    path_template + '04_template_set_up_TS_vib.py')
+template_set_up_after_ts = os.path.join(
+    path_template + '05_template_set_up_after_ts.py')
 pytemplate_relax_ads = os.path.join(
     path_pytemplate + 'pytemplate_relax_Cu_111_ads.py')
 pytemplate_xtb = os.path.join(path_pytemplate + 'pytemplate_set_up_xtb.py')
 pytemplate_set_up_ts = os.path.join(
     path_pytemplate + 'pytemplate_set_up_ts.py')
-pytemplate_f = os.path.join(path_pytemplate + 'pytemplate_set_up_irc_f.py')
-pytemplate_r = os.path.join(path_pytemplate + 'pytemplate_set_up_irc_r.py')
-pytemplate_optIRC = os.path.join(
-    path_pytemplate + 'pytemplate_set_up_opt_irc.py')
-
-slab_opt = inputR2S.slab_opt_script
-SurfaceAdsorbate = inputR2S.SurfaceAdsorbateScript
-TSxtb = inputR2S.TSxtbScript
-TS = inputR2S.TSScript
-IRC = inputR2S.IRCScript
-IRCopt = inputR2S.IRCoptScript
-##
-optimize_slab = inputR2S.optimize_slab
+pytemplate_set_up_ts_vib = os.path.join(
+    path_pytemplate + 'pytemplate_set_up_ts_vib.py')
+pytemplate_set_up_after_ts = os.path.join(
+    path_pytemplate + 'pytemplate_set_up_opt_after_ts.py')
+slab_opt = '00_set_up_slab_opt.py'
+SurfaceAdsorbate = '01_set_up_ads.py'
 
 ####################################################
 #                    Initialize                    #
@@ -143,28 +137,28 @@ class WorkFlow:
             ts_sella_py_script_list.append(fname)
         return ts_sella_py_script_list
 
-    def get_irc_jobs(self):
-        ''' Get a list with all 04 jobs, irc_f and irc_r '''
+    def get_ts_vib_list(self):
+        ''' Get a list with all 04 job scripts '''
         reactions = IO().open_yaml_file(yamlfile)
-        irc_py_script_list = []
+        ts_vib_py_scripts_list = []
         for rxn in reactions:
             rxn_name = IO().get_rxn_name(rxn)
-            fname = '04_set_up_irc_{}.py'.format(rxn_name)
-            irc_py_script_list.append(fname)
-        return irc_py_script_list
+            fname = '04_set_up_TS_vib_{}.py'.format(rxn_name)
+            ts_vib_py_scripts_list.append(fname)
+        return ts_vib_py_scripts_list
 
-    def get_irc_opt_scripts(self):
-        ''' Get a list with all 05 jobs, irc_f_opt and irc_r_opt '''
+    def get_after_ts_py_scripts(self):
+        ''' Get a list with all 05 job scripts '''
         reactions = IO().open_yaml_file(yamlfile)
-        irc_opt_py_list = []
+        after_ts_py_scripts_list = []
         for rxn in reactions:
             rxn_name = IO().get_rxn_name(rxn)
-            fname = '05_set_up_opt_after_irc_{}.py'.format(rxn_name)
-            irc_opt_py_list.append(fname)
-        return irc_opt_py_list
+            fname = '05_set_up_after_TS_{}.py'.format(rxn_name)
+            after_ts_py_scripts_list.append(fname)
+        return after_ts_py_scripts_list
 
     def gen_job_files(self):
-        ''' Generate submt scripts for 6 stages of the workflow '''
+        ''' Generate submit scripts for 6 stages of the workflow '''
         self.set_up_slab(
             template_slab_opt,
             surface_type,
@@ -225,15 +219,14 @@ class WorkFlow:
                 creation_dir
             )
 
-            self.set_up_run_IRC(
+            self.set_up_TS_vib(
                 rxn,
-                template_set_up_IRC,
+                template_set_up_ts_vib,
                 facetpath,
                 slabopt,
                 repeats,
-                pytemplate_f,
-                pytemplate_r,
                 yamlfile,
+                pytemplate_set_up_ts_vib,
                 pseudopotentials,
                 pseudo_dir,
                 balsam_exe_settings,
@@ -241,13 +234,14 @@ class WorkFlow:
                 creation_dir
             )
 
-            self.set_up_opt_IRC(
+            self.set_up_opt_after_TS(
                 rxn,
-                template_set_up_optIRC,
+                template_set_up_after_ts,
                 facetpath,
                 slabopt,
                 repeats,
-                pytemplate_optIRC,
+                yamlfile,
+                pytemplate_set_up_after_ts,
                 pseudopotentials,
                 pseudo_dir,
                 balsam_exe_settings,
@@ -273,7 +267,65 @@ class WorkFlow:
             balsam_exe_settings,
             calc_keywords,
             creation_dir):
-        ''' Create 00_set_up_slab_opt.py file '''
+        ''' Create 00_set_up_slab_opt.py file
+
+        Parameters
+        ----------
+        template : py file
+            a template for 00 job (slab optimization)
+        surface_type : str
+            type of the surface. Available options are:
+            fcc111, fcc211, fcc100, bcc111, bcc110, hcp0001, diamond111,
+            diamond100
+        symbol : str
+            atomic symbol of the studied metal surface
+            e.g. 'Cu'
+        a : float
+            a lattice constant
+        repeats_surface : tuple
+            specify reapeats in (x, y, z) direction,
+            eg. (3, 3, 1)
+        vacuum : float
+            amount of vacuum in the z direction (Units: Angstrem)
+        slab_name : str
+            a user defined name of the slab
+        repeats_surface : tuple(int, int, int)
+            surface multiplication in (x, y, z) direction
+        vacuum : float
+            amout of empty space in z direction (Angstrem)
+        slab_name : str
+            name of the slab file (no extintion) that is about to be created
+            e.g.
+            slab_name = 'Cu_111_slab_opt'
+        pseudopotentials : dict{str:str}
+            a dictionary with QE pseudopotentials for all species.
+            e.g.
+            dict(Cu='Cu.pbe-spn-kjpaw_psl.1.0.0.UPF',
+                H='H.pbe-kjpaw_psl.1.0.0.UPF',
+                O='O.pbe-n-kjpaw_psl.1.0.0.UPF',
+                C='C.pbe-n-kjpaw_psl.1.0.0.UPF',
+                )
+        pseudo_dir : str
+            a path to the QE's pseudopotentials main directory
+            e.g.
+            '/home/mgierad/espresso/pseudo'
+        balsam_exe_settings : dict{str:int}
+            a dictionary with balsam execute parameters (cores, nodes, etc.),
+            e.g.
+            balsam_exe_settings = {'num_nodes': 1,
+                                   'ranks_per_node': 48,
+                                   'threads_per_rank': 1}
+        calc_keywords : dict{str:str}
+            a dictionary with parameters to run DFT package. Quantum Espresso
+            is used as default, e.g.
+
+            calc_keywords = {'kpts': (3, 3, 1), 'occupations': 'smearing',
+                            'smearing':  'marzari-vanderbilt',
+                            'degauss': 0.01, 'ecutwfc': 40, 'nosym': True,
+                            'conv_thr': 1e-11, 'mixing_mode': 'local-TF'}
+        creation_dir : posix
+            a posix path to the working directory
+        '''
         with open(template, 'r') as r:
             template_text = r.read()
             with open('00_set_up_slab_opt.py', 'w') as c:
@@ -320,7 +372,7 @@ class WorkFlow:
         pytemplate : python file
             a template to prepare submission scripts
             for adsorbate+surface minimization
-        pseudopotentials : dict(str: str)
+        pseudopotentials : dict{str:str}
             a dictionary with QE pseudopotentials for all species.
             e.g.
             dict(Cu='Cu.pbe-spn-kjpaw_psl.1.0.0.UPF',
@@ -332,11 +384,20 @@ class WorkFlow:
             a path to the QE's pseudopotentials main directory
             e.g.
             '/home/mgierad/espresso/pseudo'
-        balsam_exe_settings : dict{'str':int}
-            a dictionary with balsam execute parameters (cores, nodes, etc.)
-        calc_keywords : dict{'str':'str'}
-            a dictionary with parameters to run DFT package. Quantume Espresso
-            is used as default
+        balsam_exe_settings : dict{str:int}
+            a dictionary with balsam execute parameters (cores, nodes, etc.),
+            e.g.
+            balsam_exe_settings = {'num_nodes': 1,
+                                   'ranks_per_node': 48,
+                                   'threads_per_rank': 1}
+        calc_keywords : dict{str:str}
+            a dictionary with parameters to run DFT package. Quantum Espresso
+            is used as default, e.g.
+
+            calc_keywords = {'kpts': (3, 3, 1), 'occupations': 'smearing',
+                            'smearing':  'marzari-vanderbilt',
+                            'degauss': 0.01, 'ecutwfc': 40, 'nosym': True,
+                            'conv_thr': 1e-11, 'mixing_mode': 'local-TF'}
         creation_dir : posix
             a posix path to the working directory
 
@@ -476,71 +537,33 @@ class WorkFlow:
                     rxn_name=rxn_name
                 ))
 
-    def set_up_run_IRC(
+    def set_up_TS_vib(
         self,
         rxn,
         template,
         facetpath,
         slab,
         repeats,
-        pytemplate_f,
-        pytemplate_r,
         yamlfile,
-        pseudopotentials,
-        pseudo_dir,
-        balsam_exe_setting,
-        calc_keywords,
-        creation_dir
-    ):
-        ''' Create 04_set_up_irc.py file '''
-        with open(template, 'r') as r:
-            template_text = r.read()
-            rxn_name = IO().get_rxn_name(rxn)
-            fname = '04_set_up_irc_{}.py'.format(rxn_name)
-            with open(fname, 'w') as c:
-                c.write(template_text.format(
-                    facetpath=facetpath,
-                    slab=slab,
-                    repeats=repeats,
-                    pytemplate_f=pytemplate_f,
-                    pytemplate_r=pytemplate_r,
-                    yamlfile=yamlfile,
-                    pseudo_dir=pseudo_dir,
-                    pseudopotentials=pseudopotentials,
-                    balsam_exe_settings=balsam_exe_settings,
-                    calc_keywords=calc_keywords, creation_dir=creation_dir,
-                    rxn=rxn,
-                    rxn_name=rxn_name
-                ))
-            c.close()
-        r.close()
-
-    def set_up_opt_IRC(
-        self,
-        rxn,
-        template,
-        facetpath,
-        slab,
-        repeats,
         pytemplate,
         pseudopotentials,
         pseudo_dir,
-        balsam_exe_setting,
+        balsam_exe_settings,
         calc_keywords,
         creation_dir
     ):
-        ''' Create 05_set_up_opt_after_irc.py file'''
+        ''' Create '04_set_up_TS_vib_{rxn_name}.py file '''
         with open(template, 'r') as r:
             template_text = r.read()
             rxn_name = IO().get_rxn_name(rxn)
-            fname = '05_set_up_opt_after_irc_{}.py'.format(rxn_name)
+            fname = '04_set_up_TS_vib_{}.py'.format(rxn_name)
             with open(fname, 'w') as c:
                 c.write(template_text.format(
                     facetpath=facetpath,
                     slab=slab,
                     repeats=repeats,
-                    pytemplate=pytemplate,
                     yamlfile=yamlfile,
+                    pytemplate=pytemplate,
                     pseudo_dir=pseudo_dir,
                     pseudopotentials=pseudopotentials,
                     balsam_exe_settings=balsam_exe_settings,
@@ -549,8 +572,42 @@ class WorkFlow:
                     rxn=rxn,
                     rxn_name=rxn_name
                 ))
-            c.close()
-        r.close()
+
+    def set_up_opt_after_TS(
+        self,
+        rxn,
+        template,
+        facetpath,
+        slab,
+        repeats,
+        yamlfile,
+        pytemplate,
+        pseudopotentials,
+        pseudo_dir,
+        balsam_exe_settings,
+        calc_keywords,
+        creation_dir
+    ):
+        ''' Create '05_set_up_after_TS_{rxn_name}.py file '''
+        with open(template, 'r') as r:
+            template_text = r.read()
+            rxn_name = IO().get_rxn_name(rxn)
+            fname = '05_set_up_after_TS_{}.py'.format(rxn_name)
+            with open(fname, 'w') as c:
+                c.write(template_text.format(
+                    facetpath=facetpath,
+                    slab=slab,
+                    repeats=repeats,
+                    yamlfile=yamlfile,
+                    pytemplate=pytemplate,
+                    pseudo_dir=pseudo_dir,
+                    pseudopotentials=pseudopotentials,
+                    balsam_exe_settings=balsam_exe_settings,
+                    calc_keywords=calc_keywords,
+                    creation_dir=creation_dir,
+                    rxn=rxn,
+                    rxn_name=rxn_name
+                ))
 
 ##############################
 # Submit jobs and execute it #
@@ -668,17 +725,18 @@ class WorkFlow:
         for ts_sella in ts_sella_py_script_list:
             self.exe(dependant_job, ts_sella)
 
-    def run_irc(self, dependant_job):
-        ''' Run IRC calculations '''
-        irc_py_script_list = self.get_irc_jobs()
-        for irc in irc_py_script_list:
-            self.exe(dependant_job, irc)
+    def run_ts_vib(self, dependant_job):
+        ''' Run frequency calculations for TS '''
+        ts_vib_py_script_list = self.get_ts_vib_list()
+        for ts_vib in ts_vib_py_script_list:
+            self.exe(dependant_job, ts_vib)
 
-    def run_irc_opt(self, dependant_job):
-        ''' Run minimization of IRC basins calculations '''
-        irc_opt_py_scripts = self.get_irc_opt_scripts()
-        for irc_opt in irc_opt_py_scripts:
-            self.exe(dependant_job, irc_opt)
+    def run_opt_after_ts(self, dependant_job):
+        ''' Run minimization of minima obtained as nudging TS structure
+        towards imaginary mode of oscilation'''
+        after_irc_py_scripts = self.get_after_ts_py_scripts()
+        for after_irc in after_irc_py_scripts:
+            self.exe(dependant_job, after_irc)
 
     def check_all_species(self, yamlfile):
         ''' Check all species (all reactions) to find whether
@@ -819,22 +877,23 @@ class WorkFlow:
                 )
             if all(self.check_all_species(yamlfile).values()):
                 # If all minima were calculated some time age rmgcat_to_sella
-                # will use that calculations. Start from TSxtb step
-                self.exe('', TSxtb)
+                # will use that calculations. Start from 02 step
+                self.run_ts_estimate_no_depend()
             else:
                 # run optimization of surface + reactants; surface + products
                 # May need to put a post process on surface adsorbate
                 # to call the next step
                 # wait until optimization of surface + reactants; surface
                 # + products finish and submit calculations to get TS guesses
-                self.exe('', SurfaceAdsorbate)
-                # wait until optimization of surface + reactants;
-                # surface + products finish and submit calculations
-                # to get TS guesses
-                self.exe('01', TSxtb)
+                try:
+                    self.run_opt_surf_and_adsorbate()
+                except NameError:
+                    self.run_opt_surf_and_adsorbate_no_depend()
+                self.run_ts_estimate('01')
         # search for the 1st order saddle point
         self.run_ts_with_sella('02')
-        # for each distinct TS, run IRC calculations
-        self.run_irc('03')
-        # run optimizataion of both IRC (forward, reverse) trajectory
-        self.run_irc_opt('04')
+        # run frequencies calculations for all TSs
+        self.run_ts_vib('03')
+        # for each distinct TS, nudge towards imaginary frequency and
+        # optimize to minima
+        self.run_opt_after_ts('04')

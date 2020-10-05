@@ -95,7 +95,7 @@ def restart(species, PathToSpecies, facetpath):
             application='python',
             args=py_script,
             ranks_per_node=1,
-            )
+        )
         job_to_add.save()
 
 

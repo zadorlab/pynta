@@ -126,7 +126,7 @@ class IO():
         Returns:
         _______
         rxn_name : str
-            The name of the reaction in the following format:
+            a name of the reaction in the following format:
             'OH_H+O'
         '''
         r_name_list, p_name_list, _ = self.prepare_react_list(rxn)

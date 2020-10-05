@@ -26,7 +26,8 @@ class GetSlab:
         __________
         surface_type : str
             type of the surface. Available options are:
-            fcc111, fcc211, fcc100
+            fcc111, fcc211, fcc100, bcc111, bcc110, hcp0001, diamond111,
+            diamond100
         symbol : str
             atomic symbol of the studied metal surface
             e.g. 'Cu'

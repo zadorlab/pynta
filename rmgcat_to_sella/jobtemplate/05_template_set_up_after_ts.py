@@ -3,7 +3,7 @@ import os
 
 from pathlib import Path
 
-from rmgcat_to_sella.irc import IRC
+from rmgcat_to_sella.vib import AfterTS
 
 from balsam.launcher.dag import BalsamJob, add_dependency
 
@@ -12,7 +12,6 @@ repeats = {repeats}
 yamlfile = '{yamlfile}'
 facetpath = '{facetpath}'
 pytemplate = '{pytemplate}'
-ts_estimate_dir = 'TS_estimate_unique'
 pseudopotentials = {pseudopotentials}
 pseudo_dir = '{pseudo_dir}'
 balsam_exe_settings = {balsam_exe_settings}
@@ -21,23 +20,13 @@ creation_dir = '{creation_dir}'
 rxn = {rxn}
 rxn_name = '{rxn_name}'
 cwd = Path.cwd().as_posix()
-path_to_irc_opt = os.path.join(facetpath, rxn_name, 'IRC')
+path_to_after_ts = os.path.join(
+    facetpath, rxn_name, 'after_TS')
 
-irc = IRC(
-    facetpath,
-    slab,
-    repeats,
-    ts_estimate_dir,
-    yamlfile,
-    pseudopotentials,
-    pseudo_dir,
-    balsam_exe_settings,
-    calc_keywords,
-    creation_dir)
-
-irc.opt_after_IRC(
-    rxn,
-    pytemplate)
+after_ts = AfterTS(facetpath, yamlfile, slab, repeats)
+after_ts.prepare_opt_after_ts(rxn, pytemplate, balsam_exe_settings,
+                              calc_keywords, creation_dir, pseudopotentials,
+                              pseudo_dir)
 
 workflow_name = facetpath + '_05_' + rxn_name
 dependency_workflow_name = facetpath + '_04_' + rxn_name
@@ -45,10 +34,14 @@ dependency_workflow_name = facetpath + '_04_' + rxn_name
 pending_simulations = BalsamJob.objects.filter(
     workflow__contains=dependency_workflow_name
 ).exclude(state="JOB_FINISHED")
+<<<<<<< HEAD:rmgcat_to_sella/jobtemplate/05_template_set_up_opt_after_irc.py
 
 cwd = Path.cwd().as_posix()
+=======
+>>>>>>> no_irc:rmgcat_to_sella/jobtemplate/05_template_set_up_after_ts.py
 
-for py_script in Path(path_to_irc_opt).glob('*_opt.py'):
+
+for py_script in Path(path_to_after_ts).glob('*.py'):
     job_dir, script_name = os.path.split(str(py_script))
     job_to_add = BalsamJob(
         name=script_name,
@@ -61,5 +54,6 @@ for py_script in Path(path_to_irc_opt).glob('*_opt.py'):
         ranks_per_node=1,
     )
     job_to_add.save()
+    # all job_to_add_ are childs of 02 job for a given reaction
     for job in pending_simulations:
         add_dependency(job, job_to_add)  # parent, child
