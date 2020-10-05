@@ -38,22 +38,22 @@ atoms.set_constraint(FixAtoms([
 ]))
 
 extra_calc_keywords = dict(
-        pseudopotentials={pseudopotentials},
-        pseudo_dir='{pseudo_dir}',
-        label=label
-        )
+    pseudopotentials={pseudopotentials},
+    pseudo_dir='{pseudo_dir}',
+    label=label
+)
 
 atoms.calc = EspressoBalsamSocketIO(
-        workflow='QE_Socket',
-        job_kwargs=balsam_exe_settings,
-        **calc_keywords
-        )
+    workflow='QE_Socket',
+    job_kwargs=balsam_exe_settings,
+    **calc_keywords
+)
 
 atoms.calc.set(**extra_calc_keywords)
 
 opt = QuasiNewton(atoms=atoms, trajectory=jobdir + '.traj')
 # opt = Sella(atoms, order=0, delta0=1e-2, trajectory=jobdir + '.traj')
-opt.run(fmax=0.01)
+opt.run(fmax=0.06)
 atoms.calc.close()
 
 pngWriteFile = os.path.join(jobdir + '_final.png')
