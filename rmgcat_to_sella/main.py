@@ -48,6 +48,8 @@ else:
     calc_keywords = inputR2S.calc_keywords
     creation_dir = inputR2S.creation_dir
     facetpaths = IO().get_facetpaths(symbol, surface_types)
+    slab_names = [facetpath + '_slab_opt' for facetpath in facetpaths]
+    slabopt = [slab_name + '.xyz' for slab_name in slab_names]
 
 ####################################################
 #                    Scripts                       #
@@ -83,7 +85,7 @@ pytemplate_set_up_ts_vib = os.path.join(
 pytemplate_set_up_after_ts = os.path.join(
     path_pytemplate + 'pytemplate_set_up_opt_after_ts.py')
 slab_opt = '00_set_up_slab_opt.py'
-SurfaceAdsorbate = '01_set_up_ads.py'
+ads_surf_opt_script = '01_set_up_ads.py'
 
 ####################################################
 #                    Initialize                    #
@@ -644,7 +646,7 @@ class WorkFlow:
 
         # get rxn_name from job_script by spliting and joining job_script name
         # exeption for two first jobs
-        if job_script in [SurfaceAdsorbate, slab_opt]:
+        if job_script in [ads_surf_opt_script, slab_opt]:
             rxn_name = ''
         else:
             rxn_name = '_'.join(job_script.split('_')[-2:])[:-3]
@@ -700,12 +702,12 @@ class WorkFlow:
 
     def run_opt_surf_and_adsorbate(self):
         ''' Run optmization of adsorbates on the surface '''
-        return self.exe(self.slab_opt_job, SurfaceAdsorbate)
+        return self.exe(self.slab_opt_job, ads_surf_opt_script)
 
     def run_opt_surf_and_adsorbate_no_depend(self):
         ''' Run optmization of adsorbates on the surface
             if there is no dependency on other jobs '''
-        return self.exe('', SurfaceAdsorbate)
+        return self.exe('', ads_surf_opt_script)
 
     def run_ts_estimate(self, dependent_job):
         ''' Run TS estimation calculations '''
