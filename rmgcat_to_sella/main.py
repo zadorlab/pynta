@@ -162,11 +162,11 @@ class WorkFlow:
             generate submit scripts for 6 stages of the workflow
 
         '''
-        # Create a dictinary to store six (00-05) main *py job files
-        py_job_dir = 'job_files'
-        os.makedirs(py_job_dir, exist_ok=True)
-
         for facetpath, surface_type in zip(facetpaths, surface_types):
+            # Create a dictinary to store six (00-05) main *py job files
+            py_job_dir = os.path.join('job_files', facetpath)
+            os.makedirs(py_job_dir, exist_ok=True)
+
             slab_name = facetpath + '_slab_opt'
             slab = slab_name + '.xyz'
 
@@ -206,6 +206,7 @@ class WorkFlow:
                 self.set_up_TS_with_xtb(
                     rxn,
                     template_set_up_ts_with_xtb,
+                    py_job_dir,
                     slab,
                     repeats,
                     yamlfile,
@@ -444,6 +445,7 @@ class WorkFlow:
         self,
         rxn,
         template,
+        py_job_dir,
         slab,
         repeats,
         yamlfile,
@@ -500,8 +502,11 @@ class WorkFlow:
             template_text = r.read()
             rxn_name = IO().get_rxn_name(rxn)
             rxn_no = rxn['index'] + 1
-            fname = '02_set_up_TS_with_xtb_{}.py'.format(rxn_name)
-            with open(fname, 'w') as c:
+
+            py_job_fname = os.path.join(
+                py_job_dir, '02_{}_set_up_TS_with_xtb_{}.py'.format(
+                    facetpath, rxn_name))
+            with open(py_job_fname, 'w') as c:
                 c.write(template_text.format(
                     facetpath=facetpath,
                     slab=slab,
