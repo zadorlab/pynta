@@ -27,8 +27,6 @@ put_adsorbates.create_relax_jobs(
 
 dependancy_dict = IO().depends_on(facetpath, yamlfile)
 
-cwd = Path.cwd().as_posix()
-
 # keep track of all submitted jobs (all unique)
 all_submitted_jobs = []
 
@@ -52,7 +50,8 @@ for rxn_name in dependancy_dict.keys():
     jobs_to_be_finished = dependancy_dict[rxn_name]
 
     for py_script in jobs_to_be_finished:
-        py_script_dir = os.path.join(cwd, facetpath, 'minima', py_script)
+        py_script_dir = os.path.join(
+            creation_dir, facetpath, 'minima', py_script)
         job_dir, _ = os.path.split(py_script_dir)
 
         # get all unique submission
