@@ -8,7 +8,7 @@ from rmgcat_to_sella.io import IO
 from balsam.launcher.dag import BalsamJob, add_dependency
 
 facetpath = '{facetpath}'
-slab = '{slabopt}'
+slab = '{slab}'
 repeats = {repeats}
 yamlfile = '{yamlfile}'
 pytemplate = '{pytemplate}'
