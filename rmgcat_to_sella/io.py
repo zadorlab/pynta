@@ -16,9 +16,6 @@ class IO():
     """ Class for handling Input/Output and transforming it to more usefull
         format for the rmgcat_to_sella """
 
-    def __init__(self):
-        self.creation_dir = os.path.dirname(os.path.dirname(os.getcwd()))
-
     def get_facetpaths(self, symbol, surface_types):
         facetpaths = []
         for stype in surface_types:
@@ -306,10 +303,21 @@ class IO():
                     species_path, traj[:-5] + '_final.xyz')
                 write(des_traj_path, read(src_traj_path))
 
-    def depends_on(self, facetpath, yamlfile):
+    def depends_on(self, facetpath, yamlfile, creation_dir):
         ''' Returns a dictionary of adsorbate + surface calculations
         (step 01; .py files) that has to be finished before starting step 02
         for a particular reaction
+
+        Parameters:
+        ___________
+
+        facetpath : str
+            a path to the workflow's main dir
+            e.g. 'Cu_111'
+        yamlfile : str
+            a name of the .yaml file with a reaction list
+        creation_dir : str
+            a path to the main working directory
 
         Returns:
         ________
@@ -321,8 +329,8 @@ class IO():
             e.g.
 
         '''
-        path_to_minima = os.path.join(self.creation_dir, facetpath, 'minima')
-        path_to_yamlfile = os.path.join(self.creation_dir, yamlfile)
+        path_to_minima = os.path.join(creation_dir, facetpath, 'minima')
+        path_to_yamlfile = os.path.join(creation_dir, yamlfile)
 
         # get reactions from. .yaml file
         reactions = self.open_yaml_file(path_to_yamlfile)

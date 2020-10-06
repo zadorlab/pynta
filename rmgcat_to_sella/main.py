@@ -439,7 +439,7 @@ class WorkFlow:
                             'degauss': 0.01, 'ecutwfc': 40, 'nosym': True,
                             'conv_thr': 1e-11, 'mixing_mode': 'local-TF'}
         creation_dir : posix
-            a posix path to the working directory
+            a posix path to the main working directory
 
         '''
         with open(template, 'r') as r:
