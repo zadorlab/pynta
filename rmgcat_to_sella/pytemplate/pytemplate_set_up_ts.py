@@ -10,6 +10,7 @@ from sella import Sella
 
 rxn_name = '{rxn_name}'
 prefix = '{prefix}'
+geom = '{ts_fname}'
 balsam_exe_settings = {balsam_exe_settings}
 calc_keywords = {calc_keywords}
 
@@ -22,7 +23,7 @@ with open(label + '_time.log', 'w+') as f:
     f.write("\n")
     f.close()
 
-ts_atom = read(os.path.join('{prefix}', '{ts_fname}'))
+ts_atom = read(os.path.join(prefix, geom))
 # fix all atoms but not adsorbates
 # ts_atom.set_constraint(FixAtoms([
 #     atom.index for atom in ts_atom if atom.index < len(ts_atom) - 2

@@ -17,13 +17,15 @@ class AfterTS():
             facetpath,
             yamlfile,
             slab,
-            repeats):
+            repeats,
+            creation_dir):
 
         self.facetpath = facetpath
         self.yamlfile = yamlfile
-        self.slab = slab
         self.repeats = repeats
-        self.nslab = len(read(self.slab) * self.repeats)
+        self.creation_dir = creation_dir
+        self.slab_atom_path = os.path.join(self.creation_dir, slab)
+        self.nslab = len(read(self.slab_atom_path) * self.repeats)
         self.io = IO()
 
     def set_up_ts_vib(
@@ -32,7 +34,6 @@ class AfterTS():
             pytemplate,
             balsam_exe_settings,
             calc_keywords,
-            creation_dir,
             pseudopotentials,
             pseudo_dir):
         '''Set up files for TSs vibration calculations
@@ -76,9 +77,15 @@ class AfterTS():
         rxn_name = self.io.get_rxn_name(rxn)
 
         ts_estimate_unique_dir = os.path.join(
-            self.facetpath, rxn_name, 'TS_estimate_unique')
+            self.creation_dir,
+            self.facetpath,
+            rxn_name,
+            'TS_estimate_unique')
         ts_vib_dir = os.path.join(
-            self.facetpath, rxn_name, 'TS_estimate_unique_vib')
+            self.creation_dir,
+            self.facetpath,
+            rxn_name,
+            'TS_estimate_unique_vib')
 
         ts_final_geoms = Path(ts_estimate_unique_dir).glob('**/*final.xyz')
 
@@ -95,8 +102,13 @@ class AfterTS():
             py_fname = ts_vib_dir_prefix + '_' + rxn_name + '_ts_vib.py'
 
             self.create_ts_vib_py_files(
-                pytemplate, geom, py_fname, balsam_exe_settings,
-                calc_keywords, creation_dir, pseudopotentials, pseudo_dir)
+                pytemplate,
+                geom,
+                py_fname,
+                balsam_exe_settings,
+                calc_keywords,
+                pseudopotentials,
+                pseudo_dir)
 
     def create_ts_vib_py_files(
             self,
@@ -105,7 +117,6 @@ class AfterTS():
             py_fname,
             balsam_exe_settings,
             calc_keywords,
-            creation_dir,
             pseudopotentials,
             pseudo_dir,
             nimages=30,
@@ -160,7 +171,7 @@ class AfterTS():
                 geom=geom,
                 balsam_exe_settings=balsam_exe_settings,
                 calc_keywords=calc_keywords,
-                creation_dir=creation_dir,
+                creation_dir=self.creation_dir,
                 pseudopotentials=pseudopotentials,
                 pseudo_dir=pseudo_dir,
                 nimages=nimages,
@@ -216,16 +227,21 @@ class AfterTS():
 
         '''
         rxn_name = self.io.get_rxn_name(rxn)
-        ts_vib_dir = os.path.join(
-            self.facetpath, rxn_name, 'TS_estimate_unique_vib')
+        ts_vib_dir = os.path.join(self.creation.dir,
+                                  self.facetpath,
+                                  rxn_name,
+                                  'TS_estimate_unique_vib')
 
         vib_traj_files = Path(ts_vib_dir).glob('**/*traj')
         for vib_traj in vib_traj_files:
             vib_traj = str(vib_traj)
             prefix = vib_traj.split('/')[-2]
 
-            after_ts_dir = os.path.join(
-                self.facetpath, rxn_name, 'after_TS', prefix)
+            after_ts_dir = os.path.join(self.creation_dir,
+                                        self.facetpath,
+                                        rxn_name,
+                                        'after_TS',
+                                        prefix)
             os.makedirs(after_ts_dir, exist_ok=True)
 
             fname_forward = os.path.join(
