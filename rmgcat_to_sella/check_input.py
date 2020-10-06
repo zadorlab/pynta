@@ -29,8 +29,11 @@ class InputChecker():
 
         '''
         # Get the path to the working directory
-        self.working_dir = os.path.dirname(os.path.dirname(os.getcwd()))
-        # Fix paths
+        # print(os.getcwd())
+        self.working_dir = os.getcwd()
+        # self.working_dir = os.path.dirname(os.path.dirname(os.getcwd()))
+        # print(self.working_dir)
+        # Specify paths to input files
         self.yamlfile = os.path.join(self.working_dir, yamlfile)
         self.inputR2S = os.path.join(self.working_dir, inputR2S)
         self.run_me_py = os.path.join(self.working_dir, run_me_py)

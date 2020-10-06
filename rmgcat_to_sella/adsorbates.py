@@ -47,7 +47,7 @@ class Adsorbates:
 
         '''
         self.facetpath = facetpath
-        self.slab = slab
+        self.slab = os.path.join(os.getcwd(), slab)
         self.repeats = repeats
         self.yamlfile = yamlfile
         self.creation_dir = creation_dir
@@ -77,7 +77,9 @@ class Adsorbates:
 
         '''
 
-        slab_atom = read(self.creation_dir + '/' + self.slab)
+        # read slab as an Atom object
+        slab_atom = read(self.slab)
+
         # If the Atoms object is periodic, we need to check connectivity
         # across the unit cell boundary as well.
         tvecs = np.array([[0., 0., 0.]])
@@ -307,7 +309,7 @@ class Adsorbates:
                 unique_bonds.append(bond)
 
         slabedges, tags = Adsorbates.get_edges(self, True)
-        slab_atom = read(self.creation_dir + '/' + self.slab)
+        slab_atom = read(self.slab)
         # slab transfromed to gratom object
         grslab = Gratoms(numbers=slab_atom.numbers,
                          positions=slab_atom.positions,

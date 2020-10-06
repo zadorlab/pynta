@@ -5,11 +5,11 @@ import shutil
 from pathlib import Path
 from warnings import warn
 from rmgcat_to_sella.io import IO
-from rmgcat_to_sella.check_input import InputChecker
+# from rmgcat_to_sella.check_input import InputChecker
 
 # check if all necessary input files are in your working directory
-InputChecker('reactions.yaml', 'inputR2S.py',
-             'run_me.py', 'run_me.sh').check_all()
+# InputChecker('reactions.yaml', 'inputR2S.py',
+#              'run_me.py', 'run_me.sh').check_all()
 
 try:
     import inputR2S
