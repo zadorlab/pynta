@@ -1,5 +1,6 @@
 import os
 import sys
+import __main__
 
 
 class InputChecker():
@@ -28,11 +29,14 @@ class InputChecker():
             the workflow execution script
 
         '''
-        # Get the path to the working directory
-        # print(os.getcwd())
-        self.working_dir = os.getcwd()
-        # self.working_dir = os.path.dirname(os.path.dirname(os.getcwd()))
-        # print(self.working_dir)
+        # Check the top-most calling .py fle and
+        # get the path to the working directory
+        calling_py = os.path.basename(__main__.__file__)
+        if calling_py != 'run_me.py':
+            self.working_dir = os.path.dirname(os.path.dirname(os.getcwd()))
+        else:
+            self.working_dir = os.getcwd()
+
         # Specify paths to input files
         self.yamlfile = os.path.join(self.working_dir, yamlfile)
         self.inputR2S = os.path.join(self.working_dir, inputR2S)

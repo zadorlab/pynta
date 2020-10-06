@@ -1,15 +1,26 @@
 #!/usr/bin/env python3
+from rmgcat_to_sella.check_input import InputChecker
 import os
 import sys
+import __main__
 import shutil
 from pathlib import Path
 from warnings import warn
 from rmgcat_to_sella.io import IO
-# from rmgcat_to_sella.check_input import InputChecker
+
+# check which file calls this module and adjust working_dir path accordingly
+calling_py = os.path.basename(__main__.__file__)
+if calling_py != 'run_me.py':
+    working_dir = os.path.dirname(os.path.dirname(os.getcwd()))
+else:
+    working_dir = os.getcwd()
 
 # check if all necessary input files are in your working directory
-# InputChecker('reactions.yaml', 'inputR2S.py',
-#              'run_me.py', 'run_me.sh').check_all()
+InputChecker('reactions.yaml', 'inputR2S.py',
+             'run_me.py', 'run_me.sh').check_all()
+
+# add working dir to system path
+sys.path.insert(1, working_dir)
 
 try:
     import inputR2S
