@@ -23,8 +23,7 @@ rxn = {rxn}
 rxn_name = '{rxn_name}'
 minima_dir = os.path.join(creation_dir, facetpath, 'minima')
 ts_dir = 'TS_estimate'
-cwd = Path.cwd().as_posix()
-path_to_ts_estimate = os.path.join(facetpath, rxn_name, ts_dir)
+path_to_ts_estimate = os.path.join(creation_dir, facetpath, rxn_name, ts_dir)
 
 ts = TS(
     facetpath,
@@ -67,7 +66,7 @@ for py_script in Path(path_to_ts_estimate).glob('**/*.py'):
         name=script_name,
         workflow=workflow_name,
         application='python',
-        args=cwd + '/' + str(py_script),
+        args=str(py_script),
         input_files='',
         ranks_per_node=1,
         node_packing_count=48,
