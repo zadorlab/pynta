@@ -14,7 +14,7 @@ class GetSlab:
             surface_type,
             symbol,
             a,
-            repeats_surface,
+            repeats,
             vacuum,
             slab_name,
             pseudopotentials,
@@ -29,14 +29,13 @@ class GetSlab:
         __________
         surface_type : str
             type of the surface. Available options are:
-            fcc111, fcc211, fcc100, bcc111, bcc110, hcp0001, diamond111,
-            diamond100
+            fcc111, fcc211, fcc100
         symbol : str
             atomic symbol of the studied metal surface
             e.g. 'Cu'
         a : float
             a lattice constant
-        repeats_surface : tuple
+        repeats : tuple
             specify reapeats in (x, y, z) direction,
             eg. (3, 3, 1)
         vacuum : float
@@ -59,7 +58,7 @@ class GetSlab:
         self.surface_type = surface_type
         self.symbol = symbol
         self.a = a
-        self.repeats_surface = repeats_surface
+        self.repeats = repeats
         self.vacuum = vacuum
         self.slab_name = slab_name
         self.pseudopotentials = pseudopotentials
@@ -71,26 +70,15 @@ class GetSlab:
     def run_slab_opt(self):
         ''' Run slab optimization '''
         if self.surface_type == 'fcc111':
-            self.opt_fcc111()
+            GetSlab.opt_fcc111(self)
         elif self.surface_type == 'fcc211':
-            self.opt_fcc211()
+            GetSlab.opt_fcc211(self)
         elif self.surface_type == 'fcc100':
-            self.opt_fcc100()
-        elif self.surface_type == 'bcc111':
-            self.opt_bcc111()
-        elif self.surface_type == 'bcc110':
-            self.opt_bcc110()
-        elif self.surface_type == 'hcp0001':
-            self.opt_hcp0001()
-        elif self.surface_type == 'diamond111':
-            self.opt_diamond111()
-        elif self.surface_type == 'diamond100':
-            self.opt_diamond100()
+            GetSlab.opt_fcc100(self)
         else:
             print('{} not implemented. Avaiable parameters are:'.format(
                 self.surface_type))
-            print('fcc111, fcc100, fcc211, bcc111, bcc110, hcp0001, '
-                  'diamond111, diamond100')
+            print('fcc111, fcc100, fcc211')
 
     def opt_fcc111(self):
         ''' Optimize fcc111 slab '''
@@ -139,7 +127,11 @@ class GetSlab:
         ''' Prepare slab optimization with Quantum Espresso '''
 
         job_kwargs = self.balsam_exe_settings.copy()
+        # job_kwargs.update([('user_workdir',cwd)])
         QE_keywords_slab = self.calc_keywords.copy()
+        # QE_keywords.update([('kpts',self.repeats_surface)])
+        # Not sure of intended behavior, but an example to show
+        # you can change keys as necessary here
 
         slab.calc = EspressoBalsamSocketIO(
             workflow='QE_Socket',
@@ -148,6 +140,7 @@ class GetSlab:
             pseudo_dir=self.pseudo_dir,
             **QE_keywords_slab
         )
+
         label = self.slab_name
 
         opt = BFGSLineSearch(atoms=slab, trajectory=label + '.traj')
