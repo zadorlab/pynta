@@ -164,11 +164,11 @@ class WorkFlow:
         '''
         # Create a dictinary to store six (00-05) main *py job files
         py_job_dir = 'job_files'
-        os.makedirs(py_job_dir)
+        os.makedirs(py_job_dir, exist_ok=True)
 
         for facetpath, surface_type in zip(facetpaths, surface_types):
             slab_name = facetpath + '_slab_opt'
-            slabopt = slab_name + '.xyz'
+            slab = slab_name + '.xyz'
 
             self.set_up_slab(
                 template_slab_opt,
@@ -188,8 +188,9 @@ class WorkFlow:
             )
             self.set_up_ads(
                 template_ads,
+                py_job_dir,
                 facetpath,
-                slabopt,
+                slab,
                 repeats,
                 yamlfile,
                 pytemplate_relax_ads,
@@ -205,7 +206,7 @@ class WorkFlow:
                 self.set_up_TS_with_xtb(
                     rxn,
                     template_set_up_ts_with_xtb,
-                    slabopt,
+                    slab,
                     repeats,
                     yamlfile,
                     facetpath,
@@ -220,7 +221,7 @@ class WorkFlow:
                     rxn,
                     template_set_up_ts,
                     facetpath,
-                    slabopt,
+                    slab,
                     repeats,
                     yamlfile,
                     pytemplate_set_up_ts,
@@ -235,7 +236,7 @@ class WorkFlow:
                     rxn,
                     template_set_up_ts_vib,
                     facetpath,
-                    slabopt,
+                    slab,
                     repeats,
                     yamlfile,
                     pytemplate_set_up_ts_vib,
@@ -250,7 +251,7 @@ class WorkFlow:
                     rxn,
                     template_set_up_after_ts,
                     facetpath,
-                    slabopt,
+                    slab,
                     repeats,
                     yamlfile,
                     pytemplate_set_up_after_ts,
@@ -359,8 +360,9 @@ class WorkFlow:
     def set_up_ads(
         self,
         template,
+        py_job_dir,
         facetpath,
-        slabopt,
+        slab,
         repeats,
         yamlfile,
         pytemplate,
@@ -379,7 +381,7 @@ class WorkFlow:
         facetpath : str
             a path to the workflow's main dir
             e.g. 'Cu_111'
-        slabopt : str
+        slab : str
             a path to .xyz file with optimized slab
         repeats : tuple(int, int, int)
             how to replicate unit cell in (x, y, z) direction
@@ -420,10 +422,14 @@ class WorkFlow:
         '''
         with open(template, 'r') as r:
             template_text = r.read()
-            with open('01_set_up_ads.py', 'w') as c:
+            py_job_fname = os.path.join(
+                py_job_dir, '01_{}_set_up_ads_on_slab.py'.format(facetpath))
+            with open(py_job_fname, 'w') as c:
                 c.write(template_text.format(
-                    facetpath=facetpath, slabopt=slabopt,
-                    yamlfile=yamlfile, repeats=repeats,
+                    facetpath=facetpath,
+                    slab=slab,
+                    yamlfile=yamlfile,
+                    repeats=repeats,
                     pytemplate=pytemplate,
                     pseudopotentials=pseudopotentials,
                     pseudo_dir=pseudo_dir,
