@@ -16,6 +16,9 @@ class IO():
     """ Class for handling Input/Output and transforming it to more usefull
         format for the rmgcat_to_sella """
 
+    def __init__(self):
+        self.creation_dir = os.path.dirname(os.path.dirname(os.getcwd()))
+
     def get_facetpaths(self, symbol, surface_types):
         facetpaths = []
         for stype in surface_types:
@@ -318,10 +321,11 @@ class IO():
             e.g.
 
         '''
-        path_to_minima = os.path.join(facetpath, 'minima')
+        path_to_minima = os.path.join(self.creation_dir, facetpath, 'minima')
+        path_to_yamlfile = os.path.join(self.creation_dir, yamlfile)
 
         # get reactions from. .yaml file
-        reactions = self.open_yaml_file(yamlfile)
+        reactions = self.open_yaml_file(path_to_yamlfile)
 
         dependancy_dict = {}
 
