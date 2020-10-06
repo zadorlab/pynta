@@ -167,6 +167,7 @@ class WorkFlow:
             py_job_dir = os.path.join('job_files', facetpath)
             os.makedirs(py_job_dir, exist_ok=True)
 
+            # naming convetion for the slab file
             slab_name = facetpath + '_slab_opt'
             slab = slab_name + '.xyz'
 
@@ -221,6 +222,7 @@ class WorkFlow:
                 self.set_up_run_TS(
                     rxn,
                     template_set_up_ts,
+                    py_job_dir,
                     facetpath,
                     slab,
                     repeats,
@@ -236,6 +238,7 @@ class WorkFlow:
                 self.set_up_TS_vib(
                     rxn,
                     template_set_up_ts_vib,
+                    py_job_dir,
                     facetpath,
                     slab,
                     repeats,
@@ -251,6 +254,7 @@ class WorkFlow:
                 self.set_up_opt_after_TS(
                     rxn,
                     template_set_up_after_ts,
+                    py_job_dir,
                     facetpath,
                     slab,
                     repeats,
@@ -425,6 +429,7 @@ class WorkFlow:
             template_text = r.read()
             py_job_fname = os.path.join(
                 py_job_dir, '01_{}_set_up_ads_on_slab.py'.format(facetpath))
+
             with open(py_job_fname, 'w') as c:
                 c.write(template_text.format(
                     facetpath=facetpath,
@@ -506,6 +511,7 @@ class WorkFlow:
             py_job_fname = os.path.join(
                 py_job_dir, '02_{}_set_up_TS_with_xtb_{}.py'.format(
                     facetpath, rxn_name))
+
             with open(py_job_fname, 'w') as c:
                 c.write(template_text.format(
                     facetpath=facetpath,
@@ -527,6 +533,7 @@ class WorkFlow:
         self,
         rxn,
         template,
+        py_job_dir,
         facetpath,
         slab,
         repeats,
@@ -542,8 +549,11 @@ class WorkFlow:
         with open(template, 'r') as r:
             template_text = r.read()
             rxn_name = IO().get_rxn_name(rxn)
-            fname = '03_checksym_xtb_run_TS_{}.py'.format(rxn_name)
-            with open(fname, 'w') as c:
+            py_job_fname = os.path.join(
+                py_job_dir, '03_{}_run_TS_{}.py'.format(
+                    facetpath, rxn_name))
+
+            with open(py_job_fname, 'w') as c:
                 c.write(template_text.format(
                     facetpath=facetpath,
                     slab=slab,
@@ -563,6 +573,7 @@ class WorkFlow:
         self,
         rxn,
         template,
+        py_job_dir,
         facetpath,
         slab,
         repeats,
@@ -578,8 +589,11 @@ class WorkFlow:
         with open(template, 'r') as r:
             template_text = r.read()
             rxn_name = IO().get_rxn_name(rxn)
-            fname = '04_set_up_TS_vib_{}.py'.format(rxn_name)
-            with open(fname, 'w') as c:
+            py_job_fname = os.path.join(
+                py_job_dir, '04_{}_set_up_TS_vib_{}.py'.format(
+                    facetpath, rxn_name))
+
+            with open(py_job_fname, 'w') as c:
                 c.write(template_text.format(
                     facetpath=facetpath,
                     slab=slab,
@@ -599,6 +613,7 @@ class WorkFlow:
         self,
         rxn,
         template,
+        py_job_dir,
         facetpath,
         slab,
         repeats,
@@ -614,8 +629,11 @@ class WorkFlow:
         with open(template, 'r') as r:
             template_text = r.read()
             rxn_name = IO().get_rxn_name(rxn)
-            fname = '05_set_up_after_TS_{}.py'.format(rxn_name)
-            with open(fname, 'w') as c:
+            py_job_fname = os.path.join(
+                py_job_dir, '05_{}_set_up_TS_vib_{}.py'.format(
+                    facetpath, rxn_name))
+
+            with open(py_job_fname, 'w') as c:
                 c.write(template_text.format(
                     facetpath=facetpath,
                     slab=slab,
