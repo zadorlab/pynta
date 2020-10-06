@@ -21,9 +21,11 @@ calc_keywords = {calc_keywords}
 creation_dir = '{creation_dir}'
 rxn = {rxn}
 rxn_name = '{rxn_name}'
-cwd = Path.cwd().as_posix()
-path_to_ts_estimate_uq = os.path.join(
-    facetpath, rxn_name, 'TS_estimate_unique')
+
+ts_estimate_path = os.path.join(
+    creation_dir, facetpath, rxn_name, ts_estimate_dir)
+ts_estimate_path_uq = os.path.join(
+    creation_dir, facetpath, rxn_name, ts_estimate_dir + '_unique')
 
 ts = TS(
     facetpath,
@@ -34,7 +36,7 @@ ts = TS(
     creation_dir)
 
 ts.create_unique_ts_all(
-    rxn,
+    ts_estimate_path,
     pytemplate,
     pseudopotentials,
     pseudo_dir,
@@ -54,13 +56,13 @@ pending_simulations_dep = BalsamJob.objects.filter(
 ).exclude(state="JOB_FINISHED")
 
 
-for py_script in Path(path_to_ts_estimate_uq).glob('*.py'):
+for py_script in Path(ts_estimate_path_uq).glob('*.py'):
     job_dir, script_name = os.path.split(str(py_script))
     job_to_add = BalsamJob(
         name=script_name,
         workflow=workflow_name,
         application='python',
-        args=cwd + '/' + str(py_script),
+        args=str(py_script),
         input_files='',
         user_workdir=job_dir,
         node_packing_count=48,

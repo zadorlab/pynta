@@ -618,7 +618,7 @@ class TS():
 
     def create_unique_ts_all(
             self,
-            rxn,
+            ts_estimate_path,
             pytemplate,
             pseudopotentials,
             pseudo_dir,
@@ -649,10 +649,6 @@ class TS():
             a dictionary with keywords to Quantum Espresso calculations
 
         '''
-
-        rxn_name = self.io.get_rxn_name(rxn)
-        ts_estimate_path = os.path.join(self.facetpath, rxn_name,
-                                        self.ts_estimate_dir)
         # create .xyz and .png files
         self.create_unique_ts_xyz_and_png(ts_estimate_path)
         # create job files (.py scripts)
