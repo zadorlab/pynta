@@ -18,7 +18,9 @@ geom = '{geom}'
 bonds = {bonds}
 av_dists_tuple = {av_dists_tuple}
 traj_path = '{traj_path}'
-slab = '../../../../{slabopt}'
+creation_dir = '{creation_dir}'
+# slab = '../../../../{slabopt}'
+slab = os.path.join(creation_dir, '{slabopt}')
 repeats = {repeats}
 prefix = '{prefix}'
 

@@ -428,8 +428,10 @@ class TS():
 
                 # create job_file
                 with open(fname, 'w') as f:
-                    f.write(pytemplate.format(geom=xyz_file, bonds=bonds,
+                    f.write(pytemplate.format(geom=xyz_file,
+                                              bonds=bonds,
                                               av_dists_tuple=av_dists_tuple,
+                                              creation_dir=self.creation_dir,
                                               traj_path=traj_path,
                                               repeats=self.repeats,
                                               prefix=prefix,
