@@ -129,7 +129,7 @@ class GetSlab:
         job_kwargs = self.balsam_exe_settings.copy()
         # job_kwargs.update([('user_workdir',cwd)])
         QE_keywords_slab = self.calc_keywords.copy()
-        # QE_keywords.update([('kpts',self.repeats_surface)])
+        # QE_keywords.update([('kpts',self.repeats)])
         # Not sure of intended behavior, but an example to show
         # you can change keys as necessary here
 
