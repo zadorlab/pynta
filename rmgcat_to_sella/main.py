@@ -67,7 +67,7 @@ template_set_up_ts_vib = os.path.join(
 template_set_up_after_ts = os.path.join(
     path_template + '05_template_set_up_after_ts.py')
 pytemplate_relax_ads = os.path.join(
-    path_pytemplate + 'pytemplate_relax_Cu_111_ads.py')
+    path_pytemplate + 'pytemplate_set_up_ads_on_slab.py')
 pytemplate_xtb = os.path.join(path_pytemplate + 'pytemplate_set_up_xtb.py')
 pytemplate_set_up_ts = os.path.join(
     path_pytemplate + 'pytemplate_set_up_ts.py')
