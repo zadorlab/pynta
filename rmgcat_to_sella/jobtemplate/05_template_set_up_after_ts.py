@@ -34,12 +34,6 @@ dependency_workflow_name = facetpath + '_04_' + rxn_name
 pending_simulations = BalsamJob.objects.filter(
     workflow__contains=dependency_workflow_name
 ).exclude(state="JOB_FINISHED")
-<<<<<<< HEAD:rmgcat_to_sella/jobtemplate/05_template_set_up_opt_after_irc.py
-
-cwd = Path.cwd().as_posix()
-=======
->>>>>>> no_irc:rmgcat_to_sella/jobtemplate/05_template_set_up_after_ts.py
-
 
 for py_script in Path(path_to_after_ts).glob('*.py'):
     job_dir, script_name = os.path.split(str(py_script))
