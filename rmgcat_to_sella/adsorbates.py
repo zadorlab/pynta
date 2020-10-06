@@ -47,7 +47,8 @@ class Adsorbates:
 
         '''
         self.facetpath = facetpath
-        self.slab = os.path.join(os.getcwd(), slab)
+        # self.slab = os.path.join(os.getcwd(), slab)
+        self.slab = slab
         self.repeats = repeats
         self.yamlfile = yamlfile
         self.creation_dir = creation_dir
@@ -78,7 +79,8 @@ class Adsorbates:
         '''
 
         # read slab as an Atom object
-        slab_atom = read(self.slab)
+        # slab_atom = read(self.slab)
+        slab_atom = read(os.path.join(self.creation_dir, self.slab))
 
         # If the Atoms object is periodic, we need to check connectivity
         # across the unit cell boundary as well.
@@ -280,7 +282,6 @@ class Adsorbates:
 
     def adjacency_to_3d(self):
         ''' Place adsorbates on the surface '''
-        os.makedirs(self.facetpath, exist_ok=True)
         with open(self.creation_dir + '/' + self.yamlfile, 'r') as f:
             text = f.read()
         reactions = yaml.safe_load(text)
@@ -309,7 +310,8 @@ class Adsorbates:
                 unique_bonds.append(bond)
 
         slabedges, tags = Adsorbates.get_edges(self, True)
-        slab_atom = read(self.slab)
+        # slab_atom = read(self.slab)
+        slab_atom = read(os.path.join(self.creation_dir, self.slab))
         # slab transfromed to gratom object
         grslab = Gratoms(numbers=slab_atom.numbers,
                          positions=slab_atom.positions,
@@ -359,8 +361,8 @@ class Adsorbates:
         nslab = len(slab_atom)
 
         for species_name, adsorbate in structures.items():
-            # savedir = f'./{slabname}/minima/{species_name}'
-            savedir = os.path.join(self.facetpath, 'minima', species_name)
+            savedir = os.path.join(
+                self.creation_dir, self.facetpath, 'minima', species_name)
             os.makedirs(savedir, exist_ok=True)
             for j, structure in enumerate(adsorbate):
                 big_slab_ads = big_slab + structure[nslab:]
@@ -401,10 +403,7 @@ class Adsorbates:
             optional
 
         '''
-        minimapath = os.path.join(self.facetpath, 'minima')
-        print(self.creation_dir)
-        if not os.path.exists(minimapath):
-            os.makedirs(minimapath)
+        minimapath = os.path.join(self.creation_dir, self.facetpath, 'minima')
         with open(pytemplate, 'r') as f:
             pytemplate = f.read()
 

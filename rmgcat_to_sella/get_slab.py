@@ -7,6 +7,8 @@ from ase.build import diamond111, diamond100
 from ase.optimize import BFGSLineSearch
 from ase.io import write
 
+import os
+
 
 class GetSlab:
     def __init__(
@@ -141,10 +143,10 @@ class GetSlab:
             **QE_keywords_slab
         )
 
-        label = self.slab_name
+        fname = os.path.join(self.creation_dir, self.slab_name)
 
-        opt = BFGSLineSearch(atoms=slab, trajectory=label + '.traj')
+        opt = BFGSLineSearch(atoms=slab, trajectory=fname + '.traj')
         opt.run(fmax=0.01)
         slab.get_forces()
         slab.calc.close()
-        write(self.slab_name + '.xyz', slab)
+        write(fname + '.xyz', slab)
