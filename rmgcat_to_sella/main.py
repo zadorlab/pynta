@@ -16,8 +16,14 @@ else:
     working_dir = os.getcwd()
 
 # check if all necessary input files are in your working directory
-InputChecker('reactions.yaml', 'inputR2S.py',
-             'run_me.py', 'run_me.sh').check_all()
+check_yaml = os.path.join(working_dir, 'reactions.yaml')
+check_inputR2S = os.path.join(working_dir, 'inputR2S.py')
+check_run_me_py = os.path.join(working_dir, 'run_me.py')
+check_run_me_sh = os.path.join(working_dir, 'run_me.sh')
+
+
+InputChecker(check_yaml, check_inputR2S, check_run_me_py,
+             check_run_me_sh).check_all()
 
 # add working dir to system path
 sys.path.insert(1, working_dir)
