@@ -619,6 +619,7 @@ class TS():
     def create_unique_ts_all(
             self,
             ts_estimate_path,
+            rxn_name,
             pytemplate,
             pseudopotentials,
             pseudo_dir,
@@ -653,6 +654,7 @@ class TS():
         self.create_unique_ts_xyz_and_png(ts_estimate_path)
         # create job files (.py scripts)
         self.create_ts_unique_py_file(pytemplate,
+                                      rxn_name,
                                       pseudopotentials,
                                       pseudo_dir,
                                       ts_estimate_path,
@@ -711,6 +713,7 @@ class TS():
     def create_ts_unique_py_file(
             self,
             pytemplate,
+            rxn_name,
             pseudopotentials,
             pseudo_dir,
             ts_estimate_path,
@@ -748,23 +751,26 @@ class TS():
 
         with open(pytemplate, 'r') as f:
             pytemplate = f.read()
-        for struc in os.listdir(ts_estimate_unique_path):
-            TSdir = os.path.join(ts_estimate_unique_path, struc)
-            if os.path.isdir(TSdir):
-                ts_path = os.path.join(ts_estimate_unique_path, struc)
-                for fl in os.listdir(ts_path):
-                    if fl.endswith('.xyz'):
-                        fname = os.path.join(
-                            ts_estimate_unique_path, fl[:-4] + '.py')
-                        with open(fname, 'w') as f:
-                            f.write(pytemplate.format(TS=os.path.join(
-                                struc, fl), rxn=fl[3:-7], prefix=fl[:2],
-                                pseudopotentials=pseudopotentials,
-                                pseudo_dir=pseudo_dir,
-                                balsam_exe_settings=balsam_exe_settings,
-                                calc_keywords=calc_keywords,
-                                creation_dir=self.creation_dir
-                            ))
+
+        tss = Path(ts_estimate_unique_path).glob('**/*ts.xyz')
+        for ts in tss:
+            ts = str(ts)
+            ts_dir, ts_fname = os.path.split(ts)
+            py_dir, _ = os.path.split(ts_dir)
+            py_fname = ts_fname[:-4] + '.py'
+            py_file = os.path.join(py_dir, py_fname)
+
+            with open(py_file, 'w') as f:
+                f.write(pytemplate.format(
+                    ts_fname=ts_fname,
+                    rxn_name=rxn_name,
+                    prefix=ts_fname[:2],
+                    pseudopotentials=pseudopotentials,
+                    pseudo_dir=pseudo_dir,
+                    balsam_exe_settings=balsam_exe_settings,
+                    calc_keywords=calc_keywords,
+                    creation_dir=self.creation_dir
+                ))
 
     def get_bond_dist(
             self,

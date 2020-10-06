@@ -37,6 +37,7 @@ ts = TS(
 
 ts.create_unique_ts_all(
     ts_estimate_path,
+    rxn_name,
     pytemplate,
     pseudopotentials,
     pseudo_dir,
