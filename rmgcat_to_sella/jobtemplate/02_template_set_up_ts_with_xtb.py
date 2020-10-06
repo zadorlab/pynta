@@ -16,20 +16,20 @@ scfactor = {scfactor}
 scfactor_surface = {scfactor_surface}
 pytemplate_xtb = '{pytemplate_xtb}'
 species_list = {species_list}
-current_dir = os.path.dirname(os.getcwd())
-minima_dir = os.path.join(facetpath, 'minima')
 scaled1 = {scaled1}
 scaled2 = {scaled2}
-ts_dir = 'TS_estimate'
 creation_dir = '{creation_dir}'
 rxn = {rxn}
 rxn_name = '{rxn_name}'
+minima_dir = os.path.join(creation_dir, facetpath, 'minima')
+ts_dir = 'TS_estimate'
 cwd = Path.cwd().as_posix()
-path_to_ts_estimate = os.path.join(facetpath, rxn_name, 'TS_estimate')
+path_to_ts_estimate = os.path.join(facetpath, rxn_name, ts_dir)
 
 ts = TS(
     facetpath,
-    slab, ts_dir,
+    slab,
+    ts_dir,
     yamlfile,
     repeats,
     creation_dir)
@@ -38,13 +38,12 @@ ts.prepare_ts_estimate(
     rxn,
     scfactor,
     scfactor_surface,
-    rotAngle,
     pytemplate_xtb,
     species_list,
     scaled1,
     scaled2)
 
-dependancy_dict = IO().depends_on(facetpath, yamlfile)
+dependancy_dict = IO().depends_on(facetpath, yamlfile, creation_dir)
 jobs_to_be_finished = dependancy_dict[rxn_name]
 
 dependency_workflow_name = facetpath + '_01_' + rxn_name

@@ -323,8 +323,6 @@ class Adsorbates:
         ads_builder = Builder(grslab)
 
         structures = dict()
-        # getting path to directory up
-        currentDir = os.path.dirname(os.getcwd())
         for adsorbate, bond in zip(images, unique_bonds):
             if len(adsorbate) == 0:
                 continue
