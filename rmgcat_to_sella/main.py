@@ -137,13 +137,14 @@ class WorkFlow:
         #     EspressoBalsam.create_application()
         #     EspressoBalsamSocketIO.create_application()
 
-    def get_ts_xtb_py_script_list(self):
+    def get_ts_xtb_py_script_list(self, facetpath):
         ''' Get a list with all 02 job scripts '''
         reactions = IO().open_yaml_file(yamlfile)
         ts_with_xtb_py_script_list = []
         for rxn in reactions:
             rxn_name = IO().get_rxn_name(rxn)
-            fname = '02_set_up_TS_with_xtb_{}.py'.format(rxn_name)
+            fname = '02_{}_set_up_TS_with_xtb_{}.py'.format(
+                facetpath, rxn_name)
             ts_with_xtb_py_script_list.append(fname)
         return ts_with_xtb_py_script_list
 
@@ -701,7 +702,7 @@ class WorkFlow:
             job that will be submitted to balsam queue/database
 
         '''
-        from balsam.launcher.dag import BalsamJob
+        # from balsam.launcher.dag import BalsamJob
 
         job_files_path = os.path.join(
             creation_dir, job_file_dir_name, facetpath)
@@ -718,46 +719,47 @@ class WorkFlow:
             workflow_name = facetpath + '_error'
 
         job = os.path.join(job_files_path, job_script)
+        print(job)
 
-        job_to_add = BalsamJob(
-            name=job_script,
-            workflow=workflow_name,
-            application=self.myPython.name,
-            args=job,
-            ranks_per_node=cores,
-            input_files='',
-            node_packing_count=48,
-            user_workdir=job_files_path
-        )
-        job_to_add.save()
+        # job_to_add = BalsamJob(
+        #     name=job_script,
+        #     workflow=workflow_name,
+        #     application=self.myPython.name,
+        #     args=job,
+        #     ranks_per_node=cores,
+        #     input_files='',
+        #     node_packing_count=48,
+        #     user_workdir=job_files_path
+        # )
+        # job_to_add.save()
 
-        # if there is a parent job, specify dependency
-        if parent_job != '':
-            from balsam.launcher.dag import add_dependency
+        # # if there is a parent job, specify dependency
+        # if parent_job != '':
+        #     from balsam.launcher.dag import add_dependency
 
-            try:
-                add_dependency(parent_job, job_to_add)  # parent, child
-            except ValueError:
-                dependency = str(parent_job[0:2])
+        #     try:
+        #         add_dependency(parent_job, job_to_add)  # parent, child
+        #     except ValueError:
+        #         dependency = str(parent_job[0:2])
 
-                # a special case for 01 where there is on job script for all
-                # reactions
-                if parent_job == '01':
-                    dependency_workflow_name = os.path.join(
-                        facetpath + '_' + dependency + '_')
-                else:
-                    dependency_workflow_name = os.path.join(
-                        facetpath + '_' + dependency + '_' + rxn_name)
+        #         # a special case for 01 where there is on job script for all
+        #         # reactions
+        #         if parent_job == '01':
+        #             dependency_workflow_name = os.path.join(
+        #                 facetpath + '_' + dependency + '_')
+        #         else:
+        #             dependency_workflow_name = os.path.join(
+        #                 facetpath + '_' + dependency + '_' + rxn_name)
 
-                BalsamJob = BalsamJob
-                pending_simulations = BalsamJob.objects.filter(
-                    workflow__contains=dependency_workflow_name
-                ).exclude(state='JOB_FINISHED')
+        #         BalsamJob = BalsamJob
+        #         pending_simulations = BalsamJob.objects.filter(
+        #             workflow__contains=dependency_workflow_name
+        #         ).exclude(state='JOB_FINISHED')
 
-                for job in pending_simulations:
-                    add_dependency(job, job_to_add)  # parent, child
+        #         for job in pending_simulations:
+        #             add_dependency(job, job_to_add)  # parent, child
 
-        return job_to_add
+        # return job_to_add
 
     def run_slab_optimization(self, facetpath):
         ''' Submit slab_optimization_job '''
@@ -779,12 +781,12 @@ class WorkFlow:
         for ts_xtb in ts_xtb_py_script_list:
             self.exe(dependent_job, ts_xtb)
 
-    def run_ts_estimate_no_depend(self):
+    def run_ts_estimate_no_depend(self, facetpath):
         ''' Run TS estimate calculations if there is
             no dependency on other jobs '''
-        ts_xtb_py_script_list = self.get_ts_xtb_py_script_list()
+        ts_xtb_py_script_list = self.get_ts_xtb_py_script_list(facetpath)
         for ts_xtb in ts_xtb_py_script_list:
-            self.exe('', ts_xtb)
+            self.exe('', ts_xtb, facetpath)
 
     def run_ts_with_sella(self, dependant_job):
         ''' Run TS minimization with Sella '''
@@ -805,7 +807,7 @@ class WorkFlow:
         for after_irc in after_irc_py_scripts:
             self.exe(dependant_job, after_irc)
 
-    def check_all_species(self, yamlfile, job_files_path):
+    def check_all_species(self, yamlfile, facetpath):
         ''' Check all species (all reactions) to find whether
             there are previous calculation the code can use
 
@@ -829,10 +831,10 @@ class WorkFlow:
             if species == 'OH':
                 species = 'HO'
             checked_species[species] = self.check_for_minima_outfiles(
-                species, job_files_path)
+                species, facetpath)
         return checked_species
 
-    def check_for_minima_dir(self, species, job_files_path):
+    def check_for_minima_dir(self, species, facetpath):
         ''' Return True if directory for a given species exists in
             {facepath}/minima. Otherwise, False
 
@@ -843,13 +845,13 @@ class WorkFlow:
             e.g. 'H' or 'CO'
 
         '''
-        facetpath = os.path.basename(job_files_path)
-        species_minima_dir = os.path.join(facetpath, 'minima', species)
+        species_minima_dir = os.path.join(
+            creation_dir, facetpath, 'minima', species)
         if os.path.isdir(species_minima_dir):
             return True
         return False
 
-    def check_for_minima_outfiles(self, species, job_files_path):
+    def check_for_minima_outfiles(self, species, facetpath):
         ''' Check for the previously calculated *relax.out files for a given
             species. Return True if there are previous calculations. Otherwise,
             False.
@@ -861,9 +863,9 @@ class WorkFlow:
             e.g. 'H' or 'CO'
 
         '''
-        minima_dir = os.path.join(facetpath, 'minima')
+        minima_dir = os.path.join(creation_dir, facetpath, 'minima')
         # if minima dir exists, check for outfiles
-        if self.check_for_minima_dir(species):
+        if self.check_for_minima_dir(species, facetpath):
             search_for_outfiles = Path(minima_dir).glob(species + '_??_*out')
             outfiles = []
             for outfile in search_for_outfiles:
@@ -880,7 +882,7 @@ class WorkFlow:
         Parameters:
         ___________
         work_files_path : posix
-            a path where work files are stored, e.g. 
+            a path where work files are stored, e.g.
             '{'creation_dir'}/Cu_111'
 
         Returns:
@@ -922,59 +924,57 @@ class WorkFlow:
 
         if optimize_slab:
             # if slab found in previous calculation, do nothing
-            if self.check_if_slab_opt_exists(facetpath)[0]:
-                pass
-                # self.copy_slab_opt_file()
-            else:
-                # If the code cannot locate optimized slab .xyz file,
-                # a slab optimization will be launched.
-                pass
-            self.run_slab_optimization(facetpath)
-            # check if species were already calculated
-            # print(self.check_all_species(yamlfile, job_files_path).values())
-            # if all(self.check_all_species(yamlfile).values()):
-            #     # If all are True, start by generating TS guesses and run
-            #     # the penalty function minimization
-            #     self.run_ts_estimate_no_depend()
-        #     else:
-        #         # If any of sp_check_list is False
-        #         # run optimization of surface + reactants; surface + products
-        #         try:
-        #             self.run_opt_surf_and_adsorbate()
-        #         except NameError:
-        #             self.run_opt_surf_and_adsorbate_no_depend()
-        #         self.run_ts_estimate('01')
-        # else:
-        #     # this is executed if user provide .xyz with the optimized slab
-        #     # and explicitly define oiptimize_slab = False
-        #     if self.check_if_slab_opt_exists()[0]:
-        #         pass
-        #     else:
-        #         raise FileNotFoundError(
-        #             'It appears that there is no slab_opt.xyz file'
-        #         )
-        #     if all(self.check_all_species(yamlfile).values()):
-        #         # If all minima were calculated some time age rmgcat_to_sella
-        #         # will use that calculations. Start from 02 step
-        #         self.run_ts_estimate_no_depend()
-        #     else:
-        #         # run optimization of surface + reactants; surface + products
-        #         # May need to put a post process on surface adsorbate
-        #         # to call the next step
-        #         # wait until optimization of surface + reactants; surface
-        #         # + products finish and submit calculations to get TS guesses
-        #         try:
-        #             self.run_opt_surf_and_adsorbate()
-        #         except NameError:
-        #             self.run_opt_surf_and_adsorbate_no_depend()
-        #         self.run_ts_estimate('01')
-        # # search for the 1st order saddle point
-        # self.run_ts_with_sella('02')
-        # # run frequencies calculations for all TSs
-        # self.run_ts_vib('03')
-        # # for each distinct TS, nudge towards imaginary frequency and
-        # # optimize to minima
-        # self.run_opt_after_ts('04')
+            # if self.check_if_slab_opt_exists(facetpath)[0]:
+            #     pass
+            #     # self.copy_slab_opt_file()
+            # else:
+            #     # If the code cannot locate optimized slab .xyz file,
+            #     # a slab optimization will be launched.
+            #     self.run_slab_optimization(facetpath)
+            # # check if species were already calculated
+            # if all(self.check_all_species(yamlfile, facetpath).values()):
+                #     # If all are True, start by generating TS guesses and run
+                #     # the penalty function minimization
+                # self.run_ts_estimate_no_depend(facetpath)
+            #     else:
+            #         # If any of sp_check_list is False
+            #         # run optimization of surface + reactants; surface + products
+            #         try:
+            #             self.run_opt_surf_and_adsorbate()
+            #         except NameError:
+            #             self.run_opt_surf_and_adsorbate_no_depend()
+            #         self.run_ts_estimate('01')
+            # else:
+            #     # this is executed if user provide .xyz with the optimized slab
+            #     # and explicitly define oiptimize_slab = False
+            #     if self.check_if_slab_opt_exists()[0]:
+            #         pass
+            #     else:
+            #         raise FileNotFoundError(
+            #             'It appears that there is no slab_opt.xyz file'
+            #         )
+            #     if all(self.check_all_species(yamlfile).values()):
+            #         # If all minima were calculated some time age rmgcat_to_sella
+            #         # will use that calculations. Start from 02 step
+            #         self.run_ts_estimate_no_depend()
+            #     else:
+            #         # run optimization of surface + reactants; surface + products
+            #         # May need to put a post process on surface adsorbate
+            #         # to call the next step
+            #         # wait until optimization of surface + reactants; surface
+            #         # + products finish and submit calculations to get TS guesses
+            #         try:
+            #             self.run_opt_surf_and_adsorbate()
+            #         except NameError:
+            #             self.run_opt_surf_and_adsorbate_no_depend()
+            #         self.run_ts_estimate('01')
+            # # search for the 1st order saddle point
+            # self.run_ts_with_sella('02')
+            # # run frequencies calculations for all TSs
+            # self.run_ts_vib('03')
+            # # for each distinct TS, nudge towards imaginary frequency and
+            # # optimize to minima
+            # self.run_opt_after_ts('04')
 
     def execute_all(self):
         for facetpath in facetpaths:
