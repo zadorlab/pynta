@@ -184,7 +184,6 @@ class AfterTS():
             pytemplate,
             balsam_exe_settings,
             calc_keywords,
-            creation_dir,
             pseudopotentials,
             pseudo_dir):
         ''' Create files for after_TS calculations - to verify TS structures
@@ -227,7 +226,7 @@ class AfterTS():
 
         '''
         rxn_name = self.io.get_rxn_name(rxn)
-        ts_vib_dir = os.path.join(self.creation.dir,
+        ts_vib_dir = os.path.join(self.creation_dir,
                                   self.facetpath,
                                   rxn_name,
                                   'TS_estimate_unique_vib')
@@ -250,10 +249,18 @@ class AfterTS():
                 after_ts_dir, prefix + '_' + rxn_name + '_after_ts_r')
 
             self.get_forward_and_reverse(
-                vib_traj, fname_forward, fname_reverse)
+                vib_traj,
+                fname_forward,
+                fname_reverse)
+
             self.create_after_ts_py_files(
-                pytemplate, fname_forward, fname_reverse, balsam_exe_settings,
-                calc_keywords, creation_dir, pseudopotentials, pseudo_dir)
+                pytemplate,
+                fname_forward,
+                fname_reverse,
+                balsam_exe_settings,
+                calc_keywords,
+                pseudopotentials,
+                pseudo_dir)
 
     def get_forward_and_reverse(
             self,
@@ -293,13 +300,14 @@ class AfterTS():
         index_forward = int(floor(nimages/4))
         index_reverse = int(nimages - index_forward)
 
-        # get forward displacement
-        write(fname_forward + '.xyz', read(vib_traj, index=index_forward))
-        write(fname_forward + '.png', read(vib_traj, index=index_forward))
+        fname = [fname_forward, fname_reverse]
+        indices = [index_forward, index_reverse]
+        extensions = ['.xyz', '.png']
 
-        # get reverse displacement
-        write(fname_reverse + '.xyz', read(vib_traj, index=index_reverse))
-        write(fname_reverse + '.png', read(vib_traj, index=index_reverse))
+        # get forward and reverse displacement
+        for fn, ind in zip(fname, indices):
+            for ext in extensions:
+                write(fn + ext, read(vib_traj, index=ind))
 
     def create_after_ts_py_files(
             self,
@@ -308,7 +316,6 @@ class AfterTS():
             fname_reverse,
             balsam_exe_settings,
             calc_keywords,
-            creation_dir,
             pseudopotentials,
             pseudo_dir):
         ''' Create job submission files for minimization displaced structures
@@ -352,6 +359,7 @@ class AfterTS():
         '''
         with open(pytemplate, 'r') as f:
             pytemplate = f.read()
+
         for fn in [fname_forward, fname_reverse]:
             tmp, geom = os.path.split(fn)
             fname = os.path.join(os.path.split(tmp)[0], geom + '.py')
@@ -360,7 +368,7 @@ class AfterTS():
                     geom=geom,
                     balsam_exe_settings=balsam_exe_settings,
                     calc_keywords=calc_keywords,
-                    creation_dir=creation_dir,
+                    creation_dir=self.creation_dir,
                     pseudopotentials=pseudopotentials,
                     pseudo_dir=pseudo_dir
                 ))
