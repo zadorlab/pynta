@@ -804,7 +804,7 @@ class WorkFlow:
         for after_irc in after_irc_py_scripts:
             self.exe(dependant_job, after_irc)
 
-    def check_all_species(self, yamlfile):
+    def check_all_species(self, yamlfile, job_files_path):
         ''' Check all species (all reactions) to find whether
             there are previous calculation the code can use
 
@@ -827,10 +827,11 @@ class WorkFlow:
             # a bug to be resolved - why does it invert the name?
             if species == 'OH':
                 species = 'HO'
-            checked_species[species] = self.check_for_minima_outfiles(species)
+            checked_species[species] = self.check_for_minima_outfiles(
+                species, job_files_path)
         return checked_species
 
-    def check_for_minima_dir(self, species):
+    def check_for_minima_dir(self, species, job_files_path):
         ''' Return True if directory for a given species exists in
             {facepath}/minima. Otherwise, False
 
@@ -841,12 +842,13 @@ class WorkFlow:
             e.g. 'H' or 'CO'
 
         '''
+        facetpath = os.path.basename(job_files_path)
         species_minima_dir = os.path.join(facetpath, 'minima', species)
         if os.path.isdir(species_minima_dir):
             return True
         return False
 
-    def check_for_minima_outfiles(self, species):
+    def check_for_minima_outfiles(self, species, job_files_path):
         ''' Check for the previously calculated *relax.out files for a given
             species. Return True if there are previous calculations. Otherwise,
             False.
@@ -928,12 +930,13 @@ class WorkFlow:
                 # If the code cannot locate optimized slab .xyz file,
                 # a slab optimization will be launched.
                 pass
-            self.run_slab_optimization(job_files_path)
-        #     # check if species were already calculated
-        #     if all(self.check_all_species(yamlfile).values()):
-        #         # If all are True, start by generating TS guesses and run
-        #         # the penalty function minimization
-        #         self.run_ts_estimate_no_depend()
+            # self.run_slab_optimization(job_files_path)
+            # check if species were already calculated
+            # print(self.check_all_species(yamlfile, job_files_path).values())
+            # if all(self.check_all_species(yamlfile).values()):
+            #     # If all are True, start by generating TS guesses and run
+            #     # the penalty function minimization
+            #     self.run_ts_estimate_no_depend()
         #     else:
         #         # If any of sp_check_list is False
         #         # run optimization of surface + reactants; surface + products
