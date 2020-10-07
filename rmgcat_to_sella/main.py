@@ -63,7 +63,8 @@ else:
     creation_dir = inputR2S.creation_dir
     surface_types = surface_types_and_repeats.keys()
     repeats, repeats_surface = surface_types_and_repeats.values()
-    # facetpaths = IO().get_facetpaths(symbol, surface_types)
+    facetpaths = IO().get_facetpaths(symbol, surface_types)
+    job_file_dir_name = 'job_files'
     # slab_names = [facetpath + '_slab_opt' for facetpath in facetpaths]
     # slabopt = [slab_name + '.xyz' for slab_name in slab_names]
 
@@ -184,7 +185,7 @@ class WorkFlow:
         for surface_type, reps in surface_types_and_repeats.items():
             facetpath = IO().get_facetpath(symbol, surface_type)
             # Create a directory to store six (00-05) main *py job files
-            py_job_dir = os.path.join('job_files', facetpath)
+            py_job_dir = os.path.join(job_file_dir_name, facetpath)
             os.makedirs(py_job_dir, exist_ok=True)
 
             # naming convetion for the slab file
@@ -821,11 +822,10 @@ class WorkFlow:
             e.g. {'C': True, 'H': True, 'O': False, 'OH': True, 'CH': True}
 
         '''
-        io = IO()
         checked_species = {}
-        all_species = io.get_all_species(yamlfile)
+        all_species = IO().get_all_species(yamlfile)
         for species in all_species:
-            # a bug to be resolved - why it inverts the name?
+            # a bug to be resolved - why does it invert the name?
             if species == 'OH':
                 species = 'HO'
             checked_species[species] = self.check_for_minima_outfiles(species)
@@ -907,8 +907,11 @@ class WorkFlow:
             except shutil.SameFileError:
                 pass
 
-    def execute(self):
-        ''' The main executable '''
+    def execute(
+            self,
+            job_files_path,
+            work_files_path):
+        ''' The main executable for given surface '''
 
         if optimize_slab:
             # if slab found in previous calculation, do nothing
@@ -963,3 +966,9 @@ class WorkFlow:
         # for each distinct TS, nudge towards imaginary frequency and
         # optimize to minima
         self.run_opt_after_ts('04')
+
+    def execute_all(self):
+        for facetpath in facetpaths:
+            job_files_path = os.path.join(
+                creation_dir, facetpath, job_file_dir_name)
+            work_files_path = os.path.join(creation_dir, facetpath)
