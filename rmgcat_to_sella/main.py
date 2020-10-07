@@ -63,10 +63,7 @@ else:
     creation_dir = inputR2S.creation_dir
     surface_types = surface_types_and_repeats.keys()
     repeats, repeats_surface = surface_types_and_repeats.values()
-    print(surface_types)
-    print(repeats)
-    print(repeats_surface)
-    facetpaths = IO().get_facetpaths(symbol, surface_types)
+    # facetpaths = IO().get_facetpaths(symbol, surface_types)
     # slab_names = [facetpath + '_slab_opt' for facetpath in facetpaths]
     # slabopt = [slab_name + '.xyz' for slab_name in slab_names]
 
@@ -184,14 +181,19 @@ class WorkFlow:
             generate submit scripts for 6 stages of the workflow
 
         '''
-        for facetpath, surface_type in zip(facetpaths, surface_types):
-            # Create a dictinary to store six (00-05) main *py job files
+        for surface_type, reps in surface_types_and_repeats.items():
+            facetpath = IO().get_facetpath(symbol, surface_type)
+            # Create a directory to store six (00-05) main *py job files
             py_job_dir = os.path.join('job_files', facetpath)
             os.makedirs(py_job_dir, exist_ok=True)
 
             # naming convetion for the slab file
             slab_name = facetpath + '_slab_opt'
             slab = slab_name + '.xyz'
+
+            repeats, repeats_surface = reps
+            # print(repeats)
+            # print(repeats_surface)
 
             self.set_up_slab(
                 template_slab_opt,

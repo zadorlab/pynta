@@ -16,7 +16,51 @@ class IO():
     """ Class for handling Input/Output and transforming it to more usefull
         format for the rmgcat_to_sella """
 
+    def get_facetpath(self, symbol, surface_type):
+        ''' Get a facetpath for a given surface defined by a
+            symbol and a surface_type
+
+        Parameters
+        ----------
+        symbol : [type]
+            [description]
+        surface_type : [type]
+            [description]
+
+        Returns
+        -------
+        [type]
+            [description]
+
+        '''
+        nums = []
+        for num in surface_type:
+            try:
+                int(num)
+            except ValueError:
+                continue
+            nums.append(num)
+        facet = ''.join(nums)
+        facetpath = symbol + '_' + facet
+        return facetpath
+
     def get_facetpaths(self, symbol, surface_types):
+        ''' Generate a list with all facetpaths for a
+        given surface defined by a symbol and a surface_type
+
+        Parameters
+        ----------
+        symbol : [type]
+            [description]
+        surface_types : [type]
+            [description]
+
+        Returns
+        -------
+        [type]
+            [description]
+
+        '''
         facetpaths = []
         for stype in surface_types:
             nums = []
