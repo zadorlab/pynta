@@ -703,6 +703,10 @@ class WorkFlow:
         from os import getcwd
         cwd = getcwd()
 
+        # get facetpath from job_script by splitting
+        # and joining job_script name
+        facetpath = '_'.join(job_script.split('_')[1:3])
+
         # get rxn_name from job_script by spliting and joining job_script name
         # exeption for two first jobs
         if job_script in [ads_surf_opt_script, slab_opt]:
