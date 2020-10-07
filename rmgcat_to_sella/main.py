@@ -679,6 +679,7 @@ class WorkFlow:
     def exe(self,
             parent_job,
             job_script,
+            job_files_path,
             cores=1):
         ''' Execute a py script
 
@@ -700,13 +701,10 @@ class WorkFlow:
             job that will be submitted to balsam queue/database
 
         '''
-        from balsam.launcher.dag import BalsamJob
-        from os import getcwd
-        cwd = getcwd()
+        # from balsam.launcher.dag import BalsamJob
 
-        # get facetpath from job_script by splitting
-        # and joining job_script name
-        facetpath = '_'.join(job_script.split('_')[1:3])
+        # get facetpath
+        facetpath = os.path.basename(job_files_path)
 
         # get rxn_name from job_script by spliting and joining job_script name
         # exeption for two first jobs
@@ -719,11 +717,13 @@ class WorkFlow:
         except ValueError:
             workflow_name = facetpath + '_error'
 
+        job = os.path.join(job_files_path, job_script)
+
         job_to_add = BalsamJob(
             name=job_script,
             workflow=workflow_name,
             application=self.myPython.name,
-            args=cwd + '/' + job_script,
+            args=job,
             ranks_per_node=cores,
             input_files='',
             node_packing_count=48,
@@ -759,10 +759,9 @@ class WorkFlow:
 
         return job_to_add
 
-    def run_slab_optimization(self):
+    def run_slab_optimization(self, job_files_path):
         ''' Submit slab_optimization_job '''
-        self.slab_opt_job = self.exe('', slab_opt, cores=1)
-        # submit slab_optimization_job 1 task probably, was 48 originally
+        self.slab_opt_job = self.exe('', slab_opt, job_files_path, cores=1)
 
     def run_opt_surf_and_adsorbate(self):
         ''' Run optmization of adsorbates on the surface '''
@@ -872,7 +871,7 @@ class WorkFlow:
             return True
         return False
 
-    def check_if_slab_opt_exists(self, work_files_path):
+    def check_if_slab_opt_exists(self, job_files_path):
         ''' Check whether slab has been already optimized
 
         Parameters:
@@ -890,7 +889,7 @@ class WorkFlow:
                 (False, )
 
         '''
-        facetpath = os.path.basename(work_files_path)
+        facetpath = os.path.basename(job_files_path)
         slab_opt_path_str = []
         # the code will look for anything like Cu_111*.xyz starting from the
         # facetpath directory including all subdirectories.
@@ -918,17 +917,18 @@ class WorkFlow:
             self,
             job_files_path,
             work_files_path):
-        ''' The main executable for given surface '''
+        ''' The main executable for a given surface '''
 
         if optimize_slab:
             # if slab found in previous calculation, do nothing
-            if self.check_if_slab_opt_exists(work_files_path)[0]:
+            if self.check_if_slab_opt_exists(job_files_path)[0]:
                 pass
                 # self.copy_slab_opt_file()
-        #     else:
-        #         # If the code cannot locate optimized slab .xyz file,
-        #         # a slab optimization will be launched.
-        #         self.run_slab_optimization()
+            else:
+                # If the code cannot locate optimized slab .xyz file,
+                # a slab optimization will be launched.
+                pass
+            self.run_slab_optimization(job_files_path)
         #     # check if species were already calculated
         #     if all(self.check_all_species(yamlfile).values()):
         #         # If all are True, start by generating TS guesses and run
@@ -977,6 +977,6 @@ class WorkFlow:
     def execute_all(self):
         for facetpath in facetpaths:
             job_files_path = os.path.join(
-                creation_dir, facetpath, job_file_dir_name)
+                creation_dir, job_file_dir_name, facetpath)
             work_files_path = os.path.join(creation_dir, facetpath)
             self.execute(job_files_path, work_files_path)

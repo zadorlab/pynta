@@ -43,10 +43,12 @@ class InputChecker():
             print('Error')
             print('Make sure all input files are '
                   'in your working directory')
+            print('---')
             # exit if at least one error
             sys.exit()
         else:
-            print('Passed')
+            print('Passed!')
+            print('---')
 
     def is_input_file(self):
         ''' Check if there are input files in the working directory '''
