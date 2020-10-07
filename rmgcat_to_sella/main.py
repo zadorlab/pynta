@@ -43,15 +43,15 @@ except ImportError:
 
 else:
     optimize_slab = inputR2S.optimize_slab
-    surface_types = inputR2S.surface_types
+    surface_types_and_repeats = inputR2S.surface_types_and_repeats
     symbol = inputR2S.symbol
     a = inputR2S.a
     vacuum = inputR2S.vacuum
     pseudo_dir = inputR2S.pseudo_dir
     pseudopotentials = inputR2S.pseudopotentials
     yamlfile = inputR2S.yamlfile
-    repeats = inputR2S.repeats
-    repeats_surface = inputR2S.repeats_surface
+    # repeats = inputR2S.repeats
+    # repeats_surface = inputR2S.repeats_surface
     scfactor = inputR2S.scfactor
     scfactor_surface = inputR2S.scfactor_surface
     scaled1 = inputR2S.scaled1
@@ -61,6 +61,11 @@ else:
     balsam_exe_settings = inputR2S.balsam_exe_settings
     calc_keywords = inputR2S.calc_keywords
     creation_dir = inputR2S.creation_dir
+    surface_types = surface_types_and_repeats.keys()
+    repeats, repeats_surface = surface_types_and_repeats.values()
+    print(surface_types)
+    print(repeats)
+    print(repeats_surface)
     facetpaths = IO().get_facetpaths(symbol, surface_types)
     # slab_names = [facetpath + '_slab_opt' for facetpath in facetpaths]
     # slabopt = [slab_name + '.xyz' for slab_name in slab_names]
