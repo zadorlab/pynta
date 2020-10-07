@@ -22,15 +22,18 @@ class IO():
 
         Parameters
         ----------
-        symbol : [type]
-            [description]
-        surface_type : [type]
-            [description]
+        symbol : str
+            atomic symbol of the studied metal surface
+            e.g. 'Cu'
+        surface_type : str
+            type of the surface, i.e. facet.
+            e.g. 'fcc111'
 
         Returns
         -------
-        [type]
-            [description]
+        facetpath : str
+            a name of the facetpath,
+            eg. 'Cu_111'
 
         '''
         nums = []
@@ -50,15 +53,18 @@ class IO():
 
         Parameters
         ----------
-        symbol : [type]
-            [description]
-        surface_types : [type]
-            [description]
+        symbol : str
+            atomic symbol of the studied metal surface
+            e.g. 'Cu'
+        surface_types : list(str)
+            a list with all surface types, i.e. facets.
+            e.g. ['fcc111', 'fcc100']
 
         Returns
         -------
-        [type]
-            [description]
+        facetpaths : list(str)
+            a list with all facetpath names,
+            e.g. ['Cu_111', 'Cu_100']
 
         '''
         facetpaths = []

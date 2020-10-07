@@ -192,8 +192,6 @@ class WorkFlow:
             slab = slab_name + '.xyz'
 
             repeats, repeats_surface = reps
-            # print(repeats)
-            # print(repeats_surface)
 
             self.set_up_slab(
                 template_slab_opt,
