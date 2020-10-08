@@ -417,7 +417,10 @@ class Adsorbates:
                 if structure.endswith('xyz'):
                     prefix = os.path.splitext(structure)[0]
                     fname = os.path.join(
-                        minimapath, f'{species}_{prefix}_relax.py')
+                        minimapath, self.facetpath + '_' + species + '_'
+                        + prefix + '_relax.py')
+                    # fname = os.path.join(
+                    #     minimapath, f'{species}_{prefix}_relax.py')
                     with open(fname, 'w') as f:
                         f.write(pytemplate.format(
                             adsorbate=species,
