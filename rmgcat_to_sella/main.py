@@ -370,7 +370,7 @@ class WorkFlow:
             balsam_exe_settings,
             calc_keywords,
             creation_dir):
-        ''' Create 00_set_up_slab_opt.py file
+        ''' Create 00_{facetpath}_set_up_slab_opt.py file
 
         Parameters
         ----------
@@ -460,7 +460,7 @@ class WorkFlow:
             balsam_exe_settings,
             calc_keywords,
             creation_dir):
-        ''' Create 01_set_up_ads.py file
+        ''' Create 01_{facetpath}_set_up_ads_on_slab_{rxn_name}.pyfile
 
         Parameters:
         ___________
@@ -547,7 +547,7 @@ class WorkFlow:
             pytemplate_xtb,
             species_dict,
             creation_dir):
-        ''' Create 02_set_up_TS_with_xtb_{rxn_name}.py files
+        ''' Create 02_{facetpath}_set_up_TS_with_xtb_{rxn_name}.py files
 
         Parameters:
         ___________
@@ -634,7 +634,7 @@ class WorkFlow:
             balsam_exe_settings,
             calc_keywords,
             creation_dir):
-        ''' Create 03_checksym_xtb_run_TS.py file
+        ''' Create 03_{facetpath}_set_up_run_TS_{rxn_name}.py file
 
         Parameters:
         ___________
@@ -730,7 +730,7 @@ class WorkFlow:
             balsam_exe_settings,
             calc_keywords,
             creation_dir):
-        ''' Create '04_set_up_TS_vib_{rxn_name}.py file
+        ''' Create '04_{facetpath}_set_up_TS_vib_{rxn_name}.py file
 
         Parameters:
         ___________
@@ -827,7 +827,7 @@ class WorkFlow:
         calc_keywords,
         creation_dir
     ):
-        ''' Create 05_set_up_after_TS_{rxn_name}.py file
+        ''' Create 05_{facetpath}_set_up_after_TS_{rxn_name}.py file
 
         Parameters:
         ___________
