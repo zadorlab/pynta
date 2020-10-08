@@ -6,6 +6,7 @@ import datetime
 from pathlib import Path
 
 from rmgcat_to_sella.prepare_ts_with_xtb import AdsorbatePlacer
+from xtb.ase.calculator import XTB
 
 from ase.io import read, write
 
