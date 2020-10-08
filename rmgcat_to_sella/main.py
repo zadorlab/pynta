@@ -111,31 +111,30 @@ ads_surf_opt_script = '01_set_up_ads.py'
 
 class WorkFlow:
 
-    # def __init__(self):
+    def __init__(self):
+        """Setup the balsam application for this workflow run.
 
-        #     """Setup the balsam application for this workflow run.
+        Once we start using QE will want one app for QE,
+        one for xtb most likely
+        """
+        from balsam.core.models import ApplicationDefinition
+        self.myPython, _ = ApplicationDefinition.objects.get_or_create(
+            name="python",
+            executable=sys.executable
+        )
+        self.myPython.save()
+        self.slab_opt_job = ''
 
-        #     Once we start using QE will want one app for QE,
-        #     one for xtb most likely
-        #     """
-        #     from balsam.core.models import ApplicationDefinition
-        #     self.myPython, _ = ApplicationDefinition.objects.get_or_create(
-        #         name="python",
-        #         executable=sys.executable
-        #     )
-        #     self.myPython.save()
-        #     self.slab_opt_job = ''
-
-        #     # TODO: instead of directly importing EspressoBalsam, we should
-        #     # write a function which returns the appropriate class from
-        #     # balsamcalc.py based on the user-provided input file
-        #     from rmgcat_to_sella.balsamcalc import (
-        #         EspressoBalsam, EspressoBalsamSocketIO
-        #     )
-        #     EspressoBalsam.exe = executable
-        #     EspressoBalsamSocketIO.exe = executable
-        #     EspressoBalsam.create_application()
-        #     EspressoBalsamSocketIO.create_application()
+        # TODO: instead of directly importing EspressoBalsam, we should
+        # write a function which returns the appropriate class from
+        # balsamcalc.py based on the user-provided input file
+        from rmgcat_to_sella.balsamcalc import (
+            EspressoBalsam, EspressoBalsamSocketIO
+        )
+        EspressoBalsam.exe = executable
+        EspressoBalsamSocketIO.exe = executable
+        EspressoBalsam.create_application()
+        EspressoBalsamSocketIO.create_application()
 
     def get_ts_xtb_py_script_list(self, facetpath):
         ''' Get a list with all 02 job scripts '''
@@ -702,7 +701,7 @@ class WorkFlow:
             job that will be submitted to balsam queue/database
 
         '''
-        # from balsam.launcher.dag import BalsamJob
+        from balsam.launcher.dag import BalsamJob
 
         job_files_path = os.path.join(
             creation_dir, job_file_dir_name, facetpath)
@@ -719,47 +718,46 @@ class WorkFlow:
             workflow_name = facetpath + '_error'
 
         job = os.path.join(job_files_path, job_script)
-        print(job)
 
-        # job_to_add = BalsamJob(
-        #     name=job_script,
-        #     workflow=workflow_name,
-        #     application=self.myPython.name,
-        #     args=job,
-        #     ranks_per_node=cores,
-        #     input_files='',
-        #     node_packing_count=48,
-        #     user_workdir=job_files_path
-        # )
-        # job_to_add.save()
+        job_to_add = BalsamJob(
+            name=job_script,
+            workflow=workflow_name,
+            application=self.myPython.name,
+            args=job,
+            ranks_per_node=cores,
+            input_files='',
+            node_packing_count=48,
+            user_workdir=job_files_path
+        )
+        job_to_add.save()
 
-        # # if there is a parent job, specify dependency
-        # if parent_job != '':
-        #     from balsam.launcher.dag import add_dependency
+        # if there is a parent job, specify dependency
+        if parent_job != '':
+            from balsam.launcher.dag import add_dependency
 
-        #     try:
-        #         add_dependency(parent_job, job_to_add)  # parent, child
-        #     except ValueError:
-        #         dependency = str(parent_job[0:2])
+            try:
+                add_dependency(parent_job, job_to_add)  # parent, child
+            except ValueError:
+                dependency = str(parent_job[0:2])
 
-        #         # a special case for 01 where there is on job script for all
-        #         # reactions
-        #         if parent_job == '01':
-        #             dependency_workflow_name = os.path.join(
-        #                 facetpath + '_' + dependency + '_')
-        #         else:
-        #             dependency_workflow_name = os.path.join(
-        #                 facetpath + '_' + dependency + '_' + rxn_name)
+                # a special case for 01 where there is on job script for all
+                # reactions
+                if parent_job == '01':
+                    dependency_workflow_name = os.path.join(
+                        facetpath + '_' + dependency + '_')
+                else:
+                    dependency_workflow_name = os.path.join(
+                        facetpath + '_' + dependency + '_' + rxn_name)
 
-        #         BalsamJob = BalsamJob
-        #         pending_simulations = BalsamJob.objects.filter(
-        #             workflow__contains=dependency_workflow_name
-        #         ).exclude(state='JOB_FINISHED')
+                BalsamJob = BalsamJob
+                pending_simulations = BalsamJob.objects.filter(
+                    workflow__contains=dependency_workflow_name
+                ).exclude(state='JOB_FINISHED')
 
-        #         for job in pending_simulations:
-        #             add_dependency(job, job_to_add)  # parent, child
+                for job in pending_simulations:
+                    add_dependency(job, job_to_add)  # parent, child
 
-        # return job_to_add
+        return job_to_add
 
     def run_slab_optimization(self, facetpath):
         ''' Submit slab_optimization_job '''
@@ -793,24 +791,24 @@ class WorkFlow:
         for ts_xtb in ts_xtb_py_script_list:
             self.exe('', ts_xtb, facetpath)
 
-    def run_ts_with_sella(self, dependant_job):
+    def run_ts_with_sella(self, dependant_job, facetpath):
         ''' Run TS minimization with Sella '''
-        ts_sella_py_script_list = self.get_ts_estimate_unique_list()
+        ts_sella_py_script_list = self.get_ts_estimate_unique_list(facetpath)
         for ts_sella in ts_sella_py_script_list:
-            self.exe(dependant_job, ts_sella)
+            self.exe(dependant_job, ts_sella, facetpath)
 
-    def run_ts_vib(self, dependant_job):
+    def run_ts_vib(self, dependant_job, facetpath):
         ''' Run frequency calculations for TS '''
-        ts_vib_py_script_list = self.get_ts_vib_list()
+        ts_vib_py_script_list = self.get_ts_vib_list(facetpath)
         for ts_vib in ts_vib_py_script_list:
-            self.exe(dependant_job, ts_vib)
+            self.exe(dependant_job, ts_vib, facetpath)
 
-    def run_opt_after_ts(self, dependant_job):
+    def run_opt_after_ts(self, dependant_job, facetpath):
         ''' Run minimization of minima obtained as nudging TS structure
         towards imaginary mode of oscilation'''
-        after_irc_py_scripts = self.get_after_ts_py_scripts()
+        after_irc_py_scripts = self.get_after_ts_py_scripts(facetpath)
         for after_irc in after_irc_py_scripts:
-            self.exe(dependant_job, after_irc)
+            self.exe(dependant_job, after_irc, facetpath)
 
     def check_all_species(self, yamlfile, facetpath):
         ''' Check all species (all reactions) to find whether
