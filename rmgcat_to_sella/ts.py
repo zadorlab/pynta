@@ -164,8 +164,11 @@ class TS():
             images):
         ''' Place adsorbates on the surface to estimate TS
 
-        Parameters
+        Parameters:
         __________
+        ts_estimate_path : str
+            a path to TS_estimate directory,
+            e.g. {creation_dir}/Cu_111/TS_estimate
         scfator : float
             a scaling factor to scale a bond distance between
             atoms taking part in the reaction
@@ -216,7 +219,7 @@ class TS():
             ts_candidate = images[2]
             # reactName = r_name
 
-        ''' Different cases '''
+        # Different cases
         if ts_candidate.get_chemical_formula() == 'CHO':
             atom2 = 2
             bonded_through = [0]
@@ -249,7 +252,7 @@ class TS():
         elif ts_candidate.get_chemical_formula() == 'C2H5O2':
             # ts_candidate.rotate(60, 'y')
             ts_candidate.rotate(90, 'z')
-            ''' Should work for H2CO*OCH3, i.e. COH3+HCOH '''
+            # Should work for H2CO*OCH3, i.e. COH3+HCOH
             ts_candidate.set_angle(atom2, atom1, atom0, -45,
                                    indices=[0, 1, 2, 3, 4], add=True)
             ts_candidate.set_distance(
@@ -320,11 +323,15 @@ class TS():
 
         Parameters
         __________
+
+        ts_estimate_path : str
+            a path to TS_estimate directory,
+            e.g. {creation_dir}/Cu_111/TS_estimate
         rxn_name : str
             a reaction name
             e.g. OH_O+H
-        '''
 
+        '''
         # check the symmetry
         filtered_equivalent_sites = self.check_symm_before_xtb(
             ts_estimate_path)
@@ -363,9 +370,15 @@ class TS():
             scfactor_surface):
         ''' Prepare calculations of the penalty function
 
-        Parameters
+        Parameters:
         __________
 
+        ts_estimate_path : str
+            a path to TS_estimate directory,
+            e.g. {creation_dir}/Cu_111/TS_estimate
+        rxn_name : str
+            a reaction name
+            e.g. OH_O+H
         pytemplate : python script
             a template for the penalty function calculations
         species_list : list(str)
@@ -537,7 +550,10 @@ class TS():
             av_dist = mean(all_dists)
         return av_dist
 
-    def get_unique_minima_indicies_after_opt(self, path_to_minima, species):
+    def get_unique_minima_indicies_after_opt(
+            self,
+            path_to_minima,
+            species):
         ''' Get the indicies of the symmetrically distinct minima
         for a given species
 
@@ -630,6 +646,12 @@ class TS():
         Parameters:
         ___________
 
+        ts_estimate_path : str
+            a path to TS_estimate directory,
+            e.g. {creation_dir}/Cu_111/TS_estimate
+        rxn_name : str
+            a reaction name
+            e.g. OH_O+H
         pytemplate : python script
             a template file for saddle point minimization with Sella
         pseudopotentials : dict(str: str)
@@ -672,7 +694,8 @@ class TS():
         ___________
 
         ts_estimate_path : str
-            a path to TS_estimate_directory for a given reaction
+            a path to TS_estimate directory,
+            e.g. {creation_dir}/Cu_111/TS_estimate
 
         '''
         # check symmetry of all TS estimates in ts_estimate_path
@@ -726,6 +749,9 @@ class TS():
 
         pytemplate : python script
             a template file for saddle point minimization with Sella
+        rxn_name : str
+            a reaction name
+            e.g. OH_O+H
         pseudopotentials : dict(str: str)
             a dictionary with QE pseudopotentials for all species.
             e.g.
@@ -739,7 +765,8 @@ class TS():
             e.g.
             '/home/mgierad/espresso/pseudo'
         ts_estimate_path : str
-            a path to TS_estimate_directory for a given reaction
+            a path to TS_estimate directory,
+            e.g. {creation_dir}/Cu_111/TS_estimate
         balsam_exe_settings : dict(str:str)
             a dictionary with balsam settings
         calc_keywords : dict(str:str)
