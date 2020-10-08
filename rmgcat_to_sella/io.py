@@ -13,10 +13,13 @@ from ase.io import read, write
 
 
 class IO():
-    """ Class for handling Input/Output and transforming it to more usefull
-        format for the rmgcat_to_sella """
+    ''' Class for handling Input/Output and transforming it to more usefull
+        format for the rmgcat_to_sella '''
 
-    def get_facetpath(self, symbol, surface_type):
+    def get_facetpath(
+            self,
+            symbol,
+            surface_type):
         ''' Get a facetpath for a given surface defined by a
             symbol and a surface_type
 
@@ -47,7 +50,10 @@ class IO():
         facetpath = symbol + '_' + facet
         return facetpath
 
-    def get_facetpaths(self, symbol, surface_types):
+    def get_facetpaths(
+            self,
+            symbol,
+            surface_types):
         ''' Generate a list with all facetpaths for a
         given surface defined by a symbol and a surface_type
 
@@ -81,7 +87,9 @@ class IO():
             facetpaths.append(facetpath)
         return facetpaths
 
-    def open_yaml_file(self, yamlfile):
+    def open_yaml_file(
+            self,
+            yamlfile):
         ''' Open yaml file with list of reactions
 
         Parameters:
@@ -100,7 +108,9 @@ class IO():
         reactions = yaml.safe_load(yamltxt)
         return reactions
 
-    def get_all_species(self, yamlfile):
+    def get_all_species(
+            self,
+            yamlfile):
         ''' Generate a list with all unique species for all reactions
             combined
 
@@ -126,7 +136,9 @@ class IO():
                 set([sp for sublist in all_species for sp in sublist]))
         return all_species_unique
 
-    def prepare_react_list(self, rxn):
+    def prepare_react_list(
+            self,
+            rxn):
         '''Convert yaml file to more useful format
 
         Paremeters:
@@ -177,7 +189,9 @@ class IO():
 
         return r_name_list, p_name_list, images
 
-    def get_rxn_name(self, rxn):
+    def get_rxn_name(
+            self,
+            rxn):
         ''' Get the reaction name
 
         Paremeters:
@@ -202,7 +216,9 @@ class IO():
         rxn_name = r_name + '_' + p_name
         return rxn_name
 
-    def get_list_all_rxns_names(self, yamlfile):
+    def get_list_all_rxns_names(
+            self,
+            yamlfile):
         ''' Get a list with all reactions names '''
 
         # open .yaml file
@@ -214,7 +230,9 @@ class IO():
             all_rxns.append(rxn_name)
         return all_rxns
 
-    def rmgcat_to_gratoms(self, adjtxt):
+    def rmgcat_to_gratoms(
+            self,
+            adjtxt):
         ''' Convert a slice of .yaml file to Catkit's Gratoms object
 
         Parameters:
@@ -332,7 +350,10 @@ class IO():
 
         return gratoms_list, bonds
 
-    def get_xyz_from_traj(self, path_to_minima, species):
+    def get_xyz_from_traj(
+            self,
+            path_to_minima,
+            species):
         ''' Convert all ASE's traj files to .xyz files for a given species
 
         Parameters:
@@ -353,7 +374,11 @@ class IO():
                     species_path, traj[:-5] + '_final.xyz')
                 write(des_traj_path, read(src_traj_path))
 
-    def depends_on(self, facetpath, yamlfile, creation_dir):
+    def depends_on(
+            self,
+            facetpath,
+            yamlfile,
+            creation_dir):
         ''' Returns a dictionary of adsorbate + surface calculations
         (step 01; .py files) that has to be finished before starting step 02
         for a particular reaction
@@ -396,10 +421,6 @@ class IO():
             minima_py_list = []
             # loop through all reactants
             for reactant in r_name_list:
-                # ?? is needed to prevent returning e.g.
-                # OH_00_relax.py and O_00_relax.py
-                # while
-                # reactant or product = O
                 # I have no idea why OH and HO is getting reverse
                 # a workaround
                 if reactant == 'OH':
@@ -407,8 +428,8 @@ class IO():
                 lookup_phrase = '{}_{}_*relax.py'.format(facetpath, reactant)
                 # find matching reatants
                 minima_py_files = Path(path_to_minima).glob(lookup_phrase)
-                # append a list with minima that have to be calculated to
-                # run 02 step
+                # append a list with minima that have to be calculated during
+                # run_02 step
                 for minima_py_file in minima_py_files:
                     minima_py_list.append(
                         os.path.split((str(minima_py_file)))[1])
