@@ -8,7 +8,6 @@ from pathlib import Path
 from rmgcat_to_sella.prepare_ts_with_xtb import AdsorbatePlacer
 
 from ase.io import read, write
-from xtb.ase.calculator import XTB
 
 cwd = Path.cwd().as_posix()
 path = Path(cwd).parents[2]

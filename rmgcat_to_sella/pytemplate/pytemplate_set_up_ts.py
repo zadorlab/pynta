@@ -14,7 +14,7 @@ geom = '{ts_fname}'
 balsam_exe_settings = {balsam_exe_settings}
 calc_keywords = {calc_keywords}
 
-trajdir = os.path.join(prefix, prefix + '_' + rxn + '.traj')
+trajdir = os.path.join(prefix, prefix + '_' + rxn_name + '.traj')
 label = os.path.join(prefix, prefix)
 
 start = datetime.datetime.now()
