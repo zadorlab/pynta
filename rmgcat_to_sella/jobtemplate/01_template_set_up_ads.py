@@ -25,7 +25,7 @@ put_adsorbates.create_relax_jobs(
     balsam_exe_settings, calc_keywords
 )
 
-dependancy_dict = IO().depends_on(facetpath, yamlfile)
+dependancy_dict = IO().depends_on(facetpath, yamlfile, creation_dir)
 
 # keep track of all submitted jobs (all unique)
 all_submitted_jobs = []
