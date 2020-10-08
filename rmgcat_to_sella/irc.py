@@ -1,10 +1,7 @@
 import os
-<<<<<<< HEAD
 
 from pathlib import Path
 
-=======
->>>>>>> 542ea3506f6af1448fd7c13f8699cd1c3e71adc9
 from ase.io import read, write
 from rmgcat_to_sella.ts import TS
 from rmgcat_to_sella.io import IO
