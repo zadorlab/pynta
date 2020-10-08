@@ -46,10 +46,8 @@ class BalsamCalculator(FileIOCalculator):
     out_name = None
     # ASE IO format of the output file
     out_format = None
-
     # Extra calculation-specific arguments to provide to Balsam
     args = None
-
     # Extra information for the Balsam App
     preprocess = ''
     postprocess = ''

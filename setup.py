@@ -22,4 +22,3 @@ setup(name='rmgcat_to_sella',
       install_requires=['numpy', 'ase', 'catkit',
                         'spglib', 'matplotlib<3.2', 'networkx<2.4'],
       )
-# , 'xtb' to be added later

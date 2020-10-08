@@ -23,12 +23,12 @@ class GetSlab:
             pseudo_dir,
             balsam_exe_settings,
             calc_keywords,
-            creation_dir
-    ):
+            creation_dir):
         ''' A class for preparing and optimizing a user defined slab
 
-        Parameters
+        Parameters:
         __________
+
         surface_type : str
             type of the surface. Available options are:
             fcc111, fcc211, fcc100
@@ -44,8 +44,6 @@ class GetSlab:
             amount of vacuum in the z direction (Units: Angstrem)
         slab_name : str
             a user defined name of the slab
-        slab_extension : str
-            usually, it should be 'xyz'
         pseudopotentials : dict(str='str')
             a dictionary with all pseudopotentials, as for Quantum Espresso
             keys() - symbol
@@ -55,6 +53,22 @@ class GetSlab:
             a path to the QE's pseudopotentials main directory
             e.g.
             '/home/mgierad/espresso/pseudo'
+        balsam_exe_settings : dict{str:int}
+            a dictionary with balsam execute parameters (cores, nodes, etc.),
+            e.g.
+            balsam_exe_settings = {'num_nodes': 1,
+                                   'ranks_per_node': 48,
+                                   'threads_per_rank': 1}
+        calc_keywords : dict{str:str}
+            a dictionary with parameters to run DFT package. Quantum Espresso
+            is used as default, e.g.
+
+            calc_keywords = {'kpts': (3, 3, 1), 'occupations': 'smearing',
+                            'smearing':  'marzari-vanderbilt',
+                            'degauss': 0.01, 'ecutwfc': 40, 'nosym': True,
+                            'conv_thr': 1e-11, 'mixing_mode': 'local-TF'}
+        creation_dir : posix
+            a posix path to the main working directory
 
         '''
         self.surface_type = surface_type
@@ -80,7 +94,8 @@ class GetSlab:
         else:
             print('{} not implemented. Avaiable parameters are:'.format(
                 self.surface_type))
-            print('fcc111, fcc100, fcc211')
+            print('fcc111, fcc211, fcc100, bcc111, bcc110, hcp0001, '
+                  'diamond111, diamond100')
 
     def opt_fcc111(self):
         ''' Optimize fcc111 slab '''
@@ -129,11 +144,9 @@ class GetSlab:
         ''' Prepare slab optimization with Quantum Espresso '''
 
         job_kwargs = self.balsam_exe_settings.copy()
-        # job_kwargs.update([('user_workdir',cwd)])
         QE_keywords_slab = self.calc_keywords.copy()
-        # QE_keywords.update([('kpts',self.repeats)])
-        # Not sure of intended behavior, but an example to show
-        # you can change keys as necessary here
+        # change kpoints - for surface optimization it is differetn
+        QE_keywords_slab.update([('kpts', self.repeats_surface)])
 
         slab.calc = EspressoBalsamSocketIO(
             workflow='QE_Socket',
