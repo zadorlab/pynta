@@ -872,7 +872,8 @@ class WorkFlow:
         minima_dir = os.path.join(creation_dir, facetpath, 'minima')
         # if minima dir exists, check for outfiles
         if self.check_for_minima_dir(species, facetpath):
-            search_for_outfiles = Path(minima_dir).glob(species + '_??_*out')
+            keyphrase = '{}_{}_*relax.py'.format(facetpath, species)
+            search_for_outfiles = Path(minima_dir).glob(keyphrase)
             outfiles = []
             for outfile in search_for_outfiles:
                 outfiles.append(str(outfile))
