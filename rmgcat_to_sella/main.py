@@ -50,8 +50,6 @@ else:
     pseudo_dir = inputR2S.pseudo_dir
     pseudopotentials = inputR2S.pseudopotentials
     yamlfile = inputR2S.yamlfile
-    # repeats = inputR2S.repeats
-    # repeats_surface = inputR2S.repeats_surface
     scfactor = inputR2S.scfactor
     scfactor_surface = inputR2S.scfactor_surface
     scaled1 = inputR2S.scaled1
@@ -65,8 +63,6 @@ else:
     repeats, repeats_surface = surface_types_and_repeats.values()
     facetpaths = IO().get_facetpaths(symbol, surface_types)
     job_file_dir_name = 'job_files'
-    # slab_names = [facetpath + '_slab_opt' for facetpath in facetpaths]
-    # slabopt = [slab_name + '.xyz' for slab_name in slab_names]
 
 ####################################################
 #                    Scripts                       #
@@ -137,7 +133,20 @@ class WorkFlow:
         EspressoBalsamSocketIO.create_application()
 
     def get_ts_xtb_py_script_list(self, facetpath):
-        ''' Get a list with all 02 job scripts '''
+        '''Get a list with all 02 job scripts
+
+        Parameters
+        ----------
+        facetpath : str
+            a path to the workflow's main dir
+            e.g. 'Cu_111'
+
+        Returns
+        -------
+        ts_with_xtb_py_script_list : list(str)
+            a list with all ts_with_xtb_py jobs for a given facetpath
+
+        '''
         reactions = IO().open_yaml_file(yamlfile)
         ts_with_xtb_py_script_list = []
         for rxn in reactions:
@@ -148,7 +157,20 @@ class WorkFlow:
         return ts_with_xtb_py_script_list
 
     def get_ts_estimate_unique_list(self, facetpath):
-        ''' Get a list with all 03 job scripts '''
+        ''' Get a list with all 03 job scripts
+
+        Parameters:
+        ----------
+        facetpath : str
+            a path to the workflow's main dir
+            e.g. 'Cu_111'
+
+        Returns:
+        -------
+        ts_sella_py_script_list : list(str)
+            a list with all ts_sella_py jobs for a given facetpath
+
+        '''
         reactions = IO().open_yaml_file(yamlfile)
         ts_sella_py_script_list = []
         for rxn in reactions:
@@ -158,7 +180,20 @@ class WorkFlow:
         return ts_sella_py_script_list
 
     def get_ts_vib_list(self, facetpath):
-        ''' Get a list with all 04 job scripts '''
+        ''' Get a list with all 04 job scripts
+
+        Parameters:
+        ----------
+        facetpath : str
+            a path to the workflow's main dir
+            e.g. 'Cu_111'
+
+        Returns:
+        -------
+        ts_vib_py_scripts_list : list(str)
+            a list with all ts_vib_py jobs for a given facetpath
+
+        '''
         reactions = IO().open_yaml_file(yamlfile)
         ts_vib_py_scripts_list = []
         for rxn in reactions:
@@ -168,7 +203,20 @@ class WorkFlow:
         return ts_vib_py_scripts_list
 
     def get_after_ts_py_scripts(self, facetpath):
-        ''' Get a list with all 05 job scripts '''
+        ''' Get a list with all 05 job scripts
+
+        Parameters:
+        ----------
+        facetpath : str
+            a path to the workflow's main dir
+            e.g. 'Cu_111'
+
+        Returns:
+        -------
+        after_ts_py_scripts_list : list(str)
+            a list with all after_ts_py jobs for a given facetpath
+
+        '''
         reactions = IO().open_yaml_file(yamlfile)
         after_ts_py_scripts_list = []
         for rxn in reactions:
@@ -183,6 +231,7 @@ class WorkFlow:
 
         '''
         for surface_type, reps in surface_types_and_repeats.items():
+            # get a facetpath
             facetpath = IO().get_facetpath(symbol, surface_type)
             # Create a directory to store six (00-05) main *py job files
             py_job_dir = os.path.join(job_file_dir_name, facetpath)
@@ -192,6 +241,7 @@ class WorkFlow:
             slab_name = facetpath + '_slab_opt'
             slab = slab_name + '.xyz'
 
+            # define repeats and repeats_surface
             repeats, repeats_surface = reps
 
             self.set_up_slab(
@@ -226,6 +276,8 @@ class WorkFlow:
             )
 
             reactions = IO().open_yaml_file(yamlfile)
+            # the rest of jobs depends on reaction,
+            # so loop throug all reactions
             for rxn in reactions:
                 self.set_up_TS_with_xtb(
                     rxn,
@@ -316,6 +368,12 @@ class WorkFlow:
         ----------
         template : py file
             a template for 00 job (slab optimization)
+        py_job_dir : str
+            a path to where all job files 00-05 are about to be created, e.g.
+            {'current_dir'}/job_files/Cu_111
+        facetpath : str
+            a path to the workflow's main dir
+            e.g. 'Cu_111'
         surface_type : str
             type of the surface. Available options are:
             fcc111, fcc211, fcc100, bcc111, bcc110, hcp0001, diamond111,
@@ -325,15 +383,9 @@ class WorkFlow:
             e.g. 'Cu'
         a : float
             a lattice constant
-        repeats_surface : tuple
-            specify reapeats in (x, y, z) direction,
-            eg. (3, 3, 1)
-        vacuum : float
-            amount of vacuum in the z direction (Units: Angstrem)
-        slab_name : str
-            a user defined name of the slab
         repeats_surface : tuple(int, int, int)
             surface multiplication in (x, y, z) direction
+             eg. (1, 1, 4)
         vacuum : float
             amout of empty space in z direction (Angstrem)
         slab_name : str
@@ -368,6 +420,7 @@ class WorkFlow:
                             'conv_thr': 1e-11, 'mixing_mode': 'local-TF'}
         creation_dir : posix
             a posix path to the working directory
+
         '''
         with open(template, 'r') as r:
             template_text = r.read()
@@ -406,13 +459,17 @@ class WorkFlow:
         ___________
         template : py file
             a template to set up 01 job
+        py_job_dir : str
+            a path to where all job files 00-05 are about to be created, e.g.
+            {'current_dir'}/job_files/Cu_111
         facetpath : str
             a path to the workflow's main dir
             e.g. 'Cu_111'
         slab : str
             a path to .xyz file with optimized slab
         repeats : tuple(int, int, int)
-            how to replicate unit cell in (x, y, z) direction
+            how to replicate unit cell in (x, y, z) direction,
+            e.g. (3, 3, 1)
         yamlfile : str
             a name of the .yaml file with a reaction list
         pytemplate : python file
@@ -495,12 +552,16 @@ class WorkFlow:
             .yaml file
         template : py file
             a template to set up 02 job for a particular reaction
+        py_job_dir : str
+            a path to where all job files 00-05 are about to be created, e.g.
+            {'current_dir'}/job_files/Cu_111
         slab : str
             a '.xyz' file name with the optimized slab
             e.g.
             'Cu_111_slab_opt.xyz'
         repeats : tuple(int, int, int)
-            how to replicate unit cell in (x, y, z) direction
+            how to replicate unit cell in (x, y, z) direction,
+            e.g. (3, 3, 1)
         yamlfile : str
             a name of the .yaml file with a reaction list
         facetpath : str
@@ -568,7 +629,64 @@ class WorkFlow:
         calc_keywords,
         creation_dir
     ):
-        ''' Create 03_checksym_xtb_run_TS.py file '''
+        ''' Create 03_checksym_xtb_run_TS.py file
+
+        Parameters:
+        ___________
+
+        rxn : dict(yaml[str:str])
+            a dictionary with info about the paricular reaction. This can be
+            view as a splitted many reaction .yaml file to a single reaction
+            .yaml file
+        template : py file
+            a template to set up 03 job for a particular reaction
+        py_job_dir : str
+            a path to where all job files 00-05 are about to be created, e.g.
+            {'current_dir'}/job_files/Cu_111
+        facetpath : str
+            a path to the workflow's main dir
+            e.g. 'Cu_111'
+        slab : str
+            a '.xyz' file name with the optimized slab
+            e.g.
+            'Cu_111_slab_opt.xyz'
+        repeats : tuple(int, int, int)
+            how to replicate unit cell in (x, y, z) direction,
+            e.g. (3, 3, 1)
+        yamlfile : str
+            a name of the .yaml file with a reaction list
+        pytemplate : python script
+            a template file for ts optimization with sella
+        pseudopotentials : dict{str:str}
+            a dictionary with QE pseudopotentials for all species.
+            e.g.
+            dict(Cu='Cu.pbe-spn-kjpaw_psl.1.0.0.UPF',
+                H='H.pbe-kjpaw_psl.1.0.0.UPF',
+                O='O.pbe-n-kjpaw_psl.1.0.0.UPF',
+                C='C.pbe-n-kjpaw_psl.1.0.0.UPF',
+                )
+        pseudo_dir : str
+            a path to the QE's pseudopotentials main directory
+            e.g.
+            '/home/mgierad/espresso/pseudo'
+        balsam_exe_settings : dict{str:int}
+            a dictionary with balsam execute parameters (cores, nodes, etc.),
+            e.g.
+            balsam_exe_settings = {'num_nodes': 1,
+                                   'ranks_per_node': 48,
+                                   'threads_per_rank': 1}
+        calc_keywords : dict{str:str}
+            a dictionary with parameters to run DFT package. Quantum Espresso
+            is used as default, e.g.
+
+            calc_keywords = {'kpts': (3, 3, 1), 'occupations': 'smearing',
+                            'smearing':  'marzari-vanderbilt',
+                            'degauss': 0.01, 'ecutwfc': 40, 'nosym': True,
+                            'conv_thr': 1e-11, 'mixing_mode': 'local-TF'}
+        creation_dir : posix
+            a posix path to the main working directory
+
+        '''
         with open(template, 'r') as r:
             template_text = r.read()
             rxn_name = IO().get_rxn_name(rxn)
@@ -608,7 +726,64 @@ class WorkFlow:
         calc_keywords,
         creation_dir
     ):
-        ''' Create '04_set_up_TS_vib_{rxn_name}.py file '''
+        ''' Create '04_set_up_TS_vib_{rxn_name}.py file
+
+        Parameters:
+        ___________
+
+        rxn : dict(yaml[str:str])
+            a dictionary with info about the paricular reaction. This can be
+            view as a splitted many reaction .yaml file to a single reaction
+            .yaml file
+        template : py file
+            a template to set up 03 job for a particular reaction
+        py_job_dir : str
+            a path to where all job files 00-05 are about to be created, e.g.
+            {'current_dir'}/job_files/Cu_111
+        facetpath : str
+            a path to the workflow's main dir
+            e.g. 'Cu_111'
+        slab : str
+            a '.xyz' file name with the optimized slab
+            e.g.
+            'Cu_111_slab_opt.xyz'
+        repeats : tuple(int, int, int)
+            how to replicate unit cell in (x, y, z) direction,
+            e.g. (3, 3, 1)
+        yamlfile : str
+            a name of the .yaml file with a reaction list
+        pytemplate : python script
+            a template file for setting up frequencies calculations
+        pseudopotentials : dict{str:str}
+            a dictionary with QE pseudopotentials for all species.
+            e.g.
+            dict(Cu='Cu.pbe-spn-kjpaw_psl.1.0.0.UPF',
+                H='H.pbe-kjpaw_psl.1.0.0.UPF',
+                O='O.pbe-n-kjpaw_psl.1.0.0.UPF',
+                C='C.pbe-n-kjpaw_psl.1.0.0.UPF',
+                )
+        pseudo_dir : str
+            a path to the QE's pseudopotentials main directory
+            e.g.
+            '/home/mgierad/espresso/pseudo'
+        balsam_exe_settings : dict{str:int}
+            a dictionary with balsam execute parameters (cores, nodes, etc.),
+            e.g.
+            balsam_exe_settings = {'num_nodes': 1,
+                                   'ranks_per_node': 48,
+                                   'threads_per_rank': 1}
+        calc_keywords : dict{str:str}
+            a dictionary with parameters to run DFT package. Quantum Espresso
+            is used as default, e.g.
+
+            calc_keywords = {'kpts': (3, 3, 1), 'occupations': 'smearing',
+                            'smearing':  'marzari-vanderbilt',
+                            'degauss': 0.01, 'ecutwfc': 40, 'nosym': True,
+                            'conv_thr': 1e-11, 'mixing_mode': 'local-TF'}
+        creation_dir : posix
+            a posix path to the main working directory
+
+        '''
         with open(template, 'r') as r:
             template_text = r.read()
             rxn_name = IO().get_rxn_name(rxn)
@@ -648,7 +823,67 @@ class WorkFlow:
         calc_keywords,
         creation_dir
     ):
-        ''' Create '05_set_up_after_TS_{rxn_name}.py file '''
+        ''' Create 05_set_up_after_TS_{rxn_name}.py file
+
+        Parameters:
+        ___________
+
+        rxn : dict(yaml[str:str])
+            a dictionary with info about the paricular reaction. This can be
+            view as a splitted many reaction .yaml file to a single reaction
+            .yaml file
+        template : py file
+            a template to set up 03 job for a particular reaction
+        py_job_dir : str
+            a path to where all job files 00-05 are about to be created, e.g.
+            {'current_dir'}/job_files/Cu_111
+        facetpath : str
+            a path to the workflow's main dir
+            e.g. 'Cu_111'
+        slab : str
+            a '.xyz' file name with the optimized slab
+            e.g.
+            'Cu_111_slab_opt.xyz'
+        repeats : tuple(int, int, int)
+            how to replicate unit cell in (x, y, z) direction,
+            e.g. (3, 3, 1)
+        yamlfile : str
+            a name of the .yaml file with a reaction list
+        pytemplate : python script
+            a template file for setting up an alternative to IRC (minimization
+            of displaced structures following the imaginary mode of
+            oscillation)
+        pseudopotentials : dict{str:str}
+            a dictionary with QE pseudopotentials for all species.
+            e.g.
+            dict(Cu='Cu.pbe-spn-kjpaw_psl.1.0.0.UPF',
+                H='H.pbe-kjpaw_psl.1.0.0.UPF',
+                O='O.pbe-n-kjpaw_psl.1.0.0.UPF',
+                C='C.pbe-n-kjpaw_psl.1.0.0.UPF',
+                )
+        pseudo_dir : str
+            a path to the QE's pseudopotentials main directory
+            e.g.
+            '/home/mgierad/espresso/pseudo'
+        balsam_exe_settings : dict{str:int}
+            a dictionary with balsam execute parameters (cores, nodes, etc.),
+            e.g.
+            balsam_exe_settings = {'num_nodes': 1,
+                                   'ranks_per_node': 48,
+                                   'threads_per_rank': 1}
+        calc_keywords : dict{str:str}
+            a dictionary with parameters to run DFT package. Quantum Espresso
+            is used as default, e.g.
+
+            calc_keywords = {'kpts': (3, 3, 1), 'occupations': 'smearing',
+                            'smearing':  'marzari-vanderbilt',
+                            'degauss': 0.01, 'ecutwfc': 40, 'nosym': True,
+                            'conv_thr': 1e-11, 'mixing_mode': 'local-TF'}
+        creation_dir : posix
+            a posix path to the main working directory
+
+
+        '''
         with open(template, 'r') as r:
             template_text = r.read()
             rxn_name = IO().get_rxn_name(rxn)
