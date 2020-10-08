@@ -108,11 +108,11 @@ ads_surf_opt_script = '01_set_up_ads.py'
 class WorkFlow:
 
     def __init__(self):
-        """Setup the balsam application for this workflow run.
+        ''' Setup the balsam application for this workflow run.
 
-        Once we start using QE will want one app for QE,
-        one for xtb most likely
-        """
+            Once we start using QE will want one app for QE,
+            one for xtb most likely
+        '''
         from balsam.core.models import ApplicationDefinition
         self.myPython, _ = ApplicationDefinition.objects.get_or_create(
             name="python",
@@ -132,7 +132,9 @@ class WorkFlow:
         EspressoBalsam.create_application()
         EspressoBalsamSocketIO.create_application()
 
-    def get_ts_xtb_py_script_list(self, facetpath):
+    def get_ts_xtb_py_script_list(
+            self,
+            facetpath):
         '''Get a list with all 02 job scripts
 
         Parameters
@@ -156,7 +158,9 @@ class WorkFlow:
             ts_with_xtb_py_script_list.append(fname)
         return ts_with_xtb_py_script_list
 
-    def get_ts_estimate_unique_list(self, facetpath):
+    def get_ts_estimate_unique_list(
+            self,
+            facetpath):
         ''' Get a list with all 03 job scripts
 
         Parameters:
@@ -179,7 +183,9 @@ class WorkFlow:
             ts_sella_py_script_list.append(fname)
         return ts_sella_py_script_list
 
-    def get_ts_vib_list(self, facetpath):
+    def get_ts_vib_list(
+            self,
+            facetpath):
         ''' Get a list with all 04 job scripts
 
         Parameters:
@@ -202,7 +208,9 @@ class WorkFlow:
             ts_vib_py_scripts_list.append(fname)
         return ts_vib_py_scripts_list
 
-    def get_after_ts_py_scripts(self, facetpath):
+    def get_after_ts_py_scripts(
+            self,
+            facetpath):
         ''' Get a list with all 05 job scripts
 
         Parameters:
@@ -439,20 +447,19 @@ class WorkFlow:
                 ))
 
     def set_up_ads(
-        self,
-        template,
-        py_job_dir,
-        facetpath,
-        slab,
-        repeats,
-        yamlfile,
-        pytemplate,
-        pseudopotentials,
-        pseudo_dir,
-        balsam_exe_settings,
-        calc_keywords,
-        creation_dir
-    ):
+            self,
+            template,
+            py_job_dir,
+            facetpath,
+            slab,
+            repeats,
+            yamlfile,
+            pytemplate,
+            pseudopotentials,
+            pseudo_dir,
+            balsam_exe_settings,
+            calc_keywords,
+            creation_dir):
         ''' Create 01_set_up_ads.py file
 
         Parameters:
@@ -527,20 +534,19 @@ class WorkFlow:
         r.close()
 
     def set_up_TS_with_xtb(
-        self,
-        rxn,
-        template,
-        py_job_dir,
-        slab,
-        repeats,
-        yamlfile,
-        facetpath,
-        scfactor,
-        scfactor_surface,
-        pytemplate_xtb,
-        species_dict,
-        creation_dir
-    ):
+            self,
+            rxn,
+            template,
+            py_job_dir,
+            slab,
+            repeats,
+            yamlfile,
+            facetpath,
+            scfactor,
+            scfactor_surface,
+            pytemplate_xtb,
+            species_dict,
+            creation_dir):
         ''' Create 02_set_up_TS_with_xtb_{rxn_name}.py files
 
         Parameters:
@@ -614,21 +620,20 @@ class WorkFlow:
                 ))
 
     def set_up_run_TS(
-        self,
-        rxn,
-        template,
-        py_job_dir,
-        facetpath,
-        slab,
-        repeats,
-        yamlfile,
-        pytemplate,
-        pseudopotentials,
-        pseudo_dir,
-        balsam_exe_settings,
-        calc_keywords,
-        creation_dir
-    ):
+            self,
+            rxn,
+            template,
+            py_job_dir,
+            facetpath,
+            slab,
+            repeats,
+            yamlfile,
+            pytemplate,
+            pseudopotentials,
+            pseudo_dir,
+            balsam_exe_settings,
+            calc_keywords,
+            creation_dir):
         ''' Create 03_checksym_xtb_run_TS.py file
 
         Parameters:
@@ -711,21 +716,20 @@ class WorkFlow:
                 ))
 
     def set_up_TS_vib(
-        self,
-        rxn,
-        template,
-        py_job_dir,
-        facetpath,
-        slab,
-        repeats,
-        yamlfile,
-        pytemplate,
-        pseudopotentials,
-        pseudo_dir,
-        balsam_exe_settings,
-        calc_keywords,
-        creation_dir
-    ):
+            self,
+            rxn,
+            template,
+            py_job_dir,
+            facetpath,
+            slab,
+            repeats,
+            yamlfile,
+            pytemplate,
+            pseudopotentials,
+            pseudo_dir,
+            balsam_exe_settings,
+            calc_keywords,
+            creation_dir):
         ''' Create '04_set_up_TS_vib_{rxn_name}.py file
 
         Parameters:
@@ -911,7 +915,8 @@ class WorkFlow:
 # Submit jobs and execute it #
 ##############################
 
-    def exe(self,
+    def exe(
+            self,
             parent_job,
             job_script,
             facetpath,
@@ -928,6 +933,9 @@ class WorkFlow:
             a script that is about to be submitted
         cores : int
             number of cores for exe job
+        facetpath : str
+            a path to the workflow's main dir
+            e.g. 'Cu_111'
 
         Returns:
         ________
@@ -997,70 +1005,182 @@ class WorkFlow:
 
         return job_to_add
 
-    def run_slab_optimization(self, facetpath):
-        ''' Submit slab_optimization_job '''
+    def run_slab_optimization(
+            self,
+            facetpath):
+        ''' Submit slab_optimization_job
+
+        Parameters:
+        ___________
+
+        facetpath : str
+            a path to the workflow's main dir
+            e.g. 'Cu_111'
+
+        '''
         slab_opt = '00_{}_set_up_slab_opt.py'.format(facetpath)
         self.slab_opt_job = self.exe('', slab_opt, facetpath, cores=1)
 
-    def run_opt_surf_and_adsorbate(self, facetpath):
-        ''' Run optmization of adsorbates on the surface '''
+    def run_opt_surf_and_adsorbate(
+            self,
+            facetpath):
+        ''' Run optmization of adsorbates on the surface
+
+        Parameters:
+        ___________
+
+        facetpath : str
+            a path to the workflow's main dir
+            e.g. 'Cu_111'
+
+        '''
         ads_surf_opt_script = '01_{}_set_up_ads_on_slab.py'.format(facetpath)
         slab_opt = '00_{}_set_up_slab_opt.py'.format(facetpath)
         return self.exe(slab_opt, ads_surf_opt_script, facetpath)
 
-    def run_opt_surf_and_adsorbate_no_depend(self, facetpath):
+    def run_opt_surf_and_adsorbate_no_depend(
+            self,
+            facetpath):
         ''' Run optmization of adsorbates on the surface
             if there is no dependency on other jobs
+
+        Parameters:
+        ___________
+
+        facetpath : str
+            a path to the workflow's main dir
+            e.g. 'Cu_111'
 
         '''
         ads_surf_opt_script = '01_{}_set_up_ads_on_slab.py'.format(facetpath)
         return self.exe('', ads_surf_opt_script, facetpath)
 
-    def run_ts_estimate(self, dependent_job, facetpath):
-        ''' Run TS estimation calculations '''
+    def run_ts_estimate(
+            self,
+            dependent_job,
+            facetpath):
+        ''' Run TS estimation calculations
+
+        Parameters:
+        ___________
+
+        dependant_jon : str
+            a prefix of the the job (minimum: two integers,
+            max: whole job script name) that the current depends on,
+            e.g. '01'
+        facetpath : str
+            a path to the workflow's main dir
+            e.g. 'Cu_111'
+
+        '''
         ts_xtb_py_script_list = self.get_ts_xtb_py_script_list(facetpath)
         for ts_xtb in ts_xtb_py_script_list:
             self.exe(dependent_job, ts_xtb, facetpath)
 
-    def run_ts_estimate_no_depend(self, facetpath):
-        ''' Run TS estimate calculations if there is
-            no dependency on other jobs '''
+    def run_ts_estimate_no_depend(
+            self,
+            facetpath):
+        ''' Run TS estimate calculations if there is no dependency on the
+            other jobs
+
+        Parameters:
+        ___________
+
+        facetpath : str
+            a path to the workflow's main dir
+            e.g. 'Cu_111'
+
+        '''
         ts_xtb_py_script_list = self.get_ts_xtb_py_script_list(facetpath)
         for ts_xtb in ts_xtb_py_script_list:
             self.exe('', ts_xtb, facetpath)
 
-    def run_ts_with_sella(self, dependant_job, facetpath):
-        ''' Run TS minimization with Sella '''
+    def run_ts_with_sella(
+            self,
+            dependant_job,
+            facetpath):
+        ''' Run TS minimization with Sella
+
+        Parameters:
+        ___________
+
+        dependant_jon : str
+            a prefix of the the job (minimum: two integers,
+            max: whole job script name) that the current depends on,
+            e.g. '02'
+        facetpath : str
+            a path to the workflow's main dir
+            e.g. 'Cu_111'
+
+        '''
         ts_sella_py_script_list = self.get_ts_estimate_unique_list(facetpath)
         for ts_sella in ts_sella_py_script_list:
             self.exe(dependant_job, ts_sella, facetpath)
 
-    def run_ts_vib(self, dependant_job, facetpath):
-        ''' Run frequency calculations for TS '''
+    def run_ts_vib(
+            self,
+            dependant_job,
+            facetpath):
+        ''' Run frequency calculations for TS
+
+        Parameters:
+        ___________
+
+        dependant_jon : str
+            a prefix of the the job (minimum: two integers,
+            max: whole job script name) that the current depends on,
+            e.g. '03'
+        facetpath : str
+            a path to the workflow's main dir
+            e.g. 'Cu_111'
+
+        '''
         ts_vib_py_script_list = self.get_ts_vib_list(facetpath)
         for ts_vib in ts_vib_py_script_list:
             self.exe(dependant_job, ts_vib, facetpath)
 
-    def run_opt_after_ts(self, dependant_job, facetpath):
+    def run_opt_after_ts(
+            self,
+            dependant_job,
+            facetpath):
         ''' Run minimization of minima obtained as nudging TS structure
-        towards imaginary mode of oscilation'''
+            towards imaginary mode of oscilation
+
+        Parameters:
+        ___________
+
+        dependant_jon : str
+            a prefix of the the job (minimum: two integers,
+            max: whole job script name) that the current depends on,
+            e.g. '04'
+        facetpath : str
+            a path to the workflow's main dir
+            e.g. 'Cu_111'
+
+        '''
         after_irc_py_scripts = self.get_after_ts_py_scripts(facetpath)
         for after_irc in after_irc_py_scripts:
             self.exe(dependant_job, after_irc, facetpath)
 
-    def check_all_species(self, yamlfile, facetpath):
-        ''' Check all species (all reactions) to find whether
+    def check_all_species(
+            self,
+            yamlfile,
+            facetpath):
+        ''' Check all species(all reactions) to find whether
             there are previous calculation the code can use
 
         Parameters:
         ___________
-        yamlfile : str
+        yamlfile: str
             a name of the .yaml file with a reaction list
+        facetpath : str
+            a path to the workflow's main dir
+            e.g. 'Cu_111'
 
         Return:
         _______
-        checked_species : dict(str:bool)
-            a dictionary with True/False values for every species (keys)
+        checked_species: dict(str: bool)
+            a dictionary with True/False values for every species(keys)
             True if there are previous calculation, otherwise False
             e.g. {'C': True, 'H': True, 'O': False, 'OH': True, 'CH': True}
 
@@ -1081,7 +1201,7 @@ class WorkFlow:
 
         Parameters:
         ___________
-        species : str
+        species: str
             a species symbol
             e.g. 'H' or 'CO'
 
@@ -1093,13 +1213,13 @@ class WorkFlow:
         return False
 
     def check_for_minima_outfiles(self, species, facetpath):
-        ''' Check for the previously calculated *relax.out files for a given
+        ''' Check for the previously calculated * relax.out files for a given
             species. Return True if there are previous calculations. Otherwise,
             False.
 
         Parameters:
         ___________
-        species : str
+        species: str
             a species symbol
             e.g. 'H' or 'CO'
 
@@ -1123,7 +1243,7 @@ class WorkFlow:
 
         Parameters:
         ___________
-        work_files_path : posix
+        work_files_path: posix
             a path where work files are stored, e.g.
             '{'creation_dir'}/Cu_111'
 
