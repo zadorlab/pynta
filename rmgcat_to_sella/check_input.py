@@ -28,12 +28,11 @@ class InputChecker():
             the workflow execution script
 
         '''
+
         self.yamlfile = yamlfile
         self.inputR2S = inputR2S
         self.run_me_py = run_me_py
         self.run_me_sh = run_me_sh
-        # Get the path to the working directory
-        self.working_dir = os.getcwd()
 
     def check_all(self):
         ''' Print info about checking input files '''
@@ -44,10 +43,12 @@ class InputChecker():
             print('Error')
             print('Make sure all input files are '
                   'in your working directory')
+            print('---')
             # exit if at least one error
             sys.exit()
         else:
-            print('Passed')
+            print('Passed!')
+            print('---')
 
     def is_input_file(self):
         ''' Check if there are input files in the working directory '''

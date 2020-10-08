@@ -1,8 +1,13 @@
 #!/usr/bin/env python3
+from rmgcat_to_sella.balsamcalc import EspressoBalsamSocketIO
+
 from ase.build import fcc111, fcc211, fcc100
 from ase.build import bcc111, bcc110, hcp0001
 from ase.build import diamond111, diamond100
+from ase.optimize import BFGSLineSearch
 from ase.io import write
+
+import os
 
 
 class GetSlab:
@@ -18,16 +23,15 @@ class GetSlab:
             pseudo_dir,
             balsam_exe_settings,
             calc_keywords,
-            creation_dir
-    ):
+            creation_dir):
         ''' A class for preparing and optimizing a user defined slab
 
-        Parameters
+        Parameters:
         __________
+
         surface_type : str
             type of the surface. Available options are:
-            fcc111, fcc211, fcc100, bcc111, bcc110, hcp0001, diamond111,
-            diamond100
+            fcc111, fcc211, fcc100
         symbol : str
             atomic symbol of the studied metal surface
             e.g. 'Cu'
@@ -40,8 +44,6 @@ class GetSlab:
             amount of vacuum in the z direction (Units: Angstrem)
         slab_name : str
             a user defined name of the slab
-        slab_extension : str
-            usually, it should be 'xyz'
         pseudopotentials : dict(str='str')
             a dictionary with all pseudopotentials, as for Quantum Espresso
             keys() - symbol
@@ -51,6 +53,22 @@ class GetSlab:
             a path to the QE's pseudopotentials main directory
             e.g.
             '/home/mgierad/espresso/pseudo'
+        balsam_exe_settings : dict{str:int}
+            a dictionary with balsam execute parameters (cores, nodes, etc.),
+            e.g.
+            balsam_exe_settings = {'num_nodes': 1,
+                                   'ranks_per_node': 48,
+                                   'threads_per_rank': 1}
+        calc_keywords : dict{str:str}
+            a dictionary with parameters to run DFT package. Quantum Espresso
+            is used as default, e.g.
+
+            calc_keywords = {'kpts': (3, 3, 1), 'occupations': 'smearing',
+                            'smearing':  'marzari-vanderbilt',
+                            'degauss': 0.01, 'ecutwfc': 40, 'nosym': True,
+                            'conv_thr': 1e-11, 'mixing_mode': 'local-TF'}
+        creation_dir : posix
+            a posix path to the main working directory
 
         '''
         self.surface_type = surface_type
@@ -68,61 +86,46 @@ class GetSlab:
     def run_slab_opt(self):
         ''' Run slab optimization '''
         if self.surface_type == 'fcc111':
-            self.opt_fcc111()
+            GetSlab.opt_fcc111(self)
         elif self.surface_type == 'fcc211':
-            self.opt_fcc211()
+            GetSlab.opt_fcc211(self)
         elif self.surface_type == 'fcc100':
-            self.opt_fcc100()
-        elif self.surface_type == 'bcc111':
-            self.opt_bcc111()
-        elif self.surface_type == 'bcc110':
-            self.opt_bcc110()
-        elif self.surface_type == 'hcp0001':
-            self.opt_hcp0001()
-        elif self.surface_type == 'diamond111':
-            self.opt_diamond111()
-        elif self.surface_type == 'diamond100':
-            self.opt_diamond100()
+            GetSlab.opt_fcc100(self)
         else:
             print('{} not implemented. Avaiable parameters are:'.format(
                 self.surface_type))
-            print('fcc111, fcc100, fcc211, bcc111, bcc110, hcp0001, '
+            print('fcc111, fcc211, fcc100, bcc111, bcc110, hcp0001, '
                   'diamond111, diamond100')
 
     def opt_fcc111(self):
         ''' Optimize fcc111 slab '''
-        slab = fcc111(self.symbol, self.repeats_surface, self.a,
-                      self.vacuum)
+        slab = fcc111(self.symbol, self.repeats_surface, self.a, self.vacuum)
         self.prepare_slab_opt(slab)
 
     def opt_fcc211(self):
         ''' Optimize fcc211 slab '''
-        slab = fcc211(self.symbol, self.repeats_surface, self.a,
-                      self.vacuum)
+        slab = fcc211(self.symbol, self.repeats_surface, self.a, self.vacuum)
         self.prepare_slab_opt(slab)
 
     def opt_fcc100(self):
         ''' Optimize fcc100 slab '''
-        slab = fcc100(self.symbol, self.repeats_surface, self.a,
-                      self.vacuum)
+        slab = fcc100(self.symbol, self.repeats_surface, self.a, self.vacuum)
         self.prepare_slab_opt(slab)
 
     def opt_bcc111(self):
         ''' Optimize bcc111 slab '''
-        slab = bcc111(self.symbol, self.repeats_surface, self.a,
-                      self.vacuum)
+        slab = bcc111(self.symbol, self.repeats_surface, self.a, self.vacuum)
         self.prepare_slab_opt(slab)
 
     def opt_bcc110(self):
         ''' Optimize bcc110 slab '''
-        slab = bcc110(self.symbol, self.repeats_surface, self.a,
-                      self.vacuum)
+        slab = bcc110(self.symbol, self.repeats_surface, self.a, self.vacuum)
         self.prepare_slab_opt(slab)
 
     def opt_hcp0001(self, c=None):
         ''' Optimize hcp0001 slab '''
-        slab = hcp0001(self.symbol, self.repeats_surface, self.a,
-                       c, self.vacuum)
+        slab = hcp0001(self.symbol, self.repeats_surface, self.a, c,
+                       self.vacuum)
         self.prepare_slab_opt(slab)
 
     def opt_diamond111(self):
@@ -140,13 +143,11 @@ class GetSlab:
     def prepare_slab_opt(self, slab):
         ''' Prepare slab optimization with Quantum Espresso '''
 
-        from rmgcat_to_sella.balsamcalc import EspressoBalsamSocketIO
         job_kwargs = self.balsam_exe_settings.copy()
-        # job_kwargs.update([('user_workdir',cwd)])
         QE_keywords_slab = self.calc_keywords.copy()
-        # QE_keywords.update([('kpts',self.repeats_surface)])
-        # Not sure of intended behavior, but an example to show
-        # you can change keys as necessary here
+        # change kpoints - for surface optimization it is differetn
+        QE_keywords_slab.update([('kpts', self.repeats_surface)])
+
         slab.calc = EspressoBalsamSocketIO(
             workflow='QE_Socket',
             job_kwargs=job_kwargs,
@@ -154,11 +155,11 @@ class GetSlab:
             pseudo_dir=self.pseudo_dir,
             **QE_keywords_slab
         )
-        label = self.slab_name
 
-        from ase.optimize import BFGSLineSearch
-        opt = BFGSLineSearch(atoms=slab, trajectory=label + '.traj')
+        fname = os.path.join(self.creation_dir, self.slab_name)
+
+        opt = BFGSLineSearch(atoms=slab, trajectory=fname + '.traj')
         opt.run(fmax=0.01)
         slab.get_forces()
         slab.calc.close()
-        write(self.slab_name + '.xyz', slab)
+        write(fname + '.xyz', slab)

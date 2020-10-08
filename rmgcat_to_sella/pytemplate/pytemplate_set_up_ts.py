@@ -8,12 +8,13 @@ from ase.io import read, write
 from ase.constraints import FixAtoms
 from sella import Sella
 
-rxn = '{rxn}'
+rxn_name = '{rxn_name}'
 prefix = '{prefix}'
+geom = '{ts_fname}'
 balsam_exe_settings = {balsam_exe_settings}
 calc_keywords = {calc_keywords}
 
-trajdir = os.path.join(prefix, prefix + '_' + rxn + '.traj')
+trajdir = os.path.join(prefix, prefix + '_' + rxn_name + '.traj')
 label = os.path.join(prefix, prefix)
 
 start = datetime.datetime.now()
@@ -22,14 +23,14 @@ with open(label + '_time.log', 'w+') as f:
     f.write("\n")
     f.close()
 
-TS_est = read('{TS}')
+ts_atom = read(os.path.join(prefix, geom))
 # fix all atoms but not adsorbates
-# TS_est.set_constraint(FixAtoms([
-#     atom.index for atom in TS_est if atom.index < len(TS_est) - 2
+# ts_atom.set_constraint(FixAtoms([
+#     atom.index for atom in ts_atom if atom.index < len(ts_atom) - 2
 # ]))
 # fix bottom half of the slab
-TS_est.set_constraint(FixAtoms([
-    atom.index for atom in TS_est if atom.position[2] < TS_est.cell[2, 2] / 2.
+ts_atom.set_constraint(FixAtoms([
+    atom.index for atom in ts_atom if atom.position[2] < ts_atom.cell[2, 2] / 2.
 ]))
 
 extra_calc_keywords = dict(
@@ -38,21 +39,21 @@ extra_calc_keywords = dict(
     label=prefix
 )
 
-TS_est.calc = EspressoBalsamSocketIO(
+ts_atom.calc = EspressoBalsamSocketIO(
     workflow='QE_Socket',
     job_kwargs=balsam_exe_settings,
     **calc_keywords
 )
 
-TS_est.calc.set(**extra_calc_keywords)
+ts_atom.calc.set(**extra_calc_keywords)
 
-opt = Sella(TS_est, order=1, delta0=1e-2, gamma=1e-3, trajectory=trajdir)
+opt = Sella(ts_atom, order=1, delta0=1e-2, gamma=1e-3, trajectory=trajdir)
 opt.run(fmax=0.01)
-TS_est.calc.close()
+ts_atom.calc.close()
 
-WriteDir = os.path.join(prefix, prefix + '_' + rxn)
-write(WriteDir + '_ts_final.png', read(trajdir))
-write(WriteDir + '_ts_final.xyz', read(trajdir))
+write_dir = os.path.join(prefix, prefix + '_' + rxn_name)
+write(write_dir + '_ts_final.png', read(trajdir))
+write(write_dir + '_ts_final.xyz', read(trajdir))
 
 end = datetime.datetime.now()
 with open(label + '_time.log', 'a+') as f:

@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 
 import sys
+import os
 import datetime
 from pathlib import Path
 
 from rmgcat_to_sella.prepare_ts_with_xtb import AdsorbatePlacer
+from xtb.ase.calculator import XTB
 
 from ase.io import read, write
-from xtb.ase.calculator import XTB
 
 cwd = Path.cwd().as_posix()
 path = Path(cwd).parents[2]
@@ -18,7 +19,8 @@ geom = '{geom}'
 bonds = {bonds}
 av_dists_tuple = {av_dists_tuple}
 traj_path = '{traj_path}'
-slab = '../../../../{slabopt}'
+creation_dir = '{creation_dir}'
+slab = os.path.join(creation_dir, '{slabopt}')
 repeats = {repeats}
 prefix = '{prefix}'
 

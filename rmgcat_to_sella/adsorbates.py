@@ -13,7 +13,6 @@ from catkit.gen.adsorption import Builder
 from catkit import Gratoms
 
 from rmgcat_to_sella.graph_utils import node_test
-from rmgcat_to_sella.main import WorkFlow
 
 # Instead of using CatKit's built in slab generator routines, we want to
 # use pre-relaxed slab geometries to save computer time. In order to use
@@ -27,7 +26,13 @@ from rmgcat_to_sella.main import WorkFlow
 class Adsorbates:
     ''' This class handles adsorbates and puts them on the surface'''
 
-    def __init__(self, facetpath, slab, repeats, yamlfile, creation_dir):
+    def __init__(
+            self,
+            facetpath,
+            slab,
+            repeats,
+            yamlfile,
+            creation_dir):
         ''' Initializing
 
         Parameters:
@@ -51,11 +56,10 @@ class Adsorbates:
         self.repeats = repeats
         self.yamlfile = yamlfile
         self.creation_dir = creation_dir
-        # self.pytemplate = pytemplate
-        # self.pseudopotentials = pseudopotentials
-        # self.pseudo_dir = pseudo_dir
 
-    def get_edges(self, find_surface=False):
+    def get_edges(
+            self,
+            find_surface=False):
         ''' Get adsorption edges
 
         Parameters:
@@ -76,8 +80,9 @@ class Adsorbates:
             Atoms with tags '1' are considered as the possible binding spots
 
         '''
+        # read slab as an Atom object
+        slab_atom = read(os.path.join(self.creation_dir, self.slab))
 
-        slab_atom = read(self.creation_dir + '/' + self.slab)
         # If the Atoms object is periodic, we need to check connectivity
         # across the unit cell boundary as well.
         tvecs = np.array([[0., 0., 0.]])
@@ -158,7 +163,9 @@ class Adsorbates:
                 surface[i] = int(np.sign(pairvec[2]))
         return edges, surface
 
-    def rmgcat_to_gratoms(self, adjtxt):
+    def rmgcat_to_gratoms(
+            self,
+            adjtxt):
         ''' Convert a slice of .yaml file to Catkit's Gratoms object
 
         Parameters:
@@ -278,7 +285,6 @@ class Adsorbates:
 
     def adjacency_to_3d(self):
         ''' Place adsorbates on the surface '''
-        os.makedirs(self.facetpath, exist_ok=True)
         with open(self.creation_dir + '/' + self.yamlfile, 'r') as f:
             text = f.read()
         reactions = yaml.safe_load(text)
@@ -307,7 +313,8 @@ class Adsorbates:
                 unique_bonds.append(bond)
 
         slabedges, tags = Adsorbates.get_edges(self, True)
-        slab_atom = read(self.creation_dir + '/' + self.slab)
+        # slab_atom = read(self.slab)
+        slab_atom = read(os.path.join(self.creation_dir, self.slab))
         # slab transfromed to gratom object
         grslab = Gratoms(numbers=slab_atom.numbers,
                          positions=slab_atom.positions,
@@ -319,23 +326,12 @@ class Adsorbates:
         ads_builder = Builder(grslab)
 
         structures = dict()
-        # getting path to directory up
-        currentDir = os.path.dirname(os.getcwd())
         for adsorbate, bond in zip(images, unique_bonds):
             if len(adsorbate) == 0:
                 continue
             if bond is None:
                 bond = [0]
             key = adsorbate.get_chemical_formula()
-            # is_it_calculated = WorkFlow().check_if_minima_already_calculated(
-            #     currentDir, key, self.facetpath)
-            # if not is_it_calculated[0]:
-            #     # if species was not already calculated,
-            #     # prepare a new set of calculations
-            #     pass
-            # else:
-            #     # if species was already calculated, do noting
-            #     continue
             try:
                 if key == 'CHO2':  # connect through oxygen
                     bond = [2]
@@ -357,8 +353,8 @@ class Adsorbates:
         nslab = len(slab_atom)
 
         for species_name, adsorbate in structures.items():
-            # savedir = f'./{slabname}/minima/{species_name}'
-            savedir = os.path.join(self.facetpath, 'minima', species_name)
+            savedir = os.path.join(
+                self.creation_dir, self.facetpath, 'minima', species_name)
             os.makedirs(savedir, exist_ok=True)
             for j, structure in enumerate(adsorbate):
                 big_slab_ads = big_slab + structure[nslab:]
@@ -395,13 +391,25 @@ class Adsorbates:
             a path to the QE's pseudopotentials main directory
             e.g.
             '/home/mgierad/espresso/pseudo'
+        balsam_exe_settings : dict{str:int}
+            a dictionary with balsam execute parameters (cores, nodes, etc.),
+            e.g.
+            balsam_exe_settings = {'num_nodes': 1,
+                                   'ranks_per_node': 48,
+                                   'threads_per_rank': 1}
+        calc_keywords : dict{str:str}
+            a dictionary with parameters to run DFT package. Quantum Espresso
+            is used as default, e.g.
+
+            calc_keywords = {'kpts': (3, 3, 1), 'occupations': 'smearing',
+                            'smearing':  'marzari-vanderbilt',
+                            'degauss': 0.01, 'ecutwfc': 40, 'nosym': True,
+                            'conv_thr': 1e-11, 'mixing_mode': 'local-TF'}
         shtemplate : .sh file
-            optional
+            optional, a .sh template (not required by the workflow)
 
         '''
-        minimapath = os.path.join(self.facetpath, 'minima')
-        if not os.path.exists(minimapath):
-            os.makedirs(minimapath)
+        minimapath = os.path.join(self.creation_dir, self.facetpath, 'minima')
         with open(pytemplate, 'r') as f:
             pytemplate = f.read()
 
@@ -417,7 +425,8 @@ class Adsorbates:
                 if structure.endswith('xyz'):
                     prefix = os.path.splitext(structure)[0]
                     fname = os.path.join(
-                        minimapath, f'{species}_{prefix}_relax.py')
+                        minimapath, self.facetpath + '_' + species + '_'
+                        + prefix + '_relax.py')
                     with open(fname, 'w') as f:
                         f.write(pytemplate.format(
                             adsorbate=species,

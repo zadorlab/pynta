@@ -56,8 +56,8 @@ opt = QuasiNewton(atoms=atoms, trajectory=jobdir + '.traj')
 opt.run(fmax=0.06)
 atoms.calc.close()
 
-pngWriteFile = os.path.join(jobdir + '_final.png')
-write(pngWriteFile, read(jobdir + '.traj'))
+png_write_dir = os.path.join(jobdir + '_final.png')
+write(png_write_dir, read(jobdir + '.traj'))
 
 end = datetime.datetime.now()
 

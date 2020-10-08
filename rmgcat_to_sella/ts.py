@@ -1,10 +1,8 @@
 from catkit import Gratoms
 from catkit.gen.adsorption import Builder
 from catkit.build import molecule
-from catkit.gen.molecules import get_3D_positions
 
 from rmgcat_to_sella.adsorbates import Adsorbates
-from rmgcat_to_sella.graph_utils import node_test
 from rmgcat_to_sella.main import WorkFlow
 from rmgcat_to_sella.io import IO
 
@@ -12,12 +10,10 @@ from ase.io import read, write
 from ase.utils.structure_comparator import SymmetryEquivalenceCheck
 
 import numpy as np
-import yaml
 import os
 import shutil
 from statistics import mean
 from pathlib import Path
-import networkx as nx
 from spglib import get_symmetry
 
 
@@ -46,10 +42,12 @@ class TS():
             a path to directory with TSs
             e.g. 'TS_estimate'
         yamlfile : str
-            a name of the .yaml file with a reaction list
-        repeats: tuple
-            specify reapeats in (x, y, z) direction,
-            eg. (3, 3, 1)
+            a name of the .yaml file with a reactions list
+        repeats : tuple(int, int, int)
+            how to replicate unit cell in (x, y, z) direction,
+            e.g. (3, 3, 1)
+        creation_dir : posix
+            a posix path to the main working directory
 
         '''
         self.facetpath = facetpath
@@ -65,7 +63,6 @@ class TS():
             rxn,
             scfactor,
             scfactor_surface,
-            rotAngle,
             pytemplate_xtb,
             species_list,
             scaled1,
@@ -74,6 +71,11 @@ class TS():
 
         Parameters:
         ___________
+
+        rxn : dict(yaml[str:str])
+            a dictionary with info about the paricular reaction. This can be
+            view as a splitted many reaction .yaml file to a single reaction
+            .yaml file
         scfator : float
             a scaling factor to scale a bond distance between
             atoms taking part in the reaction
@@ -84,9 +86,6 @@ class TS():
             surface atom. Helpful e.g. when H is far away form the surface
             in TS, whereas for minima it is close to the surface
             e.g. 1.0
-        rotAngle : float
-            an angle (deg) of rotation  of the TS guess adduct on the surface
-            e.g. 60
         pytemplate_xtb : python script
             a template file for penalty function minimization job
         species_list : list[str]
@@ -103,11 +102,33 @@ class TS():
         for species in species_list:
             r_name_list, p_name_list, images = self.io.prepare_react_list(rxn)
             rxn_name = self.io.get_rxn_name(rxn)
-            self.TS_placer(scfactor, rotAngle, rxn_name, r_name_list,
-                           p_name_list, images)
-            self.filtered_out_equiv_ts_estimate(rxn_name)
-            self.set_up_penalty_xtb(rxn_name, pytemplate_xtb, species_list,
-                                    scaled1, scaled2, scfactor_surface)
+
+            ts_estimate_path = os.path.join(
+                self.creation_dir,
+                self.facetpath,
+                rxn_name,
+                self.ts_estimate_dir)
+
+            self.TS_placer(
+                ts_estimate_path,
+                scfactor,
+                rxn_name,
+                r_name_list,
+                p_name_list,
+                images)
+
+            self.filtered_out_equiv_ts_estimate(
+                ts_estimate_path,
+                rxn_name)
+
+            self.set_up_penalty_xtb(
+                ts_estimate_path,
+                rxn_name,
+                pytemplate_xtb,
+                species_list,
+                scaled1,
+                scaled2,
+                scfactor_surface)
 
     def get_max_rot_angle(self):
         ''' Get the maximum angle of rotation for a given slab that will
@@ -138,23 +159,24 @@ class TS():
 
     def TS_placer(
             self,
+            ts_estimate_path,
             scfactor,
-            rotAngle,
             rxn_name,
             r_name_list,
             p_name_list,
             images):
         ''' Place adsorbates on the surface to estimate TS
 
-        Parameters
-        __________
+        Parameters:
+        ___________
+
+        ts_estimate_path : str
+            a path to TS_estimate directory,
+            e.g. {creation_dir}/Cu_111/TS_estimate
         scfator : float
             a scaling factor to scale a bond distance between
             atoms taking part in the reaction
             e.g. 1.4
-        rotAngle : float
-            an angle (deg) of rotation  of the TS guess adduct on the surface
-            e.g. 60
         rxn_name : str
             a reaction name
             e.g OH_O+H
@@ -167,15 +189,13 @@ class TS():
 
         '''
         # create TS_estimate directory
-        ts_estimate_path = os.path.join(
-            self.facetpath, rxn_name, self.ts_estimate_dir)
         if os.path.exists(ts_estimate_path):
             shutil.rmtree(ts_estimate_path)
             os.makedirs(ts_estimate_path)
         else:
             os.makedirs(ts_estimate_path)
-        slab = read(self.slab)
-        slab.pbc = (True, True, False)
+        slab_atom = read(os.path.join(self.creation_dir, self.slab))
+        slab_atom.pbc = (True, True, False)
         # ADSORBATES
         # This part here is a bit hard coded, especially when dealing with
         # reactants with >= 3 atoms. The code works for couple of species
@@ -190,7 +210,7 @@ class TS():
         # differently than my input in the yaml file. Probably the problem with
         # the way yamlfile is converted to species - to be resolved
         if len(r_name_list) <= len(p_name_list):
-            TS_candidate = molecule(r_name_list[0])[0]
+            ts_candidate = molecule(r_name_list[0])[0]
         else:
             # images[2] keeps info about product. It's a Gratom object.
             # Cannot use catkit's molecule method becouse it generates
@@ -198,55 +218,55 @@ class TS():
             # it works to use molecule method but in general it is better to
             # use get_3D_positions() as it converts yaml info into 3d
             # position. In images I keep the oryginal order of elements with
-            # connectivity info. In TS_candidate.get_chemical_formula()
+            # connectivity info. In ts_candidate.get_chemical_formula()
             # elements are sorted and grouped
-            TS_candidate = images[2]
+            ts_candidate = images[2]
             # reactName = r_name
 
-        ''' Different cases '''
-        if TS_candidate.get_chemical_formula() == 'CHO':
+        # Different cases
+        if ts_candidate.get_chemical_formula() == 'CHO':
             atom2 = 2
-            bondedThrough = [0]
-        elif TS_candidate.get_chemical_formula() == 'COH':
+            bonded_through = [0]
+        elif ts_candidate.get_chemical_formula() == 'COH':
             atom2 = 2
-            bondedThrough = [0]
-        elif TS_candidate.get_chemical_formula() == 'CHO2':
-            bondedThrough = [2]  # connect through oxygen
+            bonded_through = [0]
+        elif ts_candidate.get_chemical_formula() == 'CHO2':
+            bonded_through = [2]  # connect through oxygen
 
-        elif TS_candidate.get_chemical_formula() == 'C2H5O2':
+        elif ts_candidate.get_chemical_formula() == 'C2H5O2':
             atom0 = 0
             atom1 = 1
             atom2 = 5
-            bondedThrough = [6]  # connect through oxygen
+            bonded_through = [6]  # connect through oxygen
         else:
-            bondedThrough = [0]
+            bonded_through = [0]
 
-        bondlen = TS_candidate.get_distance(atom1, atom2)
+        bondlen = ts_candidate.get_distance(atom1, atom2)
 
-        # Final ridgid rotations to orientate the TS_candidate on the surface
-        if len(TS_candidate.get_tags()) < 3:
-            TS_candidate.rotate(90, 'y')
-            TS_candidate.set_distance(
+        # Final ridgid rotations to orientate the ts_candidate on the surface
+        if len(ts_candidate.get_tags()) < 3:
+            ts_candidate.rotate(90, 'y')
+            ts_candidate.set_distance(
                 atom1, atom2, bondlen * scfactor, fix=0)
-        elif len(TS_candidate.get_tags()) == 3:
-            TS_candidate.rotate(90, 'z')
-            TS_candidate.set_distance(
+        elif len(ts_candidate.get_tags()) == 3:
+            ts_candidate.rotate(90, 'z')
+            ts_candidate.set_distance(
                 atom1, atom2, bondlen * scfactor, fix=0)
         # else:
-        elif TS_candidate.get_chemical_formula() == 'C2H5O2':
-            # TS_candidate.rotate(60, 'y')
-            TS_candidate.rotate(90, 'z')
-            ''' Should work for H2CO*OCH3, i.e. COH3+HCOH '''
-            TS_candidate.set_angle(atom2, atom1, atom0, -45,
+        elif ts_candidate.get_chemical_formula() == 'C2H5O2':
+            # ts_candidate.rotate(60, 'y')
+            ts_candidate.rotate(90, 'z')
+            # Should work for H2CO*OCH3, i.e. COH3+HCOH
+            ts_candidate.set_angle(atom2, atom1, atom0, -45,
                                    indices=[0, 1, 2, 3, 4], add=True)
-            TS_candidate.set_distance(
+            ts_candidate.set_distance(
                 atom1, atom2, bondlen * scfactor, fix=1,
                 indices=[0, 1, 2, 3, 4]
             )
             # indices=[0, 1, 2, 3, 4]
-        elif TS_candidate.get_chemical_formula() == 'CHO2':
-            TS_candidate.rotate(90, 'z')
-            TS_candidate.set_distance(
+        elif ts_candidate.get_chemical_formula() == 'CHO2':
+            ts_candidate.rotate(90, 'z')
+            ts_candidate.set_distance(
                 atom1, atom2, bondlen * scfactor, fix=0)
         # double check this
         put_adsorbates = Adsorbates(
@@ -257,10 +277,10 @@ class TS():
             self.creation_dir)
         slabedges, tags = put_adsorbates.get_edges(self)
         # double check this
-        grslab = Gratoms(numbers=slab.numbers,
-                         positions=slab.positions,
-                         cell=slab.cell,
-                         pbc=slab.pbc,
+        grslab = Gratoms(numbers=slab_atom.numbers,
+                         positions=slab_atom.positions,
+                         cell=slab_atom.cell,
+                         pbc=slab_atom.pbc,
                          edges=slabedges)
         grslab.arrays['surface_atoms'] = tags
 
@@ -281,12 +301,12 @@ class TS():
         step_size = 5
         while angle <= max_angle:
             structs = ads_builder.add_adsorbate(
-                TS_candidate, bondedThrough, -1, auto_construct=False)
-            # change to True will make bondedThrough work.
-            # Now it uses TS_candidate,rotate...
+                ts_candidate, bonded_through, -1, auto_construct=False)
+            # change to True will make bonded_through work.
+            # Now it uses ts_candidate,rotate...
             # to generate adsorbed strucutres
-            big_slab = slab * self.repeats
-            nslab = len(slab)
+            big_slab = slab_atom * self.repeats
+            nslab = len(slab_atom)
 
             for i, struc in enumerate(structs):
                 big_slab_ads = big_slab + struc[nslab:]
@@ -294,23 +314,28 @@ class TS():
                     str(i + len(structs) * count).zfill(3)
                 ) + '_' + rxn_name + '.xyz'), big_slab_ads)
 
-            TS_candidate.rotate(step_size, 'z')
+            ts_candidate.rotate(step_size, 'z')
             angle += step_size
             count += 1
 
-    def filtered_out_equiv_ts_estimate(self, rxn_name):
+    def filtered_out_equiv_ts_estimate(
+            self,
+            ts_estimate_path,
+            rxn_name):
         '''Filtered out symmetry equivalent sites and remove them keeping
             only symmetry disctinct structures.
 
         Parameters
         __________
+
+        ts_estimate_path : str
+            a path to TS_estimate directory,
+            e.g. {creation_dir}/Cu_111/TS_estimate
         rxn_name : str
             a reaction name
             e.g. OH_O+H
-        '''
-        ts_estimate_path = os.path.join(
-            self.facetpath, rxn_name, self.ts_estimate_dir)
 
+        '''
         # check the symmetry
         filtered_equivalent_sites = self.check_symm_before_xtb(
             ts_estimate_path)
@@ -318,11 +343,11 @@ class TS():
         # remove all symmetry equivalent structures
         for eqsites in filtered_equivalent_sites:
             try:
-                fileToRemove = os.path.join(
+                file_to_remove = os.path.join(
                     ts_estimate_path, eqsites + '_' + rxn_name + '.xyz')
-                os.remove(fileToRemove)
+                os.remove(file_to_remove)
             except OSError:
-                print("Error while deleting file : ", fileToRemove)
+                print("Error while deleting file : ", file_to_remove)
 
         # rename and organize ymmetry disctinct structures
         for prefix, noneqsites in enumerate(
@@ -340,6 +365,7 @@ class TS():
 
     def set_up_penalty_xtb(
             self,
+            ts_estimate_path,
             rxn_name,
             pytemplate,
             species_list,
@@ -348,9 +374,15 @@ class TS():
             scfactor_surface):
         ''' Prepare calculations of the penalty function
 
-        Parameters
+        Parameters:
         __________
 
+        ts_estimate_path : str
+            a path to TS_estimate directory,
+            e.g. {creation_dir}/Cu_111/TS_estimate
+        rxn_name : str
+            a reaction name
+            e.g. OH_O+H
         pytemplate : python script
             a template for the penalty function calculations
         species_list : list(str)
@@ -371,9 +403,8 @@ class TS():
             e.g. 1.0
 
         '''
-        ts_estimate_path = os.path.join(
-            self.facetpath, rxn_name, self.ts_estimate_dir)
-        path_to_minima = os.path.join(self.facetpath, 'minima')
+        path_to_minima = os.path.join(
+            self.creation_dir, self.facetpath, 'minima')
 
         with open(pytemplate, 'r') as f:
             pytemplate = f.read()
@@ -414,8 +445,10 @@ class TS():
 
                 # create job_file
                 with open(fname, 'w') as f:
-                    f.write(pytemplate.format(geom=xyz_file, bonds=bonds,
+                    f.write(pytemplate.format(geom=xyz_file,
+                                              bonds=bonds,
                                               av_dists_tuple=av_dists_tuple,
+                                              creation_dir=self.creation_dir,
                                               traj_path=traj_path,
                                               repeats=self.repeats,
                                               prefix=prefix,
@@ -521,7 +554,10 @@ class TS():
             av_dist = mean(all_dists)
         return av_dist
 
-    def get_unique_minima_indicies_after_opt(self, path_to_minima, species):
+    def get_unique_minima_indicies_after_opt(
+            self,
+            path_to_minima,
+            species):
         ''' Get the indicies of the symmetrically distinct minima
         for a given species
 
@@ -602,7 +638,8 @@ class TS():
 
     def create_unique_ts_all(
             self,
-            rxn,
+            ts_estimate_path,
+            rxn_name,
             pytemplate,
             pseudopotentials,
             pseudo_dir,
@@ -613,6 +650,12 @@ class TS():
         Parameters:
         ___________
 
+        ts_estimate_path : str
+            a path to TS_estimate directory,
+            e.g. {creation_dir}/Cu_111/TS_estimate
+        rxn_name : str
+            a reaction name
+            e.g. OH_O+H
         pytemplate : python script
             a template file for saddle point minimization with Sella
         pseudopotentials : dict(str: str)
@@ -633,14 +676,11 @@ class TS():
             a dictionary with keywords to Quantum Espresso calculations
 
         '''
-
-        rxn_name = self.io.get_rxn_name(rxn)
-        ts_estimate_path = os.path.join(self.facetpath, rxn_name,
-                                        self.ts_estimate_dir)
         # create .xyz and .png files
         self.create_unique_ts_xyz_and_png(ts_estimate_path)
         # create job files (.py scripts)
         self.create_ts_unique_py_file(pytemplate,
+                                      rxn_name,
                                       pseudopotentials,
                                       pseudo_dir,
                                       ts_estimate_path,
@@ -658,7 +698,8 @@ class TS():
         ___________
 
         ts_estimate_path : str
-            a path to TS_estimate_directory for a given reaction
+            a path to TS_estimate directory,
+            e.g. {creation_dir}/Cu_111/TS_estimate
 
         '''
         # check symmetry of all TS estimates in ts_estimate_path
@@ -699,6 +740,7 @@ class TS():
     def create_ts_unique_py_file(
             self,
             pytemplate,
+            rxn_name,
             pseudopotentials,
             pseudo_dir,
             ts_estimate_path,
@@ -711,6 +753,9 @@ class TS():
 
         pytemplate : python script
             a template file for saddle point minimization with Sella
+        rxn_name : str
+            a reaction name
+            e.g. OH_O+H
         pseudopotentials : dict(str: str)
             a dictionary with QE pseudopotentials for all species.
             e.g.
@@ -724,7 +769,8 @@ class TS():
             e.g.
             '/home/mgierad/espresso/pseudo'
         ts_estimate_path : str
-            a path to TS_estimate_directory for a given reaction
+            a path to TS_estimate directory,
+            e.g. {creation_dir}/Cu_111/TS_estimate
         balsam_exe_settings : dict(str:str)
             a dictionary with balsam settings
         calc_keywords : dict(str:str)
@@ -736,23 +782,26 @@ class TS():
 
         with open(pytemplate, 'r') as f:
             pytemplate = f.read()
-        for struc in os.listdir(ts_estimate_unique_path):
-            TSdir = os.path.join(ts_estimate_unique_path, struc)
-            if os.path.isdir(TSdir):
-                ts_path = os.path.join(ts_estimate_unique_path, struc)
-                for fl in os.listdir(ts_path):
-                    if fl.endswith('.xyz'):
-                        fname = os.path.join(
-                            ts_estimate_unique_path, fl[:-4] + '.py')
-                        with open(fname, 'w') as f:
-                            f.write(pytemplate.format(TS=os.path.join(
-                                struc, fl), rxn=fl[3:-7], prefix=fl[:2],
-                                pseudopotentials=pseudopotentials,
-                                pseudo_dir=pseudo_dir,
-                                balsam_exe_settings=balsam_exe_settings,
-                                calc_keywords=calc_keywords,
-                                creation_dir=self.creation_dir
-                            ))
+
+        tss = Path(ts_estimate_unique_path).glob('**/*ts.xyz')
+        for ts in tss:
+            ts = str(ts)
+            ts_dir, ts_fname = os.path.split(ts)
+            py_dir, _ = os.path.split(ts_dir)
+            py_fname = ts_fname[:-4] + '.py'
+            py_file = os.path.join(py_dir, py_fname)
+
+            with open(py_file, 'w') as f:
+                f.write(pytemplate.format(
+                    ts_fname=ts_fname,
+                    rxn_name=rxn_name,
+                    prefix=ts_fname[:2],
+                    pseudopotentials=pseudopotentials,
+                    pseudo_dir=pseudo_dir,
+                    balsam_exe_settings=balsam_exe_settings,
+                    calc_keywords=calc_keywords,
+                    creation_dir=self.creation_dir
+                ))
 
     def get_bond_dist(
             self,
