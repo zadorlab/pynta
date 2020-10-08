@@ -1171,6 +1171,7 @@ class WorkFlow:
 
         Parameters:
         ___________
+
         yamlfile: str
             a name of the .yaml file with a reaction list
         facetpath : str
@@ -1195,15 +1196,22 @@ class WorkFlow:
                 species, facetpath)
         return checked_species
 
-    def check_for_minima_dir(self, species, facetpath):
+    def check_for_minima_dir(
+            self,
+            species,
+            facetpath):
         ''' Return True if directory for a given species exists in
             {facepath}/minima. Otherwise, False
 
         Parameters:
         ___________
+
         species: str
             a species symbol
             e.g. 'H' or 'CO'
+        facetpath : str
+            a path to the workflow's main dir
+            e.g. 'Cu_111'
 
         '''
         species_minima_dir = os.path.join(
@@ -1212,16 +1220,23 @@ class WorkFlow:
             return True
         return False
 
-    def check_for_minima_outfiles(self, species, facetpath):
+    def check_for_minima_outfiles(
+            self,
+            species,
+            facetpath):
         ''' Check for the previously calculated * relax.out files for a given
             species. Return True if there are previous calculations. Otherwise,
             False.
 
         Parameters:
         ___________
+
         species: str
             a species symbol
             e.g. 'H' or 'CO'
+        facetpath : str
+            a path to the workflow's main dir
+            e.g. 'Cu_111'
 
         '''
         minima_dir = os.path.join(creation_dir, facetpath, 'minima')
@@ -1238,17 +1253,24 @@ class WorkFlow:
             return True
         return False
 
-    def check_if_slab_opt_exists(self, facetpath):
+    def check_if_slab_opt_exists(
+            self,
+            facetpath):
         ''' Check whether slab has been already optimized
 
         Parameters:
         ___________
+
         work_files_path: posix
             a path where work files are stored, e.g.
             '{'creation_dir'}/Cu_111'
+        facetpath : str
+            a path to the workflow's main dir
+            e.g. 'Cu_111'
 
         Returns:
         ________
+
         tuple(bool, str=None):
             True if there are previous calculations
                 (True, path_to_prev_calc)
@@ -1282,7 +1304,16 @@ class WorkFlow:
     def execute(
             self,
             facetpath):
-        ''' The main executable for a given surface '''
+        ''' The main execute method for a given surface
+
+        Parameters:
+        ___________
+
+        facetpath : str
+            a path to the workflow's main dir
+            e.g. 'Cu_111'
+
+        '''
 
         if optimize_slab:
             # if slab found in previous calculation, do nothing
@@ -1339,5 +1370,6 @@ class WorkFlow:
         self.run_opt_after_ts('04', facetpath)
 
     def execute_all(self):
+        ''' Main execute method for the entire workflow '''
         for facetpath in facetpaths:
             self.execute(facetpath)
