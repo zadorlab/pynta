@@ -16,7 +16,7 @@ class GetSlab:
             surface_type,
             symbol,
             a,
-            repeats,
+            repeats_surface,
             vacuum,
             slab_name,
             pseudopotentials,
@@ -37,7 +37,7 @@ class GetSlab:
             e.g. 'Cu'
         a : float
             a lattice constant
-        repeats : tuple
+        repeats_surface : tuple
             specify reapeats in (x, y, z) direction,
             eg. (3, 3, 1)
         vacuum : float
@@ -60,7 +60,7 @@ class GetSlab:
         self.surface_type = surface_type
         self.symbol = symbol
         self.a = a
-        self.repeats = repeats
+        self.repeats_surface = repeats_surface
         self.vacuum = vacuum
         self.slab_name = slab_name
         self.pseudopotentials = pseudopotentials

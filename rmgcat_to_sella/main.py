@@ -708,6 +708,9 @@ class WorkFlow:
 
         # get rxn_name from job_script by spliting and joining job_script name
         # exeption for two first jobs
+        slab_opt = '00_{}_set_up_slab_opt.py'.format(facetpath)
+        ads_surf_opt_script = '01_{}_set_up_ads_on_slab.py'.format(facetpath)
+
         if job_script in [ads_surf_opt_script, slab_opt]:
             rxn_name = ''
         else:
