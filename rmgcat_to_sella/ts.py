@@ -1,10 +1,8 @@
 from catkit import Gratoms
 from catkit.gen.adsorption import Builder
 from catkit.build import molecule
-from catkit.gen.molecules import get_3D_positions
 
 from rmgcat_to_sella.adsorbates import Adsorbates
-from rmgcat_to_sella.graph_utils import node_test
 from rmgcat_to_sella.main import WorkFlow
 from rmgcat_to_sella.io import IO
 
@@ -12,12 +10,10 @@ from ase.io import read, write
 from ase.utils.structure_comparator import SymmetryEquivalenceCheck
 
 import numpy as np
-import yaml
 import os
 import shutil
 from statistics import mean
 from pathlib import Path
-import networkx as nx
 from spglib import get_symmetry
 
 
@@ -46,10 +42,12 @@ class TS():
             a path to directory with TSs
             e.g. 'TS_estimate'
         yamlfile : str
-            a name of the .yaml file with a reaction list
-        repeats: tuple
-            specify reapeats in (x, y, z) direction,
-            eg. (3, 3, 1)
+            a name of the .yaml file with a reactions list
+        repeats : tuple(int, int, int)
+            how to replicate unit cell in (x, y, z) direction,
+            e.g. (3, 3, 1)
+        creation_dir : posix
+            a posix path to the main working directory
 
         '''
         self.facetpath = facetpath
@@ -73,6 +71,11 @@ class TS():
 
         Parameters:
         ___________
+
+        rxn : dict(yaml[str:str])
+            a dictionary with info about the paricular reaction. This can be
+            view as a splitted many reaction .yaml file to a single reaction
+            .yaml file
         scfator : float
             a scaling factor to scale a bond distance between
             atoms taking part in the reaction
@@ -165,7 +168,8 @@ class TS():
         ''' Place adsorbates on the surface to estimate TS
 
         Parameters:
-        __________
+        ___________
+
         ts_estimate_path : str
             a path to TS_estimate directory,
             e.g. {creation_dir}/Cu_111/TS_estimate
