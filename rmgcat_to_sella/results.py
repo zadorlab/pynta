@@ -7,12 +7,13 @@ import numpy as np
 
 
 class Results():
-    def __init__(self,
-                 minima_path,
-                 ts_path,
-                 slab_path,
-                 reactants_list,
-                 products_list):
+    def __init__(
+            self,
+            minima_path,
+            ts_path,
+            slab_path,
+            reactants_list,
+            products_list):
         '''
         Parameters:
         ___________
@@ -31,6 +32,7 @@ class Results():
         product_list : list(str)
             a list with all products
             e.g. ['O', 'H']
+
         '''
         self.minima_path = minima_path
         self.ts_path = ts_path
@@ -389,7 +391,7 @@ class Results():
         if not plot_filename:
             plot_filename = 'plot.png'
 
-        reaction_energy = float(self.get_reaction_energy()
+        reaction_energy = float(self.get_reaction_energy())
         activation_barriers = self.get_barrier()
 
         if apply_max_barrier:
