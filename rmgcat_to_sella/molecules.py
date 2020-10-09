@@ -97,8 +97,11 @@ class Molecule():
 
         return atoms
 
+<<<<<<< HEAD
 
 << << << < HEAD
+=======
+>>>>>>> fixed dependencies up to defaults module
     def bin_hydrogen(self, hydrogens=1, bins=1):
         """Recursive function for determining distributions of
         hydrogens across bins.
@@ -115,8 +118,11 @@ class Molecule():
                     for k in self.bin_hydrogen(i, bins - 1):
                         yield j + k
 
+<<<<<<< HEAD
 == == == =
 >>>>>> > fixing some dependancies
+=======
+>>>>>>> fixed dependencies up to defaults module
     def get_topologies(self, symbols, saturate=False):
         """Return the possible topologies of a given chemical species.
 
@@ -160,6 +166,7 @@ class Molecule():
 
         if n == 1:
             atoms = Gratoms(elements, cell=[1, 1, 1])
+<<<<<<< HEAD
 << << << < HEAD
             hatoms = self.hydrogenate(atoms, np.array([hcnt]))
             return [hatoms]
@@ -171,6 +178,12 @@ class Molecule():
         elif n == 0:
             hatoms = catkit.Gratoms('H{}'.format(hcnt))
 >>>>>>> fixing some dependancies
+=======
+            hatoms = self.hydrogenate(atoms, np.array([hcnt]))
+            return [hatoms]
+        elif n == 0:
+            hatoms = Gratoms('H{}'.format(hcnt))
+>>>>>>> fixed dependencies up to defaults module
             if hcnt == 2:
                 hatoms.graph.add_edge(0, 1, bonds=1)
             return [hatoms]
@@ -180,10 +193,14 @@ class Molecule():
 
         backbones, molecules = [], []
 <<<<<<< HEAD
+<<<<<<< HEAD
         combos = combinations(np.arange(ln), n - 1)
 =======
         combos = itertools.combinations(np.arange(ln), n - 1)
 >>>>>>> fixing some dependancies
+=======
+        combos = combinations(np.arange(ln), n - 1)
+>>>>>>> fixed dependencies up to defaults module
         for c in combos:
             # Construct the connectivity matrix
             ltm = np.zeros(ln)
@@ -198,10 +215,14 @@ class Molecule():
             # Not fully connected (subgraph)
             if np.any(degree == 0) or not \
 <<<<<<< HEAD
+<<<<<<< HEAD
                     is_connected(from_numpy_matrix(connectivity)):
 =======
                     nx.is_connected(nx.from_numpy_matrix(connectivity)):
 >>>>>>> fixing some dependancies
+=======
+                    is_connected(from_numpy_matrix(connectivity)):
+>>>>>>> fixed dependencies up to defaults module
                 continue
 
             # Overbonded atoms.
@@ -210,10 +231,14 @@ class Molecule():
                 continue
 
 <<<<<<< HEAD
+<<<<<<< HEAD
             atoms = Gratoms(
 =======
             atoms = catkit.Gratoms(
 >>>>>>> fixing some dependancies
+=======
+            atoms = Gratoms(
+>>>>>>> fixed dependencies up to defaults module
                 numbers=elements,
                 edges=connectivity,
                 cell=[1, 1, 1])
@@ -230,14 +255,19 @@ class Molecule():
                 # The backbone is saturated, do not enumerate
                 if hcnt == hmax:
 <<<<<<< HEAD
+<<<<<<< HEAD
                     hatoms = self.hydrogenate(atoms, remaining_bonds)
 =======
                     hatoms = hydrogenate(atoms, remaining_bonds)
 >>>>>>> fixing some dependancies
+=======
+                    hatoms = self.hydrogenate(atoms, remaining_bonds)
+>>>>>>> fixed dependencies up to defaults module
                     molecules += [hatoms]
                     continue
 
                 # Enumerate hydrogens across backbone
+<<<<<<< HEAD
 <<<<<<< HEAD
                 for bins in self.bin_hydrogen(hcnt, n):
                     if not np.all(bins <= remaining_bonds):
@@ -251,6 +281,13 @@ class Molecule():
 
                     hatoms = hydrogenate(atoms, bins)
 >>>>>>> fixing some dependancies
+=======
+                for bins in self.bin_hydrogen(hcnt, n):
+                    if not np.all(bins <= remaining_bonds):
+                        continue
+
+                    hatoms = self.hydrogenate(atoms, bins)
+>>>>>>> fixed dependencies up to defaults module
 
                     isomorph = False
                     for G0 in molecules:
@@ -264,6 +301,9 @@ class Molecule():
         return molecules
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> fixed dependencies up to defaults module
     def get_basis_vectors(self, coordinates):
         """Return a set of basis vectors for a given array of
         3D coordinates.
@@ -331,7 +371,11 @@ class Molecule():
         root, nodes = branch
         root_position = atoms[root].position
 
+<<<<<<< HEAD
         radii = defaults.get('radii')
+=======
+        radii = catkit.gen.defaults.get('radii')
+>>>>>>> fixed dependencies up to defaults module
         atomic_numbers = atoms.numbers[[root] + nodes]
         atomic_radii = radii[atomic_numbers]
         dist = (atomic_radii[0] + atomic_radii[1:])[:, None]
@@ -373,8 +417,11 @@ class Molecule():
 
         return positions
 
+<<<<<<< HEAD
 =======
 >>>>>>> fixing some dependancies
+=======
+>>>>>>> fixed dependencies up to defaults module
     def get_3D_positions(self, atoms, bond_index=None):
         """Return an estimation of the 3D structure of a Gratoms object
         based on its graph.
@@ -406,15 +453,20 @@ class Molecule():
             c0 = atoms[root].position
             if i == 0:
 <<<<<<< HEAD
+<<<<<<< HEAD
                 basis = self.get_basis_vectors([c0, [0, 0, -1]])
 =======
                 basis = catkit.gen.utils.get_basis_vectors([c0, [0, 0, -1]])
 >>>>>>> fixing some dependancies
+=======
+                basis = self.get_basis_vectors([c0, [0, 0, -1]])
+>>>>>>> fixed dependencies up to defaults module
             else:
                 bond_index = None
                 for j, base_root in enumerate(complete):
                     if root in branches[base_root]:
                         c1 = atoms[base_root].position
+<<<<<<< HEAD
 <<<<<<< HEAD
                         # Flip the basis for every alternate step down
                         # the chain.
@@ -423,11 +475,17 @@ class Molecule():
                         # Flip the basis for every alternate step down the chain.
                         basis = catkit.gen.utils.get_basis_vectors([c0, c1])
 >>>>>>> fixing some dependancies
+=======
+                        # Flip the basis for every alternate step down
+                        # the chain.
+                        basis = self.get_basis_vectors([c0, c1])
+>>>>>>> fixed dependencies up to defaults module
                         if (i - j) % 2 != 0:
                             basis[2] *= -1
                         break
             complete.insert(0, root)
 
+<<<<<<< HEAD
 <<<<<<< HEAD
             positions = self.branch_molecule(atoms, branch, basis, bond_index)
             atoms.positions[nodes] = positions
@@ -440,6 +498,9 @@ return atoms
 >>>>>> > fixed ts.py
 =======
             positions = _branch_molecule(atoms, branch, basis, bond_index)
+=======
+            positions = self.branch_molecule(atoms, branch, basis, bond_index)
+>>>>>>> fixed dependencies up to defaults module
             atoms.positions[nodes] = positions
 
         return atoms
