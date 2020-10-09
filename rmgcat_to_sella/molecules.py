@@ -1,6 +1,11 @@
+<<<<<<< HEAD
 from rmgcat_to_sella.excatkit.gratoms import Gratoms
 from rmgcat_to_sella import defaults
 
+=======
+from rmgcat_to_sella.gratoms import Gratoms
+from rmgcat_to_sella import defaults
+>>>>>>> all dependency issues with molecules.py are now solved - tests required
 from ase.data import chemical_symbols
 from networkx import dfs_successors, is_connected, from_numpy_matrix
 from itertools import combinations
@@ -150,11 +155,15 @@ class Molecule():
             hcnt = 0
 
         elements = np.repeat(mnum, mcnt)
+<<<<<<< HEAD
 << << << < HEAD
         max_degree = defaults.get('radicals')[elements]
 == == == =
         max_degree = catkit.gen.defaults.get('radicals')[elements]
 >>>>>> > fixing some dependancies
+=======
+        max_degree = defaults.get('radicals')[elements]
+>>>>>>> all dependency issues with molecules.py are now solved - tests required
         n = mcnt.sum()
 
         hmax = int(max_degree.sum() - (n - 1) * 2)
@@ -372,10 +381,14 @@ class Molecule():
         root_position = atoms[root].position
 
 <<<<<<< HEAD
+<<<<<<< HEAD
         radii = defaults.get('radii')
 =======
         radii = catkit.gen.defaults.get('radii')
 >>>>>>> fixed dependencies up to defaults module
+=======
+        radii = defaults.get('radii')
+>>>>>>> all dependency issues with molecules.py are now solved - tests required
         atomic_numbers = atoms.numbers[[root] + nodes]
         atomic_radii = radii[atomic_numbers]
         dist = (atomic_radii[0] + atomic_radii[1:])[:, None]
