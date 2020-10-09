@@ -1,4 +1,5 @@
 from rmgcat_to_sella.gratoms import Gratoms
+from rmgcat_to_sella import defaults
 from ase.data import chemical_symbols
 from networkx import dfs_successors, is_connected, from_numpy_matrix
 from itertools import combinations
@@ -137,7 +138,7 @@ class Molecule():
             hcnt = 0
 
         elements = np.repeat(mnum, mcnt)
-        max_degree = catkit.gen.defaults.get('radicals')[elements]
+        max_degree = defaults.get('radicals')[elements]
         n = mcnt.sum()
 
         hmax = int(max_degree.sum() - (n - 1) * 2)
@@ -288,7 +289,7 @@ class Molecule():
         root, nodes = branch
         root_position = atoms[root].position
 
-        radii = catkit.gen.defaults.get('radii')
+        radii = defaults.get('radii')
         atomic_numbers = atoms.numbers[[root] + nodes]
         atomic_radii = radii[atomic_numbers]
         dist = (atomic_radii[0] + atomic_radii[1:])[:, None]
