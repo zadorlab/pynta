@@ -1,6 +1,7 @@
 from rmgcat_to_sella.gratoms import Gratoms
 from ase.data import chemical_symbols
-from networkx import dfs_successors
+from networkx import dfs_successors, is_connected, from_numpy_matrix
+from itertools import combinations
 import numpy as np
 import re
 
@@ -93,6 +94,22 @@ class Molecule():
 
         return atoms
 
+    def bin_hydrogen(self, hydrogens=1, bins=1):
+        """Recursive function for determining distributions of
+        hydrogens across bins.
+        """
+        if bins == 1:
+            yield [hydrogens]
+
+        elif hydrogens == 0:
+            yield [0] * bins
+
+        else:
+            for i in range(hydrogens + 1):
+                for j in self.bin_hydrogen(hydrogens - i, 1):
+                    for k in self.bin_hydrogen(i, bins - 1):
+                        yield j + k
+
     def get_topologies(self, symbols, saturate=False):
         """Return the possible topologies of a given chemical species.
 
@@ -132,10 +149,10 @@ class Molecule():
 
         if n == 1:
             atoms = Gratoms(elements, cell=[1, 1, 1])
-            hatoms = hydrogenate(atoms, np.array([hcnt]))
+            hatoms = self.hydrogenate(atoms, np.array([hcnt]))
             return [hatoms]
         elif n == 0:
-            hatoms = catkit.Gratoms('H{}'.format(hcnt))
+            hatoms = Gratoms('H{}'.format(hcnt))
             if hcnt == 2:
                 hatoms.graph.add_edge(0, 1, bonds=1)
             return [hatoms]
@@ -144,7 +161,7 @@ class Molecule():
         il = np.tril_indices(n, -1)
 
         backbones, molecules = [], []
-        combos = itertools.combinations(np.arange(ln), n - 1)
+        combos = combinations(np.arange(ln), n - 1)
         for c in combos:
             # Construct the connectivity matrix
             ltm = np.zeros(ln)
@@ -158,7 +175,7 @@ class Molecule():
 
             # Not fully connected (subgraph)
             if np.any(degree == 0) or not \
-                    nx.is_connected(nx.from_numpy_matrix(connectivity)):
+                    is_connected(from_numpy_matrix(connectivity)):
                 continue
 
             # Overbonded atoms.
@@ -166,7 +183,7 @@ class Molecule():
             if np.any(remaining_bonds < 0):
                 continue
 
-            atoms = catkit.Gratoms(
+            atoms = Gratoms(
                 numbers=elements,
                 edges=connectivity,
                 cell=[1, 1, 1])
@@ -182,16 +199,16 @@ class Molecule():
 
                 # The backbone is saturated, do not enumerate
                 if hcnt == hmax:
-                    hatoms = hydrogenate(atoms, remaining_bonds)
+                    hatoms = self.hydrogenate(atoms, remaining_bonds)
                     molecules += [hatoms]
                     continue
 
                 # Enumerate hydrogens across backbone
-                for bins in bin_hydrogen(hcnt, n):
+                for bins in self.bin_hydrogen(hcnt, n):
                     if not np.all(bins <= remaining_bonds):
                         continue
 
-                    hatoms = hydrogenate(atoms, bins)
+                    hatoms = self.hydrogenate(atoms, bins)
 
                     isomorph = False
                     for G0 in molecules:
@@ -203,6 +220,115 @@ class Molecule():
                         molecules += [hatoms]
 
         return molecules
+
+    def get_basis_vectors(self, coordinates):
+        """Return a set of basis vectors for a given array of
+        3D coordinates.
+
+        Parameters
+        ----------
+        coordinates : array_like (3, 3) | (2, 3)
+            Cartesian coordinates to determine the basis of. If
+            only 2 positions are given 3rd is chosen as the positive
+            y-axis.
+
+        Returns
+        -------
+        basis_vectors : ndarray (3, 3)
+            Automatically generated basis vectors from the given
+            positions.
+        """
+        if len(coordinates) == 3:
+            c0, c1, c2 = coordinates
+        else:
+            c0, c1 = coordinates
+            c2 = np.array([0, 1, 0])
+
+        basis1 = c0 - c1
+        basis2 = np.cross(basis1, c0 - c2)
+        basis3 = np.cross(basis1, basis2)
+
+        basis_vectors = np.vstack([basis1, basis2, basis3])
+        basis_vectors /= np.linalg.norm(
+            basis_vectors, axis=1, keepdims=True)
+
+        return basis_vectors
+
+    def branch_molecule(
+            self,
+            atoms,
+            branch,
+            basis=None,
+            adsorption=None):
+        """Return the positions of a Gratoms object for a segment of its
+        attached graph. This function is mean to be iterated over by a depth
+        first search form NetworkX.
+
+        Parameters
+        ----------
+        atoms : Gratoms object
+            Gratoms object to be iterated over. Will have its positions
+            altered in-place.
+        branch : tuple (1, [N,])
+            A single entry from the output of nx.bfs_successors. The
+            first entry is the root node and the following list is the
+            nodes branching from the root.
+        basis : ndarray (3, 3)
+            The basis vectors to use for this step of the branching.
+        adsorption : bool
+            If True, will construct the molecule as though there is a
+            surface normal to the negative z-axis. Must be None for
+            all but the first index in the depth first search.
+
+        Returns
+        -------
+        positions : ndarray (N, 3)
+            Estimated positions for the branch nodes.
+        """
+        root, nodes = branch
+        root_position = atoms[root].position
+
+        radii = catkit.gen.defaults.get('radii')
+        atomic_numbers = atoms.numbers[[root] + nodes]
+        atomic_radii = radii[atomic_numbers]
+        dist = (atomic_radii[0] + atomic_radii[1:])[:, None]
+
+        angles = np.array([109.47, 109.47, 109.47, 0])
+        dihedral = np.array([0, 120, -120, 0])
+
+        if adsorption:
+            # Move adsorption structures away from surface
+            angles += 15
+
+        # Tetrahedral bond arrangement by default
+        n = len(nodes)
+        if n == 1:
+            # Linear bond arrangement
+            angles[0] = 180
+        elif n == 2:
+            # Trigonal-planer bond arrangement
+            angles[:2] = 120
+            dihedral[1] = 180
+
+        # Place the atoms of this segment of the branch
+        if basis is None:
+            basis = self.get_basis_vectors(
+                [root_position, [0, 0, -1]])
+        basis = np.repeat(basis[None, :, :], len(dist), axis=0)
+
+        ang = np.deg2rad(angles)[:len(dist), None]
+        tor = np.deg2rad(dihedral)[:len(dist), None]
+
+        basis[:, 1] *= -np.sin(tor)
+        basis[:, 2] *= np.cos(tor)
+
+        vectors = basis[:, 1] + basis[:, 2]
+        vectors *= dist * np.sin(ang)
+        basis[:, 0] *= dist * np.cos(ang)
+
+        positions = vectors + root_position - basis[:, 0]
+
+        return positions
 
     def get_3D_positions(self, atoms, bond_index=None):
         """Return an estimation of the 3D structure of a Gratoms object
@@ -234,20 +360,21 @@ class Molecule():
 
             c0 = atoms[root].position
             if i == 0:
-                basis = catkit.gen.utils.get_basis_vectors([c0, [0, 0, -1]])
+                basis = self.get_basis_vectors([c0, [0, 0, -1]])
             else:
                 bond_index = None
                 for j, base_root in enumerate(complete):
                     if root in branches[base_root]:
                         c1 = atoms[base_root].position
-                        # Flip the basis for every alternate step down the chain.
-                        basis = catkit.gen.utils.get_basis_vectors([c0, c1])
+                        # Flip the basis for every alternate step down
+                        # the chain.
+                        basis = self.get_basis_vectors([c0, c1])
                         if (i - j) % 2 != 0:
                             basis[2] *= -1
                         break
             complete.insert(0, root)
 
-            positions = _branch_molecule(atoms, branch, basis, bond_index)
+            positions = self.branch_molecule(atoms, branch, basis, bond_index)
             atoms.positions[nodes] = positions
 
         return atoms
