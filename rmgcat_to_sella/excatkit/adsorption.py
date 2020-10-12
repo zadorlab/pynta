@@ -2,12 +2,14 @@ from rmgcat_to_sella import defaults
 from rmgcat_to_sella.excatkit.utils import Utils
 from rmgcat_to_sella.excatkit import symmetry
 from rmgcat_to_sella.excatkit.molecules import Molecule
-# import catkit
+
 import matplotlib.pyplot as plt
 import itertools
 import networkx as nx
 import numpy as np
 import scipy
+
+
 radii = defaults.get('radii')
 
 
