@@ -1,7 +1,7 @@
 from . import defaults
 from . import utils
 from . import symmetry
-from rmgcat_to_sella.molecules import Molecule
+from rmgcat_to_sella.excatkit.molecules import Molecule
 # import catkit
 import matplotlib.pyplot as plt
 import itertools
@@ -593,7 +593,7 @@ class Builder(AdsorptionSites):
         R = radii[numbers]
         base_position = utils.trilaterate(top_sites[u], r + R, vector)
 
-        branches = nx.bfs_successors(atoms.graph, bond)
+        # branches = nx.bfs_successors(atoms.graph, bond)
         atoms.translate(-atoms.positions[bond])
 
         if auto_construct:
@@ -657,7 +657,7 @@ class Builder(AdsorptionSites):
             uvec = [-uvec0, uvec1[0], uvec2[0]]
             self._branch_bidentate(atoms, uvec, branches0[0])
             for branch in branches0[1:]:
-                catkit.gen.molecules._branch_molecule(
+                Molecule().branch_molecule(
                     atoms, branch, adsorption=True)
 
         branches1 = list(nx.bfs_successors(atoms.graph, bonds[1]))
@@ -665,7 +665,7 @@ class Builder(AdsorptionSites):
             uvec = [uvec0, uvec1[0], uvec2[0]]
             self._branch_bidentate(atoms, uvec, branches1[0])
             for branch in branches1[1:]:
-                catkit.gen.molecules._branch_molecule(
+                Molecule().branch_molecule(
                     atoms, branch, adsorption=True)
 
         n = len(slab)
