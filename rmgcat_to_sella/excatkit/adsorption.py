@@ -1,7 +1,7 @@
 from rmgcat_to_sella import defaults
 from rmgcat_to_sella.excatkit.utils import Utils
 from rmgcat_to_sella.excatkit import symmetry
-from rmgcat_to_sella.excatkit.molecules import Molecule
+from rmgcat_to_sella.excatkit.molecule import Molecule
 
 import matplotlib.pyplot as plt
 import itertools

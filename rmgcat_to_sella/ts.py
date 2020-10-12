@@ -1,6 +1,6 @@
-from rmgcat_to_sella.gratoms import Gratoms
-from rmgcat_to_sella.adsorption import Builder
-from rmgcat_to_sella.molecules import molecule
+from rmgcat_to_sella.excatkit.gratoms import Gratoms
+from rmgcat_to_sella.excatkit.adsorption import Builder
+from rmgcat_to_sella.excatkit.molecule import Molecule
 
 from rmgcat_to_sella.adsorbates import Adsorbates
 from rmgcat_to_sella.main import WorkFlow
@@ -209,7 +209,7 @@ class TS():
         # differently than my input in the yaml file. Probably the problem with
         # the way yamlfile is converted to species - to be resolved
         if len(r_name_list) <= len(p_name_list):
-            ts_candidate = molecule(r_name_list[0])[0]
+            ts_candidate = Molecule().molecule(r_name_list[0])[0]
         else:
             # images[2] keeps info about product. It's a Gratom object.
             # Cannot use catkit's molecule method becouse it generates
