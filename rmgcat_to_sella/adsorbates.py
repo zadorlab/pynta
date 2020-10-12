@@ -9,6 +9,7 @@ from ase.io import read, write
 from ase.data import covalent_radii
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 from rmgcat_to_sella.excatkit.molecules import Molecule
 from rmgcat_to_sella.excatkit.adsorption import Builder
 from rmgcat_to_sella.excatkit.gratoms import Gratoms
@@ -17,6 +18,11 @@ from rmgcat_to_sella.molecules import Molecule
 from rmgcat_to_sella.adsorption import Builder
 from rmgcat_to_sella.gratoms import Gratoms
 >>>>>>> fixing adsorption.py and testing
+=======
+from rmgcat_to_sella.excatkit.molecules import Molecule
+from rmgcat_to_sella.excatkit.adsorption import Builder
+from rmgcat_to_sella.excatkit.gratoms import Gratoms
+>>>>>>> adding excatkit module
 
 from rmgcat_to_sella.graph_utils import node_test
 

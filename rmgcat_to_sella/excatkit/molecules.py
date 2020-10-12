@@ -1,11 +1,8 @@
-<<<<<<< HEAD
+
 from rmgcat_to_sella.excatkit.gratoms import Gratoms
 from rmgcat_to_sella import defaults
-
-=======
 from rmgcat_to_sella.gratoms import Gratoms
-from rmgcat_to_sella import defaults
->>>>>>> all dependency issues with molecules.py are now solved - tests required
+from rmgcat_to_sella.excatkit.gratoms import Gratoms
 from ase.data import chemical_symbols
 from networkx import dfs_successors, is_connected, from_numpy_matrix
 from itertools import combinations
@@ -102,11 +99,12 @@ class Molecule():
 
         return atoms
 
-<<<<<<< HEAD
 
 << << << < HEAD
-=======
->>>>>>> fixed dependencies up to defaults module
+
+<< << << < HEAD
+== == == =
+>>>>>> > fixed dependencies up to defaults module
     def bin_hydrogen(self, hydrogens=1, bins=1):
         """Recursive function for determining distributions of
         hydrogens across bins.
@@ -123,11 +121,11 @@ class Molecule():
                     for k in self.bin_hydrogen(i, bins - 1):
                         yield j + k
 
-<<<<<<< HEAD
+<< << << < HEAD
 == == == =
 >>>>>> > fixing some dependancies
-=======
->>>>>>> fixed dependencies up to defaults module
+== == == =
+>>>>>> > fixed dependencies up to defaults module
     def get_topologies(self, symbols, saturate=False):
         """Return the possible topologies of a given chemical species.
 
@@ -155,15 +153,15 @@ class Molecule():
             hcnt = 0
 
         elements = np.repeat(mnum, mcnt)
-<<<<<<< HEAD
+<< << << < HEAD
 << << << < HEAD
         max_degree = defaults.get('radicals')[elements]
 == == == =
         max_degree = catkit.gen.defaults.get('radicals')[elements]
 >>>>>> > fixing some dependancies
-=======
+== == == =
         max_degree = defaults.get('radicals')[elements]
->>>>>>> all dependency issues with molecules.py are now solved - tests required
+>>>>>> > all dependency issues with molecules.py are now solved - tests required
         n = mcnt.sum()
 
         hmax = int(max_degree.sum() - (n - 1) * 2)
@@ -175,7 +173,7 @@ class Molecule():
 
         if n == 1:
             atoms = Gratoms(elements, cell=[1, 1, 1])
-<<<<<<< HEAD
+<< << << < HEAD
 << << << < HEAD
             hatoms = self.hydrogenate(atoms, np.array([hcnt]))
             return [hatoms]
