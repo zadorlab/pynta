@@ -1,7 +1,8 @@
 from . import defaults
 from . import utils
 from . import symmetry
-import catkit
+from rmgcat_to_sella.molecules import Molecule
+# import catkit
 import matplotlib.pyplot as plt
 import itertools
 import networkx as nx
@@ -596,7 +597,7 @@ class Builder(AdsorptionSites):
         atoms.translate(-atoms.positions[bond])
 
         if auto_construct:
-            atoms = catkit.gen.molecules.get_3D_positions(atoms, bond)
+            atoms = Molecule().get_3D_positions(atoms, bond)
 
             # Align with the adsorption vector
             atoms.rotate([0, 0, 1], vector)
