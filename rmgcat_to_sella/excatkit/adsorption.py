@@ -1,6 +1,6 @@
-from . import defaults
-from . import utils
-from . import symmetry
+from rmgcat_to_sella import defaults
+from rmgcat_to_sella.excatkit.utils import Utils
+from rmgcat_to_sella.excatkit import symmetry
 from rmgcat_to_sella.excatkit.molecules import Molecule
 # import catkit
 import matplotlib.pyplot as plt
@@ -26,7 +26,7 @@ class AdsorptionSites():
         tol : float
             Absolute tolerance for floating point errors.
         """
-        index, coords, offsets = utils.expand_cell(slab, cutoff=5.0)
+        index, coords, offsets = Utils().expand_cell(slab, cutoff=5.0)
         if surface_atoms is None:
             surface_atoms = slab.get_surface_atoms()
         if surface_atoms is None:
@@ -236,7 +236,7 @@ class AdsorptionSites():
         periodic = periodic_match.copy()[self.screen]
 
         for p in periodic:
-            matched = utils.matching_sites(self.frac_coords[p], coords)
+            matched = Utils().matching_sites(self.frac_coords[p], coords)
             periodic_match[matched] = p
 
         return periodic_match
@@ -314,7 +314,7 @@ class AdsorptionSites():
         vectors = np.empty((coords.shape[0], 3))
         for i, s in enumerate(coords):
             plane_points = np.array(list(r1top[i]) + list(r2top[i]), dtype=int)
-            vectors[i] = utils.plane_normal(top_coords[plane_points])
+            vectors[i] = Utils().plane_normal(top_coords[plane_points])
 
         return vectors
 
@@ -591,7 +591,7 @@ class Builder(AdsorptionSites):
 
         numbers = atoms.numbers[bond]
         R = radii[numbers]
-        base_position = utils.trilaterate(top_sites[u], r + R, vector)
+        base_position = Utils().trilaterate(top_sites[u], r + R, vector)
 
         # branches = nx.bfs_successors(atoms.graph, bond)
         atoms.translate(-atoms.positions[bond])
@@ -628,7 +628,7 @@ class Builder(AdsorptionSites):
         for i, u in enumerate(U):
             r = radii[slab[self.index[u]].numbers] * 0.95
             top_sites = self.coordinates[self.connectivity == 1]
-            coords[i] = utils.trilaterate(top_sites[u], R[i] + r)
+            coords[i] = Utils().trilaterate(top_sites[u], R[i] + r)
 
         vec = coords[1] - coords[0]
         n = np.linalg.norm(vec)
