@@ -1,5 +1,6 @@
 from rmgcat_to_sella.excatkit.gratoms import Gratoms
 from rmgcat_to_sella import defaults
+
 from ase.data import chemical_symbols
 from networkx import dfs_successors, is_connected, from_numpy_matrix
 from itertools import combinations
