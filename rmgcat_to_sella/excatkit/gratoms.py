@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import networkx as nx
 import numpy as np
 import ase

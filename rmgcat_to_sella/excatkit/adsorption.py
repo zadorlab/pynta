@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 from rmgcat_to_sella import defaults
 from rmgcat_to_sella.excatkit.utils import Utils
 from rmgcat_to_sella.excatkit import symmetry

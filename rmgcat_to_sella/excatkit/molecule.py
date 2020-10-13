@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 from rmgcat_to_sella.excatkit.gratoms import Gratoms
 from rmgcat_to_sella import defaults
 
