@@ -972,7 +972,6 @@ class WorkFlow:
             args=job,
             ranks_per_node=cores,
             input_files='',
-            node_packing_count=48,
             user_workdir=job_files_path
         )
         job_to_add.save()
