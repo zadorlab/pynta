@@ -67,7 +67,7 @@ for rxn_name in dependancy_dict.keys():
                 args=py_script_dir,
                 input_files='',
                 user_workdir=job_dir,
-                node_packing_count=48,
+                node_packing_count=128,
                 ranks_per_node=1,
             )
             job_to_add.save()
