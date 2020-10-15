@@ -142,6 +142,13 @@ deactivate
 
 ### 2.1 Using Balsam
 
+Before you run any `pynta` calculations, make sure your `balsam` DB is initialized and activated, e.g.
+
+```bash
+balsam init ~/myWorkflow
+source balsamactivate ~/myWorkflow
+```
+
 You will need **4** files to run the workflow:
 
 - `run_me.py` a python script that executes the workflow
@@ -155,9 +162,12 @@ An example `run_me.py` file:
 #!/usr/bin/env python3
 from pynta.main import WorkFlow
 
+# instantiate a WorkFlow() class
 workflow = WorkFlow()
+# create all input files
 workflow.gen_job_files()
-workflow.execute()
+# execute the workflow
+workflow.execute_all()
 ```
 
 An example `run_me.sh` file:
@@ -171,19 +181,21 @@ An example `run_me.sh` file:
 #SBATCH -e %x.err          # error file name
 #SBATCH -o %x.out          # out file name
 
-# load your quantum chemistry calculation package. Alternatively, provide a path to the preferred executable in 'inputR2S.py', e.g.
+# load your quantum chemistry calculation package.
+# Alternatively, provide a path to the preferred executable in 'inputR2S.py'
 module load espresso
 # activate balsam environment, e.g.
-source balsamactivate ~/myWorkflow_bebop
+source balsamactivate ~/myWorkflow
 # run python executable script
 python3 $PWD/run_me.py
-# required environment variable if using balsam branch serial-mode-perf
+# required environment variable if using balsam branch serial-mode-perf and SLURM
 export SLURM_HOSTS=$(scontrol show hostname)
-# launch serial jobs (required)
-balsam launcher --job-mode=serial --wf-filter reactions.yaml --limit-nodes=1 --num-transition-threads=1 &
-# give some time to prevent time out before the sockets are ready for the quantum chemistry application, e.g. pw.x for Quantum Espresso
+# launch serial jobs
+balsam launcher --job-mode=serial --wf-filter _ --limit-nodes=1 --num-transition-threads=1 &
+# give some time to prevent time out before the sockets are ready
+# for the quantum chemistry application, e.g. pw.x for Quantum Espresso
 sleep 45
-# launch mpi jobs (required)
+# launch mpi jobs
 balsam launcher --job-mode=mpi --wf-filter QE_Sock --offset-nodes=x-1 --num-transition-threads=1 &
 # wait until finished
 wait
@@ -238,18 +250,13 @@ from pathlib import Path
 ####################################################
 '''
 ####################################################
-# specify the name of the main directory with
-# calculations
-facetpath = 'Cu_111'
-####################################################
 # do you want to run surface optimization
 optimize_slab = True
 ####################################################
-# specify name of the slab
-slab_name = 'Cu_111_slab_opt'
-####################################################
-# specify facet orientation
-surface_type = 'fcc111'
+# specify facet orientation, repeats of the slab+ads
+# and repeats of the slab_opt unit cell
+surface_types_and_repeats = {'fcc111': [(3, 3, 1), (1, 1, 4)],
+                             'fcc100': [(3, 4, 1), (1, 1, 4)]}
 ####################################################
 # surface atoms
 symbol = 'Cu'
@@ -260,20 +267,22 @@ a = 3.6
 # vacuum in the z direction (Angstrem)
 vacuum = 8.0
 ####################################################
-# filename of the optimized surface slab
-slabopt = 'Cu_111_slab_opt.xyz'
-####################################################
 # Quantum Espresso pseudopotantials and exe settings
 # for DFT calculations
 pseudo_dir = '/home/mgierad/espresso/pseudo'
 
 pseudopotentials = "dict(Cu='Cu.pbe-spn-kjpaw_psl.1.0.0.UPF',"\
     + "H='H.pbe-kjpaw_psl.1.0.0.UPF',"\
-    + "O='O.pbe-n-kjpaw_psl.1.0.0.UPF',"\
+    + "O='O.pbe-n-kjpaw_psl.1.0.0.UPF'," \
     + "C='C.pbe-n-kjpaw_psl.1.0.0.UPF')"
 
-executable = '/opt/custom/espresso/6.6_nostress/bin/pw.x'
-
+executable = '/home/mgierad/00_codes/build/q-e-qe-6.4.1/build/bin/pw.x'
+####################################################
+# Baslam settings
+balsam_exe_settings = {'num_nodes': 1,  # nodes per each balsam job
+                       'ranks_per_node': 48,  # cores per node
+                       'threads_per_rank': 1
+                       }
 calc_keywords = {'kpts': (3, 3, 1),
                  'occupations': 'smearing',
                  'smearing': 'marzari-vanderbilt',
@@ -284,66 +293,40 @@ calc_keywords = {'kpts': (3, 3, 1),
                  'mixing_mode': 'local-TF'
                  }
 ####################################################
-# Baslam settings
-balsam_exe_settings = {'num_nodes': 1,  # nodes per each balsam job
-                       'ranks_per_node': 48,  # cores per node
-                       'threads_per_rank': 1
-                       }
-####################################################
 # Set up a working directory (this is default)
 creation_dir = Path.cwd().as_posix()
 ####################################################
 # filename of the .yaml file with reactions
 yamlfile = 'reactions.yaml'
 ####################################################
-# specify repeats of the surface in (x, y, z)
-# direction
-repeats_surface = (1, 1, 3)
+# specify repeats of the surface in (x, y, z) direction
+# repeats_surface = {'fcc111': (1, 1, 4), 'fcc100': (3, 4, 5)}
 ####################################################
-# specify repeats of the surface in (x, y, z)
-# direction
-repeats = (3, 3, 1)
+# specify repeats of the surface in (x, y, z) direction
+# repeats = {'fcc111': (3, 3, 1), 'fcc100': (3, 4, 1)}
 ####################################################
-# specify the angle of TS estimate adduct rotation
-rotAngle = 60
-####################################################
-# specify the scaling factor to scale the bond
-# distance between two atoms taking part in the
-# reaction
+# specify the scaling factor to scale the bond distance
+# between two atoms taking part in the reaction
 scfactor = 1.4
 ####################################################
-# specify the scaling factor to scale the target
-# distance i.e. the average bond distance between
-# adsorbate and the nearest surface metal atom
+# specify the scaling factor to scale the target distance
+# i.e. the average bond distance between adsorbate and
+# the nearest surface metal atom
 scfactor_surface = 1.0
 ####################################################
 # species list
 species_dict = {'rxn1': ['O', 'H'], 'rxn2': ['O', 'H']}
 ####################################################
-# do you want to apply the scfactor_surface to the
-# species 1?
+# do you want to apply the scfactor_surface to the species 1?
 scaled1 = False
 ####################################################
-# do you want to apply scfactor_surface to the
-# species 2?
+# do you want to apply scfactor_surface to the species 2?
 scaled2 = False
 ####################################################
-'''
-####################################################
-                    Scripts
-####################################################
-'''
-slab_opt_script = '00_set_up_slab_opt.py'
-SurfaceAdsorbateScript = '01_set_up_ads.py'
-TSxtbScript = '02_set_up_TS_with_xtb.py'
-TSScript = '03_checksym_xtb_runTS.py'
-IRCScript = '04_set_up_irc.py'
-IRCoptScript = '05_set_up_opt_after_irc.py'
-
 
 ```
 
-An example input files are also located at `./pynta/example_run_files/`.
+An example input files are also located at `./rmgcat_to_sella/example_run_files/`.
 
 If you do not have a `.yaml` file with the reaction list but still want to use the work-flow, let me know. Also, stay tuned, as a version of `pynta` that can work without `.yaml` file is currently under development
 
