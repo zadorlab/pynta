@@ -58,7 +58,7 @@ cd ../
 
 Make sure it works by running
 
-```
+```bash
 srun -n 2 python3 -c 'from mpi4py import MPI; print(MPI.COMM_WORLD.Get_rank())'
 ```
 
@@ -71,7 +71,7 @@ Which should give
 
 1.1.6 Install [`balsam`](https://github.com/balsam-alcf/balsam.git) using [`serial-mode-perf`](https://github.com/balsam-alcf/balsam/tree/serial-mode-perf) branch.
 
-```
+```bash
 git clone https://github.com/balsam-alcf/balsam.git -b serial-mode-perf
 cd balsam
 python3 setup.py install --user
@@ -82,11 +82,24 @@ Make sure it works by running tests posted on the `balsam` GitHub page.
 
 1.1.7 Install [`xtb-python`](https://github.com/grimme-lab/xtb-python) following instruction provided there. Make sure to correctly link all required libraries, e.g. with `OpenBlas` and `GCC`.
 
-```
+```bash
 LDFLAGS="-L/opt/custom/OpenBLAS/0.3.7/lib" meson setup build --prefix=$PWD --libdir=xtb/xtb --buildtype release --optimization 2 -Dla_backend=openblas
 ```
 
-Make sure it works.
+Make sure it works. If fails, try to install [`xtb`](https://github.com/grimme-lab/xtb) and test `xtb` itself for any errors.
+
+```bash
+git clone https://github.com/grimme-lab/xtb.git
+cd xtb
+mkdir build
+pushd build
+cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=icc -DCMAKE_CXX_COMPILER=icpc -DCMAKE_FC_COMPILER=ifort ..
+make
+ctest
+popd
+echo 'export LD_LIBRARY_PATH=path/to_xtb/xtb/build:$LD_LIBRARY_PATH' >> ~/.bashrc
+echo 'export PATH=$HOME/.local/bin:\$PATH' >> ~/.bashrc
+```
 
 ## 1.2 Install `pynta`
 
