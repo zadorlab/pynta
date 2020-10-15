@@ -5,17 +5,13 @@ from pathlib import Path
 ####################################################
 '''
 ####################################################
-# specify the name of the main directory with calculations
-facetpath = 'Cu_100'
-####################################################
 # do you want to run surface optimization
 optimize_slab = True
 ####################################################
-# specify name of the slab
-slab_name = 'Cu_100_slab_opt'
-####################################################
-# specify facet orientation
-surface_type = 'fcc100'
+# specify facet orientation, repeats of the slab+ads
+# and repeats of the slab_opt unit cell
+surface_types_and_repeats = {'fcc111': [(3, 3, 1), (1, 1, 4)],
+                             'fcc100': [(3, 4, 1), (1, 1, 4)]}
 ####################################################
 # surface atoms
 symbol = 'Cu'
@@ -26,19 +22,20 @@ a = 3.6
 # vacuum in the z direction (Angstrem)
 vacuum = 8.0
 ####################################################
-# filename of the optimized surface slab
-slabopt = 'Cu_100_slab_opt.xyz'
-####################################################
-# Quantum Espresso pseudopotantials for DFT calculations
+# Quantum Espresso pseudopotantials and exe settings
+# for DFT calculations
 pseudo_dir = '/home/mgierad/espresso/pseudo'
-pseudopotentials = "dict(Cu='Cu.pbe-spn-kjpaw_psl.1.0.0.UPF', H='H.pbe-kjpaw_psl.1.0.0.UPF', O='O.pbe-n-kjpaw_psl.1.0.0.UPF', C='C.pbe-n-kjpaw_psl.1.0.0.UPF')"
+
+pseudopotentials = "dict(Cu='Cu.pbe-spn-kjpaw_psl.1.0.0.UPF',"\
+    + "H='H.pbe-kjpaw_psl.1.0.0.UPF',"\
+    + "O='O.pbe-n-kjpaw_psl.1.0.0.UPF'," \
+    + "C='C.pbe-n-kjpaw_psl.1.0.0.UPF')"
+
+executable = '/home/mgierad/00_codes/build/q-e-qe-6.4.1/build/bin/pw.x'
 ####################################################
-# Quantum chemistry package executable
-executable = '/opt/custom/espresso/6.6_nostress/bin/pw.x'
-####################################################
-# Balsam executable settings
-balsam_exe_settings = {'num_nodes': 1,
-                       'ranks_per_node': 48,
+# Baslam settings
+balsam_exe_settings = {'num_nodes': 1,  # nodes per each balsam job
+                       'ranks_per_node': 48,  # cores per node
                        'threads_per_rank': 1
                        }
 calc_keywords = {'kpts': (3, 3, 1),
@@ -50,19 +47,18 @@ calc_keywords = {'kpts': (3, 3, 1),
                  'conv_thr': 1e-11,
                  'mixing_mode': 'local-TF'
                  }
+####################################################
+# Set up a working directory (this is default)
 creation_dir = Path.cwd().as_posix()
 ####################################################
 # filename of the .yaml file with reactions
 yamlfile = 'reactions.yaml'
 ####################################################
 # specify repeats of the surface in (x, y, z) direction
-repeats_surface = (1, 1, 4)
+# repeats_surface = {'fcc111': (1, 1, 4), 'fcc100': (3, 4, 5)}
 ####################################################
 # specify repeats of the surface in (x, y, z) direction
-repeats = (3, 4, 1)
-####################################################
-# specify the angle of TS estimate adduct rotation
-rotAngle = 60
+# repeats = {'fcc111': (3, 3, 1), 'fcc100': (3, 4, 1)}
 ####################################################
 # specify the scaling factor to scale the bond distance
 # between two atoms taking part in the reaction
@@ -82,14 +78,3 @@ scaled1 = False
 # do you want to apply scfactor_surface to the species 2?
 scaled2 = False
 ####################################################
-'''
-####################################################
-                    Scripts
-####################################################
-'''
-slab_opt_script = '00_set_up_slab_opt.py'
-SurfaceAdsorbateScript = '01_set_up_ads.py'
-TSxtbScript = '02_set_up_TS_with_xtb.py'
-TSScript = '03_checksym_xtb_runTS.py'
-IRCScript = '04_set_up_irc.py'
-IRCoptScript = '05_set_up_opt_after_irc.py'
