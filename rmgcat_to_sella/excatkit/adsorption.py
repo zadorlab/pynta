@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-from rmgcat_to_sella import defaults
-from rmgcat_to_sella.excatkit.utils import Utils
-from rmgcat_to_sella.excatkit import symmetry
-from rmgcat_to_sella.excatkit.molecule import Molecule
+from pynta import defaults
+from pynta.excatkit.utils import Utils
+from pynta.excatkit import symmetry
+from pynta.excatkit.molecule import Molecule
 
 import matplotlib.pyplot as plt
 import itertools

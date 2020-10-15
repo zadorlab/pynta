@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from rmgcat_to_sella.excatkit.gratoms import Gratoms
+from pynta.excatkit.gratoms import Gratoms
 
 import numpy as np
 import spglib

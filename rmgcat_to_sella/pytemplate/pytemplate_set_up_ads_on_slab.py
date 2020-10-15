@@ -6,7 +6,7 @@ import os
 import shutil
 
 import datetime
-from rmgcat_to_sella.balsamcalc import EspressoBalsamSocketIO
+from pynta.balsamcalc import EspressoBalsamSocketIO
 
 from ase.io import read, write
 from ase.constraints import FixAtoms

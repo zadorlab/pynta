@@ -1,11 +1,11 @@
 
 from typing import List, Tuple, Dict
-from rmgcat_to_sella.excatkit.gratoms import Gratoms
-from rmgcat_to_sella.excatkit.adsorption import Builder
-from rmgcat_to_sella.ts_guesses import TSGuessesGenerator
 
-from rmgcat_to_sella.adsorbates import Adsorbates
-from rmgcat_to_sella.io import IO
+from pynta.ts_guesses import TSGuessesGenerator
+from pynta.excatkit.gratoms import Gratoms
+from pynta.excatkit.adsorption import Builder
+from pynta.adsorbates import Adsorbates
+from pynta.io import IO
 
 from ase.io import read, write
 from ase.utils.structure_comparator import SymmetryEquivalenceCheck
