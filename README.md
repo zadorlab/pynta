@@ -1,9 +1,11 @@
 # rmgcat_to_sella
 
 <!-- ![workflow_idea](./workflow_idea.png) -->
+
 The work-flow designed to automate search for transition states and reaction paths on various surfaces.
 
 `rmgcat_to_sella` reads the .yaml files from the previous RMGCat calculations, puts reactants and products on the surface, calculates TSs and returns reaction energies as well as barriers heights represented as a free energy reaction path diagrams. The general idea of the code can be summarized in the following figure.
+
 <center><img src='./workflow_idea.png' style="width:400px"></center>
 <br>
 
@@ -12,6 +14,7 @@ The work-flow designed to automate search for transition states and reaction pat
 **Instalation can be a bit tricky because `rmgcat_to_sella` depends on a several different packages that are under constant development (`balsam`, `xtb-python`)**
 
 The following instruction assumes that you have several softwares installed on your system, such as:
+
 - `Slurm`
 - `OpenMPI`
 - `OpenBlas`
@@ -20,16 +23,19 @@ The following instruction assumes that you have several softwares installed on y
 ## 1.1 Install all prerequisites
 
 1.1.1 Create a virtual environment:
+
 ```
 virtualenv venv
 ```
 
 1.1.2 Activate your virtual environment:
+
 ```
 source venv/bin/activate
 ```
 
-1.1.3 (*Optional*) Install required python packages (If not done here, `rmgcat_to_sella` installer will do it later)
+1.1.3 (_Optional_) Install required python packages (If not done here, `rmgcat_to_sella` installer will do it later)
+
 ```
 pip3 install numpy ase catkit spglib matplotlib<3.2 networkx<2.4
 ```
@@ -41,37 +47,45 @@ export PATH=path_to_PostgreSQL/pgsql/bin:$PATH
 ```
 
 1.1.5 Install [`mpi4py`](https://github.com/mpi4py/mpi4py.git):
+
 ```
 git clone https://github.com/mpi4py/mpi4py.git
 cd mpi4py
 python3 setup.py install --user
 cd ../
 ```
+
 Make sure it works by running
+
 ```
 srun -n 2 python3 -c 'from mpi4py import MPI; print(MPI.COMM_WORLD.Get_rank())'
 ```
+
 Which should give
+
 ```
 0
 1
 ```
 
 1.1.6 Install [`balsam`](https://github.com/balsam-alcf/balsam.git) using [`serial-mode-perf`](https://github.com/balsam-alcf/balsam/tree/serial-mode-perf) branch.
+
 ```
 git clone https://github.com/balsam-alcf/balsam.git -b serial-mode-perf
 cd balsam
 python3 setup.py install --user
 cd ../
 ```
+
 Make sure it works by running tests posted on the `balsam` GitHub page.
 
 1.1.7 Install [`xtb-python`](https://github.com/grimme-lab/xtb-python) following instruction provided there. Make sure to correctly link all required libraries, e.g. with `OpenBlas` and `GCC`.
+
 ```
 LDFLAGS="-L/opt/custom/OpenBLAS/0.3.7/lib" meson setup build --prefix=$PWD --libdir=xtb/xtb --buildtype release --optimization 2 -Dla_backend=openblas
 ```
-Make sure it works.
 
+Make sure it works.
 
 ## 1.2 Install `rmgcat_to_sella`
 
@@ -80,19 +94,23 @@ Make sure it works.
 ```
 git clone https://gitlab-ex.sandia.gov/mgierad/rmgcat_to_sella.git
 ```
+
 Usually, `master` branch should be fine. If somehow it is not working, make sure to switch to the latest stable version by checking the tags and looking for `stable`.
 
 1.2.2 Go to `rmgcat_to_sella`
+
 ```
 cd rmgcat_to_sella
 ```
 
 1.2.3a Install `rmgcat_to_sella`:
+
 ```
 python setup.py install
 ```
 
 1.2.3b (optional) If you do not have admin privileges (e.g. you use it on a supercomputer), do the following instead of 1.6a:
+
 ```
 python setup.py install --user
 ```
@@ -100,18 +118,21 @@ python setup.py install --user
 **You should be ready to go now!**
 
 Once finished using the workflow:
+
 ```
 cd rmgcat_to_sella
 deactivate
 ```
 
 ## 2. How to run
+
 ### 2.1 Using Balsam
 
 You will need **4** files to run the workflow:
+
 - `run_me.py` a python script that executes the workflow
 - `run_me.sh` a bash script that submits jobs to the `balsam` database
-- `inputR2S.py` a python script holding all user-modifiable parameters of the `rmgcat_to_sella` 
+- `inputR2S.py` a python script holding all user-modifiable parameters of the `rmgcat_to_sella`
 - `reactions.yaml` a yaml file with all reactions to be studied
 
 An example `run_me.py` file:
@@ -124,6 +145,7 @@ workflow = WorkFlow()
 workflow.gen_job_files()
 workflow.execute()
 ```
+
 An example `run_me.sh` file:
 
 ```bash
@@ -156,6 +178,7 @@ source balsamdeactivate
 ```
 
 An example `reactions.yaml` file:
+
 ```yaml
   - index: 0
     reaction: OHX + X <=> OX + HX
@@ -164,7 +187,7 @@ An example `reactions.yaml` file:
         multiplicity -187
         1 *1 O u0 p0 c0 {2,S} {4,S}
         2 *2 H u0 p0 c0 {1,S}
-        3 *3 X u0 p0 c0 
+        3 *3 X u0 p0 c0
         4    X u0 p0 c0 {1,S}
     product: |
         multiplicity -187
@@ -181,7 +204,7 @@ An example `reactions.yaml` file:
         2 *2 H u0 p0 c0 {1,S}
         3    H u0 p0 c0 {1,S}
         4    X u0 p0 c0 {1,S}
-        5 *3 X u0 p0 c0 
+        5 *3 X u0 p0 c0
     product: |
         multiplicity -187
         1 *1 O u0 p0 c0 {2,S} {4,S}
@@ -276,7 +299,7 @@ rotAngle = 60
 scfactor = 1.4
 ####################################################
 # specify the scaling factor to scale the target
-# distance i.e. the average bond distance between 
+# distance i.e. the average bond distance between
 # adsorbate and the nearest surface metal atom
 scfactor_surface = 1.0
 ####################################################
@@ -310,11 +333,12 @@ An example input files are also located at `./rmgcat_to_sella/example_run_files/
 
 If you do not have a `.yaml` file with the reaction list but still want to use the work-flow, let me know. Also, stay tuned, as a version of `rmgcat_to_sella` that can work without `.yaml` file is currently under development
 
-
 ### 2.2 Using SLURM only
+
 **Warning `dev` branch uses SLURM scheduler to deal with the job dependencies. Be aware that it might be a bit buggy and do not fully support all the features implemented in the `master` branch.**
 
 An example script (using `dev` branch - SLURM):
+
 ```python
 #!/usr/bin/env python3
 #SBATCH -J job_name        # name of the job e.g job_name = rmgcat_to_sella_workflow
@@ -354,4 +378,3 @@ Documentation is currently under development.
 If you are using `rmgcat_to_sella` or you wish to use it, let me know!
 
 This work was supported by the U.S. Department of Energy, Office of Science, Basic Energy Sciences, Chemical Sciences, Geosciences and Biosciences Division, as part of the Computational Chemistry Sciences Program.
-

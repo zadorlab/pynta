@@ -8,9 +8,9 @@ import networkx as nx
 from ase.io import read, write
 from ase.data import covalent_radii
 
-from catkit.gen.molecules import get_3D_positions
-from catkit.gen.adsorption import Builder
-from catkit import Gratoms
+from rmgcat_to_sella.excatkit.molecule import Molecule
+from rmgcat_to_sella.excatkit.adsorption import Builder
+from rmgcat_to_sella.excatkit.gratoms import Gratoms
 
 from rmgcat_to_sella.graph_utils import node_test
 
@@ -308,7 +308,7 @@ class Adsorbates:
                 if nx.is_isomorphic(species1.graph, species2.graph, node_test):
                     break
             else:
-                images.append(get_3D_positions(species1))
+                images.append(Molecule().get_3D_positions(species1))
                 unique_species.append(species1)
                 unique_bonds.append(bond)
 

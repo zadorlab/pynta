@@ -4,9 +4,8 @@ import yaml
 import networkx as nx
 from pathlib import Path
 
-from catkit import Gratoms
-from catkit.gen.molecules import get_3D_positions
-
+from rmgcat_to_sella.excatkit.gratoms import Gratoms
+from rmgcat_to_sella.excatkit.molecule import Molecule
 from rmgcat_to_sella.graph_utils import node_test
 
 from ase.io import read, write
@@ -180,7 +179,7 @@ class IO():
                 if nx.is_isomorphic(species1.graph, species2.graph, node_test):
                     break
             else:
-                images.append(get_3D_positions(species1))
+                images.append(Molecule().get_3D_positions(species1))
                 unique_species.append(species1)
                 unique_bonds.append(bond)
 
