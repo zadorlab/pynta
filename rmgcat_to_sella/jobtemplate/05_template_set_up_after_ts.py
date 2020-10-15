@@ -3,7 +3,7 @@ import os
 
 from pathlib import Path
 
-from rmgcat_to_sella.vib import AfterTS
+from pynta.vib import AfterTS
 
 from balsam.launcher.dag import BalsamJob, add_dependency
 

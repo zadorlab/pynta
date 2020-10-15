@@ -4,16 +4,16 @@ import yaml
 import networkx as nx
 from pathlib import Path
 
-from rmgcat_to_sella.excatkit.gratoms import Gratoms
-from rmgcat_to_sella.excatkit.molecule import Molecule
-from rmgcat_to_sella.graph_utils import node_test
+from pynta.excatkit.gratoms import Gratoms
+from pynta.excatkit.molecule import Molecule
+from pynta.graph_utils import node_test
 
 from ase.io import read, write
 
 
 class IO():
     ''' Class for handling Input/Output and transforming it to more usefull
-        format for the rmgcat_to_sella '''
+        format for the pynta '''
 
     def get_facetpath(
             self,

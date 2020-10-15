@@ -8,11 +8,11 @@ import networkx as nx
 from ase.io import read, write
 from ase.data import covalent_radii
 
-from rmgcat_to_sella.excatkit.molecule import Molecule
-from rmgcat_to_sella.excatkit.adsorption import Builder
-from rmgcat_to_sella.excatkit.gratoms import Gratoms
+from pynta.excatkit.molecule import Molecule
+from pynta.excatkit.adsorption import Builder
+from pynta.excatkit.gratoms import Gratoms
 
-from rmgcat_to_sella.graph_utils import node_test
+from pynta.graph_utils import node_test
 
 # Instead of using CatKit's built in slab generator routines, we want to
 # use pre-relaxed slab geometries to save computer time. In order to use

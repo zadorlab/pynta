@@ -3,7 +3,7 @@
 import os
 
 import datetime
-from rmgcat_to_sella.balsamcalc import EspressoBalsamSocketIO
+from pynta.balsamcalc import EspressoBalsamSocketIO
 
 from ase.constraints import FixAtoms
 from ase.vibrations import Vibrations

@@ -1,10 +1,10 @@
-from rmgcat_to_sella.excatkit.gratoms import Gratoms
-from rmgcat_to_sella.excatkit.adsorption import Builder
-from rmgcat_to_sella.excatkit.molecule import Molecule
+from pynta.excatkit.gratoms import Gratoms
+from pynta.excatkit.adsorption import Builder
+from pynta.excatkit.molecule import Molecule
 
-from rmgcat_to_sella.adsorbates import Adsorbates
-from rmgcat_to_sella.main import WorkFlow
-from rmgcat_to_sella.io import IO
+from pynta.adsorbates import Adsorbates
+from pynta.main import WorkFlow
+from pynta.io import IO
 
 from ase.io import read, write
 from ase.utils.structure_comparator import SymmetryEquivalenceCheck

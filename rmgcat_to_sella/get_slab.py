@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from rmgcat_to_sella.balsamcalc import EspressoBalsamSocketIO
+from pynta.balsamcalc import EspressoBalsamSocketIO
 
 from ase.build import fcc111, fcc211, fcc100
 from ase.build import bcc111, bcc110, hcp0001

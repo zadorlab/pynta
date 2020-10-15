@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-from rmgcat_to_sella.check_input import InputChecker
+from pynta.check_input import InputChecker
 import os
 import sys
 import __main__
 import shutil
 from pathlib import Path
 from warnings import warn
-from rmgcat_to_sella.io import IO
+from pynta.io import IO
 
 
 # check which file calls this module and adjust working_dir path accordingly
@@ -127,7 +127,7 @@ class WorkFlow:
             # TODO: instead of directly importing EspressoBalsam, we should
             # write a function which returns the appropriate class from
             # balsamcalc.py based on the user-provided input file
-            from rmgcat_to_sella.balsamcalc import (
+            from pynta.balsamcalc import (
                 EspressoBalsam, EspressoBalsamSocketIO
             )
             EspressoBalsam.exe = executable
@@ -1354,7 +1354,7 @@ class WorkFlow:
                     'It appears that there is no slab_opt.xyz file'
                 )
             if all(self.check_all_species(yamlfile, facetpath).values()):
-                # If all minima were calculated some time age rmgcat_to_sella
+                # If all minima were calculated some time age pynta
                 # will use that calculations. Start from 02 step
                 self.run_ts_estimate_no_depend(facetpath)
             else:

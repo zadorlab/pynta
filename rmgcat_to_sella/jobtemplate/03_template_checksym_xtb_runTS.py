@@ -4,7 +4,7 @@ import os
 
 from pathlib import Path
 
-from rmgcat_to_sella.ts import TS
+from pynta.ts import TS
 
 from balsam.launcher.dag import BalsamJob, add_dependency
 
