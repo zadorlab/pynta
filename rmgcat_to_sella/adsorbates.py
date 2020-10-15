@@ -8,7 +8,7 @@ import networkx as nx
 from ase.io import read, write
 from ase.data import covalent_radii
 
-from rmgcat_to_sella.excatkit.molecules import Molecule
+from rmgcat_to_sella.excatkit.molecule import Molecule
 from rmgcat_to_sella.excatkit.adsorption import Builder
 from rmgcat_to_sella.excatkit.gratoms import Gratoms
 
