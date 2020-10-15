@@ -1,17 +1,17 @@
-# rmgcat_to_sella
+# Pynta
 
 <!-- ![workflow_idea](./workflow_idea.png) -->
 
 The work-flow designed to automate search for transition states and reaction paths on various surfaces.
 
-`rmgcat_to_sella` reads the .yaml files from the previous RMGCat calculations, puts reactants and products on the surface, calculates TSs and returns reaction energies as well as barriers heights represented as a free energy reaction path diagrams. The general idea of the code can be summarized in the following figure.
+`pynta` reads the .yaml files from the previous RMGCat calculations, puts reactants and products on the surface, calculates TSs and returns reaction energies as well as barriers heights represented as a free energy reaction path diagrams. The general idea of the code can be summarized in the following figure.
 
 <center><img src='./workflow_idea.png' style="width:400px"></center>
 <br>
 
 # 1. How to install
 
-**Instalation can be a bit tricky because `rmgcat_to_sella` depends on a several different packages that are under constant development (`balsam`, `xtb-python`)**
+**Instalation can be a bit tricky because `pynta` depends on a several different packages that are under constant development (`balsam`, `xtb-python`)**
 
 The following instruction assumes that you have several softwares installed on your system, such as:
 
@@ -22,33 +22,34 @@ The following instruction assumes that you have several softwares installed on y
 
 ## 1.1 Install all prerequisites
 
-1.1.1 Create a virtual environment:
+1.1.1 Chooose the location you want to build `pynta`. It is suggested to create a virtual environment `pynta` for the `pynta` builds:
 
-```
-virtualenv venv
+```bash
+cd <path/whr/to/build/pynta>
+python3 -m venv pynta
 ```
 
 1.1.2 Activate your virtual environment:
 
-```
-source venv/bin/activate
-```
-
-1.1.3 (_Optional_) Install required python packages (If not done here, `rmgcat_to_sella` installer will do it later)
-
-```
-pip3 install numpy ase catkit spglib matplotlib<3.2 networkx<2.4
+```bash
+source pynta/bin/activate
 ```
 
-1.1.4 Download [`PostgreSQL`](https://www.enterprisedb.com/download-postgresql-binaries) precompiled binaries that suits your system and add `/bin` to your `PATH`
+1.1.3 (_Optional_) Install required python packages (If you skip this process, `pynta` installer should do this later.)
 
+```bash
+pip3 install numpy ase spglib matplotlib<3.2 networkx<2.4
 ```
-export PATH=path_to_PostgreSQL/pgsql/bin:$PATH
+
+1.1.4 Download [`PostgreSQL`](https://www.enterprisedb.com/download-postgresql-binaries) precompiled binaries that suits your system and add `path_to_PostgreSQL/pgsql/bin` to your `PATH` by modifying `~/.bashrc`
+
+```bash
+echo 'export PATH=path_to_PostgreSQL/pgsql/bin:$PATH' >> ~/.bashrc
 ```
 
 1.1.5 Install [`mpi4py`](https://github.com/mpi4py/mpi4py.git):
 
-```
+```bash
 git clone https://github.com/mpi4py/mpi4py.git
 cd mpi4py
 python3 setup.py install --user
@@ -87,23 +88,23 @@ LDFLAGS="-L/opt/custom/OpenBLAS/0.3.7/lib" meson setup build --prefix=$PWD --lib
 
 Make sure it works.
 
-## 1.2 Install `rmgcat_to_sella`
+## 1.2 Install `pynta`
 
 1.2.1 Clone the project in your preferable location.
 
 ```
-git clone https://gitlab-ex.sandia.gov/mgierad/rmgcat_to_sella.git
+git clone https://gitlab-ex.sandia.gov/mgierad/pynta.git
 ```
 
 Usually, `master` branch should be fine. If somehow it is not working, make sure to switch to the latest stable version by checking the tags and looking for `stable`.
 
-1.2.2 Go to `rmgcat_to_sella`
+1.2.2 Go to `pynta`
 
 ```
-cd rmgcat_to_sella
+cd pynta
 ```
 
-1.2.3a Install `rmgcat_to_sella`:
+1.2.3a Install `pynta`:
 
 ```
 python setup.py install
@@ -120,7 +121,7 @@ python setup.py install --user
 Once finished using the workflow:
 
 ```
-cd rmgcat_to_sella
+cd pynta
 deactivate
 ```
 
@@ -132,14 +133,14 @@ You will need **4** files to run the workflow:
 
 - `run_me.py` a python script that executes the workflow
 - `run_me.sh` a bash script that submits jobs to the `balsam` database
-- `inputR2S.py` a python script holding all user-modifiable parameters of the `rmgcat_to_sella`
+- `inputR2S.py` a python script holding all user-modifiable parameters of the `pynta`
 - `reactions.yaml` a yaml file with all reactions to be studied
 
 An example `run_me.py` file:
 
 ```python
 #!/usr/bin/env python3
-from rmgcat_to_sella.main import WorkFlow
+from pynta.main import WorkFlow
 
 workflow = WorkFlow()
 workflow.gen_job_files()
@@ -150,7 +151,7 @@ An example `run_me.sh` file:
 
 ```bash
 #!/bin/bash
-#SBATCH -J job_name        # name of the job e.g job_name = rmgcat_to_sella_workflow
+#SBATCH -J job_name        # name of the job e.g job_name = pynta_workflow
 #SBATCH --partition=queue  # queue name e.g. queue = day-long-cpu
 #SBATCH --nodes=x          # number of nodes e.g. x = 2
 #SBATCH --ntasks=y         # number of CPUs e.g. 2 x 48 = y = 96
@@ -329,9 +330,9 @@ IRCoptScript = '05_set_up_opt_after_irc.py'
 
 ```
 
-An example input files are also located at `./rmgcat_to_sella/example_run_files/`.
+An example input files are also located at `./pynta/example_run_files/`.
 
-If you do not have a `.yaml` file with the reaction list but still want to use the work-flow, let me know. Also, stay tuned, as a version of `rmgcat_to_sella` that can work without `.yaml` file is currently under development
+If you do not have a `.yaml` file with the reaction list but still want to use the work-flow, let me know. Also, stay tuned, as a version of `pynta` that can work without `.yaml` file is currently under development
 
 ### 2.2 Using SLURM only
 
@@ -341,7 +342,7 @@ An example script (using `dev` branch - SLURM):
 
 ```python
 #!/usr/bin/env python3
-#SBATCH -J job_name        # name of the job e.g job_name = rmgcat_to_sella_workflow
+#SBATCH -J job_name        # name of the job e.g job_name = pynta_workflow
 #SBATCH --partition=queue  # queue name e.g. queue = day-long-cpu
 #SBATCH --nodes=x          # number of nodes e.g. x = 2
 #SBATCH --ntasks=y         # number of CPUs e.g. 2 x 48 = y = 96
@@ -359,8 +360,8 @@ os.chdir(submitDir)
 sys.path.append(os.getcwd())
 # import input file with - can be done only after sys.path.append(os.getcwd())
 import inputR2S
-# import executable class of rmgcat_to_sella
-from rmgcat_to_sella.main import WorkFlow
+# import executable class of pynta
+from pynta.main import WorkFlow
 # instantiate the WorkFlow class
 workflow = WorkFlow()
 # generate input files
@@ -375,6 +376,6 @@ Documentation is currently under development.
 
 ## Acknowledgments
 
-If you are using `rmgcat_to_sella` or you wish to use it, let me know!
+If you are using `pynta` or you wish to use it, let me know!
 
 This work was supported by the U.S. Department of Energy, Office of Science, Basic Energy Sciences, Chemical Sciences, Geosciences and Biosciences Division, as part of the Computational Chemistry Sciences Program.
