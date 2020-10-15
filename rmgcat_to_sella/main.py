@@ -107,37 +107,37 @@ ads_surf_opt_script = '01_set_up_ads.py'
 
 class WorkFlow:
 
-    # def __init__(self):
-    #     ''' Setup the balsam application for this workflow run.
+    def __init__(self):
+        ''' Setup the balsam application for this workflow run.
 
-    #         Once we start using QE will want one app for QE,
-    #         one for xtb most likely
-    #     '''
-    #     print('Checking Balsam DB...')
-    #     try:
-    #         from balsam.core.models import ApplicationDefinition
+            Once we start using QE will want one app for QE,
+            one for xtb most likely
+        '''
+        print('Checking Balsam DB...')
+        try:
+            from balsam.core.models import ApplicationDefinition
 
-    #         self.myPython, _ = ApplicationDefinition.objects.get_or_create(
-    #             name="python",
-    #             executable=sys.executable
-    #         )
-    #         self.myPython.save()
-    #         self.slab_opt_job = ''
+            self.myPython, _ = ApplicationDefinition.objects.get_or_create(
+                name="python",
+                executable=sys.executable
+            )
+            self.myPython.save()
+            self.slab_opt_job = ''
 
-    #         # TODO: instead of directly importing EspressoBalsam, we should
-    #         # write a function which returns the appropriate class from
-    #         # balsamcalc.py based on the user-provided input file
-    #         from rmgcat_to_sella.balsamcalc import (
-    #             EspressoBalsam, EspressoBalsamSocketIO
-    #         )
-    #         EspressoBalsam.exe = executable
-    #         EspressoBalsamSocketIO.exe = executable
-    #         EspressoBalsam.create_application()
-    #         EspressoBalsamSocketIO.create_application()
-    #     except SystemExit:
-    #         print('---')
-    #         print('Please create Balsam DB and/or activate it')
-    #         print('---')
+            # TODO: instead of directly importing EspressoBalsam, we should
+            # write a function which returns the appropriate class from
+            # balsamcalc.py based on the user-provided input file
+            from rmgcat_to_sella.balsamcalc import (
+                EspressoBalsam, EspressoBalsamSocketIO
+            )
+            EspressoBalsam.exe = executable
+            EspressoBalsamSocketIO.exe = executable
+            EspressoBalsam.create_application()
+            EspressoBalsamSocketIO.create_application()
+        except SystemExit:
+            print('---')
+            print('Please create Balsam DB and/or activate it')
+            print('---')
 
     def get_ts_xtb_py_script_list(
             self,
