@@ -9,6 +9,7 @@ from rmgcat_to_sella.excatkit.molecule import Molecule
 from rmgcat_to_sella.graph_utils import node_test
 
 from ase.io import read, write
+from ase.dft.kpoints import monkhorst_pack
 
 
 class IO():
@@ -85,6 +86,26 @@ class IO():
             facetpath = symbol + '_' + facet
             facetpaths.append(facetpath)
         return facetpaths
+
+    def get_kpoints(self, size):
+        ''' Returns number of unique k-points for a given size of the slab
+
+        Parameters:
+        ___________
+        size : tuple(int, int, int):
+            a size or repeats of the slab,
+            e.g. (3, 3, 1)
+
+        Returns
+        -------
+        [type]
+            [description]
+        '''
+        kpoints = monkhorst_pack(size)
+        half_kpoints_index = len(kpoints) // 2
+        unique_points = kpoints[half_kpoints_index:, ]
+        n_unique_kpoints = len(unique_points)
+        return n_unique_kpoints
 
     def open_yaml_file(
             self,
