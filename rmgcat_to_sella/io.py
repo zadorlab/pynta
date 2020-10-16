@@ -87,7 +87,7 @@ class IO():
             facetpaths.append(facetpath)
         return facetpaths
 
-    def get_kpoints(self, size):
+    def get_kpoints(self, size, get_uniq_kpts=False):
         ''' Returns number of unique k-points for a given size of the slab
 
         Parameters:
@@ -101,11 +101,11 @@ class IO():
         [type]
             [description]
         '''
-        kpoints = monkhorst_pack(size)
-        half_kpoints_index = len(kpoints) // 2
-        unique_points = kpoints[half_kpoints_index:, ]
-        n_unique_kpoints = len(unique_points)
-        return n_unique_kpoints
+        kpts = monkhorst_pack(size)
+        half_kpts = len(kpts) // 2
+        uniq = kpts[half_kpts:, ]
+        m_uniq_kpts = len(uniq)
+        return (m_uniq_kpts, uniq) if get_uniq_kpts else m_uniq_kpts
 
     def open_yaml_file(
             self,
