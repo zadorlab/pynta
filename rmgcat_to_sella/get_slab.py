@@ -147,9 +147,9 @@ class GetSlab:
         qe_keywords_slab = self.calc_keywords.copy()
         # change kpoints - for surface optimization it's different
         qe_keywords_slab.update([('kpts', self.repeats_surface)])
+        qe_keywords_slab.update([('job_args', '-nk 3')])
         # change how k-points are distrubuted among nodes
         job_kwargs.update([('num_nodes', 3)])
-        job_kwargs.update([('job_args', '-nk 3')])
 
         slab.calc = EspressoBalsamSocketIO(
             workflow='QE_Socket',
