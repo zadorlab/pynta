@@ -95,11 +95,17 @@ class IO():
         size : tuple(int, int, int):
             a size or repeats of the slab,
             e.g. (3, 3, 1)
+        get_uniq_kpts : bool, optional
+            If True, return size and an ndarray of unique kpoints
+            Otherwise False.
 
-        Returns
+        Returns:
         -------
-        [type]
-            [description]
+        m_uniq_kpts : int
+            a number of unique k-points
+        uniq : ndarray
+            an array with unique k-points, optional
+
         '''
         kpts = monkhorst_pack(size)
         half_kpts = len(kpts) // 2
