@@ -144,16 +144,19 @@ class GetSlab:
         ''' Prepare slab optimization with Quantum Espresso '''
 
         job_kwargs = self.balsam_exe_settings.copy()
-        QE_keywords_slab = self.calc_keywords.copy()
-        # change kpoints - for surface optimization it is differetn
-        QE_keywords_slab.update([('kpts', self.repeats_surface)])
+        qe_keywords_slab = self.calc_keywords.copy()
+        # change kpoints - for surface optimization it's different
+        qe_keywords_slab.update([('kpts', self.repeats_surface)])
+        # change how k-points are distrubuted among nodes
+        job_kwargs.update([('num_nodes', 3)])
+        job_kwargs.update([('job_args', '-nk 3')])
 
         slab.calc = EspressoBalsamSocketIO(
             workflow='QE_Socket',
             job_kwargs=job_kwargs,
             pseudopotentials=self.pseudopotentials,
             pseudo_dir=self.pseudo_dir,
-            **QE_keywords_slab
+            **qe_keywords_slab
         )
 
         fname = os.path.join(self.creation_dir, self.slab_name)
