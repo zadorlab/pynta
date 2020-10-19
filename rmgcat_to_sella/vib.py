@@ -1,13 +1,9 @@
+from numpy.core.fromnumeric import repeat
 from rmgcat_to_sella.io import IO
-
 from ase.io import read, write
-
 from pathlib import Path
-
 from numpy import floor
-
 import os
-
 import shutil
 
 
@@ -26,7 +22,7 @@ class AfterTS():
         self.creation_dir = creation_dir
         self.slab_atom_path = os.path.join(self.creation_dir, slab)
         self.nslab = len(read(self.slab_atom_path) * self.repeats)
-        self.io = IO()
+        self.n_kpts = IO().get_kpoints(self.repeats)
 
     def set_up_ts_vib(
             self,
@@ -74,7 +70,7 @@ class AfterTS():
             '/home/mgierad/espresso/pseudo'
 
         '''
-        rxn_name = self.io.get_rxn_name(rxn)
+        rxn_name = IO().get_rxn_name(rxn)
 
         ts_estimate_unique_dir = os.path.join(
             self.creation_dir,
@@ -176,6 +172,8 @@ class AfterTS():
                 pseudo_dir=pseudo_dir,
                 nimages=nimages,
                 n=n,
+                repeats=self.repeats,
+                n_kpts=self.n_kpts
             ))
 
     def prepare_opt_after_ts(
@@ -225,7 +223,7 @@ class AfterTS():
             '/home/mgierad/espresso/pseudo'
 
         '''
-        rxn_name = self.io.get_rxn_name(rxn)
+        rxn_name = IO().get_rxn_name(rxn)
         ts_vib_dir = os.path.join(self.creation_dir,
                                   self.facetpath,
                                   rxn_name,
