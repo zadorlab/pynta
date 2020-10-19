@@ -148,9 +148,9 @@ class GetSlab:
 
         job_kwargs = self.balsam_exe_settings.copy()
         qe_keywords_slab = self.calc_keywords.copy()
-        # change kpoints - for surface optimization it's different
-        qe_keywords_slab.update([('kpts', self.repeats_surface)])
-        qe_keywords_slab.update([('job_args', '-nk {}'.format(n_kpts))])
+        # add kpoints and distribute it among nodes = n_kpts
+        qe_keywords_slab['kpts'] = self.repeats_surface
+        qe_keywords_slab['job_args'] = '-nk {}'.format(n_kpts)
         # change how k-points are distrubuted among nodes
         job_kwargs.update([('num_nodes', n_kpts)])
 

@@ -15,17 +15,15 @@ prefix = '{prefix}'
 balsam_exe_settings = {balsam_exe_settings}
 calc_keywords = {calc_keywords}
 creation_dir = '{creation_dir}'
-
 jobdir = os.path.join(adsorbate, prefix)
 outdir = os.path.join(jobdir, prefix)
 
 if os.path.exists(jobdir):
     shutil.rmtree(jobdir)
 os.mkdir(jobdir)
-
 label = os.path.join(jobdir, prefix)
-
 start = datetime.datetime.now()
+
 
 with open(outdir + '_time.log', 'w+') as f:
     f.write(str(start))
