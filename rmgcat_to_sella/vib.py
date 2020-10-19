@@ -1,3 +1,4 @@
+from networkx.readwrite.graph6 import n_to_data
 from numpy.core.fromnumeric import repeat
 from rmgcat_to_sella.io import IO
 from ase.io import read, write
@@ -368,7 +369,9 @@ class AfterTS():
                     calc_keywords=calc_keywords,
                     creation_dir=self.creation_dir,
                     pseudopotentials=pseudopotentials,
-                    pseudo_dir=pseudo_dir
+                    pseudo_dir=pseudo_dir,
+                    repeats=self.repeats,
+                    n_kpts=self.n_kpts
                 ))
 
     def get_all_distances(self):
