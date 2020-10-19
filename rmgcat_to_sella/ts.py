@@ -55,7 +55,7 @@ class TS():
         self.yamlfile = yamlfile
         self.repeats = repeats
         self.creation_dir = creation_dir
-        self.io = IO()
+        self.n_kpts = IO().get_kpoints(self.repeats)
 
     def prepare_ts_estimate(
             self,
@@ -99,8 +99,8 @@ class TS():
             for the species 2 (sp2)
         '''
         for species in species_list:
-            r_name_list, p_name_list, images = self.io.prepare_react_list(rxn)
-            rxn_name = self.io.get_rxn_name(rxn)
+            r_name_list, p_name_list, images = IO().prepare_react_list(rxn)
+            rxn_name = IO().get_rxn_name(rxn)
 
             ts_estimate_path = os.path.join(
                 self.creation_dir,
@@ -453,14 +453,12 @@ class TS():
                                               prefix=prefix,
                                               geom_name=geom_name,
                                               slabopt=self.slab))
-                f.close()
                 # write .png files
                 init_png = os.path.join(
                     calcDir, xyz_file[:-4] + '_initial.png')
                 write(init_png, read(xyz_file_path))
                 # remove .xyz files
                 shutil.move(xyz_file_path, calcDir)
-        f.close()
 
     def get_av_dist(
             self,
@@ -500,7 +498,7 @@ class TS():
         surface_atoms_indices = []
         adsorbate_atoms_indices = []
         all_dists = []
-        self.io.get_xyz_from_traj(path_to_minima, species)
+        IO().get_xyz_from_traj(path_to_minima, species)
         species_path = os.path.join(path_to_minima, species)
         # treat the special cases
         if species in ['CH3O', 'CH2O']:
@@ -799,7 +797,9 @@ class TS():
                     pseudo_dir=pseudo_dir,
                     balsam_exe_settings=balsam_exe_settings,
                     calc_keywords=calc_keywords,
-                    creation_dir=self.creation_dir
+                    creation_dir=self.creation_dir,
+                    n_kpts=self.n_kpts,
+                    repeats=self.repeats
                 ))
 
     def get_bond_dist(

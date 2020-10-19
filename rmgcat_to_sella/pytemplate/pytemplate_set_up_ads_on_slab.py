@@ -43,6 +43,7 @@ extra_calc_keywords = dict(
     label=label
 )
 
+# update balsam_exe_settings with info about a new num_nodes
 balsam_exe_settings['num_nodes'] = {n_kpts}
 
 atoms.calc = EspressoBalsamSocketIO(
