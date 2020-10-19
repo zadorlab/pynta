@@ -35,22 +35,19 @@ pseudo_dir = home + '/espresso/pseudo'
 
 pseudopotentials = "dict(Cu='Cu.pbe-spn-kjpaw_psl.1.0.0.UPF', H='H.pbe-kjpaw_psl.1.0.0.UPF', O='O.pbe-n-kjpaw_psl.1.0.0.UPF', C='C.pbe-n-kjpaw_psl.1.0.0.UPF')"
 executable = 'pw.x'
-balsam_exe_settings = {'num_nodes': 1,
-                       'ranks_per_node': 4,
+balsam_exe_settings = {'ranks_per_node': 4,
                        'threads_per_rank': 16,
                        'threads_per_core': 1,
                        'cpu_affinity': 'depth'
                        }
 
-calc_keywords = {'kpts': (3, 3, 1),
-                 'occupations': 'smearing',
+calc_keywords = {'occupations': 'smearing',
                  'smearing': 'marzari-vanderbilt',
                  'degauss': 0.01,  # Rydberg
                  'ecutwfc': 40,  # Rydberg
                  'nosym': True,  # Allow symmetry breaking during optimization
                  'conv_thr': 1e-11,
                  'mixing_mode': 'local-TF'
-                 'job_args': '-nk 5'  # distribute kpoints among given # nodes
                  }
 creation_dir = Path.cwd().as_posix()
 
