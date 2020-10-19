@@ -147,10 +147,10 @@ class GetSlab:
         n_kpts = IO().get_get_kpoints(self.self.repeats_surface)
 
         job_kwargs = self.balsam_exe_settings.copy()
-        qe_keywords_slab = self.calc_keywords.copy()
+        extra_calc_keywords = self.calc_keywords.copy()
         # add kpoints and distribute it among nodes = n_kpts
-        qe_keywords_slab['kpts'] = self.repeats_surface
-        qe_keywords_slab['job_args'] = '-nk {}'.format(n_kpts)
+        extra_calc_keywords['kpts'] = self.repeats_surface
+        extra_calc_keywords['job_args'] = '-nk {}'.format(n_kpts)
         # change how k-points are distrubuted among nodes
         job_kwargs.update([('num_nodes', n_kpts)])
 
@@ -159,7 +159,7 @@ class GetSlab:
             job_kwargs=job_kwargs,
             pseudopotentials=self.pseudopotentials,
             pseudo_dir=self.pseudo_dir,
-            **qe_keywords_slab
+            **extra_calc_keywords
         )
 
         fname = os.path.join(self.creation_dir, self.slab_name)

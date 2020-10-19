@@ -4,6 +4,7 @@ import os
 import shutil
 
 import datetime
+from numpy.core.fromnumeric import repeat
 from rmgcat_to_sella.balsamcalc import EspressoBalsamSocketIO
 
 from ase.io import read, write
@@ -24,7 +25,6 @@ os.mkdir(jobdir)
 label = os.path.join(jobdir, prefix)
 start = datetime.datetime.now()
 
-
 with open(outdir + '_time.log', 'w+') as f:
     f.write(str(start))
     f.write("\n")
@@ -38,6 +38,8 @@ atoms.set_constraint(FixAtoms([
 extra_calc_keywords = dict(
     pseudopotentials={pseudopotentials},
     pseudo_dir='{pseudo_dir}',
+    kpts={repeats},
+    jobs_args='-nk {n_kpts}',
     label=label
 )
 
