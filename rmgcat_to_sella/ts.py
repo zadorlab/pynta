@@ -98,36 +98,36 @@ class TS():
             specify whether use the optional scfactor_surface
             for the species 2 (sp2)
         '''
-        for species in species_list:
-            r_name_list, p_name_list, images = IO().prepare_react_list(rxn)
-            rxn_name = IO().get_rxn_name(rxn)
 
-            ts_estimate_path = os.path.join(
-                self.creation_dir,
-                self.facetpath,
-                rxn_name,
-                self.ts_estimate_dir)
+        r_name_list, p_name_list, images = IO().prepare_react_list(rxn)
+        rxn_name = IO().get_rxn_name(rxn)
 
-            self.TS_placer(
-                ts_estimate_path,
-                scfactor,
-                rxn_name,
-                r_name_list,
-                p_name_list,
-                images)
+        ts_estimate_path = os.path.join(
+            self.creation_dir,
+            self.facetpath,
+            rxn_name,
+            self.ts_estimate_dir)
 
-            self.filtered_out_equiv_ts_estimate(
-                ts_estimate_path,
-                rxn_name)
+        self.TS_placer(
+            ts_estimate_path,
+            scfactor,
+            rxn_name,
+            r_name_list,
+            p_name_list,
+            images)
 
-            self.set_up_penalty_xtb(
-                ts_estimate_path,
-                rxn_name,
-                pytemplate_xtb,
-                species_list,
-                scaled1,
-                scaled2,
-                scfactor_surface)
+        self.filtered_out_equiv_ts_estimate(
+            ts_estimate_path,
+            rxn_name)
+
+        self.set_up_penalty_xtb(
+            ts_estimate_path,
+            rxn_name,
+            pytemplate_xtb,
+            species_list,
+            scaled1,
+            scaled2,
+            scfactor_surface)
 
     def get_max_rot_angle(self):
         ''' Get the maximum angle of rotation for a given slab that will
