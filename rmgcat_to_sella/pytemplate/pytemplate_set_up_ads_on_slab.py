@@ -43,6 +43,8 @@ extra_calc_keywords = dict(
     label=label
 )
 
+balsam_exe_settings['num_nodes'] = {n_kpts}
+
 atoms.calc = EspressoBalsamSocketIO(
     workflow='QE_Socket',
     job_kwargs=balsam_exe_settings,
