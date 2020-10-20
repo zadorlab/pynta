@@ -1,21 +1,17 @@
-import re
+
 from ase.io import read
 from pathlib import Path
 import os
 import matplotlib.pyplot as plt
 from matplotlib.ticker import AutoMinorLocator
 import numpy as np
-from numpy.core.fromnumeric import prod
 from rmgcat_to_sella.io import IO
+import inputR2S
 
 
 class Results():
     def __init__(
-            self,
-            ts_path,
-            slab_path,
-            yamlfile,
-            facetpaths):
+            self):
         '''
         Parameters:
         ___________
@@ -33,17 +29,19 @@ class Results():
             e.g. ['O', 'H']
 
         '''
-        # self.minima_path = minima_path
-        self.ts_path = ts_path
-        self.slab_path = slab_path
-        self.yamlfile = yamlfile
-        self.facetpaths = facetpaths
+        surface_types_and_repeats = inputR2S.surface_types_and_repeats
+        symbol = inputR2S.symbol
+        self.yamlfile = inputR2S.yamlfile
+        self.facetpaths = IO().get_facetpaths(
+            symbol, surface_types_and_repeats.keys())
         self.reactions = IO().open_yaml_file(self.yamlfile)
         self.ev_to_kjmol = 23.06035 * 4.184
+        self.slab_paths = ['{}_slab_opt_res.xyz'.format(
+            facetpath) for facetpath in self.facetpaths]
 
     def get_reaction_energies_all(self):
         reaction_energies = {}
-        for facetpath, slab_path in zip(self.facetpaths, self.slab_path):
+        for facetpath, slab_path in zip(self.facetpaths, self.slab_paths):
             minima_path = os.path.join(facetpath, 'minima')
             for rxn in self.reactions:
                 r_name_list, p_name_list, _ = IO().prepare_react_list(rxn)
@@ -108,7 +106,7 @@ class Results():
 
     def get_barrier_all(self):
         ts_ener = {}
-        for facetpath, slab_path in zip(self.facetpaths, self.slab_path):
+        for facetpath, slab_path in zip(self.facetpaths, self.slab_paths):
             minima_path = os.path.join(facetpath, 'minima')
             for rxn in self.reactions:
                 r_name_list, p_name_list, _ = IO().prepare_react_list(rxn)
