@@ -100,6 +100,7 @@ class Results():
         else:
             reaction_energy = (sum(p_ener_list) -
                                sum(r_ener_list)) * self.ev_to_kjmol
+        # print(reaction_energy)
         reaction_energy = '{:.2f}'.format(round(reaction_energy[0], 3))
         return reaction_energy
 
@@ -339,7 +340,6 @@ class Results():
                     enerVal = enerLine.split()
                     species_ener_dict[spiecies_out_file_path] = float(
                         enerVal[4])
-                    f.close()
             lowest_species_ener = min(species_ener_dict.values())
             return lowest_species_ener
         except ValueError:
