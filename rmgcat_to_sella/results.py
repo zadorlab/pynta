@@ -434,7 +434,7 @@ class Results():
     def plot(self):
         reaction_energies = self.get_reaction_energies_all()
         activation_barriers = self.get_barrier_all()
-        _, (ax1, ax2) = plt.subplots(2, 2)
+        _, (ax1, ax2) = plt.subplots(len(self.facetpaths), 2)
         for num, facetpath in enumerate(self.facetpaths):
             for ax, rxn, in zip((ax1, ax2), self.reactions):
                 rxn_name = IO().get_rxn_name(rxn)
