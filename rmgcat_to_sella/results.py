@@ -5,6 +5,7 @@ import os
 import matplotlib.pyplot as plt
 from matplotlib.ticker import AutoMinorLocator
 import numpy as np
+from numpy.core.fromnumeric import prod
 from rmgcat_to_sella.io import IO
 
 
@@ -41,16 +42,17 @@ class Results():
         self.ev_to_kjmol = 23.06035 * 4.184
 
     def get_reaction_energies_all(self):
-        r_ener = {}
+        reaction_energies = {}
         for facetpath, slab_path in zip(self.facetpaths, self.slab_path):
             minima_path = os.path.join(facetpath, 'minima')
             for rxn in self.reactions:
                 r_name_list, p_name_list, _ = IO().prepare_react_list(rxn)
                 rxn_name = IO().get_rxn_name(rxn)
-                r_ener[facetpath+'_'+rxn_name] = self.get_reaction_energy(
+                key = facetpath+'_'+rxn_name
+                reaction_energies[key] = self.get_reaction_energy(
                     minima_path, facetpath, r_name_list, p_name_list,
                     slab_path)
-        return r_ener
+        return reaction_energies
 
     def get_reaction_energy(
             self,
@@ -421,27 +423,28 @@ class Results():
             prefix_list.append(prefix)
         return prefix_list
 
-    def rxn_title(self):
+    def rxn_title(
+            self,
+            rxn_name):
         ''' Return rxn name with arrow between reactants and products'''
-        reactants = '+'.join([str(species) +
-                              '*' for species in self.reactants_list])
-        products = '+'.join([str(species) +
-                             '*' for species in self.products_list])
-        rxn_name = reactants + ' --> ' + products
-        return rxn_name
+        reactants, products = rxn_name.split('_')
+        rxn_name_title = reactants + ' --> ' + products
+        return rxn_name_title
 
     def plot(self):
-        r_ener = self.get_reaction_energies_all()
+        reaction_energies = self.get_reaction_energies_all()
+        activation_barriers = self.get_barrier_all()
         facetpath = 'Cu_111'
         rxn_name = 'OH_O+H'
-        self.plot_rxn(facetpath, rxn_name, r_ener)
+        key = facetpath+'_'+rxn_name
+        self.plot_rxn(key, reaction_energies, activation_barriers, rxn_name)
 
     def plot_rxn(
             self,
-            facetpath,
+            key,
+            reaction_energies,
+            activation_barriers,
             rxn_name,
-            r_ener,
-            plot_title=None,
             plot_filename=None,
             apply_max_barrier=False):
         ''' Plot reaction energy diagram
@@ -459,22 +462,22 @@ class Results():
         if not plot_filename:
             plot_filename = 'plot.png'
 
-        reaction_energy = float(r_ener[facetpath+'_'+rxn_name])
-        activation_barriers = self.get_barrier()
+        reaction_energy = float(reaction_energies[key])
+        activation_barriers_rxn = activation_barriers[key]
 
         if apply_max_barrier:
-            activation_barriers = {ts_name: float(barrier) for (
-                ts_name, barrier) in activation_barriers.items()
+            activation_barriers_rxn = {ts_name: float(barrier) for (
+                ts_name, barrier) in activation_barriers_rxn.items()
                 if float(barrier) < 300}
 
-        rxn_name = self.rxn_title()
+        rxn_name_title = self.rxn_title(rxn_name)
         energy_0 = 0
         rxn_ener_position = reaction_energy + 5
         rxn_ener_position_label = reaction_energy - 8
 
-        reactants, products = rxn_name.split(' --> ')
+        reactants, products = rxn_name_title.split(' --> ')
 
-        for ts_name, barrier in activation_barriers.items():
+        for ts_name, barrier in activation_barriers_rxn.items():
             barrier = float(barrier)
             x = np.arange(6)
             y = np.array([0, 0, barrier, barrier,
@@ -506,8 +509,7 @@ class Results():
         ax.set_xlabel('reaction coordinate')
 
         plt.legend()
-        # plt.title(rxn_name)
-        plt.title(plot_title)
+        plt.title(rxn_name_title)
         # plt.show()
         plt.tight_layout()
         plt.savefig(plot_filename)
