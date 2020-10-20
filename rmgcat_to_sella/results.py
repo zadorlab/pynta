@@ -40,6 +40,16 @@ class Results():
             facetpath) for facetpath in self.facetpaths]
 
     def get_reaction_energies_all(self):
+        ''' Get reactiom energy (kj/mol) for all facetpaths and reactions
+
+        Returns
+        -------
+        reaction_energies : dict(str:float)
+            a dictionary with reaction energies for a given facetpath and
+            rxn_name, e.g.
+            {'Cu_111_OH_O+H': 70.81}
+
+        '''
         reaction_energies = {}
         for facetpath, slab_path in zip(self.facetpaths, self.slab_paths):
             minima_path = os.path.join(facetpath, 'minima')
@@ -47,9 +57,9 @@ class Results():
                 r_name_list, p_name_list, _ = IO().prepare_react_list(rxn)
                 rxn_name = IO().get_rxn_name(rxn)
                 key = facetpath+'_'+rxn_name
-                reaction_energies[key] = self.get_reaction_energy(
+                reaction_energies[key] = float(self.get_reaction_energy(
                     minima_path, facetpath, r_name_list, p_name_list,
-                    slab_path)
+                    slab_path))
         return reaction_energies
 
     def get_reaction_energy(
@@ -67,11 +77,14 @@ class Results():
         minima_path : str
             a path to main minima directory
             e.g. Cu_111/minima
-        reactant_list : list(str)
-            a list with all reactants
+        facetpath : str
+            a path to the workflow's main dir
+            e.g. 'Cu_111'
+        r_name_list : list(str)
+            a list with all reactants for the given reaction
             e.g. ['OH']
-        product_list : list(str)
-            a list with all products
+        p_name_list : list(str)
+            a list with all products for the given reaction
             e.g. ['O', 'H']
         slab_path : str
             a path to the slab
@@ -105,6 +118,16 @@ class Results():
         return reaction_energy
 
     def get_barrier_all(self):
+        ''' Get barrier heights for all rxn_names and facetpaths
+
+        Returns
+        -------
+        ts_ener : dict(str:dict(str:str))
+            a dictionary with all barrier heights (kj/mol)
+            in a format like below
+            {'Cu_111_OH_O+H': {'TS_00': '155.27', 'TS_01': '157.97'}}
+
+        '''
         ts_ener = {}
         for facetpath, slab_path in zip(self.facetpaths, self.slab_paths):
             minima_path = os.path.join(facetpath, 'minima')
@@ -136,11 +159,14 @@ class Results():
         ts_path : str
             a path to main TS directory
             e.g. 'Cu_111/TS_estimate_unique'
-        reactant_list : list(str)
-            a list with all reactants
+        facetpath : str
+            a path to the workflow's main dir
+            e.g. 'Cu_111'
+        r_name_list : list(str)
+            a list with all reactants for the given reaction
             e.g. ['OH']
-        product_list : list(str)
-            a list with all products
+        p_name_list : list(str)
+            a list with all products for the given reaction
             e.g. ['O', 'H']
         slab_path : str
             a path to the slab
@@ -185,11 +211,14 @@ class Results():
         minima_path : str
             a path to main minima directory
             e.g. Cu_111/minima
-        reactant_list : list(str)
-            a list with all reactants
+        facetpath : str
+            a path to the workflow's main dir
+            e.g. 'Cu_111'
+        r_name_list : list(str)
+            a list with all reactants for the given reaction
             e.g. ['OH']
-        product_list : list(str)
-            a list with all products
+        p_name_list : list(str)
+            a list with all products for the given reaction
             e.g. ['O', 'H']
         slab_path : str
             a path to the slab
@@ -316,6 +345,9 @@ class Results():
         species : str
             a symbol of the species
             e.g. 'OH', 'H', 'O'
+        facetpath : str
+            a path to the workflow's main dir
+            e.g. 'Cu_111'
 
         Returns:
         ________
@@ -379,6 +411,9 @@ class Results():
         species : str
             a symbol of the species
             e.g. 'OH', 'H', 'O'
+        facetpath : str
+            a path to the workflow's main dir
+            e.g. 'Cu_111'
 
         Returns:
         ________
@@ -413,6 +448,7 @@ class Results():
         ________
         prefix_list : list(str)
             a list with all prefixes for TSs
+
         '''
         prefix_list = []
         ts_out_file_list = self.get_ts_out_files(ts_path)
@@ -424,7 +460,19 @@ class Results():
     def rxn_title(
             self,
             rxn_name):
-        ''' Return rxn name with arrow between reactants and products'''
+        ''' Return rxn name with arrow between reactants and products
+
+        Parameters:
+        ___________
+        rxn_name : str
+            a reaction name having a format like OH_O+H
+
+        Returns:
+        ___________
+        rxn_name_title : str
+            a reaction name having a format like OH --> O+H
+
+        '''
         reactants, products = rxn_name.split('_')
         rxn_name_title = reactants + ' --> ' + products
         return rxn_name_title
@@ -460,10 +508,25 @@ class Results():
             num,
             plot_filename=None,
             apply_max_barrier=False):
-        ''' Plot reaction energy diagram
+        ''' Plot reaction energy diagram for a given reaction and facetpath
 
         Parameters:
         ___________
+        key : str
+            a key to look up for a correct reactions, e.g.
+            'Cu_111_OH_O+H'
+        reaction_energies : dict(str:float)
+            a dictionary with reaction energies for a given facetpath and
+            rxn_name, e.g.
+            {'Cu_111_OH_O+H': 70.81}
+        activation_barriers : dict(str:dict(str:str))
+            a dictionary with all barrier heights (kj/mol)
+            in a format like below
+            {'Cu_111_OH_O+H': {'TS_00': '155.27', 'TS_01': '157.97'}}
+        axes : matplotlib.subplot object
+            an axis for matplotlib.subplot
+        num : int
+            a num indicating column of the axes (an index of axes)
         plot_title : str
             provide a title for the plot, optional
         apply_max_barrier : bool
