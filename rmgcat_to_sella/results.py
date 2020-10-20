@@ -156,7 +156,7 @@ class Results():
 
         '''
 
-        r_ener_list, p_ener_list, slab_ener, nslabs = self.get_data(
+        r_ener_list, _, slab_ener, _ = self.get_data(
             minima_path, facetpath, r_name_list, p_name_list, slab_path)
         tss_ener = self.get_ts_ener(ts_path)
         tss_name = self.format_TS_name(ts_path)
