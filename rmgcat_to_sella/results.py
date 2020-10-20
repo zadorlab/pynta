@@ -434,13 +434,14 @@ class Results():
     def plot(self):
         reaction_energies = self.get_reaction_energies_all()
         activation_barriers = self.get_barrier_all()
-        _, (ax1, ax2) = plt.subplots(1, 2)
-        for ax, rxn in zip((ax1, ax2), self.reactions):
-            rxn_name = IO().get_rxn_name(rxn)
-            facetpath = 'Cu_111'
-            key = facetpath+'_'+rxn_name
-            self.plot_rxn(key, reaction_energies,
-                          activation_barriers, rxn_name, ax)
+        _, (ax1, ax2) = plt.subplots(2, 2)
+        for num, facetpath in enumerate(self.facetpaths):
+            for ax, rxn in zip((ax1, ax2), self.reactions):
+                rxn_name = IO().get_rxn_name(rxn)
+                # facetpath = 'Cu_100'
+                key = facetpath+'_'+rxn_name
+                self.plot_rxn(key, reaction_energies,
+                              activation_barriers, rxn_name, ax, num)
 
     def plot_rxn(
             self,
@@ -449,6 +450,7 @@ class Results():
             activation_barriers,
             rxn_name,
             axes,
+            num,
             plot_filename=None,
             apply_max_barrier=False):
         ''' Plot reaction energy diagram
@@ -486,33 +488,34 @@ class Results():
             x = np.arange(6)
             y = np.array([0, 0, barrier, barrier,
                           reaction_energy, reaction_energy])
-            axes.plot(x, y, label=ts_name)
-            axes.hlines(barrier, 0, 2.0, linestyles='dotted')
+            axes[num].plot(x, y, label=ts_name)
+            axes[num].hlines(barrier, 0, 2.0, linestyles='dotted')
             # add label with ener of the TS
             # barrier_position = barrier + 5
             # plt.annotate('{:.2f}'.format(barrier),
             #              (2.5, barrier_position), ha='center')
 
         # # add lablel with the 0 ener for reactants
-        axes.annotate('{:.2f}'.format(energy_0), (0.5, 5), ha='center')
-        axes.annotate(reactants, (0.5, -8), ha='center')
+        axes[num].annotate('{:.2f}'.format(energy_0), (0.5, 5), ha='center')
+        axes[num].annotate(reactants, (0.5, -8), ha='center')
 
         # # add lablel with the reaction energy for products
-        axes.annotate('{:.2f}'.format(reaction_energy),
-                      (4.5, rxn_ener_position), ha='center')
-        axes.annotate(products, (4.5, rxn_ener_position_label), ha='center')
+        axes[num].annotate('{:.2f}'.format(reaction_energy),
+                           (4.5, rxn_ener_position), ha='center')
+        axes[num].annotate(
+            products, (4.5, rxn_ener_position_label), ha='center')
 
         # plt.gca().axes.get_xaxis().set_visible(False)
         minor_locator = AutoMinorLocator(5)
-        axes.margins(x=0)
-        axes.xaxis.set_major_locator(plt.NullLocator())
-        axes.yaxis.set_minor_locator(minor_locator)
+        axes[num].margins(x=0)
+        axes[num].xaxis.set_major_locator(plt.NullLocator())
+        axes[num].yaxis.set_minor_locator(minor_locator)
         # labels
-        axes.set_ylabel('E (kJ/mol)')
-        axes.set_xlabel('reaction coordinate')
+        axes[num].set_ylabel('E (kJ/mol)')
+        axes[num].set_xlabel('reaction coordinate')
 
-        axes.legend()
-        axes.title.set_text(rxn_name_title)
+        axes[num].legend()
+        axes[num].title.set_text(rxn_name_title)
         # plt.show()
         plt.tight_layout()
         plt.savefig(plot_filename)
