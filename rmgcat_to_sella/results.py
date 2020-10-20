@@ -430,10 +430,20 @@ class Results():
         rxn_name = reactants + ' --> ' + products
         return rxn_name
 
-    def plot(self,
-             plot_title=None,
-             plot_filename=None,
-             apply_max_barrier=False):
+    def plot(self):
+        r_ener = self.get_reaction_energies_all()
+        facetpath = 'Cu_111'
+        rxn_name = 'OH_O+H'
+        self.plot_rxn(facetpath, rxn_name, r_ener)
+
+    def plot_rxn(
+            self,
+            facetpath,
+            rxn_name,
+            r_ener,
+            plot_title=None,
+            plot_filename=None,
+            apply_max_barrier=False):
         ''' Plot reaction energy diagram
 
         Parameters:
@@ -449,7 +459,7 @@ class Results():
         if not plot_filename:
             plot_filename = 'plot.png'
 
-        reaction_energy = float(self.get_reaction_energy())
+        reaction_energy = float(r_ener[facetpath+'_'+rxn_name])
         activation_barriers = self.get_barrier()
 
         if apply_max_barrier:
