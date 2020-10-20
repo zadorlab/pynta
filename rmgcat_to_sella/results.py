@@ -436,9 +436,8 @@ class Results():
         activation_barriers = self.get_barrier_all()
         _, (ax1, ax2) = plt.subplots(2, 2)
         for num, facetpath in enumerate(self.facetpaths):
-            for ax, rxn in zip((ax1, ax2), self.reactions):
+            for ax, rxn, in zip((ax1, ax2), self.reactions):
                 rxn_name = IO().get_rxn_name(rxn)
-                # facetpath = 'Cu_100'
                 key = facetpath+'_'+rxn_name
                 self.plot_rxn(key, reaction_energies,
                               activation_barriers, rxn_name, ax, num)
@@ -464,7 +463,6 @@ class Results():
             default = False
 
         '''
-
         if not plot_filename:
             plot_filename = 'plot.png'
 
@@ -515,7 +513,9 @@ class Results():
         axes[num].set_xlabel('reaction coordinate')
 
         axes[num].legend()
-        axes[num].title.set_text(rxn_name_title)
+        axes[num].title.set_text(key)
         # plt.show()
         plt.tight_layout()
+        figure = plt.gcf()
+        figure.set_size_inches(10, 10)
         plt.savefig(plot_filename)
