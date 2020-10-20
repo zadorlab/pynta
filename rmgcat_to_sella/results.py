@@ -11,16 +11,13 @@ from rmgcat_to_sella.io import IO
 class Results():
     def __init__(
             self,
-            minima_path,
             ts_path,
             slab_path,
-            yamlfile):
+            yamlfile,
+            facetpaths):
         '''
         Parameters:
         ___________
-        minima_path : str
-            a path to main minima directory
-            e.g. Cu_111/minima
         ts_path : str
             a path to main TS directory
             e.g. 'Cu_111/TS_estimate_unique'
@@ -35,23 +32,32 @@ class Results():
             e.g. ['O', 'H']
 
         '''
-        self.minima_path = minima_path
+        # self.minima_path = minima_path
         self.ts_path = ts_path
         self.slab_path = slab_path
         self.yamlfile = yamlfile
+        self.facetpaths = facetpaths
         self.ev_to_kjmol = 23.06035 * 4.184
 
     def get_reaction_energies_all(self):
         r_ener = {}
         reactions = IO().open_yaml_file(self.yamlfile)
-        for rxn in reactions:
-            r_name_list, p_name_list, images = IO().prepare_react_list(rxn)
-            rxn_name = IO().get_rxn_name(rxn)
-            r_ener[rxn_name] = self.get_reaction_energy(
-                'Cu_111', r_name_list, p_name_list)
+        for facetpath, slab_path in zip(self.facetpaths, self.slab_path):
+            minima_path = os.path.join(facetpath, 'minima')
+            slab_ener = self.get_slab_ener(slab_path)
+            for rxn in reactions:
+                r_name_list, p_name_list, _ = IO().prepare_react_list(rxn)
+                rxn_name = IO().get_rxn_name(rxn)
+                r_ener[facetpath+'_'+rxn_name] = self.get_reaction_energy(
+                    minima_path, facetpath, r_name_list, p_name_list)
         return r_ener
 
-    def get_reaction_energy(self, facetpath, r_name_list, p_name_list):
+    def get_reaction_energy(
+            self,
+            minima_path,
+            facetpath,
+            r_name_list,
+            p_name_list):
         ''' Calclate reaction energy as a difference between
             the most stable product and the most stable reactant
 
@@ -78,7 +84,7 @@ class Results():
 
         '''
         r_ener_list, p_ener_list, slab_ener, nslabs = self.get_data(
-            facetpath, r_name_list, p_name_list)
+            minima_path, facetpath, r_name_list, p_name_list)
         # Depending how the reactants and products are defined,
         # there are three options here:
         # e.g. AB --> A + B
@@ -129,7 +135,8 @@ class Results():
 
         '''
 
-        r_ener_list, p_ener_list, slab_ener, nslabs = self.get_data(facetpath)
+        r_ener_list, p_ener_list, slab_ener, nslabs = self.get_data(
+            minima_path, facetpath)
         tss_ener = self.get_ts_ener(facetpath)
         tss_name = self.format_TS_name()
 
@@ -153,7 +160,12 @@ class Results():
                     'Not tested if r_ener_list=p_ener_list')
         return activation_barriers
 
-    def get_data(self, facetpath, r_name_list, p_name_list):
+    def get_data(
+            self,
+            minima_path,
+            facetpath,
+            r_name_list,
+            p_name_list):
         ''' Returns the lowest energies lists for reactants and products.
 
         Parameters:
@@ -198,7 +210,7 @@ class Results():
             if reactant == 'OH':
                 reactant = 'HO'
             lowest_reactant_ener = self.get_lowest_species_ener(
-                reactant, facetpath)
+                minima_path, reactant, facetpath)
             r_ener_list.append(lowest_reactant_ener)
         # check if .out files for reactants are copied
         if None in r_ener_list:
@@ -211,7 +223,7 @@ class Results():
         # get the lowest energy for all products
         for product in p_name_list:
             lowest_product_ener = self.get_lowest_species_ener(
-                product, facetpath)
+                minima_path, product, facetpath)
             p_ener_list.append(lowest_product_ener)
         # check if .out files for products are copied
         if None in p_ener_list:
@@ -226,7 +238,9 @@ class Results():
 
         return r_ener_list, p_ener_list, slab_ener, nslabs
 
-    def get_slab_ener(self):
+    def get_slab_ener(
+            self,
+            slab_path):
         ''' Get energy of the slab
 
         Parameters:
@@ -241,7 +255,7 @@ class Results():
             an energy of the slab in eV
 
         '''
-        slab = read(self.slab_path)
+        slab = read(slab_path)
         slab_ener = slab.get_potential_energy()
         return slab_ener
 
@@ -273,6 +287,7 @@ class Results():
 
     def get_lowest_species_ener(
             self,
+            minima_path,
             species,
             facetpath):
         ''' Get the lowest energy of the most stable species
@@ -296,7 +311,7 @@ class Results():
         species_ener_dict = {}
         try:
             species_out_file_path_list = self.get_species_out_files(
-                species, facetpath)
+                minima_path, species, facetpath)
             for spiecies_out_file_path in species_out_file_path_list:
                 with open(spiecies_out_file_path, 'r') as f:
                     data = f.readlines()
@@ -334,6 +349,7 @@ class Results():
 
     def get_species_out_files(
             self,
+            minima_path,
             species,
             facetpath):
         ''' Get .out files for each reactants
@@ -360,7 +376,7 @@ class Results():
         species_out_file_path_list = []
         species = species + '_'
         outfile = '{}_{}*out'.format(facetpath, species)
-        reactant_out_list = Path(self.minima_path).glob(outfile)
+        reactant_out_list = Path(minima_path).glob(outfile)
         for reactant_out_file in reactant_out_list:
             species_out_file_path_list.append(str(reactant_out_file))
         return species_out_file_path_list
