@@ -10,25 +10,8 @@ import inputR2S
 
 
 class Results():
-    def __init__(
-            self):
-        '''
-        Parameters:
-        ___________
-        ts_path : str
-            a path to main TS directory
-            e.g. 'Cu_111/TS_estimate_unique'
-        slab_path : str
-            a path to the slab
-            e.g. 'Cu_111_slab_opt.xyz'
-        reactant_list : list(str)
-            a list with all reactants
-            e.g. ['OH']
-        product_list : list(str)
-            a list with all products
-            e.g. ['O', 'H']
-
-        '''
+    def __init__(self):
+        ''' A class to analyze the results of calculations '''
         surface_types_and_repeats = inputR2S.surface_types_and_repeats
         symbol = inputR2S.symbol
         self.yamlfile = inputR2S.yamlfile
