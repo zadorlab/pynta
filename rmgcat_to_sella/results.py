@@ -163,22 +163,12 @@ class Results():
 
         activation_barriers = {}
         for ts_ener, ts_name in zip(tss_ener, tss_name):
-            # Depending how the reactants and products are defined,
-            # there are three options here:
-            # e.g. OH --> O + H
-            if len(p_ener_list) >= len(r_ener_list):
-                barrier = (ts_ener - sum(r_ener_list)) * self.ev_to_kjmol
-                activation_barriers['TS_' +
-                                    ts_name] = '{:.2f}'.format(barrier)
-            # e.g. O + H --> OH
-            elif len(p_ener_list) < len(r_ener_list):
-                barrier = (ts_ener + slab_ener * nslabs -
-                           sum(r_ener_list)) * self.ev_to_kjmol
-                activation_barriers['TS_' +
-                                    ts_name] = '{:.2f}'.format(barrier)
-            else:
-                raise NotImplementedError(
-                    'Not tested if r_ener_list=p_ener_list')
+            # Should be valud for any type of TS, no matter how many reactants
+            # take part in the reaction, i.e. A + B -> AB or AB -> A + B
+            barrier = (ts_ener + slab_ener * (len(r_ener_list) - 1) -
+                       sum(r_ener_list)) * self.ev_to_kjmol
+            activation_barriers['TS_' +
+                                ts_name] = '{:.2f}'.format(barrier)
         return activation_barriers
 
     def get_data(
