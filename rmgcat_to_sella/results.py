@@ -111,14 +111,17 @@ class Results():
             for rxn in self.reactions:
                 r_name_list, p_name_list, _ = IO().prepare_react_list(rxn)
                 rxn_name = IO().get_rxn_name(rxn)
+                ts_path = os.path.join(
+                    facetpath, rxn_name, 'TS_estimate_unique')
                 ts_ener[facetpath+'_'+rxn_name] = self.get_barrier(
-                    minima_path, facetpath, r_name_list, p_name_list,
+                    minima_path, ts_path, facetpath, r_name_list, p_name_list,
                     slab_path)
         return ts_ener
 
     def get_barrier(
             self,
             minima_path,
+            ts_path,
             facetpath,
             r_name_list,
             p_name_list,
@@ -155,8 +158,8 @@ class Results():
 
         r_ener_list, p_ener_list, slab_ener, nslabs = self.get_data(
             minima_path, facetpath, r_name_list, p_name_list, slab_path)
-        tss_ener = self.get_ts_ener(facetpath)
-        tss_name = self.format_TS_name()
+        tss_ener = self.get_ts_ener(ts_path)
+        tss_name = self.format_TS_name(ts_path)
 
         activation_barriers = {}
         for ts_ener, ts_name in zip(tss_ener, tss_name):
@@ -280,7 +283,9 @@ class Results():
         slab_ener = slab.get_potential_energy()
         return slab_ener
 
-    def get_ts_ener(self):
+    def get_ts_ener(
+            self,
+            ts_path):
         ''' Get energy of all TSs
 
         Parameters:
@@ -296,7 +301,7 @@ class Results():
 
         '''
         ts_ener_dict = {}
-        tss = self.get_ts_out_files()
+        tss = self.get_ts_out_files(ts_path)
         for ts in tss:
             with open(ts, 'r') as f:
                 data = f.readlines()
@@ -346,7 +351,9 @@ class Results():
             print('Minima .out files probably not copied successfully.')
             print('Check minima .out files. If missing, copy it.')
 
-    def get_ts_out_files(self):
+    def get_ts_out_files(
+            self,
+            ts_path):
         ''' Get TS .out files
 
         Parameters:
@@ -362,7 +369,7 @@ class Results():
 
         '''
         ts_out_file_list = []
-        ts_file_list = Path(self.ts_path).glob('*out')
+        ts_file_list = Path(ts_path).glob('*out')
         for ts_out_file in ts_file_list:
             ts_out_file_list.append(str(ts_out_file))
         return sorted(ts_out_file_list)
@@ -401,7 +408,9 @@ class Results():
             species_out_file_path_list.append(str(reactant_out_file))
         return species_out_file_path_list
 
-    def format_TS_name(self):
+    def format_TS_name(
+            self,
+            ts_path):
         ''' Function to get prefixes of TSs
 
         Parameters:
@@ -416,7 +425,7 @@ class Results():
             a list with all prefixes for TSs
         '''
         prefix_list = []
-        ts_out_file_list = self.get_ts_out_files()
+        ts_out_file_list = self.get_ts_out_files(ts_path)
         for ts_out_file in ts_out_file_list:
             prefix = os.path.split(ts_out_file)[1].split('_')[0]
             prefix_list.append(prefix)
