@@ -37,14 +37,14 @@ class Results():
         self.slab_path = slab_path
         self.yamlfile = yamlfile
         self.facetpaths = facetpaths
+        self.reactions = IO().open_yaml_file(self.yamlfile)
         self.ev_to_kjmol = 23.06035 * 4.184
 
     def get_reaction_energies_all(self):
         r_ener = {}
-        reactions = IO().open_yaml_file(self.yamlfile)
         for facetpath, slab_path in zip(self.facetpaths, self.slab_path):
             minima_path = os.path.join(facetpath, 'minima')
-            for rxn in reactions:
+            for rxn in self.reactions:
                 r_name_list, p_name_list, _ = IO().prepare_react_list(rxn)
                 rxn_name = IO().get_rxn_name(rxn)
                 r_ener[facetpath+'_'+rxn_name] = self.get_reaction_energy(
@@ -103,9 +103,25 @@ class Results():
         reaction_energy = '{:.2f}'.format(round(reaction_energy[0], 3))
         return reaction_energy
 
+    def get_barrier_all(self):
+        ts_ener = {}
+        for facetpath, slab_path in zip(self.facetpaths, self.slab_path):
+            minima_path = os.path.join(facetpath, 'minima')
+            for rxn in self.reactions:
+                r_name_list, p_name_list, _ = IO().prepare_react_list(rxn)
+                rxn_name = IO().get_rxn_name(rxn)
+                ts_ener[facetpath+'_'+rxn_name] = self.get_barrier(
+                    minima_path, facetpath, r_name_list, p_name_list,
+                    slab_path)
+        return ts_ener
+
     def get_barrier(
             self,
-            facetpath):
+            minima_path,
+            facetpath,
+            r_name_list,
+            p_name_list,
+            slab_path):
         ''' Calculate reaction energy relatively to the most stable reactant
 
         Parameters:
@@ -137,7 +153,7 @@ class Results():
         '''
 
         r_ener_list, p_ener_list, slab_ener, nslabs = self.get_data(
-            minima_path, facetpath)
+            minima_path, facetpath, r_name_list, p_name_list, slab_path)
         tss_ener = self.get_ts_ener(facetpath)
         tss_name = self.format_TS_name()
 
@@ -224,6 +240,8 @@ class Results():
             raise TypeError
         # get the lowest energy for all products
         for product in p_name_list:
+            if product == 'OH':
+                product = 'HO'
             lowest_product_ener = self.get_lowest_species_ener(
                 minima_path, product, facetpath)
             p_ener_list.append(lowest_product_ener)
