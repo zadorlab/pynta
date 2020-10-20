@@ -14,8 +14,6 @@ class Results():
             minima_path,
             ts_path,
             slab_path,
-            reactants_list,
-            products_list,
             yamlfile):
         '''
         Parameters:
@@ -40,17 +38,18 @@ class Results():
         self.minima_path = minima_path
         self.ts_path = ts_path
         self.slab_path = slab_path
-        # self.reactants_list = reactants_list
-        # self.products_list = products_list
         self.yamlfile = yamlfile
         self.ev_to_kjmol = 23.06035 * 4.184
 
     def get_reaction_energies_all(self):
+        r_ener = {}
         reactions = IO().open_yaml_file(self.yamlfile)
         for rxn in reactions:
             r_name_list, p_name_list, images = IO().prepare_react_list(rxn)
             rxn_name = IO().get_rxn_name(rxn)
-            return self.get_reaction_energy('Cu_111', r_name_list, p_name_list)
+            r_ener[rxn_name] = self.get_reaction_energy(
+                'Cu_111', r_name_list, p_name_list)
+        return r_ener
 
     def get_reaction_energy(self, facetpath, r_name_list, p_name_list):
         ''' Calclate reaction energy as a difference between
@@ -197,7 +196,7 @@ class Results():
         for reactant in r_name_list:
             # bug to be fixed
             if reactant == 'OH':
-                reactant == 'HO'
+                reactant = 'HO'
             lowest_reactant_ener = self.get_lowest_species_ener(
                 reactant, facetpath)
             r_ener_list.append(lowest_reactant_ener)
@@ -299,7 +298,6 @@ class Results():
             species_out_file_path_list = self.get_species_out_files(
                 species, facetpath)
             for spiecies_out_file_path in species_out_file_path_list:
-                print(spiecies_out_file_path)
                 with open(spiecies_out_file_path, 'r') as f:
                     data = f.readlines()
                     enerLine = data[-1]
