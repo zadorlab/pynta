@@ -41,7 +41,7 @@ class Results():
         self.products_list = products_list
         self.ev_to_kjmol = 23.06035 * 4.184
 
-    def get_reaction_energy(self):
+    def get_reaction_energy(self, facetpath):
         ''' Calclate reaction energy as a difference between
             the most stable product and the most stable reactant
 
@@ -67,7 +67,7 @@ class Results():
             the most stable product and the most stable reactant
 
         '''
-        r_ener_list, p_ener_list, slab_ener, nslabs = self.get_data()
+        r_ener_list, p_ener_list, slab_ener, nslabs = self.get_data(facetpath)
         # Depending how the reactants and products are defined,
         # there are three options here:
         # e.g. AB --> A + B
@@ -85,7 +85,9 @@ class Results():
         reaction_energy = '{:.2f}'.format(round(reaction_energy[0], 3))
         return reaction_energy
 
-    def get_barrier(self):
+    def get_barrier(
+            self,
+            facetpath):
         ''' Calculate reaction energy relatively to the most stable reactant
 
         Parameters:
@@ -116,8 +118,8 @@ class Results():
 
         '''
 
-        r_ener_list, p_ener_list, slab_ener, nslabs = self.get_data()
-        tss_ener = self.get_ts_ener()
+        r_ener_list, p_ener_list, slab_ener, nslabs = self.get_data(facetpath)
+        tss_ener = self.get_ts_ener(facetpath)
         tss_name = self.format_TS_name()
 
         activation_barriers = {}
@@ -140,7 +142,7 @@ class Results():
                     'Not tested if r_ener_list=p_ener_list')
         return activation_barriers
 
-    def get_data(self):
+    def get_data(self, facetpath):
         ''' Returns the lowest energies lists for reactants and products.
 
         Parameters:
@@ -181,7 +183,8 @@ class Results():
         p_ener_list = []
         # get the lowest energy for all reactants
         for reactant in self.reactants_list:
-            lowest_reactant_ener = self.get_lowest_species_ener(reactant)
+            lowest_reactant_ener = self.get_lowest_species_ener(
+                reactant, facetpath)
             r_ener_list.append(lowest_reactant_ener)
         # check if .out files for reactants are copied
         if None in r_ener_list:
@@ -193,7 +196,8 @@ class Results():
             raise TypeError
         # get the lowest energy for all products
         for product in self.products_list:
-            lowest_product_ener = self.get_lowest_species_ener(product)
+            lowest_product_ener = self.get_lowest_species_ener(
+                product, facetpath)
             p_ener_list.append(lowest_product_ener)
         # check if .out files for products are copied
         if None in p_ener_list:
@@ -253,8 +257,10 @@ class Results():
         ts_ener_list = list(ts_ener_dict.values())
         return ts_ener_list
 
-    def get_lowest_species_ener(self,
-                                species):
+    def get_lowest_species_ener(
+            self,
+            species,
+            facetpath):
         ''' Get the lowest energy of the most stable species
 
         Parameters:
@@ -275,14 +281,15 @@ class Results():
         '''
         species_ener_dict = {}
         try:
-            species_out_file_path_list = self.get_species_out_files(species)
+            species_out_file_path_list = self.get_species_out_files(
+                species, facetpath)
             for spiecies_out_file_path in species_out_file_path_list:
                 with open(spiecies_out_file_path, 'r') as f:
                     data = f.readlines()
                     enerLine = data[-1]
                     enerVal = enerLine.split()
                     species_ener_dict[spiecies_out_file_path] = float(
-                        enerVal[3])
+                        enerVal[4])
                     f.close()
             lowest_species_ener = min(species_ener_dict.values())
             return lowest_species_ener
@@ -311,8 +318,10 @@ class Results():
             ts_out_file_list.append(str(ts_out_file))
         return sorted(ts_out_file_list)
 
-    def get_species_out_files(self,
-                              species):
+    def get_species_out_files(
+            self,
+            species,
+            facetpath):
         ''' Get .out files for each reactants
 
         Parameters:
@@ -336,7 +345,7 @@ class Results():
         '''
         species_out_file_path_list = []
         species = species + '_'
-        outfile = '{}*out'.format(species)
+        outfile = '{}_{}*out'.format(facetpath, species)
         reactant_out_list = Path(self.minima_path).glob(outfile)
         for reactant_out_file in reactant_out_list:
             species_out_file_path_list.append(str(reactant_out_file))
