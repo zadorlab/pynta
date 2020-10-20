@@ -432,11 +432,21 @@ class Results():
         return rxn_name_title
 
     def plot(self):
+        ''' Plot all results and automatically detect how many reactions and
+            facet types exist.
+
+            columns : rxn_name
+            rows : facetpath
+
+        '''
         reaction_energies = self.get_reaction_energies_all()
         activation_barriers = self.get_barrier_all()
-        _, (ax1, ax2) = plt.subplots(len(self.facetpaths), 2)
-        for num, facetpath in enumerate(self.facetpaths):
-            for ax, rxn, in zip((ax1, ax2), self.reactions):
+        all_rxn_names = IO().get_list_all_rxns_names(self.yamlfile)
+        n_facets = len(self.facetpaths)
+        n_rxns = len(all_rxn_names)
+        _, axes = plt.subplots(n_facets, n_rxns)
+        for num, rxn in enumerate(self.reactions):
+            for ax, facetpath, in zip(axes, self.facetpaths):
                 rxn_name = IO().get_rxn_name(rxn)
                 key = facetpath+'_'+rxn_name
                 self.plot_rxn(key, reaction_energies,
