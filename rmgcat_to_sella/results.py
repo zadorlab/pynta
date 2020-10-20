@@ -44,12 +44,12 @@ class Results():
         reactions = IO().open_yaml_file(self.yamlfile)
         for facetpath, slab_path in zip(self.facetpaths, self.slab_path):
             minima_path = os.path.join(facetpath, 'minima')
-            slab_ener = self.get_slab_ener(slab_path)
             for rxn in reactions:
                 r_name_list, p_name_list, _ = IO().prepare_react_list(rxn)
                 rxn_name = IO().get_rxn_name(rxn)
                 r_ener[facetpath+'_'+rxn_name] = self.get_reaction_energy(
-                    minima_path, facetpath, r_name_list, p_name_list)
+                    minima_path, facetpath, r_name_list, p_name_list,
+                    slab_path)
         return r_ener
 
     def get_reaction_energy(
@@ -57,7 +57,8 @@ class Results():
             minima_path,
             facetpath,
             r_name_list,
-            p_name_list):
+            p_name_list,
+            slab_path):
         ''' Calclate reaction energy as a difference between
             the most stable product and the most stable reactant
 
@@ -84,7 +85,7 @@ class Results():
 
         '''
         r_ener_list, p_ener_list, slab_ener, nslabs = self.get_data(
-            minima_path, facetpath, r_name_list, p_name_list)
+            minima_path, facetpath, r_name_list, p_name_list, slab_path)
         # Depending how the reactants and products are defined,
         # there are three options here:
         # e.g. AB --> A + B
@@ -165,7 +166,8 @@ class Results():
             minima_path,
             facetpath,
             r_name_list,
-            p_name_list):
+            p_name_list,
+            slab_path):
         ''' Returns the lowest energies lists for reactants and products.
 
         Parameters:
@@ -233,7 +235,7 @@ class Results():
             print('----')
             raise TypeError
 
-        slab_ener = self.get_slab_ener()
+        slab_ener = self.get_slab_ener(slab_path)
         nslabs = abs(len(p_ener_list) - len(r_ener_list))
 
         return r_ener_list, p_ener_list, slab_ener, nslabs
