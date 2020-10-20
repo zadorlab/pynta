@@ -1,21 +1,17 @@
+from pathlib import Path
 '''
 ####################################################
                     Basic Input
 ####################################################
 '''
 ####################################################
-# specify the name of the main directory with calculations
-from pathlib import Path
-facetpath = 'Cu_100'
-####################################################
 # do you want to run surface optimization
 optimize_slab = True
 ####################################################
-# specify name of the slab
-slab_name = 'Cu_100_slab_opt'
-####################################################
-# specify facet orientation
-surface_type = 'fcc100'
+# specify facet orientation, repeats of the slab+ads
+# and repeats of the slab_opt unit cell
+surface_types_and_repeats = {'fcc111': [(3, 3, 1), (1, 1, 4)],
+                             'fcc100': [(3, 4, 1), (1, 1, 4)]}
 ####################################################
 # surface atoms
 symbol = 'Cu'
@@ -26,21 +22,24 @@ a = 3.6
 # vacuum in the z direction (Angstrem)
 vacuum = 8.0
 ####################################################
-# filename of the optimized surface slab
-slabopt = 'Cu_100_slab_opt.xyz'
-####################################################
-# Quantum Espresso pseudopotantials for DFT calculations
-home = str(Path.home())
-pseudo_dir = home + '/espresso/pseudo'
+# Quantum Espresso pseudopotantials and exe settings
+# for DFT calculations
+pseudo_dir = '/projects/catalysis_aesp/mgierad/espresso/pseudo'
 
-pseudopotentials = "dict(Cu='Cu.pbe-spn-kjpaw_psl.1.0.0.UPF', H='H.pbe-kjpaw_psl.1.0.0.UPF', O='O.pbe-n-kjpaw_psl.1.0.0.UPF', C='C.pbe-n-kjpaw_psl.1.0.0.UPF')"
-executable = 'pw.x'
-balsam_exe_settings = {'ranks_per_node': 4,
+pseudopotentials = "dict(Cu='Cu.pbe-spn-kjpaw_psl.1.0.0.UPF',"\
+    + "H='H.pbe-kjpaw_psl.1.0.0.UPF',"\
+    + "O='O.pbe-n-kjpaw_psl.1.0.0.UPF'," \
+    + "C='C.pbe-n-kjpaw_psl.1.0.0.UPF')"
+
+executable = '/projects/catalysis_aesp/brossdh/q-e_6.4.1/bin/pw.x'
+####################################################
+# Baslam settings
+balsam_exe_settings = {'num_nodes': 5,
+                       'ranks_per_node': 4,
                        'threads_per_rank': 16,
                        'threads_per_core': 1,
                        'cpu_affinity': 'depth'
                        }
-
 calc_keywords = {'occupations': 'smearing',
                  'smearing': 'marzari-vanderbilt',
                  'degauss': 0.01,  # Rydberg
@@ -49,20 +48,12 @@ calc_keywords = {'occupations': 'smearing',
                  'conv_thr': 1e-11,
                  'mixing_mode': 'local-TF'
                  }
+####################################################
+# Set up a working directory (this is default)
 creation_dir = Path.cwd().as_posix()
-
 ####################################################
 # filename of the .yaml file with reactions
 yamlfile = 'reactions.yaml'
-####################################################
-# specify repeats of the surface in (x, y, z) direction
-repeats_surface = (1, 1, 4)
-####################################################
-# specify repeats of the surface in (x, y, z) direction
-repeats = (3, 4, 1)
-####################################################
-# specify the angle of TS estimate addut rotation
-rotAngle = 60
 ####################################################
 # specify the scaling factor to scale the bond distance
 # between two atoms taking part in the reaction
@@ -74,7 +65,7 @@ scfactor = 1.4
 scfactor_surface = 1.0
 ####################################################
 # species list
-species_list = ['O', 'H']
+species_dict = {'rxn1': ['O', 'H'], 'rxn2': ['C', 'H']}
 ####################################################
 # do you want to apply the scfactor_surface to the species 1?
 scaled1 = False
@@ -82,14 +73,3 @@ scaled1 = False
 # do you want to apply scfactor_surface to the species 2?
 scaled2 = False
 ####################################################
-'''
-####################################################
-                    Scripts
-####################################################
-'''
-slab_opt_script = '00_set_up_slab_opt.py'
-SurfaceAdsorbateScript = '01_set_up_ads.py'
-TSxtbScript = '02_set_up_TS_with_xtb.py'
-TSScript = '03_checksym_xtb_runTS.py'
-IRCScript = '04_set_up_irc.py'
-IRCoptScript = '05_set_up_opt_after_irc.py'
