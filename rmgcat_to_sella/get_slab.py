@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from rmgcat_to_sella.balsamcalc import EspressoBalsamSocketIO
-from rmgcat_to_sella.io import IO
+# from rmgcat_to_sella.io import IO
 
 from ase.build import fcc111, fcc211, fcc100
 from ase.build import bcc111, bcc110, hcp0001
@@ -144,7 +144,7 @@ class GetSlab:
     def prepare_slab_opt(self, slab):
         ''' Prepare slab optimization with Quantum Espresso '''
 
-        n_kpts = IO().get_kpoints(self.repeats_surface)
+        # n_kpts = IO().get_kpoints(self.repeats_surface)
 
         job_kwargs = self.balsam_exe_settings.copy()
         extra_calc_keywords = self.calc_keywords.copy()
