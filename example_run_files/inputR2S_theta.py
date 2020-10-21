@@ -35,7 +35,7 @@ executable = '/projects/catalysis_aesp/brossdh/q-e_6.4.1/bin/pw.x'
 ####################################################
 # Baslam settings
 balsam_exe_settings = {'num_nodes': 1,  # nodes per each balsam job
-                       'ranks_per_node': 48,  # cores per node
+                       'ranks_per_node': 64,  # cores per node
                        'threads_per_rank': 1
                        }
 calc_keywords = {'occupations': 'smearing',
