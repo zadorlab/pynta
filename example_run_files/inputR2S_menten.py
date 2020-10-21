@@ -39,7 +39,7 @@ executable = '/opt/custom/espresso/6.6_nostress/bin/pw.x'
 # Balsam executable settings
 balsam_exe_settings = {'num_nodes': 1,
                        'ranks_per_node': 48,
-                       'threads_per_rank': 1
+                       'threads_per_rank': 1,
                        }
 calc_keywords = {'kpts': (3, 3, 1),
                  'occupations': 'smearing',

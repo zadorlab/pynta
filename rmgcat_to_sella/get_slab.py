@@ -149,10 +149,10 @@ class GetSlab:
         job_kwargs = self.balsam_exe_settings.copy()
         extra_calc_keywords = self.calc_keywords.copy()
         # add kpoints and distribute it among nodes = n_kpts
-        extra_calc_keywords['kpts'] = self.repeats_surface
-        extra_calc_keywords['job_args'] = '-nk {}'.format(n_kpts)
+        # extra_calc_keywords['kpts'] = self.repeats_surface
+        # extra_calc_keywords['job_args'] = '-nk {}'.format(n_kpts)
         # change how k-points are distrubuted among nodes
-        job_kwargs.update([('num_nodes', n_kpts)])
+        # job_kwargs.update([('num_nodes', n_kpts)])
 
         slab.calc = EspressoBalsamSocketIO(
             workflow='QE_Socket',

@@ -36,9 +36,11 @@ executable = '/projects/catalysis_aesp/brossdh/q-e_6.4.1/bin/pw.x'
 # Baslam settings
 balsam_exe_settings = {'num_nodes': 1,  # nodes per each balsam job
                        'ranks_per_node': 64,  # cores per node
-                       'threads_per_rank': 1
+                       'threads_per_rank': 1,
+                       'cpu_affinity': 'depth'
                        }
-calc_keywords = {'occupations': 'smearing',
+calc_keywords = {'kpts': (3, 3, 1),
+                 'occupations': 'smearing',
                  'smearing': 'marzari-vanderbilt',
                  'degauss': 0.01,  # Rydberg
                  'ecutwfc': 40,  # Rydberg
