@@ -34,13 +34,12 @@ pseudopotentials = "dict(Cu='Cu.pbe-spn-kjpaw_psl.1.0.0.UPF',"\
 executable = '/projects/catalysis_aesp/brossdh/q-e_6.4.1/bin/pw.x'
 ####################################################
 # Baslam settings
-balsam_exe_settings = {'num_nodes': 5,
-                       'ranks_per_node': 4,
-                       'threads_per_rank': 16,
-                       'threads_per_core': 1,
-                       'cpu_affinity': 'depth'
+balsam_exe_settings = {'num_nodes': 1,  # nodes per each balsam job
+                       'ranks_per_node': 48,  # cores per node
+                       'threads_per_rank': 1
                        }
-calc_keywords = {'occupations': 'smearing',
+calc_keywords = {'kpts': (3, 3, 1),
+                 'occupations': 'smearing',
                  'smearing': 'marzari-vanderbilt',
                  'degauss': 0.01,  # Rydberg
                  'ecutwfc': 40,  # Rydberg
@@ -54,6 +53,12 @@ creation_dir = Path.cwd().as_posix()
 ####################################################
 # filename of the .yaml file with reactions
 yamlfile = 'reactions.yaml'
+####################################################
+# specify repeats of the surface in (x, y, z) direction
+# repeats_surface = {'fcc111': (1, 1, 4), 'fcc100': (3, 4, 5)}
+####################################################
+# specify repeats of the surface in (x, y, z) direction
+# repeats = {'fcc111': (3, 3, 1), 'fcc100': (3, 4, 1)}
 ####################################################
 # specify the scaling factor to scale the bond distance
 # between two atoms taking part in the reaction
