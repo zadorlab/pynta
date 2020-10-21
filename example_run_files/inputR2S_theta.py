@@ -38,8 +38,7 @@ balsam_exe_settings = {'num_nodes': 1,  # nodes per each balsam job
                        'ranks_per_node': 48,  # cores per node
                        'threads_per_rank': 1
                        }
-calc_keywords = {'kpts': (3, 3, 1),
-                 'occupations': 'smearing',
+calc_keywords = {'occupations': 'smearing',
                  'smearing': 'marzari-vanderbilt',
                  'degauss': 0.01,  # Rydberg
                  'ecutwfc': 40,  # Rydberg
