@@ -144,7 +144,7 @@ class GetSlab:
     def prepare_slab_opt(self, slab):
         ''' Prepare slab optimization with Quantum Espresso '''
 
-        n_kpts = IO().get_kpoints(self.self.repeats_surface)
+        n_kpts = IO().get_kpoints(self.repeats_surface)
 
         job_kwargs = self.balsam_exe_settings.copy()
         extra_calc_keywords = self.calc_keywords.copy()
