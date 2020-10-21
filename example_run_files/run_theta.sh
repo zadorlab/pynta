@@ -1,9 +1,8 @@
 #!/bin/bash
 #COBALT --jobname rmgcat_to_sella_test
 #COBALT -A catalysis_aesp
-#COBALT -n 6
-#COBALT -t 1:00:00
-#COBALT -q debug-cache-quad
+#COBALT -n 141
+#COBALT -t 2:00:00
 
 source balsamactivate /projects/catalysis_aesp/mgierad/myWorkflow
 #conda activate rmgcat_to_sella
