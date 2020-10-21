@@ -55,12 +55,6 @@ creation_dir = Path.cwd().as_posix()
 # filename of the .yaml file with reactions
 yamlfile = 'reactions.yaml'
 ####################################################
-# specify repeats of the surface in (x, y, z) direction
-# repeats_surface = {'fcc111': (1, 1, 4), 'fcc100': (3, 4, 5)}
-####################################################
-# specify repeats of the surface in (x, y, z) direction
-# repeats = {'fcc111': (3, 3, 1), 'fcc100': (3, 4, 1)}
-####################################################
 # specify the scaling factor to scale the bond distance
 # between two atoms taking part in the reaction
 scfactor = 1.4
