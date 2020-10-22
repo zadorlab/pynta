@@ -3,7 +3,7 @@ from balsam.launcher.dag import BalsamJob
 from collections import Counter
 
 
-class Restart():
+class Show():
     def __init__(self):
         # get all python (ASE) jobs
         self.ase_jobs = BalsamJob.objects.filter(
@@ -38,7 +38,7 @@ class Restart():
                 running_jobs.append(job)
         return len(running_jobs)
 
-    def describe(self):
+    def status(self):
         ''' Show info about the current status of the Balsam DB, i.e.
             How many jobs are running? How many already finished? etc...
 
