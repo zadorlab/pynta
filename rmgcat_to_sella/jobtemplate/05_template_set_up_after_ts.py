@@ -53,7 +53,7 @@ for py_script in Path(path_to_after_ts).glob('*.py'):
         args=str(py_script),
         input_files='',
         user_workdir=job_dir,
-        node_packing_count=64,
+        node_packing_count={node_packing_count},
         ranks_per_node=1,
     )
     job_to_add.save()

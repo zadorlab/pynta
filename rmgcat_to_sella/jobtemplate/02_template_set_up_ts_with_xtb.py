@@ -69,7 +69,7 @@ for py_script in Path(path_to_ts_estimate).glob('**/*.py'):
         args=str(py_script),
         input_files='',
         ranks_per_node=1,
-        node_packing_count=64,
+        node_packing_count={node_packing_count},
         user_workdir=job_dir,
     )
     job_to_add.save()

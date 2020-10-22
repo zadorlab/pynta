@@ -301,6 +301,7 @@ class WorkFlow:
                     scfactor_surface,
                     pytemplate_xtb,
                     species_dict,
+                    node_packing_count,
                     creation_dir
                 )
 
@@ -315,6 +316,7 @@ class WorkFlow:
                     pytemplate_set_up_ts,
                     pseudopotentials,
                     pseudo_dir,
+                    node_packing_count,
                     balsam_exe_settings,
                     calc_keywords,
                     creation_dir
@@ -331,6 +333,7 @@ class WorkFlow:
                     pytemplate_set_up_ts_vib,
                     pseudopotentials,
                     pseudo_dir,
+                    node_packing_count,
                     balsam_exe_settings,
                     calc_keywords,
                     creation_dir
@@ -347,6 +350,7 @@ class WorkFlow:
                     pytemplate_set_up_after_ts,
                     pseudopotentials,
                     pseudo_dir,
+                    node_packing_count,
                     balsam_exe_settings,
                     calc_keywords,
                     creation_dir
@@ -550,6 +554,7 @@ class WorkFlow:
             scfactor_surface,
             pytemplate_xtb,
             species_dict,
+            node_packing_count,
             creation_dir):
         ''' Create 02_{facetpath}_set_up_TS_with_xtb_{rxn_name}.py files
 
@@ -620,7 +625,8 @@ class WorkFlow:
                     scaled2=scaled2,
                     creation_dir=creation_dir,
                     rxn=rxn,
-                    rxn_name=rxn_name
+                    rxn_name=rxn_name,
+                    node_packing_count=node_packing_count
                 ))
 
     def set_up_run_TS(
@@ -635,6 +641,7 @@ class WorkFlow:
             pytemplate,
             pseudopotentials,
             pseudo_dir,
+            node_packing_count,
             balsam_exe_settings,
             calc_keywords,
             creation_dir):
@@ -712,6 +719,7 @@ class WorkFlow:
                     pytemplate=pytemplate,
                     pseudo_dir=pseudo_dir,
                     pseudopotentials=pseudopotentials,
+                    node_packing_count=node_packing_count,
                     balsam_exe_settings=balsam_exe_settings,
                     calc_keywords=calc_keywords,
                     creation_dir=creation_dir,
@@ -731,6 +739,7 @@ class WorkFlow:
             pytemplate,
             pseudopotentials,
             pseudo_dir,
+            node_packing_count,
             balsam_exe_settings,
             calc_keywords,
             creation_dir):
@@ -808,6 +817,7 @@ class WorkFlow:
                     pytemplate=pytemplate,
                     pseudo_dir=pseudo_dir,
                     pseudopotentials=pseudopotentials,
+                    node_packing_count=node_packing_count,
                     balsam_exe_settings=balsam_exe_settings,
                     calc_keywords=calc_keywords,
                     creation_dir=creation_dir,
@@ -827,6 +837,7 @@ class WorkFlow:
         pytemplate,
         pseudopotentials,
         pseudo_dir,
+        node_packing_count,
         balsam_exe_settings,
         calc_keywords,
         creation_dir
@@ -908,6 +919,7 @@ class WorkFlow:
                     pytemplate=pytemplate,
                     pseudo_dir=pseudo_dir,
                     pseudopotentials=pseudopotentials,
+                    node_packing_count=node_packing_count,
                     balsam_exe_settings=balsam_exe_settings,
                     calc_keywords=calc_keywords,
                     creation_dir=creation_dir,
