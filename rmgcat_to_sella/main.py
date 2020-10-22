@@ -54,7 +54,7 @@ else:
     scfactor_surface = inputR2S.scfactor_surface
     scaled1 = inputR2S.scaled1
     scaled2 = inputR2S.scaled2
-    species_dict = inputR2S.species_dict
+    species_dict = IO().get_species_dict(yamlfile)
     executable = inputR2S.executable
     node_packing_count = inputR2S.node_packing_count
     balsam_exe_settings = inputR2S.balsam_exe_settings
