@@ -934,7 +934,6 @@ class TS():
                     surface_atoms.append(num - 2)
                 elif ads_atom in line and metal_atom not in line:
                     adsorbate_atoms.append(num - 2)
-        print(surface_atoms)
         all_dist_surface_adsorbate = struc.get_distances(
             adsorbate_atoms[0], surface_atoms)
         min_dist_surface_adsorbate = min(
