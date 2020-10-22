@@ -64,6 +64,7 @@ class TS():
             scfactor_surface,
             pytemplate_xtb,
             species_list,
+            metal_atom,
             scaled1,
             scaled2):
         ''' Prepare TS estimates for subsequent xTB calculations
@@ -125,6 +126,7 @@ class TS():
             rxn_name,
             pytemplate_xtb,
             species_list,
+            metal_atom,
             scaled1,
             scaled2,
             scfactor_surface)
@@ -368,6 +370,7 @@ class TS():
             rxn_name,
             pytemplate,
             species_list,
+            metal_atom,
             scaled1,
             scaled2,
             scfactor_surface):
@@ -408,12 +411,12 @@ class TS():
         with open(pytemplate, 'r') as f:
             pytemplate = f.read()
 
-        # get a list with the average distances (only symmetrically distinct
-        # sites considered) for all species. It can be done outside the nested
-        # loop, as it is enough to calculate it only once.
         average_distance_list = []
-
         for species in species_list:
+            # get a list with the average distances (only symmetrically
+            # distinct sites considered) for all species. It can be done
+            # outside the nested loop (where sp_index and M_indes is),
+            # as it is enough to calculate it only once.
             av_dist = self.get_av_dist(path_to_minima, species,
                                        scfactor_surface, scaled1)
             average_distance_list.append(av_dist)
@@ -428,10 +431,11 @@ class TS():
                 xyz_file_path = os.path.join(ts_estimate_path, xyz_file)
                 # loop through all species
                 for species in species_list:
-                    sp_index = self.get_index_adatom(species, xyz_file_path)
-                    Cu_index = self.get_index_surface_atom(species,
-                                                           xyz_file_path)
-                    bonds.append((sp_index, Cu_index))
+                    sp_index = self.get_index_adatom(
+                        species, metal_atom, xyz_file_path)
+                    metal_index = self.get_index_surface_atom(
+                        species, metal_atom, xyz_file_path)
+                    bonds.append((sp_index, metal_index))
 
                 # set up variables
                 av_dists_tuple = tuple(average_distance_list)
@@ -860,6 +864,7 @@ class TS():
     def get_index_adatom(
             self,
             ads_atom,
+            metal_atom,
             geom):
         ''' Specify adsorbate atom symbol and its index will be returned.
 
@@ -887,7 +892,7 @@ class TS():
             xyz_geom_file = f.readlines()
             for num, line in enumerate(xyz_geom_file):
                 if ads_atom in line:
-                    if 'Cu' not in line:
+                    if metal_atom not in line:
                         adsorbate_atom.append(num - 2)
         f.close()
         return adsorbate_atom[0]
@@ -895,6 +900,7 @@ class TS():
     def get_index_surface_atom(
             self,
             ads_atom,
+            metal_atom,
             geom):
         ''' Specify adsorbate atom symbol and index of the nearest metal atom
             will be returned.
@@ -909,35 +915,38 @@ class TS():
 
         Returns:
         ________
-        surface_atom[index[0][0]] : float
+        surface_atoms[index[0][0]] : float
             index of the metal atom to which ads_atom is bonded
 
         '''
-        surface_atom = []
-        adsorbate_atom = []
+        surface_atoms = []
+        adsorbate_atoms = []
+        metal_atom_space = metal_atom + ' '
+
         if len(ads_atom) > 1:
             ads_atom = ads_atom[:1]
+
         struc = read(geom)
+
         with open(geom, 'r') as f:
             xyz_geom_file = f.readlines()
             for num, line in enumerate(xyz_geom_file):
-                if 'Cu ' in line:
-                    surface_atom.append(num - 2)
+                if metal_atom_space in line:
+                    surface_atoms.append(num - 2)
                 elif ads_atom in line:
-                    if 'Cu' not in line:
-                        adsorbate_atom.append(num - 2)
-        f.close()
+                    if metal_atom not in line:
+                        adsorbate_atoms.append(num - 2)
 
         all_dist_surface_adsorbate = struc.get_distances(
-            adsorbate_atom[0], surface_atom)
+            adsorbate_atoms[0], surface_atoms)
         min_dist_surface_adsorbate = min(
-            struc.get_distances(adsorbate_atom[0], surface_atom))
+            struc.get_distances(adsorbate_atoms[0], surface_atoms))
         # get index of the surface atom for which distance to adsorbate is the
         # lowest
         index = np.where(all_dist_surface_adsorbate
                          == min_dist_surface_adsorbate)
 
-        return surface_atom[index[0][0]]
+        return surface_atoms[index[0][0]]
 
     def check_symm(
             self,

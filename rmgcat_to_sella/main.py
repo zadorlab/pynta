@@ -54,7 +54,7 @@ else:
     scfactor_surface = inputR2S.scfactor_surface
     scaled1 = inputR2S.scaled1
     scaled2 = inputR2S.scaled2
-    species_dict = IO().get_species_dict(yamlfile)
+    species_dict = IO().get_species_dict(check_yaml)
     executable = inputR2S.executable
     node_packing_count = inputR2S.node_packing_count
     balsam_exe_settings = inputR2S.balsam_exe_settings
@@ -301,6 +301,7 @@ class WorkFlow:
                     scfactor_surface,
                     pytemplate_xtb,
                     species_dict,
+                    symbol,
                     node_packing_count,
                     creation_dir
                 )
@@ -554,6 +555,7 @@ class WorkFlow:
             scfactor_surface,
             pytemplate_xtb,
             species_dict,
+            metal_atom,
             node_packing_count,
             creation_dir):
         ''' Create 02_{facetpath}_set_up_TS_with_xtb_{rxn_name}.py files
@@ -621,6 +623,7 @@ class WorkFlow:
                     scfactor_surface=scfactor_surface,
                     pytemplate_xtb=pytemplate_xtb,
                     species_list=species_dict['rxn' + str(rxn_no)],
+                    metal_atom=metal_atom,
                     scaled1=scaled1,
                     scaled2=scaled2,
                     creation_dir=creation_dir,
