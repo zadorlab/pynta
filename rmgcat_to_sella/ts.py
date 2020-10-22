@@ -921,7 +921,6 @@ class TS():
         '''
         surface_atoms = []
         adsorbate_atoms = []
-        metal_atom_space = metal_atom + ' '
 
         if len(ads_atom) > 1:
             ads_atom = ads_atom[:1]
@@ -931,12 +930,11 @@ class TS():
         with open(geom, 'r') as f:
             xyz_geom_file = f.readlines()
             for num, line in enumerate(xyz_geom_file):
-                if metal_atom_space in line:
+                if metal_atom in line:
                     surface_atoms.append(num - 2)
-                elif ads_atom in line:
-                    if metal_atom not in line:
-                        adsorbate_atoms.append(num - 2)
-
+                elif ads_atom in line and metal_atom not in line:
+                    adsorbate_atoms.append(num - 2)
+        print(surface_atoms)
         all_dist_surface_adsorbate = struc.get_distances(
             adsorbate_atoms[0], surface_atoms)
         min_dist_surface_adsorbate = min(
