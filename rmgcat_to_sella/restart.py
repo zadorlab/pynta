@@ -28,9 +28,23 @@ class Restart():
         return len(running_jobs)
 
     def describe(self):
+        ''' Print info about the current status of the Balsam DB, i.e.
+            How many jobs are running? How many already finished? etc...
+
+        '''
         job_states = []
-        for job in self.ase.jobs:
+        for job in self.ase_jobs:
             job_states.append(job.state)
         current_state = Counter(job_states)
         for key, val in current_state.items():
+            print('{:>15} : {:>4}'.format(key, val))
+
+    def not_finished(self):
+        not_finished = {}
+        for job in self.ase_jobs:
+            if job.state != 'JOB_FINISHED':
+                not_finished[job.state] = 'Workflow : {}. Jobname : {}'.format(
+                    job.workflow, job.name)
+        # return not_finished
+        for key, val in not_finished.items():
             print('{:>15} : {:>4}'.format(key, val))
