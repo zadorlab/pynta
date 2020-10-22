@@ -108,30 +108,30 @@ ads_surf_opt_script = '01_set_up_ads.py'
 
 class WorkFlow:
 
-    def __init__(self):
-        ''' Setup the balsam application for this workflow run.
+    # def __init__(self):
+    #     ''' Setup the balsam application for this workflow run.
 
-            Once we start using QE will want one app for QE,
-            one for xtb most likely
-        '''
-        from balsam.core.models import ApplicationDefinition
-        self.myPython, _ = ApplicationDefinition.objects.get_or_create(
-            name="python",
-            executable=sys.executable
-        )
-        self.myPython.save()
-        self.slab_opt_job = ''
+    #         Once we start using QE will want one app for QE,
+    #         one for xtb most likely
+    #     '''
+    #     from balsam.core.models import ApplicationDefinition
+    #     self.myPython, _ = ApplicationDefinition.objects.get_or_create(
+    #         name="python",
+    #         executable=sys.executable
+    #     )
+    #     self.myPython.save()
+    #     self.slab_opt_job = ''
 
-        # TODO: instead of directly importing EspressoBalsam, we should
-        # write a function which returns the appropriate class from
-        # balsamcalc.py based on the user-provided input file
-        from rmgcat_to_sella.balsamcalc import (
-            EspressoBalsam, EspressoBalsamSocketIO
-        )
-        EspressoBalsam.exe = executable
-        EspressoBalsamSocketIO.exe = executable
-        EspressoBalsam.create_application()
-        EspressoBalsamSocketIO.create_application()
+    #     # TODO: instead of directly importing EspressoBalsam, we should
+    #     # write a function which returns the appropriate class from
+    #     # balsamcalc.py based on the user-provided input file
+    #     from rmgcat_to_sella.balsamcalc import (
+    #         EspressoBalsam, EspressoBalsamSocketIO
+    #     )
+    #     EspressoBalsam.exe = executable
+    #     EspressoBalsamSocketIO.exe = executable
+    #     EspressoBalsam.create_application()
+    #     EspressoBalsamSocketIO.create_application()
 
     def get_ts_xtb_py_script_list(
             self,
@@ -279,6 +279,7 @@ class WorkFlow:
                 pytemplate_relax_ads,
                 pseudopotentials,
                 pseudo_dir,
+                node_packing_count,
                 balsam_exe_settings,
                 calc_keywords,
                 creation_dir
@@ -458,6 +459,7 @@ class WorkFlow:
             pytemplate,
             pseudopotentials,
             pseudo_dir,
+            node_packing_count,
             balsam_exe_settings,
             calc_keywords,
             creation_dir):
@@ -527,6 +529,7 @@ class WorkFlow:
                     pytemplate=pytemplate,
                     pseudopotentials=pseudopotentials,
                     pseudo_dir=pseudo_dir,
+                    node_packing_count=node_packing_count,
                     balsam_exe_settings=balsam_exe_settings,
                     calc_keywords=calc_keywords,
                     creation_dir=creation_dir
