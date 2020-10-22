@@ -58,7 +58,7 @@ class Show():
         not_finished = {}
         for job in self.ase_jobs:
             if job.state != 'JOB_FINISHED':
-                not_finished[job.state] = 'Workflow : {}. Jobname : {}'.format(
+                not_finished[job.state] = 'Workflow : {} Jobname : {}'.format(
                     job.workflow, job.name)
         # return not_finished
         for key, val in not_finished.items():
