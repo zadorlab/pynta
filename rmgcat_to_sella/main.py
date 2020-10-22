@@ -56,6 +56,7 @@ else:
     scaled2 = inputR2S.scaled2
     species_dict = inputR2S.species_dict
     executable = inputR2S.executable
+    node_packing_count = inputR2S.node_packing_count
     balsam_exe_settings = inputR2S.balsam_exe_settings
     calc_keywords = inputR2S.calc_keywords
     creation_dir = inputR2S.creation_dir
@@ -972,7 +973,7 @@ class WorkFlow:
             args=job,
             ranks_per_node=cores,
             input_files='',
-            node_packing_count=64,
+            node_packing_count=node_packing_count,
             user_workdir=job_files_path
         )
         job_to_add.save()
