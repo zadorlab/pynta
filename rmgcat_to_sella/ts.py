@@ -429,17 +429,18 @@ class TS():
             ts_estimates_xyz_files.append(str(ts))
 
         ts_estimates_xyz_files = sorted(ts_estimates_xyz_files)
+
+        # take a first file and use it as a template to get info about
+        # surface atom and adsorbate atoms indices
         tmp_ts_atom = read(ts_estimates_xyz_files[0])
 
+        # create surface_atoms_idx dict with all surface atoms and its idx
         surface_atoms_idx = {
-            atom.symbol+str(atom.index): atom.index for atom in tmp_ts_atom if atom.symbol == metal_atom}
+            atom.symbol + '_' + str(atom.index): atom.index for atom in tmp_ts_atom if atom.symbol == metal_atom}
 
+        # create adsorbate_atoms_idx dict with all adsorbate atoms and its idx
         adsorbate_atoms_idx = {
             atom.symbol + '_' + str(atom.index): atom.index for atom in tmp_ts_atom if atom.symbol != metal_atom}
-
-        # for key, val in adsorbate_atoms_idx.items():
-        #     if key.startswith('C'):
-        #         print(val)
 
         # loop through all .xyz files
         for prefix, xyz_file in enumerate(ts_estimates_xyz_files):
@@ -458,7 +459,6 @@ class TS():
             calc_dir = os.path.join(ts_estimate_path, prefix)
             os.makedirs(calc_dir, exist_ok=True)
             f_name_xyz = os.path.basename(xyz_file)[:-4]
-            # geom_name = f_name_xyz[:-4]
             traj_path = os.path.join(f_name_xyz + '.traj')
             fname = os.path.join(calc_dir, f_name_xyz + '.py')
 
