@@ -117,9 +117,9 @@ class TS():
             p_name_list,
             images)
 
-        # self.filtered_out_equiv_ts_estimate(
-        #     ts_estimate_path,
-        #     rxn_name)
+        self.filtered_out_equiv_ts_estimate(
+            ts_estimate_path,
+            rxn_name)
 
         self.set_up_penalty_xtb(
             ts_estimate_path,
@@ -343,14 +343,14 @@ class TS():
 
         # remove all symmetry equivalent structures
         for eqsites in filtered_equivalent_sites:
+            file_to_remove = os.path.join(
+                ts_estimate_path, eqsites + '_' + rxn_name + '.xyz')
             try:
-                file_to_remove = os.path.join(
-                    ts_estimate_path, eqsites + '_' + rxn_name + '.xyz')
                 os.remove(file_to_remove)
             except OSError:
                 print("Error while deleting file : ", file_to_remove)
 
-        # rename and organize ymmetry disctinct structures
+        # rename and organize symmetry distinct structures
         for prefix, noneqsites in enumerate(
             sorted(os.listdir(ts_estimate_path))
         ):
@@ -436,11 +436,13 @@ class TS():
 
         # create surface_atoms_idx dict with all surface atoms and its idx
         surface_atoms_idx = {
-            atom.symbol + '_' + str(atom.index): atom.index for atom in tmp_ts_atom if atom.symbol == metal_atom}
+            atom.symbol + '_' + str(atom.index): atom.index
+            for atom in tmp_ts_atom if atom.symbol == metal_atom}
 
         # create adsorbate_atoms_idx dict with all adsorbate atoms and its idx
         adsorbate_atoms_idx = {
-            atom.symbol + '_' + str(atom.index): atom.index for atom in tmp_ts_atom if atom.symbol != metal_atom}
+            atom.symbol + '_' + str(atom.index): atom.index
+            for atom in tmp_ts_atom if atom.symbol != metal_atom}
 
         # loop through all .xyz files
         for prefix, xyz_file in enumerate(ts_estimates_xyz_files):
@@ -1005,20 +1007,25 @@ class TS():
         Returns:
         ________
         not_unique_index : list(str)
-            a list with prefixes of all symmetry equivalent structures
+            a list with prefixes of all symmetry equivalent structures, i.e.,
+            files with these prefixes should be deleted
 
         '''
-        good_adsorbate = []
-        result_list = []
+        comparator = SymmetryEquivalenceCheck()
         geomlist = sorted(Path(path).glob('*.xyz'))
+
+        good_adsorbates = []
+        result_list = []
+
         for geom in geomlist:
             adsorbed = read(geom)
             adsorbed.pbc = True
-            comparator = SymmetryEquivalenceCheck()
-            result = comparator.compare(adsorbed, good_adsorbate)
+            result = comparator.compare(adsorbed, good_adsorbates)
             result_list.append(result)
             if result is False:
-                good_adsorbate.append(adsorbed)
+                # if compared structures are different, add the current one to
+                # good_adsorbates
+                good_adsorbates.append(adsorbed)
         not_unique_index = []
         for num, res in enumerate(result_list):
             if res is True:
