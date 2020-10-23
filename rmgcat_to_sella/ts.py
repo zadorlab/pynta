@@ -459,12 +459,12 @@ class TS():
             os.makedirs(calc_dir, exist_ok=True)
             f_name_xyz = os.path.basename(xyz_file)[:-4]
             # geom_name = f_name_xyz[:-4]
-            traj_path = os.path.join(calc_dir, f_name_xyz + '.traj')
+            traj_path = os.path.join(f_name_xyz + '.traj')
             fname = os.path.join(calc_dir, f_name_xyz + '.py')
 
             # create job_file
             with open(fname, 'w') as f:
-                f.write(pytemplate.format(geom=xyz_file,
+                f.write(pytemplate.format(geom=os.path.basename(xyz_file),
                                           bonds=bonds,
                                           av_dists_tuple=av_dists_tuple,
                                           creation_dir=self.creation_dir,
@@ -473,11 +473,7 @@ class TS():
                                           prefix=prefix,
                                           geom_name=f_name_xyz,
                                           slabopt=self.slab))
-            # write .png files
-            init_png = os.path.join(
-                calc_dir, f_name_xyz + '_initial.png')
-            write(init_png, read(xyz_file))
-            # remove .xyz files
+            # move .xyz files
             shutil.move(xyz_file, calc_dir)
 
     def get_av_dist(

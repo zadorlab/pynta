@@ -45,6 +45,8 @@ adsplacer = AdsorbatePlacer(
 
 adsplacer.ads_ref.set_calculator(XTB(method="GFN1-xTB"))
 opt = adsplacer.optimize()
+# visualize initial point of each trajectory
+write(geom[:-4] + '_initial.png', read(geom))
 # visualize end point of each trajectory
 write(traj_path[:-5] + '_final.png', read(traj_path))
 write(traj_path[:-5] + '_final.xyz', read(traj_path))
