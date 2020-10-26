@@ -14,7 +14,16 @@ balsam_exe_settings = {balsam_exe_settings}
 calc_keywords = {calc_keywords}
 creation_dir = '{creation_dir}'
 
-WorkFlow().get_big_slab_files()
+WorkFlow().create_big_slab_pyjob(
+    pytemplate,
+    facetpath,
+    slab_name,
+    repeats,
+    balsam_exe_settings,
+    calc_keywords,
+    pseudopotentials,
+    pseudo_dir,
+    creation_dir)
 
 workflow_name = facetpath + '_00_big_slab_opt'
 dependency_workflow_name = facetpath + '_00_'

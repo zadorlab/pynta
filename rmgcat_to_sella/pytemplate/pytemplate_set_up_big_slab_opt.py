@@ -22,7 +22,7 @@ atoms.set_constraint(FixAtoms([
 extra_calc_keywords = dict(
     pseudopotentials={pseudopotentials},
     pseudo_dir='{pseudo_dir}',
-    label=label
+    label=big_slab_name
 )
 
 atoms.calc = EspressoBalsamSocketIO(

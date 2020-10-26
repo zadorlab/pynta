@@ -238,6 +238,32 @@ class WorkFlow:
             after_ts_py_scripts_list.append(fname)
         return after_ts_py_scripts_list
 
+    def create_big_slab_pyjob(
+            self,
+            pytemplate,
+            facetpath,
+            slab_name,
+            repeats,
+            balsam_exe_settings,
+            calc_keywords,
+            pseudopotentials,
+            pseudo_dir,
+            creation_dir):
+        with open(pytemplate, 'r') as r:
+            pytemplate_text = r.read()
+            py_job = '{}_big_slab_job.py'.format(facetpath)
+            with open(py_job, 'w') as c:
+                c.write(pytemplate_text.format(
+                    facetpath=facetpath,
+                    slab_name=slab_name,
+                    repeats=repeats,
+                    balsam_exe_settings=balsam_exe_settings,
+                    calc_keywords=calc_keywords,
+                    pseudopotentials=pseudopotentials,
+                    pseudo_dir=pseudo_dir,
+                    creation_dir=creation_dir
+                ))
+
     def create_job_files(self):
         ''' For each surface type and for each reaction
             generate submit scripts for 6 stages of the workflow
