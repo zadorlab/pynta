@@ -15,7 +15,6 @@ calc_keywords = {calc_keywords}
 creation_dir = '{creation_dir}'
 node_packing_count = {node_packing_count}
 
-
 WorkFlow().create_big_slab_pyjob(
     pytemplate,
     facetpath,
@@ -30,7 +29,7 @@ WorkFlow().create_big_slab_pyjob(
 workflow_name = facetpath + '_00_big_slab_opt'
 dependency_workflow_name = facetpath + '_00_'
 
-py_script = '{}_big_slab_opt_job.py'.format(facetpath)
+py_script = os.path.join(facetpath + '_big_slab_opt_job.py')
 
 pending_simulations = BalsamJob.objects.filter(
     workflow__contains=dependency_workflow_name
@@ -43,7 +42,7 @@ job_to_add = BalsamJob(
     application='python',
     args=str(py_script),
     input_files='',
-    user_workdir=os.getcwd(),
+    user_workdir='aaa',
     node_packing_count=node_packing_count,
     ranks_per_node=1,
 )
