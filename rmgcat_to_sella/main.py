@@ -249,6 +249,7 @@ class WorkFlow:
             pseudopotentials,
             pseudo_dir,
             creation_dir):
+        ''' Create a ase pyjob for big slab optimization '''
         with open(pytemplate, 'r') as r:
             pytemplate_text = r.read()
             py_job = '{}_big_slab_job.py'.format(facetpath)
@@ -299,6 +300,7 @@ class WorkFlow:
                 calc_keywords,
                 creation_dir,
             )
+
             self.set_up_big_slab(
                 template_big_slab_opt,
                 py_job_dir,
@@ -308,10 +310,11 @@ class WorkFlow:
                 pytemplate_big_slab_opt,
                 pseudopotentials,
                 pseudo_dir,
+                node_packing_count,
                 balsam_exe_settings,
-                creation_dir,
-                node_packing_count
-            )
+                calc_keywords,
+                creation_dir)
+
             self.set_up_ads(
                 template_ads,
                 py_job_dir,
@@ -508,9 +511,11 @@ class WorkFlow:
             pytemplate,
             pseudopotentials,
             pseudo_dir,
+            node_packing_count,
             balsam_exe_settings,
-            creation_dir,
-            node_packing_count):
+            calc_keywords,
+            creation_dir):
+        ''' Set up a big_slab_opt ase py job generator '''
         with open(template, 'r') as r:
             template_text = r.read()
             py_job_fname = os.path.join(
@@ -524,9 +529,9 @@ class WorkFlow:
                     pseudopotentials=pseudopotentials,
                     pseudo_dir=pseudo_dir,
                     balsam_exe_settings=balsam_exe_settings,
+                    node_packing_count=node_packing_count,
                     calc_keywords=calc_keywords,
                     creation_dir=creation_dir,
-                    node_packing_count=node_packing_count
                 ))
 
     def set_up_ads(
@@ -1453,6 +1458,8 @@ class WorkFlow:
                 # If the code cannot locate optimized slab .xyz file,
                 # a slab optimization will be launched.
                 self.run_slab_optimization(facetpath)
+            if self.is_bigslab(facetpath) is False:
+                self.run_big_slab_opt(facetpath)
             # check if species were already calculated
             if all(self.check_all_species(yamlfile, facetpath).values()):
                 # If all are True, start by generating TS guesses and run
