@@ -1344,7 +1344,7 @@ class WorkFlow:
                 pass
             else:
                 raise FileNotFoundError(
-                    'It appears that there is no slab_opt.xyz file'
+                    'It appears there is no slab_opt.xyz file'
                 )
             if all(self.check_all_species(yamlfile, facetpath).values()):
                 # If all minima were calculated some time age rmgcat_to_sella
