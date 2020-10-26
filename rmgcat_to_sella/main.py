@@ -1215,6 +1215,9 @@ class WorkFlow:
                 species, facetpath)
         return checked_species
 
+    def optimize_res_slab(self, facetpath):
+        slab = read()
+
     def check_for_minima_dir(
             self,
             species,
@@ -1307,6 +1310,35 @@ class WorkFlow:
         if len(slab_opt_path_str) >= 1:
             return True, slab_opt_path_str[0]
         return (False, )
+
+    def check_if_big_slab_exists(self, facetpath):
+        ''' Check for big_slab calculations. True if there is a big_slab file,
+        False if not. If multiple matches found, print all and raise error.
+
+        big_slab is a slab multiplied by repeats.
+
+        Parameters:
+        ___________
+        facetpath : str
+            a path to the workflow's main dir
+            e.g. 'Cu_111'
+
+        '''
+        big_slab_list = []
+        keyphrase = '{}_big_slab_opt*.xyz'.format(facetpath)
+        big_slab_paths = Path(creation_dir).glob(keyphrase)
+        for big_slab_path in big_slab_paths:
+            big_slab_list.append(big_slab_path)
+        if len(big_slab_list) > 1:
+            print('Multiple matches found. Please check the work dir')
+            print(big_slab_list)
+            exit()
+        elif len(big_slab_list) == 1:
+            print('works')
+            return True
+        else:
+            print('No matches found. Big slab optimization required')
+            return False
 
     def copy_slab_opt_file(self):
         ''' Copy .xyz of previously optimized slab '''
