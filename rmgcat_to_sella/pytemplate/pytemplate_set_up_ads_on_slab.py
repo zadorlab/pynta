@@ -36,15 +36,16 @@ atoms.set_constraint(FixAtoms([
 ]))
 
 extra_calc_keywords = dict(
-    pseudopotentials={pseudopotentials},
     pseudo_dir='{pseudo_dir}',
-    kpts={repeats},
-    jobs_args='-nk {n_kpts}',
+    pseudopotentials={pseudopotentials},
     label=label
 )
 
-# update balsam_exe_settings with info about a new num_nodes
-balsam_exe_settings['num_nodes'] = {n_kpts}
+# kpts={repeats},
+# jobs_args='-nk {n_kpts}',
+
+# # update balsam_exe_settings with info about a new num_nodes
+# balsam_exe_settings['num_nodes'] = {n_kpts}
 
 atoms.calc = EspressoBalsamSocketIO(
     workflow='QE_Socket',
