@@ -1040,6 +1040,12 @@ class WorkFlow:
         slab_opt = '00_{}_set_up_slab_opt.py'.format(facetpath)
         self.slab_opt_job = self.exe('', slab_opt, facetpath, cores=1)
 
+    def run_big_slab_opt(
+            self,
+            facetpath):
+        big_slab_opt = '00_{}_set_up_big_slab_opt.py'.format(facetpath)
+        self.big_slab_opt_job = self.exe('', big_slab_opt, facetpath, cores=1)
+
     def run_opt_surf_and_adsorbate(
             self,
             facetpath):
@@ -1215,9 +1221,6 @@ class WorkFlow:
                 species, facetpath)
         return checked_species
 
-    def optimize_res_slab(self, facetpath):
-        slab = read()
-
     def check_for_minima_dir(
             self,
             species,
@@ -1275,7 +1278,7 @@ class WorkFlow:
             return True
         return False
 
-    def check_if_slab_opt_exists(
+    def is_slab(
             self,
             facetpath):
         ''' Check whether slab has been already optimized
@@ -1311,7 +1314,7 @@ class WorkFlow:
             return True, slab_opt_path_str[0]
         return (False, )
 
-    def check_if_big_slab_exists(self, facetpath):
+    def is_big_slab(self, facetpath):
         ''' Check for big_slab calculations. True if there is a big_slab file,
         False if not. If multiple matches found, print all and raise error.
 
@@ -1334,15 +1337,15 @@ class WorkFlow:
             print(big_slab_list)
             exit()
         elif len(big_slab_list) == 1:
-            print('works')
             return True
         else:
-            print('No matches found. Big slab optimization required')
+            print('No matches found for {} :'
+                  'Big slab optimization required'.format(keyphrase))
             return False
 
     def copy_slab_opt_file(self):
         ''' Copy .xyz of previously optimized slab '''
-        self.slab_exists = self.check_if_slab_opt_exists()
+        self.slab_exists = self.is_slab()
         if self.slab_exists[0]:
             src = self.slab_exists[1]
             dst = os.getcwd()
@@ -1365,10 +1368,9 @@ class WorkFlow:
             e.g. 'Cu_111'
 
         '''
-
         if optimize_slab:
             # if slab found in previous calculation, do nothing
-            if self.check_if_slab_opt_exists(facetpath)[0]:
+            if self.is_slab(facetpath)[0]:
                 pass
                 # self.copy_slab_opt_file()
             else:
@@ -1391,7 +1393,7 @@ class WorkFlow:
         else:
             # this is executed if user provide .xyz with the optimized slab
             # and explicitly define oiptimize_slab = False
-            if self.check_if_slab_opt_exists(facetpath)[0]:
+            if self.is_slab(facetpath)[0]:
                 pass
             else:
                 raise FileNotFoundError(
