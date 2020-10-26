@@ -269,6 +269,7 @@ class WorkFlow:
                 calc_keywords,
                 creation_dir,
             )
+            self.set_up_big_slab()
             self.set_up_ads(
                 template_ads,
                 py_job_dir,
@@ -444,8 +445,34 @@ class WorkFlow:
             with open(py_job_fname, 'w') as c:
                 c.write(template_text.format(
                     surface_type=surface_type,
-                    symbol=symbol, a=a,
+                    symbol=symbol,
+                    a=a,
                     repeats_surface=repeats_surface,
+                    vacuum=vacuum, slab_name=slab_name,
+                    pseudopotentials=pseudopotentials,
+                    pseudo_dir=pseudo_dir,
+                    balsam_exe_settings=balsam_exe_settings,
+                    calc_keywords=calc_keywords,
+                    creation_dir=creation_dir
+                ))
+
+    def set_up_big_slab(
+            self,
+            facetpath,
+            slab_name,
+            py_job_dir,
+            template,
+            pytemplate,
+            repeats):
+        with open(template, 'r') as r:
+            template_text = r.read()
+            py_job_fname = os.path.join(
+                py_job_dir, '00_{}_set_up_big_slab_opt.py'.format(facetpath))
+            with open(py_job_fname, 'w') as c:
+                c.write(template_text.format(
+                    surface_type=surface_type,
+                    symbol=symbol, a=a,
+                    repeats=repeats,
                     vacuum=vacuum, slab_name=slab_name,
                     pseudopotentials=pseudopotentials,
                     pseudo_dir=pseudo_dir,
