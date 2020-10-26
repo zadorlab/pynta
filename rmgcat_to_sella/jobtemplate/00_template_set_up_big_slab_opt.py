@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
-from pathlib import Path
+from rmgcat_to_sella.main import WorkFlow
 import os
-
 
 from balsam.launcher.dag import BalsamJob, add_dependency
 
@@ -14,11 +13,15 @@ pseudo_dir = '{pseudo_dir}'
 balsam_exe_settings = {balsam_exe_settings}
 calc_keywords = {calc_keywords}
 creation_dir = '{creation_dir}'
-py_script = '{py_script}'
 
+WorkFlow().get_big_slab_files()
 
 workflow_name = facetpath + '_00_big_slab_opt'
 dependency_workflow_name = facetpath + '_00_'
+
+pending_simulations = BalsamJob.objects.filter(
+    workflow__contains=dependency_workflow_name
+).exclude(state="JOB_FINISHED")
 
 # create a BalsamJob object, i.e. submit all unique jobs
 job_to_add = BalsamJob(
@@ -33,11 +36,6 @@ job_to_add = BalsamJob(
 )
 job_to_add.save()
 
-# for a given rxn_name, get all BalsamJob objects that it depends on
-dependancy.append(BalsamJob.objects.filter(
-    name=py_script).exclude(state="JOB_FINISHED"))
-
 # add dependencies
-for job in pending_simulations_dep:
-    for adding_job in dependancy:
-        add_dependency(adding_job, job)  # parent, child
+for job in pending_simulations:
+    add_dependency(job, job_to_add)  # parent, child

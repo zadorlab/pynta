@@ -80,6 +80,8 @@ path_template = os.path.join(dir_path, 'jobtemplate/')
 path_pytemplate = os.path.join(dir_path, 'pytemplate/')
 template_slab_opt = os.path.join(
     path_template + '00_template_set_up_slab_opt.py')
+template_big_slab_opt = os.path.join(
+    path_template + '00_template_set_up_big_slab_opt.py')
 template_ads = os.path.join(path_template + '01_template_set_up_ads.py')
 template_set_up_ts_with_xtb = os.path.join(
     path_template + '02_template_set_up_ts_with_xtb.py')
@@ -89,6 +91,8 @@ template_set_up_ts_vib = os.path.join(
     path_template + '04_template_set_up_TS_vib.py')
 template_set_up_after_ts = os.path.join(
     path_template + '05_template_set_up_after_ts.py')
+pytemplate_big_slab_opt = os.path.join(
+    path_pytemplate + 'pytemplate_set_up_big_slab_opt.py')
 pytemplate_relax_ads = os.path.join(
     path_pytemplate + 'pytemplate_set_up_ads_on_slab.py')
 pytemplate_xtb = os.path.join(path_pytemplate + 'pytemplate_set_up_xtb.py')
@@ -269,7 +273,19 @@ class WorkFlow:
                 calc_keywords,
                 creation_dir,
             )
-            self.set_up_big_slab()
+            self.set_up_big_slab(
+                template_big_slab_opt,
+                py_job_dir,
+                facetpath,
+                slab_name,
+                repeats,
+                pytemplate_big_slab_opt,
+                pseudopotentials,
+                pseudo_dir,
+                balsam_exe_settings,
+                creation_dir,
+                node_packing_count
+            )
             self.set_up_ads(
                 template_ads,
                 py_job_dir,
@@ -458,26 +474,33 @@ class WorkFlow:
 
     def set_up_big_slab(
             self,
+            template,
+            py_job_dir,
             facetpath,
             slab_name,
-            py_job_dir,
-            template,
+            repeats,
             pytemplate,
-            repeats):
+            pseudopotentials,
+            pseudo_dir,
+            balsam_exe_settings,
+            creation_dir,
+            node_packing_count):
         with open(template, 'r') as r:
             template_text = r.read()
             py_job_fname = os.path.join(
                 py_job_dir, '00_{}_set_up_big_slab_opt.py'.format(facetpath))
             with open(py_job_fname, 'w') as c:
                 c.write(template_text.format(
-                    surface_type=surface_type,
-                    symbol=symbol, a=a,
+                    facetpath=facetpath,
+                    slab_name=slab_name,
                     repeats=repeats,
-                    vacuum=vacuum, slab_name=slab_name,
+                    pytemplate=pytemplate,
                     pseudopotentials=pseudopotentials,
                     pseudo_dir=pseudo_dir,
                     balsam_exe_settings=balsam_exe_settings,
-                    calc_keywords=calc_keywords, creation_dir=creation_dir
+                    calc_keywords=calc_keywords,
+                    creation_dir=creation_dir,
+                    node_packing_count=node_packing_count
                 ))
 
     def set_up_ads(
