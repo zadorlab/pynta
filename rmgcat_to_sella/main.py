@@ -313,7 +313,8 @@ class WorkFlow:
                 node_packing_count,
                 balsam_exe_settings,
                 calc_keywords,
-                creation_dir)
+                creation_dir
+            )
 
             self.set_up_ads(
                 template_ads,
@@ -520,6 +521,7 @@ class WorkFlow:
             template_text = r.read()
             py_job_fname = os.path.join(
                 py_job_dir, '00_{}_set_up_big_slab_opt.py'.format(facetpath))
+
             with open(py_job_fname, 'w') as c:
                 c.write(template_text.format(
                     facetpath=facetpath,
@@ -529,10 +531,12 @@ class WorkFlow:
                     pseudopotentials=pseudopotentials,
                     pseudo_dir=pseudo_dir,
                     balsam_exe_settings=balsam_exe_settings,
-                    node_packing_count=node_packing_count,
                     calc_keywords=calc_keywords,
                     creation_dir=creation_dir,
+                    node_packing_count=node_packing_count
                 ))
+            c.close()
+        r.close()
 
     def set_up_ads(
             self,
