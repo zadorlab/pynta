@@ -447,18 +447,19 @@ class TS():
             for atom in tmp_ts_atom if atom.symbol != metal_atom}
 
         # loop through all .xyz files
-        # for prefix, xyz_file in enumerate(ts_estimates_xyz_files):
-        bonds = []
-        visited_species = []
+        for prefix, xyz_file in enumerate(ts_estimates_xyz_files):
+            bonds = []
+            visited_species = []
 
-        # loop through all species
-        for species in relevant_species_list:
-            sp_index = self.get_sp_index(
-                species, visited_species, adsorbate_atoms_idx)
+            # loop through all species
+            for species in relevant_species_list:
+                sp_index = self.get_sp_index(
+                    species, visited_species, adsorbate_atoms_idx)
 
-            #     metal_index = self.get_index_surface_atom(
-            #         sp_index, surface_atoms_idx, xyz_file)
-            #     bonds.append((sp_index, metal_index))
+                metal_index = self.get_index_surface_atom(
+                    sp_index, surface_atoms_idx, xyz_file)
+
+                bonds.append((sp_index, metal_index))
 
             # # set up variables
             # av_dists_tuple = tuple(average_distance_list)
