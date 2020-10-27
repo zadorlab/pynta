@@ -306,7 +306,8 @@ class WorkFlow:
         with open(pytemplate, 'r') as r:
             pytemplate_text = r.read()
             py_job_name = '{}_big_slab_opt_job.py'.format(facetpath)
-            py_job = os.path.join(creation_dir, job_file_dir_name, py_job_name)
+            py_job = os.path.join(
+                creation_dir, job_file_dir_name, facetpath, py_job_name)
             with open(py_job, 'w') as c:
                 c.write(pytemplate_text.format(
                     facetpath=facetpath,
@@ -642,7 +643,7 @@ class WorkFlow:
                     calc_keywords=calc_keywords,
                     creation_dir=creation_dir,
                     job_file_dir_name=os.path.join(
-                        creation_dir, job_file_dir_name),
+                        creation_dir, job_file_dir_name, facetpath),
                     node_packing_count=node_packing_count
                 ))
             c.close()
@@ -1590,10 +1591,7 @@ class WorkFlow:
         '''
         if optimize_slab:
             # if slab found in previous calculation, do nothing
-            if self.is_slab(facetpath)[0]:
-                pass
-                # self.copy_slab_opt_file()
-            else:
+            if self.is_slab(facetpath)[0] is False:
                 # If the code cannot locate optimized slab .xyz file,
                 # a slab optimization will be launched.
                 self.run_slab_optimization(facetpath)
@@ -1621,6 +1619,8 @@ class WorkFlow:
                 raise FileNotFoundError(
                     'It appears there is no slab_opt.xyz file'
                 )
+            if self.is_big_slab(facetpath) is False:
+                self.run_big_slab_opt(facetpath)
             if all(self.check_all_species(yamlfile, facetpath).values()):
                 # If all minima were calculated some time age rmgcat_to_sella
                 # will use that calculations. Start from 02 step
