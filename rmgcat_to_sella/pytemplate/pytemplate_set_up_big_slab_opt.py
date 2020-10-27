@@ -9,12 +9,16 @@ from ase.optimize import QuasiNewton
 
 slab_name = '{slab_name}'
 big_slab_name = '{facetpath}' + '_big_slab_opt'
+creation_dir = '{creation_dir}'
+slab_path = os.path.join(creation_dir, slab_name)
+big_slab_path = os.path.join(creation_dir, big_slab_name)
+
 repeats = {repeats}
 balsam_exe_settings = {balsam_exe_settings}
 calc_keywords = {calc_keywords}
-creation_dir = '{creation_dir}'
 
-atoms = read(slab_name + '.xyz') * repeats
+
+atoms = read(slab_path + '.xyz') * repeats
 atoms.set_constraint(FixAtoms([
     atom.index for atom in atoms if atom.position[2] < atoms.cell[2, 2] / 2.
 ]))
@@ -33,10 +37,11 @@ atoms.calc = EspressoBalsamSocketIO(
 
 atoms.calc.set(**extra_calc_keywords)
 
-opt = QuasiNewton(atoms=atoms, trajectory=big_slab_name + '.traj')
+opt = QuasiNewton(atoms=atoms, trajectory=big_slab_path + '.traj')
 # opt = Sella(atoms, order=0, delta0=1e-2, trajectory=jobdir + '.traj')
 opt.run(fmax=0.01)
 atoms.calc.close()
 
-write_dir = os.path.join(big_slab_name + '.xyz')
-write(write_dir, read(big_slab_name + '.traj'))
+# save optimized structure as .xyz file
+write_dir = os.path.join(big_slab_path + '.xyz')
+write(write_dir, read(big_slab_path + '.traj'))
