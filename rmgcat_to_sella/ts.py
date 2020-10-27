@@ -64,6 +64,7 @@ class TS():
             scfactor_surface,
             pytemplate_xtb,
             species_list,
+            relevant_species_list,
             metal_atom,
             scaled1,
             scaled2):
@@ -117,15 +118,16 @@ class TS():
             p_name_list,
             images)
 
-        self.filtered_out_equiv_ts_estimate(
-            ts_estimate_path,
-            rxn_name)
+        # self.filtered_out_equiv_ts_estimate(
+        #     ts_estimate_path,
+        #     rxn_name)
 
         self.set_up_penalty_xtb(
             ts_estimate_path,
             rxn_name,
             pytemplate_xtb,
             species_list,
+            relevant_species_list,
             metal_atom,
             scaled1,
             scaled2,
@@ -370,6 +372,7 @@ class TS():
             rxn_name,
             pytemplate,
             species_list,
+            relevant_species_list,
             metal_atom,
             scaled1,
             scaled2,
@@ -421,13 +424,12 @@ class TS():
                                        scfactor_surface, scaled1)
             average_distance_list.append(av_dist)
 
-        # get all ts_estimatex_xyz files in alphabetic order
-        # ts_estimates_xyz_files = sorted(os.listdir(ts_estimate_path))
         ts_estimates_xyz_files = []
         ts_est = Path(ts_estimate_path).glob('*.xyz')
         for ts in ts_est:
             ts_estimates_xyz_files.append(str(ts))
 
+        # get all ts_estimatex_xyz files in alphabetic order
         ts_estimates_xyz_files = sorted(ts_estimates_xyz_files)
 
         # take a first file and use it as a template to get info about
@@ -445,38 +447,53 @@ class TS():
             for atom in tmp_ts_atom if atom.symbol != metal_atom}
 
         # loop through all .xyz files
-        for prefix, xyz_file in enumerate(ts_estimates_xyz_files):
-            bonds = []
-            # loop through all species
-            for species in species_list:
-                sp_index = self.get_index_adatom(
-                    species, adsorbate_atoms_idx)
-                metal_index = self.get_index_surface_atom(
-                    sp_index, surface_atoms_idx, xyz_file)
-                bonds.append((sp_index, metal_index))
+        # for prefix, xyz_file in enumerate(ts_estimates_xyz_files):
+        bonds = []
+        visited_species = []
 
-            # set up variables
-            av_dists_tuple = tuple(average_distance_list)
-            prefix = str(prefix).zfill(3)
-            calc_dir = os.path.join(ts_estimate_path, prefix)
-            os.makedirs(calc_dir, exist_ok=True)
-            f_name_xyz = os.path.basename(xyz_file)[:-4]
-            traj_path = os.path.join(f_name_xyz + '.traj')
-            fname = os.path.join(calc_dir, f_name_xyz + '.py')
+        # loop through all species
+        for species in relevant_species_list:
+            sp_index = self.get_index_adatom(
+                species, adsorbate_atoms_idx)
 
-            # create job_file
-            with open(fname, 'w') as f:
-                f.write(pytemplate.format(geom=os.path.basename(xyz_file),
-                                          bonds=bonds,
-                                          av_dists_tuple=av_dists_tuple,
-                                          creation_dir=self.creation_dir,
-                                          traj_path=traj_path,
-                                          repeats=self.repeats,
-                                          prefix=prefix,
-                                          geom_name=f_name_xyz,
-                                          slabopt=self.slab))
-            # move .xyz files
-            shutil.move(xyz_file, calc_dir)
+            # count how many times the given species were considered
+            # e.g. if relevant_species_list = ['O', 'O'] the logic below
+            # will return the correct index for the second 'O', calculated as
+            # index of the first 'O' + how many times 'O's already analyzed
+            if species in visited_species:
+                _count = visited_species.count(species)
+                visited_species.append(species)
+                sp_index = sp_index + _count
+            else:
+                visited_species.append(species)
+            print(sp_index)
+
+            #     metal_index = self.get_index_surface_atom(
+            #         sp_index, surface_atoms_idx, xyz_file)
+            #     bonds.append((sp_index, metal_index))
+
+            # # set up variables
+            # av_dists_tuple = tuple(average_distance_list)
+            # prefix = str(prefix).zfill(3)
+            # calc_dir = os.path.join(ts_estimate_path, prefix)
+            # os.makedirs(calc_dir, exist_ok=True)
+            # f_name_xyz = os.path.basename(xyz_file)[:-4]
+            # traj_path = os.path.join(f_name_xyz + '.traj')
+            # fname = os.path.join(calc_dir, f_name_xyz + '.py')
+
+            # # create job_file
+            # with open(fname, 'w') as f:
+            #     f.write(pytemplate.format(geom=os.path.basename(xyz_file),
+            #                               bonds=bonds,
+            #                               av_dists_tuple=av_dists_tuple,
+            #                               creation_dir=self.creation_dir,
+            #                               traj_path=traj_path,
+            #                               repeats=self.repeats,
+            #                               prefix=prefix,
+            #                               geom_name=f_name_xyz,
+            #                               slabopt=self.slab))
+            # # move .xyz files
+            # shutil.move(xyz_file, calc_dir)
 
     def get_av_dist(
             self,
@@ -898,20 +915,6 @@ class TS():
         for key, val in adsorbate_atoms_idx.items():
             if key.startswith(ads_atom):
                 return val
-        # # TODO: currently it works only for one ads_atom, so it will return
-        # # only index at [0]. In the future I plan to add support for many
-        # # indices
-        # adsorbate_atom = []
-        # if len(ads_atom) > 1:
-        #     ads_atom = ads_atom[:1]
-        # with open(geom, 'r') as f:
-        #     xyz_geom_file = f.readlines()
-        #     for num, line in enumerate(xyz_geom_file):
-        #         if ads_atom in line:
-        #             if metal_atom not in line:
-        #                 adsorbate_atom.append(num - 2)
-        # f.close()
-        # return adsorbate_atom[0]
 
     def get_index_surface_atom(
             self,
@@ -936,18 +939,9 @@ class TS():
 
         '''
         surface_atoms_idx_list = list(surface_atoms_idx.values())
-        # if len(species) > 1:
-        #     species = species[:1]
 
         ts_est_atom = read(geom)
 
-        # with open(geom, 'r') as f:
-        #     xyz_geom_file = f.readlines()
-        #     for num, line in enumerate(xyz_geom_file):
-        #         if metal_atom in line:
-        #             surface_atoms.append(num - 2)
-        #         elif ads_atom in line and metal_atom not in line:
-        #             adsorbate_atoms.append(num - 2)
         all_dist_surface_adsorbate = ts_est_atom.get_distances(
             sp_index, surface_atoms_idx_list)
 
