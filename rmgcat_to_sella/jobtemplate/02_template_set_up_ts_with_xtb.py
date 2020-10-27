@@ -16,6 +16,7 @@ scfactor = {scfactor}
 scfactor_surface = {scfactor_surface}
 pytemplate_xtb = '{pytemplate_xtb}'
 species_list = {species_list}
+metal_atom = '{metal_atom}'
 scaled1 = {scaled1}
 scaled2 = {scaled2}
 creation_dir = '{creation_dir}'
@@ -39,6 +40,7 @@ ts.prepare_ts_estimate(
     scfactor_surface,
     pytemplate_xtb,
     species_list,
+    metal_atom,
     scaled1,
     scaled2)
 
@@ -69,7 +71,7 @@ for py_script in Path(path_to_ts_estimate).glob('**/*.py'):
         args=str(py_script),
         input_files='',
         ranks_per_node=1,
-        node_packing_count=64,
+        node_packing_count={node_packing_count},
         user_workdir=job_dir,
     )
     job_to_add.save()
