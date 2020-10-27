@@ -445,7 +445,6 @@ class TS():
         adsorbate_atoms_idx = {
             atom.symbol + '_' + str(atom.index): atom.index
             for atom in tmp_ts_atom if atom.symbol != metal_atom}
-        print(adsorbate_atoms_idx)
 
         # loop through all .xyz files
         # for prefix, xyz_file in enumerate(ts_estimates_xyz_files):
@@ -454,26 +453,8 @@ class TS():
 
         # loop through all species
         for species in relevant_species_list:
-            sp_index = self.get_index_adatom(
-                species, adsorbate_atoms_idx)
-
-            # count how many times the given species were considered
-            # e.g. if relevant_species_list = ['O', 'O'] the logic below
-            # will return the correct index for the second 'O', calculated as
-            # index of the first 'O' + how many times 'O's already analyzed
-            if species in visited_species:
-                _count = visited_species.count(species)
-                visited_species.append(species)
-                sp_index = sp_index + _count
-            else:
-                visited_species.append(species)
-            if not self.is_valid_sp_index(species, sp_index,
-                                          adsorbate_atoms_idx):
-                print('Index {} is not a valid index for a species {}. \n'
-                      'Check your relevant_species definition \n'
-                      ''.format(sp_index, species))
-                print('The folowing indicies are possible: \n     {}'.format(
-                    adsorbate_atoms_idx))
+            sp_index = self.get_sp_index(
+                species, visited_species, adsorbate_atoms_idx)
 
             #     metal_index = self.get_index_surface_atom(
             #         sp_index, surface_atoms_idx, xyz_file)
@@ -501,6 +482,35 @@ class TS():
             #                               slabopt=self.slab))
             # # move .xyz files
             # shutil.move(xyz_file, calc_dir)
+
+    def get_sp_index(
+            self,
+            species,
+            visited_species,
+            adsorbate_atoms_idx):
+        ''' Count how many times the given species have been already considered
+            e.g. if relevant_species_list = ['O', 'O'] the logic below
+            will return the correct index for the second 'O', calculated as
+            index of the first 'O' + how many times 'O's already analyzed
+
+        '''
+        sp_index = self.get_index_adatom(species, adsorbate_atoms_idx)
+
+        if species in visited_species:
+            _count = visited_species.count(species)
+            visited_species.append(species)
+            sp_index = sp_index + _count
+        else:
+            visited_species.append(species)
+        if not self.is_valid_sp_index(species, sp_index,
+                                      adsorbate_atoms_idx):
+            print('Index {} is not a valid index for a species {}. \n'
+                  'Check your relevant_species definition \n'
+                  ''.format(sp_index, species))
+            print('The folowing indicies are possible: \n     {}'.format(
+                adsorbate_atoms_idx))
+            raise KeyError
+        return sp_index
 
     def is_valid_sp_index(
             self,
