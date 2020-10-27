@@ -461,28 +461,28 @@ class TS():
 
                 bonds.append((sp_index, metal_index))
 
-            # # set up variables
-            # av_dists_tuple = tuple(average_distance_list)
-            # prefix = str(prefix).zfill(3)
-            # calc_dir = os.path.join(ts_estimate_path, prefix)
-            # os.makedirs(calc_dir, exist_ok=True)
-            # f_name_xyz = os.path.basename(xyz_file)[:-4]
-            # traj_path = os.path.join(f_name_xyz + '.traj')
-            # fname = os.path.join(calc_dir, f_name_xyz + '.py')
+            # set up variables
+            av_dists_tuple = tuple(average_distance_list)
+            prefix = str(prefix).zfill(3)
+            calc_dir = os.path.join(ts_estimate_path, prefix)
+            os.makedirs(calc_dir, exist_ok=True)
+            f_name_xyz = os.path.basename(xyz_file)[:-4]
+            traj_path = os.path.join(f_name_xyz + '.traj')
+            fname = os.path.join(calc_dir, f_name_xyz + '.py')
 
-            # # create job_file
-            # with open(fname, 'w') as f:
-            #     f.write(pytemplate.format(geom=os.path.basename(xyz_file),
-            #                               bonds=bonds,
-            #                               av_dists_tuple=av_dists_tuple,
-            #                               creation_dir=self.creation_dir,
-            #                               traj_path=traj_path,
-            #                               repeats=self.repeats,
-            #                               prefix=prefix,
-            #                               geom_name=f_name_xyz,
-            #                               slabopt=self.slab))
-            # # move .xyz files
-            # shutil.move(xyz_file, calc_dir)
+            # create job_file
+            with open(fname, 'w') as f:
+                f.write(pytemplate.format(geom=os.path.basename(xyz_file),
+                                          bonds=bonds,
+                                          av_dists_tuple=av_dists_tuple,
+                                          creation_dir=self.creation_dir,
+                                          traj_path=traj_path,
+                                          repeats=self.repeats,
+                                          prefix=prefix,
+                                          geom_name=f_name_xyz,
+                                          slabopt=self.slab))
+            # move .xyz files
+            shutil.move(xyz_file, calc_dir)
 
     def get_sp_index(
             self,
