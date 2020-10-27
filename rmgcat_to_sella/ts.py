@@ -445,6 +445,7 @@ class TS():
         adsorbate_atoms_idx = {
             atom.symbol + '_' + str(atom.index): atom.index
             for atom in tmp_ts_atom if atom.symbol != metal_atom}
+        print(adsorbate_atoms_idx)
 
         # loop through all .xyz files
         # for prefix, xyz_file in enumerate(ts_estimates_xyz_files):
@@ -466,7 +467,13 @@ class TS():
                 sp_index = sp_index + _count
             else:
                 visited_species.append(species)
-            print(sp_index)
+            if not self.is_valid_sp_index(species, sp_index,
+                                          adsorbate_atoms_idx):
+                print('Index {} is not a valid index for a species {}. \n'
+                      'Check your relevant_species definition \n'
+                      ''.format(sp_index, species))
+                print('The folowing indicies are possible: \n     {}'.format(
+                    adsorbate_atoms_idx))
 
             #     metal_index = self.get_index_surface_atom(
             #         sp_index, surface_atoms_idx, xyz_file)
@@ -494,6 +501,23 @@ class TS():
             #                               slabopt=self.slab))
             # # move .xyz files
             # shutil.move(xyz_file, calc_dir)
+
+    def is_valid_sp_index(
+            self,
+            species,
+            sp_index,
+            adsorbate_atoms_idx):
+        ''' Return True if given sp_index is possible for a given species '''
+        key = species + '_' + str(sp_index)
+        try:
+            adsorbate_atoms_idx[key]
+            return True
+        except KeyError:
+            return False
+        # for k, v in adsorbate_atoms_idx.items():
+        #     if k.startswith(species) and v == sp_index:
+        #         return True
+        #     return False
 
     def get_av_dist(
             self,
