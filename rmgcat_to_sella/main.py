@@ -1242,6 +1242,15 @@ class WorkFlow:
     def run_big_slab_opt(
             self,
             facetpath):
+        ''' Submit big slab optimization
+
+        Parameters
+        ----------
+        facetpath : str
+            a path to the workflow's main dir
+            e.g. 'Cu_111'
+
+        '''
         big_slab_opt = '00_{}_set_up_big_slab_opt.py'.format(facetpath)
         return self.exe('', big_slab_opt, facetpath, cores=1)
 
@@ -1416,11 +1425,11 @@ class WorkFlow:
             # a bug to be resolved - why does it invert the name?
             if species == 'OH':
                 species = 'HO'
-            checked_species[species] = self.check_for_minima_outfiles(
+            checked_species[species] = self.is_minima_out_files(
                 species, facetpath)
         return checked_species
 
-    def check_for_minima_dir(
+    def is_minima_dir(
             self,
             species,
             facetpath):
@@ -1444,7 +1453,7 @@ class WorkFlow:
             return True
         return False
 
-    def check_for_minima_outfiles(
+    def is_minima_out_files(
             self,
             species,
             facetpath):
@@ -1465,7 +1474,7 @@ class WorkFlow:
         '''
         minima_dir = os.path.join(creation_dir, facetpath, 'minima')
         # if minima dir exists, check for outfiles
-        if self.check_for_minima_dir(species, facetpath):
+        if self.is_minima_dir(species, facetpath):
             keyphrase = '{}_{}_*relax.py'.format(facetpath, species)
             search_for_outfiles = Path(minima_dir).glob(keyphrase)
             outfiles = []
@@ -1513,9 +1522,11 @@ class WorkFlow:
             return True, slab_opt_path_str[0]
         return (False, )
 
-    def is_big_slab(self, facetpath):
+    def is_big_slab(
+            self,
+            facetpath):
         ''' Check for big_slab calculations. True if there is a big_slab file,
-        False if not. If multiple matches found, print all and raise error.
+            False if not. If multiple matches found, print all and raise error.
 
         big_slab is a slab multiplied by repeats.
 
@@ -1529,8 +1540,10 @@ class WorkFlow:
         big_slab_list = []
         keyphrase = '{}_big_slab_opt*.xyz'.format(facetpath)
         big_slab_paths = Path(creation_dir).glob(keyphrase)
+
         for big_slab_path in big_slab_paths:
             big_slab_list.append(big_slab_path)
+
         if len(big_slab_list) > 1:
             print('Multiple matches found. Please check the work dir')
             print(big_slab_list)
