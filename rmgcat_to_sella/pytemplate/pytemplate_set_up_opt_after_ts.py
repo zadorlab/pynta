@@ -27,11 +27,17 @@ atoms.set_constraint(FixAtoms([
     atom.index for atom in atoms if atom.position[2] < atoms.cell[2, 2] / 2.
 ]))
 
+# update balsam_exe_settings with info about a new num_nodes
+# balsam_exe_settings['num_nodes'] = {n_kpts}
+
 extra_calc_keywords = dict(
     pseudopotentials={pseudopotentials},
     pseudo_dir='{pseudo_dir}',
     label=geom
 )
+
+# kpts={repeats},
+# jobs_args='-nk {n_kpts}',
 
 atoms.calc = EspressoBalsamSocketIO(
     workflow='QE_Socket',

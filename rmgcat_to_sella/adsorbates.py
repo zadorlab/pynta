@@ -11,8 +11,8 @@ from ase.data import covalent_radii
 from rmgcat_to_sella.excatkit.molecule import Molecule
 from rmgcat_to_sella.excatkit.adsorption import Builder
 from rmgcat_to_sella.excatkit.gratoms import Gratoms
-
 from rmgcat_to_sella.graph_utils import node_test
+from rmgcat_to_sella.io import IO
 
 # Instead of using CatKit's built in slab generator routines, we want to
 # use pre-relaxed slab geometries to save computer time. In order to use
@@ -409,6 +409,7 @@ class Adsorbates:
             optional, a .sh template (not required by the workflow)
 
         '''
+        n_kpts = IO().get_kpoints(self.repeats)
         minimapath = os.path.join(self.creation_dir, self.facetpath, 'minima')
         with open(pytemplate, 'r') as f:
             pytemplate = f.read()
@@ -435,8 +436,9 @@ class Adsorbates:
                             pseudo_dir=pseudo_dir,
                             balsam_exe_settings=balsam_exe_settings,
                             calc_keywords=calc_keywords,
-                            creation_dir=self.creation_dir
-                        ))
+                            creation_dir=self.creation_dir,
+                            repeats=self.repeats,
+                            n_kpts=n_kpts))
                     if shtemplate is None:
                         continue
                     # optional

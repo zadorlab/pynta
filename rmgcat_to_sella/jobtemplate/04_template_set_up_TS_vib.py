@@ -23,9 +23,20 @@ cwd = Path.cwd().as_posix()
 path_to_ts_vib = os.path.join(creation_dir, facetpath,
                               rxn_name, 'TS_estimate_unique_vib')
 
-after_ts = AfterTS(facetpath, yamlfile, slab, repeats, creation_dir)
-after_ts.set_up_ts_vib(rxn, pytemplate, balsam_exe_settings,
-                       calc_keywords, pseudopotentials, pseudo_dir)
+after_ts = AfterTS(
+    facetpath,
+    yamlfile,
+    slab,
+    repeats,
+    creation_dir)
+
+after_ts.set_up_ts_vib(
+    rxn,
+    pytemplate,
+    balsam_exe_settings,
+    calc_keywords,
+    pseudopotentials,
+    pseudo_dir)
 
 workflow_name = facetpath + '_04_' + rxn_name
 dependency_workflow_name = facetpath + '_03_' + rxn_name
@@ -49,7 +60,7 @@ for py_script in Path(path_to_ts_vib).glob('*.py'):
         args=str(py_script),
         input_files='',
         user_workdir=job_dir,
-        node_packing_count=48,
+        node_packing_count={node_packing_count},
         ranks_per_node=1,
     )
     job_to_add.save()

@@ -22,10 +22,20 @@ rxn_name = '{rxn_name}'
 path_to_after_ts = os.path.join(creation_dir, facetpath,
                                 rxn_name, 'after_TS')
 
-after_ts = AfterTS(facetpath, yamlfile, slab, repeats, creation_dir)
-after_ts.prepare_opt_after_ts(rxn, pytemplate, balsam_exe_settings,
-                              calc_keywords, pseudopotentials,
-                              pseudo_dir)
+after_ts = AfterTS(
+    facetpath,
+    yamlfile,
+    slab,
+    repeats,
+    creation_dir)
+
+after_ts.prepare_opt_after_ts(
+    rxn,
+    pytemplate,
+    balsam_exe_settings,
+    calc_keywords,
+    pseudopotentials,
+    pseudo_dir)
 
 workflow_name = facetpath + '_05_' + rxn_name
 dependency_workflow_name = facetpath + '_04_' + rxn_name
@@ -43,7 +53,7 @@ for py_script in Path(path_to_after_ts).glob('*.py'):
         args=str(py_script),
         input_files='',
         user_workdir=job_dir,
-        node_packing_count=48,
+        node_packing_count={node_packing_count},
         ranks_per_node=1,
     )
     job_to_add.save()

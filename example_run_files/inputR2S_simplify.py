@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 from pathlib import Path
 '''
 ####################################################
@@ -24,20 +25,20 @@ vacuum = 8.0
 ####################################################
 # Quantum Espresso pseudopotantials and exe settings
 # for DFT calculations
-pseudo_dir = '/projects/catalysis_aesp/mgierad/espresso/pseudo'
+pseudo_dir = '/home/mgierad/espresso/pseudo'
 
 pseudopotentials = "dict(Cu='Cu.pbe-spn-kjpaw_psl.1.0.0.UPF',"\
     + "H='H.pbe-kjpaw_psl.1.0.0.UPF',"\
     + "O='O.pbe-n-kjpaw_psl.1.0.0.UPF'," \
     + "C='C.pbe-n-kjpaw_psl.1.0.0.UPF')"
 
-executable = '/projects/catalysis_aesp/brossdh/q-e_6.4.1/bin/pw.x'
+executable = '/home/mgierad/00_codes/build/q-e-qe-6.4.1/build/bin/pw.x'
 ####################################################
 # Baslam settings
-balsam_exe_settings = {'num_nodes': 16,  # nodes per each balsam job
-                       'ranks_per_node': 64,  # cores per node
-                       'threads_per_rank': 1,
-                       'cpu_affinity': 'depth'
+node_packing_count = 48
+balsam_exe_settings = {'num_nodes': 1,  # nodes per each balsam job
+                       'ranks_per_node': node_packing_count,  # cores per node
+                       'threads_per_rank': 1
                        }
 calc_keywords = {'kpts': (3, 3, 1),
                  'occupations': 'smearing',
@@ -63,9 +64,6 @@ scfactor = 1.4
 # i.e. the average bond distance between adsorbate and
 # the nearest surface metal atom
 scfactor_surface = 1.0
-####################################################
-# species list
-species_dict = {'rxn1': ['O', 'H'], 'rxn2': ['C', 'H']}
 ####################################################
 # do you want to apply the scfactor_surface to the species 1?
 scaled1 = False

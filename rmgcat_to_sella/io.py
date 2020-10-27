@@ -9,6 +9,7 @@ from rmgcat_to_sella.excatkit.molecule import Molecule
 from rmgcat_to_sella.graph_utils import node_test
 
 from ase.io import read, write
+from ase.dft.kpoints import monkhorst_pack
 
 
 class IO():
@@ -86,6 +87,63 @@ class IO():
             facetpaths.append(facetpath)
         return facetpaths
 
+    def get_kpoints(self, size, get_uniq_kpts=False):
+        ''' Returns number of unique k-points for a given size of the slab
+
+        Parameters:
+        ___________
+        size : tuple(int, int, int):
+            a size or repeats of the slab,
+            e.g. (3, 3, 1)
+        get_uniq_kpts : bool, optional
+            If True, return size and an ndarray of unique kpoints
+            Otherwise False.
+
+        Returns:
+        -------
+        m_uniq_kpts : int
+            a number of unique k-points
+        uniq : ndarray
+            an array with unique k-points, optional
+
+        '''
+        kpts = monkhorst_pack(size)
+        half_kpts = len(kpts) // 2
+        uniq = kpts[half_kpts:, ]
+        m_uniq_kpts = len(uniq)
+        return (m_uniq_kpts, uniq) if get_uniq_kpts else m_uniq_kpts
+
+    def get_species_dict(self, yamlfile):
+        ''' For a given reaction get a dictionary with all species that takes
+            part in the reaction.
+
+            Those species will be considered as a reacting species by the
+            TS esitmate constructor
+
+        Parameters
+        ----------
+        yamlfile : str
+            a name of the .yaml file with a reaction list
+
+        Returns
+        -------
+        species_dict
+            a dictionary where keys are reactions (in a rxn{#} format)
+            and values are species considered to moved in that reaction
+            e.g.
+            species_dict = {'rxn1': ['O', 'H'], 'rxn2': ['C', 'H']}
+
+        '''
+        species_dict = {}
+        reactions = self.open_yaml_file(yamlfile)
+        for num, rxn in enumerate(reactions):
+            r_name_list, p_name_list, _ = self.prepare_react_list(rxn)
+            if len(r_name_list) >= len(p_name_list):
+                species_dict['rxn{}'.format(num+1)] = r_name_list
+            else:
+                species_dict['rxn{}'.format(num+1)] = p_name_list
+        return species_dict
+
     def open_yaml_file(
             self,
             yamlfile):
@@ -131,8 +189,8 @@ class IO():
             r_name_list, p_name_list, _ = self.prepare_react_list(rxn)
             all_species.append(r_name_list)
             all_species.append(p_name_list)
-            all_species_unique = list(
-                set([sp for sublist in all_species for sp in sublist]))
+        all_species_unique = list(
+            set([sp for sublist in all_species for sp in sublist]))
         return all_species_unique
 
     def prepare_react_list(
