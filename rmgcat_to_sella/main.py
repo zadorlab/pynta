@@ -249,7 +249,54 @@ class WorkFlow:
             pseudopotentials,
             pseudo_dir,
             creation_dir):
-        ''' Create a ase pyjob for big slab optimization '''
+        ''' Create a ase pyjob for big slab optimization
+
+        Parameters
+        ----------
+        pytemplate : python file
+            a template to prepare submission scripts
+            for big_slab minimization
+        facetpath : str
+            a path to the workflow's main dir
+            e.g. 'Cu_111'
+        slab_name : str
+            name of the slab file (no extintion) that is about to be created
+            e.g.
+            slab_name = 'Cu_111_slab_opt'
+        repeats : tuple(int, int, int)
+            how to replicate unit cell in (x, y, z) direction,
+            e.g. (3, 3, 1)
+        balsam_exe_settings : dict{str:int}
+            a dictionary with balsam execute parameters (cores, nodes, etc.),
+            e.g.
+            balsam_exe_settings = {'num_nodes': 1,
+                                   'ranks_per_node': 48,
+                                   'threads_per_rank': 1}
+        calc_keywords : dict{str:str}
+            a dictionary with parameters to run DFT package. Quantum Espresso
+            is used as default, e.g.
+
+            calc_keywords = {'kpts': (3, 3, 1), 'occupations': 'smearing',
+                            'smearing':  'marzari-vanderbilt',
+                            'degauss': 0.01, 'ecutwfc': 40, 'nosym': True,
+                            'conv_thr': 1e-11, 'mixing_mode': 'local-TF'}
+        pseudopotentials : dict{str:str}
+            a dictionary with QE pseudopotentials for all species.
+            e.g.
+            dict(Cu='Cu.pbe-spn-kjpaw_psl.1.0.0.UPF',
+                H='H.pbe-kjpaw_psl.1.0.0.UPF',
+                O='O.pbe-n-kjpaw_psl.1.0.0.UPF',
+                C='C.pbe-n-kjpaw_psl.1.0.0.UPF',
+                )
+        pseudo_dir : str
+            a path to the QE's pseudopotentials main directory
+            e.g.
+            '/home/mgierad/espresso/pseudo'
+        creation_dir : posix
+            a posix path to the working directory
+
+
+        '''
         with open(pytemplate, 'r') as r:
             pytemplate_text = r.read()
             py_job_name = '{}_big_slab_opt_job.py'.format(facetpath)
@@ -517,7 +564,61 @@ class WorkFlow:
             balsam_exe_settings,
             calc_keywords,
             creation_dir):
-        ''' Set up a big_slab_opt ase py job generator '''
+        ''' Set up a big_slab_opt ase py job generator
+
+        Parameters
+        ----------
+        template : py file
+            a template to set up 01 job
+        py_job_dir : str
+            a path to where all job files 00-05 are about to be created, e.g.
+            {'current_dir'}/job_files/Cu_111
+        facetpath : str
+            a path to the workflow's main dir
+            e.g. 'Cu_111'
+        slab_name : str
+            name of the slab file (no extintion) that is about to be created
+            e.g.
+            slab_name = 'Cu_111_slab_opt'
+        repeats : tuple(int, int, int)
+            how to replicate unit cell in (x, y, z) direction,
+            e.g. (3, 3, 1)
+        pytemplate : python file
+            a template to prepare submission scripts
+            for big_slab minimization
+        pseudopotentials : dict{str:str}
+            a dictionary with QE pseudopotentials for all species.
+            e.g.
+            dict(Cu='Cu.pbe-spn-kjpaw_psl.1.0.0.UPF',
+                H='H.pbe-kjpaw_psl.1.0.0.UPF',
+                O='O.pbe-n-kjpaw_psl.1.0.0.UPF',
+                C='C.pbe-n-kjpaw_psl.1.0.0.UPF',
+                )
+        pseudo_dir : str
+            a path to the QE's pseudopotentials main directory
+            e.g.
+            '/home/mgierad/espresso/pseudo'
+        node_packing_count : int
+            number of cores per node
+        balsam_exe_settings : dict{str:int}
+            a dictionary with balsam execute parameters (cores, nodes, etc.),
+            e.g.
+            balsam_exe_settings = {'num_nodes': 1,
+                                   'ranks_per_node': 48,
+                                   'threads_per_rank': 1}
+        calc_keywords : dict{str:str}
+            a dictionary with parameters to run DFT package. Quantum Espresso
+            is used as default, e.g.
+
+            calc_keywords = {'kpts': (3, 3, 1),
+                            'occupations': 'smearing',
+                            'smearing':  'marzari-vanderbilt',
+                            'degauss': 0.01, 'ecutwfc': 40, 'nosym': True,
+                            'conv_thr': 1e-11, 'mixing_mode': 'local-TF'}
+        creation_dir : posix
+            a posix path to the main working directory
+
+        '''
         with open(template, 'r') as r:
             template_text = r.read()
             py_job_fname = os.path.join(
@@ -588,6 +689,8 @@ class WorkFlow:
             a path to the QE's pseudopotentials main directory
             e.g.
             '/home/mgierad/espresso/pseudo'
+        node_packing_count : int
+            number of cores per node
         balsam_exe_settings : dict{str:int}
             a dictionary with balsam execute parameters (cores, nodes, etc.),
             e.g.
@@ -598,7 +701,8 @@ class WorkFlow:
             a dictionary with parameters to run DFT package. Quantum Espresso
             is used as default, e.g.
 
-            calc_keywords = {'kpts': (3, 3, 1), 'occupations': 'smearing',
+            calc_keywords = {'kpts': (3, 3, 1),
+                            'occupations': 'smearing',
                             'smearing':  'marzari-vanderbilt',
                             'degauss': 0.01, 'ecutwfc': 40, 'nosym': True,
                             'conv_thr': 1e-11, 'mixing_mode': 'local-TF'}
@@ -686,6 +790,8 @@ class WorkFlow:
             a dictionary holding info about particular reaction and key species
             for that reaction
             e.g. {'rxn1': ['O', 'H'], 'rxn2': ['C', 'H']}
+        node_packing_count : int
+            number of cores per node
         creation_dir : posix
             a posix path to the working directory
 
@@ -774,6 +880,8 @@ class WorkFlow:
             a path to the QE's pseudopotentials main directory
             e.g.
             '/home/mgierad/espresso/pseudo'
+        node_packing_count : int
+            number of cores per node
         balsam_exe_settings : dict{str:int}
             a dictionary with balsam execute parameters (cores, nodes, etc.),
             e.g.
@@ -872,6 +980,8 @@ class WorkFlow:
             a path to the QE's pseudopotentials main directory
             e.g.
             '/home/mgierad/espresso/pseudo'
+        node_packing_count : int
+            number of cores per node
         balsam_exe_settings : dict{str:int}
             a dictionary with balsam execute parameters (cores, nodes, etc.),
             e.g.
@@ -973,6 +1083,8 @@ class WorkFlow:
             a path to the QE's pseudopotentials main directory
             e.g.
             '/home/mgierad/espresso/pseudo'
+        node_packing_count : int
+            number of cores per node
         balsam_exe_settings : dict{str:int}
             a dictionary with balsam execute parameters (cores, nodes, etc.),
             e.g.
@@ -989,7 +1101,6 @@ class WorkFlow:
                             'conv_thr': 1e-11, 'mixing_mode': 'local-TF'}
         creation_dir : posix
             a posix path to the main working directory
-
 
         '''
         with open(template, 'r') as r:
@@ -1020,8 +1131,7 @@ class WorkFlow:
 # Submit jobs and execute it #
 ##############################
 
-    def exe(
-            self,
+    def exe(self,
             parent_job,
             job_script,
             facetpath,
@@ -1069,11 +1179,11 @@ class WorkFlow:
         except ValueError:
             workflow_name = facetpath + '_error'
 
+        # special case for big_slab_opt jobs
         if job_script == big_slab_opt:
             workflow_name = facetpath + '_big_slab_opt'
 
         job = os.path.join(job_files_path, job_script)
-
         job_to_add = BalsamJob(
             name=job_script,
             workflow=workflow_name,
@@ -1089,7 +1199,6 @@ class WorkFlow:
         # if there is a parent job, specify dependency
         if parent_job != '':
             from balsam.launcher.dag import add_dependency
-
             try:
                 add_dependency(parent_job, job_to_add)  # parent, child
             except ValueError:
@@ -1097,7 +1206,7 @@ class WorkFlow:
 
                 if parent_job == '01':
                     # a special case for 01 where there is on job script
-                    # for all reactions
+                    # for all reactions for a given facet
                     dependency_workflow_name = os.path.join(
                         facetpath + '_' + dependency + '_')
                 else:
