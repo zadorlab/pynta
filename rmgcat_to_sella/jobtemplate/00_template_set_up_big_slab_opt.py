@@ -26,7 +26,7 @@ WorkFlow().create_big_slab_pyjob(
     pseudo_dir,
     creation_dir)
 
-workflow_name = facetpath + '_00_big_slab_opt'
+workflow_name = facetpath + '_big_slab_opt'
 dependency_workflow_name = facetpath + '_00_'
 
 py_script = os.path.join(facetpath + '_big_slab_opt_job.py')

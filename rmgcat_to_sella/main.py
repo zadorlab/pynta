@@ -112,30 +112,30 @@ ads_surf_opt_script = '01_set_up_ads.py'
 
 class WorkFlow:
 
-    # def __init__(self):
-    #     ''' Setup the balsam application for this workflow run.
+    def __init__(self):
+        ''' Setup the balsam application for this workflow run.
 
-    #         Once we start using QE will want one app for QE,
-    #         one for xtb most likely
-    #     '''
-    #     from balsam.core.models import ApplicationDefinition
-    #     self.myPython, _ = ApplicationDefinition.objects.get_or_create(
-    #         name="python",
-    #         executable=sys.executable
-    #     )
-    #     self.myPython.save()
-    #     self.slab_opt_job = ''
+            Once we start using QE will want one app for QE,
+            one for xtb most likely
+        '''
+        from balsam.core.models import ApplicationDefinition
+        self.myPython, _ = ApplicationDefinition.objects.get_or_create(
+            name="python",
+            executable=sys.executable
+        )
+        self.myPython.save()
+        self.slab_opt_job = ''
 
-    #     # TODO: instead of directly importing EspressoBalsam, we should
-    #     # write a function which returns the appropriate class from
-    #     # balsamcalc.py based on the user-provided input file
-    #     from rmgcat_to_sella.balsamcalc import (
-    #         EspressoBalsam, EspressoBalsamSocketIO
-    #     )
-    #     EspressoBalsam.exe = executable
-    #     EspressoBalsamSocketIO.exe = executable
-    #     EspressoBalsam.create_application()
-    #     EspressoBalsamSocketIO.create_application()
+        # TODO: instead of directly importing EspressoBalsam, we should
+        # write a function which returns the appropriate class from
+        # balsamcalc.py based on the user-provided input file
+        from rmgcat_to_sella.balsamcalc import (
+            EspressoBalsam, EspressoBalsamSocketIO
+        )
+        EspressoBalsam.exe = executable
+        EspressoBalsamSocketIO.exe = executable
+        EspressoBalsam.create_application()
+        EspressoBalsamSocketIO.create_application()
 
     def get_ts_xtb_py_script_list(
             self,
@@ -1056,6 +1056,7 @@ class WorkFlow:
         # get rxn_name from job_script by spliting and joining job_script name
         # exeption for two first jobs
         slab_opt = '00_{}_set_up_slab_opt.py'.format(facetpath)
+        big_slab_opt = '00_{}_set_up_big_slab_opt.py'.format(facetpath)
         ads_surf_opt_script = '01_{}_set_up_ads_on_slab.py'.format(facetpath)
 
         if job_script in [ads_surf_opt_script, slab_opt]:
@@ -1066,6 +1067,9 @@ class WorkFlow:
             workflow_name = facetpath + '_' + job_script[0:2] + '_' + rxn_name
         except ValueError:
             workflow_name = facetpath + '_error'
+
+        if job_script == big_slab_opt:
+            workflow_name = facetpath + '_big_slab_opt'
 
         job = os.path.join(job_files_path, job_script)
 
@@ -1090,9 +1094,9 @@ class WorkFlow:
             except ValueError:
                 dependency = str(parent_job[0:2])
 
-                # a special case for 01 where there is on job script for all
-                # reactions
                 if parent_job == '01':
+                    # a special case for 01 where there is on job script
+                    # for all reactions
                     dependency_workflow_name = os.path.join(
                         facetpath + '_' + dependency + '_')
                 else:
@@ -1129,7 +1133,7 @@ class WorkFlow:
             self,
             facetpath):
         big_slab_opt = '00_{}_set_up_big_slab_opt.py'.format(facetpath)
-        self.big_slab_opt_job = self.exe('', big_slab_opt, facetpath, cores=1)
+        return self.exe('', big_slab_opt, facetpath, cores=1)
 
     def run_opt_surf_and_adsorbate(
             self,
@@ -1424,7 +1428,7 @@ class WorkFlow:
         elif len(big_slab_list) == 1:
             return True
         else:
-            print('No matches found for {} :'
+            print('No matches found for {} '
                   'Big slab optimization required'.format(keyphrase))
             return False
 
@@ -1462,7 +1466,7 @@ class WorkFlow:
                 # If the code cannot locate optimized slab .xyz file,
                 # a slab optimization will be launched.
                 self.run_slab_optimization(facetpath)
-            if self.is_bigslab(facetpath) is False:
+            if self.is_big_slab(facetpath) is False:
                 self.run_big_slab_opt(facetpath)
             # check if species were already calculated
             if all(self.check_all_species(yamlfile, facetpath).values()):
