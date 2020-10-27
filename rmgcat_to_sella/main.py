@@ -252,7 +252,7 @@ class WorkFlow:
         ''' Create a ase pyjob for big slab optimization '''
         with open(pytemplate, 'r') as r:
             pytemplate_text = r.read()
-            py_job = '{}_big_slab_job.py'.format(facetpath)
+            py_job = '{}_big_slab_opt_job.py'.format(facetpath)
             with open(py_job, 'w') as c:
                 c.write(pytemplate_text.format(
                     facetpath=facetpath,

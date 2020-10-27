@@ -42,7 +42,7 @@ job_to_add = BalsamJob(
     application='python',
     args=str(py_script),
     input_files='',
-    user_workdir='aaa',
+    user_workdir=os.getcwd(),
     node_packing_count=node_packing_count,
     ranks_per_node=1,
 )
