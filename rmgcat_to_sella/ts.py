@@ -410,17 +410,24 @@ class TS():
             e.g. 1.0
 
         '''
-        path_to_minima = os.path.join(
-            self.creation_dir, self.facetpath, 'minima')
-
+        # load pytemplate
         with open(pytemplate, 'r') as f:
             pytemplate = f.read()
 
+        # set up path
+        path_to_minima = os.path.join(
+            self.creation_dir, self.facetpath, 'minima')
+
+        # get a dictionary with average distances for all species in
+        # species_list, e.g. {'CO2': 4.14.., 'H': 1.665..., 'O': 1.847...}
         sp_surf_av_dists = self.get_all_av_dists(
             species_list, path_to_minima, scfactor_surface, scaled1)
 
+        # modify the sp_surf_av_dists by taking into account that some species
+        # could be considered more than one times in penalty function calcs
         av_dists_tuple = self.get_av_dists_tuple(
             relevant_species_list, sp_surf_av_dists)
+        print(av_dists_tuple)
 
         ts_estimates_xyz_files = []
         ts_est = Path(ts_estimate_path).glob('*.xyz')
@@ -488,19 +495,16 @@ class TS():
             sp_surf_av_dists):
 
         count = Counter(relevant_species_list)
-        print(sp_surf_av_dists)
 
-        tmp_dict = {}
-
+        av_dists_dict = {}
         for key, value in sp_surf_av_dists.items():
             n = count[key]
             if n > 1:
                 for i in range(1, n):
-                    print(i)
-                    tmp_dict[key + '_' + str(i)] = value
+                    av_dists_dict[key + '_' + str(i)] = value
+            av_dists_dict[key] = value
 
-        sp_surf_av_dists.update(tmp_dict)
-        av_dist_tuple = tuple(sp_surf_av_dists.values())
+        av_dist_tuple = tuple(av_dists_dict.values())
         return av_dist_tuple
 
     def get_all_av_dists(
