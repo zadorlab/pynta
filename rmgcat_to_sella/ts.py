@@ -92,10 +92,15 @@ class TS():
             e.g. 1.0
         pytemplate_xtb : python script
             a template file for penalty function minimization job
-        species_list : list[str]
-            a lists of max 2 species that take
-            part in the reaction
-            e.g. ['O', 'H']
+        species_list : list(str)
+            a list of species which atoms take part in the reaction,
+            i.e. for ['CO2'] ['C'] is taking part in reaction
+            e.g. ['O', 'H'] or ['CO2', 'H']
+        relevant_species_list : list(str)
+            a list of species that are considerd as the reactiong one
+        metal_atom : str
+            a checmical symbol for the surface atoms (only metallic surfaces
+            are allowed)
         scaled1 : bool
             specify whether use the optional scfactor_surface
             for the species 1 (sp1)
@@ -360,14 +365,10 @@ class TS():
             sorted(os.listdir(ts_estimate_path))
         ):
             prefix = str(prefix).zfill(3)
-            oldfname = os.path.join(ts_estimate_path, noneqsites)
-            newfname = os.path.join(
+            old_fname = os.path.join(ts_estimate_path, noneqsites)
+            new_fname = os.path.join(
                 ts_estimate_path, prefix + noneqsites[3:])
-            os.rename(oldfname, newfname)
-
-    def get_average_distance_all(self, species, geom_path):
-        # probably do not need it or already have it somewhere else - check
-        raise NotImplementedError
+            os.rename(old_fname, new_fname)
 
     def set_up_penalty_xtb(
             self,
@@ -394,9 +395,14 @@ class TS():
         pytemplate : python script
             a template for the penalty function calculations
         species_list : list(str)
-            a list of max 2 species that take part in the reaction
+            a list of species which atoms take part in the reaction,
+            i.e. for ['CO2'] ['C'] is taking part in reaction
             e.g. ['O', 'H'] or ['CO2', 'H']
-            TODO: remove this limitation
+        relevant_species_list : list(str)
+            a list of species that are considerd as the reactiong one
+        metal_atom : str
+            a checmical symbol for the surface atoms (only metallic surfaces
+            are allowed)
         scaled1 : bool
             specify whether use the optional scfactor_surface
             for the species 1 (sp1)
@@ -447,13 +453,13 @@ class TS():
 
         # create surface_atoms_idx dict with all surface atoms and theirs
         # corresponding indicies
-        surface_atoms_idx = {
+        surface_atoms_idxs = {
             atom.symbol + '_' + str(atom.index): atom.index
             for atom in tmp_ts_atom if atom.symbol == metal_atom}
 
         # create adsorbate_atoms_idx dict with all adsorbate atoms and theirs
         # corresponding indicies
-        adsorbate_atoms_idx = {
+        adsorbate_atoms_idxs = {
             atom.symbol + '_' + str(atom.index): atom.index
             for atom in tmp_ts_atom if atom.symbol != metal_atom}
 
@@ -466,10 +472,10 @@ class TS():
             # Loop through all relevant_species
             for species in relevant_species_list:
                 sp_index = self.get_sp_index(
-                    species, visited_species, adsorbate_atoms_idx)
+                    species, visited_species, adsorbate_atoms_idxs)
 
                 metal_index = self.get_index_surface_atom(
-                    sp_index, surface_atoms_idx, xyz_file)
+                    sp_index, surface_atoms_idxs, xyz_file)
 
                 bonds.append((sp_index, metal_index))
 
@@ -499,7 +505,7 @@ class TS():
             self,
             species,
             visited_species,
-            adsorbate_atoms_idx):
+            adsorbate_atoms_idxs):
         '''Count how many times the given species have been already considered
 
             e.g. If relevant_species_list = ['O', 'O'] the logic below
@@ -513,7 +519,7 @@ class TS():
             e.g. 'H', 'C' or 'O', etc.
         visited_species : list(str)
             a list holding all species that have been already visited
-        adsorbate_atoms_idx : dict(str:int)
+        adsorbate_atoms_idxs : dict(str:int)
             a dictionary with all adsorbate atoms and theirs corresponding
             indicies
 
@@ -528,7 +534,7 @@ class TS():
             if key not found in adsorbate_atoms_idx
 
         '''
-        sp_index = self.get_index_adatom(species, adsorbate_atoms_idx)
+        sp_index = self.get_index_adatom(species, adsorbate_atoms_idxs)
 
         if species in visited_species:
             _count = visited_species.count(species)
@@ -537,12 +543,12 @@ class TS():
         else:
             visited_species.append(species)
         if not self.is_valid_sp_index(species, sp_index,
-                                      adsorbate_atoms_idx):
+                                      adsorbate_atoms_idxs):
             print('Index {} is not a valid index for a species {}. \n'
                   'Check your relevant_species definition \n'
                   ''.format(sp_index, species))
             print('The folowing indicies are possible: \n     {}'.format(
-                adsorbate_atoms_idx))
+                adsorbate_atoms_idxs))
             raise KeyError
         return sp_index
 
@@ -550,7 +556,7 @@ class TS():
             self,
             species,
             sp_index,
-            adsorbate_atoms_idx):
+            adsorbate_atoms_idxs):
         ''' Return True if given sp_index is possible for a given species
 
         Parameters
@@ -560,7 +566,7 @@ class TS():
             e.g. 'H', 'C' or 'O', etc.
         sp_index : int
             an index for a given species
-        adsorbate_atoms_idx : dict(str:int)
+        adsorbate_atoms_idxs : dict(str:int)
             a dictionary with all adsorbate atoms and theirs corresponding
             indicies
 
@@ -573,7 +579,7 @@ class TS():
         '''
         key = species + '_' + str(sp_index)
         try:
-            adsorbate_atoms_idx[key]
+            adsorbate_atoms_idxs[key]
             return True
         except KeyError:
             return False
@@ -630,7 +636,8 @@ class TS():
         Parameters
         ----------
         species_list : list(str)
-            a list of max 2 species that take part in the reaction
+            a list of species which atoms take part in the reaction,
+            i.e. for ['CO2'] ['C'] is taking part in reaction
             e.g. ['O', 'H'] or ['CO2', 'H']
         minima_dir : str
             a path to minima directory
@@ -706,7 +713,7 @@ class TS():
 
         # get unique minima prefixes
         unique_minima_prefixes = self.get_unique_minima_prefixes_after_opt(
-            path_to_minima, species)
+            path_to_species)
         path_to_tmp_traj = os.path.join(path_to_species, '00.traj')
         tmp_traj = read(path_to_tmp_traj)
 
@@ -743,19 +750,15 @@ class TS():
 
     def get_unique_minima_prefixes_after_opt(
             self,
-            path_to_minima,
-            species):
+            path_to_species):
         ''' Get the prefixes of the symmetrically distinct minima
         for a given species
 
         Parameters:
         ___________
-        path_to_minima : str
-            a path to minima
-            e.g. 'Cu_111/minima'
-        species : str
-            a species symbol
-            e.g. 'H' or 'CO'
+        path_to_species : str
+            a path to species
+            e.g. 'Cu_111/minima/CO'
 
         Returns:
         ________
@@ -768,7 +771,6 @@ class TS():
         good_minima = []
         result_list = []
         unique_minima_prefixes = []
-        path_to_species = os.path.join(path_to_minima, species)
         trajlist = sorted(Path(path_to_species).glob('*final.xyz'), key=str)
         for traj in trajlist:
             minima = read(traj)
@@ -782,46 +784,6 @@ class TS():
             if result is False:
                 unique_minima_prefixes.append(str(prefix).zfill(2))
         return unique_minima_prefixes
-
-    def copy_minimas_prev_calculated(
-            self,
-            current_dir,
-            species_list,
-            minima_dir):
-        ''' If minimas have been already calculated in different set of
-         reactions, they are copied to the current workflow and used instead
-         of calculating it again
-
-        Parameters
-        __________
-
-        current_dir : str
-            a path to the current directory
-            e.g './Cu_111'
-        species_list : list(str)
-            a list of max 2 species that take part in the reaction
-            e.g. ['O', 'H'] or ['CO2', 'H']
-        minima_dir : str
-            a path to minima directory
-            e.g. Cu_111/minima
-
-        '''
-        for species in species_list:
-            is_it_calculated = WorkFlow().check_if_minima_already_calculated(
-                current_dir, species, self.facetpath)
-            if is_it_calculated[0] is False:
-                pass
-            else:
-                try:
-                    _, copy_path_dft, copy_path_outfiles = is_it_calculated
-                    dst_dir = os.path.join(minima_dir, species)
-                    # copy DFT files
-                    shutil.copytree(copy_path_dft, dst_dir)
-                    # copy Sella's .out files
-                    for outfile in copy_path_outfiles:
-                        shutil.copy2(outfile, minima_dir)
-                except FileExistsError:
-                    raise FileExistsError('Files already copied')
 
     def create_unique_ts_all(
             self,
@@ -1074,7 +1036,7 @@ class TS():
     def get_index_surface_atom(
             self,
             sp_index,
-            surface_atoms_idx,
+            surface_atoms_idxs,
             geom):
         ''' Specify adsorbate atom symbol and index of the nearest metal atom
             will be returned.
@@ -1093,19 +1055,19 @@ class TS():
             index of the metal atom to which ads_atom is bonded
 
         '''
-        surface_atoms_idx_list = list(surface_atoms_idx.values())
+        surface_atoms_idxs_list = list(surface_atoms_idxs.values())
 
         ts_est_atom = read(geom)
 
         all_dist_surface_adsorbate = ts_est_atom.get_distances(
-            sp_index, surface_atoms_idx_list)
+            sp_index, surface_atoms_idxs_list)
 
         min_dist_surface_adsorbate = min(all_dist_surface_adsorbate)
         # get index of the surface atom for which distance to adsorbate is the
         # lowest
         index = np.where(all_dist_surface_adsorbate
                          == min_dist_surface_adsorbate)
-        return surface_atoms_idx_list[index[0][0]]
+        return surface_atoms_idxs_list[index[0][0]]
 
     def check_symm(
             self,
