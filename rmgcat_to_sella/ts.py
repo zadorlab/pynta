@@ -538,6 +538,38 @@ class TS():
             path_to_minima,
             scfactor_surface,
             scaled1):
+        ''' Get a dictionary with average distances for all species in
+            species_list
+
+        Parameters
+        ----------
+        species_list : list(str)
+            a list of max 2 species that take part in the reaction
+            e.g. ['O', 'H'] or ['CO2', 'H']
+        minima_dir : str
+            a path to minima directory
+            e.g. Cu_111/minima
+        path_to_minima : str
+            a path to minima
+            e.g. 'Cu_111/minima'
+        scfactor_surface : float
+            a scaling factor to scale the target bond distance, i.e.
+            the average distance between adsorbed atom and the nearest
+            surface atom. Helpful e.g. when H is far away form the surface
+            in TS, whereas for minima it is close to the surface
+            e.g. 1.0
+        scaled : bool
+            specify whether to use the optional scfactor_surface
+            for the given species
+            default = False
+
+        Returns
+        -------
+        sp_surf_av_dists : dict(str:float)
+            a dictionary with keys being species name and average distances
+            as values
+
+        '''
         sp_surf_av_dists = {}
         for species in species_list:
             av_dist = self.get_av_dist(
