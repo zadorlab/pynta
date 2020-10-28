@@ -699,8 +699,8 @@ class TS():
         adsorbate_atoms_indices = []
         all_dists = []
         IO().get_xyz_from_traj(path_to_minima, species)
-        species_path = os.path.join(path_to_minima, species)
-        # treat the special cases
+        path_to_species = os.path.join(path_to_minima, species)
+        # for the special cases
         if species in ['CH3O', 'CH2O']:
             species = 'O'
         # deal with the multiatomic molecules and look only for the surface
@@ -711,14 +711,14 @@ class TS():
             # for one atomic species it is trivial
             sp_bonded = species
         # get unique minima indices
-        unique_minima_indices = self.get_unique_minima_indicies_after_opt(
+        unique_minima_prefixes = self.get_unique_minima_prefixes_after_opt(
             path_to_minima, species
         )
         # go through all indices of *final.xyz file
         # e.g. 00_final.xyz, 01_final.xyz
-        for index in unique_minima_indices:
+        for index in unique_minima_prefixes:
             paths_to_uniq_minima_final_xyz = Path(
-                species_path).glob('{}*final.xyz'.format(index))
+                path_to_species).glob('{}*final.xyz'.format(index))
             for unique_minimum_final_xyz in paths_to_uniq_minima_final_xyz:
                 unique_minimum_atom = read(unique_minimum_final_xyz)
                 # open the *final.xyz file as xyz_file
@@ -743,19 +743,20 @@ class TS():
                 # and the surface
                 dist = float(min(unique_minimum_atom.get_distances(
                     adsorbate_atoms_indices[0], surface_atoms_indices)))
-            all_dists.append(dist)
+                all_dists.append(dist)
         # apply scaling factor if required
         if scaled:
             av_dist = mean(all_dists) * scfactor_surface
         else:
             av_dist = mean(all_dists)
+        print('{} : {}'.format(species, av_dist))
         return av_dist
 
-    def get_unique_minima_indicies_after_opt(
+    def get_unique_minima_prefixes_after_opt(
             self,
             path_to_minima,
             species):
-        ''' Get the indicies of the symmetrically distinct minima
+        ''' Get the prefixes of the symmetrically distinct minima
         for a given species
 
         Parameters:
@@ -770,14 +771,14 @@ class TS():
         Returns:
         ________
 
-        unique_minima_indices : list(str)
+        unique_minima_prefixes : list(str)
             a list with indecies of all unique minima for a given species
             e.g. ['01', '02', '04']
 
         '''
         good_minima = []
         result_list = []
-        unique_minima_indices = []
+        unique_minima_prefixes = []
         path_to_species = os.path.join(path_to_minima, species)
         trajlist = sorted(Path(path_to_species).glob('*final.xyz'), key=str)
         for traj in trajlist:
@@ -790,8 +791,8 @@ class TS():
                 good_minima.append(minima)
         for prefix, result in enumerate(result_list):
             if result is False:
-                unique_minima_indices.append(str(prefix).zfill(2))
-        return unique_minima_indices
+                unique_minima_prefixes.append(str(prefix).zfill(2))
+        return unique_minima_prefixes
 
     def copy_minimas_prev_calculated(
             self,
