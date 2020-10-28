@@ -35,14 +35,14 @@ class LowLevelRestart():
         for minimum in unfinished_minima:
             metal_symbol, facet, species, prefix, _ = minimum.split('_')
             facetpath = metal_symbol + '_' + facet
-            path_to_minima_traj = os.path.join(
+            path_to_species = os.path.join(
                 facetpath, 'minima', species, prefix)
             new_xyz_fname = os.path.join(
-                path_to_minima_traj + '_new.xyz')
-            try:
-                minima_traj_atom = read(path_to_minima_traj + '.traj')
-                write(new_xyz_fname, minima_traj_atom)
+                path_to_species + '.xyz')
 
+            try:
+                atom_traj_file = read(path_to_species + '.traj')
+                write(new_xyz_fname, atom_traj_file)
             except UnknownFileTypeError:
                 continue
 
