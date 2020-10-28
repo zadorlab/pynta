@@ -582,11 +582,32 @@ class TS():
             species,
             visited_species,
             adsorbate_atoms_idx):
-        ''' Count how many times the given species have been already considered
-            e.g. if relevant_species_list = ['O', 'O'] the logic below
+        '''Count how many times the given species have been already considered
+
+            e.g. If relevant_species_list = ['O', 'O'] the logic below
             will return the correct index for the second 'O', calculated as
             index of the first 'O' + how many times 'O's already analyzed
 
+        Parameters
+        ----------
+        species : str
+            a species symbol
+            e.g. 'H', 'C' or 'O', etc.
+        visited_species : list(str)
+            a list holding all species that have been already visited
+        adsorbate_atoms_idx : dict(str:int)
+            a dictionary with all adsorbate atoms and theirs corresponding
+            indicies
+
+        Returns
+        -------
+        sp_index : int
+            an index for a given species
+
+        Raises
+        ------
+        KeyError
+            if key not found in adsorbate_atoms_idx
         '''
         sp_index = self.get_index_adatom(species, adsorbate_atoms_idx)
 
@@ -618,10 +639,6 @@ class TS():
             return True
         except KeyError:
             return False
-        # for k, v in adsorbate_atoms_idx.items():
-        #     if k.startswith(species) and v == sp_index:
-        #         return True
-        #     return False
 
     def get_av_dist(
             self,
