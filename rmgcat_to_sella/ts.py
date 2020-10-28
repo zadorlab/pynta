@@ -427,7 +427,7 @@ class TS():
 
         # get a dictionary with average distances for all species in
         # species_list, e.g. {'CO2': 4.14.., 'H': 1.665..., 'O': 1.847...}
-        sp_surf_av_dists = self.get_all_av_dists(
+        sp_surf_av_dists = self.get_av_dists_dict(
             species_list, metal_atom, path_to_minima, scfactor_surface,
             scaled1)
 
@@ -498,7 +498,7 @@ class TS():
                                           prefix=prefix,
                                           geom_name=f_name_xyz,
                                           slabopt=self.slab))
-            # move .xyz files
+            # move .xyz file
             shutil.move(xyz_file, calc_dir)
 
     def get_sp_index(
@@ -623,7 +623,7 @@ class TS():
         av_dist_tuple = tuple(av_dists_dict.values())
         return av_dist_tuple
 
-    def get_all_av_dists(
+    def get_av_dists_dict(
             self,
             species_list,
             metal_atom,
@@ -677,7 +677,7 @@ class TS():
             metal_atom,
             scfactor_surface,
             scaled=False):
-        ''' Get the average bond distance between adsorbate atom and
+        ''' Get the average bond distance between a given adsorbate atom and
         the nearest surface atom for all symmetrically distinct minima
 
         Parameters:
