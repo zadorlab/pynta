@@ -9,6 +9,8 @@ from rmgcat_to_sella.io import IO
 from ase.io import read, write
 from ase.utils.structure_comparator import SymmetryEquivalenceCheck
 
+from collections import Counter
+
 import numpy as np
 import os
 import shutil
@@ -414,15 +416,11 @@ class TS():
         with open(pytemplate, 'r') as f:
             pytemplate = f.read()
 
-        average_distance_list = []
-        for species in species_list:
-            # get a list with the average distances (only symmetrically
-            # distinct sites considered) for all species. It can be done
-            # outside the nested loop (where sp_index and M_indes is),
-            # as it is enough to calculate it only once.
-            av_dist = self.get_av_dist(path_to_minima, species,
-                                       scfactor_surface, scaled1)
-            average_distance_list.append(av_dist)
+        sp_surf_av_dists = self.get_all_av_dists(
+            species_list, path_to_minima, scfactor_surface, scaled1)
+
+        av_dists_tuple = self.get_av_dists_tuple(
+            relevant_species_list, sp_surf_av_dists)
 
         ts_estimates_xyz_files = []
         ts_est = Path(ts_estimate_path).glob('*.xyz')
@@ -451,7 +449,7 @@ class TS():
             bonds = []
             visited_species = []
 
-            # loop through all species
+            # loop through all relevant_species
             for species in relevant_species_list:
                 sp_index = self.get_sp_index(
                     species, visited_species, adsorbate_atoms_idx)
@@ -462,7 +460,7 @@ class TS():
                 bonds.append((sp_index, metal_index))
 
             # set up variables
-            av_dists_tuple = tuple(average_distance_list)
+            # av_dists_tuple = tuple(sp_surf_av_dists.values())
             prefix = str(prefix).zfill(3)
             calc_dir = os.path.join(ts_estimate_path, prefix)
             os.makedirs(calc_dir, exist_ok=True)
@@ -483,6 +481,40 @@ class TS():
                                           slabopt=self.slab))
             # move .xyz files
             shutil.move(xyz_file, calc_dir)
+
+    def get_av_dists_tuple(
+            self,
+            relevant_species_list,
+            sp_surf_av_dists):
+
+        count = Counter(relevant_species_list)
+        print(sp_surf_av_dists)
+
+        tmp_dict = {}
+
+        for key, value in sp_surf_av_dists.items():
+            n = count[key]
+            if n > 1:
+                for i in range(1, n):
+                    print(i)
+                    tmp_dict[key + '_' + str(i)] = value
+
+        sp_surf_av_dists.update(tmp_dict)
+        av_dist_tuple = tuple(sp_surf_av_dists.values())
+        return av_dist_tuple
+
+    def get_all_av_dists(
+            self,
+            species_list,
+            path_to_minima,
+            scfactor_surface,
+            scaled1):
+        sp_surf_av_dists = {}
+        for species in species_list:
+            av_dist = self.get_av_dist(
+                path_to_minima, species, scfactor_surface, scaled1)
+            sp_surf_av_dists[species] = av_dist
+        return sp_surf_av_dists
 
     def get_sp_index(
             self,
