@@ -9,20 +9,6 @@ class Show():
         self.ase_jobs = BalsamJob.objects.filter(
             application__contains='python')
 
-    def restart(self):
-        ''' Prepare all unfinished jobs to restart
-
-        '''
-        # remove all balsam calculator objects
-        BalsamJob.objects.filter(name__contains='balsam',
-                                 workflow='QE_Socket').delete()
-
-        # update state of every not finished jobs to 'READY'
-        for job in self.ase_jobs:
-            if job.state not in ['JOB_FINISHED', 'AWAITING_PARENTS']:
-                job.state = 'READY'
-                job.save()
-
     def how_many_still_running(self):
         ''' Show how many jobs required restart
 
