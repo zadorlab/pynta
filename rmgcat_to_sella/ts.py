@@ -497,7 +497,28 @@ class TS():
             self,
             relevant_species_list,
             sp_surf_av_dists):
+        ''' Create a av_dists_tuple with all relevant average bond distances.
 
+            This method loops through sp_surf_av_dists dictionary. If
+            particular key exists n > 1 times in relevant_species_list, this
+            entry is added n times to a new dictionary. Otherwise, a new
+            dictionary is updated with the keys and values of sp_surf_av_dists.
+            At the end, the valuses of the new dict are transformed into tuple
+
+        Parameters
+        ----------
+        relevant_species_list : list(str)
+            a list of species that are considerd as the reactiong one
+        sp_surf_av_dists : dict(str:float)
+            a dictionary with keys being species name and average distances
+            as values
+
+        Returns
+        -------
+        av_dist_tuple : tuple
+            a tuple with all relevant average bond distances
+
+        '''
         count = Counter(relevant_species_list)
 
         av_dists_dict = {}
