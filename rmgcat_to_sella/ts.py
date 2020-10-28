@@ -414,7 +414,7 @@ class TS():
         with open(pytemplate, 'r') as f:
             pytemplate = f.read()
 
-        # set up path
+        # set up path to optimized minima files
         path_to_minima = os.path.join(
             self.creation_dir, self.facetpath, 'minima')
 
@@ -423,40 +423,45 @@ class TS():
         sp_surf_av_dists = self.get_all_av_dists(
             species_list, path_to_minima, scfactor_surface, scaled1)
 
-        # modify the sp_surf_av_dists by taking into account that some species
-        # could be considered more than one times in penalty function calcs
+        # convert sp_surf_av_dists dict to a tuple and take into accout that
+        # the same type of species can be included into penalty function
+        # calculations many times, e.g. ['C', 'H', 'O', 'O'], so the av_dist
+        # for the 'O' have to be specified twice (order not important)
         av_dists_tuple = self.get_av_dists_tuple(
             relevant_species_list, sp_surf_av_dists)
-        print(av_dists_tuple)
 
+        # get all .xyz files with TS estimates
         ts_estimates_xyz_files = []
         ts_est = Path(ts_estimate_path).glob('*.xyz')
         for ts in ts_est:
             ts_estimates_xyz_files.append(str(ts))
 
-        # get all ts_estimatex_xyz files in alphabetic order
+        # sort it in increasing order
         ts_estimates_xyz_files = sorted(ts_estimates_xyz_files)
 
         # take a first file and use it as a template to get info about
         # surface atom and adsorbate atoms indices
         tmp_ts_atom = read(ts_estimates_xyz_files[0])
 
-        # create surface_atoms_idx dict with all surface atoms and its idx
+        # create surface_atoms_idx dict with all surface atoms and theirs
+        # corresponding indicies
         surface_atoms_idx = {
             atom.symbol + '_' + str(atom.index): atom.index
             for atom in tmp_ts_atom if atom.symbol == metal_atom}
 
-        # create adsorbate_atoms_idx dict with all adsorbate atoms and its idx
+        # create adsorbate_atoms_idx dict with all adsorbate atoms and theirs
+        # corresponding indicies
         adsorbate_atoms_idx = {
             atom.symbol + '_' + str(atom.index): atom.index
             for atom in tmp_ts_atom if atom.symbol != metal_atom}
 
-        # loop through all .xyz files
+        # Main loop #
+        # Loop through all .xyz files
         for prefix, xyz_file in enumerate(ts_estimates_xyz_files):
             bonds = []
             visited_species = []
 
-            # loop through all relevant_species
+            # Loop through all relevant_species
             for species in relevant_species_list:
                 sp_index = self.get_sp_index(
                     species, visited_species, adsorbate_atoms_idx)
@@ -466,8 +471,7 @@ class TS():
 
                 bonds.append((sp_index, metal_index))
 
-            # set up variables
-            # av_dists_tuple = tuple(sp_surf_av_dists.values())
+            # set up some variables
             prefix = str(prefix).zfill(3)
             calc_dir = os.path.join(ts_estimate_path, prefix)
             os.makedirs(calc_dir, exist_ok=True)
