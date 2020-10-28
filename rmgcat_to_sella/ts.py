@@ -681,6 +681,9 @@ class TS():
         species : str
             a species symbol
             e.g. 'H' or 'CO'
+        metal_atom : str
+            a checmical symbol for the surface atoms (only metallic surfaces
+            are allowed)
         scfactor_surface : float
             a scaling factor to scale the target bond distance, i.e.
             the average distance between adsorbed atom and the nearest
@@ -700,28 +703,10 @@ class TS():
 
         '''
         path_to_species = os.path.join(path_to_minima, species)
-        # convert .traj to .xyz for a given species
-        IO().get_xyz_from_traj(path_to_species)
-        surface_atoms_indices = []
-        adsorbate_atoms_indices = []
-        all_dists = []
 
-        # # for the special cases
-        # if species in ['CH3O', 'CH2O']:
-        #     species = 'O'
-        # # deal with the multiatomic molecules and look only for the surface
-        # # bonded atom
-        # if len(species) > 1:
-        #     sp_bonded = species[:1]
-        # else:
-        #     # for one atomic species it is trivial
-        #     sp_bonded = species
-
-        # get unique minima indices
+        # get unique minima prefixes
         unique_minima_prefixes = self.get_unique_minima_prefixes_after_opt(
             path_to_minima, species)
-        # go through all indices of *final.xyz file
-        # e.g. 00_final.xyz, 01_final.xyz
         path_to_tmp_traj = os.path.join(path_to_species, '00.traj')
         tmp_traj = read(path_to_tmp_traj)
 
@@ -733,16 +718,23 @@ class TS():
             for atom in tmp_traj if atom.symbol != metal_atom}
 
         all_dists_bonded = []
+        # loop through all unique traj files, e.g. 00.traj, 01.traj ...
         for index in unique_minima_prefixes:
             path_to_unique_minima_traj = os.path.join(
                 path_to_species, '{}.traj'.format(index))
             uq_species_atom = read(path_to_unique_minima_traj)
             ads_atom_surf_dist = {}
             for key, ads_atom_idx in adsorbate_atom_idxs.items():
+                # create a dict storing the shortest distance between given
+                # adsorbate index atom and surface atoms
                 ads_atom_surf_dist[key] = min(uq_species_atom.get_distances(
                     ads_atom_idx, surface_atom_idxs))
+            # the shortest distance in bonded_ads_atom_surf_dist.values()
+            # is considered as a distance between atom bonded to the surface
+            # and the surface
             bonded_ads_atom_surf_dist = min(ads_atom_surf_dist.values())
             all_dists_bonded.append(bonded_ads_atom_surf_dist)
+        # apply the scalling factor
         if scaled:
             av_dist = mean(all_dists_bonded) * scfactor_surface
         else:
