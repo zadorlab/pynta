@@ -493,6 +493,89 @@ class TS():
             # move .xyz files
             shutil.move(xyz_file, calc_dir)
 
+    def get_sp_index(
+            self,
+            species,
+            visited_species,
+            adsorbate_atoms_idx):
+        '''Count how many times the given species have been already considered
+
+            e.g. If relevant_species_list = ['O', 'O'] the logic below
+            will return the correct index for the second 'O', calculated as
+            index of the first 'O' + how many times 'O's already analyzed
+
+        Parameters
+        ----------
+        species : str
+            a species symbol
+            e.g. 'H', 'C' or 'O', etc.
+        visited_species : list(str)
+            a list holding all species that have been already visited
+        adsorbate_atoms_idx : dict(str:int)
+            a dictionary with all adsorbate atoms and theirs corresponding
+            indicies
+
+        Returns
+        -------
+        sp_index : int
+            an index for a given species
+
+        Raises
+        ------
+        KeyError
+            if key not found in adsorbate_atoms_idx
+
+        '''
+        sp_index = self.get_index_adatom(species, adsorbate_atoms_idx)
+
+        if species in visited_species:
+            _count = visited_species.count(species)
+            visited_species.append(species)
+            sp_index = sp_index + _count
+        else:
+            visited_species.append(species)
+        if not self.is_valid_sp_index(species, sp_index,
+                                      adsorbate_atoms_idx):
+            print('Index {} is not a valid index for a species {}. \n'
+                  'Check your relevant_species definition \n'
+                  ''.format(sp_index, species))
+            print('The folowing indicies are possible: \n     {}'.format(
+                adsorbate_atoms_idx))
+            raise KeyError
+        return sp_index
+
+    def is_valid_sp_index(
+            self,
+            species,
+            sp_index,
+            adsorbate_atoms_idx):
+        ''' Return True if given sp_index is possible for a given species
+
+        Parameters
+        ----------
+        species : str
+            a species symbol
+            e.g. 'H', 'C' or 'O', etc.
+        sp_index : int
+            an index for a given species
+        adsorbate_atoms_idx : dict(str:int)
+            a dictionary with all adsorbate atoms and theirs corresponding
+            indicies
+
+        Returns
+        -------
+        bool
+            True if given sp_index is possible for a given species.
+            False otherwise
+
+        '''
+        key = species + '_' + str(sp_index)
+        try:
+            adsorbate_atoms_idx[key]
+            return True
+        except KeyError:
+            return False
+
     def get_av_dists_tuple(
             self,
             relevant_species_list,
@@ -576,69 +659,6 @@ class TS():
                 path_to_minima, species, scfactor_surface, scaled1)
             sp_surf_av_dists[species] = av_dist
         return sp_surf_av_dists
-
-    def get_sp_index(
-            self,
-            species,
-            visited_species,
-            adsorbate_atoms_idx):
-        '''Count how many times the given species have been already considered
-
-            e.g. If relevant_species_list = ['O', 'O'] the logic below
-            will return the correct index for the second 'O', calculated as
-            index of the first 'O' + how many times 'O's already analyzed
-
-        Parameters
-        ----------
-        species : str
-            a species symbol
-            e.g. 'H', 'C' or 'O', etc.
-        visited_species : list(str)
-            a list holding all species that have been already visited
-        adsorbate_atoms_idx : dict(str:int)
-            a dictionary with all adsorbate atoms and theirs corresponding
-            indicies
-
-        Returns
-        -------
-        sp_index : int
-            an index for a given species
-
-        Raises
-        ------
-        KeyError
-            if key not found in adsorbate_atoms_idx
-        '''
-        sp_index = self.get_index_adatom(species, adsorbate_atoms_idx)
-
-        if species in visited_species:
-            _count = visited_species.count(species)
-            visited_species.append(species)
-            sp_index = sp_index + _count
-        else:
-            visited_species.append(species)
-        if not self.is_valid_sp_index(species, sp_index,
-                                      adsorbate_atoms_idx):
-            print('Index {} is not a valid index for a species {}. \n'
-                  'Check your relevant_species definition \n'
-                  ''.format(sp_index, species))
-            print('The folowing indicies are possible: \n     {}'.format(
-                adsorbate_atoms_idx))
-            raise KeyError
-        return sp_index
-
-    def is_valid_sp_index(
-            self,
-            species,
-            sp_index,
-            adsorbate_atoms_idx):
-        ''' Return True if given sp_index is possible for a given species '''
-        key = species + '_' + str(sp_index)
-        try:
-            adsorbate_atoms_idx[key]
-            return True
-        except KeyError:
-            return False
 
     def get_av_dist(
             self,
