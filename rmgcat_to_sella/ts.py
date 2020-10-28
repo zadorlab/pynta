@@ -926,7 +926,6 @@ class TS():
             a dictionary with keywords to Quantum Espresso calculations
 
         '''
-
         ts_estimate_unique_path = ts_estimate_path + '_unique'
 
         with open(pytemplate, 'r') as f:
