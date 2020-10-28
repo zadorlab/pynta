@@ -126,9 +126,9 @@ class TS():
             p_name_list,
             images)
 
-        # self.filtered_out_equiv_ts_estimate(
-        #     ts_estimate_path,
-        #     rxn_name)
+        self.filtered_out_equiv_ts_estimate(
+            ts_estimate_path,
+            rxn_name)
 
         self.set_up_penalty_xtb(
             ts_estimate_path,
