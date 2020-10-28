@@ -23,6 +23,16 @@ class LowLevelRestart():
         return all_unfinished
 
     def get_minima_to_restart(self):
+        ''' Go through all_unfinished dictionary and createa a list with all
+            minima ase jobs that requires restart.
+
+        Returns
+        -------
+        unfinished_minima : list(str)
+            a list with all *py files for minima optimization which
+            did not finished
+
+        '''
         # all_unfinished = self.get_jobs_to_restart()
         unfinished_minima = []
         for key in all_unfinished.keys():
@@ -31,6 +41,13 @@ class LowLevelRestart():
         return unfinished_minima
 
     def prepare_minima_to_restart(self):
+        ''' If there is at least one optimization step in a .traj file
+            for a given minima, this method will create a new *.xyz file for
+            that job from the last converged opt step.
+            So, when HighLevelRestart is executed, the optimization can resume
+            from the last converged step, taking advantade of previous calcs.
+
+        '''
         unfinished_minima = self.get_minima_to_restart()
         for minimum in unfinished_minima:
             metal_symbol, facet, species, prefix, _ = minimum.split('_')
@@ -41,9 +58,12 @@ class LowLevelRestart():
                 path_to_species + '.xyz')
 
             try:
+                # try convert last step in *traj file to a new .xyz file
                 atom_traj_file = read(path_to_species + '.traj')
                 write(new_xyz_fname, atom_traj_file)
             except UnknownFileTypeError:
+                # continue if *traj file is empty
+                # hard HighLevelRestart required
                 continue
 
 
