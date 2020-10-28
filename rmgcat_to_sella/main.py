@@ -54,6 +54,7 @@ else:
     scfactor_surface = inputR2S.scfactor_surface
     scaled1 = inputR2S.scaled1
     scaled2 = inputR2S.scaled2
+    relevant_species_list = inputR2S.relevant_species_list
     species_dict = IO().get_species_dict(check_yaml)
     executable = inputR2S.executable
     node_packing_count = inputR2S.node_packing_count
@@ -827,6 +828,7 @@ class WorkFlow:
                     metal_atom=metal_atom,
                     scaled1=scaled1,
                     scaled2=scaled2,
+                    relevant_species_list=relevant_species_list,
                     creation_dir=creation_dir,
                     rxn=rxn,
                     rxn_name=rxn_name,
