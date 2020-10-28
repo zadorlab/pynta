@@ -1,3 +1,4 @@
+from sys import path
 from rmgcat_to_sella.excatkit.gratoms import Gratoms
 from rmgcat_to_sella.excatkit.adsorption import Builder
 from rmgcat_to_sella.excatkit.molecule import Molecule
@@ -421,7 +422,8 @@ class TS():
         # get a dictionary with average distances for all species in
         # species_list, e.g. {'CO2': 4.14.., 'H': 1.665..., 'O': 1.847...}
         sp_surf_av_dists = self.get_all_av_dists(
-            species_list, path_to_minima, scfactor_surface, scaled1)
+            species_list, metal_atom, path_to_minima, scfactor_surface,
+            scaled1)
 
         # convert sp_surf_av_dists dict to a tuple and take into accout that
         # the same type of species can be included into penalty function
@@ -618,6 +620,7 @@ class TS():
     def get_all_av_dists(
             self,
             species_list,
+            metal_atom,
             path_to_minima,
             scfactor_surface,
             scaled1):
@@ -656,7 +659,7 @@ class TS():
         sp_surf_av_dists = {}
         for species in species_list:
             av_dist = self.get_av_dist(
-                path_to_minima, species, scfactor_surface, scaled1)
+                path_to_minima, species, metal_atom, scfactor_surface, scaled1)
             sp_surf_av_dists[species] = av_dist
         return sp_surf_av_dists
 
@@ -664,6 +667,7 @@ class TS():
             self,
             path_to_minima,
             species,
+            metal_atom,
             scfactor_surface,
             scaled=False):
         ''' Get the average bond distance between adsorbate atom and
@@ -695,61 +699,54 @@ class TS():
             surface atom for all symmetrically dictinct minima
 
         '''
+        path_to_species = os.path.join(path_to_minima, species)
+        # convert .traj to .xyz for a given species
+        IO().get_xyz_from_traj(path_to_species)
         surface_atoms_indices = []
         adsorbate_atoms_indices = []
         all_dists = []
-        IO().get_xyz_from_traj(path_to_minima, species)
-        path_to_species = os.path.join(path_to_minima, species)
-        # for the special cases
-        if species in ['CH3O', 'CH2O']:
-            species = 'O'
-        # deal with the multiatomic molecules and look only for the surface
-        # bonded atom
-        if len(species) > 1:
-            sp_bonded = species[:1]
-        else:
-            # for one atomic species it is trivial
-            sp_bonded = species
+
+        # # for the special cases
+        # if species in ['CH3O', 'CH2O']:
+        #     species = 'O'
+        # # deal with the multiatomic molecules and look only for the surface
+        # # bonded atom
+        # if len(species) > 1:
+        #     sp_bonded = species[:1]
+        # else:
+        #     # for one atomic species it is trivial
+        #     sp_bonded = species
+
         # get unique minima indices
         unique_minima_prefixes = self.get_unique_minima_prefixes_after_opt(
-            path_to_minima, species
-        )
+            path_to_minima, species)
         # go through all indices of *final.xyz file
         # e.g. 00_final.xyz, 01_final.xyz
+        path_to_tmp_traj = os.path.join(path_to_species, '00.traj')
+        tmp_traj = read(path_to_tmp_traj)
+
+        surface_atom_idxs = [
+            atom.index for atom in tmp_traj if atom.symbol == metal_atom]
+
+        adsorbate_atom_idxs = {
+            atom.symbol + '_' + str(atom.index): atom.index
+            for atom in tmp_traj if atom.symbol != metal_atom}
+
+        all_dists_bonded = []
         for index in unique_minima_prefixes:
-            paths_to_uniq_minima_final_xyz = Path(
-                path_to_species).glob('{}*final.xyz'.format(index))
-            for unique_minimum_final_xyz in paths_to_uniq_minima_final_xyz:
-                unique_minimum_atom = read(unique_minimum_final_xyz)
-                # open the *final.xyz file as xyz_file
-                with open(unique_minimum_final_xyz, 'r') as f:
-                    xyz_file = f.readlines()
-                    # find all Cu atoms and adsorbate atoms
-                    for num, line in enumerate(xyz_file):
-                        # For Cu(111) we can put ' 1 ' instead of 'Cu ' to
-                        # limit calculations to surface Cu atoms only.
-                        # For Cu(211) ASE is not generating tags like this,
-                        # so full calculation have to be performed, i.e. all
-                        # surface atoms
-                        if 'Cu ' in line:
-                            surface_atoms_indices.append(num - 2)
-                        elif sp_bonded in line and 'Cu ' not in line:
-                            # We need to have additional statement
-                            # 'not 'Cu' in line'
-                            # because for C it does not work without it'''
-                            adsorbate_atoms_indices.append(num - 2)
-                f.close()
-                # find the shortest distance between the adsorbate
-                # and the surface
-                dist = float(min(unique_minimum_atom.get_distances(
-                    adsorbate_atoms_indices[0], surface_atoms_indices)))
-                all_dists.append(dist)
-        # apply scaling factor if required
+            path_to_unique_minima_traj = os.path.join(
+                path_to_species, '{}.traj'.format(index))
+            uq_species_atom = read(path_to_unique_minima_traj)
+            ads_atom_surf_dist = {}
+            for key, ads_atom_idx in adsorbate_atom_idxs.items():
+                ads_atom_surf_dist[key] = min(uq_species_atom.get_distances(
+                    ads_atom_idx, surface_atom_idxs))
+            bonded_ads_atom_surf_dist = min(ads_atom_surf_dist.values())
+            all_dists_bonded.append(bonded_ads_atom_surf_dist)
         if scaled:
-            av_dist = mean(all_dists) * scfactor_surface
+            av_dist = mean(all_dists_bonded) * scfactor_surface
         else:
-            av_dist = mean(all_dists)
-        print('{} : {}'.format(species, av_dist))
+            av_dist = mean(all_dists_bonded)
         return av_dist
 
     def get_unique_minima_prefixes_after_opt(

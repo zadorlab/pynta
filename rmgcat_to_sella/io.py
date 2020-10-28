@@ -409,8 +409,7 @@ class IO():
 
     def get_xyz_from_traj(
             self,
-            path_to_minima,
-            species):
+            path_to_species):
         ''' Convert all ASE's traj files to .xyz files for a given species
 
         Parameters:
@@ -423,12 +422,11 @@ class IO():
             e.g. 'H' or 'CO'
 
         '''
-        species_path = os.path.join(path_to_minima, species)
-        for traj in sorted(os.listdir(species_path), key=str):
+        for traj in sorted(os.listdir(path_to_species), key=str):
             if traj.endswith('.traj'):
-                src_traj_path = os.path.join(species_path, traj)
+                src_traj_path = os.path.join(path_to_species, traj)
                 des_traj_path = os.path.join(
-                    species_path, traj[:-5] + '_final.xyz')
+                    path_to_species, traj[:-5] + '_final.xyz')
                 write(des_traj_path, read(src_traj_path))
 
     def depends_on(
