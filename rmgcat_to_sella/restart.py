@@ -62,6 +62,17 @@ class LowLevelRestart():
         return unfinished_tss
 
     def get_after_ts_to_restart(self):
+        ''' Go through all_unfinished dictionary and create a list with all
+            after_ts ase jobs that started but are not yet finished and
+            require to berestarted.
+
+        Returns
+        -------
+        unfinished_after_tss : list(str)
+            a list with unique *py file names for started but yet finished
+            minimization of reactants and products after TS calculations
+
+        '''
         unfinished_after_tss = []
         for key, value in all_unfinished.items():
             if 'after_ts' in key and 'AWAITING_PARENTS' not in value:
@@ -121,6 +132,13 @@ class LowLevelRestart():
                 continue
 
     def prepare_after_ts_to_restart(self):
+        ''' If there is at least one optimization step in a .traj file
+            for a given after_ts, this method will create a new *.xyz file for
+            that job from the last converge opt step.
+            So, when HighLevelRestart is executed, the optimization can resume
+            from the last converged step, taking advantade of previous calcs.
+
+        '''
         unfinished_after_tss = self.get_after_ts_to_restart()
         for after_ts in unfinished_after_tss:
             prefix, metal_atom, facet, react, prod, *_ = after_ts.split('_')
