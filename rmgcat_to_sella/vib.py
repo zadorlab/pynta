@@ -241,10 +241,11 @@ class AfterTS():
                                         prefix)
             os.makedirs(after_ts_dir, exist_ok=True)
 
-            fname_forward = os.path.join(
-                after_ts_dir, prefix + '_' + rxn_name + '_after_ts_f')
-            fname_reverse = os.path.join(
-                after_ts_dir, prefix + '_' + rxn_name + '_after_ts_r')
+            fname = os.path.join(
+                prefix + '_' + self.facetpath + '_' + rxn_name + '_after_ts')
+
+            fname_forward = os.path.join(after_ts_dir, fname + '_f')
+            fname_reverse = os.path.join(after_ts_dir, fname + '_r')
 
             self.get_forward_and_reverse(
                 vib_traj,
