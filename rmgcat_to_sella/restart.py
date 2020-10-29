@@ -1,12 +1,10 @@
 import os
-from sys import path
 from ase.io import read, write
 from ase.io.formats import UnknownFileTypeError
-from numpy.core.fromnumeric import prod
 # from balsam.launcher.dag import BalsamJob
 
 all_unfinished = {'05_Cu_100_set_up_TS_vib_CH_C+H.py': 'AWAITING_PARENTS', '04_Cu_111_set_up_TS_vib_OH_O+H.py': 'AWAITING_PARENTS', '03_Cu_100_run_TS_CH_C+H.py': 'AWAITING_PARENTS', '03_Cu_100_run_TS_OH_O+H.py': 'AWAITING_PARENTS', 'Cu_111_HO_03_relax.py': 'RUNNING', 'Cu_111_O_00_relax.py': 'RUNNING', '02_Cu_100_set_up_TS_with_xtb_OH_O+H.py': 'AWAITING_PARENTS', '02_Cu_111_set_up_TS_with_xtb_CH_C+H.py': 'AWAITING_PARENTS', '03_Cu_111_run_TS_CH_C+H.py': 'AWAITING_PARENTS', '04_Cu_111_set_up_TS_vib_CH_C+H.py': 'AWAITING_PARENTS', '03_Cu_111_run_TS_OH_O+H.py': 'AWAITING_PARENTS', '04_Cu_100_set_up_TS_vib_CH_C+H.py': 'AWAITING_PARENTS', '05_Cu_100_set_up_TS_vib_OH_O+H.py': 'AWAITING_PARENTS', 'Cu_100_CH_01_relax.py': 'RUNNING',
-                  'Cu_100_HO_02_relax.py': 'RUNNING', 'Cu_100_O_01_relax.py': 'RUNNING', '02_Cu_111_set_up_TS_with_xtb_OH_O+H.py': 'AWAITING_PARENTS', '05_Cu_111_set_up_TS_vib_OH_O+H.py': 'AWAITING_PARENTS', 'Cu_100_HO_01_relax.py': 'RUNNING', 'Cu_100_C_01_relax.py': 'RUNNING', '02_Cu_100_set_up_TS_with_xtb_CH_C+H.py': 'AWAITING_PARENTS', '04_Cu_100_set_up_TS_vib_OH_O+H.py': 'AWAITING_PARENTS', 'Cu_111_C_03_relax.py': 'RUNNING', 'Cu_111_O_01_relax.py': 'RUNNING', 'Cu_111_O_02_relax.py': 'RUNNING', 'Cu_111_O_03_relax.py': 'RUNNING', 'Cu_111_H_00_relax.py': 'RUNNING', 'Cu_111_H_01_relax.py': 'RUNNING', 'Cu_111_H_02_relax.py': 'RUNNING', 'Cu_111_H_03_relax.py': 'RUNNING', '05_Cu_111_set_up_TS_vib_CH_C+H.py': 'AWAITING_PARENTS', '00_Cu_111_OH_O+H_ts.py': 'RUNNING'}
+                  'Cu_100_HO_02_relax.py': 'RUNNING', 'Cu_100_O_01_relax.py': 'RUNNING', '02_Cu_111_set_up_TS_with_xtb_OH_O+H.py': 'AWAITING_PARENTS', '05_Cu_111_set_up_TS_vib_OH_O+H.py': 'AWAITING_PARENTS', 'Cu_100_HO_01_relax.py': 'RUNNING', 'Cu_100_C_01_relax.py': 'RUNNING', '02_Cu_100_set_up_TS_with_xtb_CH_C+H.py': 'AWAITING_PARENTS', '04_Cu_100_set_up_TS_vib_OH_O+H.py': 'AWAITING_PARENTS', 'Cu_111_C_03_relax.py': 'RUNNING', 'Cu_111_O_01_relax.py': 'RUNNING', 'Cu_111_O_02_relax.py': 'RUNNING', 'Cu_111_O_03_relax.py': 'RUNNING', 'Cu_111_H_00_relax.py': 'RUNNING', 'Cu_111_H_01_relax.py': 'RUNNING', 'Cu_111_H_02_relax.py': 'RUNNING', 'Cu_111_H_03_relax.py': 'RUNNING', '05_Cu_111_set_up_TS_vib_CH_C+H.py': 'AWAITING_PARENTS', '00_Cu_111_OH_O+H_ts.py': 'RUNNING', '00_Cu_111_OH_O+H_after_ts_f.py': 'RUNNING', '00_Cu_111_OH_O+H_after_ts_r.py': 'RUNNING', '01_Cu_111_OH_O+H_after_ts_f.py': 'RUNNING', '01_Cu_111_OH_O+H_after_ts_r.py': 'RUNNING'}
 
 
 class LowLevelRestart():
@@ -63,6 +61,14 @@ class LowLevelRestart():
                 unfinished_tss.append(key)
         return unfinished_tss
 
+    def get_after_ts_to_restart(self):
+        unfinished_after_tss = []
+        for key, value in all_unfinished.items():
+            if 'after_ts' in key and 'AWAITING_PARENTS' not in value:
+                # remove '_f.py' or '_r.py' from the key name
+                unfinished_after_tss.append(key[:-5])
+        return list(set(unfinished_after_tss))
+
     def prepare_minima_to_restart(self):
         ''' If there is at least one optimization step in a .traj file
             for a given minima, this method will create a new *.xyz file for
@@ -79,8 +85,9 @@ class LowLevelRestart():
                 facetpath, 'minima', species, prefix)
 
             try:
-                # try convert last step in *traj file to a new .xyz file
-                write(path_to_species + '.xyz', path_to_species + '.traj')
+                # try to convert last step in *traj file to a new .xyz file
+                write(path_to_species + '.xyz',
+                      read(path_to_species + '.traj'))
             except UnknownFileTypeError:
                 # continue if *traj file is empty
                 # hard HighLevelRestart is required
@@ -96,22 +103,48 @@ class LowLevelRestart():
         '''
         unfinished_tss = self.get_tss_to_restart()
         for ts in unfinished_tss:
-            prefix, metal_symbol, facet, reactant, product, _ = ts.split(
+            prefix, metal_symbol, facet, react, prod, _ = ts.split(
                 '_')
             facetpath = metal_symbol + '_' + facet
-            rxn_name = reactant + '_' + product
+            rxn_name = react + '_' + prod
             ts_name = os.path.join(
                 prefix + '_' + facetpath + '_' + rxn_name + '_ts')
             path_to_ts = os.path.join(
                 facetpath, rxn_name, 'TS_estimate_unique', prefix, ts_name)
 
             try:
-                # try convert last step in *traj file to a new .xyz file
+                # try to convert last step in *traj file to a new .xyz file
                 write(path_to_ts + '.xyz', read(path_to_ts + '.traj'))
             except UnknownFileTypeError:
                 # continue if *traj file is empty
                 # hard HighLevelRestart is required
                 continue
+
+    def prepare_after_ts_to_restart(self):
+        unfinished_after_tss = self.get_after_ts_to_restart()
+        for after_ts in unfinished_after_tss:
+            prefix, metal_atom, facet, react, prod, *_ = after_ts.split('_')
+            facetpath = metal_atom + '_' + facet
+            rxn_name = react + '_' + prod
+            for irc in ['f', 'r']:
+                after_ts_name = os.path.join(
+                    prefix + '_' + facetpath + '_' + rxn_name
+                    + '_after_ts_' + irc)
+                path_to_after_ts = os.path.join(
+                    facetpath,
+                    rxn_name,
+                    'after_TS',
+                    prefix,
+                    after_ts_name)
+
+                try:
+                    # try to convert last step in *traj file to a new .xyz file
+                    write(path_to_after_ts + '.xyz',
+                          read(path_to_after_ts + '.traj'))
+                except UnknownFileTypeError:
+                    # continue if *traj file is empty
+                    # hard HighLevelRestart is required
+                    continue
 
 
 class HighLevelRestart():
