@@ -1,18 +1,20 @@
 import os
 from ase.io import read, write
 from ase.io.formats import UnknownFileTypeError
-# from balsam.launcher.dag import BalsamJob
-
-all_unfinished = {'05_Cu_100_set_up_TS_vib_CH_C+H.py': 'AWAITING_PARENTS', '04_Cu_111_set_up_TS_vib_OH_O+H.py': 'AWAITING_PARENTS', '03_Cu_100_run_TS_CH_C+H.py': 'AWAITING_PARENTS', '03_Cu_100_run_TS_OH_O+H.py': 'AWAITING_PARENTS', 'Cu_111_HO_03_relax.py': 'RUNNING', 'Cu_111_O_00_relax.py': 'RUNNING', '02_Cu_100_set_up_TS_with_xtb_OH_O+H.py': 'AWAITING_PARENTS', '02_Cu_111_set_up_TS_with_xtb_CH_C+H.py': 'AWAITING_PARENTS', '03_Cu_111_run_TS_CH_C+H.py': 'AWAITING_PARENTS', '04_Cu_111_set_up_TS_vib_CH_C+H.py': 'AWAITING_PARENTS', '03_Cu_111_run_TS_OH_O+H.py': 'AWAITING_PARENTS', '04_Cu_100_set_up_TS_vib_CH_C+H.py': 'AWAITING_PARENTS', '05_Cu_100_set_up_TS_vib_OH_O+H.py': 'AWAITING_PARENTS', 'Cu_100_CH_01_relax.py': 'RUNNING',
-                  'Cu_100_HO_02_relax.py': 'RUNNING', 'Cu_100_O_01_relax.py': 'RUNNING', '02_Cu_111_set_up_TS_with_xtb_OH_O+H.py': 'AWAITING_PARENTS', '05_Cu_111_set_up_TS_vib_OH_O+H.py': 'AWAITING_PARENTS', 'Cu_100_HO_01_relax.py': 'RUNNING', 'Cu_100_C_01_relax.py': 'RUNNING', '02_Cu_100_set_up_TS_with_xtb_CH_C+H.py': 'AWAITING_PARENTS', '04_Cu_100_set_up_TS_vib_OH_O+H.py': 'AWAITING_PARENTS', 'Cu_111_C_03_relax.py': 'RUNNING', 'Cu_111_O_01_relax.py': 'RUNNING', 'Cu_111_O_02_relax.py': 'RUNNING', 'Cu_111_O_03_relax.py': 'RUNNING', 'Cu_111_H_00_relax.py': 'RUNNING', 'Cu_111_H_01_relax.py': 'RUNNING', 'Cu_111_H_02_relax.py': 'RUNNING', 'Cu_111_H_03_relax.py': 'RUNNING', '05_Cu_111_set_up_TS_vib_CH_C+H.py': 'AWAITING_PARENTS', '00_Cu_111_OH_O+H_ts.py': 'RUNNING', '00_Cu_111_OH_O+H_after_ts_f.py': 'RUNNING', '00_Cu_111_OH_O+H_after_ts_r.py': 'RUNNING', '01_Cu_111_OH_O+H_after_ts_f.py': 'RUNNING', '01_Cu_111_OH_O+H_after_ts_r.py': 'RUNNING'}
+from balsam.launcher.dag import BalsamJob
 
 
 class LowLevelRestart():
     def __init__(self):
         self.current_dir = os.getcwd()
-        # get all python (ASE) jobs
-        # self.ase_jobs = BalsamJob.objects.filter(
-        #     application__contains='python')
+        # get all python(ASE) jobs
+        self.ase_jobs = BalsamJob.objects.filter(
+            application__contains='python')
+
+    def restart(self):
+        self.prepare_minima_to_restart()
+        self.prepare_ts_to_restart()
+        self.prepare_after_ts_to_restart()
 
     def get_jobs_to_restart(self):
         ''' Get a dictionary with all ase_jobs that did not finish '''
@@ -35,7 +37,7 @@ class LowLevelRestart():
             did not finished
 
         '''
-        # all_unfinished = self.get_jobs_to_restart()
+        all_unfinished = self.get_jobs_to_restart()
         unfinished_minima = []
         for key in all_unfinished.keys():
             if 'relax' in key:
@@ -54,7 +56,7 @@ class LowLevelRestart():
             point optimizations
 
         '''
-        # all_unfinished = self.get_jobs_to_restart()
+        all_unfinished = self.get_jobs_to_restart()
         unfinished_tss = []
         for key, value in all_unfinished.items():
             if 'ts' in key and 'AWAITING_PARENTS' not in value:
@@ -73,6 +75,7 @@ class LowLevelRestart():
             minimization of reactants and products after TS calculations
 
         '''
+        all_unfinished = self.get_jobs_to_restart()
         unfinished_after_tss = []
         for key, value in all_unfinished.items():
             if 'after_ts' in key and 'AWAITING_PARENTS' not in value:

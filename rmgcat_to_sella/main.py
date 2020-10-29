@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 from rmgcat_to_sella.check_input import InputChecker
+from rmgcat_to_sella.restart import LowLevelRestart, HighLevelRestart
 from rmgcat_to_sella.io import IO
 import os
 import sys
@@ -11,10 +12,11 @@ from warnings import warn
 
 # check which file calls this module and adjust working_dir path accordingly
 calling_py = os.path.basename(__main__.__file__)
-if calling_py != 'run_me.py':
-    working_dir = os.path.dirname(os.path.dirname(os.getcwd()))
-else:
+# if calling_py != 'run_me.py':
+if any([calling_py == i for i in ['run_me.py', 'restart_me.py']]):
     working_dir = os.getcwd()
+else:
+    working_dir = os.path.dirname(os.path.dirname(os.getcwd()))
 
 # check if all necessary input files are in your working directory
 check_yaml = os.path.join(working_dir, 'reactions.yaml')
@@ -23,7 +25,7 @@ check_run_me_py = os.path.join(working_dir, 'run_me.py')
 check_run_me_sh = os.path.join(working_dir, 'run_me.sh')
 
 InputChecker(check_yaml, check_inputR2S, check_run_me_py,
-             check_run_me_sh).check_all()
+             check_run_me_sh, working_dir).check_all()
 
 # add working dir to system path
 sys.path.insert(1, working_dir)
@@ -1650,3 +1652,7 @@ class WorkFlow:
         ''' Main execute method for the entire workflow '''
         for facetpath in facetpaths:
             self.execute(facetpath)
+
+    def restart(self):
+        LowLevelRestart().restart()
+        HighLevelRestart().restart()

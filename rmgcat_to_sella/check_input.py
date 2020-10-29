@@ -10,7 +10,8 @@ class InputChecker():
             yamlfile,
             inputR2S,
             run_me_py,
-            run_me_sh):
+            run_me_sh,
+            working_dir):
         ''' Initialize
 
         Parameters:
@@ -33,6 +34,7 @@ class InputChecker():
         self.inputR2S = inputR2S
         self.run_me_py = run_me_py
         self.run_me_sh = run_me_sh
+        self.working_dir = working_dir
 
     def check_all(self):
         ''' Print info about checking input files '''
