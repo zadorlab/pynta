@@ -1,5 +1,3 @@
-from networkx.readwrite.graph6 import n_to_data
-from numpy.core.fromnumeric import repeat
 from rmgcat_to_sella.io import IO
 from ase.io import read, write
 from pathlib import Path

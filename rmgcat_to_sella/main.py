@@ -1118,7 +1118,7 @@ class WorkFlow:
             template_text = r.read()
             rxn_name = IO().get_rxn_name(rxn)
             py_job_fname = os.path.join(
-                py_job_dir, '05_{}_set_up_TS_vib_{}.py'.format(
+                py_job_dir, '05_{}_set_up_after_TS_{}.py'.format(
                     facetpath, rxn_name))
 
             with open(py_job_fname, 'w') as c:
