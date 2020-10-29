@@ -16,6 +16,7 @@ class LowLevelRestart():
 
     def get_jobs_to_restart(self):
         ''' Get a dictionary with all ase_jobs that did not finish '''
+
         all_unfinished = {}
         for job in self.ase_jobs:
             if job.state != 'JOB_FINISHED':
@@ -23,8 +24,9 @@ class LowLevelRestart():
         return all_unfinished
 
     def get_minima_to_restart(self):
-        ''' Go through all_unfinished dictionary and createa a list with all
-            minima ase jobs that requires restart.
+        ''' Go through all_unfinished dictionary and create a list with all
+            minima ase jobs that started but are not yet finished and require
+            to be restarted.
 
         Returns
         -------
@@ -39,6 +41,25 @@ class LowLevelRestart():
             if 'relax' in key:
                 unfinished_minima.append(key)
         return unfinished_minima
+
+    def get_tss_to_restart(self):
+        ''' Go through all_unfinished dictionary and create a list with all
+            TS ase jobs that started but are not yet finished and require to be
+            restarted.
+
+        Returns
+        -------
+        unfinished_TSs : list(str)
+            a list with all *py files for started but yet finished saddle
+            point optimizations
+
+        '''
+        # all_unfinished = self.get_jobs_to_restart()
+        unfinished_TSs = []
+        for key, value in all_unfinished.items():
+            if 'run_TS' in key and 'AWAITING_PARENTS' not in value:
+                unfinished_TSs.append(key)
+        return unfinished_TSs
 
     def prepare_minima_to_restart(self):
         ''' If there is at least one optimization step in a .traj file
