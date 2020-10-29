@@ -321,9 +321,10 @@ class TS():
 
             for i, struc in enumerate(structs):
                 big_slab_ads = big_slab + struc[nslab:]
-                write(os.path.join(ts_estimate_path, '{}'.format(
-                    str(i + len(structs) * count).zfill(3)
-                ) + '_' + rxn_name + '.xyz'), big_slab_ads)
+                prefix = str(i + len(structs) * count).zfill(3)
+                xyz_fname = os.path.join(prefix + '_' + rxn_name + '.xyz')
+                path_to_xyz = os.path.join(ts_estimate_path, xyz_fname)
+                write(path_to_xyz, big_slab_ads)
 
             ts_candidate.rotate(step_size, 'z')
             angle += step_size

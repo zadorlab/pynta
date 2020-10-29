@@ -57,7 +57,7 @@ class LowLevelRestart():
         # all_unfinished = self.get_jobs_to_restart()
         unfinished_TSs = []
         for key, value in all_unfinished.items():
-            if 'run_TS' in key and 'AWAITING_PARENTS' not in value:
+            if 'ts' in key and 'AWAITING_PARENTS' not in value:
                 unfinished_TSs.append(key)
         return unfinished_TSs
 
