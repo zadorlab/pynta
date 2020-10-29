@@ -87,6 +87,13 @@ class LowLevelRestart():
                 continue
 
     def prepare_ts_to_restart(self):
+        ''' If there is at least one optimization step in a .traj file
+            for a given ts, this method will create a new *.xyz file for
+            that job from the last converged saddle point opt step.
+            So, when HighLevelRestart is executed, the optimization can resume
+            from the last converged step, taking advantade of previous calcs.
+
+        '''
         unfinished_tss = self.get_tss_to_restart()
         for ts in unfinished_tss:
             prefix, metal_symbol, facet, reactant, product, _ = ts.split(
