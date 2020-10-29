@@ -77,8 +77,10 @@ class LowLevelRestart():
         for key, value in all_unfinished.items():
             if 'after_ts' in key and 'AWAITING_PARENTS' not in value:
                 # remove '_f.py' or '_r.py' from the key name
-                unfinished_after_tss.append(key[:-5])
-        return list(set(unfinished_after_tss))
+                # unfinished_after_tss.append(key[:-5])
+                unfinished_after_tss.append(key)
+        # return list(set(unfinished_after_tss))
+        return unfinished_after_tss
 
     def prepare_minima_to_restart(self):
         ''' If there is at least one optimization step in a .traj file
@@ -141,28 +143,28 @@ class LowLevelRestart():
         '''
         unfinished_after_tss = self.get_after_ts_to_restart()
         for after_ts in unfinished_after_tss:
-            prefix, metal_atom, facet, react, prod, *_ = after_ts.split('_')
+            prefix, metal_atom, facet, react, prod, * \
+                _, letter = after_ts.split('_')
             facetpath = metal_atom + '_' + facet
             rxn_name = react + '_' + prod
-            for irc in ['f', 'r']:
-                after_ts_name = os.path.join(
-                    prefix + '_' + facetpath + '_' + rxn_name
-                    + '_after_ts_' + irc)
-                path_to_after_ts = os.path.join(
-                    facetpath,
-                    rxn_name,
-                    'after_TS',
-                    prefix,
-                    after_ts_name)
+            after_ts_name = os.path.join(
+                prefix + '_' + facetpath + '_' + rxn_name
+                + '_after_ts_' + letter[0])
+            path_to_after_ts = os.path.join(
+                facetpath,
+                rxn_name,
+                'after_TS',
+                prefix,
+                after_ts_name)
 
-                try:
-                    # try to convert last step in *traj file to a new .xyz file
-                    write(path_to_after_ts + '.xyz',
-                          read(path_to_after_ts + '.traj'))
-                except UnknownFileTypeError:
-                    # continue if *traj file is empty
-                    # hard HighLevelRestart is required
-                    continue
+            try:
+                # try to convert last step in *traj file to a new .xyz file
+                write(path_to_after_ts + '.xyz',
+                      read(path_to_after_ts + '.traj'))
+            except UnknownFileTypeError:
+                # continue if *traj file is empty
+                # hard HighLevelRestart is required
+                continue
 
 
 class HighLevelRestart():
