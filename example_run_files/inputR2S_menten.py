@@ -78,3 +78,4 @@ scaled1 = False
 # do you want to apply scfactor_surface to the species 2?
 scaled2 = False
 ####################################################
+relevant_species_list = ['O', 'H']

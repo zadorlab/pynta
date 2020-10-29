@@ -8,6 +8,7 @@
 
 source balsamactivate ~/myWorkflow_bebop
 python3 $PWD/run_me.py
+# python3 $PWD/restart_me.py
 export SLURM_HOSTS=$(scontrol show hostname)
 balsam launcher --job-mode=serial --wf-filter _ --limit-nodes=1 --num-transition-threads=1 &
 sleep 60
