@@ -356,7 +356,8 @@ class TS():
         # remove all symmetry equivalent structures
         for eqsites in filtered_equivalent_sites:
             file_to_remove = os.path.join(
-                ts_estimate_path, eqsites + '_' + rxn_name + '.xyz')
+                ts_estimate_path, eqsites + '_' + self.facetpath + '_' +
+                rxn_name + '.xyz')
             try:
                 os.remove(file_to_remove)
             except OSError:
