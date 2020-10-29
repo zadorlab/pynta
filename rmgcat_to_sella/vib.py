@@ -94,7 +94,8 @@ class AfterTS():
             shutil.copy2(ts_final_geom, ts_vib_dir_prefix)
             _, geom = os.path.split(ts_final_geom)
 
-            py_fname = ts_vib_dir_prefix + '_' + rxn_name + '_ts_vib.py'
+            py_fname = ts_vib_dir_prefix + '_' + \
+                self.facetpath + '_' + rxn_name + '_ts_vib.py'
 
             self.create_ts_vib_py_files(
                 pytemplate,
