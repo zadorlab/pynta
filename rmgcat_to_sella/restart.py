@@ -182,7 +182,8 @@ class HighLevelRestart():
 
     def __init__(self):
         # get all python (ASE) jobs
-        self.balsamjob = __import__('balsam.launcher.dag')
+        self.balsamjob = __import__(
+            'balsam.launcher.dag.BalsamJob', fromlist=['BalsamJob', ])
         self.ase_jobs = self.balsamjob.filter(
             application__contains='python')
 

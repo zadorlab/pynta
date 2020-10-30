@@ -1675,6 +1675,6 @@ class WorkFlow:
             self.execute(facetpath)
 
     @staticmethod
-    def restart(self):
+    def restart():
         LowLevelRestart().restart()
         HighLevelRestart().restart()
