@@ -7,11 +7,11 @@ class InputChecker():
 
     def __init__(
             self,
-            yamlfile,
-            inputR2S,
-            run_me_py,
-            run_me_sh,
-            working_dir):
+            yamlfile: str,
+            inputR2S: str,
+            run_me_py: str,
+            run_me_sh: str,
+            working_dir: str) -> None:
         ''' Initialize
 
         Parameters:
@@ -27,16 +27,17 @@ class InputChecker():
             an input file with paramters to the workflow
         run_me : python script
             the workflow execution script
+        working_dir : str
+            a main dir where all files are stored
 
         '''
-
         self.yamlfile = yamlfile
         self.inputR2S = inputR2S
         self.run_me_py = run_me_py
         self.run_me_sh = run_me_sh
         self.working_dir = working_dir
 
-    def check_all(self):
+    def check_all(self) -> None:
         ''' Print info about checking input files '''
         print('Checking input...')
         print('---')
@@ -52,7 +53,7 @@ class InputChecker():
             print('Passed!')
             print('---')
 
-    def is_input_file(self):
+    def is_input_file(self) -> bool:
         ''' Check if there are input files in the working directory '''
         # create check list
         check_list = []
@@ -73,7 +74,7 @@ class InputChecker():
         else:
             return False
 
-    def check_yaml(self):
+    def check_yaml(self) -> bool:
         ''' Check for .yaml file '''
         if not os.path.isfile(self.yamlfile):
             print('!    .yaml file ({}) is not in your working '
@@ -82,7 +83,7 @@ class InputChecker():
         else:
             return True
 
-    def check_slab(self):
+    def check_slab(self) -> bool:
         ''' Check for slab .xyz file '''
         if not os.path.isfile(self.slab):
             print('!    .xyz file ({}) with optimized slab is not in your '
@@ -92,7 +93,7 @@ class InputChecker():
         else:
             return True
 
-    def check_inputR2S(self):
+    def check_inputR2S(self) -> bool:
         ''' Check for inputR2S file '''
         if not os.path.isfile(self.inputR2S):
             print('!    inputR2S.py file ({}) is not in your current working '
@@ -101,7 +102,7 @@ class InputChecker():
         else:
             return True
 
-    def check_run_me_py(self):
+    def check_run_me_py(self) -> bool:
         ''' Check for run_me.py file '''
         if not os.path.isfile(self.run_me_py):
             print('!    run_me.py file ({}) is not in your current working '
@@ -110,7 +111,7 @@ class InputChecker():
         else:
             return True
 
-    def check_run_me_sh(self):
+    def check_run_me_sh(self) -> bool:
         ''' Check for run_me.sh file '''
         if not os.path.isfile(self.run_me_sh):
             print('!    run_me.sh file ({}) is not in your current working '
