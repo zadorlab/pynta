@@ -29,7 +29,7 @@ class TS():
             ts_estimate_dir: str,
             yamlfile: str,
             repeats: Tuple[int, int, int],
-            creation_dir: PosixPath):
+            creation_dir: PosixPath) -> None:
         ''' Initializing
 
         Parameters:
