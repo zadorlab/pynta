@@ -163,8 +163,8 @@ class Adsorbates:
                 surface[i] = int(np.sign(pairvec[2]))
         return edges, surface
 
+    @staticmethod
     def rmgcat_to_gratoms(
-            self,
             adjtxt):
         ''' Convert a slice of .yaml file to Catkit's Gratoms object
 
@@ -293,9 +293,9 @@ class Adsorbates:
         bonds = []
         for rxn in reactions:
             reactants, rbonds = Adsorbates.rmgcat_to_gratoms(
-                self, rxn['reactant'].split('\n'))
+                rxn['reactant'].split('\n'))
             products, pbonds = Adsorbates.rmgcat_to_gratoms(
-                self, rxn['product'].split('\n'))
+                rxn['product'].split('\n'))
             species += reactants + products
             bonds += rbonds + pbonds
 
