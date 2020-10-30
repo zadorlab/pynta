@@ -1038,22 +1038,21 @@ class WorkFlow:
                 ))
 
     def set_up_opt_after_TS(
-        self,
-        rxn,
-        template,
-        py_job_dir,
-        facetpath,
-        slab,
-        repeats,
-        yamlfile,
-        pytemplate,
-        pseudopotentials,
-        pseudo_dir,
-        node_packing_count,
-        balsam_exe_settings,
-        calc_keywords,
-        creation_dir
-    ):
+            self,
+            rxn,
+            template,
+            py_job_dir,
+            facetpath,
+            slab,
+            repeats,
+            yamlfile,
+            pytemplate,
+            pseudopotentials,
+            pseudo_dir,
+            node_packing_count,
+            balsam_exe_settings,
+            calc_keywords,
+            creation_dir):
         ''' Create 05_{facetpath}_set_up_after_TS_{rxn_name}.py file
 
         Parameters:
@@ -1144,7 +1143,8 @@ class WorkFlow:
 # Submit jobs and execute it #
 ##############################
 
-    def exe(self,
+    def exe(
+            self,
             parent_job,
             job_script,
             facetpath,
