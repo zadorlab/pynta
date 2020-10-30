@@ -1,11 +1,12 @@
 import os
 from ase.io import read, write
 from ase.io.formats import UnknownFileTypeError
-from balsam.launcher.dag import BalsamJob
+# from importlib import import_module
 
 
 class LowLevelRestart():
     def __init__(self):
+        from balsam.launcher.dag import BalsamJob
         self.current_dir = os.getcwd()
         # get all python(ASE) jobs
         self.ase_jobs = BalsamJob.objects.filter(
@@ -171,7 +172,9 @@ class LowLevelRestart():
 
 
 class HighLevelRestart():
+
     def __init__(self):
+        from balsam.launcher.dag import BalsamJob
         # get all python (ASE) jobs
         self.ase_jobs = BalsamJob.objects.filter(
             application__contains='python')
@@ -180,6 +183,7 @@ class HighLevelRestart():
         ''' Prepare all unfinished jobs to restart
 
         '''
+        from balsam.launcher.dag import BalsamJob
         # remove all balsam calculator objects
         BalsamJob.objects.filter(name__contains='balsam',
                                  workflow='QE_Socket').delete()

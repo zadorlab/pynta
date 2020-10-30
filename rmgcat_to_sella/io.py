@@ -16,8 +16,8 @@ class IO():
     ''' Class for handling Input/Output and transforming it to more usefull
         format for the rmgcat_to_sella '''
 
+    @staticmethod
     def get_facetpath(
-            self,
             symbol,
             surface_type):
         ''' Get a facetpath for a given surface defined by a
@@ -50,8 +50,8 @@ class IO():
         facetpath = symbol + '_' + facet
         return facetpath
 
+    @staticmethod
     def get_facetpaths(
-            self,
             symbol,
             surface_types):
         ''' Generate a list with all facetpaths for a
@@ -87,7 +87,10 @@ class IO():
             facetpaths.append(facetpath)
         return facetpaths
 
-    def get_kpoints(self, size, get_uniq_kpts=False):
+    @staticmethod
+    def get_kpoints(
+            size,
+            get_uniq_kpts=False):
         ''' Returns number of unique k-points for a given size of the slab
 
         Parameters:
@@ -113,7 +116,9 @@ class IO():
         m_uniq_kpts = len(uniq)
         return (m_uniq_kpts, uniq) if get_uniq_kpts else m_uniq_kpts
 
-    def get_species_dict(self, yamlfile):
+    def get_species_dict(
+            self,
+            yamlfile):
         ''' For a given reaction get a dictionary with all species that takes
             part in the reaction.
 
@@ -144,8 +149,8 @@ class IO():
                 species_dict['rxn{}'.format(num+1)] = p_name_list
         return species_dict
 
+    @staticmethod
     def open_yaml_file(
-            self,
             yamlfile):
         ''' Open yaml file with list of reactions
 
@@ -287,8 +292,8 @@ class IO():
             all_rxns.append(rxn_name)
         return all_rxns
 
+    @staticmethod
     def rmgcat_to_gratoms(
-            self,
             adjtxt):
         ''' Convert a slice of .yaml file to Catkit's Gratoms object
 
@@ -407,8 +412,8 @@ class IO():
 
         return gratoms_list, bonds
 
+    @staticmethod
     def get_xyz_from_traj(
-            self,
             path_to_species):
         ''' Convert all ASE's traj files to .xyz files for a given species
 
@@ -503,7 +508,8 @@ class IO():
             dependancy_dict[rxn_name] = minima_py_list
         return dependancy_dict
 
-    def clean_finished_subjobs(self):
+    @staticmethod
+    def clean_finished_subjobs():
         ''' Move finished subjob files to finised_tmp_scripts directory '''
         dir_name = 'finished_tmp_scripts'
         os.makedirs(dir_name, exist_ok=True)
