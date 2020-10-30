@@ -146,9 +146,8 @@ class WorkFlow:
     #         print('---')
     #         print('Please create Balsam DB and/or activate it')
     #         print('---')
-
+    @staticmethod
     def get_ts_xtb_py_script_list(
-            self,
             facetpath):
         '''Get a list with all 02 job scripts
 
@@ -173,8 +172,8 @@ class WorkFlow:
             ts_with_xtb_py_script_list.append(fname)
         return ts_with_xtb_py_script_list
 
+    @staticmethod
     def get_ts_estimate_unique_list(
-            self,
             facetpath):
         ''' Get a list with all 03 job scripts
 
@@ -198,8 +197,8 @@ class WorkFlow:
             ts_sella_py_script_list.append(fname)
         return ts_sella_py_script_list
 
+    @staticmethod
     def get_ts_vib_list(
-            self,
             facetpath):
         ''' Get a list with all 04 job scripts
 
@@ -223,8 +222,8 @@ class WorkFlow:
             ts_vib_py_scripts_list.append(fname)
         return ts_vib_py_scripts_list
 
+    @staticmethod
     def get_after_ts_py_scripts(
-            self,
             facetpath):
         ''' Get a list with all 05 job scripts
 
@@ -248,8 +247,8 @@ class WorkFlow:
             after_ts_py_scripts_list.append(fname)
         return after_ts_py_scripts_list
 
+    @staticmethod
     def create_big_slab_pyjob(
-            self,
             pytemplate,
             facetpath,
             slab_name,
@@ -342,7 +341,7 @@ class WorkFlow:
             # define repeats and repeats_surface
             repeats, repeats_surface = reps
 
-            self.set_up_slab(
+            WorkFlow.set_up_slab(
                 template_slab_opt,
                 py_job_dir,
                 facetpath,
@@ -359,7 +358,7 @@ class WorkFlow:
                 creation_dir,
             )
 
-            self.set_up_big_slab(
+            WorkFlow.set_up_big_slab(
                 template_big_slab_opt,
                 py_job_dir,
                 facetpath,
@@ -374,7 +373,7 @@ class WorkFlow:
                 creation_dir
             )
 
-            self.set_up_ads(
+            WorkFlow.set_up_ads(
                 template_ads,
                 py_job_dir,
                 facetpath,
@@ -394,7 +393,7 @@ class WorkFlow:
             # the rest of jobs depends on reaction,
             # so loop throug all reactions
             for rxn in reactions:
-                self.set_up_TS_with_xtb(
+                WorkFlow.set_up_TS_with_xtb(
                     rxn,
                     template_set_up_ts_with_xtb,
                     py_job_dir,
@@ -411,7 +410,7 @@ class WorkFlow:
                     creation_dir
                 )
 
-                self.set_up_run_TS(
+                WorkFlow.set_up_run_TS(
                     rxn,
                     template_set_up_ts,
                     py_job_dir,
@@ -428,7 +427,7 @@ class WorkFlow:
                     creation_dir
                 )
 
-                self.set_up_TS_vib(
+                WorkFlow.set_up_TS_vib(
                     rxn,
                     template_set_up_ts_vib,
                     py_job_dir,
@@ -445,7 +444,7 @@ class WorkFlow:
                     creation_dir
                 )
 
-                self.set_up_opt_after_TS(
+                WorkFlow.set_up_opt_after_TS(
                     rxn,
                     template_set_up_after_ts,
                     py_job_dir,
@@ -465,9 +464,8 @@ class WorkFlow:
 ###########################
 #   Create submit files   #
 ###########################
-
+    @staticmethod
     def set_up_slab(
-            self,
             template,
             py_job_dir,
             facetpath,
@@ -560,8 +558,8 @@ class WorkFlow:
                     creation_dir=creation_dir
                 ))
 
+    @staticmethod
     def set_up_big_slab(
-            self,
             template,
             py_job_dir,
             facetpath,
@@ -652,8 +650,8 @@ class WorkFlow:
             c.close()
         r.close()
 
+    @staticmethod
     def set_up_ads(
-            self,
             template,
             py_job_dir,
             facetpath,
@@ -741,11 +739,9 @@ class WorkFlow:
                     calc_keywords=calc_keywords,
                     creation_dir=creation_dir
                 ))
-            c.close()
-        r.close()
 
+    @staticmethod
     def set_up_TS_with_xtb(
-            self,
             rxn,
             template,
             py_job_dir,
@@ -837,8 +833,8 @@ class WorkFlow:
                     node_packing_count=node_packing_count
                 ))
 
+    @staticmethod
     def set_up_run_TS(
-            self,
             rxn,
             template,
             py_job_dir,
@@ -937,8 +933,8 @@ class WorkFlow:
                     rxn_name=rxn_name
                 ))
 
+    @staticmethod
     def set_up_TS_vib(
-            self,
             rxn,
             template,
             py_job_dir,
@@ -1037,8 +1033,8 @@ class WorkFlow:
                     rxn_name=rxn_name
                 ))
 
+    @staticmethod
     def set_up_opt_after_TS(
-            self,
             rxn,
             template,
             py_job_dir,
@@ -1319,7 +1315,7 @@ class WorkFlow:
             e.g. 'Cu_111'
 
         '''
-        ts_xtb_py_script_list = self.get_ts_xtb_py_script_list(facetpath)
+        ts_xtb_py_script_list = WorkFlow.get_ts_xtb_py_script_list(facetpath)
         for ts_xtb in ts_xtb_py_script_list:
             self.exe(dependent_job, ts_xtb, facetpath)
 
@@ -1337,7 +1333,7 @@ class WorkFlow:
             e.g. 'Cu_111'
 
         '''
-        ts_xtb_py_script_list = self.get_ts_xtb_py_script_list(facetpath)
+        ts_xtb_py_script_list = WorkFlow.get_ts_xtb_py_script_list(facetpath)
         for ts_xtb in ts_xtb_py_script_list:
             self.exe('', ts_xtb, facetpath)
 
@@ -1359,7 +1355,8 @@ class WorkFlow:
             e.g. 'Cu_111'
 
         '''
-        ts_sella_py_script_list = self.get_ts_estimate_unique_list(facetpath)
+        ts_sella_py_script_list = WorkFlow.get_ts_estimate_unique_list(
+            facetpath)
         for ts_sella in ts_sella_py_script_list:
             self.exe(dependant_job, ts_sella, facetpath)
 
@@ -1381,7 +1378,7 @@ class WorkFlow:
             e.g. 'Cu_111'
 
         '''
-        ts_vib_py_script_list = self.get_ts_vib_list(facetpath)
+        ts_vib_py_script_list = WorkFlow.get_ts_vib_list(facetpath)
         for ts_vib in ts_vib_py_script_list:
             self.exe(dependant_job, ts_vib, facetpath)
 
@@ -1404,12 +1401,12 @@ class WorkFlow:
             e.g. 'Cu_111'
 
         '''
-        after_irc_py_scripts = self.get_after_ts_py_scripts(facetpath)
+        after_irc_py_scripts = WorkFlow.get_after_ts_py_scripts(facetpath)
         for after_irc in after_irc_py_scripts:
             self.exe(dependant_job, after_irc, facetpath)
 
+    @staticmethod
     def check_all_species(
-            self,
             yamlfile,
             facetpath):
         ''' Check all species(all reactions) to find whether
@@ -1438,12 +1435,12 @@ class WorkFlow:
             # a bug to be resolved - why does it invert the name?
             if species == 'OH':
                 species = 'HO'
-            checked_species[species] = self.is_minima_out_files(
+            checked_species[species] = WorkFlow.is_minima_out_files(
                 species, facetpath)
         return checked_species
 
+    @staticmethod
     def is_minima_dir(
-            self,
             species,
             facetpath):
         ''' Return True if directory for a given species exists in
@@ -1466,8 +1463,8 @@ class WorkFlow:
             return True
         return False
 
+    @staticmethod
     def is_minima_out_files(
-            self,
             species,
             facetpath):
         ''' Check for the previously calculated * relax.out files for a given
@@ -1487,7 +1484,7 @@ class WorkFlow:
         '''
         minima_dir = os.path.join(creation_dir, facetpath, 'minima')
         # if minima dir exists, check for outfiles
-        if self.is_minima_dir(species, facetpath):
+        if WorkFlow.is_minima_dir(species, facetpath):
             keyphrase = '{}_{}_*relax.py'.format(facetpath, species)
             search_for_outfiles = Path(minima_dir).glob(keyphrase)
             outfiles = []
@@ -1499,8 +1496,8 @@ class WorkFlow:
             return True
         return False
 
+    @staticmethod
     def is_slab(
-            self,
             facetpath):
         ''' Check whether slab has been already optimized
 
@@ -1535,8 +1532,8 @@ class WorkFlow:
             return True, slab_opt_path_str[0]
         return (False, )
 
+    @staticmethod
     def is_big_slab(
-            self,
             facetpath):
         ''' Check for big_slab calculations. True if there is a big_slab file,
             False if not. If multiple matches found, print all and raise error.
@@ -1568,17 +1565,41 @@ class WorkFlow:
                   'Big slab optimization required'.format(keyphrase))
             return False
 
-    def copy_slab_opt_file(self):
-        ''' Copy .xyz of previously optimized slab '''
-        self.slab_exists = self.is_slab()
-        if self.slab_exists[0]:
-            src = self.slab_exists[1]
-            dst = os.getcwd()
-            try:
-                shutil.copy2(src, dst)
-                self.slab_opt_job = ''
-            except shutil.SameFileError:
-                pass
+    @staticmethod
+    def check_if_slab_opt_exists(
+            facetpath):
+        ''' Check whether slab has been already optimized
+
+        Parameters:
+        ___________
+
+        work_files_path: posix
+            a path where work files are stored, e.g.
+            '{'creation_dir'}/Cu_111'
+        facetpath : str
+            a path to the workflow's main dir
+            e.g. 'Cu_111'
+
+        Returns:
+        ________
+
+        tuple(bool, str=None):
+            True if there are previous calculations
+                (True, path_to_prev_calc)
+            False otherwise
+                (False, )
+
+        '''
+        slab_opt_path_str = []
+        # the code will look for anything like Cu_111*.xyz starting from the
+        # facetpath directory including all subdirectories.
+        keyphrase = str(facetpath) + '*.xyz'
+        slab_opt_path_posix = Path(str(os.getcwd())).glob(keyphrase)
+        for slab_opt_path in slab_opt_path_posix:
+            slab_opt_path_str.append(slab_opt_path)
+        if len(slab_opt_path_str) >= 1:
+            return True, slab_opt_path_str[0]
+        return (False, )
 
     def execute(
             self,
@@ -1595,14 +1616,14 @@ class WorkFlow:
         '''
         if optimize_slab:
             # if slab found in previous calculation, do nothing
-            if self.is_slab(facetpath)[0] is False:
+            if WorkFlow.is_slab(facetpath)[0] is False:
                 # If the code cannot locate optimized slab .xyz file,
                 # a slab optimization will be launched.
                 self.run_slab_optimization(facetpath)
-            if self.is_big_slab(facetpath) is False:
+            if WorkFlow.is_big_slab(facetpath) is False:
                 self.run_big_slab_opt(facetpath)
             # check if species were already calculated
-            if all(self.check_all_species(yamlfile, facetpath).values()):
+            if all(WorkFlow.check_all_species(yamlfile, facetpath).values()):
                 # If all are True, start by generating TS guesses and run
                 # the penalty function minimization
                 self.run_ts_estimate_no_depend(facetpath)
@@ -1617,15 +1638,15 @@ class WorkFlow:
         else:
             # this is executed if user provide .xyz with the optimized slab
             # and explicitly define oiptimize_slab = False
-            if self.check_if_slab_opt_exists(facetpath)[0]:
+            if WorkFlow.check_if_slab_opt_exists(facetpath)[0]:
                 pass
             else:
                 raise FileNotFoundError(
                     'It appears there is no slab_opt.xyz file'
                 )
-            if self.is_big_slab(facetpath) is False:
+            if WorkFlow.is_big_slab(facetpath) is False:
                 self.run_big_slab_opt(facetpath)
-            if all(self.check_all_species(yamlfile, facetpath).values()):
+            if all(WorkFlow.check_all_species(yamlfile, facetpath).values()):
                 # If all minima were calculated some time age rmgcat_to_sella
                 # will use that calculations. Start from 02 step
                 self.run_ts_estimate_no_depend(facetpath)
@@ -1653,6 +1674,7 @@ class WorkFlow:
         for facetpath in facetpaths:
             self.execute(facetpath)
 
+    @staticmethod
     def restart(self):
         LowLevelRestart().restart()
         HighLevelRestart().restart()
