@@ -19,7 +19,7 @@ class IO():
     @staticmethod
     def get_facetpath(
             symbol,
-            surface_type):
+            surface_type) -> None:
         ''' Get a facetpath for a given surface defined by a
             symbol and a surface_type
 

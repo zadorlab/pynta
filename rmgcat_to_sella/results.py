@@ -10,7 +10,7 @@ from matplotlib.ticker import AutoMinorLocator
 
 
 class Results():
-    def __init__(self):
+    def __init__(self) -> None:
         ''' A class to analyze the results of calculations '''
         surface_types_and_repeats = inputR2S.surface_types_and_repeats
         symbol = inputR2S.symbol

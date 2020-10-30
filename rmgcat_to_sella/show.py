@@ -3,7 +3,7 @@ from collections import Counter
 
 
 class Show():
-    def __init__(self):
+    def __init__(self) -> None:
         from balsam.launcher.dag import BalsamJob
         # get all python (ASE) jobs
         self.ase_jobs = BalsamJob.objects.filter(

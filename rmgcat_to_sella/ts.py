@@ -1,11 +1,10 @@
 from sys import path
-from typing import List, Tuple
+from typing import List, Tuple, Dict
 from rmgcat_to_sella.excatkit.gratoms import Gratoms
 from rmgcat_to_sella.excatkit.adsorption import Builder
 from rmgcat_to_sella.excatkit.molecule import Molecule
 
 from rmgcat_to_sella.adsorbates import Adsorbates
-from rmgcat_to_sella.main import WorkFlow
 from rmgcat_to_sella.io import IO
 
 from ase.io import read, write
@@ -63,15 +62,15 @@ class TS():
 
     def prepare_ts_estimate(
             self,
-            rxn,
-            scfactor,
-            scfactor_surface,
-            pytemplate_xtb,
-            species_list,
-            relevant_species_list,
-            metal_atom,
-            scaled1,
-            scaled2):
+            rxn: Dict[str, str],
+            scfactor: float,
+            scfactor_surface: float,
+            pytemplate_xtb: str,
+            species_list: List[str],
+            relevant_species_list: List[str],
+            metal_atom: str,
+            scaled1: bool,
+            scaled2: bool) -> None:
         ''' Prepare TS estimates for subsequent xTB calculations
 
         Parameters:
@@ -108,8 +107,8 @@ class TS():
         scaled2 : bool
             specify whether use the optional scfactor_surface
             for the species 2 (sp2)
-        '''
 
+        '''
         r_name_list, p_name_list, images = IO().prepare_react_list(rxn)
         rxn_name = IO().get_rxn_name(rxn)
 

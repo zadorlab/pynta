@@ -5,14 +5,14 @@ from ase.io.formats import UnknownFileTypeError
 
 
 class LowLevelRestart():
-    def __init__(self):
+    def __init__(self) -> None:
         from balsam.launcher.dag import BalsamJob
         self.current_dir = os.getcwd()
         # get all python(ASE) jobs
         self.ase_jobs = BalsamJob.objects.filter(
             application__contains='python')
 
-    def restart(self):
+    def restart(self) -> None:
         self.prepare_minima_to_restart()
         self.prepare_ts_to_restart()
         self.prepare_after_ts_to_restart()
