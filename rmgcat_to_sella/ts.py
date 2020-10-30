@@ -1,4 +1,5 @@
 from sys import path
+from typing import List, Tuple
 from rmgcat_to_sella.excatkit.gratoms import Gratoms
 from rmgcat_to_sella.excatkit.adsorption import Builder
 from rmgcat_to_sella.excatkit.molecule import Molecule
@@ -16,19 +17,19 @@ import numpy as np
 import os
 import shutil
 from statistics import mean
-from pathlib import Path
+from pathlib import Path, PosixPath
 from spglib import get_symmetry
 
 
 class TS():
     def __init__(
             self,
-            facetpath,
-            slab,
-            ts_estimate_dir,
-            yamlfile,
-            repeats,
-            creation_dir):
+            facetpath: str,
+            slab: str,
+            ts_estimate_dir: str,
+            yamlfile: str,
+            repeats: Tuple[int, int, int],
+            creation_dir: PosixPath):
         ''' Initializing
 
         Parameters:
