@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-from balsam.launcher.dag import BalsamJob
 from collections import Counter
 
 
 class Show():
     def __init__(self):
+        from balsam.launcher.dag import BalsamJob
         # get all python (ASE) jobs
         self.ase_jobs = BalsamJob.objects.filter(
             application__contains='python')
@@ -44,7 +44,7 @@ class Show():
         not_finished = {}
         for job in self.ase_jobs:
             if job.state != 'JOB_FINISHED':
-                # TODO improve becouse keys are overwritten
+                # TODO improve because keys are overwritten
                 not_finished[job.state] = 'Workflow : {} Jobname : {}'.format(
                     job.workflow, job.name)
         # return not_finished

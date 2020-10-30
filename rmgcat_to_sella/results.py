@@ -1,12 +1,12 @@
+import inputR2S
+from rmgcat_to_sella.io import IO
 
+import os
+import numpy as np
 from ase.io import read
 from pathlib import Path
-import os
 import matplotlib.pyplot as plt
 from matplotlib.ticker import AutoMinorLocator
-import numpy as np
-from rmgcat_to_sella.io import IO
-import inputR2S
 
 
 class Results():
@@ -80,7 +80,7 @@ class Results():
             the most stable product and the most stable reactant
 
         '''
-        r_ener_list, p_ener_list, slab_ener, nslabs = self.get_data(
+        r_ener_list, p_ener_list, slab_ener, nslabs = Results.get_data(
             minima_path, facetpath, r_name_list, p_name_list, slab_path)
         # Depending how the reactants and products are defined,
         # there are three options here:
@@ -165,10 +165,10 @@ class Results():
 
         '''
 
-        r_ener_list, _, slab_ener, _ = self.get_data(
+        r_ener_list, _, slab_ener, _ = Results.get_data(
             minima_path, facetpath, r_name_list, p_name_list, slab_path)
-        tss_ener = self.get_ts_ener(ts_path)
-        tss_name = self.format_TS_name(ts_path)
+        tss_ener = Results.get_ts_ener(ts_path)
+        tss_name = Results.format_TS_name(ts_path)
 
         activation_barriers = {}
         for ts_ener, ts_name in zip(tss_ener, tss_name):
@@ -180,8 +180,8 @@ class Results():
                                 ts_name] = '{:.2f}'.format(barrier)
         return activation_barriers
 
+    @staticmethod
     def get_data(
-            self,
             minima_path,
             facetpath,
             r_name_list,
@@ -233,7 +233,7 @@ class Results():
             # bug to be fixed
             if reactant == 'OH':
                 reactant = 'HO'
-            lowest_reactant_ener = self.get_lowest_species_ener(
+            lowest_reactant_ener = Results.get_lowest_species_ener(
                 minima_path, reactant, facetpath)
             r_ener_list.append(lowest_reactant_ener)
         # check if .out files for reactants are copied
@@ -248,7 +248,7 @@ class Results():
         for product in p_name_list:
             if product == 'OH':
                 product = 'HO'
-            lowest_product_ener = self.get_lowest_species_ener(
+            lowest_product_ener = Results.get_lowest_species_ener(
                 minima_path, product, facetpath)
             p_ener_list.append(lowest_product_ener)
         # check if .out files for products are copied
@@ -259,13 +259,13 @@ class Results():
             print('----')
             raise TypeError
 
-        slab_ener = self.get_slab_ener(slab_path)
+        slab_ener = Results.get_slab_ener(slab_path)
         nslabs = abs(len(p_ener_list) - len(r_ener_list))
 
         return r_ener_list, p_ener_list, slab_ener, nslabs
 
+    @staticmethod
     def get_slab_ener(
-            self,
             slab_path):
         ''' Get energy of the slab
 
@@ -285,8 +285,8 @@ class Results():
         slab_ener = slab.get_potential_energy()
         return slab_ener
 
+    @staticmethod
     def get_ts_ener(
-            self,
             ts_path):
         ''' Get energy of all TSs
 
@@ -303,7 +303,7 @@ class Results():
 
         '''
         ts_ener_dict = {}
-        tss = self.get_ts_out_files(ts_path)
+        tss = Results.get_ts_out_files(ts_path)
         for ts in tss:
             with open(ts, 'r') as f:
                 data = f.readlines()
@@ -313,8 +313,8 @@ class Results():
         ts_ener_list = list(ts_ener_dict.values())
         return ts_ener_list
 
+    @staticmethod
     def get_lowest_species_ener(
-            self,
             minima_path,
             species,
             facetpath):
@@ -341,7 +341,7 @@ class Results():
         '''
         species_ener_dict = {}
         try:
-            species_out_file_path_list = self.get_species_out_files(
+            species_out_file_path_list = Results.get_species_out_files(
                 minima_path, species, facetpath)
             for spiecies_out_file_path in species_out_file_path_list:
                 with open(spiecies_out_file_path, 'r') as f:
@@ -356,8 +356,8 @@ class Results():
             print('Minima .out files probably not copied successfully.')
             print('Check minima .out files. If missing, copy it.')
 
+    @staticmethod
     def get_ts_out_files(
-            self,
             ts_path):
         ''' Get TS .out files
 
@@ -379,8 +379,8 @@ class Results():
             ts_out_file_list.append(str(ts_out_file))
         return sorted(ts_out_file_list)
 
+    @staticmethod
     def get_species_out_files(
-            self,
             minima_path,
             species,
             facetpath):
@@ -416,8 +416,8 @@ class Results():
             species_out_file_path_list.append(str(reactant_out_file))
         return species_out_file_path_list
 
+    @staticmethod
     def format_TS_name(
-            self,
             ts_path):
         ''' Function to get prefixes of TSs
 
@@ -434,14 +434,14 @@ class Results():
 
         '''
         prefix_list = []
-        ts_out_file_list = self.get_ts_out_files(ts_path)
+        ts_out_file_list = Results.get_ts_out_files(ts_path)
         for ts_out_file in ts_out_file_list:
             prefix = os.path.split(ts_out_file)[1].split('_')[0]
             prefix_list.append(prefix)
         return prefix_list
 
+    @staticmethod
     def rxn_title(
-            self,
             rxn_name):
         ''' Return rxn name with arrow between reactants and products
 
@@ -478,11 +478,11 @@ class Results():
             for ax, facetpath, in zip(axes, self.facetpaths):
                 rxn_name = IO().get_rxn_name(rxn)
                 key = facetpath+'_'+rxn_name
-                self.plot_rxn(key, reaction_energies,
-                              activation_barriers, rxn_name, ax, num)
+                Results.plot_rxn(key, reaction_energies,
+                                 activation_barriers, rxn_name, ax, num)
 
+    @staticmethod
     def plot_rxn(
-            self,
             key,
             reaction_energies,
             activation_barriers,
@@ -528,7 +528,7 @@ class Results():
                 ts_name, barrier) in activation_barriers_rxn.items()
                 if float(barrier) < 300}
 
-        rxn_name_title = self.rxn_title(rxn_name)
+        rxn_name_title = Results.rxn_title(rxn_name)
         energy_0 = 0
         rxn_ener_position = reaction_energy + 5
         rxn_ener_position_label = reaction_energy - 8
