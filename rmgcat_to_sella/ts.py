@@ -1,4 +1,5 @@
-from sys import path
+
+from os import stat
 from typing import List, Tuple, Dict
 from rmgcat_to_sella.excatkit.gratoms import Gratoms
 from rmgcat_to_sella.excatkit.adsorption import Builder
@@ -132,16 +133,14 @@ class TS():
 
         self.set_up_penalty_xtb(
             ts_estimate_path,
-            rxn_name,
             pytemplate_xtb,
             species_list,
             relevant_species_list,
             metal_atom,
             scaled1,
-            scaled2,
             scfactor_surface)
 
-    def get_max_rot_angle(self):
+    def get_max_rot_angle(self) -> None:
         ''' Get the maximum angle of rotation for a given slab that will
         generate all symmetrically distinct TS estimates.
 
@@ -170,12 +169,12 @@ class TS():
 
     def TS_placer(
             self,
-            ts_estimate_path,
-            scfactor,
-            rxn_name,
-            r_name_list,
-            p_name_list,
-            images):
+            ts_estimate_path: str,
+            scfactor: float,
+            rxn_name: str,
+            r_name_list: List[str],
+            p_name_list: List[str],
+            images: List[Gratoms]) -> None:
         ''' Place adsorbates on the surface to estimate TS
 
         Parameters:
@@ -333,8 +332,8 @@ class TS():
 
     def filtered_out_equiv_ts_estimate(
             self,
-            ts_estimate_path,
-            rxn_name):
+            ts_estimate_path: str,
+            rxn_name: str) -> None:
         '''Filtered out symmetry equivalent sites and remove them keeping
             only symmetry disctinct structures.
 
@@ -350,7 +349,7 @@ class TS():
 
         '''
         # check the symmetry
-        filtered_equivalent_sites = self.check_symm_before_xtb(
+        filtered_equivalent_sites = TS.check_symm_before_xtb(
             ts_estimate_path)
 
         # remove all symmetry equivalent structures
@@ -375,15 +374,13 @@ class TS():
 
     def set_up_penalty_xtb(
             self,
-            ts_estimate_path,
-            rxn_name,
-            pytemplate,
-            species_list,
-            relevant_species_list,
-            metal_atom,
-            scaled1,
-            scaled2,
-            scfactor_surface):
+            ts_estimate_path: str,
+            pytemplate: str,
+            species_list: List[str],
+            relevant_species_list: List[str],
+            metal_atom: str,
+            scaled1: bool,
+            scfactor_surface) -> None:
         ''' Prepare calculations of the penalty function
 
         Parameters:
@@ -430,7 +427,7 @@ class TS():
 
         # get a dictionary with average distances for all species in
         # species_list, e.g. {'CO2': 4.14.., 'H': 1.665..., 'O': 1.847...}
-        sp_surf_av_dists = self.get_av_dists_dict(
+        sp_surf_av_dists = TS.get_av_dists_dict(
             species_list, metal_atom, path_to_minima, scfactor_surface,
             scaled1)
 
@@ -438,7 +435,7 @@ class TS():
         # the same type of species can be included into penalty function
         # calculations many times, e.g. ['C', 'H', 'O', 'O'], so the av_dist
         # for the 'O' have to be specified twice (order not important)
-        av_dists_tuple = self.get_av_dists_tuple(
+        av_dists_tuple = TS.get_av_dists_tuple(
             relevant_species_list, sp_surf_av_dists)
 
         # get all .xyz files with TS estimates
@@ -474,10 +471,10 @@ class TS():
 
             # Loop through all relevant_species
             for species in relevant_species_list:
-                sp_index = self.get_sp_index(
+                sp_index = TS.get_sp_index(
                     species, visited_species, adsorbate_atoms_idxs)
 
-                metal_index = self.get_index_surface_atom(
+                metal_index = TS.get_index_surface_atom(
                     sp_index, surface_atoms_idxs, xyz_file)
 
                 bonds.append((sp_index, metal_index))
@@ -504,11 +501,11 @@ class TS():
             # move .xyz file
             shutil.move(xyz_file, calc_dir)
 
+    @staticmethod
     def get_sp_index(
-            self,
-            species,
-            visited_species,
-            adsorbate_atoms_idxs):
+            species: str,
+            visited_species: List[str],
+            adsorbate_atoms_idxs: Dict[str, int]) -> int:
         '''Count how many times the given species have been already considered
 
             e.g. If relevant_species_list = ['O', 'O'] the logic below
@@ -537,7 +534,7 @@ class TS():
             if key not found in adsorbate_atoms_idx
 
         '''
-        sp_index = self.get_index_adatom(species, adsorbate_atoms_idxs)
+        sp_index = TS.get_index_adatom(species, adsorbate_atoms_idxs)
 
         if species in visited_species:
             _count = visited_species.count(species)
@@ -545,8 +542,8 @@ class TS():
             sp_index = sp_index + _count
         else:
             visited_species.append(species)
-        if not self.is_valid_sp_index(species, sp_index,
-                                      adsorbate_atoms_idxs):
+        if not TS.is_valid_sp_index(species, sp_index,
+                                    adsorbate_atoms_idxs):
             print('Index {} is not a valid index for a species {}. \n'
                   'Check your relevant_species definition \n'
                   ''.format(sp_index, species))
@@ -555,11 +552,11 @@ class TS():
             raise KeyError
         return sp_index
 
+    @staticmethod
     def is_valid_sp_index(
-            self,
-            species,
-            sp_index,
-            adsorbate_atoms_idxs):
+            species: str,
+            sp_index: int,
+            adsorbate_atoms_idxs: Dict[str, int]) -> int:
         ''' Return True if given sp_index is possible for a given species
 
         Parameters
@@ -587,10 +584,10 @@ class TS():
         except KeyError:
             return False
 
+    @staticmethod
     def get_av_dists_tuple(
-            self,
-            relevant_species_list,
-            sp_surf_av_dists):
+            relevant_species_list: List[str],
+            sp_surf_av_dists: Dict[str, float]):
         ''' Create a av_dists_tuple with all relevant average bond distances.
 
             This method loops through sp_surf_av_dists dictionary. If
@@ -626,13 +623,13 @@ class TS():
         av_dist_tuple = tuple(av_dists_dict.values())
         return av_dist_tuple
 
+    @staticmethod
     def get_av_dists_dict(
-            self,
-            species_list,
-            metal_atom,
-            path_to_minima,
-            scfactor_surface,
-            scaled1):
+            species_list: str,
+            metal_atom: str,
+            path_to_minima: str,
+            scfactor_surface: float,
+            scaled1: bool) -> Dict[str, float]:
         ''' Get a dictionary with average distances for all species in
             species_list
 
@@ -668,18 +665,18 @@ class TS():
         '''
         sp_surf_av_dists = {}
         for species in species_list:
-            av_dist = self.get_av_dist(
+            av_dist = TS.get_av_dist(
                 path_to_minima, species, metal_atom, scfactor_surface, scaled1)
             sp_surf_av_dists[species] = av_dist
         return sp_surf_av_dists
 
+    @staticmethod
     def get_av_dist(
-            self,
-            path_to_minima,
-            species,
-            metal_atom,
-            scfactor_surface,
-            scaled=False):
+            path_to_minima: str,
+            species: str,
+            metal_atom: str,
+            scfactor_surface: float,
+            scaled: bool = False) -> float:
         ''' Get the average bond distance between a given adsorbate atom and
         the nearest surface atom for all symmetrically distinct minima
 
@@ -715,7 +712,7 @@ class TS():
         path_to_species = os.path.join(path_to_minima, species)
 
         # get unique minima prefixes
-        unique_minima_prefixes = self.get_unique_minima_prefixes_after_opt(
+        unique_minima_prefixes = TS.get_unique_minima_prefixes_after_opt(
             path_to_species)
         path_to_tmp_traj = os.path.join(path_to_species, '00.traj')
         tmp_traj = read(path_to_tmp_traj)
@@ -751,9 +748,9 @@ class TS():
             av_dist = mean(all_dists_bonded)
         return av_dist
 
+    @staticmethod
     def get_unique_minima_prefixes_after_opt(
-            self,
-            path_to_species):
+            path_to_species: str) -> List[str]:
         ''' Get the prefixes of the symmetrically distinct minima
         for a given species
 
@@ -790,13 +787,13 @@ class TS():
 
     def create_unique_ts_all(
             self,
-            ts_estimate_path,
-            rxn_name,
-            pytemplate,
-            pseudopotentials,
-            pseudo_dir,
-            balsam_exe_settings,
-            calc_keywords):
+            ts_estimate_path: str,
+            rxn_name: str,
+            pytemplate: str,
+            pseudopotentials: Dict[str, str],
+            pseudo_dir: str,
+            balsam_exe_settings: Dict[str, str],
+            calc_keywords: Dict[str, str]) -> None:
         ''' Create all TS_estimate_unique files
 
         Parameters:
@@ -829,7 +826,7 @@ class TS():
 
         '''
         # create .xyz and .png files
-        self.create_unique_ts_xyz_and_png(ts_estimate_path)
+        TS.create_unique_ts_xyz_and_png(ts_estimate_path)
         # create job files (.py scripts)
         self.create_ts_unique_py_file(pytemplate,
                                       rxn_name,
@@ -840,9 +837,9 @@ class TS():
                                       calc_keywords
                                       )
 
+    @staticmethod
     def create_unique_ts_xyz_and_png(
-            self,
-            ts_estimate_path):
+            ts_estimate_path: str) -> None:
         ''' Create unique TS files for saddle point calculations
             for a given scfactor
 
@@ -855,7 +852,7 @@ class TS():
 
         '''
         # check symmetry of all TS estimates in ts_estimate_path
-        gd_ads_index = self.check_symm(ts_estimate_path)
+        gd_ads_index = TS.check_symm(ts_estimate_path)
 
         for i, index in enumerate(gd_ads_index):
             # name of the directory with unique TS_estimates for which saddle
@@ -891,13 +888,13 @@ class TS():
 
     def create_ts_unique_py_file(
             self,
-            pytemplate,
-            rxn_name,
-            pseudopotentials,
-            pseudo_dir,
-            ts_estimate_path,
-            balsam_exe_settings,
-            calc_keywords):
+            pytemplate: str,
+            rxn_name: str,
+            pseudopotentials: Dict[str, str],
+            pseudo_dir: str,
+            ts_estimate_path: str,
+            balsam_exe_settings: Dict[str, str],
+            calc_keywords: Dict[str, str]) -> None:
         ''' Create job submission files for TS calculation with Sella
 
         Parameters:
@@ -956,23 +953,23 @@ class TS():
                     repeats=self.repeats
                 ))
 
+    @staticmethod
     def get_index_adatom(
-            self,
-            ads_atom,
-            adsorbate_atoms_idx):
+            ads_atom: str,
+            adsorbate_atoms_idx: Dict[str, float]) -> int:
         ''' Specify adsorbate atom symbol and its index will be returned.
 
         Parameters:
         ___________
         ads_atom : str
             an atom of the species bonded to the surface, e.g. 'O' for OH
-        geom : str
-            a .xyz of .traj file name with geometry of the structure
-            to be analysed
+        adsorbate_atoms_idxs : dict(str:int)
+            a dictionary with all adsorbate atoms and theirs corresponding
+            indicies
 
         Returns:
         ________
-        adsorbate_atom[0] : float
+        adsorbate_atom[0] : int
             index of the adsorbed atom
 
         '''
@@ -980,11 +977,11 @@ class TS():
             if key.startswith(ads_atom):
                 return val
 
+    @staticmethod
     def get_index_surface_atom(
-            self,
-            sp_index,
-            surface_atoms_idxs,
-            geom):
+            sp_index: int,
+            surface_atoms_idxs: Dict[str, int],
+            geom: str) -> int:
         ''' Specify adsorbate atom symbol and index of the nearest metal atom
             will be returned.
 
@@ -1016,9 +1013,9 @@ class TS():
                          == min_dist_surface_adsorbate)
         return surface_atoms_idxs_list[index[0][0]]
 
+    @staticmethod
     def check_symm(
-            self,
-            path):
+            path: str) -> List[int]:
         ''' Check for the symmetry equivalent structures in the given path
 
         Parameters:
@@ -1050,9 +1047,9 @@ class TS():
                 unique_index.append(str(num).zfill(3))
         return unique_index
 
+    @staticmethod
     def check_symm_before_xtb(
-            self,
-            path):
+            path: str) -> List[int]:
         ''' Check for the symmetry equivalent structures in the given path
             before executing penalty function minimization
 
