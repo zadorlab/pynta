@@ -1,7 +1,7 @@
 import os
 from ase.io import read, write
 from ase.io.formats import UnknownFileTypeError
-# from importlib import import_module
+from typing import Dict, List
 
 
 class LowLevelRestart():
@@ -17,16 +17,23 @@ class LowLevelRestart():
         self.prepare_ts_to_restart()
         self.prepare_after_ts_to_restart()
 
-    def get_jobs_to_restart(self):
-        ''' Get a dictionary with all ase_jobs that did not finish '''
+    def get_jobs_to_restart(self) -> Dict[str, str]:
+        ''' Get a dictionary with all ase_jobs that did not finish
 
+        Returns:
+        ________
+        all_unfinished: Dict[str, str]
+            a dictionary with all unfinished jobs, e.g.
+            all_unfinished = {Cu_111_C_01_relax.py: 'RUNNING'}
+
+        '''
         all_unfinished = {}
         for job in self.ase_jobs:
             if job.state != 'JOB_FINISHED':
                 all_unfinished[job.name] = job.state
         return all_unfinished
 
-    def get_minima_to_restart(self):
+    def get_minima_to_restart(self) -> List[str]:
         ''' Go through all_unfinished dictionary and create a list with all
             minima ase jobs that started but are not yet finished and require
             to be restarted.
@@ -45,7 +52,7 @@ class LowLevelRestart():
                 unfinished_minima.append(key)
         return unfinished_minima
 
-    def get_tss_to_restart(self):
+    def get_tss_to_restart(self) -> List[str]:
         ''' Go through all_unfinished dictionary and create a list with all
             TS ase jobs that started but are not yet finished and require to be
             restarted.
@@ -64,7 +71,7 @@ class LowLevelRestart():
                 unfinished_tss.append(key)
         return unfinished_tss
 
-    def get_after_ts_to_restart(self):
+    def get_after_ts_to_restart(self) -> List[str]:
         ''' Go through all_unfinished dictionary and create a list with all
             after_ts ase jobs that started but are not yet finished and
             require to berestarted.
@@ -86,7 +93,7 @@ class LowLevelRestart():
         # return list(set(unfinished_after_tss))
         return unfinished_after_tss
 
-    def prepare_minima_to_restart(self):
+    def prepare_minima_to_restart(self) -> None:
         ''' If there is at least one optimization step in a .traj file
             for a given minima, this method will create a new *.xyz file for
             that job from the last converged opt step.
@@ -110,7 +117,7 @@ class LowLevelRestart():
                 # hard HighLevelRestart is required
                 continue
 
-    def prepare_ts_to_restart(self):
+    def prepare_ts_to_restart(self) -> None:
         ''' If there is at least one optimization step in a .traj file
             for a given ts, this method will create a new *.xyz file for
             that job from the last converged saddle point opt step.
@@ -137,7 +144,7 @@ class LowLevelRestart():
                 # hard HighLevelRestart is required
                 continue
 
-    def prepare_after_ts_to_restart(self):
+    def prepare_after_ts_to_restart(self) -> None:
         ''' If there is at least one optimization step in a .traj file
             for a given after_ts, this method will create a new *.xyz file for
             that job from the last converge opt step.
@@ -179,7 +186,7 @@ class HighLevelRestart():
         self.ase_jobs = self.balsamjob.filter(
             application__contains='python')
 
-    def restart(self):
+    def restart(self) -> None:
         ''' Prepare all unfinished jobs to restart
 
         '''

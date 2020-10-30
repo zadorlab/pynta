@@ -1,5 +1,4 @@
 
-from os import stat
 from typing import List, Tuple, Dict
 from rmgcat_to_sella.excatkit.gratoms import Gratoms
 from rmgcat_to_sella.excatkit.adsorption import Builder
