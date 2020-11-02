@@ -2,11 +2,12 @@
 from rmgcat_to_sella.check_input import InputChecker
 from rmgcat_to_sella.restart import LowLevelRestart, HighLevelRestart
 from rmgcat_to_sella.io import IO
+from typing import List, Dict, Tuple, Any, Optional
 import os
 import sys
 import __main__
 import shutil
-from pathlib import Path
+from pathlib import Path, PosixPath
 from warnings import warn
 
 
@@ -115,41 +116,41 @@ ads_surf_opt_script = '01_set_up_ads.py'
 
 class WorkFlow:
 
-    def __init__(self):
-        ''' Setup the balsam application for this workflow run.
+    # def __init__(self):
+    #     ''' Setup the balsam application for this workflow run.
 
-            Once we start using QE will want one app for QE,
-            one for xtb most likely
-        '''
-        print('Checking Balsam DB...')
-        try:
-            from balsam.core.models import ApplicationDefinition
+    #         Once we start using QE will want one app for QE,
+    #         one for xtb most likely
+    #     '''
+    #     print('Checking Balsam DB...')
+    #     try:
+    #         from balsam.core.models import ApplicationDefinition
 
-            self.myPython, _ = ApplicationDefinition.objects.get_or_create(
-                name="python",
-                executable=sys.executable
-            )
-            self.myPython.save()
-            self.slab_opt_job = ''
+    #         self.myPython, _ = ApplicationDefinition.objects.get_or_create(
+    #             name="python",
+    #             executable=sys.executable
+    #         )
+    #         self.myPython.save()
+    #         self.slab_opt_job = ''
 
-            # TODO: instead of directly importing EspressoBalsam, we should
-            # write a function which returns the appropriate class from
-            # balsamcalc.py based on the user-provided input file
-            from rmgcat_to_sella.balsamcalc import (
-                EspressoBalsam, EspressoBalsamSocketIO
-            )
-            EspressoBalsam.exe = executable
-            EspressoBalsamSocketIO.exe = executable
-            EspressoBalsam.create_application()
-            EspressoBalsamSocketIO.create_application()
-        except SystemExit:
-            print('---')
-            print('Please create Balsam DB and/or activate it')
-            print('---')
+    #         # TODO: instead of directly importing EspressoBalsam, we should
+    #         # write a function which returns the appropriate class from
+    #         # balsamcalc.py based on the user-provided input file
+    #         from rmgcat_to_sella.balsamcalc import (
+    #             EspressoBalsam, EspressoBalsamSocketIO
+    #         )
+    #         EspressoBalsam.exe = executable
+    #         EspressoBalsamSocketIO.exe = executable
+    #         EspressoBalsam.create_application()
+    #         EspressoBalsamSocketIO.create_application()
+    #     except SystemExit:
+    #         print('---')
+    #         print('Please create Balsam DB and/or activate it')
+    #         print('---')
 
     @staticmethod
     def get_ts_xtb_py_script_list(
-            facetpath):
+            facetpath: str) -> List[str]:
         '''Get a list with all 02 job scripts
 
         Parameters
@@ -175,7 +176,7 @@ class WorkFlow:
 
     @staticmethod
     def get_ts_estimate_unique_list(
-            facetpath):
+            facetpath: str) -> List[str]:
         ''' Get a list with all 03 job scripts
 
         Parameters:
@@ -200,7 +201,7 @@ class WorkFlow:
 
     @staticmethod
     def get_ts_vib_list(
-            facetpath):
+            facetpath: str) -> List[str]:
         ''' Get a list with all 04 job scripts
 
         Parameters:
@@ -225,7 +226,7 @@ class WorkFlow:
 
     @staticmethod
     def get_after_ts_py_scripts(
-            facetpath):
+            facetpath: str) -> List[str]:
         ''' Get a list with all 05 job scripts
 
         Parameters:
@@ -250,15 +251,15 @@ class WorkFlow:
 
     @staticmethod
     def create_big_slab_pyjob(
-            pytemplate,
-            facetpath,
-            slab_name,
-            repeats,
-            balsam_exe_settings,
-            calc_keywords,
-            pseudopotentials,
-            pseudo_dir,
-            creation_dir):
+            pytemplate: str,
+            facetpath: str,
+            slab_name: str,
+            repeats: Tuple(int, int, int),
+            balsam_exe_settings: Dict[str, int],
+            calc_keywords: Dict[str, str],
+            pseudopotentials: Dict[str, str],
+            pseudo_dir: str,
+            creation_dir: PosixPath) -> None:
         ''' Create a ase pyjob for big slab optimization
 
         Parameters
@@ -323,7 +324,8 @@ class WorkFlow:
                     creation_dir=creation_dir
                 ))
 
-    def create_job_files(self):
+    @staticmethod
+    def create_job_files() -> None:
         ''' For each surface type and for each reaction
             generate submit scripts for 6 stages of the workflow
 
@@ -467,20 +469,20 @@ class WorkFlow:
 ###########################
     @staticmethod
     def set_up_slab(
-            template,
-            py_job_dir,
-            facetpath,
-            surface_type,
-            symbol,
-            a,
-            repeats_surface,
-            vacuum,
-            slab_name,
-            pseudopotentials,
-            pseudo_dir,
-            balsam_exe_settings,
-            calc_keywords,
-            creation_dir):
+            template: str,
+            py_job_dir: str,
+            facetpath: str,
+            surface_type: str,
+            symbol: str,
+            a: str,
+            repeats_surface: Tuple(int, int, int),
+            vacuum: float,
+            slab_name: str,
+            pseudopotentials: Dict[str, str],
+            pseudo_dir: str,
+            balsam_exe_settings: Dict[str, int],
+            calc_keywords: Dict[str, str],
+            creation_dir: PosixPath) -> None:
         ''' Create 00_{facetpath}_set_up_slab_opt.py file
 
         Parameters
@@ -561,18 +563,18 @@ class WorkFlow:
 
     @staticmethod
     def set_up_big_slab(
-            template,
-            py_job_dir,
-            facetpath,
-            slab_name,
-            repeats,
-            pytemplate,
-            pseudopotentials,
-            pseudo_dir,
-            node_packing_count,
-            balsam_exe_settings,
-            calc_keywords,
-            creation_dir):
+            template: str,
+            py_job_dir: str,
+            facetpath: str,
+            slab_name: str,
+            repeats: Tuple(int, int, int),
+            pytemplate: str,
+            pseudopotentials: Dict[str, str],
+            pseudo_dir: str,
+            node_packing_count: int,
+            balsam_exe_settings: Dict[str, int],
+            calc_keywords: Dict[str, str],
+            creation_dir: PosixPath) -> None:
         ''' Set up a big_slab_opt ase py job generator
 
         Parameters
@@ -648,8 +650,6 @@ class WorkFlow:
                         creation_dir, job_file_dir_name, facetpath),
                     node_packing_count=node_packing_count
                 ))
-            c.close()
-        r.close()
 
     @staticmethod
     def set_up_ads(
@@ -743,20 +743,20 @@ class WorkFlow:
 
     @staticmethod
     def set_up_TS_with_xtb(
-            rxn,
-            template,
-            py_job_dir,
-            slab,
-            repeats,
-            yamlfile,
-            facetpath,
-            scfactor,
-            scfactor_surface,
-            pytemplate_xtb,
-            species_dict,
-            metal_atom,
-            node_packing_count,
-            creation_dir):
+            rxn: Dict[str, str],
+            template: str,
+            py_job_dir: str,
+            slab: str,
+            repeats: Tuple(int, int, int),
+            yamlfile: str,
+            facetpath: str,
+            scfactor: float,
+            scfactor_surface: float,
+            pytemplate_xtb: str,
+            species_dict: Dict[str, List[str]],
+            metal_atom: str,
+            node_packing_count: int,
+            creation_dir: PosixPath) -> None:
         ''' Create 02_{facetpath}_set_up_TS_with_xtb_{rxn_name}.py files
 
         Parameters:
@@ -836,20 +836,20 @@ class WorkFlow:
 
     @staticmethod
     def set_up_run_TS(
-            rxn,
-            template,
-            py_job_dir,
-            facetpath,
-            slab,
-            repeats,
-            yamlfile,
-            pytemplate,
-            pseudopotentials,
-            pseudo_dir,
-            node_packing_count,
-            balsam_exe_settings,
-            calc_keywords,
-            creation_dir):
+            rxn: Dict[str, str],
+            template: str,
+            py_job_dir: str,
+            facetpath: str,
+            slab: str,
+            repeats: Tuple(int, int, int),
+            yamlfile: str,
+            pytemplate: str,
+            pseudopotentials: Dict[str, str],
+            pseudo_dir: str,
+            node_packing_count: int,
+            balsam_exe_settings: Dict[str, int],
+            calc_keywords: Dict[str, str],
+            creation_dir: PosixPath) -> None:
         ''' Create 03_{facetpath}_set_up_run_TS_{rxn_name}.py file
 
         Parameters:
@@ -936,20 +936,20 @@ class WorkFlow:
 
     @staticmethod
     def set_up_TS_vib(
-            rxn,
-            template,
-            py_job_dir,
-            facetpath,
-            slab,
-            repeats,
-            yamlfile,
-            pytemplate,
-            pseudopotentials,
-            pseudo_dir,
-            node_packing_count,
-            balsam_exe_settings,
-            calc_keywords,
-            creation_dir):
+            rxn: Dict[str, str],
+            template: str,
+            py_job_dir: str,
+            facetpath: str,
+            slab: str,
+            repeats: Tuple(int, int, int),
+            yamlfile: str,
+            pytemplate: str,
+            pseudopotentials: Dict[str, str],
+            pseudo_dir: str,
+            node_packing_count: float,
+            balsam_exe_settings: Dict[str, int],
+            calc_keywords: Dict[str, str],
+            creation_dir: PosixPath) -> None:
         ''' Create '04_{facetpath}_set_up_TS_vib_{rxn_name}.py file
 
         Parameters:
@@ -1036,20 +1036,20 @@ class WorkFlow:
 
     @staticmethod
     def set_up_opt_after_TS(
-            rxn,
-            template,
-            py_job_dir,
-            facetpath,
-            slab,
-            repeats,
-            yamlfile,
-            pytemplate,
-            pseudopotentials,
-            pseudo_dir,
-            node_packing_count,
-            balsam_exe_settings,
-            calc_keywords,
-            creation_dir):
+            rxn: Dict[str, str],
+            template: str,
+            py_job_dir: str,
+            facetpath: str,
+            slab: str,
+            repeats: Tuple(int, int, int),
+            yamlfile: str,
+            pytemplate: str,
+            pseudopotentials: Dict[str, str],
+            pseudo_dir: str,
+            node_packing_count: int,
+            balsam_exe_settings: Dict[str, int],
+            calc_keywords: Dict[str, str],
+            creation_dir: PosixPath) -> None:
         ''' Create 05_{facetpath}_set_up_after_TS_{rxn_name}.py file
 
         Parameters:
@@ -1142,10 +1142,10 @@ class WorkFlow:
 
     def exe(
             self,
-            parent_job,
-            job_script,
-            facetpath,
-            cores=1):
+            parent_job: str,
+            job_script: str,
+            facetpath: str,
+            cores: int = 1) -> Any:
         ''' Execute a py script
 
         Parameters:
@@ -1165,7 +1165,7 @@ class WorkFlow:
         Returns:
         ________
 
-        job_to_add : balsam job
+        job_to_add : BalsamJob
             job that will be submitted to balsam queue/database
 
         '''
@@ -1235,7 +1235,7 @@ class WorkFlow:
 
     def run_slab_optimization(
             self,
-            facetpath):
+            facetpath: str) -> None:
         ''' Submit slab_optimization_job
 
         Parameters:
@@ -1251,7 +1251,7 @@ class WorkFlow:
 
     def run_big_slab_opt(
             self,
-            facetpath):
+            facetpath: str) -> None:
         ''' Submit big slab optimization
 
         Parameters
@@ -1266,7 +1266,7 @@ class WorkFlow:
 
     def run_opt_surf_and_adsorbate(
             self,
-            facetpath):
+            facetpath: str) -> None:
         ''' Run optmization of adsorbates on the surface
 
         Parameters:
@@ -1283,7 +1283,7 @@ class WorkFlow:
 
     def run_opt_surf_and_adsorbate_no_depend(
             self,
-            facetpath):
+            facetpath: str) -> None:
         ''' Run optmization of adsorbates on the surface
             if there is no dependency on other jobs
 
@@ -1300,8 +1300,8 @@ class WorkFlow:
 
     def run_ts_estimate(
             self,
-            dependent_job,
-            facetpath):
+            dependent_job: str,
+            facetpath: str) -> None:
         ''' Run TS estimation calculations
 
         Parameters:
@@ -1322,7 +1322,7 @@ class WorkFlow:
 
     def run_ts_estimate_no_depend(
             self,
-            facetpath):
+            facetpath: str) -> None:
         ''' Run TS estimate calculations if there is no dependency on the
             other jobs
 
@@ -1340,8 +1340,8 @@ class WorkFlow:
 
     def run_ts_with_sella(
             self,
-            dependant_job,
-            facetpath):
+            dependant_job: str,
+            facetpath: str) -> None:
         ''' Run TS minimization with Sella
 
         Parameters:
@@ -1363,8 +1363,8 @@ class WorkFlow:
 
     def run_ts_vib(
             self,
-            dependant_job,
-            facetpath):
+            dependant_job: str,
+            facetpath: str) -> None:
         ''' Run frequency calculations for TS
 
         Parameters:
@@ -1385,8 +1385,8 @@ class WorkFlow:
 
     def run_opt_after_ts(
             self,
-            dependant_job,
-            facetpath):
+            dependant_job: str,
+            facetpath: str) -> None:
         ''' Run minimization of minima obtained as nudging TS structure
             towards imaginary mode of oscilation
 
@@ -1408,8 +1408,8 @@ class WorkFlow:
 
     @staticmethod
     def check_all_species(
-            yamlfile,
-            facetpath):
+            yamlfile: str,
+            facetpath: str) -> Dict[str, bool]:
         ''' Check all species(all reactions) to find whether
             there are previous calculation the code can use
 
@@ -1442,8 +1442,8 @@ class WorkFlow:
 
     @staticmethod
     def is_minima_dir(
-            species,
-            facetpath):
+            species: str,
+            facetpath: str) -> bool:
         ''' Return True if directory for a given species exists in
             {facepath}/minima. Otherwise, False
 
@@ -1466,8 +1466,8 @@ class WorkFlow:
 
     @staticmethod
     def is_minima_out_files(
-            species,
-            facetpath):
+            species: str,
+            facetpath: str) -> bool:
         ''' Check for the previously calculated * relax.out files for a given
             species. Return True if there are previous calculations. Otherwise,
             False.
@@ -1499,7 +1499,7 @@ class WorkFlow:
 
     @staticmethod
     def is_slab(
-            facetpath):
+            facetpath: str) -> Tuple(bool, Optional[str]):
         ''' Check whether slab has been already optimized
 
         Parameters:
@@ -1535,7 +1535,7 @@ class WorkFlow:
 
     @staticmethod
     def is_big_slab(
-            facetpath):
+            facetpath: str) -> bool:
         ''' Check for big_slab calculations. True if there is a big_slab file,
             False if not. If multiple matches found, print all and raise error.
 
@@ -1568,7 +1568,7 @@ class WorkFlow:
 
     @staticmethod
     def check_if_slab_opt_exists(
-            facetpath):
+            facetpath: str) -> Tuple[bool, Optional[str]]:
         ''' Check whether slab has been already optimized
 
         Parameters:
@@ -1604,7 +1604,7 @@ class WorkFlow:
 
     def execute(
             self,
-            facetpath):
+            facetpath: str) -> None:
         ''' The main execute method for a given surface
 
         Parameters:
@@ -1670,12 +1670,12 @@ class WorkFlow:
         # optimize to minima
         self.run_opt_after_ts('04', facetpath)
 
-    def execute_all(self):
+    def execute_all(self) -> None:
         ''' Main execute method for the entire workflow '''
         for facetpath in facetpaths:
             self.execute(facetpath)
 
     @staticmethod
-    def restart():
+    def restart() -> None:
         LowLevelRestart().restart()
         HighLevelRestart().restart()
