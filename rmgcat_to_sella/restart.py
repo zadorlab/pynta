@@ -183,8 +183,8 @@ class HighLevelRestart():
     def __init__(self):
         # get all python (ASE) jobs
         self.balsamjob = __import__(
-            'balsam.launcher.dag.BalsamJob', fromlist=['BalsamJob', ])
-        self.ase_jobs = self.balsamjob.filter(
+            'balsam.launcher.dag', fromlist=['BalsamJob'])
+        self.ase_jobs = self.balsamjob.BalsamJob.objects.filter(
             application__contains='python')
 
     def restart(self) -> None:
@@ -192,8 +192,8 @@ class HighLevelRestart():
 
         '''
         # remove all balsam calculator objects
-        self.balsamjob.filter(name__contains='balsam',
-                              workflow='QE_Socket').delete()
+        self.balsamjob.BalsamJob.objects.filter(name__contains='balsam',
+                                                workflow='QE_Socket').delete()
 
         # update state of every not finished jobs to 'READY'
         for job in self.ase_jobs:
