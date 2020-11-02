@@ -2,7 +2,9 @@ import os
 import shutil
 import yaml
 import networkx as nx
-from pathlib import Path
+from pathlib import Path, PosixPath
+from typing import List, Tuple, Optional, Dict
+import numpy as np
 
 from rmgcat_to_sella.excatkit.gratoms import Gratoms
 from rmgcat_to_sella.excatkit.molecule import Molecule
@@ -18,8 +20,8 @@ class IO():
 
     @staticmethod
     def get_facetpath(
-            symbol,
-            surface_type) -> None:
+            symbol: str,
+            surface_type: str) -> None:
         ''' Get a facetpath for a given surface defined by a
             symbol and a surface_type
 
@@ -52,8 +54,8 @@ class IO():
 
     @staticmethod
     def get_facetpaths(
-            symbol,
-            surface_types):
+            symbol: str,
+            surface_types: List[str]) -> List[str]:
         ''' Generate a list with all facetpaths for a
         given surface defined by a symbol and a surface_type
 
@@ -89,8 +91,8 @@ class IO():
 
     @staticmethod
     def get_kpoints(
-            size,
-            get_uniq_kpts=False):
+            size: Tuple(int, int, int),
+            get_uniq_kpts: bool = False) -> Tuple[int, Optional[np.ndarray]]:
         ''' Returns number of unique k-points for a given size of the slab
 
         Parameters:
@@ -118,7 +120,7 @@ class IO():
 
     def get_species_dict(
             self,
-            yamlfile):
+            yamlfile: str) -> Dict[str, List[str]]:
         ''' For a given reaction get a dictionary with all species that takes
             part in the reaction.
 
@@ -151,7 +153,7 @@ class IO():
 
     @staticmethod
     def open_yaml_file(
-            yamlfile):
+            yamlfile: str) -> List[Dict[str, str]]:
         ''' Open yaml file with list of reactions
 
         Parameters:
@@ -172,7 +174,7 @@ class IO():
 
     def get_all_species(
             self,
-            yamlfile):
+            yamlfile: str) -> List[str]:
         ''' Generate a list with all unique species for all reactions
             combined
 
@@ -200,7 +202,7 @@ class IO():
 
     def prepare_react_list(
             self,
-            rxn):
+            rxn: Dict[str, str]) -> Tuple(List[str], List[str], List[Gratoms]):
         '''Convert yaml file to more useful format
 
         Paremeters:
@@ -253,7 +255,7 @@ class IO():
 
     def get_rxn_name(
             self,
-            rxn):
+            rxn: Dict[str, str]) -> str:
         ''' Get the reaction name
 
         Paremeters:
@@ -294,7 +296,7 @@ class IO():
 
     @staticmethod
     def rmgcat_to_gratoms(
-            adjtxt):
+            adjtxt: str) -> Tuple[List[Gratoms], List[int]]:
         ''' Convert a slice of .yaml file to Catkit's Gratoms object
 
         Parameters:
@@ -414,7 +416,7 @@ class IO():
 
     @staticmethod
     def get_xyz_from_traj(
-            path_to_species):
+            path_to_species: str) -> None:
         ''' Convert all ASE's traj files to .xyz files for a given species
 
         Parameters:
@@ -436,9 +438,9 @@ class IO():
 
     def depends_on(
             self,
-            facetpath,
-            yamlfile,
-            creation_dir):
+            facetpath: str,
+            yamlfile: str,
+            creation_dir: PosixPath) -> Dict[str, List[str]]:
         ''' Returns a dictionary of adsorbate + surface calculations
         (step 01; .py files) that has to be finished before starting step 02
         for a particular reaction
@@ -509,7 +511,7 @@ class IO():
         return dependancy_dict
 
     @staticmethod
-    def clean_finished_subjobs():
+    def clean_finished_subjobs() -> None:
         ''' Move finished subjob files to finised_tmp_scripts directory '''
         dir_name = 'finished_tmp_scripts'
         os.makedirs(dir_name, exist_ok=True)
