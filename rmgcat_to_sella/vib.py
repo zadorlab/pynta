@@ -1,7 +1,8 @@
+from sys import path
 from rmgcat_to_sella.io import IO
 from ase.io import read, write
 from pathlib import Path, PosixPath
-from typing import Tuple, Dict
+from typing import Tuple, Dict, List
 from numpy import floor
 import os
 import shutil
@@ -13,7 +14,7 @@ class AfterTS():
             facetpath: str,
             yamlfile: str,
             slab: str,
-            repeats: Tuple[int, int.int],
+            repeats: Tuple[int, int, int],
             creation_dir: PosixPath) -> None:
 
         self.facetpath = facetpath
@@ -492,3 +493,50 @@ class AfterTS():
                 dist = xyz_atom.get_distance(0, 1)
                 r_dist_dict[xyz] = dist
         return f_dist_dict, r_dist_dict
+
+
+class minimaVib():
+    def __init__(
+            self,
+            facetpath: str) -> None:
+
+        self.facetpath = facetpath
+        self.minima_path = os.path.join(self.facetpath, 'minima')
+
+    def get_minima_energies(
+            self,
+            species: str) -> Dict[str, float]:
+        species_path = os.path.join(self.minima_path, species)
+
+        energies = {}
+        traj_files = Path(species_path).glob('*final.xyz')
+        for traj in traj_files:
+            species_atom = read(traj)
+            traj = str(traj)
+            energies[traj] = species_atom.get_potential_energy()
+        return energies
+
+    def get_min_conformer(
+            self,
+            species: str) -> float:
+        minima_energies = self.get_minima_energies(species)
+        path_to_min_ener_species = min(
+            minima_energies, key=minima_energies.get)
+        return path_to_min_ener_species
+
+    def create_minima_vib_all(
+            self,
+            species_list: List[str]) -> None:
+        minima_vib_path = os.path.join(self.facetpath, 'minima_vib')
+        os.makedirs(minima_vib_path, exist_ok=True)
+        for species in species_list:
+            self.create_minima_vib(species, minima_vib_path)
+
+    def create_minima_vib(
+            self,
+            species: str,
+            minima_vib_path: str) -> None:
+        path_to_vib_species = os.path.join(minima_vib_path, species)
+        os.makedirs(path_to_vib_species, exist_ok=True)
+        path_to_min_ener_species = self.get_min_conformer(species)
+        shutil.copy2(path_to_min_ener_species, path_to_vib_species)
