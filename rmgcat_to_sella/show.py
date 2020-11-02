@@ -24,7 +24,7 @@ class Show():
                 running_jobs.append(job)
         return len(running_jobs)
 
-    def status(self):
+    def status(self) -> None:
         ''' Show info about the current status of the Balsam DB, i.e.
             How many jobs are running? How many already finished? etc...
 
@@ -36,7 +36,7 @@ class Show():
         for key, val in current_state.items():
             print('{:>15} : {:>4}'.format(key, val))
 
-    def not_finished(self):
+    def not_finished(self) -> None:
         ''' Show info about all jobs that did not finish:
         State, workflow name jobname
 

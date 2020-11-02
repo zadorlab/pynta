@@ -5,6 +5,7 @@ import os
 import numpy as np
 from ase.io import read
 from pathlib import Path
+from typing import List, Dict, Tuple
 import matplotlib.pyplot as plt
 from matplotlib.ticker import AutoMinorLocator
 
@@ -22,7 +23,7 @@ class Results():
         self.slab_paths = ['{}_slab_opt_res.xyz'.format(
             facetpath) for facetpath in self.facetpaths]
 
-    def get_reaction_energies_all(self):
+    def get_reaction_energies_all(self) -> None:
         ''' Get reactiom energy (kj/mol) for all facetpaths and reactions
 
         Returns
@@ -47,11 +48,11 @@ class Results():
 
     def get_reaction_energy(
             self,
-            minima_path,
-            facetpath,
-            r_name_list,
-            p_name_list,
-            slab_path):
+            minima_path: str,
+            facetpath: str,
+            r_name_list: List[str],
+            p_name_list: List[str],
+            slab_path: str) -> str:
         ''' Calclate reaction energy as a difference between
             the most stable product and the most stable reactant
 
@@ -100,7 +101,7 @@ class Results():
         reaction_energy = '{:.2f}'.format(round(reaction_energy[0], 3))
         return reaction_energy
 
-    def get_barrier_all(self):
+    def get_barrier_all(self) -> Dict[str, Dict[str, str]]:
         ''' Get barrier heights for all rxn_names and facetpaths
 
         Returns
@@ -126,12 +127,12 @@ class Results():
 
     def get_barrier(
             self,
-            minima_path,
-            ts_path,
-            facetpath,
-            r_name_list,
-            p_name_list,
-            slab_path):
+            minima_path: str,
+            ts_path: str,
+            facetpath: str,
+            r_name_list: List[str],
+            p_name_list: List[str],
+            slab_path: str) -> Dict[str, float]:
         ''' Calculate reaction energy relatively to the most stable reactant
 
         Parameters:
@@ -182,11 +183,11 @@ class Results():
 
     @staticmethod
     def get_data(
-            minima_path,
-            facetpath,
-            r_name_list,
-            p_name_list,
-            slab_path):
+            minima_path: str,
+            facetpath: str,
+            r_name_list: List[str],
+            p_name_list: List[str],
+            slab_path: str) -> Tuple[List[float], List[float], float, int]:
         ''' Returns the lowest energies lists for reactants and products.
 
         Parameters:
@@ -266,7 +267,7 @@ class Results():
 
     @staticmethod
     def get_slab_ener(
-            slab_path):
+            slab_path: str) -> float:
         ''' Get energy of the slab
 
         Parameters:
@@ -287,7 +288,7 @@ class Results():
 
     @staticmethod
     def get_ts_ener(
-            ts_path):
+            ts_path: str) -> List[float]:
         ''' Get energy of all TSs
 
         Parameters:
@@ -315,9 +316,9 @@ class Results():
 
     @staticmethod
     def get_lowest_species_ener(
-            minima_path,
-            species,
-            facetpath):
+            minima_path: str,
+            species: str,
+            facetpath: str) -> float:
         ''' Get the lowest energy of the most stable species
 
         Parameters:
@@ -358,7 +359,7 @@ class Results():
 
     @staticmethod
     def get_ts_out_files(
-            ts_path):
+            ts_path: str) -> List[str]:
         ''' Get TS .out files
 
         Parameters:
@@ -381,9 +382,9 @@ class Results():
 
     @staticmethod
     def get_species_out_files(
-            minima_path,
-            species,
-            facetpath):
+            minima_path: str,
+            species: str,
+            facetpath: str) -> List[str]:
         ''' Get .out files for each reactants
 
         Parameters:
@@ -418,7 +419,7 @@ class Results():
 
     @staticmethod
     def format_TS_name(
-            ts_path):
+            ts_path: str) -> List[str]:
         ''' Function to get prefixes of TSs
 
         Parameters:
@@ -442,7 +443,7 @@ class Results():
 
     @staticmethod
     def rxn_title(
-            rxn_name):
+            rxn_name: str) -> str:
         ''' Return rxn name with arrow between reactants and products
 
         Parameters:
@@ -460,7 +461,7 @@ class Results():
         rxn_name_title = reactants + ' --> ' + products
         return rxn_name_title
 
-    def plot(self):
+    def plot(self) -> None:
         ''' Plot all results and automatically detect how many reactions and
             facet types exist.
 
@@ -483,14 +484,14 @@ class Results():
 
     @staticmethod
     def plot_rxn(
-            key,
-            reaction_energies,
-            activation_barriers,
-            rxn_name,
-            axes,
-            num,
-            plot_filename=None,
-            apply_max_barrier=False):
+            key: str,
+            reaction_energies: Dict[str, float],
+            activation_barriers: Dict[str, Dict[str, str]],
+            rxn_name: str,
+            axes: plt.subplot,
+            num: int,
+            plot_filename: str = None,
+            apply_max_barrier: bool = False) -> None:
         ''' Plot reaction energy diagram for a given reaction and facetpath
 
         Parameters:
@@ -510,7 +511,7 @@ class Results():
             an axis for matplotlib.subplot
         num : int
             a num indicating column of the axes (an index of axes)
-        plot_title : str
+        plot_file_name : str
             provide a title for the plot, optional
         apply_max_barrier : bool
             specify whether to apply a filter for a max barrier,
