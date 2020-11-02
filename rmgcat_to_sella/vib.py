@@ -13,7 +13,7 @@ class AfterTS():
             facetpath: str,
             yamlfile: str,
             slab: str,
-            repeats: Tuple[int, int.int],
+            repeats: Tuple[int, int, int],
             creation_dir: PosixPath) -> None:
 
         self.facetpath = facetpath

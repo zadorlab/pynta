@@ -91,7 +91,7 @@ class IO():
 
     @staticmethod
     def get_kpoints(
-            size: Tuple(int, int, int),
+            size: Tuple[int, int, int],
             get_uniq_kpts: bool = False) -> Tuple[int, Optional[np.ndarray]]:
         ''' Returns number of unique k-points for a given size of the slab
 
