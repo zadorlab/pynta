@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
+from pathlib import PosixPath
 from rmgcat_to_sella.balsamcalc import EspressoBalsamSocketIO
-# from rmgcat_to_sella.io import IO
+from typing import Dict, Tuple
 
 from ase.build import fcc111, fcc211, fcc100
 from ase.build import bcc111, bcc110, hcp0001
 from ase.build import diamond111, diamond100
 from ase.optimize import BFGSLineSearch
 from ase.io import write
+from ase import Atoms
 
 import os
 
@@ -14,17 +16,17 @@ import os
 class GetSlab:
     def __init__(
             self,
-            surface_type,
-            symbol,
-            a,
-            repeats_surface,
-            vacuum,
-            slab_name,
-            pseudopotentials,
-            pseudo_dir,
-            balsam_exe_settings,
-            calc_keywords,
-            creation_dir):
+            surface_type: str,
+            symbol: str,
+            a: str,
+            repeats_surface: Tuple[int, int, int],
+            vacuum: float,
+            slab_name: str,
+            pseudopotentials: Dict[str, str],
+            pseudo_dir: str,
+            balsam_exe_settings: Dict[str, float],
+            calc_keywords: Dict[str, str],
+            creation_dir: PosixPath) -> None:
         ''' A class for preparing and optimizing a user defined slab
 
         Parameters:
@@ -84,7 +86,7 @@ class GetSlab:
         self.calc_keywords = calc_keywords
         self.creation_dir = creation_dir
 
-    def run_slab_opt(self):
+    def run_slab_opt(self) -> None:
         ''' Run slab optimization '''
         if self.surface_type == 'fcc111':
             GetSlab.opt_fcc111(self)
@@ -98,50 +100,54 @@ class GetSlab:
             print('fcc111, fcc211, fcc100, bcc111, bcc110, hcp0001, '
                   'diamond111, diamond100')
 
-    def opt_fcc111(self):
+    def opt_fcc111(self) -> None:
         ''' Optimize fcc111 slab '''
         slab = fcc111(self.symbol, self.repeats_surface, self.a, self.vacuum)
         self.prepare_slab_opt(slab)
 
-    def opt_fcc211(self):
+    def opt_fcc211(self) -> None:
         ''' Optimize fcc211 slab '''
         slab = fcc211(self.symbol, self.repeats_surface, self.a, self.vacuum)
         self.prepare_slab_opt(slab)
 
-    def opt_fcc100(self):
+    def opt_fcc100(self) -> None:
         ''' Optimize fcc100 slab '''
         slab = fcc100(self.symbol, self.repeats_surface, self.a, self.vacuum)
         self.prepare_slab_opt(slab)
 
-    def opt_bcc111(self):
+    def opt_bcc111(self) -> None:
         ''' Optimize bcc111 slab '''
         slab = bcc111(self.symbol, self.repeats_surface, self.a, self.vacuum)
         self.prepare_slab_opt(slab)
 
-    def opt_bcc110(self):
+    def opt_bcc110(self) -> None:
         ''' Optimize bcc110 slab '''
         slab = bcc110(self.symbol, self.repeats_surface, self.a, self.vacuum)
         self.prepare_slab_opt(slab)
 
-    def opt_hcp0001(self, c=None):
+    def opt_hcp0001(
+            self,
+            c: int = None) -> None:
         ''' Optimize hcp0001 slab '''
         slab = hcp0001(self.symbol, self.repeats_surface, self.a, c,
                        self.vacuum)
         self.prepare_slab_opt(slab)
 
-    def opt_diamond111(self):
+    def opt_diamond111(self) -> None:
         ''' Optimize diamond111 slab '''
         slab = diamond111(self.symbol, self.repeats_surface, self.a,
                           self.vacuum)
         self.prepare_slab_opt(slab)
 
-    def opt_diamond100(self):
+    def opt_diamond100(self) -> None:
         ''' Optimize diamond100 slab '''
         slab = diamond100(self.symbol, self.repeats_surface, self.a,
                           self.vacuum)
         self.prepare_slab_opt(slab)
 
-    def prepare_slab_opt(self, slab):
+    def prepare_slab_opt(
+            self,
+            slab: Atoms) -> None:
         ''' Prepare slab optimization with Quantum Espresso '''
 
         # n_kpts = IO().get_kpoints(self.repeats_surface)

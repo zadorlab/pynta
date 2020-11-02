@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 import os
+from pathlib import PosixPath
 import yaml
+from typing import Tuple, List, Dict
 
 import numpy as np
 import networkx as nx
@@ -28,11 +30,11 @@ class Adsorbates:
 
     def __init__(
             self,
-            facetpath,
-            slab,
-            repeats,
-            yamlfile,
-            creation_dir):
+            facetpath: str,
+            slab: str,
+            repeats: Tuple(int, int, int),
+            yamlfile: str,
+            creation_dir: PosixPath) -> None:
         ''' Initializing
 
         Parameters:
@@ -59,7 +61,7 @@ class Adsorbates:
 
     def get_edges(
             self,
-            find_surface=False):
+            find_surface: bool = False) -> Tuple(List[str], np.ndarray):
         ''' Get adsorption edges
 
         Parameters:
@@ -165,7 +167,7 @@ class Adsorbates:
 
     @staticmethod
     def rmgcat_to_gratoms(
-            adjtxt):
+            adjtxt: str) -> Tuple[List[Gratoms], List[int]]:
         ''' Convert a slice of .yaml file to Catkit's Gratoms object
 
         Parameters:
@@ -283,7 +285,7 @@ class Adsorbates:
 
         return gratoms_list, bonds
 
-    def adjacency_to_3d(self):
+    def adjacency_to_3d(self) -> None:
         ''' Place adsorbates on the surface '''
         with open(self.creation_dir + '/' + self.yamlfile, 'r') as f:
             text = f.read()
@@ -365,13 +367,12 @@ class Adsorbates:
 
     def create_relax_jobs(
             self,
-            pytemplate,
-            pseudopotentials,
-            pseudo_dir,
-            balsam_exe_settings,
-            calc_keywords,
-            shtemplate=None
-    ):
+            pytemplate: str,
+            pseudopotentials: Dict[str, str],
+            pseudo_dir: str,
+            balsam_exe_settings: Dict[str, int],
+            calc_keywords: Dict[str, str],
+            shtemplate: str = None) -> None:
         ''' Create a submit scripts
 
         Parameters:
