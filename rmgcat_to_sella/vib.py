@@ -1,6 +1,7 @@
 from rmgcat_to_sella.io import IO
 from ase.io import read, write
-from pathlib import Path
+from pathlib import Path, PosixPath
+from typing import Tuple, Dict
 from numpy import floor
 import os
 import shutil
@@ -9,11 +10,11 @@ import shutil
 class AfterTS():
     def __init__(
             self,
-            facetpath,
-            yamlfile,
-            slab,
-            repeats,
-            creation_dir):
+            facetpath: str,
+            yamlfile: str,
+            slab: str,
+            repeats: Tuple[int, int.int],
+            creation_dir: PosixPath) -> None:
 
         self.facetpath = facetpath
         self.yamlfile = yamlfile
@@ -25,12 +26,12 @@ class AfterTS():
 
     def set_up_ts_vib(
             self,
-            rxn,
-            pytemplate,
-            balsam_exe_settings,
-            calc_keywords,
-            pseudopotentials,
-            pseudo_dir):
+            rxn: Dict[str, str],
+            pytemplate: str,
+            balsam_exe_settings: Dict[str, int],
+            calc_keywords: Dict[str, str],
+            pseudopotentials: Dict[str, str],
+            pseudo_dir: str) -> None:
         '''Set up files for TSs vibration calculations
 
         Parameters
@@ -108,15 +109,15 @@ class AfterTS():
 
     def create_ts_vib_py_files(
             self,
-            pytemplate,
-            geom,
-            py_fname,
-            balsam_exe_settings,
-            calc_keywords,
-            pseudopotentials,
-            pseudo_dir,
-            nimages=30,
-            n=0):
+            pytemplate: str,
+            geom: str,
+            py_fname: str,
+            balsam_exe_settings: Dict[str, int],
+            calc_keywords: Dict[str, str],
+            pseudopotentials: Dict[str, str],
+            pseudo_dir: str,
+            nimages: int = 30,
+            n: int = 0) -> None:
         ''' Create job submission .py files for frequency calculation of TSs
 
         Parameters
@@ -178,12 +179,12 @@ class AfterTS():
 
     def prepare_opt_after_ts(
             self,
-            rxn,
-            pytemplate,
-            balsam_exe_settings,
-            calc_keywords,
-            pseudopotentials,
-            pseudo_dir):
+            rxn: Dict[str, str],
+            pytemplate: str,
+            balsam_exe_settings: Dict[str, int],
+            calc_keywords: Dict[str, str],
+            pseudopotentials: Dict[str, str],
+            pseudo_dir: str) -> None:
         ''' Create files for after_TS calculations - to verify TS structures
             and get corresponding reactant and product minima[summary]
 
@@ -263,10 +264,10 @@ class AfterTS():
 
     @staticmethod
     def get_forward_and_reverse(
-            vib_traj,
-            fname_forward,
-            fname_reverse,
-            nimages=30):
+            vib_traj: str,
+            fname_forward: str,
+            fname_reverse: str,
+            nimages: int = 30) -> None:
         ''' Get forward and reverse .xyz file by nudging TS towards imaginary
         mode of oscilations summary
 
@@ -310,13 +311,13 @@ class AfterTS():
 
     def create_after_ts_py_files(
             self,
-            pytemplate,
-            fname_forward,
-            fname_reverse,
-            balsam_exe_settings,
-            calc_keywords,
-            pseudopotentials,
-            pseudo_dir):
+            pytemplate: str,
+            fname_forward: str,
+            fname_reverse: str,
+            balsam_exe_settings: Dict[str, int],
+            calc_keywords: Dict[str, str],
+            pseudopotentials: Dict[str, str],
+            pseudo_dir: str) -> None:
         ''' Create job submission files for minimization displaced structures
             after TS
 
@@ -374,7 +375,7 @@ class AfterTS():
                     n_kpts=self.n_kpts
                 ))
 
-    def get_all_distances(self):
+    def get_all_distances(self) -> None:
         ''' Get distances between reacting species for ts, forward and
         reverse structure
 
@@ -388,9 +389,9 @@ class AfterTS():
 
     @staticmethod
     def print_table(
-            ts_dist_dict,
-            forward_dist_dict,
-            reverse_dist_dict):
+            ts_dist_dict: Dict[str, float],
+            forward_dist_dict: Dict[str, float],
+            reverse_dist_dict: Dict[str, float]) -> None:
         ''' Print information about bond distances (reacting atoms) for TS,
         forward and reverse .xyz file
 
@@ -414,12 +415,11 @@ class AfterTS():
 
         print('TS \t \t TS_dist \t F_dist \t R_dist')
         for key, ts, f, r in zip(keys, ts_val, f_val, r_val):
-
             print('{} \t {:2f} \t {:2f} \t {:2f}'.format(key, ts, f, r))
 
     def get_ts_dist(
             self,
-            rxn_name):
+            rxn_name: str) -> Dict[str, float]:
         ''' For given rxn_name get distances between reacting species
             in TS structure
 
@@ -453,7 +453,7 @@ class AfterTS():
 
     def get_forward_and_reverse_dist(
             self,
-            rxn_name):
+            rxn_name: str) -> Tuple[Dict[str, float], Dict[str, float]]:
         ''' For given rxn_name get distances between reacting species in
             forward and reverse .xyz file
 
