@@ -353,7 +353,6 @@ class Adsorbates:
                 structures[key] = structs
             except IndexError:
                 print(adsorbate, adsorbate.edges, adsorbate.get_tags())
-        print(structures)
         big_slab = slab_atom * self.repeats
         nslab = len(slab_atom)
 

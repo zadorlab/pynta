@@ -560,8 +560,6 @@ class minimaVib():
         minima_vib_path = os.path.join(
             self.creation_dir, self.facetpath, 'minima_vib')
         os.makedirs(minima_vib_path, exist_ok=True)
-        if species == 'OH':
-            species = 'HO'
         path_to_minima_species = os.path.join(self.minima_path, species)
         path_to_vib_species = os.path.join(minima_vib_path, species)
         os.makedirs(path_to_vib_species, exist_ok=True)
@@ -739,8 +737,6 @@ class minimaVib():
             calculations
 
         '''
-        # if species == 'OH':
-        #     species = 'HO'
         dependancy_minima_list = []
         dependancy_minima = Path(self.minima_path).glob(
             '*_{}_*.py'.format(species))
