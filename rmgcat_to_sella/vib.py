@@ -648,7 +648,9 @@ class minimaVib():
             pseudo_dir: str,
             pseudopotentials: Dict[str, str],
             calc_keywords: Dict[str, str],
-            creation_dir: PosixPath) -> None:
+            creation_dir: PosixPath,
+            nimages: int = 30,
+            n: int = 0) -> None:
         ''' Create a .py files for a vibrational frequiency calculations
             for a given species
 
@@ -691,20 +693,29 @@ class minimaVib():
                             'conv_thr': 1e-11, 'mixing_mode': 'local-TF'}
         creation_dir : PosixPath
             a posix path to the working directory
+        nimages : int, optional
+            how many strucutres to use to construct a trajectory visualizing
+            oscilations, by default 30
+        n : int, optional
+            mode of oscilation, i.e. which vibration to analyze.
+            0 is the first vibration, should be imaginary, by default 0
 
         '''
         with open(pytemplate, 'r') as f:
             pytemplate_txt = f.read()
             py_file_name = os.path.join(
                 self.facetpath + '_' + species + '_vib.py')
+            print(minima_vib_path)
             py_file = os.path.join(minima_vib_path, py_file_name)
-            print(py_file)
+            geom = os.path.join(minima_vib_path, species, species + '.traj')
             with open(py_file, 'w') as c:
                 c.write(pytemplate_txt.format(
-                    geom=traj_fname,
+                    geom=geom,
                     balsam_exe_settings=balsam_exe_settings,
                     creation_dir=creation_dir,
                     pseudopotentials=pseudopotentials,
                     pseudo_dir=pseudo_dir,
-                    calc_keywords=calc_keywords
+                    calc_keywords=calc_keywords,
+                    nimages=nimages,
+                    n=n
                 ))
