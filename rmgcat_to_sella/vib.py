@@ -705,12 +705,10 @@ class minimaVib():
             pytemplate_txt = f.read()
             py_file_name = os.path.join(
                 self.facetpath + '_' + species + '_vib.py')
-            print(minima_vib_path)
             py_file = os.path.join(minima_vib_path, py_file_name)
-            geom = os.path.join(minima_vib_path, species, species + '.traj')
             with open(py_file, 'w') as c:
                 c.write(pytemplate_txt.format(
-                    geom=geom,
+                    geom=traj_fname,
                     balsam_exe_settings=balsam_exe_settings,
                     creation_dir=creation_dir,
                     pseudopotentials=pseudopotentials,
@@ -719,3 +717,32 @@ class minimaVib():
                     nimages=nimages,
                     n=n
                 ))
+
+    def dependency_minima_vib(
+            self,
+            species: str) -> List[str]:
+        ''' Get a list with all dependant species minima calculations that have
+            to be finished before vibrational frequency for that species
+            can start
+
+        Parameters
+        ----------
+        species : str
+            a chemical symbol of the adsorbate
+
+        Returns
+        -------
+        dependancy_minima_list : List[str]
+            a list with all minima calculations for that particular species,
+            that have to be finished before starting vibrational frequency
+            calculations
+
+        '''
+        if species == 'OH':
+            species = 'HO'
+        dependancy_minima_list = []
+        dependancy_minima = Path(self.minima_path).glob(
+            '*_{}_*.py'.format(species))
+        for pyscript in dependancy_minima:
+            dependancy_minima_list.append(os.path.basename(pyscript))
+        return dependancy_minima_list
