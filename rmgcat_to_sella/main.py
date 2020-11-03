@@ -104,7 +104,7 @@ pytemplate_big_slab_opt = os.path.join(
 pytemplate_relax_ads = os.path.join(
     path_pytemplate + 'pytemplate_set_up_ads_on_slab.py')
 pytemplate_set_up_ads_vib = os.path.join(
-    path_template + 'pytemplate_set_up_ads_vib.py')
+    path_pytemplate + 'pytemplate_set_up_ads_vib.py')
 pytemplate_xtb = os.path.join(path_pytemplate + 'pytemplate_set_up_xtb.py')
 pytemplate_set_up_ts = os.path.join(
     path_pytemplate + 'pytemplate_set_up_ts.py')
@@ -764,18 +764,18 @@ class WorkFlow:
 
     @staticmethod
     def set_up_ads_vib(
-            template,
-            py_job_dir,
-            facetpath,
-            repeats,
-            all_species,
-            pytemplate,
-            pseudopotentials,
-            pseudo_dir,
-            node_packing_count,
-            balsam_exe_settings,
-            calc_keywords,
-            creation_dir):
+            template: str,
+            py_job_dir: str,
+            facetpath: str,
+            repeats: Tuple[int, int, int],
+            all_species: List[str],
+            pytemplate: str,
+            pseudopotentials: Dict[str, str],
+            pseudo_dir: str,
+            node_packing_count: int,
+            balsam_exe_settings: Dict[str, int],
+            calc_keywords: Dict[str, str],
+            creation_dir: PosixPath) -> None:
         '''[summary]
 
         Parameters

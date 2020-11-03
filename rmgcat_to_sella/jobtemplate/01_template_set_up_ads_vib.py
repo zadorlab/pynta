@@ -18,8 +18,8 @@ calc_keywords = {calc_keywords}
 creation_dir = '{creation_dir}'
 node_packing_count = {node_packing_count}
 
-mv = minimaVib(facetpath)
-mv.create_minima_vib_all(species_list)
+mv = minimaVib(facetpath, creation_dir)
+mv.create_minima_vib_all(all_species, pytemplate)
 
 # dependancy_dict = IO().depends_on(facetpath, yamlfile, creation_dir)
 

@@ -498,54 +498,68 @@ class AfterTS():
 class minimaVib():
     def __init__(
             self,
-            facetpath: str) -> None:
+            facetpath: str,
+            creation_dir: PosixPath) -> None:
 
         self.facetpath = facetpath
-        self.minima_path = os.path.join(self.facetpath, 'minima')
-
-    def get_minima_energies(
-            self,
-            species: str) -> Dict[str, float]:
-        species_path = os.path.join(self.minima_path, species)
-
-        energies = {}
-        traj_files = Path(species_path).glob('*final.xyz')
-        for traj in traj_files:
-            species_atom = read(traj)
-            traj = str(traj)
-            energies[traj] = species_atom.get_potential_energy()
-        return energies
-
-    def get_min_conformer(
-            self,
-            species: str) -> float:
-        minima_energies = self.get_minima_energies(species)
-        path_to_min_ener_species = min(
-            minima_energies, key=minima_energies.get)
-        return path_to_min_ener_species
+        self.creation_dir = creation_dir
+        self.minima_path = os.path.join(
+            self.creation_dir, self.facetpath, 'minima')
 
     def create_minima_vib_all(
             self,
             species_list: List[str],
-            template: str) -> None:
-        minima_vib_path = os.path.join(self.facetpath, 'minima_vib')
+            pytemplate: str) -> None:
+        minima_vib_path = os.path.join(
+            self.creation_dir, self.facetpath, 'minima_vib')
         os.makedirs(minima_vib_path, exist_ok=True)
         for species in species_list:
-            self.create_minima_vib_xyz(species, minima_vib_path)
-            self.create_minima_vib_py_files(species, template)
+            if species == 'OH':
+                species = 'HO'
+            path_to_minima_species = os.path.join(self.minima_path, species)
+            path_to_vib_species = os.path.join(minima_vib_path, species)
+            os.makedirs(path_to_vib_species, exist_ok=True)
+
+            self.create_minima_vib_xyz(
+                path_to_minima_species, path_to_vib_species)
+            self.create_minima_vib_py_files(
+                species, minima_vib_path, pytemplate)
 
     def create_minima_vib_xyz(
             self,
-            species: str,
-            minima_vib_path: str) -> None:
-        path_to_vib_species = os.path.join(minima_vib_path, species)
-        os.makedirs(path_to_vib_species, exist_ok=True)
-        path_to_min_ener_species = self.get_min_conformer(species)
+            path_to_minima_species: str,
+            path_to_vib_species: str) -> None:
+        path_to_min_ener_species = self.get_min_conformer(
+            path_to_minima_species)
         shutil.copy2(path_to_min_ener_species, path_to_vib_species)
+
+    def get_min_conformer(
+            self,
+            path_to_minima_species: str) -> float:
+        minima_energies = self.get_minima_energies(path_to_minima_species)
+        print(minima_energies)
+        path_to_min_ener_species = min(
+            minima_energies, key=minima_energies.get)
+        return path_to_min_ener_species
+
+    def get_minima_energies(
+            self,
+            path_to_minima_species: str) -> Dict[str, float]:
+        energies = {}
+        final_xyz_files = Path(path_to_minima_species).glob('*traj')
+        for xyz in final_xyz_files:
+            species_atom = read(xyz)
+            xyz = str(xyz)
+            energies[xyz] = species_atom.get_potential_energy()
+        return energies
 
     def create_minima_vib_py_files(
             self,
             species: str,
-            template: str) -> None:
-        with open(template, 'r') as f:
-            template_txt = f.read()
+            minima_vib_path: str,
+            pytemplate: str) -> None:
+        with open(pytemplate, 'r') as f:
+            pytemplate_txt = f.read()
+            py_file_name = os.path.join(
+                self.facetpath + '_' + species + '_vib.py')
+            py_file = os.path.join(minima_vib_path, py_file_name)
