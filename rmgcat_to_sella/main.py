@@ -6,7 +6,6 @@ from typing import List, Dict, Tuple, Any, Optional
 import os
 import sys
 import __main__
-import shutil
 from pathlib import Path, PosixPath
 from warnings import warn
 
@@ -59,7 +58,7 @@ else:
     scaled2 = inputR2S.scaled2
     relevant_species_list = inputR2S.relevant_species_list
     species_dict = IO().get_species_dict(check_yaml)
-    all_species = IO().get_all_species(yamlfile)
+    all_species = IO().get_all_species(check_yaml)
     executable = inputR2S.executable
     node_packing_count = inputR2S.node_packing_count
     balsam_exe_settings = inputR2S.balsam_exe_settings
@@ -121,37 +120,46 @@ ads_surf_opt_script = '01_set_up_ads.py'
 
 class WorkFlow:
 
-    # def __init__(self):
-    #     ''' Setup the balsam application for this workflow run.
+    def __init__(self):
+        ''' Setup the balsam application for this workflow run.
 
-    #         Once we start using QE will want one app for QE,
-    #         one for xtb most likely
-    #     '''
-    #     print('Checking Balsam DB...')
-    #     try:
-    #         from balsam.core.models import ApplicationDefinition
+            Once we start using QE will want one app for QE,
+            one for xtb most likely
+        '''
+        print('Checking Balsam DB...')
+        try:
+            from balsam.core.models import ApplicationDefinition
 
-    #         self.myPython, _ = ApplicationDefinition.objects.get_or_create(
-    #             name="python",
-    #             executable=sys.executable
-    #         )
-    #         self.myPython.save()
-    #         self.slab_opt_job = ''
+            self.myPython, _ = ApplicationDefinition.objects.get_or_create(
+                name="python",
+                executable=sys.executable
+            )
+            self.myPython.save()
+            self.slab_opt_job = ''
 
-    #         # TODO: instead of directly importing EspressoBalsam, we should
-    #         # write a function which returns the appropriate class from
-    #         # balsamcalc.py based on the user-provided input file
-    #         from rmgcat_to_sella.balsamcalc import (
-    #             EspressoBalsam, EspressoBalsamSocketIO
-    #         )
-    #         EspressoBalsam.exe = executable
-    #         EspressoBalsamSocketIO.exe = executable
-    #         EspressoBalsam.create_application()
-    #         EspressoBalsamSocketIO.create_application()
-    #     except SystemExit:
-    #         print('---')
-    #         print('Please create Balsam DB and/or activate it')
-    #         print('---')
+            # TODO: instead of directly importing EspressoBalsam, we should
+            # write a function which returns the appropriate class from
+            # balsamcalc.py based on the user-provided input file
+            from rmgcat_to_sella.balsamcalc import (
+                EspressoBalsam, EspressoBalsamSocketIO
+            )
+            EspressoBalsam.exe = executable
+            EspressoBalsamSocketIO.exe = executable
+            EspressoBalsam.create_application()
+            EspressoBalsamSocketIO.create_application()
+        except SystemExit:
+            print('---')
+            print('Please create Balsam DB and/or activate it')
+            print('---')
+
+    @staticmethod
+    def get_minima_vib_py_scripts(
+            facetpath: str) -> List[str]:
+        minima_vib_py_script_list = []
+        for species in all_species:
+            fname = '01_{}_set_up_ads_vib_{}.py'.format(facetpath, species)
+            minima_vib_py_script_list.append(fname)
+        return minima_vib_py_script_list
 
     @staticmethod
     def get_ts_xtb_py_script_list(
@@ -1376,6 +1384,29 @@ class WorkFlow:
         ads_surf_opt_script = '01_{}_set_up_ads_on_slab.py'.format(facetpath)
         return self.exe('', ads_surf_opt_script, facetpath)
 
+    def run_minima_vib(
+            self,
+            dependent_job: str,
+            facetpath: str) -> None:
+        ''' Run vibrational frequnecies calculations for the lowest energy
+            conformer of a given adsorbate
+
+        Parameters
+        ----------
+        dependant_job : str
+            a prefix of the the job (minimum: two integers,
+            max: whole job script name) that the current run depends on,
+            e.g. '01'
+        facetpath : str
+            a path to the workflow's main dir
+            e.g. 'Cu_111'
+
+        '''
+        minima_vib_py_script_list = WorkFlow.get_minima_vib_py_scripts(
+            facetpath)
+        for minima_vib in minima_vib_py_script_list:
+            self.exe(dependent_job, minima_vib, facetpath)
+
     def run_ts_estimate(
             self,
             dependent_job: str,
@@ -1385,9 +1416,9 @@ class WorkFlow:
         Parameters:
         ___________
 
-        dependant_jon : str
+        dependant_job : str
             a prefix of the the job (minimum: two integers,
-            max: whole job script name) that the current depends on,
+            max: whole job script name) that the current run depends on,
             e.g. '01'
         facetpath : str
             a path to the workflow's main dir
@@ -1701,6 +1732,7 @@ class WorkFlow:
                 self.run_slab_optimization(facetpath)
             if WorkFlow.is_big_slab(facetpath) is False:
                 self.run_big_slab_opt(facetpath)
+            self.run_minima_vib('01', facetpath)
             # check if species were already calculated
             if all(WorkFlow.check_all_species(yamlfile, facetpath).values()):
                 # If all are True, start by generating TS guesses and run

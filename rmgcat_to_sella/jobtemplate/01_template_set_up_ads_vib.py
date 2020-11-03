@@ -1,12 +1,7 @@
 #!/usr/bin/env python3
-from operator import sub
-from pathlib import Path
 import os
-
 from rmgcat_to_sella.vib import minimaVib
-from rmgcat_to_sella.io import IO
-
-# from balsam.launcher.dag import BalsamJob, add_dependency
+from balsam.launcher.dag import BalsamJob, add_dependency
 
 facetpath = '{facetpath}'
 repeats = {repeats}

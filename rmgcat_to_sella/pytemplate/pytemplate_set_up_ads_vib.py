@@ -5,7 +5,7 @@ import os
 import datetime
 from rmgcat_to_sella.balsamcalc import EspressoBalsamSocketIO
 
-from ase.io import read, write
+from ase.io import read
 from ase.constraints import FixAtoms
 from ase.vibrations import Vibrations
 
