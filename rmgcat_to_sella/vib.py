@@ -515,6 +515,46 @@ class minimaVib():
             pseudopotentials: Dict[str, str],
             calc_keywords: Dict[str, str],
             creation_dir: PosixPath) -> None:
+        ''' Create all files for frequency calculations for the most stable
+            conformer for a given species.
+
+        Parameters
+        ----------
+        species_list : List[str]
+            a list with all species taking part in all reactions,
+            e.g. ['H', 'C', 'CH', 'O', 'OH']
+        pytemplate : str
+            a pytemplate for frequency calculations of minima
+        balsam_exe_settings : Dict[str, int]
+            a dictionary with balsam execute parameters (cores, nodes, etc.),
+            e.g.
+            balsam_exe_settings = {'num_nodes': 1,
+                                   'ranks_per_node': 48,
+                                   'threads_per_rank': 1}
+        pseudo_dir : str
+            a path to the QE's pseudopotentials main directory
+            e.g.
+            '/home/mgierad/espresso/pseudo'
+        pseudopotentials : Dict[str, str]
+            a dictionary with QE pseudopotentials for all species.
+            e.g.
+            dict(Cu='Cu.pbe-spn-kjpaw_psl.1.0.0.UPF',
+                H='H.pbe-kjpaw_psl.1.0.0.UPF',
+                O='O.pbe-n-kjpaw_psl.1.0.0.UPF',
+                C='C.pbe-n-kjpaw_psl.1.0.0.UPF',
+                )
+        calc_keywords : Dict[str, str]
+            a dictionary with parameters to run DFT package. Quantum Espresso
+            is used as default, e.g.
+
+            calc_keywords = {'kpts': (3, 3, 1), 'occupations': 'smearing',
+                            'smearing':  'marzari-vanderbilt',
+                            'degauss': 0.01, 'ecutwfc': 40, 'nosym': True,
+                            'conv_thr': 1e-11, 'mixing_mode': 'local-TF'}
+        creation_dir : PosixPath
+            a posix path to the working directory
+
+        '''
         minima_vib_path = os.path.join(
             self.creation_dir, self.facetpath, 'minima_vib')
         os.makedirs(minima_vib_path, exist_ok=True)
@@ -528,7 +568,7 @@ class minimaVib():
             traj_fname = os.path.join(path_to_vib_species, species + '.traj')
 
             self.create_minima_vib_xyz(
-                path_to_minima_species, path_to_vib_species, traj_fname)
+                path_to_minima_species, traj_fname)
             self.create_minima_vib_py_files(
                 species, traj_fname, minima_vib_path, pytemplate,
                 balsam_exe_settings, pseudo_dir, pseudopotentials,
@@ -537,24 +577,59 @@ class minimaVib():
     def create_minima_vib_xyz(
             self,
             path_to_minima_species: str,
-            path_to_vib_species: str,
             traj_fname: str) -> None:
+        ''' Create traj file with optimized minima for a vibrational frequency
+            calculations
+
+        Parameters
+        ----------
+        path_to_minima_species : str
+            a path where all minima calculations for a given species are
+        traj_fname : str
+            a name of a new traj file
+
+        '''
         path_to_min_ener_species = self.get_min_conformer(
             path_to_minima_species)
         shutil.copy2(path_to_min_ener_species, traj_fname)
-        # os.rename(path_to_vib_species, traj_fname)
 
     def get_min_conformer(
             self,
-            path_to_minima_species: str) -> float:
-        minima_energies = self.get_minima_energies(path_to_minima_species)
+            path_to_minima_species: str) -> str:
+        ''' Get path to the most stable conformer of a given species
+
+        Parameters
+        ----------
+        path_to_minima_species : str
+            a path where all minima calculations for a given species are
+
+        Returns
+        -------
+        path_to_min_ener_species: str
+            a path to the most stable conformer of a given species
+
+        '''
+        minima_energies = minimaVib.get_minima_energies(path_to_minima_species)
         path_to_min_ener_species = min(
             minima_energies, key=minima_energies.get)
         return path_to_min_ener_species
 
+    @staticmethod
     def get_minima_energies(
-            self,
             path_to_minima_species: str) -> Dict[str, float]:
+        '''[summary]
+
+        Parameters
+        ----------
+        path_to_minima_species : str
+            a path where all minima calculations for a given species are
+
+        Returns
+        -------
+        energies: Dict[str, float]
+            a dict with path to a given minima and potential energy
+            associated with it
+        '''
         energies = {}
         final_xyz_files = Path(path_to_minima_species).glob('*traj')
         for xyz in final_xyz_files:
@@ -574,6 +649,50 @@ class minimaVib():
             pseudopotentials: Dict[str, str],
             calc_keywords: Dict[str, str],
             creation_dir: PosixPath) -> None:
+        ''' Create a .py files for a vibrational frequiency calculations
+            for a given species
+
+        Parameters
+        ----------
+        species : str
+            a chemical symbol of a reacting species
+        traj_fname : str
+            a name of a new traj file
+        minima_vib_path : str
+            a path to vibrational frequency calculations of minima,
+            e.g. 'Cu_111/minima_vib'
+        pytemplate : str
+            a pytemplate for frequency calculations of minima
+        balsam_exe_settings : Dict[str, int]
+            a dictionary with balsam execute parameters (cores, nodes, etc.),
+            e.g.
+            balsam_exe_settings = {'num_nodes': 1,
+                                   'ranks_per_node': 48,
+                                   'threads_per_rank': 1}
+        pseudo_dir : str
+            a path to the QE's pseudopotentials main directory
+            e.g.
+            '/home/mgierad/espresso/pseudo'
+        pseudopotentials : Dict[str, str]
+            a dictionary with QE pseudopotentials for all species.
+            e.g.
+            dict(Cu='Cu.pbe-spn-kjpaw_psl.1.0.0.UPF',
+                H='H.pbe-kjpaw_psl.1.0.0.UPF',
+                O='O.pbe-n-kjpaw_psl.1.0.0.UPF',
+                C='C.pbe-n-kjpaw_psl.1.0.0.UPF',
+                )
+        calc_keywords : Dict[str, str]
+            a dictionary with parameters to run DFT package. Quantum Espresso
+            is used as default, e.g.
+
+            calc_keywords = {'kpts': (3, 3, 1), 'occupations': 'smearing',
+                            'smearing':  'marzari-vanderbilt',
+                            'degauss': 0.01, 'ecutwfc': 40, 'nosym': True,
+                            'conv_thr': 1e-11, 'mixing_mode': 'local-TF'}
+        creation_dir : PosixPath
+            a posix path to the working directory
+
+        '''
         with open(pytemplate, 'r') as f:
             pytemplate_txt = f.read()
             py_file_name = os.path.join(
