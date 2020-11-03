@@ -9,7 +9,7 @@ from rmgcat_to_sella.io import IO
 
 facetpath = '{facetpath}'
 repeats = {repeats}
-all_species = {all_species}
+adsorbate = '{adsorbate}'
 pytemplate = '{pytemplate}'
 pseudopotentials = {pseudopotentials}
 pseudo_dir = '{pseudo_dir}'
@@ -19,9 +19,12 @@ creation_dir = '{creation_dir}'
 node_packing_count = {node_packing_count}
 
 mv = minimaVib(facetpath, creation_dir)
-mv.create_minima_vib_all(all_species, pytemplate, balsam_exe_settings,
+mv.create_minima_vib_all(adsorbate, pytemplate, balsam_exe_settings,
                          pseudo_dir, pseudopotentials, calc_keywords,
                          creation_dir)
+
+py_scripts = mv.dependency_minima_vib(adsorbate)
+print(py_scripts)
 
 # dependancy_dict = IO().depends_on(facetpath, yamlfile, creation_dir)
 

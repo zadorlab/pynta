@@ -508,7 +508,7 @@ class minimaVib():
 
     def create_minima_vib_all(
             self,
-            species_list: List[str],
+            species: str,
             pytemplate: str,
             balsam_exe_settings: Dict[str, int],
             pseudo_dir: str,
@@ -520,6 +520,8 @@ class minimaVib():
 
         Parameters
         ----------
+        species : str
+            a chemical symbol of the adsorbate
         species_list : List[str]
             a list with all species taking part in all reactions,
             e.g. ['H', 'C', 'CH', 'O', 'OH']
@@ -558,21 +560,20 @@ class minimaVib():
         minima_vib_path = os.path.join(
             self.creation_dir, self.facetpath, 'minima_vib')
         os.makedirs(minima_vib_path, exist_ok=True)
-        for species in species_list:
-            if species == 'OH':
-                species = 'HO'
-            path_to_minima_species = os.path.join(self.minima_path, species)
-            path_to_vib_species = os.path.join(minima_vib_path, species)
-            os.makedirs(path_to_vib_species, exist_ok=True)
+        if species == 'OH':
+            species = 'HO'
+        path_to_minima_species = os.path.join(self.minima_path, species)
+        path_to_vib_species = os.path.join(minima_vib_path, species)
+        os.makedirs(path_to_vib_species, exist_ok=True)
 
-            traj_fname = os.path.join(path_to_vib_species, species + '.traj')
+        traj_fname = os.path.join(path_to_vib_species, species + '.traj')
 
-            self.create_minima_vib_xyz(
-                path_to_minima_species, traj_fname)
-            self.create_minima_vib_py_files(
-                species, traj_fname, minima_vib_path, pytemplate,
-                balsam_exe_settings, pseudo_dir, pseudopotentials,
-                calc_keywords, creation_dir)
+        self.create_minima_vib_xyz(
+            path_to_minima_species, traj_fname)
+        self.create_minima_vib_py_files(
+            species, traj_fname, minima_vib_path, pytemplate,
+            balsam_exe_settings, pseudo_dir, pseudopotentials,
+            calc_keywords, creation_dir)
 
     def create_minima_vib_xyz(
             self,

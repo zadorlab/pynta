@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-from os import stat
 from rmgcat_to_sella.check_input import InputChecker
 from rmgcat_to_sella.restart import LowLevelRestart, HighLevelRestart
 from rmgcat_to_sella.io import IO
@@ -800,23 +799,25 @@ class WorkFlow:
             [description]
 
         '''
-        with open(template, 'r') as f:
-            template_txt = f.read()
-            py_job_fname = os.path.join(
-                py_job_dir, '01_{}_set_up_ads_vib.py'.format(facetpath))
-            with open(py_job_fname, 'w') as c:
-                c.write(template_txt.format(
-                    facetpath=facetpath,
-                    repeats=repeats,
-                    all_species=all_species,
-                    pytemplate=pytemplate,
-                    pseudopotentials=pseudopotentials,
-                    pseudo_dir=pseudo_dir,
-                    node_packing_count=node_packing_count,
-                    balsam_exe_settings=balsam_exe_settings,
-                    calc_keywords=calc_keywords,
-                    creation_dir=creation_dir
-                ))
+        for species in all_species:
+            with open(template, 'r') as f:
+                template_txt = f.read()
+                py_job_fname = os.path.join(
+                    py_job_dir,
+                    '01_{}_set_up_ads_vib_{}.py'.format(facetpath, species))
+                with open(py_job_fname, 'w') as c:
+                    c.write(template_txt.format(
+                        facetpath=facetpath,
+                        repeats=repeats,
+                        adsorbate=species,
+                        pytemplate=pytemplate,
+                        pseudopotentials=pseudopotentials,
+                        pseudo_dir=pseudo_dir,
+                        node_packing_count=node_packing_count,
+                        balsam_exe_settings=balsam_exe_settings,
+                        calc_keywords=calc_keywords,
+                        creation_dir=creation_dir
+                    ))
 
     @staticmethod
     def set_up_TS_with_xtb(
