@@ -19,7 +19,9 @@ creation_dir = '{creation_dir}'
 node_packing_count = {node_packing_count}
 
 mv = minimaVib(facetpath, creation_dir)
-mv.create_minima_vib_all(all_species, pytemplate)
+mv.create_minima_vib_all(all_species, pytemplate, balsam_exe_settings,
+                         pseudo_dir, pseudopotentials, calc_keywords,
+                         creation_dir)
 
 # dependancy_dict = IO().depends_on(facetpath, yamlfile, creation_dir)
 

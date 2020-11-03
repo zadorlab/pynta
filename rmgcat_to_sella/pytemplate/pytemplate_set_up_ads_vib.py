@@ -4,25 +4,17 @@ import os
 import shutil
 
 import datetime
-from numpy.core.fromnumeric import repeat
 from rmgcat_to_sella.balsamcalc import EspressoBalsamSocketIO
 
 from ase.io import read, write
 from ase.constraints import FixAtoms
 from ase.optimize import QuasiNewton
 
-adsorbate = '{adsorbate}'
-prefix = '{prefix}'
+geom = '{geom}'
 balsam_exe_settings = {balsam_exe_settings}
 calc_keywords = {calc_keywords}
 creation_dir = '{creation_dir}'
-jobdir = os.path.join(adsorbate, prefix)
-outdir = os.path.join(jobdir, prefix)
 
-if os.path.exists(jobdir):
-    shutil.rmtree(jobdir)
-os.mkdir(jobdir)
-label = os.path.join(jobdir, prefix)
 start = datetime.datetime.now()
 
 with open(outdir + '_time.log', 'w+') as f:
@@ -41,11 +33,6 @@ extra_calc_keywords = dict(
     label=label
 )
 
-# kpts={repeats},
-# jobs_args='-nk {n_kpts}',
-
-# # update balsam_exe_settings with info about a new num_nodes
-# balsam_exe_settings['num_nodes'] = {n_kpts}
 
 atoms.calc = EspressoBalsamSocketIO(
     workflow='QE_Socket',
