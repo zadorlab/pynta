@@ -716,7 +716,7 @@ class minimaVib():
                     pseudo_dir=pseudo_dir,
                     calc_keywords=calc_keywords,
                     nimages=nimages,
-                    n=n
+                    n=n,
                 ))
 
     def dependency_minima_vib(
@@ -739,8 +739,8 @@ class minimaVib():
             calculations
 
         '''
-        if species == 'OH':
-            species = 'HO'
+        # if species == 'OH':
+        #     species = 'HO'
         dependancy_minima_list = []
         dependancy_minima = Path(self.minima_path).glob(
             '*_{}_*.py'.format(species))

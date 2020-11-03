@@ -17,6 +17,9 @@ balsam_exe_settings = {balsam_exe_settings}
 calc_keywords = {calc_keywords}
 creation_dir = '{creation_dir}'
 node_packing_count = {node_packing_count}
+submit_py = os.path.join(facetpath + '_' + adsorbate + '_vib.py')
+submit_py_path = os.path.join(creation_dir, facetpath, 'minima_vib', submit_py)
+print(submit_py_path)
 
 mv = minimaVib(facetpath, creation_dir)
 mv.create_minima_vib_all(adsorbate, pytemplate, balsam_exe_settings,
