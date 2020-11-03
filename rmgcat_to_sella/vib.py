@@ -526,13 +526,15 @@ class minimaVib():
 
     def create_minima_vib_all(
             self,
-            species_list: List[str]) -> None:
+            species_list: List[str],
+            template: str) -> None:
         minima_vib_path = os.path.join(self.facetpath, 'minima_vib')
         os.makedirs(minima_vib_path, exist_ok=True)
         for species in species_list:
-            self.create_minima_vib(species, minima_vib_path)
+            self.create_minima_vib_xyz(species, minima_vib_path)
+            self.create_minima_vib_py_files(species, template)
 
-    def create_minima_vib(
+    def create_minima_vib_xyz(
             self,
             species: str,
             minima_vib_path: str) -> None:
@@ -540,3 +542,10 @@ class minimaVib():
         os.makedirs(path_to_vib_species, exist_ok=True)
         path_to_min_ener_species = self.get_min_conformer(species)
         shutil.copy2(path_to_min_ener_species, path_to_vib_species)
+
+    def create_minima_vib_py_files(
+            self,
+            species: str,
+            template: str) -> None:
+        with open(template, 'r') as f:
+            template_txt = f.read()

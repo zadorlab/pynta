@@ -200,6 +200,29 @@ class IO():
             set([sp for sublist in all_species for sp in sublist]))
         return all_species_unique
 
+    def get_all_species_given_rxn(
+            self,
+            rxn: Dict[str, str]) -> List[str]:
+        ''' Get the reaction name
+
+        Paremeters:
+        ___________
+
+        rxn : dict(yaml[str:str])
+            a dictionary with info about the paricular reaction. This can be
+            view as a splitted many reaction .yaml file into a single reaction
+            .yaml file
+
+        Returns:
+        _______
+        rxn_name : str
+            a name of the reaction in the following format:
+            'OH_H+O'
+        '''
+        r_name_list, p_name_list, _ = self.prepare_react_list(rxn)
+        all_species_rxn = r_name_list + p_name_list
+        return all_species_rxn
+
     def prepare_react_list(
             self,
             rxn: Dict[str, str]) -> Tuple[List[str], List[str], List[Gratoms]]:

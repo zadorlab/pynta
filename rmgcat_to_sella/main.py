@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from os import stat
 from rmgcat_to_sella.check_input import InputChecker
 from rmgcat_to_sella.restart import LowLevelRestart, HighLevelRestart
 from rmgcat_to_sella.io import IO
@@ -59,6 +60,7 @@ else:
     scaled2 = inputR2S.scaled2
     relevant_species_list = inputR2S.relevant_species_list
     species_dict = IO().get_species_dict(check_yaml)
+    all_species = IO().get_all_species(yamlfile)
     executable = inputR2S.executable
     node_packing_count = inputR2S.node_packing_count
     balsam_exe_settings = inputR2S.balsam_exe_settings
@@ -87,6 +89,8 @@ template_slab_opt = os.path.join(
 template_big_slab_opt = os.path.join(
     path_template + '00_template_set_up_big_slab_opt.py')
 template_ads = os.path.join(path_template + '01_template_set_up_ads.py')
+template_ads_vib = os.path.join(
+    path_template + '01_template_set_up_ads_vib.py')
 template_set_up_ts_with_xtb = os.path.join(
     path_template + '02_template_set_up_ts_with_xtb.py')
 template_set_up_ts = os.path.join(
@@ -99,6 +103,8 @@ pytemplate_big_slab_opt = os.path.join(
     path_pytemplate + 'pytemplate_set_up_big_slab_opt.py')
 pytemplate_relax_ads = os.path.join(
     path_pytemplate + 'pytemplate_set_up_ads_on_slab.py')
+pytemplate_set_up_ads_vib = os.path.join(
+    path_template + 'pytemplate_set_up_ads_vib.py')
 pytemplate_xtb = os.path.join(path_pytemplate + 'pytemplate_set_up_xtb.py')
 pytemplate_set_up_ts = os.path.join(
     path_pytemplate + 'pytemplate_set_up_ts.py')
@@ -116,37 +122,37 @@ ads_surf_opt_script = '01_set_up_ads.py'
 
 class WorkFlow:
 
-    def __init__(self):
-        ''' Setup the balsam application for this workflow run.
+    # def __init__(self):
+    #     ''' Setup the balsam application for this workflow run.
 
-            Once we start using QE will want one app for QE,
-            one for xtb most likely
-        '''
-        print('Checking Balsam DB...')
-        try:
-            from balsam.core.models import ApplicationDefinition
+    #         Once we start using QE will want one app for QE,
+    #         one for xtb most likely
+    #     '''
+    #     print('Checking Balsam DB...')
+    #     try:
+    #         from balsam.core.models import ApplicationDefinition
 
-            self.myPython, _ = ApplicationDefinition.objects.get_or_create(
-                name="python",
-                executable=sys.executable
-            )
-            self.myPython.save()
-            self.slab_opt_job = ''
+    #         self.myPython, _ = ApplicationDefinition.objects.get_or_create(
+    #             name="python",
+    #             executable=sys.executable
+    #         )
+    #         self.myPython.save()
+    #         self.slab_opt_job = ''
 
-            # TODO: instead of directly importing EspressoBalsam, we should
-            # write a function which returns the appropriate class from
-            # balsamcalc.py based on the user-provided input file
-            from rmgcat_to_sella.balsamcalc import (
-                EspressoBalsam, EspressoBalsamSocketIO
-            )
-            EspressoBalsam.exe = executable
-            EspressoBalsamSocketIO.exe = executable
-            EspressoBalsam.create_application()
-            EspressoBalsamSocketIO.create_application()
-        except SystemExit:
-            print('---')
-            print('Please create Balsam DB and/or activate it')
-            print('---')
+    #         # TODO: instead of directly importing EspressoBalsam, we should
+    #         # write a function which returns the appropriate class from
+    #         # balsamcalc.py based on the user-provided input file
+    #         from rmgcat_to_sella.balsamcalc import (
+    #             EspressoBalsam, EspressoBalsamSocketIO
+    #         )
+    #         EspressoBalsam.exe = executable
+    #         EspressoBalsamSocketIO.exe = executable
+    #         EspressoBalsam.create_application()
+    #         EspressoBalsamSocketIO.create_application()
+    #     except SystemExit:
+    #         print('---')
+    #         print('Please create Balsam DB and/or activate it')
+    #         print('---')
 
     @staticmethod
     def get_ts_xtb_py_script_list(
@@ -254,7 +260,7 @@ class WorkFlow:
             pytemplate: str,
             facetpath: str,
             slab_name: str,
-            repeats: Tuple(int, int, int),
+            repeats: Tuple[int, int, int],
             balsam_exe_settings: Dict[str, int],
             calc_keywords: Dict[str, str],
             pseudopotentials: Dict[str, str],
@@ -392,6 +398,21 @@ class WorkFlow:
                 creation_dir
             )
 
+            WorkFlow.set_up_ads_vib(
+                template_ads_vib,
+                py_job_dir,
+                facetpath,
+                repeats,
+                all_species,
+                pytemplate_set_up_ads_vib,
+                pseudopotentials,
+                pseudo_dir,
+                node_packing_count,
+                balsam_exe_settings,
+                calc_keywords,
+                creation_dir
+            )
+
             reactions = IO().open_yaml_file(yamlfile)
             # the rest of jobs depends on reaction,
             # so loop throug all reactions
@@ -475,7 +496,7 @@ class WorkFlow:
             surface_type: str,
             symbol: str,
             a: str,
-            repeats_surface: Tuple(int, int, int),
+            repeats_surface: Tuple[int, int, int],
             vacuum: float,
             slab_name: str,
             pseudopotentials: Dict[str, str],
@@ -567,7 +588,7 @@ class WorkFlow:
             py_job_dir: str,
             facetpath: str,
             slab_name: str,
-            repeats: Tuple(int, int, int),
+            repeats: Tuple[int, int, int],
             pytemplate: str,
             pseudopotentials: Dict[str, str],
             pseudo_dir: str,
@@ -742,12 +763,68 @@ class WorkFlow:
                 ))
 
     @staticmethod
+    def set_up_ads_vib(
+            template,
+            py_job_dir,
+            facetpath,
+            repeats,
+            all_species,
+            pytemplate,
+            pseudopotentials,
+            pseudo_dir,
+            node_packing_count,
+            balsam_exe_settings,
+            calc_keywords,
+            creation_dir):
+        '''[summary]
+
+        Parameters
+        ----------
+        facetpath : [type]
+            [description]
+        repeats : [type]
+            [description]
+        all_species : [type]
+            [description]
+        pytemplate : [type]
+            [description]
+        pseudopotentials : [type]
+            [description]
+        pseudo_dir : [type]
+            [description]
+        balsam_exe_settings : [type]
+            [description]
+        calc_keywords : [type]
+            [description]
+        creation_dir : [type]
+            [description]
+
+        '''
+        with open(template, 'r') as f:
+            template_txt = f.read()
+            py_job_fname = os.path.join(
+                py_job_dir, '01_{}_set_up_ads_vib.py'.format(facetpath))
+            with open(py_job_fname, 'w') as c:
+                c.write(template_txt.format(
+                    facetpath=facetpath,
+                    repeats=repeats,
+                    all_species=all_species,
+                    pytemplate=pytemplate,
+                    pseudopotentials=pseudopotentials,
+                    pseudo_dir=pseudo_dir,
+                    node_packing_count=node_packing_count,
+                    balsam_exe_settings=balsam_exe_settings,
+                    calc_keywords=calc_keywords,
+                    creation_dir=creation_dir
+                ))
+
+    @staticmethod
     def set_up_TS_with_xtb(
             rxn: Dict[str, str],
             template: str,
             py_job_dir: str,
             slab: str,
-            repeats: Tuple(int, int, int),
+            repeats: Tuple[int, int, int],
             yamlfile: str,
             facetpath: str,
             scfactor: float,
@@ -841,7 +918,7 @@ class WorkFlow:
             py_job_dir: str,
             facetpath: str,
             slab: str,
-            repeats: Tuple(int, int, int),
+            repeats: Tuple[int, int, int],
             yamlfile: str,
             pytemplate: str,
             pseudopotentials: Dict[str, str],
@@ -941,7 +1018,7 @@ class WorkFlow:
             py_job_dir: str,
             facetpath: str,
             slab: str,
-            repeats: Tuple(int, int, int),
+            repeats: Tuple[int, int, int],
             yamlfile: str,
             pytemplate: str,
             pseudopotentials: Dict[str, str],
@@ -1041,7 +1118,7 @@ class WorkFlow:
             py_job_dir: str,
             facetpath: str,
             slab: str,
-            repeats: Tuple(int, int, int),
+            repeats: Tuple[int, int, int],
             yamlfile: str,
             pytemplate: str,
             pseudopotentials: Dict[str, str],
@@ -1431,7 +1508,7 @@ class WorkFlow:
 
         '''
         checked_species = {}
-        all_species = IO().get_all_species(yamlfile)
+        # all_species = IO().get_all_species(yamlfile)
         for species in all_species:
             # a bug to be resolved - why does it invert the name?
             if species == 'OH':
@@ -1499,7 +1576,7 @@ class WorkFlow:
 
     @staticmethod
     def is_slab(
-            facetpath: str) -> Tuple(bool, Optional[str]):
+            facetpath: str) -> Tuple[bool, Optional[str]]:
         ''' Check whether slab has been already optimized
 
         Parameters:
