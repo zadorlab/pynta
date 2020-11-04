@@ -156,7 +156,10 @@ class WorkFlow:
     def get_minima_vib_py_scripts(
             facetpath: str) -> List[str]:
         minima_vib_py_script_list = []
-        for species in all_species:
+        unique_adsorbates_prefixes = IO().get_unique_adsorbates_prefixes(
+            facetpath, check_yaml)
+
+        for species, unique_prefixes in unique_adsorbates_prefixes.items():
             for prefix in unique_prefixes:
                 fname = '01_{}_set_up_ads_vib_{}_{}.py'.format(
                     facetpath, prefix, species)
@@ -412,7 +415,6 @@ class WorkFlow:
                 py_job_dir,
                 facetpath,
                 repeats,
-                all_species,
                 pytemplate_set_up_ads_vib,
                 pseudopotentials,
                 pseudo_dir,
@@ -777,7 +779,6 @@ class WorkFlow:
             py_job_dir: str,
             facetpath: str,
             repeats: Tuple[int, int, int],
-            all_species: List[str],
             pytemplate: str,
             pseudopotentials: Dict[str, str],
             pseudo_dir: str,
@@ -793,8 +794,6 @@ class WorkFlow:
             [description]
         repeats : [type]
             [description]
-        all_species : [type]
-            [description]
         pytemplate : [type]
             [description]
         pseudopotentials : [type]
@@ -809,25 +808,30 @@ class WorkFlow:
             [description]
 
         '''
-        for species in all_species:
-            with open(template, 'r') as f:
-                template_txt = f.read()
-                py_job_fname = os.path.join(
-                    py_job_dir,
-                    '01_{}_set_up_ads_vib_{}.py'.format(facetpath, species))
-                with open(py_job_fname, 'w') as c:
-                    c.write(template_txt.format(
-                        facetpath=facetpath,
-                        repeats=repeats,
-                        adsorbate=species,
-                        pytemplate=pytemplate,
-                        pseudopotentials=pseudopotentials,
-                        pseudo_dir=pseudo_dir,
-                        node_packing_count=node_packing_count,
-                        balsam_exe_settings=balsam_exe_settings,
-                        calc_keywords=calc_keywords,
-                        creation_dir=creation_dir
-                    ))
+        unique_adsorbates_prefixes = IO().get_unique_adsorbates_prefixes(
+            facetpath, check_yaml)
+        for species, unique_prefixes in unique_adsorbates_prefixes.items():
+            for prefix in unique_prefixes:
+                with open(template, 'r') as f:
+                    template_txt = f.read()
+                    py_job_fname = os.path.join(
+                        py_job_dir,
+                        '01_{}_set_up_ads_vib_{}_{}.py'.format(
+                            facetpath, prefix, species))
+                    with open(py_job_fname, 'w') as c:
+                        c.write(template_txt.format(
+                            facetpath=facetpath,
+                            repeats=repeats,
+                            adsorbate=species,
+                            prefix=prefix,
+                            pytemplate=pytemplate,
+                            pseudopotentials=pseudopotentials,
+                            pseudo_dir=pseudo_dir,
+                            node_packing_count=node_packing_count,
+                            balsam_exe_settings=balsam_exe_settings,
+                            calc_keywords=calc_keywords,
+                            creation_dir=creation_dir
+                        ))
 
     @staticmethod
     def set_up_TS_with_xtb(

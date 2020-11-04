@@ -6,6 +6,7 @@ from balsam.launcher.dag import BalsamJob, add_dependency
 facetpath = '{facetpath}'
 repeats = {repeats}
 adsorbate = '{adsorbate}'
+prefix = '{prefix}'
 pytemplate = '{pytemplate}'
 pseudopotentials = {pseudopotentials}
 pseudo_dir = '{pseudo_dir}'
@@ -13,7 +14,7 @@ balsam_exe_settings = {balsam_exe_settings}
 calc_keywords = {calc_keywords}
 creation_dir = '{creation_dir}'
 node_packing_count = {node_packing_count}
-submit_py = os.path.join(facetpath + '_' + adsorbate + '_vib.py')
+submit_py = '{{}}_{{}}_{{}}_vib.py'.format(facetpath, prefix, adsorbate)
 submit_py_path = os.path.join(creation_dir, facetpath, 'minima_vib', submit_py)
 
 mv = minimaVib(facetpath, creation_dir)
@@ -21,7 +22,7 @@ mv.create_minima_vib_all(adsorbate, pytemplate, balsam_exe_settings,
                          pseudo_dir, pseudopotentials, calc_keywords,
                          creation_dir)
 
-workflow_name = facetpath + '_01_' + adsorbate + '_vib'
+workflow_name = '{{}}_01_{{}}_{{}}_vib'.format(facetpath, prefix, adsorbate)
 
 job_to_add = BalsamJob(
     name=submit_py,
