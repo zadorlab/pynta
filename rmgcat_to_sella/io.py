@@ -551,25 +551,62 @@ class IO():
                     # and corresponding .py.out files
                     shutil.move(file[:-4], dir_name)
 
-    def get_unique_adsorbate_idx(self, facetpath, yamlfile):
-        ads_unq_idx = {}
+    def get_unique_adsorbates_prefixes(
+            self,
+            facetpath: str,
+            yamlfile: str) -> Dict[str, List[str]]:
+        ''' Get a dictionary with a list with prefixes of symmetry distinct
+            conformers for a given adsorbate
+
+        Parameters
+        ----------
+        facetpath : str
+            a name of the facetpath,
+            eg. 'Cu_111'
+        yamlfile : str
+            a name of the .yaml file with a reaction list
+
+        Returns
+        -------
+        unique_adsorbates_prefixes: Dict[str, List[str]]
+            a dictionary with a list with prefixes of symmetry distinct
+            conformers for a given adsorbate
+
+        '''
+        unique_adsorbates_prefixes = {}
         path_to_minima = os.path.join(facetpath, 'minima')
         all_species = self.get_all_species(yamlfile)
         for species in all_species:
             path_to_species = os.path.join(path_to_minima, species)
-            uq_prefixes = self.get_unique_adsorbate_prefixes(
+            uq_prefixes = IO.get_unique_prefixes(
                 path_to_species)
-            ads_unq_idx[species] = uq_prefixes
-        print(ads_unq_idx)
-        return ads_unq_idx
+            unique_adsorbates_prefixes[species] = uq_prefixes
+        return unique_adsorbates_prefixes
 
-    def get_unique_adsorbate_prefixes(self, path_to_species):
+    @staticmethod
+    def get_unique_prefixes(
+            path_to_species: str) -> List[str]:
+        ''' Compare each conformers for a given adsorbate and returns a list
+            with prefixes of a symmetrty dictinct structures
+
+        Parameters
+        ----------
+        path_to_species : str
+            a path to species
+            e.g. 'Cu_111/minima/CO'
+
+        Returns
+        -------
+        unique_minima_prefixes : List[str]
+            a list with prefixes of symmetry distinct structures for a given
+            adsorbate
+
+        '''
         good_minima = []
         result_dict = {}
         unique_minima_prefixes = []
         trajlist = sorted(Path(path_to_species).glob('*traj'), key=str)
         for traj in trajlist:
-            # print(traj)
             minima = read(traj)
             comparator = SymmetryEquivalenceCheck(to_primitive=True)
             result = comparator.compare(minima, good_minima)
