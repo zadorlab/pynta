@@ -814,6 +814,8 @@ class WorkFlow:
             for prefix in unique_prefixes:
                 with open(template, 'r') as f:
                     template_txt = f.read()
+                    py_script_prev_opt = '{}_{}_{}_relax.py'.format(
+                        facetpath, species, prefix)
                     py_job_fname = os.path.join(
                         py_job_dir,
                         '01_{}_set_up_ads_vib_{}_{}.py'.format(
@@ -824,6 +826,7 @@ class WorkFlow:
                             repeats=repeats,
                             adsorbate=species,
                             prefix=prefix,
+                            py_script_prev_opt=py_script_prev_opt,
                             pytemplate=pytemplate,
                             pseudopotentials=pseudopotentials,
                             pseudo_dir=pseudo_dir,

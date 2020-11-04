@@ -7,6 +7,7 @@ facetpath = '{facetpath}'
 repeats = {repeats}
 adsorbate = '{adsorbate}'
 prefix = '{prefix}'
+py_script_prev_opt = '{py_script_prev_opt}'
 pytemplate = '{pytemplate}'
 pseudopotentials = {pseudopotentials}
 pseudo_dir = '{pseudo_dir}'
@@ -18,7 +19,7 @@ submit_py = '{{}}_{{}}_{{}}_vib.py'.format(facetpath, prefix, adsorbate)
 submit_py_path = os.path.join(creation_dir, facetpath, 'minima_vib', submit_py)
 
 mv = minimaVib(facetpath, creation_dir)
-mv.create_minima_vib_all(adsorbate, pytemplate, balsam_exe_settings,
+mv.create_minima_vib_all(adsorbate, prefix, pytemplate, balsam_exe_settings,
                          pseudo_dir, pseudopotentials, calc_keywords,
                          creation_dir)
 
@@ -36,13 +37,10 @@ job_to_add = BalsamJob(
 )
 job_to_add.save()
 
-py_scripts = mv.dependency_minima_vib(adsorbate)
-pending_simulations = []
-for py_script in py_scripts:
-    pending_simulations.append(BalsamJob.objects.filter(
-        name=py_script).exclude(state="JOB_FINISHED"))
+# pending_simulation = BalsamJob.objects.filter(
+#     name=py_script_prev_opt).exclude(state="JOB_FINISHED"))
 
-# add dependencies
-for job in pending_simulations:
-    for sub_job in job:
-        add_dependency(sub_job, job_to_add)  # parent, child
+# # add dependencies
+# for job in pending_simulations:
+#     for sub_job in job:
+#         add_dependency(sub_job, job_to_add)  # parent, child
