@@ -12,6 +12,7 @@ from rmgcat_to_sella.graph_utils import node_test
 
 from ase.io import read, write
 from ase.dft.kpoints import monkhorst_pack
+from ase.utils.structure_comparator import SymmetryEquivalenceCheck
 
 
 class IO():
@@ -549,3 +550,34 @@ class IO():
                     shutil.move(file, dir_name)
                     # and corresponding .py.out files
                     shutil.move(file[:-4], dir_name)
+
+    def get_unique_adsorbate_idx(self, facetpath, yamlfile):
+        ads_unq_idx = {}
+        path_to_minima = os.path.join(facetpath, 'minima')
+        all_species = self.get_all_species(yamlfile)
+        for species in all_species:
+            path_to_species = os.path.join(path_to_minima, species)
+            uq_prefixes = self.get_unique_adsorbate_prefixes(
+                path_to_species)
+            ads_unq_idx[species] = uq_prefixes
+        print(ads_unq_idx)
+        return ads_unq_idx
+
+    def get_unique_adsorbate_prefixes(self, path_to_species):
+        good_minima = []
+        result_list = []
+        unique_minima_prefixes = []
+        trajlist = sorted(Path(path_to_species).glob('*traj'), key=str)
+        for traj in trajlist:
+            # print(traj)
+            minima = read(traj)
+            comparator = SymmetryEquivalenceCheck(to_primitive=True)
+            result = comparator.compare(minima, good_minima)
+            result_list.append(result)
+            if result is False:
+                good_minima.append(minima)
+        print(result_list)
+        for prefix, result in enumerate(result_list):
+            if result is False:
+                unique_minima_prefixes.append(str(prefix).zfill(2))
+        return unique_minima_prefixes

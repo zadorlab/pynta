@@ -120,45 +120,47 @@ ads_surf_opt_script = '01_set_up_ads.py'
 
 class WorkFlow:
 
-    def __init__(self):
-        ''' Setup the balsam application for this workflow run.
+    # def __init__(self):
+    #     ''' Setup the balsam application for this workflow run.
 
-            Once we start using QE will want one app for QE,
-            one for xtb most likely
-        '''
-        print('Checking Balsam DB...')
-        try:
-            from balsam.core.models import ApplicationDefinition
+    #         Once we start using QE will want one app for QE,
+    #         one for xtb most likely
+    #     '''
+    #     print('Checking Balsam DB...')
+    #     try:
+    #         from balsam.core.models import ApplicationDefinition
 
-            self.myPython, _ = ApplicationDefinition.objects.get_or_create(
-                name="python",
-                executable=sys.executable
-            )
-            self.myPython.save()
-            self.slab_opt_job = ''
+    #         self.myPython, _ = ApplicationDefinition.objects.get_or_create(
+    #             name="python",
+    #             executable=sys.executable
+    #         )
+    #         self.myPython.save()
+    #         self.slab_opt_job = ''
 
-            # TODO: instead of directly importing EspressoBalsam, we should
-            # write a function which returns the appropriate class from
-            # balsamcalc.py based on the user-provided input file
-            from rmgcat_to_sella.balsamcalc import (
-                EspressoBalsam, EspressoBalsamSocketIO
-            )
-            EspressoBalsam.exe = executable
-            EspressoBalsamSocketIO.exe = executable
-            EspressoBalsam.create_application()
-            EspressoBalsamSocketIO.create_application()
-        except SystemExit:
-            print('---')
-            print('Please create Balsam DB and/or activate it')
-            print('---')
+    #         # TODO: instead of directly importing EspressoBalsam, we should
+    #         # write a function which returns the appropriate class from
+    #         # balsamcalc.py based on the user-provided input file
+    #         from rmgcat_to_sella.balsamcalc import (
+    #             EspressoBalsam, EspressoBalsamSocketIO
+    #         )
+    #         EspressoBalsam.exe = executable
+    #         EspressoBalsamSocketIO.exe = executable
+    #         EspressoBalsam.create_application()
+    #         EspressoBalsamSocketIO.create_application()
+    #     except SystemExit:
+    #         print('---')
+    #         print('Please create Balsam DB and/or activate it')
+    #         print('---')
 
     @staticmethod
     def get_minima_vib_py_scripts(
             facetpath: str) -> List[str]:
         minima_vib_py_script_list = []
         for species in all_species:
-            fname = '01_{}_set_up_ads_vib_{}.py'.format(facetpath, species)
-            minima_vib_py_script_list.append(fname)
+            for prefix in unique_prefixes:
+                fname = '01_{}_set_up_ads_vib_{}_{}.py'.format(
+                    facetpath, prefix, species)
+                minima_vib_py_script_list.append(fname)
         return minima_vib_py_script_list
 
     @staticmethod
