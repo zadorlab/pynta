@@ -565,7 +565,7 @@ class IO():
 
     def get_unique_adsorbate_prefixes(self, path_to_species):
         good_minima = []
-        result_list = []
+        result_dict = {}
         unique_minima_prefixes = []
         trajlist = sorted(Path(path_to_species).glob('*traj'), key=str)
         for traj in trajlist:
@@ -573,11 +573,10 @@ class IO():
             minima = read(traj)
             comparator = SymmetryEquivalenceCheck(to_primitive=True)
             result = comparator.compare(minima, good_minima)
-            result_list.append(result)
+            result_dict[str(os.path.basename(traj).split('.')[0])] = result
             if result is False:
                 good_minima.append(minima)
-        print(result_list)
-        for prefix, result in enumerate(result_list):
+        for prefix, result in result_dict.items():
             if result is False:
-                unique_minima_prefixes.append(str(prefix).zfill(2))
+                unique_minima_prefixes.append(prefix)
         return unique_minima_prefixes
