@@ -508,7 +508,8 @@ class minimaVib():
 
     def create_minima_vib_all(
             self,
-            species: str,
+            adsorbate: str,
+            prefix: str,
             pytemplate: str,
             balsam_exe_settings: Dict[str, int],
             pseudo_dir: str,
@@ -560,87 +561,27 @@ class minimaVib():
         minima_vib_path = os.path.join(
             self.creation_dir, self.facetpath, 'minima_vib')
         os.makedirs(minima_vib_path, exist_ok=True)
-        path_to_minima_species = os.path.join(self.minima_path, species)
-        path_to_vib_species = os.path.join(minima_vib_path, species)
+
+        path_to_minimum_traj = os.path.join(
+            self.minima_path, adsorbate, prefix + '.traj')
+
+        path_to_vib_species = os.path.join(minima_vib_path, adsorbate, prefix)
         os.makedirs(path_to_vib_species, exist_ok=True)
 
-        traj_fname = os.path.join(path_to_vib_species, species + '.traj')
+        traj_to_start_vib = os.path.join(
+            path_to_vib_species, '{}_{}.traj'.format(prefix, adsorbate))
+        shutil.copy2(path_to_minimum_traj, traj_to_start_vib)
 
-        self.create_minima_vib_xyz(
-            path_to_minima_species, traj_fname)
         self.create_minima_vib_py_files(
-            species, traj_fname, minima_vib_path, pytemplate,
+            adsorbate, prefix, traj_to_start_vib, minima_vib_path, pytemplate,
             balsam_exe_settings, pseudo_dir, pseudopotentials,
             calc_keywords, creation_dir)
 
-    def create_minima_vib_xyz(
-            self,
-            path_to_minima_species: str,
-            traj_fname: str) -> None:
-        ''' Create traj file with optimized minima for a vibrational frequency
-            calculations
-
-        Parameters
-        ----------
-        path_to_minima_species : str
-            a path where all minima calculations for a given species are
-        traj_fname : str
-            a name of a new traj file
-
-        '''
-        path_to_min_ener_species = self.get_min_conformer(
-            path_to_minima_species)
-        shutil.copy2(path_to_min_ener_species, traj_fname)
-
-    def get_min_conformer(
-            self,
-            path_to_minima_species: str) -> str:
-        ''' Get path to the most stable conformer of a given species
-
-        Parameters
-        ----------
-        path_to_minima_species : str
-            a path where all minima calculations for a given species are
-
-        Returns
-        -------
-        path_to_min_ener_species: str
-            a path to the most stable conformer of a given species
-
-        '''
-        minima_energies = minimaVib.get_minima_energies(path_to_minima_species)
-        path_to_min_ener_species = min(
-            minima_energies, key=minima_energies.get)
-        return path_to_min_ener_species
-
-    @staticmethod
-    def get_minima_energies(
-            path_to_minima_species: str) -> Dict[str, float]:
-        '''[summary]
-
-        Parameters
-        ----------
-        path_to_minima_species : str
-            a path where all minima calculations for a given species are
-
-        Returns
-        -------
-        energies: Dict[str, float]
-            a dict with path to a given minima and potential energy
-            associated with it
-        '''
-        energies = {}
-        final_xyz_files = Path(path_to_minima_species).glob('*traj')
-        for xyz in final_xyz_files:
-            species_atom = read(xyz)
-            xyz = str(xyz)
-            energies[xyz] = species_atom.get_potential_energy()
-        return energies
-
     def create_minima_vib_py_files(
             self,
-            species: str,
-            traj_fname: str,
+            adsorbate: str,
+            prefix: str,
+            traj_to_start_vib: str,
             minima_vib_path: str,
             pytemplate: str,
             balsam_exe_settings: Dict[str, int],
@@ -702,12 +643,12 @@ class minimaVib():
         '''
         with open(pytemplate, 'r') as f:
             pytemplate_txt = f.read()
-            py_file_name = os.path.join(
-                self.facetpath + '_' + species + '_vib.py')
+            py_file_name = os.path.join('{}_{}_{}_vib.py'.format(
+                self.facetpath, prefix, adsorbate))
             py_file = os.path.join(minima_vib_path, py_file_name)
             with open(py_file, 'w') as c:
                 c.write(pytemplate_txt.format(
-                    geom=traj_fname,
+                    geom=traj_to_start_vib,
                     balsam_exe_settings=balsam_exe_settings,
                     creation_dir=creation_dir,
                     pseudopotentials=pseudopotentials,
