@@ -508,8 +508,8 @@ class minimaVib():
 
     def create_minima_vib_all(
             self,
-            adsorbate: str,
-            prefix: str,
+            facetpath: str,
+            yamlfile_path: PosixPath,
             pytemplate: str,
             balsam_exe_settings: Dict[str, int],
             pseudo_dir: str,
@@ -562,20 +562,25 @@ class minimaVib():
             self.creation_dir, self.facetpath, 'minima_vib')
         os.makedirs(minima_vib_path, exist_ok=True)
 
-        path_to_minimum_traj = os.path.join(
-            self.minima_path, adsorbate, prefix + '.traj')
+        unique_adsorbates_prefixes = IO().get_unique_adsorbates_prefixes(
+            facetpath, yamlfile_path, creation_dir)
+        for adsorbate, unique_prefixes in unique_adsorbates_prefixes.items():
+            for prefix in unique_prefixes:
+                path_to_minimum_traj = os.path.join(
+                    self.minima_path, adsorbate, prefix + '.traj')
 
-        path_to_vib_species = os.path.join(minima_vib_path, adsorbate, prefix)
-        os.makedirs(path_to_vib_species, exist_ok=True)
+                path_to_vib_species = os.path.join(
+                    minima_vib_path, adsorbate, prefix)
+                os.makedirs(path_to_vib_species, exist_ok=True)
 
-        traj_to_start_vib = os.path.join(
-            path_to_vib_species, '{}_{}.traj'.format(prefix, adsorbate))
-        shutil.copy2(path_to_minimum_traj, traj_to_start_vib)
+                traj_to_start_vib = os.path.join(
+                    path_to_vib_species, '{}_{}.traj'.format(prefix, adsorbate))
+                shutil.copy2(path_to_minimum_traj, traj_to_start_vib)
 
-        self.create_minima_vib_py_files(
-            adsorbate, prefix, traj_to_start_vib, minima_vib_path, pytemplate,
-            balsam_exe_settings, pseudo_dir, pseudopotentials,
-            calc_keywords, creation_dir)
+                self.create_minima_vib_py_files(
+                    adsorbate, prefix, traj_to_start_vib, minima_vib_path,
+                    pytemplate, balsam_exe_settings, pseudo_dir,
+                    pseudopotentials, calc_keywords, creation_dir)
 
     def create_minima_vib_py_files(
             self,

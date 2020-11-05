@@ -418,6 +418,7 @@ class WorkFlow:
                 template_ads_vib,
                 py_job_dir,
                 facetpath,
+                yamlfile,
                 repeats,
                 pytemplate_set_up_ads_vib,
                 pseudopotentials,
@@ -782,6 +783,7 @@ class WorkFlow:
             template: str,
             py_job_dir: str,
             facetpath: str,
+            yamlfile: str,
             repeats: Tuple[int, int, int],
             pytemplate: str,
             pseudopotentials: Dict[str, str],
@@ -789,8 +791,7 @@ class WorkFlow:
             node_packing_count: int,
             balsam_exe_settings: Dict[str, int],
             calc_keywords: Dict[str, str],
-            creation_dir: PosixPath,
-            unique_adsorbates_prefixes: Dict[str, str]) -> None:
+            creation_dir: PosixPath) -> None:
         '''[summary]
 
         Parameters
@@ -813,34 +814,25 @@ class WorkFlow:
             [description]
 
         '''
-        unique_adsorbates_prefixes = IO().get_unique_adsorbates_prefixes(
-            facetpath, check_yaml, creation_dir)
-        for species, unique_prefixes in unique_adsorbates_prefixes.items():
-            for prefix in unique_prefixes:
-                with open(template, 'r') as f:
-                    template_txt = f.read()
-                    py_script_prev_opt = '{}_{}_{}_relax.py'.format(
-                        facetpath, species, prefix)
-                    py_job_fname = os.path.join(
-                        creation_dir,
-                        py_job_dir,
-                        '01_{}_set_up_ads_vib_{}_{}.py'.format(
-                            facetpath, prefix, species))
-                    with open(py_job_fname, 'w') as c:
-                        c.write(template_txt.format(
-                            facetpath=facetpath,
-                            repeats=repeats,
-                            adsorbate=species,
-                            prefix=prefix,
-                            py_script_prev_opt=py_script_prev_opt,
-                            pytemplate=pytemplate,
-                            pseudopotentials=pseudopotentials,
-                            pseudo_dir=pseudo_dir,
-                            node_packing_count=node_packing_count,
-                            balsam_exe_settings=balsam_exe_settings,
-                            calc_keywords=calc_keywords,
-                            creation_dir=creation_dir
-                        ))
+        with open(template, 'r') as f:
+            template_txt = f.read()
+            py_job_fname = os.path.join(
+                creation_dir,
+                py_job_dir,
+                '01_{}_set_up_ads_vib.py'.format(facetpath))
+            with open(py_job_fname, 'w') as c:
+                c.write(template_txt.format(
+                    facetpath=facetpath,
+                    yamlfile=yamlfile,
+                    repeats=repeats,
+                    pytemplate=pytemplate,
+                    pseudopotentials=pseudopotentials,
+                    pseudo_dir=pseudo_dir,
+                    node_packing_count=node_packing_count,
+                    balsam_exe_settings=balsam_exe_settings,
+                    calc_keywords=calc_keywords,
+                    creation_dir=creation_dir
+                ))
 
     @staticmethod
     def set_up_TS_with_xtb(
@@ -1269,7 +1261,6 @@ class WorkFlow:
 ##############################
 # Submit jobs and execute it #
 ##############################
-
 
     def exe(
             self,
@@ -1777,7 +1768,7 @@ class WorkFlow:
                 self.run_slab_optimization(facetpath)
             if WorkFlow.is_big_slab(facetpath) is False:
                 self.run_big_slab_opt(facetpath)
-            self.run_minima_vib('00', facetpath)
+            self.run_minima_vib('01', facetpath)
             # check if species were already calculated
             if all(WorkFlow.check_all_species(yamlfile, facetpath).values()):
                 # If all are True, start by generating TS guesses and run
