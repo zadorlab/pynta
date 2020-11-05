@@ -71,20 +71,3 @@ with open(outdir + '_time.log', 'a+') as f:
     f.write(str(end - start))
     f.write("\n")
     f.close()
-
-# =========================
-# Vib freqs
-
-WorkFlow.set_up_ads_vib(
-    template_ads_vib,
-    py_job_dir,
-    facetpath,
-    repeats,
-    pytemplate_set_up_ads_vib,
-    pseudopotentials,
-    pseudo_dir,
-    node_packing_count,
-    balsam_exe_settings,
-    calc_keywords,
-    creation_dir
-)

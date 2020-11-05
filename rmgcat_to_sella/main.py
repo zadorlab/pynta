@@ -1265,10 +1265,11 @@ class WorkFlow:
         ads_opt = '01_{}_set_up_ads_on_slab.py'.format(facetpath)
         ads_vib = '{}_set_up_ads_vib.py'.format(facetpath)
 
-        if job_script in [ads_opt, slab_opt]:
+        if job_script in [ads_opt, slab_opt, ads_vib]:
             rxn_name = ''
         else:
             rxn_name = '_'.join(job_script.split('_')[-2:])[:-3]
+
         try:
             workflow_name = facetpath + '_' + job_script[0:2] + '_' + rxn_name
         except ValueError:
@@ -1405,7 +1406,7 @@ class WorkFlow:
 
         '''
         ads_vib_script = '{}_set_up_ads_vib.py'.format(facetpath)
-        self.exe(dependent_job, ads_vib_script, facetpath)
+        return self.exe(dependent_job, ads_vib_script, facetpath)
 
     def run_ts_estimate(
             self,
