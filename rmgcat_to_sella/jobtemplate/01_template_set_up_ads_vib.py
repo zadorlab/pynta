@@ -37,10 +37,10 @@ job_to_add = BalsamJob(
 )
 job_to_add.save()
 
-# pending_simulation = BalsamJob.objects.filter(
-#     name=py_script_prev_opt).exclude(state="JOB_FINISHED"))
+pending_simulations = BalsamJob.objects.filter(
+    name=py_script_prev_opt).exclude(state="JOB_FINISHED"))
 
-# # add dependencies
-# for job in pending_simulations:
-#     for sub_job in job:
-#         add_dependency(sub_job, job_to_add)  # parent, child
+# add dependencies
+for job in pending_simulations:
+    for sub_job in job:
+        add_dependency(sub_job, job_to_add)  # parent, child

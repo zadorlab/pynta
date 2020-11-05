@@ -1,4 +1,5 @@
 import os
+from os import supports_fd
 import shutil
 import yaml
 import networkx as nx
@@ -554,7 +555,8 @@ class IO():
     def get_unique_adsorbates_prefixes(
             self,
             facetpath: str,
-            yamlfile: str) -> Dict[str, List[str]]:
+            yamlfile: str,
+            creation_dir: PosixPath) -> Dict[str, List[str]]:
         ''' Get a dictionary with a list with prefixes of symmetry distinct
             conformers for a given adsorbate
 
@@ -574,7 +576,7 @@ class IO():
 
         '''
         unique_adsorbates_prefixes = {}
-        path_to_minima = os.path.join(facetpath, 'minima')
+        path_to_minima = os.path.join(creation_dir, facetpath, 'minima')
         all_species = self.get_all_species(yamlfile)
         for species in all_species:
             path_to_species = os.path.join(path_to_minima, species)
@@ -585,7 +587,8 @@ class IO():
 
     @staticmethod
     def get_unique_prefixes(
-            path_to_species: str) -> List[str]:
+            path_to_species: str,
+            surface_type: str = None) -> List[str]:
         ''' Compare each conformers for a given adsorbate and returns a list
             with prefixes of a symmetrty dictinct structures
 
@@ -616,4 +619,20 @@ class IO():
         for prefix, result in result_dict.items():
             if result is False:
                 unique_minima_prefixes.append(prefix)
+        # temporary solution
+        # if not unique_minima_prefixes:
+        #     return IO.number_of_bindings_spots(surface_type)
+        # else:
         return unique_minima_prefixes
+
+    @staticmethod
+    def number_of_bindings_spots(surface_type):
+        if surface_type == 'fcc111':
+            n_sites = 4
+        elif surface_type == 'fcc100':
+            n_sites = 3
+        else:
+            raise NotImplementedError('Unique site number generator not tested'
+                                      'for other surface types than fcc111 or '
+                                      'fcc100.')
+        list_of_prefixes = [str(i).zfill(2) for i in range(n_sites)]

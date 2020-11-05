@@ -89,6 +89,8 @@ template_big_slab_opt = os.path.join(
 template_ads = os.path.join(path_template + '01_template_set_up_ads.py')
 template_ads_vib = os.path.join(
     path_template + '01_template_set_up_ads_vib.py')
+template_create_vib_jobs = os.path.join(
+    path_template + 'template_create_minima_files.py')
 template_set_up_ts_with_xtb = os.path.join(
     path_template + '02_template_set_up_ts_with_xtb.py')
 template_set_up_ts = os.path.join(
@@ -154,10 +156,12 @@ class WorkFlow:
 
     @staticmethod
     def get_minima_vib_py_scripts(
-            facetpath: str) -> List[str]:
+            facetpath: str,
+            creation_dir: PosixPath,
+            unique_adsorbates_prefixes: Dict[str, str]) -> List[str]:
         minima_vib_py_script_list = []
-        unique_adsorbates_prefixes = IO().get_unique_adsorbates_prefixes(
-            facetpath, check_yaml)
+        # unique_adsorbates_prefixes = IO().get_unique_adsorbates_prefixes(
+        #     facetpath, check_yaml, creation_dir)
 
         for species, unique_prefixes in unique_adsorbates_prefixes.items():
             for prefix in unique_prefixes:
@@ -785,7 +789,8 @@ class WorkFlow:
             node_packing_count: int,
             balsam_exe_settings: Dict[str, int],
             calc_keywords: Dict[str, str],
-            creation_dir: PosixPath) -> None:
+            creation_dir: PosixPath,
+            unique_adsorbates_prefixes: Dict[str, str]) -> None:
         '''[summary]
 
         Parameters
@@ -809,7 +814,7 @@ class WorkFlow:
 
         '''
         unique_adsorbates_prefixes = IO().get_unique_adsorbates_prefixes(
-            facetpath, check_yaml)
+            facetpath, check_yaml, creation_dir)
         for species, unique_prefixes in unique_adsorbates_prefixes.items():
             for prefix in unique_prefixes:
                 with open(template, 'r') as f:
@@ -817,6 +822,7 @@ class WorkFlow:
                     py_script_prev_opt = '{}_{}_{}_relax.py'.format(
                         facetpath, species, prefix)
                     py_job_fname = os.path.join(
+                        creation_dir,
                         py_job_dir,
                         '01_{}_set_up_ads_vib_{}_{}.py'.format(
                             facetpath, prefix, species))
@@ -1231,9 +1237,39 @@ class WorkFlow:
                     rxn_name=rxn_name
                 ))
 
+    def generate_vib_files(
+            self,
+            facetpath,
+            repeats):
+        unique_adsorbates_prefixes = IO().get_unique_adsorbates_prefixes(
+            facetpath, check_yaml, creation_dir)
+        with open(template_create_vib_jobs, 'r') as f:
+            template_txt = f.read()
+            py_job_dir = os.path.join(job_file_dir_name, facetpath)
+            py_job = os.path.join(
+                creation_dir, job_file_dir_name, facetpath, 'create_vib.py')
+            with open(py_job, 'w') as c:
+                c.write(template_txt.format(
+                    job_file_dir_name=job_file_dir_name,
+                    facetpath=facetpath,
+                    py_job_dir=py_job_dir,
+                    template_ads_vib=template_ads_vib,
+                    repeats=repeats,
+                    pytemplate_set_up_ads_vib=pytemplate_set_up_ads_vib,
+                    pseudopotentials=pseudopotentials,
+                    pseudo_dir=pseudo_dir,
+                    node_packing_count=node_packing_count,
+                    balsam_exe_settings=balsam_exe_settings,
+                    calc_keywords=calc_keywords,
+                    creation_dir=creation_dir,
+                    unique_adsorbates_prefixes=unique_adsorbates_prefixes
+                ))
+
+
 ##############################
 # Submit jobs and execute it #
 ##############################
+
 
     def exe(
             self,
@@ -1411,10 +1447,10 @@ class WorkFlow:
             e.g. 'Cu_111'
 
         '''
-        minima_vib_py_script_list = WorkFlow.get_minima_vib_py_scripts(
-            facetpath)
-        for minima_vib in minima_vib_py_script_list:
-            self.exe(dependent_job, minima_vib, facetpath)
+
+        self.exe(dependent_job, 'create_vib.py', facetpath)
+        # for minima_vib in minima_vib_py_script_list:
+        #     self.exe(dependent_job, minima_vib, facetpath)
 
     def run_ts_estimate(
             self,
@@ -1524,7 +1560,7 @@ class WorkFlow:
         for after_irc in after_irc_py_scripts:
             self.exe(dependant_job, after_irc, facetpath)
 
-    @staticmethod
+    @ staticmethod
     def check_all_species(
             yamlfile: str,
             facetpath: str) -> Dict[str, bool]:
@@ -1558,7 +1594,7 @@ class WorkFlow:
                 species, facetpath)
         return checked_species
 
-    @staticmethod
+    @ staticmethod
     def is_minima_dir(
             species: str,
             facetpath: str) -> bool:
@@ -1582,7 +1618,7 @@ class WorkFlow:
             return True
         return False
 
-    @staticmethod
+    @ staticmethod
     def is_minima_out_files(
             species: str,
             facetpath: str) -> bool:
@@ -1615,7 +1651,7 @@ class WorkFlow:
             return True
         return False
 
-    @staticmethod
+    @ staticmethod
     def is_slab(
             facetpath: str) -> Tuple[bool, Optional[str]]:
         ''' Check whether slab has been already optimized
@@ -1651,7 +1687,7 @@ class WorkFlow:
             return True, slab_opt_path_str[0]
         return (False, )
 
-    @staticmethod
+    @ staticmethod
     def is_big_slab(
             facetpath: str) -> bool:
         ''' Check for big_slab calculations. True if there is a big_slab file,
@@ -1684,7 +1720,7 @@ class WorkFlow:
                   'Big slab optimization required'.format(keyphrase))
             return False
 
-    @staticmethod
+    @ staticmethod
     def check_if_slab_opt_exists(
             facetpath: str) -> Tuple[bool, Optional[str]]:
         ''' Check whether slab has been already optimized
@@ -1741,7 +1777,7 @@ class WorkFlow:
                 self.run_slab_optimization(facetpath)
             if WorkFlow.is_big_slab(facetpath) is False:
                 self.run_big_slab_opt(facetpath)
-            self.run_minima_vib('01', facetpath)
+            self.run_minima_vib('00', facetpath)
             # check if species were already calculated
             if all(WorkFlow.check_all_species(yamlfile, facetpath).values()):
                 # If all are True, start by generating TS guesses and run
@@ -1794,7 +1830,7 @@ class WorkFlow:
         for facetpath in facetpaths:
             self.execute(facetpath)
 
-    @staticmethod
+    @ staticmethod
     def restart() -> None:
         LowLevelRestart().restart()
         HighLevelRestart().restart()
