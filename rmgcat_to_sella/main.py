@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import re
 from rmgcat_to_sella.check_input import InputChecker
 from rmgcat_to_sella.restart import LowLevelRestart, HighLevelRestart
 from rmgcat_to_sella.io import IO
@@ -12,7 +13,6 @@ from warnings import warn
 
 # check which file calls this module and adjust working_dir path accordingly
 calling_py = os.path.basename(__main__.__file__)
-# if calling_py != 'run_me.py':
 if any([calling_py == i for i in ['run_me.py', 'restart_me.py']]):
     working_dir = os.getcwd()
 else:
@@ -65,7 +65,11 @@ else:
     calc_keywords = inputR2S.calc_keywords
     creation_dir = inputR2S.creation_dir
     surface_types = surface_types_and_repeats.keys()
-    repeats, repeats_surface = surface_types_and_repeats.values()
+    # repeats = []
+    # repeats_surface = []
+    # for i in surface_types_and_repeats.values():
+    #     repeats.append(i[0])
+    #     repeats_surface.append(i[1])
     facetpaths = IO().get_facetpaths(symbol, surface_types)
     job_file_dir_name = 'job_files'
 
@@ -122,53 +126,37 @@ ads_surf_opt_script = '01_set_up_ads.py'
 
 class WorkFlow:
 
-    # def __init__(self):
-    #     ''' Setup the balsam application for this workflow run.
+    def __init__(self):
+        ''' Setup the balsam application for this workflow run.
 
-    #         Once we start using QE will want one app for QE,
-    #         one for xtb most likely
-    #     '''
-    #     print('Checking Balsam DB...')
-    #     try:
-    #         from balsam.core.models import ApplicationDefinition
+            Once we start using QE will want one app for QE,
+            one for xtb most likely
+        '''
+        print('Checking Balsam DB...')
+        try:
+            from balsam.core.models import ApplicationDefinition
 
-    #         self.myPython, _ = ApplicationDefinition.objects.get_or_create(
-    #             name="python",
-    #             executable=sys.executable
-    #         )
-    #         self.myPython.save()
-    #         self.slab_opt_job = ''
+            self.myPython, _ = ApplicationDefinition.objects.get_or_create(
+                name="python",
+                executable=sys.executable
+            )
+            self.myPython.save()
+            self.slab_opt_job = ''
 
-    #         # TODO: instead of directly importing EspressoBalsam, we should
-    #         # write a function which returns the appropriate class from
-    #         # balsamcalc.py based on the user-provided input file
-    #         from rmgcat_to_sella.balsamcalc import (
-    #             EspressoBalsam, EspressoBalsamSocketIO
-    #         )
-    #         EspressoBalsam.exe = executable
-    #         EspressoBalsamSocketIO.exe = executable
-    #         EspressoBalsam.create_application()
-    #         EspressoBalsamSocketIO.create_application()
-    #     except SystemExit:
-    #         print('---')
-    #         print('Please create Balsam DB and/or activate it')
-    #         print('---')
-
-    @staticmethod
-    def get_minima_vib_py_scripts(
-            facetpath: str,
-            creation_dir: PosixPath,
-            unique_adsorbates_prefixes: Dict[str, str]) -> List[str]:
-        minima_vib_py_script_list = []
-        # unique_adsorbates_prefixes = IO().get_unique_adsorbates_prefixes(
-        #     facetpath, check_yaml, creation_dir)
-
-        for species, unique_prefixes in unique_adsorbates_prefixes.items():
-            for prefix in unique_prefixes:
-                fname = '01_{}_set_up_ads_vib_{}_{}.py'.format(
-                    facetpath, prefix, species)
-                minima_vib_py_script_list.append(fname)
-        return minima_vib_py_script_list
+            # TODO: instead of directly importing EspressoBalsam, we should
+            # write a function which returns the appropriate class from
+            # balsamcalc.py based on the user-provided input file
+            from rmgcat_to_sella.balsamcalc import (
+                EspressoBalsam, EspressoBalsamSocketIO
+            )
+            EspressoBalsam.exe = executable
+            EspressoBalsamSocketIO.exe = executable
+            EspressoBalsam.create_application()
+            EspressoBalsamSocketIO.create_application()
+        except SystemExit:
+            print('---')
+            print('Please create Balsam DB and/or activate it')
+            print('---')
 
     @staticmethod
     def get_ts_xtb_py_script_list(
@@ -267,7 +255,7 @@ class WorkFlow:
         after_ts_py_scripts_list = []
         for rxn in reactions:
             rxn_name = IO().get_rxn_name(rxn)
-            fname = '05_{}_set_up_TS_vib_{}.py'.format(facetpath, rxn_name)
+            fname = '05_{}_set_up_after_TS_{}.py'.format(facetpath, rxn_name)
             after_ts_py_scripts_list.append(fname)
         return after_ts_py_scripts_list
 
@@ -419,7 +407,6 @@ class WorkFlow:
                 py_job_dir,
                 facetpath,
                 yamlfile,
-                repeats,
                 pytemplate_set_up_ads_vib,
                 pseudopotentials,
                 pseudo_dir,
@@ -784,7 +771,6 @@ class WorkFlow:
             py_job_dir: str,
             facetpath: str,
             yamlfile: str,
-            repeats: Tuple[int, int, int],
             pytemplate: str,
             pseudopotentials: Dict[str, str],
             pseudo_dir: str,
@@ -796,21 +782,27 @@ class WorkFlow:
 
         Parameters
         ----------
-        facetpath : [type]
+        template : str
             [description]
-        repeats : [type]
+        py_job_dir : str
             [description]
-        pytemplate : [type]
+        facetpath : str
             [description]
-        pseudopotentials : [type]
+        yamlfile : str
             [description]
-        pseudo_dir : [type]
+        pytemplate : str
             [description]
-        balsam_exe_settings : [type]
+        pseudopotentials : Dict[str, str]
             [description]
-        calc_keywords : [type]
+        pseudo_dir : str
             [description]
-        creation_dir : [type]
+        node_packing_count : int
+            [description]
+        balsam_exe_settings : Dict[str, int]
+            [description]
+        calc_keywords : Dict[str, str]
+            [description]
+        creation_dir : PosixPath
             [description]
 
         '''
@@ -819,12 +811,11 @@ class WorkFlow:
             py_job_fname = os.path.join(
                 creation_dir,
                 py_job_dir,
-                '01_{}_set_up_ads_vib.py'.format(facetpath))
+                '{}_set_up_ads_vib.py'.format(facetpath))
             with open(py_job_fname, 'w') as c:
                 c.write(template_txt.format(
                     facetpath=facetpath,
                     yamlfile=yamlfile,
-                    repeats=repeats,
                     pytemplate=pytemplate,
                     pseudopotentials=pseudopotentials,
                     pseudo_dir=pseudo_dir,
@@ -1229,35 +1220,6 @@ class WorkFlow:
                     rxn_name=rxn_name
                 ))
 
-    def generate_vib_files(
-            self,
-            facetpath,
-            repeats):
-        unique_adsorbates_prefixes = IO().get_unique_adsorbates_prefixes(
-            facetpath, check_yaml, creation_dir)
-        with open(template_create_vib_jobs, 'r') as f:
-            template_txt = f.read()
-            py_job_dir = os.path.join(job_file_dir_name, facetpath)
-            py_job = os.path.join(
-                creation_dir, job_file_dir_name, facetpath, 'create_vib.py')
-            with open(py_job, 'w') as c:
-                c.write(template_txt.format(
-                    job_file_dir_name=job_file_dir_name,
-                    facetpath=facetpath,
-                    py_job_dir=py_job_dir,
-                    template_ads_vib=template_ads_vib,
-                    repeats=repeats,
-                    pytemplate_set_up_ads_vib=pytemplate_set_up_ads_vib,
-                    pseudopotentials=pseudopotentials,
-                    pseudo_dir=pseudo_dir,
-                    node_packing_count=node_packing_count,
-                    balsam_exe_settings=balsam_exe_settings,
-                    calc_keywords=calc_keywords,
-                    creation_dir=creation_dir,
-                    unique_adsorbates_prefixes=unique_adsorbates_prefixes
-                ))
-
-
 ##############################
 # Submit jobs and execute it #
 ##############################
@@ -1300,9 +1262,10 @@ class WorkFlow:
         # exeption for two first jobs
         slab_opt = '00_{}_set_up_slab_opt.py'.format(facetpath)
         big_slab_opt = '00_{}_set_up_big_slab_opt.py'.format(facetpath)
-        ads_surf_opt_script = '01_{}_set_up_ads_on_slab.py'.format(facetpath)
+        ads_opt = '01_{}_set_up_ads_on_slab.py'.format(facetpath)
+        ads_vib = '{}_set_up_ads_vib.py'.format(facetpath)
 
-        if job_script in [ads_surf_opt_script, slab_opt]:
+        if job_script in [ads_opt, slab_opt]:
             rxn_name = ''
         else:
             rxn_name = '_'.join(job_script.split('_')[-2:])[:-3]
@@ -1314,6 +1277,9 @@ class WorkFlow:
         # special case for big_slab_opt jobs
         if job_script == big_slab_opt:
             workflow_name = facetpath + '_big_slab_opt'
+        # special case for ads_vib jobs
+        elif job_script == ads_vib:
+            workflow_name = facetpath + '_vib'
 
         job = os.path.join(job_files_path, job_script)
         job_to_add = BalsamJob(
@@ -1438,10 +1404,8 @@ class WorkFlow:
             e.g. 'Cu_111'
 
         '''
-
-        self.exe(dependent_job, 'create_vib.py', facetpath)
-        # for minima_vib in minima_vib_py_script_list:
-        #     self.exe(dependent_job, minima_vib, facetpath)
+        ads_vib_script = '{}_set_up_ads_vib.py'.format(facetpath)
+        self.exe(dependent_job, ads_vib_script, facetpath)
 
     def run_ts_estimate(
             self,
@@ -1768,7 +1732,6 @@ class WorkFlow:
                 self.run_slab_optimization(facetpath)
             if WorkFlow.is_big_slab(facetpath) is False:
                 self.run_big_slab_opt(facetpath)
-            self.run_minima_vib('01', facetpath)
             # check if species were already calculated
             if all(WorkFlow.check_all_species(yamlfile, facetpath).values()):
                 # If all are True, start by generating TS guesses and run
@@ -1781,6 +1744,7 @@ class WorkFlow:
                     self.run_opt_surf_and_adsorbate(facetpath)
                 except NameError:
                     self.run_opt_surf_and_adsorbate_no_depend(facetpath)
+                self.run_minima_vib('01', facetpath)
                 self.run_ts_estimate('01', facetpath)
         else:
             # this is executed if user provide .xyz with the optimized slab

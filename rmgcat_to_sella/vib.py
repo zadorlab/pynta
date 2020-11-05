@@ -574,7 +574,8 @@ class minimaVib():
                 os.makedirs(path_to_vib_species, exist_ok=True)
 
                 traj_to_start_vib = os.path.join(
-                    path_to_vib_species, '{}_{}.traj'.format(prefix, adsorbate))
+                    path_to_vib_species,
+                    '{}_{}.traj'.format(prefix, adsorbate))
                 shutil.copy2(path_to_minimum_traj, traj_to_start_vib)
 
                 self.create_minima_vib_py_files(
