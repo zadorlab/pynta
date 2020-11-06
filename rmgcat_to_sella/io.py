@@ -531,7 +531,6 @@ class IO():
                         os.path.split((str(minima_py_file)))[1])
 
             # create a dictionary with dependencies
-            # {'reaction_name':[list_with_py_files_have_to_be_calculated]}
             dependancy_dict[rxn_name] = minima_py_list
         return dependancy_dict
 
@@ -587,8 +586,7 @@ class IO():
 
     @staticmethod
     def get_unique_prefixes(
-            path_to_species: str,
-            surface_type: str = None) -> List[str]:
+            path_to_species: str) -> List[str]:
         ''' Compare each conformers for a given adsorbate and returns a list
             with prefixes of a symmetrty dictinct structures
 
@@ -619,20 +617,4 @@ class IO():
         for prefix, result in result_dict.items():
             if result is False:
                 unique_minima_prefixes.append(prefix)
-        # temporary solution
-        # if not unique_minima_prefixes:
-        #     return IO.number_of_bindings_spots(surface_type)
-        # else:
         return unique_minima_prefixes
-
-    @staticmethod
-    def number_of_bindings_spots(surface_type):
-        if surface_type == 'fcc111':
-            n_sites = 4
-        elif surface_type == 'fcc100':
-            n_sites = 3
-        else:
-            raise NotImplementedError('Unique site number generator not tested'
-                                      'for other surface types than fcc111 or '
-                                      'fcc100.')
-        list_of_prefixes = [str(i).zfill(2) for i in range(n_sites)]
