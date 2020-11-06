@@ -3,7 +3,7 @@
 from rmgcat_to_sella.get_slab import GetSlab
 
 surface_type = '{surface_type}'
-symbol = '{symbol}'
+metal_atom = '{metal_atom}'
 a = {a}
 repeats_surface = {repeats_surface}
 vacuum = {vacuum}
@@ -15,7 +15,7 @@ balsam_exe_settings = {balsam_exe_settings}
 calc_keywords = {calc_keywords}
 creation_dir = '{creation_dir}'
 
-get_slab = GetSlab(surface_type, symbol, a, repeats_surface, vacuum,
+get_slab = GetSlab(surface_type, metal_atom, a, repeats_surface, vacuum,
                    slab_name, pseudopotentials, pseudo_dir,
                    balsam_exe_settings, calc_keywords, creation_dir)
 get_slab.run_slab_opt()
