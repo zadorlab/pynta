@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import re
 from rmgcat_to_sella.check_input import InputChecker
 from rmgcat_to_sella.restart import LowLevelRestart, HighLevelRestart
 from rmgcat_to_sella.io import IO
@@ -65,11 +64,6 @@ else:
     calc_keywords = inputR2S.calc_keywords
     creation_dir = inputR2S.creation_dir
     surface_types = surface_types_and_repeats.keys()
-    # repeats = []
-    # repeats_surface = []
-    # for i in surface_types_and_repeats.values():
-    #     repeats.append(i[0])
-    #     repeats_surface.append(i[1])
     facetpaths = IO().get_facetpaths(symbol, surface_types)
     job_file_dir_name = 'job_files'
 
@@ -93,8 +87,6 @@ template_big_slab_opt = os.path.join(
 template_ads = os.path.join(path_template + '01_template_set_up_ads.py')
 template_ads_vib = os.path.join(
     path_template + '01_template_set_up_ads_vib.py')
-template_create_vib_jobs = os.path.join(
-    path_template + 'template_create_minima_files.py')
 template_set_up_ts_with_xtb = os.path.join(
     path_template + '02_template_set_up_ts_with_xtb.py')
 template_set_up_ts = os.path.join(
@@ -117,7 +109,6 @@ pytemplate_set_up_ts_vib = os.path.join(
 pytemplate_set_up_after_ts = os.path.join(
     path_pytemplate + 'pytemplate_set_up_opt_after_ts.py')
 slab_opt = '00_set_up_slab_opt.py'
-ads_surf_opt_script = '01_set_up_ads.py'
 
 ####################################################
 #                    Initialize                    #
@@ -354,6 +345,7 @@ class WorkFlow:
             # define repeats and repeats_surface
             repeats, repeats_surface = reps
 
+            # create all input files for each main job 00-05
             WorkFlow.set_up_slab(
                 template_slab_opt,
                 py_job_dir,
@@ -417,8 +409,7 @@ class WorkFlow:
             )
 
             reactions = IO().open_yaml_file(yamlfile)
-            # the rest of jobs depends on reaction,
-            # so loop throug all reactions
+            # the rest of jobs depends on reaction - loop throug all reactions
             for rxn in reactions:
                 WorkFlow.set_up_TS_with_xtb(
                     rxn,
@@ -783,29 +774,55 @@ class WorkFlow:
         Parameters
         ----------
         template : str
-            [description]
+            a template file for ads_vib job
         py_job_dir : str
-            [description]
+            a path to where all job files 00-05 are about to be created, e.g.
+            {'current_dir'}/job_files/Cu_111
         facetpath : str
-            [description]
+            a path to the workflow's main dir
+            e.g. 'Cu_111'
         yamlfile : str
-            [description]
+            a name of the .yaml file with a reaction list
         pytemplate : str
-            [description]
+            a template to prepare submission scripts for vibfrational
+            frequencies calculations of symmetry distinct minima
         pseudopotentials : Dict[str, str]
-            [description]
+            a dictionary with QE pseudopotentials for all species.
+            e.g.
+            dict(Cu='Cu.pbe-spn-kjpaw_psl.1.0.0.UPF',
+                H='H.pbe-kjpaw_psl.1.0.0.UPF',
+                O='O.pbe-n-kjpaw_psl.1.0.0.UPF',
+                C='C.pbe-n-kjpaw_psl.1.0.0.UPF',
+                )
         pseudo_dir : str
-            [description]
+            a path to the QE's pseudopotentials main directory
+            e.g.
+            '/home/mgierad/espresso/pseudo'
         node_packing_count : int
-            [description]
+            number of cores per node
         balsam_exe_settings : Dict[str, int]
-            [description]
+            a dictionary with balsam execute parameters (cores, nodes, etc.),
+            e.g.
+            balsam_exe_settings = {'num_nodes': 1,
+                                   'ranks_per_node': 48,
+                                   'threads_per_rank': 1}
+        calc_keywords : dict{str:str}
+            a dictionary with parameters to run DFT package. Quantum Espresso
+            is used as default, e.g.
         calc_keywords : Dict[str, str]
-            [description]
+            a dictionary with parameters to run DFT package. Quantum Espresso
+            is used as default, e.g.
+
+            calc_keywords = {'kpts': (3, 3, 1),
+                            'occupations': 'smearing',
+                            'smearing':  'marzari-vanderbilt',
+                            'degauss': 0.01, 'ecutwfc': 40, 'nosym': True,
+                            'conv_thr': 1e-11, 'mixing_mode': 'local-TF'}
         creation_dir : PosixPath
-            [description]
+            a posix path to the main working directory
 
         '''
+
         with open(template, 'r') as f:
             template_txt = f.read()
             py_job_fname = os.path.join(
@@ -1250,7 +1267,7 @@ class WorkFlow:
         ________
 
         job_to_add : BalsamJob
-            job that will be submitted to balsam queue/database
+            job that will be submitted to balsam database
 
         '''
         from balsam.launcher.dag import BalsamJob
@@ -1265,22 +1282,26 @@ class WorkFlow:
         ads_opt = '01_{}_set_up_ads_on_slab.py'.format(facetpath)
         ads_vib = '{}_set_up_ads_vib.py'.format(facetpath)
 
+        # specify rxn_name TODO a better method required!
         if job_script in [ads_opt, slab_opt, ads_vib]:
             rxn_name = ''
         else:
             rxn_name = '_'.join(job_script.split('_')[-2:])[:-3]
 
-        try:
-            workflow_name = facetpath + '_' + job_script[0:2] + '_' + rxn_name
-        except ValueError:
-            workflow_name = facetpath + '_error'
-
-        # special case for big_slab_opt jobs
+        # specify workflow name
         if job_script == big_slab_opt:
+            # special case for big_slab_opt jobs
             workflow_name = facetpath + '_big_slab_opt'
-        # special case for ads_vib jobs
         elif job_script == ads_vib:
+            # special case for ads_vib jobs
             workflow_name = facetpath + '_vib'
+        else:
+            # default name for the workflow
+            try:
+                workflow_name = facetpath + '_' + \
+                    job_script[0:2] + '_' + rxn_name
+            except ValueError:
+                workflow_name = facetpath + '_error'
 
         job = os.path.join(job_files_path, job_script)
         job_to_add = BalsamJob(
@@ -1541,11 +1562,8 @@ class WorkFlow:
 
         '''
         checked_species = {}
-        # all_species = IO().get_all_species(yamlfile)
+        all_species = IO().get_all_species(yamlfile)
         for species in all_species:
-            # a bug to be resolved - why does it invert the name?
-            if species == 'OH':
-                species = 'HO'
             checked_species[species] = WorkFlow.is_minima_out_files(
                 species, facetpath)
         return checked_species
@@ -1772,6 +1790,7 @@ class WorkFlow:
                     self.run_opt_surf_and_adsorbate(facetpath)
                 except NameError:
                     self.run_opt_surf_and_adsorbate_no_depend(facetpath)
+                self.run_minima_vib('01', facetpath)
                 self.run_ts_estimate('01', facetpath)
         # search for the 1st order saddle point
         self.run_ts_with_sella('02', facetpath)
