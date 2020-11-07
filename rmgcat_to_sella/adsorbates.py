@@ -334,6 +334,8 @@ class Adsorbates:
             if bond is None:
                 bond = [0]
             key = adsorbate.get_chemical_formula()
+            if key == 'HO':
+                key = 'OH'
             try:
                 if key == 'CHO2':  # connect through oxygen
                     bond = [2]

@@ -6,7 +6,7 @@ from typing import List, Dict, Tuple, Any, Optional
 import os
 import sys
 import __main__
-from pathlib import Path, PosixPath
+from pathlib import Path
 from warnings import warn
 
 
@@ -418,8 +418,7 @@ class WorkFlow:
                     facetpath,
                     slab,
                     repeats,
-                    pytemplate_set_up_after_ts,
-                    pseudopotentials
+                    pytemplate_set_up_after_ts
                 )
 
 ###########################
