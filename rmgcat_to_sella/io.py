@@ -1,5 +1,4 @@
 import os
-from os import supports_fd
 import shutil
 import yaml
 import networkx as nx

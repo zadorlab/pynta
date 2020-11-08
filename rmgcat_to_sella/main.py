@@ -6,7 +6,7 @@ from typing import List, Dict, Tuple, Any, Optional
 import os
 import sys
 import __main__
-from pathlib import Path
+from pathlib import Path, PosixPath
 from warnings import warn
 
 
@@ -255,7 +255,8 @@ class WorkFlow:
             pytemplate: str,
             facetpath: str,
             slab_name: str,
-            repeats: Tuple[int, int, int]) -> None:
+            repeats: Tuple[int, int, int],
+            creation_dir: PosixPath) -> None:
         ''' Create a ase pyjob for big slab optimization
 
         Parameters
