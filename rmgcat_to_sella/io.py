@@ -510,8 +510,6 @@ class IO():
             for reactant in r_name_list:
                 # I have no idea why OH and HO is getting reverse
                 # a workaround
-                if reactant == 'OH':
-                    reactant = 'HO'
                 lookup_phrase = '{}_{}_*relax.py'.format(facetpath, reactant)
                 # find matching reatants
                 minima_py_files = Path(path_to_minima).glob(lookup_phrase)
