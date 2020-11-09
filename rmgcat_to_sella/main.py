@@ -274,32 +274,6 @@ class WorkFlow:
         repeats : tuple(int, int, int)
             how to replicate unit cell in (x, y, z) direction,
             e.g. (3, 3, 1)
-        balsam_exe_settings : dict{str:int}
-            a dictionary with balsam execute parameters (cores, nodes, etc.),
-            e.g.
-            balsam_exe_settings = {'num_nodes': 1,
-                                   'ranks_per_node': 48,
-                                   'threads_per_rank': 1}
-        calc_keywords : dict{str:str}
-            a dictionary with parameters to run DFT package. Quantum Espresso
-            is used as default, e.g.
-
-            calc_keywords = {'kpts': (3, 3, 1), 'occupations': 'smearing',
-                            'smearing':  'marzari-vanderbilt',
-                            'degauss': 0.01, 'ecutwfc': 40, 'nosym': True,
-                            'conv_thr': 1e-11, 'mixing_mode': 'local-TF'}
-        pseudopotentials : dict{str:str}
-            a dictionary with QE pseudopotentials for all species.
-            e.g.
-            dict(Cu='Cu.pbe-spn-kjpaw_psl.1.0.0.UPF',
-                H='H.pbe-kjpaw_psl.1.0.0.UPF',
-                O='O.pbe-n-kjpaw_psl.1.0.0.UPF',
-                C='C.pbe-n-kjpaw_psl.1.0.0.UPF',
-                )
-        pseudo_dir : str
-            a path to the QE's pseudopotentials main directory
-            e.g.
-            '/home/mgierad/espresso/pseudo'
         creation_dir : posix
             a posix path to the working directory
 
@@ -542,37 +516,6 @@ class WorkFlow:
         pytemplate : python file
             a template to prepare submission scripts
             for big_slab minimization
-        pseudopotentials : dict{str:str}
-            a dictionary with QE pseudopotentials for all species.
-            e.g.
-            dict(Cu='Cu.pbe-spn-kjpaw_psl.1.0.0.UPF',
-                H='H.pbe-kjpaw_psl.1.0.0.UPF',
-                O='O.pbe-n-kjpaw_psl.1.0.0.UPF',
-                C='C.pbe-n-kjpaw_psl.1.0.0.UPF',
-                )
-        pseudo_dir : str
-            a path to the QE's pseudopotentials main directory
-            e.g.
-            '/home/mgierad/espresso/pseudo'
-        node_packing_count : int
-            number of cores per node
-        balsam_exe_settings : dict{str:int}
-            a dictionary with balsam execute parameters (cores, nodes, etc.),
-            e.g.
-            balsam_exe_settings = {'num_nodes': 1,
-                                   'ranks_per_node': 48,
-                                   'threads_per_rank': 1}
-        calc_keywords : dict{str:str}
-            a dictionary with parameters to run DFT package. Quantum Espresso
-            is used as default, e.g.
-
-            calc_keywords = {'kpts': (3, 3, 1),
-                            'occupations': 'smearing',
-                            'smearing':  'marzari-vanderbilt',
-                            'degauss': 0.01, 'ecutwfc': 40, 'nosym': True,
-                            'conv_thr': 1e-11, 'mixing_mode': 'local-TF'}
-        creation_dir : posix
-            a posix path to the main working directory
 
         '''
         with open(template, 'r') as r:
@@ -627,37 +570,6 @@ class WorkFlow:
         pytemplate : python file
             a template to prepare submission scripts
             for adsorbate+surface minimization
-        pseudopotentials : dict{str:str}
-            a dictionary with QE pseudopotentials for all species.
-            e.g.
-            dict(Cu='Cu.pbe-spn-kjpaw_psl.1.0.0.UPF',
-                H='H.pbe-kjpaw_psl.1.0.0.UPF',
-                O='O.pbe-n-kjpaw_psl.1.0.0.UPF',
-                C='C.pbe-n-kjpaw_psl.1.0.0.UPF',
-                )
-        pseudo_dir : str
-            a path to the QE's pseudopotentials main directory
-            e.g.
-            '/home/mgierad/espresso/pseudo'
-        node_packing_count : int
-            number of cores per node
-        balsam_exe_settings : dict{str:int}
-            a dictionary with balsam execute parameters (cores, nodes, etc.),
-            e.g.
-            balsam_exe_settings = {'num_nodes': 1,
-                                   'ranks_per_node': 48,
-                                   'threads_per_rank': 1}
-        calc_keywords : dict{str:str}
-            a dictionary with parameters to run DFT package. Quantum Espresso
-            is used as default, e.g.
-
-            calc_keywords = {'kpts': (3, 3, 1),
-                            'occupations': 'smearing',
-                            'smearing':  'marzari-vanderbilt',
-                            'degauss': 0.01, 'ecutwfc': 40, 'nosym': True,
-                            'conv_thr': 1e-11, 'mixing_mode': 'local-TF'}
-        creation_dir : posix
-            a posix path to the main working directory
 
         '''
         with open(template, 'r') as r:
@@ -698,45 +610,9 @@ class WorkFlow:
         facetpath : str
             a path to the workflow's main dir
             e.g. 'Cu_111'
-        yamlfile : str
-            a name of the .yaml file with a reaction list
         pytemplate : str
             a template to prepare submission scripts for vibfrational
             frequencies calculations of symmetry distinct minima
-        pseudopotentials : Dict[str, str]
-            a dictionary with QE pseudopotentials for all species.
-            e.g.
-            dict(Cu='Cu.pbe-spn-kjpaw_psl.1.0.0.UPF',
-                H='H.pbe-kjpaw_psl.1.0.0.UPF',
-                O='O.pbe-n-kjpaw_psl.1.0.0.UPF',
-                C='C.pbe-n-kjpaw_psl.1.0.0.UPF',
-                )
-        pseudo_dir : str
-            a path to the QE's pseudopotentials main directory
-            e.g.
-            '/home/mgierad/espresso/pseudo'
-        node_packing_count : int
-            number of cores per node
-        balsam_exe_settings : Dict[str, int]
-            a dictionary with balsam execute parameters (cores, nodes, etc.),
-            e.g.
-            balsam_exe_settings = {'num_nodes': 1,
-                                   'ranks_per_node': 48,
-                                   'threads_per_rank': 1}
-        calc_keywords : dict{str:str}
-            a dictionary with parameters to run DFT package. Quantum Espresso
-            is used as default, e.g.
-        calc_keywords : Dict[str, str]
-            a dictionary with parameters to run DFT package. Quantum Espresso
-            is used as default, e.g.
-
-            calc_keywords = {'kpts': (3, 3, 1),
-                            'occupations': 'smearing',
-                            'smearing':  'marzari-vanderbilt',
-                            'degauss': 0.01, 'ecutwfc': 40, 'nosym': True,
-                            'conv_thr': 1e-11, 'mixing_mode': 'local-TF'}
-        creation_dir : PosixPath
-            a posix path to the main working directory
 
         '''
 
@@ -791,8 +667,6 @@ class WorkFlow:
         repeats : tuple(int, int, int)
             how to replicate unit cell in (x, y, z) direction,
             e.g. (3, 3, 1)
-        yamlfile : str
-            a name of the .yaml file with a reaction list
         facetpath : str
             a path to the workflow's main dir
             e.g. 'Cu_111'
@@ -808,14 +682,6 @@ class WorkFlow:
             e.g. 1.0
         pytemplate_xtb : python script
             a template file for penalty function minimization job
-        species_dict : dict{str:list[str]}
-            a dictionary holding info about particular reaction and key species
-            for that reaction
-            e.g. {'rxn1': ['O', 'H'], 'rxn2': ['C', 'H']}
-        node_packing_count : int
-            number of cores per node
-        creation_dir : posix
-            a posix path to the working directory
 
         '''
         with open(template, 'r') as r:
@@ -880,40 +746,8 @@ class WorkFlow:
         repeats : tuple(int, int, int)
             how to replicate unit cell in (x, y, z) direction,
             e.g. (3, 3, 1)
-        yamlfile : str
-            a name of the .yaml file with a reaction list
         pytemplate : python script
             a template file for ts optimization with sella
-        pseudopotentials : dict{str:str}
-            a dictionary with QE pseudopotentials for all species.
-            e.g.
-            dict(Cu='Cu.pbe-spn-kjpaw_psl.1.0.0.UPF',
-                H='H.pbe-kjpaw_psl.1.0.0.UPF',
-                O='O.pbe-n-kjpaw_psl.1.0.0.UPF',
-                C='C.pbe-n-kjpaw_psl.1.0.0.UPF',
-                )
-        pseudo_dir : str
-            a path to the QE's pseudopotentials main directory
-            e.g.
-            '/home/mgierad/espresso/pseudo'
-        node_packing_count : int
-            number of cores per node
-        balsam_exe_settings : dict{str:int}
-            a dictionary with balsam execute parameters (cores, nodes, etc.),
-            e.g.
-            balsam_exe_settings = {'num_nodes': 1,
-                                   'ranks_per_node': 48,
-                                   'threads_per_rank': 1}
-        calc_keywords : dict{str:str}
-            a dictionary with parameters to run DFT package. Quantum Espresso
-            is used as default, e.g.
-
-            calc_keywords = {'kpts': (3, 3, 1), 'occupations': 'smearing',
-                            'smearing':  'marzari-vanderbilt',
-                            'degauss': 0.01, 'ecutwfc': 40, 'nosym': True,
-                            'conv_thr': 1e-11, 'mixing_mode': 'local-TF'}
-        creation_dir : posix
-            a posix path to the main working directory
 
         '''
         with open(template, 'r') as r:
@@ -973,40 +807,8 @@ class WorkFlow:
         repeats : tuple(int, int, int)
             how to replicate unit cell in (x, y, z) direction,
             e.g. (3, 3, 1)
-        yamlfile : str
-            a name of the .yaml file with a reaction list
         pytemplate : python script
             a template file for setting up frequencies calculations
-        pseudopotentials : dict{str:str}
-            a dictionary with QE pseudopotentials for all species.
-            e.g.
-            dict(Cu='Cu.pbe-spn-kjpaw_psl.1.0.0.UPF',
-                H='H.pbe-kjpaw_psl.1.0.0.UPF',
-                O='O.pbe-n-kjpaw_psl.1.0.0.UPF',
-                C='C.pbe-n-kjpaw_psl.1.0.0.UPF',
-                )
-        pseudo_dir : str
-            a path to the QE's pseudopotentials main directory
-            e.g.
-            '/home/mgierad/espresso/pseudo'
-        node_packing_count : int
-            number of cores per node
-        balsam_exe_settings : dict{str:int}
-            a dictionary with balsam execute parameters (cores, nodes, etc.),
-            e.g.
-            balsam_exe_settings = {'num_nodes': 1,
-                                   'ranks_per_node': 48,
-                                   'threads_per_rank': 1}
-        calc_keywords : dict{str:str}
-            a dictionary with parameters to run DFT package. Quantum Espresso
-            is used as default, e.g.
-
-            calc_keywords = {'kpts': (3, 3, 1), 'occupations': 'smearing',
-                            'smearing':  'marzari-vanderbilt',
-                            'degauss': 0.01, 'ecutwfc': 40, 'nosym': True,
-                            'conv_thr': 1e-11, 'mixing_mode': 'local-TF'}
-        creation_dir : posix
-            a posix path to the main working directory
 
         '''
         with open(template, 'r') as r:
@@ -1066,42 +868,10 @@ class WorkFlow:
         repeats : tuple(int, int, int)
             how to replicate unit cell in (x, y, z) direction,
             e.g. (3, 3, 1)
-        yamlfile : str
-            a name of the .yaml file with a reaction list
         pytemplate : python script
             a template file for setting up an alternative to IRC (minimization
             of displaced structures following the imaginary mode of
             oscillation)
-        pseudopotentials : dict{str:str}
-            a dictionary with QE pseudopotentials for all species.
-            e.g.
-            dict(Cu='Cu.pbe-spn-kjpaw_psl.1.0.0.UPF',
-                H='H.pbe-kjpaw_psl.1.0.0.UPF',
-                O='O.pbe-n-kjpaw_psl.1.0.0.UPF',
-                C='C.pbe-n-kjpaw_psl.1.0.0.UPF',
-                )
-        pseudo_dir : str
-            a path to the QE's pseudopotentials main directory
-            e.g.
-            '/home/mgierad/espresso/pseudo'
-        node_packing_count : int
-            number of cores per node
-        balsam_exe_settings : dict{str:int}
-            a dictionary with balsam execute parameters (cores, nodes, etc.),
-            e.g.
-            balsam_exe_settings = {'num_nodes': 1,
-                                   'ranks_per_node': 48,
-                                   'threads_per_rank': 1}
-        calc_keywords : dict{str:str}
-            a dictionary with parameters to run DFT package. Quantum Espresso
-            is used as default, e.g.
-
-            calc_keywords = {'kpts': (3, 3, 1), 'occupations': 'smearing',
-                            'smearing':  'marzari-vanderbilt',
-                            'degauss': 0.01, 'ecutwfc': 40, 'nosym': True,
-                            'conv_thr': 1e-11, 'mixing_mode': 'local-TF'}
-        creation_dir : posix
-            a posix path to the main working directory
 
         '''
         with open(template, 'r') as r:
@@ -1369,7 +1139,7 @@ class WorkFlow:
         Parameters:
         ___________
 
-        dependant_jon : str
+        dependant_job : str
             a prefix of the the job (minimum: two integers,
             max: whole job script name) that the current depends on,
             e.g. '02'
@@ -1392,7 +1162,7 @@ class WorkFlow:
         Parameters:
         ___________
 
-        dependant_jon : str
+        dependant_job : str
             a prefix of the the job (minimum: two integers,
             max: whole job script name) that the current depends on,
             e.g. '03'
@@ -1415,7 +1185,7 @@ class WorkFlow:
         Parameters:
         ___________
 
-        dependant_jon : str
+        dependant_job : str
             a prefix of the the job (minimum: two integers,
             max: whole job script name) that the current depends on,
             e.g. '04'
@@ -1524,9 +1294,6 @@ class WorkFlow:
         Parameters:
         ___________
 
-        work_files_path: posix
-            a path where work files are stored, e.g.
-            '{'creation_dir'}/Cu_111'
         facetpath : str
             a path to the workflow's main dir
             e.g. 'Cu_111'
@@ -1593,9 +1360,6 @@ class WorkFlow:
         Parameters:
         ___________
 
-        work_files_path: posix
-            a path where work files are stored, e.g.
-            '{'creation_dir'}/Cu_111'
         facetpath : str
             a path to the workflow's main dir
             e.g. 'Cu_111'
