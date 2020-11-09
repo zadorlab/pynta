@@ -519,8 +519,6 @@ class IO():
                         os.path.split((str(minima_py_file)))[1])
             # loop through all products and do the same as for reactants
             for product in p_name_list:
-                if product == 'OH':
-                    product = 'HO'
                 lookup_phrase = '{}_{}_*relax.py'.format(facetpath, product)
                 minima_py_files = Path(path_to_minima).glob(lookup_phrase)
                 for minima_py_file in minima_py_files:

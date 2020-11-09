@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
+from operator import sub
 from pathlib import Path
 import os
 
 from rmgcat_to_sella.adsorbates import Adsorbates
 from rmgcat_to_sella.io import IO
 
-from balsam.launcher.dag import BalsamJob, add_dependency
+from balsam.launcher.dag import BalsamJob, add_dependency, submit
 
 facetpath = '{facetpath}'
 slab = '{slab}'
@@ -88,5 +89,8 @@ pending_simulations_dep_2 = BalsamJob.objects.filter(
 ).exclude(state="JOB_FINISHED")
 
 for pending_job in pending_simulations_dep_2:
-    for minimum_py_script in all_submitted_jobs:
-        add_dependency(minimum_py_script, pending_job)  # parent, child
+    for submitted_job in all_submitted_jobs:
+        balsam_submitted_job = BalsamJob.objects.filter(
+            name=submitted_job
+        ).exclude(state="JOB_FINISHED")
+        add_dependency(balsam_submitted_job, pending_job)  # parent, child

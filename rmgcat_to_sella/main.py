@@ -1198,7 +1198,7 @@ class WorkFlow:
         for after_irc in after_irc_py_scripts:
             self.exe(dependant_job, after_irc, facetpath)
 
-    @ staticmethod
+    @staticmethod
     def check_all_species(
             yamlfile: str,
             facetpath: str) -> Dict[str, bool]:
@@ -1229,7 +1229,7 @@ class WorkFlow:
                 species, facetpath)
         return checked_species
 
-    @ staticmethod
+    @staticmethod
     def is_minima_dir(
             species: str,
             facetpath: str) -> bool:
@@ -1253,7 +1253,7 @@ class WorkFlow:
             return True
         return False
 
-    @ staticmethod
+    @staticmethod
     def is_minima_out_files(
             species: str,
             facetpath: str) -> bool:
@@ -1286,7 +1286,7 @@ class WorkFlow:
             return True
         return False
 
-    @ staticmethod
+    @staticmethod
     def is_slab(
             facetpath: str) -> Tuple[bool, Optional[str]]:
         ''' Check whether slab has been already optimized
@@ -1319,7 +1319,7 @@ class WorkFlow:
             return True, slab_opt_path_str[0]
         return (False, )
 
-    @ staticmethod
+    @staticmethod
     def is_big_slab(
             facetpath: str) -> bool:
         ''' Check for big_slab calculations. True if there is a big_slab file,
@@ -1352,7 +1352,7 @@ class WorkFlow:
                   'Big slab optimization required'.format(keyphrase))
             return False
 
-    @ staticmethod
+    @staticmethod
     def check_if_slab_opt_exists(
             facetpath: str) -> Tuple[bool, Optional[str]]:
         ''' Check whether slab has been already optimized
