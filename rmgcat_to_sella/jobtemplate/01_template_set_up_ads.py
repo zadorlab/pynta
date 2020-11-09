@@ -30,12 +30,6 @@ dependancy_dict = IO().depends_on(facetpath, yamlfile, creation_dir)
 # keep track of all submitted jobs (all unique)
 all_submitted_jobs = []
 
-# ads_vib jobs dependancies
-dependent_workflow_name_2 = facetpath + '_vib'
-pending_simulations_dep_2 = BalsamJob.objects.filter(
-    workflow__contains=dependent_workflow_name_2
-).exclude(state="JOB_FINISHED")
-
 # specify dependant 02 for given reactions
 for rxn_name in dependancy_dict.keys():
     workflow_name = facetpath + '_01_' + rxn_name
@@ -86,6 +80,13 @@ for rxn_name in dependancy_dict.keys():
     for job in pending_simulations_dep_1:
         for adding_job in dependancy:
             add_dependency(adding_job, job)  # parent, child
-    for job in pending_simulations_dep_2:
-        for adding_job in dependancy:
-            add_dependency(adding_job, job)  # parent, child
+
+# ads_vib jobs dependancies
+dependent_workflow_name_2 = facetpath + '_vib'
+pending_simulations_dep_2 = BalsamJob.objects.filter(
+    workflow__contains=dependent_workflow_name_2
+).exclude(state="JOB_FINISHED")
+
+for pending_job in pending_simulations_dep_2:
+    for minimum_py_script in all_submitted_jobs:
+        add_dependency(minimum_py_script, pending_job)  # parent, child
