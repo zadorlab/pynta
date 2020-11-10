@@ -225,9 +225,9 @@ class TS():
             # else:
             if len(ts_guess) == 2:
                 print('Diatomic reaction')
-                ts_candidate, bonded = Diatomic().get_ts_candidate(ts_guess, rxn, reacting_sp)
-                print(ts_candidate)
-                print(bonded)
+                ts_candidate = Diatomic().get_ts_candidate(
+                    ts_guess, rxn, reacting_sp, scfactor)
+
         # a = Molecule().get_3D_positions(ts_guess[0])
         # print(a)
 
