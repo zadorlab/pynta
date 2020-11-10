@@ -225,135 +225,61 @@ class TS():
             # else:
             if len(ts_guess) == 2:
                 print('Diatomic reaction')
-                ts_candidate = Diatomic().get_ts_candidate(
+                ts_candidate, bonded_idx = Diatomic().get_ts_candidate(
                     ts_guess, rxn, reacting_sp, scfactor)
+                print(ts_candidate)
 
-        # a = Molecule().get_3D_positions(ts_guess[0])
-        # print(a)
+                # double check this
+                put_adsorbates = Adsorbates(
+                    self.facetpath,
+                    self.slab,
+                    self.repeats,
+                    self.yamlfile,
+                    self.creation_dir)
+                slabedges, tags = put_adsorbates.get_edges(self)
+                # double check this
+                grslab = Gratoms(numbers=slab_atom.numbers,
+                                 positions=slab_atom.positions,
+                                 cell=slab_atom.cell,
+                                 pbc=slab_atom.pbc,
+                                 edges=slabedges)
+                grslab.arrays['surface_atoms'] = tags
 
-        # ADSORBATES
-        # This part here is a bit hard coded, especially when dealing with
-        # reactants with >= 3 atoms. The code works for couple of species
-        # included in if else statement below. Probably will fail for other
-        # species. This is becouse ase.build.molecule method numbers atoms
-        # very diferently depending on the molecule specify.
-        # To be resolved somehow.
+                # building adsorbtion structures
+                ads_builder = Builder(grslab)
 
-        # atom1 = 0  # atom1 should always have index 0, i.e. the first atom
-        # atom2 = 1
-        # # well, here is the problem becouse ase.build.molecule counts atoms
-        # # differently than my input in the yaml file. Probably the problem with
-        # # the way yamlfile is converted to species - to be resolved
-        # if len(r_name_list) <= len(p_name_list):
-        #     ts_candidate = Molecule().molecule(r_name_list[0])[0]
-        # else:
-        #     # images[2] keeps info about product. It's a Gratom object.
-        #     # Cannot use catkit's molecule method becouse it generates
-        #     # gemetry based on wierd order chemical formula string. Sometimes
-        #     # it works to use molecule method but in general it is better to
-        #     # use get_3D_positions() as it converts yaml info into 3d
-        #     # position. In images I keep the oryginal order of elements with
-        #     # connectivity info. In ts_candidate.get_chemical_formula()
-        #     # elements are sorted and grouped
-        #     ts_candidate = images[2]
-        #     # reactName = r_name
+                # max_angle = int(TS.get_max_rot_angle(self))
+                # do a full 360 degree rotation - bridge have different symmetry than
+                # hollows and top sites on Cu(111), so cannot use 60 degree for all
+                # of them. So the approach is to do a full 360 degree scan with
+                # 5 degree increment, check the symmetry using check_symm_before_xtb()
+                # method, run the penalty function minimization for the remaining
+                # structures. Once done, check symmetry again using check_symm() method
+                # That would avoid bugs if other surface is applied.
+                max_angle = 360
+                angle = 0
+                count = 0
+                step_size = 5
+                while angle <= max_angle:
+                    structs = ads_builder.add_adsorbate(
+                        ts_candidate, [bonded_idx], -1, auto_construct=False)
+                    # change to True will make bonded_through work.
+                    # Now it uses ts_candidate,rotate...
+                    # to generate adsorbed strucutres
+                    big_slab = slab_atom * self.repeats
+                    nslab = len(slab_atom)
 
-        # # Different cases
-        # if ts_candidate.get_chemical_formula() == 'CHO':
-        #     atom2 = 2
-        #     bonded_through = [0]
-        # elif ts_candidate.get_chemical_formula() == 'COH':
-        #     atom2 = 2
-        #     bonded_through = [0]
-        # elif ts_candidate.get_chemical_formula() == 'CHO2':
-        #     bonded_through = [2]  # connect through oxygen
+                    for i, struc in enumerate(structs):
+                        big_slab_ads = big_slab + struc[nslab:]
+                        prefix = str(i + len(structs) * count).zfill(3)
+                        xyz_fname = os.path.join(
+                            prefix + '_' + self.facetpath + '_' + rxn_name + '.xyz')
+                        path_to_xyz = os.path.join(ts_estimate_path, xyz_fname)
+                        write(path_to_xyz, big_slab_ads)
 
-        # elif ts_candidate.get_chemical_formula() == 'C2H5O2':
-        #     atom0 = 0
-        #     atom1 = 1
-        #     atom2 = 5
-        #     bonded_through = [6]  # connect through oxygen
-        # else:
-        #     bonded_through = [0]
-
-        # bondlen = ts_candidate.get_distance(atom1, atom2)
-
-        # # Final ridgid rotations to orientate the ts_candidate on the surface
-        # if len(ts_candidate.get_tags()) < 3:
-        #     ts_candidate.rotate(90, 'y')
-        #     ts_candidate.set_distance(
-        #         atom1, atom2, bondlen * scfactor, fix=0)
-        # elif len(ts_candidate.get_tags()) == 3:
-        #     ts_candidate.rotate(90, 'z')
-        #     ts_candidate.set_distance(
-        #         atom1, atom2, bondlen * scfactor, fix=0)
-        # # else:
-        # elif ts_candidate.get_chemical_formula() == 'C2H5O2':
-        #     # ts_candidate.rotate(60, 'y')
-        #     ts_candidate.rotate(90, 'z')
-        #     # Should work for H2CO*OCH3, i.e. COH3+HCOH
-        #     ts_candidate.set_angle(atom2, atom1, atom0, -45,
-        #                            indices=[0, 1, 2, 3, 4], add=True)
-        #     ts_candidate.set_distance(
-        #         atom1, atom2, bondlen * scfactor, fix=1,
-        #         indices=[0, 1, 2, 3, 4]
-        #     )
-        #     # indices=[0, 1, 2, 3, 4]
-        # elif ts_candidate.get_chemical_formula() == 'CHO2':
-        #     ts_candidate.rotate(90, 'z')
-        #     ts_candidate.set_distance(
-        #         atom1, atom2, bondlen * scfactor, fix=0)
-        # # double check this
-        # put_adsorbates = Adsorbates(
-        #     self.facetpath,
-        #     self.slab,
-        #     self.repeats,
-        #     self.yamlfile,
-        #     self.creation_dir)
-        # slabedges, tags = put_adsorbates.get_edges(self)
-        # # double check this
-        # grslab = Gratoms(numbers=slab_atom.numbers,
-        #                  positions=slab_atom.positions,
-        #                  cell=slab_atom.cell,
-        #                  pbc=slab_atom.pbc,
-        #                  edges=slabedges)
-        # grslab.arrays['surface_atoms'] = tags
-
-        # # building adsorbtion structures
-        # ads_builder = Builder(grslab)
-
-        # # max_angle = int(TS.get_max_rot_angle(self))
-        # # do a full 360 degree rotation - bridge have different symmetry than
-        # # hollows and top sites on Cu(111), so cannot use 60 degree for all
-        # # of them. So the approach is to do a full 360 degree scan with
-        # # 5 degree increment, check the symmetry using check_symm_before_xtb()
-        # # method, run the penalty function minimization for the remaining
-        # # structures. Once done, check symmetry again using check_symm() method
-        # # That would avoid bugs if other surface is applied.
-        # max_angle = 360
-        # angle = 0
-        # count = 0
-        # step_size = 5
-        # while angle <= max_angle:
-        #     structs = ads_builder.add_adsorbate(
-        #         ts_candidate, bonded_through, -1, auto_construct=False)
-        #     # change to True will make bonded_through work.
-        #     # Now it uses ts_candidate,rotate...
-        #     # to generate adsorbed strucutres
-        #     big_slab = slab_atom * self.repeats
-        #     nslab = len(slab_atom)
-
-        #     for i, struc in enumerate(structs):
-        #         big_slab_ads = big_slab + struc[nslab:]
-        #         prefix = str(i + len(structs) * count).zfill(3)
-        #         xyz_fname = os.path.join(
-        #             prefix + '_' + self.facetpath + '_' + rxn_name + '.xyz')
-        #         path_to_xyz = os.path.join(ts_estimate_path, xyz_fname)
-        #         write(path_to_xyz, big_slab_ads)
-
-        #     ts_candidate.rotate(step_size, 'z')
-        #     angle += step_size
-        #     count += 1
+                    ts_candidate.rotate(step_size, 'z')
+                    angle += step_size
+                    count += 1
 
     def filtered_out_equiv_ts_estimate(
             self,
