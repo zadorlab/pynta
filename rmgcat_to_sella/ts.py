@@ -11,6 +11,7 @@ from rmgcat_to_sella.io import IO
 from ase.io import read, write
 from ase.utils.structure_comparator import SymmetryEquivalenceCheck
 from ase.collections import g2
+from ase import Atoms
 
 from collections import Counter
 
@@ -61,6 +62,7 @@ class TS():
         self.repeats = repeats
         self.creation_dir = creation_dir
         self.n_kpts = IO().get_kpoints(self.repeats)
+        self.path_to_slab = os.path.join(self.creation_dir, self.slab)
 
     def prepare_ts_estimate(
             self,
@@ -111,7 +113,7 @@ class TS():
             for the species 2 (sp2)
 
         '''
-        r_name_list, p_name_list, images = IO().prepare_react_list(rxn)
+        r_name_list, p_name_list, _ = IO().prepare_react_list(rxn)
         rxn_name = IO().get_rxn_name(rxn)
 
         ts_estimate_path = os.path.join(
@@ -126,8 +128,7 @@ class TS():
             rxn,
             rxn_name,
             r_name_list,
-            p_name_list,
-            images)
+            p_name_list)
 
         # self.filtered_out_equiv_ts_estimate(
         #     ts_estimate_path,
@@ -176,8 +177,7 @@ class TS():
             rxn: Dict[str, str],
             rxn_name: str,
             r_name_list: List[str],
-            p_name_list: List[str],
-            images: List[Gratoms]) -> None:
+            p_name_list: List[str]) -> None:
         ''' Place adsorbates on the surface to estimate TS
 
         Parameters:
@@ -197,44 +197,67 @@ class TS():
             a list with all reactants for the given reaction
         p_name_list : list(str)
             a list with all products for the given reaction
-        images : list(Gratoms)
-            a list of CatKit's Gratom object (both reactants and products)
 
         '''
         # create TS_estimate directory
         os.makedirs(ts_estimate_path, exist_ok=True)
 
-        slab_atom = read(os.path.join(self.creation_dir, self.slab))
+        slab_atom = read(self.path_to_slab)
         slab_atom.pbc = (True, True, False)
 
+        # decide whether reactant or product is easier to use
+        # to build a ts_guess
         if len(r_name_list) <= len(p_name_list):
             reacting_sp = 'reactant'
-            ts_guesses = r_name_list
+            ts_estimators = r_name_list
         else:
             reacting_sp = 'product'
-            ts_guesses = p_name_list
+            ts_estimators = p_name_list
 
         # Developing assuming there is only one element in the list, e.g 'HO'
         # Potentially, one can imagine a reaction where A + B -> C + D
-        # all adsorbed to the surface - there will be 2 elements in ts_guesses
-        for ts_guess in ts_guesses:
+        # all adsorbed to the surface - there will be 2 elements in
+        # ts_estimators
+        for ts_est in ts_estimators:
             # if ts_guess not in g2.names:
             #     raise NotImplementedError(
             #         'Molecule {} is not supported at '
             #         'this moment.'.format(ts_guess))
             # else:
-            if len(ts_guess) == 2:
-                print('Diatomic reaction')
-                ts_candidate, bonded_idx = Diatomic().get_ts_candidate(
-                    ts_guess, rxn, reacting_sp, scfactor)
+            if len(ts_est) == 2:
+                print('Reaction: {} is a diatomic reaction'.format(rxn_name))
+
+                # get ts_guess (Gratom) and index of bonded atom (int)
+                ts_guess, bonded_idx = Diatomic().get_ts_guess_and_bonded_idx(
+                    ts_est, rxn, reacting_sp, scfactor)
+
+                # convert slab (Atom) to grslab(Gratom)
                 ads_builder = self.prepare_slab_for_ts_guess(slab_atom)
-                self.ts_guess_place_and_rotate(ts_candidate, ads_builder,
+
+                # put ts_guess on the surface in all possible spots and rotate
+                self.ts_guess_place_and_rotate(ts_guess, ads_builder,
                                                bonded_idx, slab_atom,
                                                ts_estimate_path, rxn_name)
 
     def prepare_slab_for_ts_guess(
             self,
-            slab_atom):
+            slab_atom: Atoms) -> Builder:
+        ''' Convert slab_atom to Gratom object and finally to Builder object
+            to have a suitable format for ts_guess placement
+
+        Parameters
+        ----------
+        slab_atom : Atoms
+            an initial slab converted to Atoms object, e.g.
+            ase.io.read('Cu_111_slab_opt.xyz')
+
+        Returns
+        -------
+        ads_builder : Builder
+            a slab converted to a Builder object, suitable for ts_guess
+            placement
+
+        '''
         put_adsorbates = Adsorbates(self.facetpath, self.slab, self.repeats,
                                     self.yamlfile, self.creation_dir)
         slabedges, tags = put_adsorbates.get_edges(self)
@@ -244,29 +267,56 @@ class TS():
                          pbc=slab_atom.pbc,
                          edges=slabedges)
         grslab.arrays['surface_atoms'] = tags
-        print(grslab)
 
-        # building adsorbtion structures
         ads_builder = Builder(grslab)
         return ads_builder
 
     def ts_guess_place_and_rotate(
             self,
-            ts_candidate,
-            ads_builder,
-            bonded_idx,
-            slab_atom,
-            ts_estimate_path,
-            rxn_name):
-        max_angle = 360
-        angle = 0
+            ts_guess: Gratoms,
+            ads_builder: Builder,
+            bonded_idx: int,
+            slab_atom: Atoms,
+            ts_estimate_path: str,
+            rxn_name: str,
+            max_angle: int = 360,
+            angle: int = 0,
+            angle_increment: int = 5) -> None:
+        ''' Place ts_est on the surface (ads_builder) in all possible
+            locations, rotate and save all obtained structures as a
+            seperate .xyz files
+
+        Parameters
+        ----------
+        ts_guess : Gratoms
+            an estimate TS structure that will be placed on the surface
+        ads_builder : Builder
+            a slab converted to a Builder object, suitable for ts_guess
+            placement
+        bonded_idx : int
+            an index of ts_guess atom(s) connected to the surface
+        slab_atom : Atoms
+            an initial slab converted to Atoms object, e.g.
+            ase.io.read('Cu_111_slab_opt.xyz')
+        ts_estimate_path : str
+            a path where save all generated .xyz files
+        rxn_name : str
+            a reaction name
+            e.g. OH_O+H
+        max_angle : int, optional
+            maximum angle of rotation around z axis, by default 360
+        angle : int, optional
+            initial angle of rotation around z axis, by default 0
+        angle_increment : int, optional
+            an increment of angle of rotation around z axis, by default 5
+
+        '''
         count = 0
-        step_size = 5
         while angle <= max_angle:
             structs = ads_builder.add_adsorbate(
-                ts_candidate, [bonded_idx], -1, auto_construct=False)
+                ts_guess, [bonded_idx], -1, auto_construct=False)
             # change to True will make bonded_through work.
-            # Now it uses ts_candidate,rotate...
+            # Now it uses ts_guess,rotate...
             # to generate adsorbed strucutres
             big_slab = slab_atom * self.repeats
             nslab = len(slab_atom)
@@ -279,8 +329,8 @@ class TS():
                 path_to_xyz = os.path.join(ts_estimate_path, xyz_fname)
                 write(path_to_xyz, big_slab_ads)
 
-            ts_candidate.rotate(step_size, 'z')
-            angle += step_size
+            ts_guess.rotate(angle_increment, 'z')
+            angle += angle_increment
             count += 1
 
     def filtered_out_equiv_ts_estimate(
