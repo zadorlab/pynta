@@ -2,8 +2,7 @@
 from typing import List, Tuple, Dict
 from rmgcat_to_sella.excatkit.gratoms import Gratoms
 from rmgcat_to_sella.excatkit.adsorption import Builder
-from rmgcat_to_sella.excatkit.molecule import Molecule
-from rmgcat_to_sella.ts_guesses import Diatomic
+from rmgcat_to_sella.ts_guesses import Diatomic, Triatomic
 
 from rmgcat_to_sella.adsorbates import Adsorbates
 from rmgcat_to_sella.io import IO
@@ -231,13 +230,22 @@ class TS():
                 ts_guess, bonded_idx = Diatomic().get_ts_guess_and_bonded_idx(
                     ts_est, rxn, reacting_sp, scfactor)
 
-                # convert slab (Atom) to grslab(Gratom)
-                ads_builder = self.prepare_slab_for_ts_guess(slab_atom)
+            elif len(ts_est) == 3:
+                print('Reaction: {} is a triatomic reaction'.format(rxn_name))
 
-                # put ts_guess on the surface in all possible spots and rotate
-                self.ts_guess_place_and_rotate(ts_guess, ads_builder,
-                                               bonded_idx, slab_atom,
-                                               ts_estimate_path, rxn_name)
+                ts_guess, bonded_idx = Triatomic().get_ts_guess_and_bonded_idx(
+                    ts_est, rxn, reacting_sp, scfactor)
+            else:
+                raise NotImplementedError('Only di- and triatomic reactions '
+                                          'are supported at this moment')
+
+            # convert slab (Atom) to grslab(Gratom)
+            ads_builder = self.prepare_slab_for_ts_guess(slab_atom)
+
+            # put ts_guess on the surface in all possible spots and rotate
+            self.ts_guess_place_and_rotate(ts_guess, ads_builder,
+                                           bonded_idx, slab_atom,
+                                           ts_estimate_path, rxn_name)
 
     def prepare_slab_for_ts_guess(
             self,
@@ -314,7 +322,7 @@ class TS():
         count = 0
         while angle <= max_angle:
             structs = ads_builder.add_adsorbate(
-                ts_guess, [bonded_idx], -1, auto_construct=False)
+                ts_guess, [bonded_idx], -1, auto_construct=True)
             # change to True will make bonded_through work.
             # Now it uses ts_guess,rotate...
             # to generate adsorbed strucutres
