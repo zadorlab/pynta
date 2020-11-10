@@ -227,59 +227,61 @@ class TS():
                 print('Diatomic reaction')
                 ts_candidate, bonded_idx = Diatomic().get_ts_candidate(
                     ts_guess, rxn, reacting_sp, scfactor)
-                print(ts_candidate)
+                ads_builder = self.prepare_slab_for_ts_guess(slab_atom)
+                self.ts_guess_place_and_rotate(ts_candidate, ads_builder,
+                                               bonded_idx, slab_atom,
+                                               ts_estimate_path, rxn_name)
 
-                # double check this
-                put_adsorbates = Adsorbates(
-                    self.facetpath,
-                    self.slab,
-                    self.repeats,
-                    self.yamlfile,
-                    self.creation_dir)
-                slabedges, tags = put_adsorbates.get_edges(self)
-                # double check this
-                grslab = Gratoms(numbers=slab_atom.numbers,
-                                 positions=slab_atom.positions,
-                                 cell=slab_atom.cell,
-                                 pbc=slab_atom.pbc,
-                                 edges=slabedges)
-                grslab.arrays['surface_atoms'] = tags
+    def prepare_slab_for_ts_guess(
+            self,
+            slab_atom):
+        put_adsorbates = Adsorbates(self.facetpath, self.slab, self.repeats,
+                                    self.yamlfile, self.creation_dir)
+        slabedges, tags = put_adsorbates.get_edges(self)
+        grslab = Gratoms(numbers=slab_atom.numbers,
+                         positions=slab_atom.positions,
+                         cell=slab_atom.cell,
+                         pbc=slab_atom.pbc,
+                         edges=slabedges)
+        grslab.arrays['surface_atoms'] = tags
+        print(grslab)
 
-                # building adsorbtion structures
-                ads_builder = Builder(grslab)
+        # building adsorbtion structures
+        ads_builder = Builder(grslab)
+        return ads_builder
 
-                # max_angle = int(TS.get_max_rot_angle(self))
-                # do a full 360 degree rotation - bridge have different symmetry than
-                # hollows and top sites on Cu(111), so cannot use 60 degree for all
-                # of them. So the approach is to do a full 360 degree scan with
-                # 5 degree increment, check the symmetry using check_symm_before_xtb()
-                # method, run the penalty function minimization for the remaining
-                # structures. Once done, check symmetry again using check_symm() method
-                # That would avoid bugs if other surface is applied.
-                max_angle = 360
-                angle = 0
-                count = 0
-                step_size = 5
-                while angle <= max_angle:
-                    structs = ads_builder.add_adsorbate(
-                        ts_candidate, [bonded_idx], -1, auto_construct=False)
-                    # change to True will make bonded_through work.
-                    # Now it uses ts_candidate,rotate...
-                    # to generate adsorbed strucutres
-                    big_slab = slab_atom * self.repeats
-                    nslab = len(slab_atom)
+    def ts_guess_place_and_rotate(
+            self,
+            ts_candidate,
+            ads_builder,
+            bonded_idx,
+            slab_atom,
+            ts_estimate_path,
+            rxn_name):
+        max_angle = 360
+        angle = 0
+        count = 0
+        step_size = 5
+        while angle <= max_angle:
+            structs = ads_builder.add_adsorbate(
+                ts_candidate, [bonded_idx], -1, auto_construct=False)
+            # change to True will make bonded_through work.
+            # Now it uses ts_candidate,rotate...
+            # to generate adsorbed strucutres
+            big_slab = slab_atom * self.repeats
+            nslab = len(slab_atom)
 
-                    for i, struc in enumerate(structs):
-                        big_slab_ads = big_slab + struc[nslab:]
-                        prefix = str(i + len(structs) * count).zfill(3)
-                        xyz_fname = os.path.join(
-                            prefix + '_' + self.facetpath + '_' + rxn_name + '.xyz')
-                        path_to_xyz = os.path.join(ts_estimate_path, xyz_fname)
-                        write(path_to_xyz, big_slab_ads)
+            for i, struc in enumerate(structs):
+                big_slab_ads = big_slab + struc[nslab:]
+                prefix = str(i + len(structs) * count).zfill(3)
+                xyz_fname = os.path.join(
+                    prefix + '_' + self.facetpath + '_' + rxn_name + '.xyz')
+                path_to_xyz = os.path.join(ts_estimate_path, xyz_fname)
+                write(path_to_xyz, big_slab_ads)
 
-                    ts_candidate.rotate(step_size, 'z')
-                    angle += step_size
-                    count += 1
+            ts_candidate.rotate(step_size, 'z')
+            angle += step_size
+            count += 1
 
     def filtered_out_equiv_ts_estimate(
             self,
