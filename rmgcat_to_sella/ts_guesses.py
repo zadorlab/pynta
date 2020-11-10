@@ -30,7 +30,8 @@ class Diatomic():
         return surface_bonded_atoms
 
     def get_bonded_index(self, bonded, ts_candidate):
-        bonded_idx =
+        symbol = str(ts_candidate[0].symbols)
+        bonded_idx = symbol.find(bonded)
         return bonded_idx
 
     def get_atomic_connections(self, rxn, reacting_sp):
