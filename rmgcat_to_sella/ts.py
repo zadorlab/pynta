@@ -224,14 +224,14 @@ class TS():
             #         'this moment.'.format(ts_guess))
             # else:
             if len(ts_est) == 2:
-                print('Reaction: {} is a diatomic reaction'.format(rxn_name))
+                print('Reaction {} is a diatomic reaction'.format(rxn_name))
 
                 # get ts_guess (Gratom) and index of bonded atom (int)
                 ts_guess, bonded_idx = Diatomic().get_ts_guess_and_bonded_idx(
                     ts_est, rxn, reacting_sp, scfactor)
 
             elif len(ts_est) == 3:
-                print('Reaction: {} is a triatomic reaction'.format(rxn_name))
+                print('Reaction {} is a triatomic reaction'.format(rxn_name))
 
                 ts_guess, bonded_idx = Triatomic().get_ts_guess_and_bonded_idx(
                     ts_est, rxn, reacting_sp, scfactor)

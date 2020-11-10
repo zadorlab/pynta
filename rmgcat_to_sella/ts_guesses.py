@@ -1,6 +1,8 @@
 from rmgcat_to_sella.excatkit.molecule import Molecule
 from rmgcat_to_sella.excatkit.gratoms import Gratoms
 from typing import List, Dict, Tuple
+import os
+from ase.io import read, write
 
 
 class Diatomic():
@@ -17,8 +19,30 @@ class Diatomic():
 
     @staticmethod
     def build_ts_guess(ts_est: str) -> Gratoms:
-        ts_guess = Molecule().molecule(ts_est)
-        return ts_guess
+        ''' Convert ts_est string into a list of Gratoms objects.
+
+            Numner of elements in the list depends is equal to number of
+            distinct topologies available for given ts_est.
+
+            For diatomics there will always be one element in the list.
+            For other types, more than one structure is possible, e.g.
+            ts_est = 'COH' --> ts_guess_list = ['COH' (sp), 'CHO' (sp2)]
+
+        Parameters
+        ----------
+        ts_est : str
+            a string representing species that will be used to get ts_guess
+            e.g. 'OH', 'COH'
+
+        Returns
+        -------
+        ts_guess_list : List[Gratoms]
+            a list of Gratoms objects with all distinct topologies for a given
+            ts_est
+
+        '''
+        ts_guess_list = Molecule().molecule(ts_est)
+        return ts_guess_list
 
     def deal_with_bonds(
             self,
@@ -86,11 +110,18 @@ class Diatomic():
         return ts_guess_list[0], bonded_idx
 
 
-class Triatomic():
+class Triatomic(Diatomic):
     def get_ts_guess_and_bonded_idx(
             self,
             ts_est,
             rxn,
             reacting_sp,
-            scfactor):
-        raise NotImplementedError('Will be developed soon')
+            scfactor,
+            conf=None):
+        print(ts_est)
+        ts_guess_list = Diatomic.build_ts_guess(ts_est)
+        if conf == 'sp':
+            ts_guess_list_el = ts_guess_list[1]
+        else:
+            ts_guess_list_el = ts_guess_list[0]
+        write('ts.xyz', ts_guess_list_el)
