@@ -13,9 +13,10 @@ class Diatomic():
             reacting_sp: str,
             scfactor: float) -> Tuple[Gratoms, int]:
         ts_guess_list = Diatomic.build_ts_guess(ts_est)
-        ts_guess, bonded_idx = self.rotate_and_scale(
-            ts_guess_list, rxn, reacting_sp, scfactor)
-        return ts_guess, bonded_idx
+        ts_guess_el = ts_guess_list[0]
+        ts_guess, surface_bonded_atom_idx = self.rotate_and_scale(
+            ts_guess_el, rxn, reacting_sp, scfactor)
+        return ts_guess, surface_bonded_atom_idx
 
     @staticmethod
     def build_ts_guess(ts_est: str) -> Gratoms:
@@ -46,7 +47,7 @@ class Diatomic():
 
     def deal_with_bonds(
             self,
-            ts_guess_list,
+            ts_guess_el,
             rxn,
             reacting_sp):
         surface_bonded_atoms = self.get_surface_bonded_atoms(
@@ -57,8 +58,9 @@ class Diatomic():
                 'Support for many atoms will be added later.')
         else:
             bonded = surface_bonded_atoms[0]
-            bonded_idx = self.get_bonded_index(bonded, ts_guess_list)
-        return bonded_idx
+            surface_bonded_atom_idx = self.get_bonded_index(
+                bonded, ts_guess_el)
+        return surface_bonded_atom_idx
 
     @staticmethod
     def get_surface_bonded_atoms(
@@ -74,10 +76,10 @@ class Diatomic():
     @staticmethod
     def get_bonded_index(
             bonded,
-            ts_guess_list):
-        symbol = str(ts_guess_list[0].symbols)
-        bonded_idx = symbol.find(bonded)
-        return bonded_idx
+            ts_guess_el):
+        symbol = str(ts_guess_el.symbols)
+        surface_bonded_atom_idx = symbol.find(bonded)
+        return surface_bonded_atom_idx
 
     @staticmethod
     def get_atomic_connections(
@@ -94,20 +96,22 @@ class Diatomic():
 
     def rotate_and_scale(
             self,
-            ts_guess_list,
+            ts_guess_el,
             rxn,
             reacting_sp,
             scfactor):
-        bonded_idx = self.deal_with_bonds(ts_guess_list, rxn, reacting_sp)
-        if bonded_idx == 0:
+        surface_bonded_atom_idx = self.deal_with_bonds(
+            ts_guess_el, rxn, reacting_sp)
+        if surface_bonded_atom_idx == 0:
             other_atom_idx = 1
         else:
             other_atom_idx = 0
-        bondlen = ts_guess_list[0].get_distance(bonded_idx, other_atom_idx)
-        ts_guess_list[0].rotate(90, 'y')
-        ts_guess_list[0].set_distance(
-            bonded_idx, other_atom_idx, bondlen * scfactor, fix=0)
-        return ts_guess_list[0], bonded_idx
+        bondlen = ts_guess_el.get_distance(
+            surface_bonded_atom_idx, other_atom_idx)
+        ts_guess_el.rotate(90, 'y')
+        ts_guess_el.set_distance(
+            surface_bonded_atom_idx, other_atom_idx, bondlen * scfactor, fix=0)
+        return ts_guess_el, surface_bonded_atom_idx
 
 
 class Triatomic(Diatomic):
@@ -116,12 +120,49 @@ class Triatomic(Diatomic):
             ts_est,
             rxn,
             reacting_sp,
+            relevant_species_list,
             scfactor,
             conf=None):
-        print(ts_est)
-        ts_guess_list = Diatomic.build_ts_guess(ts_est)
+        ts_guess_list = Triatomic.build_ts_guess(ts_est)
         if conf == 'sp':
-            ts_guess_list_el = ts_guess_list[1]
+            ts_guess_el = ts_guess_list[1]
         else:
-            ts_guess_list_el = ts_guess_list[0]
-        write('ts.xyz', ts_guess_list_el)
+            ts_guess_el = ts_guess_list[0]
+
+        ts_guess, surface_bonded_atom_idx = self.rotate_and_scale_tri(
+            ts_guess_el, rxn, reacting_sp, relevant_species_list, scfactor)
+        return ts_guess, surface_bonded_atom_idx
+
+    @staticmethod
+    def get_reacting_atoms_indices(
+            ts_guess_el,
+            relevant_species_list):
+        symbol = str(ts_guess_el.symbols)
+        reacting_atom_idx = {}
+        for species in relevant_species_list:
+            reacting_atom_idx[species] = symbol.find(species)
+        return reacting_atom_idx
+
+    def rotate_and_scale_tri(
+            self,
+            ts_guess_el,
+            rxn,
+            reacting_sp,
+            relevant_species_list,
+            scfactor):
+        surface_bonded_atom_idx = self.deal_with_bonds(
+            ts_guess_el, rxn, reacting_sp)
+        reacting_atom_idx = Triatomic.get_reacting_atoms_indices(
+            ts_guess_el, relevant_species_list)
+
+        if len(reacting_atom_idx) > 2:
+            raise NotADirectoryError('Only two atoms can take part in '
+                                     'reaction')
+
+        react_ind_1, react_ind_2 = reacting_atom_idx.values()
+
+        bondlen = ts_guess_el.get_distance(react_ind_1, react_ind_2)
+        # ts_guess_el.rotate(90, 'y')
+        ts_guess_el.set_distance(
+            react_ind_1, react_ind_2, bondlen * scfactor, fix=0)
+        return ts_guess_el, surface_bonded_atom_idx

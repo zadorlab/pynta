@@ -127,7 +127,8 @@ class TS():
             rxn,
             rxn_name,
             r_name_list,
-            p_name_list)
+            p_name_list,
+            relevant_species_list)
 
         # self.filtered_out_equiv_ts_estimate(
         #     ts_estimate_path,
@@ -176,7 +177,8 @@ class TS():
             rxn: Dict[str, str],
             rxn_name: str,
             r_name_list: List[str],
-            p_name_list: List[str]) -> None:
+            p_name_list: List[str],
+            relevant_species_list: List[str]) -> None:
         ''' Place adsorbates on the surface to estimate TS
 
         Parameters:
@@ -213,16 +215,12 @@ class TS():
             reacting_sp = 'product'
             ts_estimators = p_name_list
 
-        # Developing assuming there is only one element in the list, e.g 'HO'
-        # Potentially, one can imagine a reaction where A + B -> C + D
-        # all adsorbed to the surface - there will be 2 elements in
+        # Developing assuming there is only one element in the list, e.g 'OH'
+        # So the reaction is A + B -> C
+        # Potentially, one can imagine a reaction where A + B -> C + D with
+        # all species adsorbed to the surface - there will be 2 elements in
         # ts_estimators
         for ts_est in ts_estimators:
-            # if ts_guess not in g2.names:
-            #     raise NotImplementedError(
-            #         'Molecule {} is not supported at '
-            #         'this moment.'.format(ts_guess))
-            # else:
             if len(ts_est) == 2:
                 print('Reaction {} is a diatomic reaction'.format(rxn_name))
 
@@ -234,7 +232,7 @@ class TS():
                 print('Reaction {} is a triatomic reaction'.format(rxn_name))
 
                 ts_guess, bonded_idx = Triatomic().get_ts_guess_and_bonded_idx(
-                    ts_est, rxn, reacting_sp, scfactor)
+                    ts_est, rxn, reacting_sp, relevant_species_list, scfactor)
             else:
                 raise NotImplementedError('Only di- and triatomic reactions '
                                           'are supported at this moment')
@@ -322,7 +320,7 @@ class TS():
         count = 0
         while angle <= max_angle:
             structs = ads_builder.add_adsorbate(
-                ts_guess, [bonded_idx], -1, auto_construct=True)
+                ts_guess, [bonded_idx], -1, auto_construct=False)
             # change to True will make bonded_through work.
             # Now it uses ts_guess,rotate...
             # to generate adsorbed strucutres
