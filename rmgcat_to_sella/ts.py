@@ -228,7 +228,7 @@ class TS():
 
                 # get ts_guess (Gratom) and index of bonded atom (int)
                 ts_guess, bonded_idx = Diatomic().get_ts_guess_and_bonded_idx(
-                    ts_est, rxn, reacting_sp, scfactor)
+                    ts_est, rxn, reacting_sp, reacting_species, scfactor)
 
             elif len(ts_est) == 3:
                 print('Reaction {} is a triatomic reaction'.format(rxn_name))

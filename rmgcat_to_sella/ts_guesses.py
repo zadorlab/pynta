@@ -83,6 +83,24 @@ class TSEstimator():
                 atomic_connections[symbol] = connections
         return atomic_connections
 
+    @staticmethod
+    def get_reacting_atoms_indices(
+            ts_guess_el,
+            reacting_atoms):
+        symbol = str(ts_guess_el.symbols)
+        reacting_atom_indicies = {}
+        for species in reacting_atoms:
+            # deal with edge case when there are two the same type (eg. CO2)
+            add = 0
+            if Triatomic.is_double_atom(ts_guess_el, species):
+                add = 1
+            reacting_atom_indicies[species] = symbol.find(species) + add
+
+        if len(reacting_atom_indicies) > 2:
+            raise NotImplementedError('Only two atoms can take part in '
+                                      'reaction')
+        return reacting_atom_indicies
+
 
 class Diatomic(TSEstimator):
     def get_ts_guess_and_bonded_idx(
@@ -90,31 +108,32 @@ class Diatomic(TSEstimator):
             ts_est: str,
             rxn: Dict[str, str],
             reacting_sp: str,
+            reacting_atoms: List[str],
             scfactor: float) -> Tuple[Gratoms, int]:
         ts_guess_list = Diatomic.build_ts_guess(ts_est)
-        # For diatimics, there is only one topology possible, so
+        # For diatimics, there is only one possible topology, so
         ts_guess_el = ts_guess_list[0]
-        ts_guess, surface_bonded_atom_idx = self.rotate_and_scale(
-            ts_guess_el, rxn, reacting_sp, scfactor)
-        return ts_guess, surface_bonded_atom_idx
+        return self.rotate_and_scale(ts_guess_el, rxn, reacting_sp,
+                                     reacting_atoms, scfactor)
 
     def rotate_and_scale(
             self,
             ts_guess_el,
             rxn,
             reacting_sp,
+            reacting_atoms,
             scfactor):
         surface_bonded_atom_idx = self.deal_with_bonds(
             ts_guess_el, rxn, reacting_sp)
-        if surface_bonded_atom_idx == 0:
-            other_atom_idx = 1
-        else:
-            other_atom_idx = 0
-        bondlen = ts_guess_el.get_distance(
-            surface_bonded_atom_idx, other_atom_idx)
+        reacting_atom_indicies = Diatomic.get_reacting_atoms_indices(
+            ts_guess_el, reacting_atoms)
+
+        react_ind_1, react_ind_2 = reacting_atom_indicies.values()
+
+        bondlen = ts_guess_el.get_distance(react_ind_1, react_ind_2)
         ts_guess_el.rotate(90, 'y')
         ts_guess_el.set_distance(
-            surface_bonded_atom_idx, other_atom_idx, bondlen * scfactor, fix=0)
+            react_ind_1, react_ind_2, bondlen * scfactor, fix=0)
         return ts_guess_el, surface_bonded_atom_idx
 
 
@@ -133,9 +152,8 @@ class Triatomic(TSEstimator):
         else:
             ts_guess_el = ts_guess_list[0]
 
-        ts_guess, surface_bonded_atom_idx = self.rotate_and_scale(
-            ts_guess_el, rxn, reacting_sp, reacting_atoms, scfactor)
-        return ts_guess, surface_bonded_atom_idx
+        return self.rotate_and_scale(ts_guess_el, rxn, reacting_sp,
+                                     reacting_atoms, scfactor)
 
     @staticmethod
     def get_reacting_atoms_indices(
@@ -172,10 +190,6 @@ class Triatomic(TSEstimator):
             ts_guess_el, rxn, reacting_sp)
         reacting_atom_indicies = Triatomic.get_reacting_atoms_indices(
             ts_guess_el, reacting_atoms)
-
-        if len(reacting_atom_indicies) > 2:
-            raise NotImplementedError('Only two atoms can take part in '
-                                      'reaction')
 
         react_ind_1, react_ind_2 = reacting_atom_indicies.values()
 
