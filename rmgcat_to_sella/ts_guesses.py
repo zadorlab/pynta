@@ -129,7 +129,7 @@ class Triatomic(Diatomic):
         else:
             ts_guess_el = ts_guess_list[0]
 
-        ts_guess, surface_bonded_atom_idx = self.rotate_and_scale_tri(
+        ts_guess, surface_bonded_atom_idx = self.rotate_and_scale(
             ts_guess_el, rxn, reacting_sp, reacting_atoms, scfactor)
         return ts_guess, surface_bonded_atom_idx
 
@@ -143,7 +143,7 @@ class Triatomic(Diatomic):
             reacting_atom_idx[species] = symbol.find(species)
         return reacting_atom_idx
 
-    def rotate_and_scale_tri(
+    def rotate_and_scale(
             self,
             ts_guess_el,
             rxn,
@@ -162,7 +162,9 @@ class Triatomic(Diatomic):
         react_ind_1, react_ind_2 = reacting_atom_idx.values()
 
         bondlen = ts_guess_el.get_distance(react_ind_1, react_ind_2)
-        # ts_guess_el.rotate(90, 'y')
+        ts_guess_el.rotate(90, 'z')
         ts_guess_el.set_distance(
             react_ind_1, react_ind_2, bondlen * scfactor, fix=0)
+        ts_guess_el.set_angle(
+            0, 1, 2, -30, indices=[0, 1, 2], add=True)
         return ts_guess_el, surface_bonded_atom_idx
