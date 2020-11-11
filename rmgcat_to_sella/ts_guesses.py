@@ -138,18 +138,13 @@ class Triatomic(Diatomic):
             ts_guess_el,
             reacting_atoms):
         symbol = str(ts_guess_el.symbols)
-        # deal with edge case when there are two the same atom type like in CO2
         reacting_atom_indicies = {}
         for species in reacting_atoms:
+            # deal with edge case when there are two the same type (eg. CO2)
+            add = 0
             if Triatomic.is_double_atom(ts_guess_el, species):
                 add = 1
-            else:
-                add = 0
-            # if 2 atoms are the same, e.g CO2, increase index of the
-            # repeted one by 1
-            reacting_atom_indicies[species] = int(
-                symbol.find(species)) + add
-        print(reacting_atom_indicies)
+            reacting_atom_indicies[species] = symbol.find(species) + add
         return reacting_atom_indicies
 
     @staticmethod
