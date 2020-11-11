@@ -16,7 +16,7 @@ scfactor = {scfactor}
 scfactor_surface = {scfactor_surface}
 pytemplate_xtb = '{pytemplate_xtb}'
 species_list = {species_list}
-relevant_species_list = {relevant_species_list}
+reacting_atoms = {reacting_atoms}
 metal_atom = '{metal_atom}'
 scaled1 = {scaled1}
 scaled2 = {scaled2}
@@ -41,7 +41,7 @@ ts.prepare_ts_estimate(
     scfactor_surface,
     pytemplate_xtb,
     species_list,
-    relevant_species_list,
+    reacting_atoms,
     metal_atom,
     scaled1,
     scaled2)

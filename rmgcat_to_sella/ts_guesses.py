@@ -120,7 +120,7 @@ class Triatomic(Diatomic):
             ts_est,
             rxn,
             reacting_sp,
-            relevant_species_list,
+            reacting_atoms,
             scfactor,
             conf=None):
         ts_guess_list = Triatomic.build_ts_guess(ts_est)
@@ -130,16 +130,16 @@ class Triatomic(Diatomic):
             ts_guess_el = ts_guess_list[0]
 
         ts_guess, surface_bonded_atom_idx = self.rotate_and_scale_tri(
-            ts_guess_el, rxn, reacting_sp, relevant_species_list, scfactor)
+            ts_guess_el, rxn, reacting_sp, reacting_atoms, scfactor)
         return ts_guess, surface_bonded_atom_idx
 
     @staticmethod
     def get_reacting_atoms_indices(
             ts_guess_el,
-            relevant_species_list):
+            reacting_atoms):
         symbol = str(ts_guess_el.symbols)
         reacting_atom_idx = {}
-        for species in relevant_species_list:
+        for species in reacting_atoms:
             reacting_atom_idx[species] = symbol.find(species)
         return reacting_atom_idx
 
@@ -148,12 +148,12 @@ class Triatomic(Diatomic):
             ts_guess_el,
             rxn,
             reacting_sp,
-            relevant_species_list,
+            reacting_atoms,
             scfactor):
         surface_bonded_atom_idx = self.deal_with_bonds(
             ts_guess_el, rxn, reacting_sp)
         reacting_atom_idx = Triatomic.get_reacting_atoms_indices(
-            ts_guess_el, relevant_species_list)
+            ts_guess_el, reacting_atoms)
 
         if len(reacting_atom_idx) > 2:
             raise NotADirectoryError('Only two atoms can take part in '

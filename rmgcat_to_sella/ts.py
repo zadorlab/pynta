@@ -70,7 +70,7 @@ class TS():
             scfactor_surface: float,
             pytemplate_xtb: str,
             species_list: List[str],
-            relevant_species_list: List[str],
+            reacting_species: List[str],
             metal_atom: str,
             scaled1: bool,
             scaled2: bool) -> None:
@@ -99,7 +99,7 @@ class TS():
             a list of species which atoms take part in the reaction,
             i.e. for ['CO2'] ['C'] is taking part in reaction
             e.g. ['O', 'H'] or ['CO2', 'H']
-        relevant_species_list : list(str)
+        reacting_species : list(str)
             a list of species that are considerd as the reactiong one
         metal_atom : str
             a checmical symbol for the surface atoms (only metallic surfaces
@@ -128,7 +128,7 @@ class TS():
             rxn_name,
             r_name_list,
             p_name_list,
-            relevant_species_list)
+            reacting_species)
 
         # self.filtered_out_equiv_ts_estimate(
         #     ts_estimate_path,
@@ -138,7 +138,7 @@ class TS():
         #     ts_estimate_path,
         #     pytemplate_xtb,
         #     species_list,
-        #     relevant_species_list,
+        #     reacting_species,
         #     metal_atom,
         #     scaled1,
         #     scfactor_surface)
@@ -178,7 +178,7 @@ class TS():
             rxn_name: str,
             r_name_list: List[str],
             p_name_list: List[str],
-            relevant_species_list: List[str]) -> None:
+            reacting_species: List[str]) -> None:
         ''' Place adsorbates on the surface to estimate TS
 
         Parameters:
@@ -232,7 +232,7 @@ class TS():
                 print('Reaction {} is a triatomic reaction'.format(rxn_name))
 
                 ts_guess, bonded_idx = Triatomic().get_ts_guess_and_bonded_idx(
-                    ts_est, rxn, reacting_sp, relevant_species_list, scfactor)
+                    ts_est, rxn, reacting_sp, reacting_species, scfactor)
             else:
                 raise NotImplementedError('Only di- and triatomic reactions '
                                           'are supported at this moment')
@@ -386,7 +386,7 @@ class TS():
             ts_estimate_path: str,
             pytemplate: str,
             species_list: List[str],
-            relevant_species_list: List[str],
+            reacting_species: List[str],
             metal_atom: str,
             scaled1: bool,
             scfactor_surface) -> None:
@@ -407,7 +407,7 @@ class TS():
             a list of species which atoms take part in the reaction,
             i.e. for ['CO2'] ['C'] is taking part in reaction
             e.g. ['O', 'H'] or ['CO2', 'H']
-        relevant_species_list : list(str)
+        reacting_species : list(str)
             a list of species that are considerd as the reactiong one
         metal_atom : str
             a checmical symbol for the surface atoms (only metallic surfaces
@@ -445,7 +445,7 @@ class TS():
         # calculations many times, e.g. ['C', 'H', 'O', 'O'], so the av_dist
         # for the 'O' have to be specified twice (order not important)
         av_dists_tuple = TS.get_av_dists_tuple(
-            relevant_species_list, sp_surf_av_dists)
+            reacting_species, sp_surf_av_dists)
 
         # get all .xyz files with TS estimates
         ts_estimates_xyz_files = []
@@ -479,7 +479,7 @@ class TS():
             visited_species = []
 
             # Loop through all relevant_species
-            for species in relevant_species_list:
+            for species in reacting_species:
                 sp_index = TS.get_sp_index(
                     species, visited_species, adsorbate_atoms_idxs)
 
@@ -517,7 +517,7 @@ class TS():
             adsorbate_atoms_idxs: Dict[str, int]) -> int:
         '''Count how many times the given species have been already considered
 
-            e.g. If relevant_species_list = ['O', 'O'] the logic below
+            e.g. If reacting_species = ['O', 'O'] the logic below
             will return the correct index for the second 'O', calculated as
             index of the first 'O' + how many times 'O's already analyzed
 
@@ -595,19 +595,19 @@ class TS():
 
     @staticmethod
     def get_av_dists_tuple(
-            relevant_species_list: List[str],
+            reacting_species: List[str],
             sp_surf_av_dists: Dict[str, float]):
         ''' Create a av_dists_tuple with all relevant average bond distances.
 
             This method loops through sp_surf_av_dists dictionary. If
-            particular key exists n > 1 times in relevant_species_list, this
+            particular key exists n > 1 times in reacting_species, this
             entry is added n times to a new dictionary. Otherwise, a new
             dictionary is updated with the keys and values of sp_surf_av_dists.
             At the end, the valuses of the new dict are transformed into tuple
 
         Parameters
         ----------
-        relevant_species_list : list(str)
+        reacting_species : list(str)
             a list of species that are considerd as the reactiong one
         sp_surf_av_dists : dict(str:float)
             a dictionary with keys being species name and average distances
@@ -619,7 +619,7 @@ class TS():
             a tuple with all relevant average bond distances
 
         '''
-        count = Counter(relevant_species_list)
+        count = Counter(reacting_species)
 
         av_dists_dict = {}
         for key, value in sp_surf_av_dists.items():

@@ -55,7 +55,7 @@ else:
     scfactor_surface = inputR2S.scfactor_surface
     scaled1 = inputR2S.scaled1
     scaled2 = inputR2S.scaled2
-    relevant_species_list = inputR2S.relevant_species_list
+    all_reacting_atoms = inputR2S.all_reacting_atoms
     species_dict = IO().get_species_dict(check_yaml)
     all_species = IO().get_all_species(check_yaml)
     executable = inputR2S.executable
@@ -352,10 +352,11 @@ class WorkFlow:
             )
 
             reactions = IO().open_yaml_file(yamlfile)
-            # the rest of jobs depends on reaction - loop throug all reactions
-            for rxn in reactions:
+            # the rest of jobs depends on reaction and reacting_atoms
+            for rxn, react_at in zip(reactions, all_reacting_atoms.values()):
                 WorkFlow.set_up_TS_with_xtb(
                     rxn,
+                    react_at,
                     template_set_up_ts_with_xtb,
                     py_job_dir,
                     slab,
@@ -638,6 +639,7 @@ class WorkFlow:
     @staticmethod
     def set_up_TS_with_xtb(
             rxn: Dict[str, str],
+            reacting_atoms: List[str],
             template: str,
             py_job_dir: str,
             slab: str,
@@ -706,7 +708,7 @@ class WorkFlow:
                     metal_atom=metal_atom,
                     scaled1=scaled1,
                     scaled2=scaled2,
-                    relevant_species_list=relevant_species_list,
+                    reacting_atoms=reacting_atoms,
                     creation_dir=creation_dir,
                     rxn=rxn,
                     rxn_name=rxn_name,
