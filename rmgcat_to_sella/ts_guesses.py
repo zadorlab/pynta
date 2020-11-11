@@ -2,7 +2,6 @@ from rmgcat_to_sella.excatkit.molecule import Molecule
 from rmgcat_to_sella.excatkit.gratoms import Gratoms
 from typing import List, Dict, Tuple
 from collections import Counter
-import os
 
 
 class TSEstimator():
@@ -92,7 +91,7 @@ class TSEstimator():
         for species in reacting_atoms:
             # deal with edge case when there are two the same type (eg. CO2)
             add = 0
-            if Triatomic.is_double_atom(ts_guess_el, species):
+            if TSEstimator.is_double_atom(ts_guess_el, species):
                 add = 1
             reacting_atom_indicies[species] = symbol.find(species) + add
 
@@ -100,6 +99,16 @@ class TSEstimator():
             raise NotImplementedError('Only two atoms can take part in '
                                       'reaction')
         return reacting_atom_indicies
+
+    @staticmethod
+    def is_double_atom(
+            ts_guess_el,
+            species):
+        atom_list = [atom.symbol for atom in ts_guess_el]
+        count = Counter(atom_list)
+        if count[species] > 1:
+            return True
+        return False
 
 
 class Diatomic(TSEstimator):
@@ -155,30 +164,6 @@ class Triatomic(TSEstimator):
         return self.rotate_and_scale(ts_guess_el, rxn, reacting_sp,
                                      reacting_atoms, scfactor)
 
-    @staticmethod
-    def get_reacting_atoms_indices(
-            ts_guess_el,
-            reacting_atoms):
-        symbol = str(ts_guess_el.symbols)
-        reacting_atom_indicies = {}
-        for species in reacting_atoms:
-            # deal with edge case when there are two the same type (eg. CO2)
-            add = 0
-            if Triatomic.is_double_atom(ts_guess_el, species):
-                add = 1
-            reacting_atom_indicies[species] = symbol.find(species) + add
-        return reacting_atom_indicies
-
-    @staticmethod
-    def is_double_atom(
-            ts_guess_el,
-            species):
-        atom_list = [atom.symbol for atom in ts_guess_el]
-        count = Counter(atom_list)
-        if count[species] > 1:
-            return True
-        return False
-
     def rotate_and_scale(
             self,
             ts_guess_el,
@@ -197,6 +182,7 @@ class Triatomic(TSEstimator):
         ts_guess_el.rotate(90, 'z')
         ts_guess_el.set_distance(
             react_ind_1, react_ind_2, bondlen * scfactor, fix=0)
+        # hardcoded values based on empirical tests
         ts_guess_el.set_angle(
             0, 1, 2, -30, indices=[0, 1, 2], add=True)
         return ts_guess_el, surface_bonded_atom_idx
