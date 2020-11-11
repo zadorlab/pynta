@@ -1,8 +1,8 @@
 from rmgcat_to_sella.excatkit.molecule import Molecule
 from rmgcat_to_sella.excatkit.gratoms import Gratoms
 from typing import List, Dict, Tuple
+from collections import Counter
 import os
-from ase.io import read, write
 
 
 class Diatomic():
@@ -138,10 +138,29 @@ class Triatomic(Diatomic):
             ts_guess_el,
             reacting_atoms):
         symbol = str(ts_guess_el.symbols)
-        reacting_atom_idx = {}
+        # deal with edge case when there are two the same atom type like in CO2
+        reacting_atom_indicies = {}
         for species in reacting_atoms:
-            reacting_atom_idx[species] = symbol.find(species)
-        return reacting_atom_idx
+            if Triatomic.is_double_atom(ts_guess_el, species):
+                add = 1
+            else:
+                add = 0
+            # if 2 atoms are the same, e.g CO2, increase index of the
+            # repeted one by 1
+            reacting_atom_indicies[species] = int(
+                symbol.find(species)) + add
+        print(reacting_atom_indicies)
+        return reacting_atom_indicies
+
+    @staticmethod
+    def is_double_atom(
+            ts_guess_el,
+            species):
+        atom_list = [atom.symbol for atom in ts_guess_el]
+        count = Counter(atom_list)
+        if count[species] > 1:
+            return True
+        return False
 
     def rotate_and_scale(
             self,
@@ -152,14 +171,14 @@ class Triatomic(Diatomic):
             scfactor):
         surface_bonded_atom_idx = self.deal_with_bonds(
             ts_guess_el, rxn, reacting_sp)
-        reacting_atom_idx = Triatomic.get_reacting_atoms_indices(
+        reacting_atom_indicies = Triatomic.get_reacting_atoms_indices(
             ts_guess_el, reacting_atoms)
 
-        if len(reacting_atom_idx) > 2:
-            raise NotADirectoryError('Only two atoms can take part in '
-                                     'reaction')
+        if len(reacting_atom_indicies) > 2:
+            raise NotImplementedError('Only two atoms can take part in '
+                                      'reaction')
 
-        react_ind_1, react_ind_2 = reacting_atom_idx.values()
+        react_ind_1, react_ind_2 = reacting_atom_indicies.values()
 
         bondlen = ts_guess_el.get_distance(react_ind_1, react_ind_2)
         ts_guess_el.rotate(90, 'z')

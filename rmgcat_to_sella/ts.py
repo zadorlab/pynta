@@ -134,14 +134,16 @@ class TS():
         #     ts_estimate_path,
         #     rxn_name)
 
-        # self.set_up_penalty_xtb(
-        #     ts_estimate_path,
-        #     pytemplate_xtb,
-        #     species_list,
-        #     reacting_species,
-        #     metal_atom,
-        #     scaled1,
-        #     scfactor_surface)
+        # TODO there is a bug here for CH_C+H
+
+        self.set_up_penalty_xtb(
+            ts_estimate_path,
+            pytemplate_xtb,
+            species_list,
+            reacting_species,
+            metal_atom,
+            scaled1,
+            scfactor_surface)
 
     def get_max_rot_angle(self) -> None:
         ''' Get the maximum angle of rotation for a given slab that will
@@ -508,7 +510,7 @@ class TS():
                                           geom_name=f_name_xyz,
                                           slabopt=self.slab))
             # move .xyz file
-            shutil.move(xyz_file, calc_dir)
+                shutil.move(xyz_file, calc_dir)
 
     @staticmethod
     def get_sp_index(
@@ -554,7 +556,7 @@ class TS():
         if not TS.is_valid_sp_index(species, sp_index,
                                     adsorbate_atoms_idxs):
             print('Index {} is not a valid index for a species {}. \n'
-                  'Check your relevant_species definition \n'
+                  'Check your reacting_atoms definition \n'
                   ''.format(sp_index, species))
             print('The folowing indicies are possible: \n     {}'.format(
                 adsorbate_atoms_idxs))
@@ -620,7 +622,6 @@ class TS():
 
         '''
         count = Counter(reacting_species)
-
         av_dists_dict = {}
         for key, value in sp_surf_av_dists.items():
             n = count[key]
