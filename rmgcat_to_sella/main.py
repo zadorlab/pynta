@@ -1092,6 +1092,12 @@ class WorkFlow:
         ads_vib_script = '{}_set_up_ads_vib.py'.format(facetpath)
         return self.exe(dependent_job, ads_vib_script, facetpath)
 
+    def run_minima_vib_no_depend(
+            self,
+            facetpath: str) -> None:
+        ads_vib_script = '{}_set_up_ads_vib.py'.format(facetpath)
+        return self.exe('', ads_vib_script, facetpath)
+
     def run_ts_estimate(
             self,
             dependent_job: str,
@@ -1409,9 +1415,11 @@ class WorkFlow:
             if WorkFlow.is_big_slab(facetpath) is False:
                 self.run_big_slab_opt(facetpath)
             # check if species were already calculated
+            # TODO there is a bug here as it counts CO as C
             if all(WorkFlow.check_all_species(yamlfile, facetpath).values()):
                 # If all are True, start by generating TS guesses and run
                 # the penalty function minimization
+                self.run_minima_vib_no_depend(facetpath)
                 self.run_ts_estimate_no_depend(facetpath)
             else:
                 # If any of sp_check_list is False
