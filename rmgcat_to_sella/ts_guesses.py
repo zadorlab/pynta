@@ -5,19 +5,7 @@ from collections import Counter
 import os
 
 
-class Diatomic():
-    def get_ts_guess_and_bonded_idx(
-            self,
-            ts_est: str,
-            rxn: Dict[str, str],
-            reacting_sp: str,
-            scfactor: float) -> Tuple[Gratoms, int]:
-        ts_guess_list = Diatomic.build_ts_guess(ts_est)
-        ts_guess_el = ts_guess_list[0]
-        ts_guess, surface_bonded_atom_idx = self.rotate_and_scale(
-            ts_guess_el, rxn, reacting_sp, scfactor)
-        return ts_guess, surface_bonded_atom_idx
-
+class TSEstimator():
     @staticmethod
     def build_ts_guess(ts_est: str) -> Gratoms:
         ''' Convert ts_est string into a list of Gratoms objects.
@@ -66,7 +54,8 @@ class Diatomic():
     def get_surface_bonded_atoms(
             rxn,
             reacting_sp):
-        atomic_connections = Diatomic.get_atomic_connections(rxn, reacting_sp)
+        atomic_connections = TSEstimator.get_atomic_connections(
+            rxn, reacting_sp)
         surface_bonded_atoms = []
         for k, v in atomic_connections.items():
             if v == max(atomic_connections.values()):
@@ -94,6 +83,21 @@ class Diatomic():
                 atomic_connections[symbol] = connections
         return atomic_connections
 
+
+class Diatomic(TSEstimator):
+    def get_ts_guess_and_bonded_idx(
+            self,
+            ts_est: str,
+            rxn: Dict[str, str],
+            reacting_sp: str,
+            scfactor: float) -> Tuple[Gratoms, int]:
+        ts_guess_list = Diatomic.build_ts_guess(ts_est)
+        # For diatimics, there is only one topology possible, so
+        ts_guess_el = ts_guess_list[0]
+        ts_guess, surface_bonded_atom_idx = self.rotate_and_scale(
+            ts_guess_el, rxn, reacting_sp, scfactor)
+        return ts_guess, surface_bonded_atom_idx
+
     def rotate_and_scale(
             self,
             ts_guess_el,
@@ -114,7 +118,7 @@ class Diatomic():
         return ts_guess_el, surface_bonded_atom_idx
 
 
-class Triatomic(Diatomic):
+class Triatomic(TSEstimator):
     def get_ts_guess_and_bonded_idx(
             self,
             ts_est,
