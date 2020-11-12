@@ -12,6 +12,7 @@ from rmgcat_to_sella.graph_utils import node_test
 
 from ase.io import read, write
 from ase.dft.kpoints import monkhorst_pack
+from ase.utils.structure_comparator import SymmetryEquivalenceCheck
 
 
 class IO():
@@ -200,9 +201,32 @@ class IO():
             set([sp for sublist in all_species for sp in sublist]))
         return all_species_unique
 
+    def get_all_species_given_rxn(
+            self,
+            rxn: Dict[str, str]) -> List[str]:
+        ''' Get the reaction name
+
+        Paremeters:
+        ___________
+
+        rxn : dict(yaml[str:str])
+            a dictionary with info about the paricular reaction. This can be
+            view as a splitted many reaction .yaml file into a single reaction
+            .yaml file
+
+        Returns:
+        _______
+        rxn_name : str
+            a name of the reaction in the following format:
+            'OH_H+O'
+        '''
+        r_name_list, p_name_list, _ = self.prepare_react_list(rxn)
+        all_species_rxn = r_name_list + p_name_list
+        return all_species_rxn
+
     def prepare_react_list(
             self,
-            rxn: Dict[str, str]) -> Tuple(List[str], List[str], List[Gratoms]):
+            rxn: Dict[str, str]) -> Tuple[List[str], List[str], List[Gratoms]]:
         '''Convert yaml file to more useful format
 
         Paremeters:
@@ -485,8 +509,6 @@ class IO():
             for reactant in r_name_list:
                 # I have no idea why OH and HO is getting reverse
                 # a workaround
-                if reactant == 'OH':
-                    reactant = 'HO'
                 lookup_phrase = '{}_{}_*relax.py'.format(facetpath, reactant)
                 # find matching reatants
                 minima_py_files = Path(path_to_minima).glob(lookup_phrase)
@@ -497,8 +519,6 @@ class IO():
                         os.path.split((str(minima_py_file)))[1])
             # loop through all products and do the same as for reactants
             for product in p_name_list:
-                if product == 'OH':
-                    product = 'HO'
                 lookup_phrase = '{}_{}_*relax.py'.format(facetpath, product)
                 minima_py_files = Path(path_to_minima).glob(lookup_phrase)
                 for minima_py_file in minima_py_files:
@@ -506,7 +526,6 @@ class IO():
                         os.path.split((str(minima_py_file)))[1])
 
             # create a dictionary with dependencies
-            # {'reaction_name':[list_with_py_files_have_to_be_calculated]}
             dependancy_dict[rxn_name] = minima_py_list
         return dependancy_dict
 
@@ -526,3 +545,71 @@ class IO():
                     shutil.move(file, dir_name)
                     # and corresponding .py.out files
                     shutil.move(file[:-4], dir_name)
+
+    def get_unique_adsorbates_prefixes(
+            self,
+            facetpath: str,
+            yamlfile: str,
+            creation_dir: PosixPath) -> Dict[str, List[str]]:
+        ''' Get a dictionary with a list with prefixes of symmetry distinct
+            conformers for a given adsorbate
+
+        Parameters
+        ----------
+        facetpath : str
+            a name of the facetpath,
+            eg. 'Cu_111'
+        yamlfile : str
+            a name of the .yaml file with a reaction list
+
+        Returns
+        -------
+        unique_adsorbates_prefixes: Dict[str, List[str]]
+            a dictionary with a list with prefixes of symmetry distinct
+            conformers for a given adsorbate
+
+        '''
+        unique_adsorbates_prefixes = {}
+        path_to_minima = os.path.join(creation_dir, facetpath, 'minima')
+        all_species = self.get_all_species(yamlfile)
+        for species in all_species:
+            path_to_species = os.path.join(path_to_minima, species)
+            uq_prefixes = IO.get_unique_prefixes(
+                path_to_species)
+            unique_adsorbates_prefixes[species] = uq_prefixes
+        return unique_adsorbates_prefixes
+
+    @staticmethod
+    def get_unique_prefixes(
+            path_to_species: str) -> List[str]:
+        ''' Compare each conformers for a given adsorbate and returns a list
+            with prefixes of a symmetrty dictinct structures
+
+        Parameters
+        ----------
+        path_to_species : str
+            a path to species
+            e.g. 'Cu_111/minima/CO'
+
+        Returns
+        -------
+        unique_minima_prefixes : List[str]
+            a list with prefixes of symmetry distinct structures for a given
+            adsorbate
+
+        '''
+        good_minima = []
+        result_dict = {}
+        unique_minima_prefixes = []
+        trajlist = sorted(Path(path_to_species).glob('*traj'), key=str)
+        for traj in trajlist:
+            minima = read(traj)
+            comparator = SymmetryEquivalenceCheck(to_primitive=True)
+            result = comparator.compare(minima, good_minima)
+            result_dict[str(os.path.basename(traj).split('.')[0])] = result
+            if result is False:
+                good_minima.append(minima)
+        for prefix, result in result_dict.items():
+            if result is False:
+                unique_minima_prefixes.append(prefix)
+        return unique_minima_prefixes

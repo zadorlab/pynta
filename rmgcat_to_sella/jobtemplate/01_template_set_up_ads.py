@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from operator import sub
 from pathlib import Path
 import os
 
@@ -33,11 +34,11 @@ all_submitted_jobs = []
 # specify dependant 02 for given reactions
 for rxn_name in dependancy_dict.keys():
     workflow_name = facetpath + '_01_' + rxn_name
-    dependent_workflow_name = facetpath + '_02_' + rxn_name
-
+    # ts estimate jobs
+    dependent_workflow_name_1 = facetpath + '_02_' + rxn_name
     # get all dependant workflow BalsamJobs objects (should be one)
-    pending_simulations_dep = BalsamJob.objects.filter(
-        workflow__contains=dependent_workflow_name
+    pending_simulations_dep_1 = BalsamJob.objects.filter(
+        workflow__contains=dependent_workflow_name_1
     ).exclude(state="JOB_FINISHED")
 
     # for each reaction keep track of its dependencies
@@ -77,6 +78,19 @@ for rxn_name in dependancy_dict.keys():
             name=py_script).exclude(state="JOB_FINISHED"))
 
     # add dependencies
-    for job in pending_simulations_dep:
+    for job in pending_simulations_dep_1:
         for adding_job in dependancy:
             add_dependency(adding_job, job)  # parent, child
+
+# ads_vib jobs dependancies
+dependent_workflow_name_2 = facetpath + '_vib'
+pending_simulations_dep_2 = BalsamJob.objects.filter(
+    workflow__contains=dependent_workflow_name_2
+).exclude(state="JOB_FINISHED")
+
+for pending_job in pending_simulations_dep_2:
+    for submitted_job in all_submitted_jobs:
+        balsam_submitted_job = BalsamJob.objects.filter(
+            name=submitted_job
+        ).exclude(state="JOB_FINISHED")
+        add_dependency(balsam_submitted_job, pending_job)  # parent, child

@@ -32,7 +32,7 @@ class Adsorbates:
             self,
             facetpath: str,
             slab: str,
-            repeats: Tuple(int, int, int),
+            repeats: Tuple[int, int, int],
             yamlfile: str,
             creation_dir: PosixPath) -> None:
         ''' Initializing
@@ -61,7 +61,7 @@ class Adsorbates:
 
     def get_edges(
             self,
-            find_surface: bool = False) -> Tuple(List[str], np.ndarray):
+            find_surface: bool = False) -> Tuple[List[str], np.ndarray]:
         ''' Get adsorption edges
 
         Parameters:
@@ -72,7 +72,7 @@ class Adsorbates:
 
         Returns:
         ________
-        edges : list(tuple)
+        edges : list[tuple]
             adsobrtion edges
         surface : numpy.ndarray
             an array with tags describing:
@@ -334,6 +334,8 @@ class Adsorbates:
             if bond is None:
                 bond = [0]
             key = adsorbate.get_chemical_formula()
+            if key == 'HO':
+                key = 'OH'
             try:
                 if key == 'CHO2':  # connect through oxygen
                     bond = [2]
@@ -350,7 +352,6 @@ class Adsorbates:
                 structures[key] = structs
             except IndexError:
                 print(adsorbate, adsorbate.edges, adsorbate.get_tags())
-
         big_slab = slab_atom * self.repeats
         nslab = len(slab_atom)
 

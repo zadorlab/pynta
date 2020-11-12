@@ -5,6 +5,25 @@ from typing import Dict, List
 
 
 class LowLevelRestart():
+    ''' Low level restart means that each quantum chemistry job that can be
+        restarted will be restarted. These are:
+            * adsorbates minimization
+            * TSs optimization
+            * optimization of reactants and products as from TS
+            (IRC alternative)
+
+        For those jobs, once restarted, calculations will start from the last
+        converged optimization step.
+
+        For other types of jobs, including:
+            * vibrational frequencies calculations of adsorbates and TSs
+            * xTB + penalty function minimization to get TS guesses
+
+        low level restart is not possible, so they will start from scratch,
+        during high level restart.
+
+    '''
+
     def __init__(self) -> None:
         from balsam.launcher.dag import BalsamJob
         self.current_dir = os.getcwd()
@@ -179,6 +198,11 @@ class LowLevelRestart():
 
 
 class HighLevelRestart():
+    ''' High level restart means that each ASE job that has an unfinished
+        status will be restarted. All balsam jobs will be removed. They will be
+        regenerated once ASE jobs start launching.
+
+    '''
 
     def __init__(self):
         # get all python (ASE) jobs

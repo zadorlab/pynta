@@ -19,10 +19,6 @@ WorkFlow().create_big_slab_pyjob(
     facetpath,
     slab_name,
     repeats,
-    balsam_exe_settings,
-    calc_keywords,
-    pseudopotentials,
-    pseudo_dir,
     creation_dir)
 
 workflow_name = facetpath + '_big_slab_opt'

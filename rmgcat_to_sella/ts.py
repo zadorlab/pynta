@@ -711,20 +711,24 @@ class TS():
         path_to_species = os.path.join(path_to_minima, species)
 
         # get unique minima prefixes
-        unique_minima_prefixes = TS.get_unique_minima_prefixes_after_opt(
-            path_to_species)
+        unique_minima_prefixes = IO.get_unique_prefixes(path_to_species)
+
+        # choose a representative traj file based on which surface_atom_idxs
+        # and adsorbate_atom_idxs will be created
         path_to_tmp_traj = os.path.join(path_to_species, '00.traj')
         tmp_traj = read(path_to_tmp_traj)
 
+        # create a list with all surface atom indicies
         surface_atom_idxs = [
             atom.index for atom in tmp_traj if atom.symbol == metal_atom]
 
+        # create a list with all adosorbate atom indicies
         adsorbate_atom_idxs = {
             atom.symbol + '_' + str(atom.index): atom.index
             for atom in tmp_traj if atom.symbol != metal_atom}
 
-        all_dists_bonded = []
         # loop through all unique traj files, e.g. 00.traj, 01.traj ...
+        all_dists_bonded = []
         for index in unique_minima_prefixes:
             path_to_unique_minima_traj = os.path.join(
                 path_to_species, '{}.traj'.format(index))
@@ -746,43 +750,6 @@ class TS():
         else:
             av_dist = mean(all_dists_bonded)
         return av_dist
-
-    @staticmethod
-    def get_unique_minima_prefixes_after_opt(
-            path_to_species: str) -> List[str]:
-        ''' Get the prefixes of the symmetrically distinct minima
-        for a given species
-
-        Parameters:
-        ___________
-        path_to_species : str
-            a path to species
-            e.g. 'Cu_111/minima/CO'
-
-        Returns:
-        ________
-
-        unique_minima_prefixes : list(str)
-            a list with indecies of all unique minima for a given species
-            e.g. ['01', '02', '04']
-
-        '''
-        good_minima = []
-        result_list = []
-        unique_minima_prefixes = []
-        trajlist = sorted(Path(path_to_species).glob('*final.xyz'), key=str)
-        for traj in trajlist:
-            minima = read(traj)
-            minima.pbc = True
-            comparator = SymmetryEquivalenceCheck()
-            result = comparator.compare(minima, good_minima)
-            result_list.append(result)
-            if result is False:
-                good_minima.append(minima)
-        for prefix, result in enumerate(result_list):
-            if result is False:
-                unique_minima_prefixes.append(str(prefix).zfill(2))
-        return unique_minima_prefixes
 
     def create_unique_ts_all(
             self,

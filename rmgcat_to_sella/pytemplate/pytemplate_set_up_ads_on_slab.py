@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 
+from balsam.launcher.dag import BalsamJob, add_dependency
+from rmgcat_to_sella.vib import minimaVib
 import os
 import shutil
 
 import datetime
-from numpy.core.fromnumeric import repeat
 from rmgcat_to_sella.balsamcalc import EspressoBalsamSocketIO
 
 from ase.io import read, write
@@ -56,7 +57,6 @@ atoms.calc = EspressoBalsamSocketIO(
 atoms.calc.set(**extra_calc_keywords)
 
 opt = QuasiNewton(atoms=atoms, trajectory=jobdir + '.traj')
-# opt = Sella(atoms, order=0, delta0=1e-2, trajectory=jobdir + '.traj')
 opt.run(fmax=0.06)
 atoms.calc.close()
 
