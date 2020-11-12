@@ -334,7 +334,6 @@ class Adsorbates:
             if bond is None:
                 bond = [0]
             key = adsorbate.symbols
-            print(key)
             try:
                 key = str(key)
                 if key == 'CHO2':  # connect through oxygen

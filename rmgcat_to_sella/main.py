@@ -1232,6 +1232,7 @@ class WorkFlow:
         '''
         checked_species = {}
         all_species = IO().get_all_species(yamlfile)
+        print(all_species)
         for species in all_species:
             checked_species[species] = WorkFlow.is_minima_out_files(
                 species, facetpath)
@@ -1283,7 +1284,7 @@ class WorkFlow:
         minima_dir = os.path.join(creation_dir, facetpath, 'minima')
         # if minima dir exists, check for outfiles
         if WorkFlow.is_minima_dir(species, facetpath):
-            keyphrase = '{}_{}_*relax.py'.format(facetpath, species)
+            keyphrase = '{}_{}_*relax.py.out'.format(facetpath, species)
             search_for_outfiles = Path(minima_dir).glob(keyphrase)
             outfiles = []
             for outfile in search_for_outfiles:
