@@ -333,10 +333,10 @@ class Adsorbates:
                 continue
             if bond is None:
                 bond = [0]
-            key = adsorbate.get_chemical_formula()
-            if key == 'HO':
-                key = 'OH'
+            key = adsorbate.symbols
+            print(key)
             try:
+                key = str(key)
                 if key == 'CHO2':  # connect through oxygen
                     bond = [2]
                 elif key == 'CH3O':
@@ -349,7 +349,7 @@ class Adsorbates:
                     bond = [0]
                 structs = ads_builder.add_adsorbate(
                     adsorbate, bonds=bond, index=-1)
-                structures[key] = structs
+                structures[str(key)] = structs
             except IndexError:
                 print(adsorbate, adsorbate.edges, adsorbate.get_tags())
         big_slab = slab_atom * self.repeats
