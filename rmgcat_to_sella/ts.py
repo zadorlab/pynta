@@ -136,14 +136,14 @@ class TS():
 
         # TODO there is a bug here for CH_C+H
 
-        self.set_up_penalty_xtb(
-            ts_estimate_path,
-            pytemplate_xtb,
-            species_list,
-            reacting_species,
-            metal_atom,
-            scaled1,
-            scfactor_surface)
+        # self.set_up_penalty_xtb(
+        #     ts_estimate_path,
+        #     pytemplate_xtb,
+        #     species_list,
+        #     reacting_species,
+        #     metal_atom,
+        #     scaled1,
+        #     scfactor_surface)
 
     def get_max_rot_angle(self) -> None:
         ''' Get the maximum angle of rotation for a given slab that will

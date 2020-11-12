@@ -168,12 +168,28 @@ class TSEstimator():
         '''
         symbol = str(ts_guess_el.symbols)
         reacting_atom_indicies = {}
-        for species in reacting_atoms:
-            # deal with edge case when there are two the same type (eg. CO2)
+        visited_species = []
+        atom_list = [atom.symbol for atom in ts_guess_el]
+        for idx, species in enumerate(reacting_atoms):
+            # deal with the edge case when there are two atoms the same typ
+            # (eg. 'CO2', 'O2')
             add = 0
-            if TSEstimator.is_double_atom(ts_guess_el, species):
-                add = 1
-            reacting_atom_indicies[species] = symbol.find(species) + add
+            if species not in visited_species:
+                visited_species.append(species)
+            else:
+                add += visited_species.count(species) - 1
+
+            key = '{}_{}'.format(species, idx)
+            is_repeted_atom = TSEstimator.is_double_atom(atom_list, species)
+            n_atom_list = len(atom_list)
+
+            # deal with the edge case when reactions is not diatomic and there
+            # is a repeted atom that does not take part in the reaction,
+            # eg. 'CO2' -> in that case increase add by one again
+            if is_repeted_atom and n_atom_list > 2:
+                add += 1
+            reacting_atom_indicies[key] = symbol.find(species) + add
+            visited_species.append(species)
 
         if len(reacting_atom_indicies) > 2:
             raise NotImplementedError('Only two atoms can take part in '
@@ -182,16 +198,15 @@ class TSEstimator():
 
     @staticmethod
     def is_double_atom(
-            ts_guess_el: Gratoms,
+            atom_list: List[str],
             species: str) -> bool:
         ''' Check if there are two atoms of the same type chemical symbol in
             ts_guess_el
 
         Parameters
         ----------
-        ts_guess_el : Gratom
-            a Gratom object of ts_guess with the chosen topology, if more than
-            one topologies are possible
+        atom_list : list(str)
+            a list of atoms in ts_guess_el
         species : str
             a reacting species, e.g. 'OH', 'CO', 'CO2'
 
@@ -202,7 +217,6 @@ class TSEstimator():
             False otherwise.
 
         '''
-        atom_list = [atom.symbol for atom in ts_guess_el]
         count = Counter(atom_list)
         if count[species] > 1:
             return True
@@ -288,6 +302,7 @@ class Diatomic(TSEstimator):
             ts_guess_el, rxn, reacting_sp)
         reacting_atom_indicies = Diatomic.get_reacting_atoms_indices(
             ts_guess_el, reacting_atoms)
+        print(reacting_atom_indicies)
 
         react_ind_1, react_ind_2 = reacting_atom_indicies.values()
 
@@ -384,6 +399,7 @@ class Triatomic(TSEstimator):
             ts_guess_el, rxn, reacting_sp)
         reacting_atom_indicies = Triatomic.get_reacting_atoms_indices(
             ts_guess_el, reacting_atoms)
+        print(reacting_atom_indicies)
 
         react_ind_1, react_ind_2 = reacting_atom_indicies.values()
 
