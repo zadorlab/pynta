@@ -302,7 +302,6 @@ class Diatomic(TSEstimator):
             ts_guess_el, rxn, reacting_sp)
         reacting_atom_indicies = Diatomic.get_reacting_atoms_indices(
             ts_guess_el, reacting_atoms)
-        print(reacting_atom_indicies)
 
         react_ind_1, react_ind_2 = reacting_atom_indicies.values()
 
@@ -399,7 +398,6 @@ class Triatomic(TSEstimator):
             ts_guess_el, rxn, reacting_sp)
         reacting_atom_indicies = Triatomic.get_reacting_atoms_indices(
             ts_guess_el, reacting_atoms)
-        print(reacting_atom_indicies)
 
         react_ind_1, react_ind_2 = reacting_atom_indicies.values()
 
