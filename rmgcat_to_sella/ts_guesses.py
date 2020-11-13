@@ -5,6 +5,42 @@ from collections import Counter
 from ase.io import write
 
 
+class TSGuessesGenerator():
+    def decide(self,
+               ts_est,
+               rxn,
+               rxn_name,
+               reacting_sp,
+               reacting_species, scfactor):
+        ts_guess_list = TSEstimator.build_ts_guess(ts_est)
+        ts_guess_check_atomicity = ts_guess_list[0]
+        n_atoms = len(ts_guess_check_atomicity)
+
+        if n_atoms == 2:
+            print('Reaction {} is a diatomic reaction'.format(rxn_name))
+
+            # get ts_guess (Gratom) and index of bonded atom (int)
+            ts_guess, bonded_idx = Diatomic().get_ts_guess_and_bonded_idx(
+                ts_est, rxn, reacting_sp, reacting_species, scfactor)
+
+        elif n_atoms == 3:
+            print('Reaction {} is a triatomic reaction'.format(rxn_name))
+
+            ts_guess, bonded_idx = Triatomic().get_ts_guess_and_bonded_idx(
+                ts_est, rxn, reacting_sp, reacting_species, scfactor)
+
+        elif n_atoms == 4:
+            print('Reaction {} is a tetraatomic reaction'.format(rxn_name))
+
+            ts_guess, bonded_idx = Tetraatomic().get_ts_guess_and_bonded_idx(
+                ts_est, rxn, reacting_sp, reacting_species, scfactor)
+
+        else:
+            raise NotImplementedError('Only di-, tri- and some tetraatomic '
+                                      'reactions are supported at this moment')
+        return ts_guess, bonded_idx
+
+
 class TSEstimator():
     @staticmethod
     def build_ts_guess(ts_est: str) -> Gratoms:
@@ -408,4 +444,103 @@ class Triatomic(TSEstimator):
         # hardcoded values based on empirical tests
         ts_guess_el.set_angle(
             0, 1, 2, -30, indices=[0, 1, 2], add=True)
+        return ts_guess_el, surface_bonded_atom_idx
+
+
+class Tetraatomic(TSEstimator):
+    def get_ts_guess_and_bonded_idx(
+            self,
+            ts_est: str,
+            rxn: Dict[str, str],
+            reacting_sp: str,
+            reacting_atoms: List[str],
+            scfactor: float,
+            conf: str = None) -> Tuple[Gratoms, int]:
+        '''[summary]
+
+        Parameters
+        ----------
+        ts_est : str
+            a string representing species that will be used to get ts_guess
+            e.g. 'OH', 'COH'
+        rxn : Dict[str, str]
+            a dictionary with info about the paricular reaction. This can be
+            view as a splitted many reaction .yaml file to a single reaction
+            .yaml file
+        reacting_sp : str
+            a key to rxn dictionary
+            'reactant' or 'product' are the only avaiable options options
+        reacting_atom_indicies: Dict[str, int]
+            a dict with reacting atoms symbol as a key and index as a value
+        scfactor : float
+            a scaling factor used to scale bond distance to get ts_guess
+        conf : str, optional
+            specify which topology to choose to construct ts_guess, e.g 'sp'
+            or None (None -> 'sp2')
+            by default None
+
+        Returns
+        -------
+        ts_guess, surface_bonded_idx = Tuple[Gratoms, int]
+            a tuple with final ts_guess ready to be placed on the surface
+            and index of atom that connects ts_guess with the surface
+
+        '''
+        ts_guess_list = Tetraatomic.build_ts_guess(ts_est)
+        if conf == 'sp':
+            ts_guess_el = ts_guess_list[1]
+        else:
+            ts_guess_el = ts_guess_list[0]
+
+        return self.rotate_and_scale(ts_guess_el, rxn, reacting_sp,
+                                     reacting_atoms, scfactor)
+
+    def rotate_and_scale(
+            self,
+            ts_guess_el: Gratoms,
+            rxn: Dict[str, str],
+            reacting_sp: str,
+            reacting_atoms: List[str],
+            scfactor: float) -> Tuple[Gratoms, int]:
+        ''' Rotate ts_guess and scale the bond distance between reacting atoms
+            to get a right structures to be placed on the surface
+
+        Parameters
+        ----------
+        ts_guess_el : Gratoms
+            a Gratom object of ts_guess with the chosen topology, if more than
+            one topologies are possible
+        rxn : Dict[str, str]
+            a dictionary with info about the paricular reaction. This can be
+            view as a splitted many reaction .yaml file to a single reaction
+            .yaml file
+        reacting_sp : str
+            a key to rxn dictionary
+            'reactant' or 'product' are the only avaiable options options
+        reacting_atom_indicies: Dict[str, int]
+            a dict with reacting atoms symbol as a key and index as a value
+        scfactor : float
+            a scaling factor used to scale bond distance to get ts_guess
+
+        Returns
+        -------
+        ts_guess, surface_bonded_idx = Tuple[Gratoms, int]
+            a tuple with final ts_guess ready to be placed on the surface
+            and index of atom that connects ts_guess with the surface
+
+        '''
+        surface_bonded_atom_idx = self.get_surface_bonded_atom_idx(
+            rxn, reacting_sp)
+        reacting_atom_indicies = Triatomic.get_reacting_atoms_indices(
+            ts_guess_el, reacting_atoms)
+
+        react_ind_1, react_ind_2 = reacting_atom_indicies.values()
+
+        bondlen = ts_guess_el.get_distance(react_ind_1, react_ind_2)
+        ts_guess_el.rotate(150, 'z')
+        ts_guess_el.set_distance(
+            react_ind_1, react_ind_2, bondlen * scfactor, fix=0)
+        # hardcoded values based on empirical tests
+        ts_guess_el.set_angle(
+            0, 1, 2, -30, indices=[0, 1, 2, 3, 4], add=True)
         return ts_guess_el, surface_bonded_atom_idx
