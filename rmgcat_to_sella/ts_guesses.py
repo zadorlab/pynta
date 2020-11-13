@@ -2,38 +2,50 @@ from rmgcat_to_sella.excatkit.molecule import Molecule
 from rmgcat_to_sella.excatkit.gratoms import Gratoms
 from typing import List, Dict, Tuple
 from collections import Counter
-from ase.io import write
 
 
 class TSGuessesGenerator():
-    def decide(self,
-               ts_est,
-               rxn,
-               rxn_name,
-               reacting_sp,
-               reacting_species, scfactor):
-        ts_guess_list = TSEstimator.build_ts_guess(ts_est)
+    def __init__(self,
+                 ts_est,
+                 rxn,
+                 rxn_name,
+                 reacting_sp,
+                 reacting_species,
+                 scfactor):
+        self.ts_est = ts_est
+        self.rxn = rxn
+        self.rxn_name = rxn_name
+        self.reacting_sp = reacting_sp
+        self.reacting_species = reacting_species
+        self.scfactor = scfactor
+
+    def decide(self):
+        ts_guess_list = TSEstimator.build_ts_guess(self.ts_est)
         ts_guess_check_atomicity = ts_guess_list[0]
         n_atoms = len(ts_guess_check_atomicity)
 
         if n_atoms == 2:
-            print('Reaction {} is a diatomic reaction'.format(rxn_name))
+            print('Reaction {} is a diatomic reaction'.format(self.rxn_name))
 
             # get ts_guess (Gratom) and index of bonded atom (int)
             ts_guess, bonded_idx = Diatomic().get_ts_guess_and_bonded_idx(
-                ts_est, rxn, reacting_sp, reacting_species, scfactor)
+                self.ts_est, self.rxn, self.reacting_sp, self.reacting_species,
+                self.scfactor)
 
         elif n_atoms == 3:
-            print('Reaction {} is a triatomic reaction'.format(rxn_name))
+            print('Reaction {} is a triatomic reaction'.format(self.rxn_name))
 
             ts_guess, bonded_idx = Triatomic().get_ts_guess_and_bonded_idx(
-                ts_est, rxn, reacting_sp, reacting_species, scfactor)
+                self.ts_est, self.rxn, self.reacting_sp, self.reacting_species,
+                self.scfactor)
 
         elif n_atoms == 4:
-            print('Reaction {} is a tetraatomic reaction'.format(rxn_name))
+            print('Reaction {} is a '
+                  'tetraatomic reaction'.format(self.rxn_name))
 
             ts_guess, bonded_idx = Tetraatomic().get_ts_guess_and_bonded_idx(
-                ts_est, rxn, reacting_sp, reacting_species, scfactor)
+                self.ts_est, self.rxn, self.reacting_sp, self.reacting_species,
+                self.scfactor)
 
         else:
             raise NotImplementedError('Only di-, tri- and some tetraatomic '
@@ -42,7 +54,7 @@ class TSGuessesGenerator():
 
 
 class TSEstimator():
-    @staticmethod
+    @ staticmethod
     def build_ts_guess(ts_est: str) -> Gratoms:
         ''' Convert ts_est string into a list of Gratoms objects.
 
@@ -69,7 +81,7 @@ class TSEstimator():
         ts_guess_list = Molecule().molecule(ts_est)
         return ts_guess_list
 
-    @staticmethod
+    @ staticmethod
     def get_surface_bonded_atom_idx(
             rxn: Dict[str, str],
             reacting_sp: str) -> int:

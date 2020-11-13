@@ -130,18 +130,18 @@ class TS():
             p_name_list,
             reacting_species)
 
-        # self.filtered_out_equiv_ts_estimate(
-        #     ts_estimate_path,
-        #     rxn_name)
+        self.filtered_out_equiv_ts_estimate(
+            ts_estimate_path,
+            rxn_name)
 
-        # self.set_up_penalty_xtb(
-        #     ts_estimate_path,
-        #     pytemplate_xtb,
-        #     species_list,
-        #     reacting_species,
-        #     metal_atom,
-        #     scaled1,
-        #     scfactor_surface)
+        self.set_up_penalty_xtb(
+            ts_estimate_path,
+            pytemplate_xtb,
+            species_list,
+            reacting_species,
+            metal_atom,
+            scaled1,
+            scfactor_surface)
 
     def get_max_rot_angle(self) -> None:
         ''' Get the maximum angle of rotation for a given slab that will
@@ -221,9 +221,9 @@ class TS():
         # all species adsorbed to the surface - there will be 2 elements in
         # ts_estimators
         for ts_est in ts_estimators:
-            ts_guess, bonded_idx = TSGuessesGenerator().decide(
-                ts_est, rxn, rxn_name, reacting_sp,
-                reacting_species, scfactor)
+            ts_guess_generator = TSGuessesGenerator(
+                ts_est, rxn, rxn_name, reacting_sp, reacting_species, scfactor)
+            ts_guess, bonded_idx = ts_guess_generator.decide()
 
             # convert slab (Atom) to grslab(Gratom)
             ads_builder = self.prepare_slab_for_ts_guess(slab_atom)
