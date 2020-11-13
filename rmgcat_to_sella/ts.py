@@ -2,7 +2,7 @@
 from typing import List, Tuple, Dict
 from rmgcat_to_sella.excatkit.gratoms import Gratoms
 from rmgcat_to_sella.excatkit.adsorption import Builder
-from rmgcat_to_sella.ts_guesses import Diatomic, Triatomic, Complex
+from rmgcat_to_sella.ts_guesses import Diatomic, Triatomic
 
 from rmgcat_to_sella.adsorbates import Adsorbates
 from rmgcat_to_sella.io import IO
@@ -130,20 +130,20 @@ class TS():
             p_name_list,
             reacting_species)
 
-        # self.filtered_out_equiv_ts_estimate(
-        #     ts_estimate_path,
-        #     rxn_name)
+        self.filtered_out_equiv_ts_estimate(
+            ts_estimate_path,
+            rxn_name)
 
         # TODO there is a bug here for CH_C+H
 
-        # self.set_up_penalty_xtb(
-        #     ts_estimate_path,
-        #     pytemplate_xtb,
-        #     species_list,
-        #     reacting_species,
-        #     metal_atom,
-        #     scaled1,
-        #     scfactor_surface)
+        self.set_up_penalty_xtb(
+            ts_estimate_path,
+            pytemplate_xtb,
+            species_list,
+            reacting_species,
+            metal_atom,
+            scaled1,
+            scfactor_surface)
 
     def get_max_rot_angle(self) -> None:
         ''' Get the maximum angle of rotation for a given slab that will
@@ -235,12 +235,6 @@ class TS():
 
                 ts_guess, bonded_idx = Triatomic().get_ts_guess_and_bonded_idx(
                     ts_est, rxn, reacting_sp, reacting_species, scfactor)
-
-            elif len(ts_est) > 3:
-                print('Reaction {} is a complex reaction'.format(rxn_name))
-                ts_guess, bonded_idx = Complex().get_ts_guess_and_bonded_idx(
-                    ts_est, rxn, reacting_sp, reacting_species, scfactor,
-                    conf='ester')
 
             else:
                 raise NotImplementedError('Only di- and triatomic reactions '

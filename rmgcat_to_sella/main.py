@@ -689,7 +689,7 @@ class WorkFlow:
         with open(template, 'r') as r:
             template_text = r.read()
             rxn_name = IO().get_rxn_name(rxn)
-            rxn_no = rxn['index'] + 1
+            rxn_no = rxn['index']
 
             py_job_fname = os.path.join(
                 py_job_dir, '02_{}_set_up_TS_with_xtb_{}.py'.format(
