@@ -2,7 +2,7 @@
 from typing import List, Tuple, Dict
 from rmgcat_to_sella.excatkit.gratoms import Gratoms
 from rmgcat_to_sella.excatkit.adsorption import Builder
-from rmgcat_to_sella.ts_guesses import Diatomic, Triatomic
+from rmgcat_to_sella.ts_guesses import Diatomic, Triatomic, Complex
 
 from rmgcat_to_sella.adsorbates import Adsorbates
 from rmgcat_to_sella.io import IO
@@ -235,6 +235,13 @@ class TS():
 
                 ts_guess, bonded_idx = Triatomic().get_ts_guess_and_bonded_idx(
                     ts_est, rxn, reacting_sp, reacting_species, scfactor)
+
+            elif len(ts_est) > 3:
+                print('Reaction {} is a complex reaction'.format(rxn_name))
+                ts_guess, bonded_idx = Complex().get_ts_guess_and_bonded_idx(
+                    ts_est, rxn, reacting_sp, reacting_species, scfactor,
+                    conf='ester')
+
             else:
                 raise NotImplementedError('Only di- and triatomic reactions '
                                           'are supported at this moment')
