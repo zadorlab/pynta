@@ -1,4 +1,3 @@
-from rmgcat_to_sella import ts_guesses
 from rmgcat_to_sella.excatkit.molecule import Molecule
 from rmgcat_to_sella.excatkit.gratoms import Gratoms
 from typing import List, Dict, Tuple
@@ -79,7 +78,10 @@ class TSEstimator():
         if len(surface_bonded_atom_idxs) > 1:
             raise NotImplementedError('Only monodendate type of adsorbtion is '
                                       'currently supported.')
-        return surface_bonded_atom_idxs[0]
+        print(int(surface_bonded_atom_idxs[0]) - 1)
+
+        return int(surface_bonded_atom_idxs[0]) - 1
+
         # atomic_connections = TSEstimator.get_atomic_connections(
         #     rxn, reacting_sp)
         # print(atomic_connections)
@@ -317,7 +319,7 @@ class Diatomic(TSEstimator):
 
         '''
         surface_bonded_atom_idx = self.get_surface_bonded_atom_idx(
-            ts_guess_el, rxn, reacting_sp)
+            rxn, reacting_sp)
         reacting_atom_indicies = Diatomic.get_reacting_atoms_indices(
             ts_guess_el, reacting_atoms)
 
@@ -413,7 +415,7 @@ class Triatomic(TSEstimator):
 
         '''
         surface_bonded_atom_idx = self.get_surface_bonded_atom_idx(
-            ts_guess_el, rxn, reacting_sp)
+            rxn, reacting_sp)
         reacting_atom_indicies = Triatomic.get_reacting_atoms_indices(
             ts_guess_el, reacting_atoms)
 
@@ -456,5 +458,13 @@ class Complex(TSEstimator):
             scfactor):
         surface_bonded_atom_idx = Complex.get_surface_bonded_atom_idx(
             rxn, reacting_sp)
+        reacting_atom_indicies = Complex.get_reacting_atoms_indices(
+            ts_guess_el, reacting_atoms)
 
-        print(surface_bonded_atom_idx)
+        react_ind_1, react_ind_2 = reacting_atom_indicies.values()
+
+        bondlen = ts_guess_el.get_distance(react_ind_1, react_ind_2)
+        print(bondlen)
+
+        print(reacting_atom_indicies)
+        return ts_guess_el, surface_bonded_atom_idx
