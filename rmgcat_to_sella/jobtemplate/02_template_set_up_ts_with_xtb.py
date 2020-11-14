@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-
 import os
 from pathlib import Path
 
@@ -7,6 +6,7 @@ from rmgcat_to_sella.ts import TS
 from rmgcat_to_sella.io import IO
 
 from balsam.launcher.dag import BalsamJob, add_dependency
+
 
 slab = '{slab}'
 repeats = {repeats}
@@ -26,6 +26,7 @@ rxn_name = '{rxn_name}'
 minima_dir = os.path.join(creation_dir, facetpath, 'minima')
 ts_dir = 'TS_estimate'
 path_to_ts_estimate = os.path.join(creation_dir, facetpath, rxn_name, ts_dir)
+
 
 ts = TS(
     facetpath,

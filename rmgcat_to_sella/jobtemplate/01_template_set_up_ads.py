@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-from operator import sub
 from pathlib import Path
 import os
 
@@ -80,8 +79,11 @@ for rxn_name in dependancy_dict.keys():
     # add dependencies
     for job in pending_simulations_dep_1:
         for adding_job in dependancy:
-            add_dependency(adding_job, job)  # parent, child
-
+            # handle double species like O2_O+O
+            try:
+                add_dependency(adding_job, job)  # parent, child
+            except RuntimeError:
+                pass
 # ads_vib jobs dependancies
 dependent_workflow_name_2 = facetpath + '_vib'
 pending_simulations_dep_2 = BalsamJob.objects.filter(

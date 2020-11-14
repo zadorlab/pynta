@@ -313,7 +313,6 @@ class Adsorbates:
                 images.append(Molecule().get_3D_positions(species1))
                 unique_species.append(species1)
                 unique_bonds.append(bond)
-        print(images)
         slabedges, tags = Adsorbates.get_edges(self, True)
         # slab_atom = read(self.slab)
         slab_atom = read(os.path.join(self.creation_dir, self.slab))
