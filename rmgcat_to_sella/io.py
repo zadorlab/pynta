@@ -147,9 +147,9 @@ class IO():
         for num, rxn in enumerate(reactions):
             r_name_list, p_name_list, _ = self.prepare_react_list(rxn)
             if len(r_name_list) >= len(p_name_list):
-                species_dict['rxn{}'.format(num+1)] = r_name_list
+                species_dict['rxn{}'.format(num)] = r_name_list
             else:
-                species_dict['rxn{}'.format(num+1)] = p_name_list
+                species_dict['rxn{}'.format(num)] = p_name_list
         return species_dict
 
     @staticmethod
@@ -268,7 +268,8 @@ class IO():
                 if nx.is_isomorphic(species1.graph, species2.graph, node_test):
                     break
             else:
-                images.append(Molecule().get_3D_positions(species1))
+                # images.append(Molecule().get_3D_positions(species1))
+                images.append(species1)
                 unique_species.append(species1)
                 unique_bonds.append(bond)
 

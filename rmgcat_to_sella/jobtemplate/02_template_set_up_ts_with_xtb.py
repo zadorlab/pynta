@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-
 import os
 from pathlib import Path
 
@@ -7,6 +6,7 @@ from rmgcat_to_sella.ts import TS
 from rmgcat_to_sella.io import IO
 
 from balsam.launcher.dag import BalsamJob, add_dependency
+
 
 slab = '{slab}'
 repeats = {repeats}
@@ -16,7 +16,7 @@ scfactor = {scfactor}
 scfactor_surface = {scfactor_surface}
 pytemplate_xtb = '{pytemplate_xtb}'
 species_list = {species_list}
-relevant_species_list = {relevant_species_list}
+reacting_atoms = {reacting_atoms}
 metal_atom = '{metal_atom}'
 scaled1 = {scaled1}
 scaled2 = {scaled2}
@@ -26,6 +26,7 @@ rxn_name = '{rxn_name}'
 minima_dir = os.path.join(creation_dir, facetpath, 'minima')
 ts_dir = 'TS_estimate'
 path_to_ts_estimate = os.path.join(creation_dir, facetpath, rxn_name, ts_dir)
+
 
 ts = TS(
     facetpath,
@@ -41,7 +42,7 @@ ts.prepare_ts_estimate(
     scfactor_surface,
     pytemplate_xtb,
     species_list,
-    relevant_species_list,
+    reacting_atoms,
     metal_atom,
     scaled1,
     scaled2)

@@ -2,13 +2,15 @@
 from typing import List, Tuple, Dict
 from rmgcat_to_sella.excatkit.gratoms import Gratoms
 from rmgcat_to_sella.excatkit.adsorption import Builder
-from rmgcat_to_sella.excatkit.molecule import Molecule
+from rmgcat_to_sella.ts_guesses import TSGuessesGenerator
 
 from rmgcat_to_sella.adsorbates import Adsorbates
 from rmgcat_to_sella.io import IO
 
 from ase.io import read, write
 from ase.utils.structure_comparator import SymmetryEquivalenceCheck
+from ase.collections import g2
+from ase import Atoms
 
 from collections import Counter
 
@@ -59,6 +61,7 @@ class TS():
         self.repeats = repeats
         self.creation_dir = creation_dir
         self.n_kpts = IO().get_kpoints(self.repeats)
+        self.path_to_slab = os.path.join(self.creation_dir, self.slab)
 
     def prepare_ts_estimate(
             self,
@@ -67,7 +70,7 @@ class TS():
             scfactor_surface: float,
             pytemplate_xtb: str,
             species_list: List[str],
-            relevant_species_list: List[str],
+            reacting_species: List[str],
             metal_atom: str,
             scaled1: bool,
             scaled2: bool) -> None:
@@ -96,7 +99,7 @@ class TS():
             a list of species which atoms take part in the reaction,
             i.e. for ['CO2'] ['C'] is taking part in reaction
             e.g. ['O', 'H'] or ['CO2', 'H']
-        relevant_species_list : list(str)
+        reacting_species : list(str)
             a list of species that are considerd as the reactiong one
         metal_atom : str
             a checmical symbol for the surface atoms (only metallic surfaces
@@ -109,7 +112,7 @@ class TS():
             for the species 2 (sp2)
 
         '''
-        r_name_list, p_name_list, images = IO().prepare_react_list(rxn)
+        r_name_list, p_name_list, _ = IO().prepare_react_list(rxn)
         rxn_name = IO().get_rxn_name(rxn)
 
         ts_estimate_path = os.path.join(
@@ -121,10 +124,11 @@ class TS():
         self.TS_placer(
             ts_estimate_path,
             scfactor,
+            rxn,
             rxn_name,
             r_name_list,
             p_name_list,
-            images)
+            reacting_species)
 
         self.filtered_out_equiv_ts_estimate(
             ts_estimate_path,
@@ -134,7 +138,7 @@ class TS():
             ts_estimate_path,
             pytemplate_xtb,
             species_list,
-            relevant_species_list,
+            reacting_species,
             metal_atom,
             scaled1,
             scfactor_surface)
@@ -170,10 +174,11 @@ class TS():
             self,
             ts_estimate_path: str,
             scfactor: float,
+            rxn: Dict[str, str],
             rxn_name: str,
             r_name_list: List[str],
             p_name_list: List[str],
-            images: List[Gratoms]) -> None:
+            reacting_species: List[str]) -> None:
         ''' Place adsorbates on the surface to estimate TS
 
         Parameters:
@@ -193,99 +198,63 @@ class TS():
             a list with all reactants for the given reaction
         p_name_list : list(str)
             a list with all products for the given reaction
-        images : list(Gratoms)
-            a list of CatKit's Gratom object (both reactants and products)
 
         '''
         # create TS_estimate directory
-        if os.path.exists(ts_estimate_path):
-            shutil.rmtree(ts_estimate_path)
-            os.makedirs(ts_estimate_path)
-        else:
-            os.makedirs(ts_estimate_path)
-        slab_atom = read(os.path.join(self.creation_dir, self.slab))
+        os.makedirs(ts_estimate_path, exist_ok=True)
+
+        slab_atom = read(self.path_to_slab)
         slab_atom.pbc = (True, True, False)
-        # ADSORBATES
-        # This part here is a bit hard coded, especially when dealing with
-        # reactants with >= 3 atoms. The code works for couple of species
-        # included in if else statement below. Probably will fail for other
-        # species. This is becouse ase.build.molecule method numbers atoms
-        # very diferently depending on the molecule specify.
-        # To be resolved somehow.
 
-        atom1 = 0  # atom1 should always have index 0, i.e. the first atom
-        atom2 = 1
-        # well, here is the problem becouse ase.build.molecule counts atoms
-        # differently than my input in the yaml file. Probably the problem with
-        # the way yamlfile is converted to species - to be resolved
+        # decide whether reactant or product is easier to use
+        # to build a ts_guess
         if len(r_name_list) <= len(p_name_list):
-            ts_candidate = Molecule().molecule(r_name_list[0])[0]
+            reacting_sp = 'reactant'
+            ts_estimators = r_name_list
         else:
-            # images[2] keeps info about product. It's a Gratom object.
-            # Cannot use catkit's molecule method becouse it generates
-            # gemetry based on wierd order chemical formula string. Sometimes
-            # it works to use molecule method but in general it is better to
-            # use get_3D_positions() as it converts yaml info into 3d
-            # position. In images I keep the oryginal order of elements with
-            # connectivity info. In ts_candidate.get_chemical_formula()
-            # elements are sorted and grouped
-            ts_candidate = images[2]
-            # reactName = r_name
+            reacting_sp = 'product'
+            ts_estimators = p_name_list
 
-        # Different cases
-        if ts_candidate.get_chemical_formula() == 'CHO':
-            atom2 = 2
-            bonded_through = [0]
-        elif ts_candidate.get_chemical_formula() == 'COH':
-            atom2 = 2
-            bonded_through = [0]
-        elif ts_candidate.get_chemical_formula() == 'CHO2':
-            bonded_through = [2]  # connect through oxygen
+        # Developing assuming there is only one element in the list, e.g 'OH'
+        # So the reaction is A + B -> C
+        # Potentially, one can imagine a reaction where A + B -> C + D with
+        # all species adsorbed to the surface - there will be 2 elements in
+        # ts_estimators
+        for ts_est in ts_estimators:
+            ts_guess_generator = TSGuessesGenerator(
+                ts_est, rxn, rxn_name, reacting_sp, reacting_species, scfactor)
+            ts_guess, bonded_idx = ts_guess_generator.decide()
 
-        elif ts_candidate.get_chemical_formula() == 'C2H5O2':
-            atom0 = 0
-            atom1 = 1
-            atom2 = 5
-            bonded_through = [6]  # connect through oxygen
-        else:
-            bonded_through = [0]
+            # convert slab (Atom) to grslab(Gratom)
+            ads_builder = self.prepare_slab_for_ts_guess(slab_atom)
 
-        bondlen = ts_candidate.get_distance(atom1, atom2)
+            # put ts_guess on the surface in all possible spots and rotate
+            self.ts_guess_place_and_rotate(ts_guess, ads_builder,
+                                           bonded_idx, slab_atom,
+                                           ts_estimate_path, rxn_name)
 
-        # Final ridgid rotations to orientate the ts_candidate on the surface
-        if len(ts_candidate.get_tags()) < 3:
-            ts_candidate.rotate(90, 'y')
-            ts_candidate.set_distance(
-                atom1, atom2, bondlen * scfactor, fix=0)
-        elif len(ts_candidate.get_tags()) == 3:
-            ts_candidate.rotate(90, 'z')
-            ts_candidate.set_distance(
-                atom1, atom2, bondlen * scfactor, fix=0)
-        # else:
-        elif ts_candidate.get_chemical_formula() == 'C2H5O2':
-            # ts_candidate.rotate(60, 'y')
-            ts_candidate.rotate(90, 'z')
-            # Should work for H2CO*OCH3, i.e. COH3+HCOH
-            ts_candidate.set_angle(atom2, atom1, atom0, -45,
-                                   indices=[0, 1, 2, 3, 4], add=True)
-            ts_candidate.set_distance(
-                atom1, atom2, bondlen * scfactor, fix=1,
-                indices=[0, 1, 2, 3, 4]
-            )
-            # indices=[0, 1, 2, 3, 4]
-        elif ts_candidate.get_chemical_formula() == 'CHO2':
-            ts_candidate.rotate(90, 'z')
-            ts_candidate.set_distance(
-                atom1, atom2, bondlen * scfactor, fix=0)
-        # double check this
-        put_adsorbates = Adsorbates(
-            self.facetpath,
-            self.slab,
-            self.repeats,
-            self.yamlfile,
-            self.creation_dir)
+    def prepare_slab_for_ts_guess(
+            self,
+            slab_atom: Atoms) -> Builder:
+        ''' Convert slab_atom to Gratom object and finally to Builder object
+            to have a suitable format for ts_guess placement
+
+        Parameters
+        ----------
+        slab_atom : Atoms
+            an initial slab converted to Atoms object, e.g.
+            ase.io.read('Cu_111_slab_opt.xyz')
+
+        Returns
+        -------
+        ads_builder : Builder
+            a slab converted to a Builder object, suitable for ts_guess
+            placement
+
+        '''
+        put_adsorbates = Adsorbates(self.facetpath, self.slab, self.repeats,
+                                    self.yamlfile, self.creation_dir)
         slabedges, tags = put_adsorbates.get_edges(self)
-        # double check this
         grslab = Gratoms(numbers=slab_atom.numbers,
                          positions=slab_atom.positions,
                          cell=slab_atom.cell,
@@ -293,26 +262,55 @@ class TS():
                          edges=slabedges)
         grslab.arrays['surface_atoms'] = tags
 
-        # building adsorbtion structures
         ads_builder = Builder(grslab)
+        return ads_builder
 
-        # max_angle = int(TS.get_max_rot_angle(self))
-        # do a full 360 degree rotation - bridge have different symmetry than
-        # hollows and top sites on Cu(111), so cannot use 60 degree for all
-        # of them. So the approach is to do a full 360 degree scan with
-        # 5 degree increment, check the symmetry using check_symm_before_xtb()
-        # method, run the penalty function minimization for the remaining
-        # structures. Once done, check symmetry again using check_symm() method
-        # That would avoid bugs if other surface is applied.
-        max_angle = 360
-        angle = 0
+    def ts_guess_place_and_rotate(
+            self,
+            ts_guess: Gratoms,
+            ads_builder: Builder,
+            bonded_idx: int,
+            slab_atom: Atoms,
+            ts_estimate_path: str,
+            rxn_name: str,
+            max_angle: int = 360,
+            angle: int = 0,
+            angle_increment: int = 5) -> None:
+        ''' Place ts_est on the surface (ads_builder) in all possible
+            locations, rotate and save all obtained structures as a
+            seperate .xyz files
+
+        Parameters
+        ----------
+        ts_guess : Gratoms
+            an estimate TS structure that will be placed on the surface
+        ads_builder : Builder
+            a slab converted to a Builder object, suitable for ts_guess
+            placement
+        bonded_idx : int
+            an index of ts_guess atom(s) connected to the surface
+        slab_atom : Atoms
+            an initial slab converted to Atoms object, e.g.
+            ase.io.read('Cu_111_slab_opt.xyz')
+        ts_estimate_path : str
+            a path where save all generated .xyz files
+        rxn_name : str
+            a reaction name
+            e.g. OH_O+H
+        max_angle : int, optional
+            maximum angle of rotation around z axis, by default 360
+        angle : int, optional
+            initial angle of rotation around z axis, by default 0
+        angle_increment : int, optional
+            an increment of angle of rotation around z axis, by default 5
+
+        '''
         count = 0
-        step_size = 5
         while angle <= max_angle:
             structs = ads_builder.add_adsorbate(
-                ts_candidate, bonded_through, -1, auto_construct=False)
+                ts_guess, [bonded_idx], -1, auto_construct=False)
             # change to True will make bonded_through work.
-            # Now it uses ts_candidate,rotate...
+            # Now it uses ts_guess,rotate...
             # to generate adsorbed strucutres
             big_slab = slab_atom * self.repeats
             nslab = len(slab_atom)
@@ -325,8 +323,8 @@ class TS():
                 path_to_xyz = os.path.join(ts_estimate_path, xyz_fname)
                 write(path_to_xyz, big_slab_ads)
 
-            ts_candidate.rotate(step_size, 'z')
-            angle += step_size
+            ts_guess.rotate(angle_increment, 'z')
+            angle += angle_increment
             count += 1
 
     def filtered_out_equiv_ts_estimate(
@@ -376,7 +374,7 @@ class TS():
             ts_estimate_path: str,
             pytemplate: str,
             species_list: List[str],
-            relevant_species_list: List[str],
+            reacting_species: List[str],
             metal_atom: str,
             scaled1: bool,
             scfactor_surface) -> None:
@@ -397,7 +395,7 @@ class TS():
             a list of species which atoms take part in the reaction,
             i.e. for ['CO2'] ['C'] is taking part in reaction
             e.g. ['O', 'H'] or ['CO2', 'H']
-        relevant_species_list : list(str)
+        reacting_species : list(str)
             a list of species that are considerd as the reactiong one
         metal_atom : str
             a checmical symbol for the surface atoms (only metallic surfaces
@@ -435,7 +433,7 @@ class TS():
         # calculations many times, e.g. ['C', 'H', 'O', 'O'], so the av_dist
         # for the 'O' have to be specified twice (order not important)
         av_dists_tuple = TS.get_av_dists_tuple(
-            relevant_species_list, sp_surf_av_dists)
+            reacting_species, sp_surf_av_dists)
 
         # get all .xyz files with TS estimates
         ts_estimates_xyz_files = []
@@ -469,7 +467,7 @@ class TS():
             visited_species = []
 
             # Loop through all relevant_species
-            for species in relevant_species_list:
+            for species in reacting_species:
                 sp_index = TS.get_sp_index(
                     species, visited_species, adsorbate_atoms_idxs)
 
@@ -498,7 +496,7 @@ class TS():
                                           geom_name=f_name_xyz,
                                           slabopt=self.slab))
             # move .xyz file
-            shutil.move(xyz_file, calc_dir)
+                shutil.move(xyz_file, calc_dir)
 
     @staticmethod
     def get_sp_index(
@@ -507,7 +505,7 @@ class TS():
             adsorbate_atoms_idxs: Dict[str, int]) -> int:
         '''Count how many times the given species have been already considered
 
-            e.g. If relevant_species_list = ['O', 'O'] the logic below
+            e.g. If reacting_species = ['O', 'O'] the logic below
             will return the correct index for the second 'O', calculated as
             index of the first 'O' + how many times 'O's already analyzed
 
@@ -544,7 +542,7 @@ class TS():
         if not TS.is_valid_sp_index(species, sp_index,
                                     adsorbate_atoms_idxs):
             print('Index {} is not a valid index for a species {}. \n'
-                  'Check your relevant_species definition \n'
+                  'Check your reacting_atoms definition \n'
                   ''.format(sp_index, species))
             print('The folowing indicies are possible: \n     {}'.format(
                 adsorbate_atoms_idxs))
@@ -585,19 +583,19 @@ class TS():
 
     @staticmethod
     def get_av_dists_tuple(
-            relevant_species_list: List[str],
+            reacting_species: List[str],
             sp_surf_av_dists: Dict[str, float]):
         ''' Create a av_dists_tuple with all relevant average bond distances.
 
             This method loops through sp_surf_av_dists dictionary. If
-            particular key exists n > 1 times in relevant_species_list, this
+            particular key exists n > 1 times in reacting_species, this
             entry is added n times to a new dictionary. Otherwise, a new
             dictionary is updated with the keys and values of sp_surf_av_dists.
             At the end, the valuses of the new dict are transformed into tuple
 
         Parameters
         ----------
-        relevant_species_list : list(str)
+        reacting_species : list(str)
             a list of species that are considerd as the reactiong one
         sp_surf_av_dists : dict(str:float)
             a dictionary with keys being species name and average distances
@@ -609,8 +607,7 @@ class TS():
             a tuple with all relevant average bond distances
 
         '''
-        count = Counter(relevant_species_list)
-
+        count = Counter(reacting_species)
         av_dists_dict = {}
         for key, value in sp_surf_av_dists.items():
             n = count[key]

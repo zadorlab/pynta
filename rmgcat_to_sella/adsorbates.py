@@ -313,7 +313,6 @@ class Adsorbates:
                 images.append(Molecule().get_3D_positions(species1))
                 unique_species.append(species1)
                 unique_bonds.append(bond)
-
         slabedges, tags = Adsorbates.get_edges(self, True)
         # slab_atom = read(self.slab)
         slab_atom = read(os.path.join(self.creation_dir, self.slab))
@@ -333,10 +332,9 @@ class Adsorbates:
                 continue
             if bond is None:
                 bond = [0]
-            key = adsorbate.get_chemical_formula()
-            if key == 'HO':
-                key = 'OH'
+            key = adsorbate.symbols
             try:
+                key = str(key)
                 if key == 'CHO2':  # connect through oxygen
                     bond = [2]
                 elif key == 'CH3O':
@@ -349,7 +347,7 @@ class Adsorbates:
                     bond = [0]
                 structs = ads_builder.add_adsorbate(
                     adsorbate, bonds=bond, index=-1)
-                structures[key] = structs
+                structures[str(key)] = structs
             except IndexError:
                 print(adsorbate, adsorbate.edges, adsorbate.get_tags())
         big_slab = slab_atom * self.repeats

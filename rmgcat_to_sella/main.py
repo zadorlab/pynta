@@ -55,7 +55,7 @@ else:
     scfactor_surface = inputR2S.scfactor_surface
     scaled1 = inputR2S.scaled1
     scaled2 = inputR2S.scaled2
-    relevant_species_list = inputR2S.relevant_species_list
+    all_reacting_atoms = inputR2S.all_reacting_atoms
     species_dict = IO().get_species_dict(check_yaml)
     all_species = IO().get_all_species(check_yaml)
     executable = inputR2S.executable
@@ -352,10 +352,11 @@ class WorkFlow:
             )
 
             reactions = IO().open_yaml_file(yamlfile)
-            # the rest of jobs depends on reaction - loop throug all reactions
-            for rxn in reactions:
+            # the rest of jobs depends on reaction and reacting_atoms
+            for rxn, react_at in zip(reactions, all_reacting_atoms.values()):
                 WorkFlow.set_up_TS_with_xtb(
                     rxn,
+                    react_at,
                     template_set_up_ts_with_xtb,
                     py_job_dir,
                     slab,
@@ -638,6 +639,7 @@ class WorkFlow:
     @staticmethod
     def set_up_TS_with_xtb(
             rxn: Dict[str, str],
+            reacting_atoms: List[str],
             template: str,
             py_job_dir: str,
             slab: str,
@@ -687,7 +689,7 @@ class WorkFlow:
         with open(template, 'r') as r:
             template_text = r.read()
             rxn_name = IO().get_rxn_name(rxn)
-            rxn_no = rxn['index'] + 1
+            rxn_no = rxn['index']
 
             py_job_fname = os.path.join(
                 py_job_dir, '02_{}_set_up_TS_with_xtb_{}.py'.format(
@@ -706,7 +708,7 @@ class WorkFlow:
                     metal_atom=metal_atom,
                     scaled1=scaled1,
                     scaled2=scaled2,
-                    relevant_species_list=relevant_species_list,
+                    reacting_atoms=reacting_atoms,
                     creation_dir=creation_dir,
                     rxn=rxn,
                     rxn_name=rxn_name,
@@ -1090,6 +1092,12 @@ class WorkFlow:
         ads_vib_script = '{}_set_up_ads_vib.py'.format(facetpath)
         return self.exe(dependent_job, ads_vib_script, facetpath)
 
+    def run_minima_vib_no_depend(
+            self,
+            facetpath: str) -> None:
+        ads_vib_script = '{}_set_up_ads_vib.py'.format(facetpath)
+        return self.exe('', ads_vib_script, facetpath)
+
     def run_ts_estimate(
             self,
             dependent_job: str,
@@ -1275,7 +1283,7 @@ class WorkFlow:
         minima_dir = os.path.join(creation_dir, facetpath, 'minima')
         # if minima dir exists, check for outfiles
         if WorkFlow.is_minima_dir(species, facetpath):
-            keyphrase = '{}_{}_*relax.py'.format(facetpath, species)
+            keyphrase = '{}_{}_*relax.py.out'.format(facetpath, species)
             search_for_outfiles = Path(minima_dir).glob(keyphrase)
             outfiles = []
             for outfile in search_for_outfiles:
@@ -1407,9 +1415,11 @@ class WorkFlow:
             if WorkFlow.is_big_slab(facetpath) is False:
                 self.run_big_slab_opt(facetpath)
             # check if species were already calculated
+            # TODO there is a bug here as it counts CO as C
             if all(WorkFlow.check_all_species(yamlfile, facetpath).values()):
                 # If all are True, start by generating TS guesses and run
                 # the penalty function minimization
+                self.run_minima_vib_no_depend(facetpath)
                 self.run_ts_estimate_no_depend(facetpath)
             else:
                 # If any of sp_check_list is False
