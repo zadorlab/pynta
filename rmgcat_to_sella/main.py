@@ -1440,17 +1440,10 @@ class WorkFlow:
                 raise FileNotFoundError(
                     'It appears there is no slab_opt.xyz file'
                 )
-
-
-<< << << < HEAD
             if WorkFlow.is_big_slab(facetpath) is False:
                 self.run_big_slab_opt(facetpath)
             if all(WorkFlow.check_all_species(yamlfile, facetpath).values()):
                 # If all minima were calculated some time age pynta
-== == == =
-            if all(self.check_all_species(yamlfile, facetpath).values()):
-                # If all minima were calculated some time age pynta
->>>>>> > renaming pynta through the codebase
                 # will use that calculations. Start from 02 step
                 self.run_ts_estimate_no_depend(facetpath)
             else:
