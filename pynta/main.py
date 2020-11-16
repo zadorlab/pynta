@@ -1440,7 +1440,6 @@ class WorkFlow:
                 raise FileNotFoundError(
                     'It appears there is no slab_opt.xyz file'
                 )
-
             if WorkFlow.is_big_slab(facetpath) is False:
                 self.run_big_slab_opt(facetpath)
             if all(WorkFlow.check_all_species(yamlfile, facetpath).values()):

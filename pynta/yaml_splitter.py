@@ -1,5 +1,5 @@
-import yaml
 import os
+checkimport yaml
 
 
 class YamlSplitter():
