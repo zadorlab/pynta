@@ -8,8 +8,9 @@ with open('README.md', 'r') as f:
 
 setup(name='pynta',
       version='0.0.1',
-      summary='Workflow for automatic search of 1st order saddle points (transition states)',
-      author='Maciej Gierada, Eric Hermes',
+      summary='A workflow for automatic generation of reactions mechanisms on '
+      'metallic surfaces.',
+      author='Maciej Gierada, Eric D. Hermes, David Bross',
       author_email='mgierad@sandia.gov. ehermes@sandia.gov',
       long_description=long_description,
       long_description_type='text/markdown',

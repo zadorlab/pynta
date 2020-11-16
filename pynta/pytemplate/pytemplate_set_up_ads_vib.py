@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
-
 import os
-
 import datetime
-from rmgcat_to_sella.balsamcalc import EspressoBalsamSocketIO
+from pynta.balsamcalc import EspressoBalsamSocketIO
 
 from ase.io import read
 from ase.constraints import FixAtoms

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import os
-from rmgcat_to_sella.vib import minimaVib
+from pynta.vib import minimaVib
 from pathlib import Path
 from balsam.launcher.dag import BalsamJob
 

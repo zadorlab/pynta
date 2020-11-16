@@ -16,3 +16,4 @@ rmgcat_to_sella.egg-info/
 rmgcat_to_sella_package.tar.gz
 *egg-info
 gitlistobjecbysizer.sh
+*pyc
