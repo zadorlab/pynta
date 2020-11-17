@@ -6,9 +6,9 @@ from pathlib import Path, PosixPath
 from typing import List, Tuple, Optional, Dict
 import numpy as np
 
-from rmgcat_to_sella.excatkit.gratoms import Gratoms
-from rmgcat_to_sella.excatkit.molecule import Molecule
-from rmgcat_to_sella.graph_utils import node_test
+from pynta.excatkit.gratoms import Gratoms
+from pynta.excatkit.molecule import Molecule
+from pynta.graph_utils import node_test
 
 from ase.io import read, write
 from ase.dft.kpoints import monkhorst_pack
@@ -17,7 +17,7 @@ from ase.utils.structure_comparator import SymmetryEquivalenceCheck
 
 class IO():
     ''' Class for handling Input/Output and transforming it to more usefull
-        format for the rmgcat_to_sella '''
+        format for the pynta '''
 
     @staticmethod
     def get_facetpath(

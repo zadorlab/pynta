@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
+from pynta.balsamcalc import EspressoBalsamSocketIO
+
 from pathlib import PosixPath
-from rmgcat_to_sella.balsamcalc import EspressoBalsamSocketIO
 from typing import Dict, Tuple
 
 from ase.build import fcc111, fcc211, fcc100

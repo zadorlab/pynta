@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-
-from rmgcat_to_sella.get_slab import GetSlab
+from pynta.get_slab import GetSlab
 
 surface_type = '{surface_type}'
 metal_atom = '{metal_atom}'

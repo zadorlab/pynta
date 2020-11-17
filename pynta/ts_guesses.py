@@ -1,5 +1,5 @@
-from rmgcat_to_sella.excatkit.molecule import Molecule
-from rmgcat_to_sella.excatkit.gratoms import Gratoms
+from pynta.excatkit.molecule import Molecule
+from pynta.excatkit.gratoms import Gratoms
 from typing import List, Dict, Tuple
 from collections import Counter
 

@@ -35,10 +35,11 @@ python3 -m venv pynta
 source pynta/bin/activate
 ```
 
-1.1.3 (_Optional_) Install required python packages (If you skip this process, `pynta` installer should do this later.)
+1.1.3 (_Optional_) Install required python packages (If you skip this process, `pynta` installer will do this later.)
 
 ```bash
-pip3 install numpy ase spglib matplotlib<3.2 networkx<2.4
+pip3 install matplotlib<3.2 spglib==1.14.1.post0 networkx<2.4 ase==3.19.0 scipy==1.3.1 numpy==1.18.1 PyYAML==5.3.1 sella==1.0.3
+
 ```
 
 1.1.4 Download [`PostgreSQL`](https://www.enterprisedb.com/download-postgresql-binaries) precompiled binaries that suits your system and add `path_to_PostgreSQL/pgsql/bin` to your `PATH` by modifying `~/.bashrc`

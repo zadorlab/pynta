@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
-from rmgcat_to_sella.check_input import InputChecker
-from rmgcat_to_sella.restart import LowLevelRestart, HighLevelRestart
-from rmgcat_to_sella.io import IO
+from pynta.check_input import InputChecker
+from pynta.restart import LowLevelRestart, HighLevelRestart
+from pynta.io import IO
+
 from typing import List, Dict, Tuple, Any, Optional
 import os
 import sys
@@ -137,7 +138,7 @@ class WorkFlow:
             # TODO: instead of directly importing EspressoBalsam, we should
             # write a function which returns the appropriate class from
             # balsamcalc.py based on the user-provided input file
-            from rmgcat_to_sella.balsamcalc import (
+            from pynta.balsamcalc import (
                 EspressoBalsam, EspressoBalsamSocketIO
             )
             EspressoBalsam.exe = executable
@@ -1442,7 +1443,7 @@ class WorkFlow:
             if WorkFlow.is_big_slab(facetpath) is False:
                 self.run_big_slab_opt(facetpath)
             if all(WorkFlow.check_all_species(yamlfile, facetpath).values()):
-                # If all minima were calculated some time age rmgcat_to_sella
+                # If all minima were calculated some time age pynta
                 # will use that calculations. Start from 02 step
                 self.run_ts_estimate_no_depend(facetpath)
             else:

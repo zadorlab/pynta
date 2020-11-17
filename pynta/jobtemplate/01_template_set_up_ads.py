@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
-from pathlib import Path
 import os
 
-from rmgcat_to_sella.adsorbates import Adsorbates
-from rmgcat_to_sella.io import IO
+from pynta.adsorbates import Adsorbates
+from pynta.io import IO
 
 from balsam.launcher.dag import BalsamJob, add_dependency
 
