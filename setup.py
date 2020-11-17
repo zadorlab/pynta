@@ -4,6 +4,8 @@ from setuptools import setup, find_packages
 
 with open('README.md', 'r') as f:
     long_description = f.read()
+with open('requirements.txt', 'r') as f:
+    requirements = f.read().split('\n')
 
 
 setup(name='pynta',
@@ -20,6 +22,7 @@ setup(name='pynta',
                 'pynta.jobtemplate',
                 'pynta.excatkit'],
       python_requires='>=3.6',
-      install_requires=['numpy', 'ase', 'spglib',
-                        'matplotlib<3.2', 'networkx<2.4'],
+      install_requires=requirements
+      #   install_requires=['numpy', 'ase', 'spglib',
+      #                     'matplotlib<3.2', 'networkx<2.4'],
       )
