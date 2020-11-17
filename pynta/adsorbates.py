@@ -165,125 +165,125 @@ class Adsorbates:
                 surface[i] = int(np.sign(pairvec[2]))
         return edges, surface
 
-    @staticmethod
-    def rmgcat_to_gratoms(
-            adjtxt: str) -> Tuple[List[Gratoms], List[int]]:
-        ''' Convert a slice of .yaml file to Catkit's Gratoms object
+    # @staticmethod
+    # def rmgcat_to_gratoms(
+    #         adjtxt: str) -> Tuple[List[Gratoms], List[int]]:
+    #     ''' Convert a slice of .yaml file to Catkit's Gratoms object
 
-        Parameters:
-        ___________
+    #     Parameters:
+    #     ___________
 
-        adjtxt : list
-            a list with a connectivity info for reactant or product
-            as from the .yaml file.
-            e.g. for given reaction (reactant or product)
+    #     adjtxt : list
+    #         a list with a connectivity info for reactant or product
+    #         as from the .yaml file.
+    #         e.g. for given reaction (reactant or product)
 
-            In .yaml file we have something like that:
+    #         In .yaml file we have something like that:
 
-                    multiplicity -187
-                1 *1 C u0 p0 c0 { 2,S} {4,S}
-                2    O u0 p0 c0 {1,S}
-                3 *2 H u0 p0 c0 {5,S}
-                4 *3 X u0 p0 c0 {1,S}
-                5 *4 X u0 p0 c0 {3,S}
+    #                 multiplicity -187
+    #             1 *1 C u0 p0 c0 { 2,S} {4,S}
+    #             2    O u0 p0 c0 {1,S}
+    #             3 *2 H u0 p0 c0 {5,S}
+    #             4 *3 X u0 p0 c0 {1,S}
+    #             5 *4 X u0 p0 c0 {3,S}
 
-            but we need here a list like that:
+    #         but we need here a list like that:
 
-            ['multiplicity -187', '1 *1 C u0 p0 c0 {2,S} {4,S}',
-            '2    O u0 p0 c0 {1,S}', '3 *2 H u0 p0 c0 {5,S}',
-            '4 *3 X u0 p0 c0 {1,S}', '5 *4 X u0 p0 c0 {3,S}', '']
+    #         ['multiplicity -187', '1 *1 C u0 p0 c0 {2,S} {4,S}',
+    #         '2    O u0 p0 c0 {1,S}', '3 *2 H u0 p0 c0 {5,S}',
+    #         '4 *3 X u0 p0 c0 {1,S}', '5 *4 X u0 p0 c0 {3,S}', '']
 
-            So it can be simply converted using the following:
+    #         So it can be simply converted using the following:
 
-            yamlfile = 'reactions.yaml'
-            with open(yamlfile, 'r') as f:
-                text = f.read()
-            reactions = yaml.safe_load(text)
-            for rxn in reactions:
-                adjtxt = rxn['reactant'].split('\n')
+    #         yamlfile = 'reactions.yaml'
+    #         with open(yamlfile, 'r') as f:
+    #             text = f.read()
+    #         reactions = yaml.safe_load(text)
+    #         for rxn in reactions:
+    #             adjtxt = rxn['reactant'].split('\n')
 
-        Returns:
-        ________
-        gratoms_list : list
-            a Gratom like object
-        bonds : list
-            a list of bonds to the metal
+    #     Returns:
+    #     ________
+    #     gratoms_list : list
+    #         a Gratom like object
+    #     bonds : list
+    #         a list of bonds to the metal
 
-        '''
-        symbols = []
-        edges = []
-        tags = []
-        # bond_index = None
-        for i, line in enumerate(adjtxt):
-            if i == 0:
-                continue
-            if not line:
-                break
+    #     '''
+    #     symbols = []
+    #     edges = []
+    #     tags = []
+    #     # bond_index = None
+    #     for i, line in enumerate(adjtxt):
+    #         if i == 0:
+    #             continue
+    #         if not line:
+    #             break
 
-            line = line.split()
-            inc = 0
-            if line[1][0] == '*':
-                inc = 1
-                tags.append(int(line[1][1]))
-            else:
-                tags.append(0)
+    #         line = line.split()
+    #         inc = 0
+    #         if line[1][0] == '*':
+    #             inc = 1
+    #             tags.append(int(line[1][1]))
+    #         else:
+    #             tags.append(0)
 
-            symbols.append(line[1 + inc])
-            conn = line[5 + inc:]
+    #         symbols.append(line[1 + inc])
+    #         conn = line[5 + inc:]
 
-            for bond in conn:
-                j = int(bond.strip('{}').split(',')[0])
-                if j > i:
-                    edges.append((i - 1, j - 1))
+    #         for bond in conn:
+    #             j = int(bond.strip('{}').split(',')[0])
+    #             if j > i:
+    #                 edges.append((i - 1, j - 1))
 
-        gratoms = Gratoms(symbols, edges=edges)
+    #     gratoms = Gratoms(symbols, edges=edges)
 
-        del_indices = []
+    #     del_indices = []
 
-        for i, atom in enumerate(gratoms):
-            if atom.symbol == 'X':
-                for j in gratoms.graph.neighbors(i):
-                    tags[j] *= -1
-                del_indices.append(i)
+    #     for i, atom in enumerate(gratoms):
+    #         if atom.symbol == 'X':
+    #             for j in gratoms.graph.neighbors(i):
+    #                 tags[j] *= -1
+    #             del_indices.append(i)
 
-        gratoms.set_tags(tags)
-        del gratoms[del_indices]
+    #     gratoms.set_tags(tags)
+    #     del gratoms[del_indices]
 
-        gratoms_list = []
-        bonds = []
-        for i, subgraph in enumerate(
-            nx.connected_component_subgraphs(gratoms.graph)
-        ):
-            indices = list(subgraph.nodes)
-            symbols = gratoms[indices].symbols
-            # new_gratoms = gratoms[indices].copy()
-            new_indices = {old: new for new, old in enumerate(indices)}
-            new_edges = []
-            for edge in subgraph.edges:
-                newa = new_indices[edge[0]]
-                newb = new_indices[edge[1]]
-                new_edges.append((newa, newb))
-            new_gratoms = Gratoms(symbols, edges=new_edges)
+    #     gratoms_list = []
+    #     bonds = []
+    #     for i, subgraph in enumerate(
+    #         nx.connected_component_subgraphs(gratoms.graph)
+    #     ):
+    #         indices = list(subgraph.nodes)
+    #         symbols = gratoms[indices].symbols
+    #         # new_gratoms = gratoms[indices].copy()
+    #         new_indices = {old: new for new, old in enumerate(indices)}
+    #         new_edges = []
+    #         for edge in subgraph.edges:
+    #             newa = new_indices[edge[0]]
+    #             newb = new_indices[edge[1]]
+    #             new_edges.append((newa, newb))
+    #         new_gratoms = Gratoms(symbols, edges=new_edges)
 
-            bond = None
-            tags = new_gratoms.get_tags()
-            for i, tag in enumerate(tags):
-                if tag < 0:
-                    if bond is None:
-                        bond = [i]
-                    elif len(bond) == 1:
-                        bond.append(i)
-                    else:
-                        raise RuntimeError(
-                            'At most two bonds to the metal are allowed '
-                            'per adsorbate!'
-                        )
-                    tags[i] = abs(tags[i])
-            new_gratoms.set_tags(tags)
-            bonds.append(bond)
-            gratoms_list.append(new_gratoms)
+    #         bond = None
+    #         tags = new_gratoms.get_tags()
+    #         for i, tag in enumerate(tags):
+    #             if tag < 0:
+    #                 if bond is None:
+    #                     bond = [i]
+    #                 elif len(bond) == 1:
+    #                     bond.append(i)
+    #                 else:
+    #                     raise RuntimeError(
+    #                         'At most two bonds to the metal are allowed '
+    #                         'per adsorbate!'
+    #                     )
+    #                 tags[i] = abs(tags[i])
+    #         new_gratoms.set_tags(tags)
+    #         bonds.append(bond)
+    #         gratoms_list.append(new_gratoms)
 
-        return gratoms_list, bonds
+    #     return gratoms_list, bonds
 
     def adjacency_to_3d(self) -> None:
         ''' Place adsorbates on the surface '''
@@ -294,9 +294,9 @@ class Adsorbates:
         species = []
         bonds = []
         for rxn in reactions:
-            reactants, rbonds = Adsorbates.rmgcat_to_gratoms(
+            reactants, rbonds = IO.rmgcat_to_gratoms(
                 rxn['reactant'].split('\n'))
-            products, pbonds = Adsorbates.rmgcat_to_gratoms(
+            products, pbonds = IO.rmgcat_to_gratoms(
                 rxn['product'].split('\n'))
             species += reactants + products
             bonds += rbonds + pbonds

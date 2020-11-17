@@ -253,8 +253,6 @@ class IO():
         unique_bonds = []
         images = []
 
-        print(rxn['reactant'].split('\n'))
-
         # transforming reactions data to gratom objects
         reactants, rbonds = self.rmgcat_to_gratoms(
             rxn['reactant'].split('\n'))
@@ -262,7 +260,6 @@ class IO():
             rxn['product'].split('\n'))
         species_ind += reactants + products
         bonds += rbonds + pbonds
-
         # check if any products are the same as anßy reactants
         for species1, bond in zip(species_ind, bonds):
             for species2 in unique_species:
@@ -320,7 +317,7 @@ class IO():
             all_rxns.append(rxn_name)
         return all_rxns
 
-    @staticmethod
+    @ staticmethod
     def rmgcat_to_gratoms(
             adjtxt: str) -> Tuple[List[Gratoms], List[int]]:
         ''' Convert a slice of .yaml file to Catkit's Gratoms object
@@ -389,7 +386,9 @@ class IO():
             for bond in conn:
                 j = int(bond.strip('{}').split(',')[0])
                 if j > i:
-                    edges.append((i - 1, j - 1))
+                    edges.append((i, j - 1))
+                    # TODO bug -> change to the below for MG made reactions
+                    # edges.append((i, j - 1))
 
         gratoms = Gratoms(symbols, edges=edges)
 
@@ -437,7 +436,7 @@ class IO():
             new_gratoms.set_tags(tags)
             bonds.append(bond)
             gratoms_list.append(new_gratoms)
-
+        print(gratoms_list)
         return gratoms_list, bonds
 
     @staticmethod
