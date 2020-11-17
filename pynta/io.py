@@ -7,7 +7,6 @@ from typing import List, Tuple, Optional, Dict
 import numpy as np
 
 from pynta.excatkit.gratoms import Gratoms
-from pynta.excatkit.molecule import Molecule
 from pynta.graph_utils import node_test
 
 from ase.io import read, write
@@ -254,6 +253,8 @@ class IO():
         unique_bonds = []
         images = []
 
+        print(rxn['reactant'].split('\n'))
+
         # transforming reactions data to gratom objects
         reactants, rbonds = self.rmgcat_to_gratoms(
             rxn['reactant'].split('\n'))
@@ -369,7 +370,7 @@ class IO():
         tags = []
         # bond_index = None
         for i, line in enumerate(adjtxt):
-            if i == 0:
+            if 'multiplicity' in line:
                 continue
             if not line:
                 break
