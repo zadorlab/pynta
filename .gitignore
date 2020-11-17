@@ -12,6 +12,7 @@ dist
 *workspace
 *project
 .vscode/
-rmgcat_to_sella.egg-info/
+*.egg-info/
 rmgcat_to_sella_package.tar.gz
 gitlistobjecbysizer.sh
+*pyc*
