@@ -389,7 +389,6 @@ class IO():
                     edges.append((i, j - 1))
                     # TODO bug -> change to the below for MG made reactions
                     # edges.append((i, j - 1))
-
         gratoms = Gratoms(symbols, edges=edges)
 
         del_indices = []
@@ -408,8 +407,10 @@ class IO():
         for i, subgraph in enumerate(
             nx.connected_component_subgraphs(gratoms.graph)
         ):
-            indices = list(subgraph.nodes)
+            # TODO bug -> remove [::-1] to have a default order of atoms
+            indices = list(subgraph.nodes)[::-1]
             symbols = gratoms[indices].symbols
+            print(symbols)
             # new_gratoms = gratoms[indices].copy()
             new_indices = {old: new for new, old in enumerate(indices)}
             new_edges = []
