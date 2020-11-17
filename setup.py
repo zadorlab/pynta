@@ -7,8 +7,8 @@ with open('README.md', 'r') as f:
 
 
 setup(name='pynta',
-      version='0.0.1',
-      summary='A workflow for automatic generation of reactions mechanisms on '
+      version='1.0.0',
+      summary='A workflow for automated reaction path exploration on '
       'metallic surfaces.',
       author='Maciej Gierada, Eric D. Hermes, David Bross',
       author_email='mgierad@sandia.gov. ehermes@sandia.gov',
@@ -16,7 +16,6 @@ setup(name='pynta',
       long_description_type='text/markdown',
       #   packages=find_packages(),
       packages=['pynta',
-                'pynta.yaml_template',
                 'pynta.pytemplate',
                 'pynta.jobtemplate',
                 'pynta.excatkit'],
