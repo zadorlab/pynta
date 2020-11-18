@@ -462,6 +462,26 @@ class IO():
         return symbols
 
     @staticmethod
+    def get_better_rxn_name(rxn):
+        raw_rxn_name = rxn['reaction']
+        reactants, products = raw_rxn_name.split('<=>')
+
+        reactants = [react[:react.find('*')].strip()
+                     if '*' in react else
+                     react[:react.find('(')].strip()
+                     for react in reactants.split('+')]
+
+        products = [prod[:prod.find('*')].strip()
+                    if '*' in prod else
+                    prod[:prod.find('(')].strip()
+                    for prod in products.split('+')]
+
+        [el.remove('X') for el in [reactants, products] if 'X' in el]
+
+        rxn_name = '+'.join(reactants) + '_' + '+'.join(products)
+        return rxn_name
+
+    @staticmethod
     def get_xyz_from_traj(
             path_to_species: str) -> None:
         ''' Convert all ASE's traj files to .xyz files for a given species
