@@ -412,7 +412,6 @@ class IO():
             # as they appears in reactions.yaml
             indices = list(subgraph.nodes)[::-1]
             # symbols = str(gratoms[indices].symbols)
-            # print(symbols)
             symbols = IO.fix_symbols(str(gratoms[indices].symbols))
             # new_gratoms = gratoms[indices].copy()
             new_indices = {old: new for new, old in enumerate(indices)}
@@ -440,7 +439,6 @@ class IO():
             new_gratoms.set_tags(tags)
             bonds.append(bond)
             gratoms_list.append(new_gratoms)
-        print(gratoms_list)
         return gratoms_list, bonds
 
     @staticmethod
@@ -448,7 +446,6 @@ class IO():
         # perumtations = get_permutations(list(symbols))
         # print(perumtations)
         # correct_symbols = {'CH3O': ['H2COH', 'HCOH2']}
-        print(symbols)
         correct_symbols = {'OH': ['HO', 'OH'],
                            'H2O': ['H2O', 'HO2', '2HO', '2OH', 'O2H', 'OH2'],
                            'CO2': ['CO2', 'C2O', 'OC2', 'O2C', '2OC', '2CO'],
