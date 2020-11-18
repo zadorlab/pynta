@@ -321,8 +321,17 @@ class IO():
         return all_rxns
 
     @ staticmethod
-    def rmgcat_to_gratoms(rxn):
-        pass
+    def get_all_unique_species(yamlfile):
+        reactions = IO().open_yaml_file(yamlfile)
+        all_sp_tmp = []
+        for rxn in reactions:
+            reactants_rxn, products_rxn = IO.prepare_reactants_and_products(
+                rxn)
+            all_sp_tmp.append(reactants_rxn)
+            all_sp_tmp.append(products_rxn)
+        all_species = [
+            species for sublist in all_sp_tmp for species in sublist]
+        return(list(set(all_species)))
 
     @staticmethod
     def prepare_reactants_and_products(rxn):
