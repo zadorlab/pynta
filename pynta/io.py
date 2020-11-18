@@ -8,6 +8,7 @@ import numpy as np
 
 from pynta.excatkit.gratoms import Gratoms
 from pynta.graph_utils import node_test
+from pynta.utils import get_permutations
 
 from ase.io import read, write
 from ase.dft.kpoints import monkhorst_pack
@@ -408,9 +409,11 @@ class IO():
             nx.connected_component_subgraphs(gratoms.graph)
         ):
             # TODO bug -> remove [::-1] to have a default order of atoms
+            # as they appears in reactions.yaml
             indices = list(subgraph.nodes)[::-1]
-            symbols = gratoms[indices].symbols
-            print(symbols)
+            # symbols = str(gratoms[indices].symbols)
+            # print(symbols)
+            symbols = IO.fix_symbols(str(gratoms[indices].symbols))
             # new_gratoms = gratoms[indices].copy()
             new_indices = {old: new for new, old in enumerate(indices)}
             new_edges = []
@@ -439,6 +442,24 @@ class IO():
             gratoms_list.append(new_gratoms)
         print(gratoms_list)
         return gratoms_list, bonds
+
+    @staticmethod
+    def fix_symbols(symbols):
+        # perumtations = get_permutations(list(symbols))
+        # print(perumtations)
+        # correct_symbols = {'CH3O': ['H2COH', 'HCOH2']}
+        print(symbols)
+        correct_symbols = {'OH': ['HO', 'OH'],
+                           'H2O': ['H2O', 'HO2', '2HO', '2OH', 'O2H', 'OH2'],
+                           'CO2': ['CO2', 'C2O', 'OC2', 'O2C', '2OC', '2CO'],
+                           'COOH': ['CO2H', 'CHO2', 'O2CH', 'O2HC'],
+                           'CH2O': ['H2OC', 'CH2O', 'OCH2', 'H2CO'],
+                           'CH3O': ['H2COH'],
+                           'HCOO': ['CO2H', 'HCO2']}
+        for key, value in correct_symbols.items():
+            if symbols in value:
+                return key
+        return symbols
 
     @staticmethod
     def get_xyz_from_traj(
