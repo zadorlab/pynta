@@ -48,7 +48,7 @@ atoms.calc = EspressoBalsamSocketIO(
 atoms.calc.set(**extra_calc_keywords)
 
 opt = QuasiNewton(atoms=atoms, trajectory=geom_prefix + '.traj')
-opt.run(fmax=0.01)
+opt.run(fmax=0.06, steps=100)
 atoms.calc.close()
 
 write_file = os.path.join(geom_prefix + '_final')

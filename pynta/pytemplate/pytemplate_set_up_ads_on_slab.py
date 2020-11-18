@@ -57,7 +57,7 @@ atoms.calc = EspressoBalsamSocketIO(
 atoms.calc.set(**extra_calc_keywords)
 
 opt = QuasiNewton(atoms=atoms, trajectory=jobdir + '.traj')
-opt.run(fmax=0.06)
+opt.run(fmax=0.06, steps=100)
 atoms.calc.close()
 
 png_write_dir = os.path.join(jobdir + '_final.png')
