@@ -58,7 +58,7 @@ else:
     scaled2 = inputR2S.scaled2
     all_reacting_atoms = inputR2S.all_reacting_atoms
     species_dict = IO().get_species_dict(check_yaml)
-    all_species = IO().get_all_species(check_yaml)
+    all_species = IO().get_all_unique_species(check_yaml)
     executable = inputR2S.executable
     node_packing_count = inputR2S.node_packing_count
     balsam_exe_settings = inputR2S.balsam_exe_settings

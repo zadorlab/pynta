@@ -145,7 +145,8 @@ class IO():
         species_dict = {}
         reactions = self.open_yaml_file(yamlfile)
         for num, rxn in enumerate(reactions):
-            r_name_list, p_name_list, _ = self.prepare_react_list(rxn)
+            r_name_list, p_name_list = IO.prepare_reactants_and_products(
+                rxn)
             if len(r_name_list) >= len(p_name_list):
                 species_dict['rxn{}'.format(num)] = r_name_list
             else:
@@ -173,152 +174,152 @@ class IO():
         reactions = yaml.safe_load(yamltxt)
         return reactions
 
-    def get_all_species(
-            self,
-            yamlfile: str) -> List[str]:
-        ''' Generate a list with all unique species for all reactions
-            combined
+    # def get_all_species(
+    #         self,
+    #         yamlfile: str) -> List[str]:
+    #     ''' Generate a list with all unique species for all reactions
+    #         combined
 
-        Parameters:
-        ___________
-        yamlfile : str
-            a name of the .yaml file with a reaction list
+    #     Parameters:
+    #     ___________
+    #     yamlfile : str
+    #         a name of the .yaml file with a reaction list
 
-        Returns:
-        ________
+    #     Returns:
+    #     ________
 
-        all_species_unique : list[str]
-            a list with all unique species
+    #     all_species_unique : list[str]
+    #         a list with all unique species
 
-        '''
-        reactions = self.open_yaml_file(yamlfile)
-        all_species = []
-        for rxn in reactions:
-            r_name_list, p_name_list, _ = self.prepare_react_list(rxn)
-            all_species.append(r_name_list)
-            all_species.append(p_name_list)
-        all_species_unique = list(
-            set([sp for sublist in all_species for sp in sublist]))
-        return all_species_unique
+    #     '''
+    #     reactions = self.open_yaml_file(yamlfile)
+    #     all_species = []
+    #     for rxn in reactions:
+    #         r_name_list, p_name_list, _ = self.prepare_react_list(rxn)
+    #         all_species.append(r_name_list)
+    #         all_species.append(p_name_list)
+    #     all_species_unique = list(
+    #         set([sp for sublist in all_species for sp in sublist]))
+    #     return all_species_unique
 
-    def get_all_species_given_rxn(
-            self,
-            rxn: Dict[str, str]) -> List[str]:
-        ''' Get the reaction name
+    # def get_all_species_given_rxn(
+    #         self,
+    #         rxn: Dict[str, str]) -> List[str]:
+    #     ''' Get the reaction name
 
-        Paremeters:
-        ___________
+    #     Paremeters:
+    #     ___________
 
-        rxn : dict(yaml[str:str])
-            a dictionary with info about the paricular reaction. This can be
-            view as a splitted many reaction .yaml file into a single reaction
-            .yaml file
+    #     rxn : dict(yaml[str:str])
+    #         a dictionary with info about the paricular reaction. This can be
+    #         view as a splitted many reaction .yaml file into a single reaction
+    #         .yaml file
 
-        Returns:
-        _______
-        rxn_name : str
-            a name of the reaction in the following format:
-            'OH_H+O'
-        '''
-        r_name_list, p_name_list, _ = self.prepare_react_list(rxn)
-        all_species_rxn = r_name_list + p_name_list
-        return all_species_rxn
+    #     Returns:
+    #     _______
+    #     rxn_name : str
+    #         a name of the reaction in the following format:
+    #         'OH_H+O'
+    #     '''
+    #     r_name_list, p_name_list, _ = self.prepare_react_list(rxn)
+    #     all_species_rxn = r_name_list + p_name_list
+    #     return all_species_rxn
 
-    def prepare_react_list(
-            self,
-            rxn: Dict[str, str]) -> Tuple[List[str], List[str], List[Gratoms]]:
-        '''Convert yaml file to more useful format
+    # def prepare_react_list(
+    #         self,
+    #         rxn: Dict[str, str]) -> Tuple[List[str], List[str], List[Gratoms]]:
+    #     '''Convert yaml file to more useful format
 
-        Paremeters:
-        ___________
+    #     Paremeters:
+    #     ___________
 
-        rxn : dict(yaml[str:str])
-            a dictionary with info about the paricular reaction. This can be
-            view as a splitted many reaction .yaml file to a single reaction
-            .yaml file
+    #     rxn : dict(yaml[str:str])
+    #         a dictionary with info about the paricular reaction. This can be
+    #         view as a splitted many reaction .yaml file to a single reaction
+    #         .yaml file
 
-        Returns:
-        _______
-        r_name_list : list(str)
-            a list with all reactants for the given reaction
-        p_name_list : list(str)
-            a list with all products for the given reaction
-        images : list(Gratoms)
-            a list of CatKit's Gratom object (both reactants and products)
+    #     Returns:
+    #     _______
+    #     r_name_list : list(str)
+    #         a list with all reactants for the given reaction
+    #     p_name_list : list(str)
+    #         a list with all products for the given reaction
+    #     images : list(Gratoms)
+    #         a list of CatKit's Gratom object (both reactants and products)
 
-        '''
+    #     '''
 
-        species_ind = []
-        bonds = []
-        unique_species = []
-        unique_bonds = []
-        images = []
+    #     species_ind = []
+    #     bonds = []
+    #     unique_species = []
+    #     unique_bonds = []
+    #     images = []
 
-        # transforming reactions data to gratom objects
-        reactants, rbonds = self.rmgcat_to_gratoms(
-            rxn['reactant'].split('\n'))
-        products, pbonds = self.rmgcat_to_gratoms(
-            rxn['product'].split('\n'))
-        species_ind += reactants + products
-        bonds += rbonds + pbonds
-        # check if any products are the same as any reactants
-        for species1, bond in zip(species_ind, bonds):
-            for species2 in unique_species:
-                if nx.is_isomorphic(species1.graph, species2.graph, node_test):
-                    break
-            else:
-                # images.append(Molecule().get_3D_positions(species1))
-                images.append(species1)
-                unique_species.append(species1)
-                unique_bonds.append(bond)
+    #     # transforming reactions data to gratom objects
+    #     reactants, rbonds = self.rmgcat_to_gratoms(
+    #         rxn['reactant'].split('\n'))
+    #     products, pbonds = self.rmgcat_to_gratoms(
+    #         rxn['product'].split('\n'))
+    #     species_ind += reactants + products
+    #     bonds += rbonds + pbonds
+    #     # check if any products are the same as any reactants
+    #     for species1, bond in zip(species_ind, bonds):
+    #         for species2 in unique_species:
+    #             if nx.is_isomorphic(species1.graph, species2.graph, node_test):
+    #                 break
+    #         else:
+    #             # images.append(Molecule().get_3D_positions(species1))
+    #             images.append(species1)
+    #             unique_species.append(species1)
+    #             unique_bonds.append(bond)
 
-        r_name_list = [str(species.symbols) for species in reactants]
-        p_name_list = [str(species.symbols) for species in products]
+    #     r_name_list = [str(species.symbols) for species in reactants]
+    #     p_name_list = [str(species.symbols) for species in products]
 
-        print(r_name_list)
+    #     print(r_name_list)
 
-        return r_name_list, p_name_list, images
+    #     return r_name_list, p_name_list, images
 
-    def get_rxn_name(
-            self,
-            rxn: Dict[str, str]) -> str:
-        ''' Get the reaction name
+    # def get_rxn_name(
+    #         self,
+    #         rxn: Dict[str, str]) -> str:
+    #     ''' Get the reaction name
 
-        Paremeters:
-        ___________
+    #     Paremeters:
+    #     ___________
 
-        rxn : dict(yaml[str:str])
-            a dictionary with info about the paricular reaction. This can be
-            view as a splitted many reaction .yaml file into a single reaction
-            .yaml file
+    #     rxn : dict(yaml[str:str])
+    #         a dictionary with info about the paricular reaction. This can be
+    #         view as a splitted many reaction .yaml file into a single reaction
+    #         .yaml file
 
-        Returns:
-        _______
-        rxn_name : str
-            a name of the reaction in the following format:
-            'OH_H+O'
-        '''
-        r_name_list, p_name_list, _ = self.prepare_react_list(rxn)
+    #     Returns:
+    #     _______
+    #     rxn_name : str
+    #         a name of the reaction in the following format:
+    #         'OH_H+O'
+    #     '''
+    #     r_name_list, p_name_list, _ = self.prepare_react_list(rxn)
 
-        r_name = '+'.join([species for species in r_name_list])
-        p_name = '+'.join([species for species in p_name_list])
+    #     r_name = '+'.join([species for species in r_name_list])
+    #     p_name = '+'.join([species for species in p_name_list])
 
-        rxn_name = r_name + '_' + p_name
-        return rxn_name
+    #     rxn_name = r_name + '_' + p_name
+    #     return rxn_name
 
-    def get_list_all_rxns_names(
-            self,
-            yamlfile):
-        ''' Get a list with all reactions names '''
+    # def get_list_all_rxns_names(
+    #         self,
+    #         yamlfile):
+    #     ''' Get a list with all reactions names '''
 
-        # open .yaml file
-        reactions = self.open_yaml_file(yamlfile)
+    #     # open .yaml file
+    #     reactions = self.open_yaml_file(yamlfile)
 
-        all_rxns = []
-        for rxn in reactions:
-            rxn_name = self.get_rxn_name(rxn)
-            all_rxns.append(rxn_name)
-        return all_rxns
+    #     all_rxns = []
+    #     for rxn in reactions:
+    #         rxn_name = self.get_rxn_name(rxn)
+    #         all_rxns.append(rxn_name)
+    #     return all_rxns
 
     @ staticmethod
     def get_all_unique_species(yamlfile):
