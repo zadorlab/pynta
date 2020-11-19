@@ -332,6 +332,10 @@ class IO():
             all_sp_tmp.append(products_rxn)
         all_species = [
             species for sublist in all_sp_tmp for species in sublist]
+
+        # remove all empty '' elements
+        all_species = [sp for sp in all_species if sp]
+
         return(list(set(all_species)))
 
     @staticmethod

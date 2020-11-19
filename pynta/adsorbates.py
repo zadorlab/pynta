@@ -168,6 +168,7 @@ class Adsorbates:
         ''' Place adsorbates on the surface '''
 
         all_species_symbols = IO.get_all_unique_species(self.yamlfile)
+        print(all_species_symbols)
 
         images = []
         # convert str to Gratoms and deal with edge cases
