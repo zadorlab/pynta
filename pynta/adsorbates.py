@@ -166,17 +166,25 @@ class Adsorbates:
 
     def adjacency_to_3d(self) -> None:
         ''' Place adsorbates on the surface '''
+        # by default, each atom is bonded to the surface through the atom
+        # at index 0. This can be overwrite by using this dict
+        edge_cases_bonded_dict = dict(CO3=1)
 
+        # by default, the first topology structure is used to generate
+        # adsorbates. This can be modified using this dict
+        edge_cases_topology_dict = dict(COOH=1)
+
+        # get all species
         all_species_symbols = IO.get_all_unique_species(self.yamlfile)
-        print(all_species_symbols)
 
-        images = []
         # convert str to Gratoms and deal with edge cases
-        for species_symbol in all_species_symbols:
+        images = []
+        for sp_symbol in all_species_symbols:
             index = 0
-            if species_symbol == 'COOH':
-                index = 1
-            images.append(Molecule().molecule(species_symbol)[index])
+            # deal with edge cases - which topology to use
+            if sp_symbol in edge_cases_topology_dict.keys():
+                index = edge_cases_topology_dict[sp_symbol]
+            images.append(Molecule().molecule(sp_symbol)[index])
 
         slabedges, tags = Adsorbates.get_edges(self, True)
 
@@ -196,14 +204,21 @@ class Adsorbates:
         # prepare surface for placing adsorbates
         ads_builder = Builder(grslab)
 
+        # build adsorbates
         structures = dict()
         for sp_symbol, sp_gratoms in zip(all_species_symbols, images):
             if len(sp_gratoms) == 0:
                 continue
+
+            # deal with edge cases - which atom connects to the surface
+            bonded = [0]
+            if sp_symbol in edge_cases_bonded_dict.keys():
+                bonded = [edge_cases_bonded_dict[sp_symbol]]
+
             try:
                 # put adsorbates on the surface
                 structs = ads_builder.add_adsorbate(
-                    sp_gratoms, index=-1, bonds=[0])
+                    sp_gratoms, index=-1, bonds=bonded)
                 structures[str(sp_symbol)] = structs
             except IndexError:
                 # TODO an idea to put -1 in adsorbate.get_tags() for
@@ -211,10 +226,10 @@ class Adsorbates:
                 print(sp_gratoms, sp_gratoms.edges,
                       sp_gratoms.get_tags())
 
-        for species_symbol, adsorbate in structures.items():
+        for sp_symbol, adsorbate in structures.items():
             # create dir
             savedir = os.path.join(
-                self.creation_dir, self.facetpath, 'minima', species_symbol)
+                self.creation_dir, self.facetpath, 'minima', sp_symbol)
             os.makedirs(savedir, exist_ok=True)
 
             for prefix, structure in enumerate(adsorbate):
