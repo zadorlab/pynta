@@ -1,14 +1,9 @@
 import os
 import shutil
 import yaml
-import networkx as nx
 from pathlib import Path, PosixPath
 from typing import List, Tuple, Optional, Dict
 import numpy as np
-
-from pynta.excatkit.gratoms import Gratoms
-from pynta.graph_utils import node_test
-from pynta.utils import get_permutations
 
 from ase.io import read, write
 from ase.dft.kpoints import monkhorst_pack
@@ -175,21 +170,53 @@ class IO():
         return reactions
 
     @ staticmethod
-    def get_all_unique_species(yamlfile):
+    def get_all_unique_species(
+            yamlfile: str) -> List[str]:
+        ''' Generate a list with all unique species names
+
+        Parameters
+        ----------
+        yamlfile : str
+            a name of the .yaml file with a reaction list
+
+        Returns
+        -------
+        all_species : List[str]
+            a list with all unique species names in all reactions
+
+        '''
         reactions = IO().open_yaml_file(yamlfile)
+
         all_sp_tmp = []
         for rxn in reactions:
             reactants_rxn, products_rxn = IO.prepare_reactants_and_products(
                 rxn)
             all_sp_tmp.append(reactants_rxn)
             all_sp_tmp.append(products_rxn)
+
         all_species = [
             species for sublist in all_sp_tmp for species in sublist]
 
         return(list(set(all_species)))
 
     @staticmethod
-    def prepare_reactants_and_products(rxn):
+    def prepare_reactants_and_products(
+            rxn: Dict[str, str]) -> Tuple[List[str], List[str]]:
+        ''' For a given rxn, get lists with all reactants and products
+
+        Parameters
+        ----------
+        rxn : dict(yaml[str:str])
+            a dictionary with info about the paricular reaction. This can be
+            view as a splitted many reaction .yaml file to a single reaction
+            .yaml file
+
+        Returns
+        -------
+        Tuple[List[str], List[str]]
+            lists with species names for reactants and products
+
+        '''
         raw_rxn_name = rxn['reaction']
         reactants, products = raw_rxn_name.split('<=>')
 
@@ -212,7 +239,23 @@ class IO():
         return reactants, products
 
     @staticmethod
-    def get_better_rxn_name(rxn):
+    def get_better_rxn_name(
+            rxn: Dict[str, str]) -> str:
+        ''' Get a reaction name for a given rxn
+
+        Parameters
+        ----------
+        rxn : dict(yaml[str:str])
+            a dictionary with info about the paricular reaction. This can be
+            view as a splitted many reaction .yaml file to a single reaction
+            .yaml file
+
+        Returns
+        -------
+        rxn_name: str
+            a reaction name, e.g. 'CO_C+O'
+
+        '''
         reactants, products = IO.prepare_reactants_and_products(rxn)
         rxn_name = '+'.join(reactants) + '_' + '+'.join(products)
         return rxn_name
@@ -351,7 +394,7 @@ class IO():
         '''
         unique_adsorbates_prefixes = {}
         path_to_minima = os.path.join(creation_dir, facetpath, 'minima')
-        all_species = self.get_all_species(yamlfile)
+        all_species = self.get_unique_all_species(yamlfile)
         for species in all_species:
             path_to_species = os.path.join(path_to_minima, species)
             uq_prefixes = IO.get_unique_prefixes(
