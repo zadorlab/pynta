@@ -110,8 +110,8 @@ class TS():
             for the species 2 (sp2)
 
         '''
-        r_name_list, p_name_list, _ = IO().prepare_react_list(rxn)
-        rxn_name = IO().get_rxn_name(rxn)
+        r_name_list, p_name_list = IO.get_reactants_and_products(rxn)
+        rxn_name = IO.get_rxn_name(rxn)
 
         ts_estimate_path = os.path.join(
             self.creation_dir,

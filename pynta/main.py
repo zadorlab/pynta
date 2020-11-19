@@ -170,7 +170,7 @@ class WorkFlow:
         reactions = IO().open_yaml_file(yamlfile)
         ts_with_xtb_py_script_list = []
         for rxn in reactions:
-            rxn_name = IO().get_better_rxn_name(rxn)
+            rxn_name = IO.get_rxn_name(rxn)
             fname = '02_{}_set_up_TS_with_xtb_{}.py'.format(
                 facetpath, rxn_name)
             ts_with_xtb_py_script_list.append(fname)
@@ -196,7 +196,7 @@ class WorkFlow:
         reactions = IO().open_yaml_file(yamlfile)
         ts_sella_py_script_list = []
         for rxn in reactions:
-            rxn_name = IO().get_better_rxn_name(rxn)
+            rxn_name = IO.get_rxn_name(rxn)
             fname = '03_{}_run_TS_{}.py'.format(facetpath, rxn_name)
             ts_sella_py_script_list.append(fname)
         return ts_sella_py_script_list
@@ -221,7 +221,7 @@ class WorkFlow:
         reactions = IO().open_yaml_file(yamlfile)
         ts_vib_py_scripts_list = []
         for rxn in reactions:
-            rxn_name = IO().get_better_rxn_name(rxn)
+            rxn_name = IO.get_rxn_name(rxn)
             fname = '04_{}_set_up_TS_vib_{}.py'.format(facetpath, rxn_name)
             ts_vib_py_scripts_list.append(fname)
         return ts_vib_py_scripts_list
@@ -246,7 +246,7 @@ class WorkFlow:
         reactions = IO().open_yaml_file(yamlfile)
         after_ts_py_scripts_list = []
         for rxn in reactions:
-            rxn_name = IO().get_better_rxn_name(rxn)
+            rxn_name = IO.get_rxn_name(rxn)
             fname = '05_{}_set_up_after_TS_{}.py'.format(facetpath, rxn_name)
             after_ts_py_scripts_list.append(fname)
         return after_ts_py_scripts_list
@@ -689,7 +689,7 @@ class WorkFlow:
         '''
         with open(template, 'r') as r:
             template_text = r.read()
-            rxn_name = IO().get_better_rxn_name(rxn)
+            rxn_name = IO.get_rxn_name(rxn)
             rxn_no = rxn['index']
 
             py_job_fname = os.path.join(
@@ -755,7 +755,7 @@ class WorkFlow:
         '''
         with open(template, 'r') as r:
             template_text = r.read()
-            rxn_name = IO().get_better_rxn_name(rxn)
+            rxn_name = IO.get_rxn_name(rxn)
             py_job_fname = os.path.join(
                 py_job_dir, '03_{}_run_TS_{}.py'.format(
                     facetpath, rxn_name))
@@ -816,7 +816,7 @@ class WorkFlow:
         '''
         with open(template, 'r') as r:
             template_text = r.read()
-            rxn_name = IO().get_better_rxn_name(rxn)
+            rxn_name = IO.get_rxn_name(rxn)
             py_job_fname = os.path.join(
                 py_job_dir, '04_{}_set_up_TS_vib_{}.py'.format(
                     facetpath, rxn_name))
@@ -879,7 +879,7 @@ class WorkFlow:
         '''
         with open(template, 'r') as r:
             template_text = r.read()
-            rxn_name = IO().get_better_rxn_name(rxn)
+            rxn_name = IO.get_rxn_name(rxn)
             py_job_fname = os.path.join(
                 py_job_dir, '05_{}_set_up_after_TS_{}.py'.format(
                     facetpath, rxn_name))

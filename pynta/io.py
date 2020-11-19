@@ -140,7 +140,7 @@ class IO():
         species_dict = {}
         reactions = self.open_yaml_file(yamlfile)
         for num, rxn in enumerate(reactions):
-            r_name_list, p_name_list = IO.prepare_reactants_and_products(
+            r_name_list, p_name_list = IO.get_reactants_and_products(
                 rxn)
             if len(r_name_list) >= len(p_name_list):
                 species_dict['rxn{}'.format(num)] = r_name_list
@@ -189,7 +189,7 @@ class IO():
 
         all_sp_tmp = []
         for rxn in reactions:
-            reactants_rxn, products_rxn = IO.prepare_reactants_and_products(
+            reactants_rxn, products_rxn = IO.get_reactants_and_products(
                 rxn)
             all_sp_tmp.append(reactants_rxn)
             all_sp_tmp.append(products_rxn)
@@ -200,7 +200,7 @@ class IO():
         return(list(set(all_species)))
 
     @staticmethod
-    def prepare_reactants_and_products(
+    def get_reactants_and_products(
             rxn: Dict[str, str]) -> Tuple[List[str], List[str]]:
         ''' For a given rxn, get lists with all reactants and products
 
@@ -239,7 +239,7 @@ class IO():
         return reactants, products
 
     @staticmethod
-    def get_better_rxn_name(
+    def get_rxn_name(
             rxn: Dict[str, str]) -> str:
         ''' Get a reaction name for a given rxn
 
@@ -256,7 +256,7 @@ class IO():
             a reaction name, e.g. 'CO_C+O'
 
         '''
-        reactants, products = IO.prepare_reactants_and_products(rxn)
+        reactants, products = IO.get_reactants_and_products(rxn)
         rxn_name = '+'.join(reactants) + '_' + '+'.join(products)
         return rxn_name
 
@@ -323,10 +323,10 @@ class IO():
         # loop through all reactions
         for rxn in reactions:
             # get list of reactant and product
-            reactants, products = IO.prepare_reactants_and_products(
+            reactants, products = IO.get_reactants_and_products(
                 rxn)
             # get reaction name
-            rxn_name = IO.get_better_rxn_name(rxn)
+            rxn_name = IO.get_rxn_name(rxn)
             minima_py_list = []
             # loop through all reactants
             for reactant in reactants:
