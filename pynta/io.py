@@ -230,15 +230,13 @@ class IO():
                     prod[:prod.find('(')].strip()
                     for prod in products.split('+')]
 
-        [el.remove('X') for el in [reactants, products] if 'X' in el]
-
-        # remove all empty '' elements
-        reactants = [sp for sp in reactants if sp]
-        products = [sp for sp in products if sp]
+        # remove all 'X' species
+        reactants = list(filter(('X').__ne__, reactants))
+        products = list(filter(('X').__ne__, products))
 
         return reactants, products
 
-    @staticmethod
+    @ staticmethod
     def get_rxn_name(
             rxn: Dict[str, str]) -> str:
         ''' Get a reaction name for a given rxn
@@ -260,7 +258,7 @@ class IO():
         rxn_name = '+'.join(reactants) + '_' + '+'.join(products)
         return rxn_name
 
-    @staticmethod
+    @ staticmethod
     def get_xyz_from_traj(
             path_to_species: str) -> None:
         ''' Convert all ASE's traj files to .xyz files for a given species
@@ -352,7 +350,7 @@ class IO():
             dependancy_dict[rxn_name] = minima_py_list
         return dependancy_dict
 
-    @staticmethod
+    @ staticmethod
     def clean_finished_subjobs() -> None:
         ''' Move finished subjob files to finised_tmp_scripts directory '''
         dir_name = 'finished_tmp_scripts'
@@ -402,7 +400,7 @@ class IO():
             unique_adsorbates_prefixes[species] = uq_prefixes
         return unique_adsorbates_prefixes
 
-    @staticmethod
+    @ staticmethod
     def get_unique_prefixes(
             path_to_species: str) -> List[str]:
         ''' Compare each conformers for a given adsorbate and returns a list
