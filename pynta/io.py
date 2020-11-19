@@ -186,9 +186,6 @@ class IO():
         all_species = [
             species for sublist in all_sp_tmp for species in sublist]
 
-        # remove all empty '' elements
-        all_species = [sp for sp in all_species if sp]
-
         return(list(set(all_species)))
 
     @staticmethod
@@ -207,6 +204,10 @@ class IO():
                     for prod in products.split('+')]
 
         [el.remove('X') for el in [reactants, products] if 'X' in el]
+
+        # remove all empty '' elements
+        reactants = [sp for sp in reactants if sp]
+        products = [sp for sp in products if sp]
 
         return reactants, products
 
