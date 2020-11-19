@@ -167,18 +167,24 @@ class Adsorbates:
     def adjacency_to_3d(self) -> None:
         ''' Place adsorbates on the surface '''
 
-        all_species = IO.get_all_unique_species(self.yamlfile)
+        all_species_symbols = IO.get_all_unique_species(self.yamlfile)
 
         images = []
-        for species in all_species:
+        # convert str to Gratoms and deal with edge cases
+        for species_symbol in all_species_symbols:
             index = 0
-            if species == 'COOH':
+            if species_symbol == 'COOH':
                 index = 1
-            images.append(Molecule().molecule(species)[index])
-        slabedges, tags = Adsorbates.get_edges(self, True)
-        slab_atom = read(os.path.join(self.creation_dir, self.slab))
+            images.append(Molecule().molecule(species_symbol)[index])
 
-        # slab transfromed to gratom object
+        slabedges, tags = Adsorbates.get_edges(self, True)
+
+        # convert .xyz file to Atoms object
+        slab_atom = read(os.path.join(self.creation_dir, self.slab))
+        big_slab = slab_atom * self.repeats
+        nslab = len(slab_atom)
+
+        # transform Atoms to Gratoms object
         grslab = Gratoms(numbers=slab_atom.numbers,
                          positions=slab_atom.positions,
                          cell=slab_atom.cell,
@@ -186,33 +192,37 @@ class Adsorbates:
                          edges=slabedges)
         grslab.arrays['surface_atoms'] = tags
 
+        # prepare surface for placing adsorbates
         ads_builder = Builder(grslab)
 
         structures = dict()
-        for species_name, adsorbate in zip(all_species, images):
-            #     if len(adsorbate) == 0:
-            #         continue
-            #     if bond is None:
-            #         bond = [0]
+        for sp_symbol, sp_gratoms in zip(all_species_symbols, images):
+            if len(sp_gratoms) == 0:
+                continue
             try:
+                # put adsorbates on the surface
                 structs = ads_builder.add_adsorbate(
-                    adsorbate, index=-1, bonds=[0])
-                structures[str(species_name)] = structs
+                    sp_gratoms, index=-1, bonds=[0])
+                structures[str(sp_symbol)] = structs
             except IndexError:
-                print(adsorbate, adsorbate.edges, adsorbate.get_tags())
-        big_slab = slab_atom * self.repeats
-        nslab = len(slab_atom)
+                # TODO an idea to put -1 in adsorbate.get_tags() for
+                # surface bonded atom
+                print(sp_gratoms, sp_gratoms.edges,
+                      sp_gratoms.get_tags())
 
-        for species_name, adsorbate in structures.items():
+        for species_symbol, adsorbate in structures.items():
+            # create dir
             savedir = os.path.join(
-                self.creation_dir, self.facetpath, 'minima', species_name)
+                self.creation_dir, self.facetpath, 'minima', species_symbol)
             os.makedirs(savedir, exist_ok=True)
-            for j, structure in enumerate(adsorbate):
+
+            for prefix, structure in enumerate(adsorbate):
                 big_slab_ads = big_slab + structure[nslab:]
+                # save adsorbates as .xyz and .png
                 write(os.path.join(savedir, '{}.xyz'.format(
-                    str(j).zfill(2))), big_slab_ads)
+                    str(prefix).zfill(2))), big_slab_ads)
                 write(os.path.join(savedir, '{}.png'.format(
-                    str(j).zfill(2))), big_slab_ads)
+                    str(prefix).zfill(2))), big_slab_ads)
 
     def create_relax_jobs(
             self,
