@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 import os
 from pathlib import PosixPath
-import yaml
 from typing import Tuple, List, Dict
 
 import numpy as np
@@ -12,7 +11,6 @@ from ase.data import covalent_radii
 from pynta.excatkit.molecule import Molecule
 from pynta.excatkit.adsorption import Builder
 from pynta.excatkit.gratoms import Gratoms
-from pynta.graph_utils import node_test
 from pynta.io import IO
 
 # Instead of using CatKit's built in slab generator routines, we want to
