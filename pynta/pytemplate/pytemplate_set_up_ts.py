@@ -54,7 +54,7 @@ ts_atom.calc = EspressoBalsamSocketIO(
 ts_atom.calc.set(**extra_calc_keywords)
 
 opt = Sella(ts_atom, order=1, delta0=1e-2, gamma=1e-3, trajectory=trajdir)
-opt.run(fmax=0.01, steps=100)
+opt.run(fmax=0.06, steps=100)
 ts_atom.calc.close()
 
 write_dir = os.path.join(prefix, prefix + '_' + rxn_name)
