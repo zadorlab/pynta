@@ -198,7 +198,7 @@ class LowLevelRestart():
                 # try to convert last step in *traj file to a new .xyz file
                 write(path_to_after_ts + '.xyz',
                       read(path_to_after_ts + '.traj'))
-            except UnknownFileTypeError:
+            except (FileNotFoundError, UnknownFileTypeError):
                 # continue if *traj file is empty
                 # hard HighLevelRestart is required
                 continue
