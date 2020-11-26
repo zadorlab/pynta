@@ -86,7 +86,9 @@ class LowLevelRestart():
         all_unfinished = self.get_jobs_to_restart()
         unfinished_tss = []
         for key, value in all_unfinished.items():
-            comparator = 'ts' in key and 'after_ts' not in key and 'ts_vib' not in key
+            comparator = 'ts' in key and all(
+                [k not in key for k in ['ts_vib', 'after_ts']])
+            # comparator = 'ts' in key and 'after_ts' not in key and 'ts_vib' not in key
             if comparator and 'AWAITING_PARENTS' not in value:
                 unfinished_tss.append(key)
         return unfinished_tss
@@ -132,8 +134,8 @@ class LowLevelRestart():
                 # try to convert last step in *traj file to a new .xyz file
                 write(path_to_species + '.xyz',
                       read(path_to_species + '.traj'))
-            except UnknownFileTypeError:
-                # continue if *traj file is empty
+            except (FileNotFoundError, UnknownFileTypeError):
+                # continue if *traj file is missing or it is empty
                 # hard HighLevelRestart is required
                 continue
 
@@ -165,8 +167,8 @@ class LowLevelRestart():
             try:
                 # try to convert last step in *traj file to a new .xyz file
                 write(path_to_ts_write + '.xyz', read(path_to_ts + '.traj'))
-            except UnknownFileTypeError:
-                # continue if *traj file is empty
+            except (FileNotFoundError, UnknownFileTypeError):
+                # continue if *traj file is missing or it is empty
                 # hard HighLevelRestart is required
                 continue
 
@@ -199,7 +201,7 @@ class LowLevelRestart():
                 write(path_to_after_ts + '.xyz',
                       read(path_to_after_ts + '.traj'))
             except (FileNotFoundError, UnknownFileTypeError):
-                # continue if *traj file is empty
+                # continue if *traj file is missing or it is empty
                 # hard HighLevelRestart is required
                 continue
 
