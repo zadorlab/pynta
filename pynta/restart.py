@@ -86,10 +86,10 @@ class LowLevelRestart():
         all_unfinished = self.get_jobs_to_restart()
         unfinished_tss = []
         for key, value in all_unfinished.items():
-            comparator = 'ts' in key and all(
+            only_ts = 'ts' in key and all(
                 [k not in key for k in ['ts_vib', 'after_ts']])
             # comparator = 'ts' in key and 'after_ts' not in key and 'ts_vib' not in key
-            if comparator and 'AWAITING_PARENTS' not in value:
+            if only_ts and 'AWAITING_PARENTS' not in value:
                 unfinished_tss.append(key)
         return unfinished_tss
 
