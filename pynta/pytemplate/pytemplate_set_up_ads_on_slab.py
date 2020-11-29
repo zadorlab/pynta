@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 from balsam.launcher.dag import BalsamJob, add_dependency
-from rmgcat_to_sella.vib import minimaVib
 import os
 import shutil
 
