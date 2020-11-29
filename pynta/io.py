@@ -197,6 +197,9 @@ class IO():
         all_species = [
             species for sublist in all_sp_tmp for species in sublist]
 
+        # remove empty elements, such as ''
+        all_species = [species for species in all_species if species]
+
         return(list(set(all_species)))
 
     @staticmethod
