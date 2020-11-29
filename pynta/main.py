@@ -1232,7 +1232,7 @@ class WorkFlow:
 
         '''
         checked_species = {}
-        all_species = IO().get_all_species(yamlfile)
+        all_species = IO().get_all_unique_species(yamlfile)
         for species in all_species:
             checked_species[species] = WorkFlow.is_minima_out_files(
                 species, facetpath)
