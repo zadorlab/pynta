@@ -437,3 +437,17 @@ class IO():
             if result is False:
                 unique_minima_prefixes.append(prefix)
         return unique_minima_prefixes
+
+    def get_list_all_rxns_names(
+            self,
+            yamlfile):
+        ''' Get a list with all reactions names '''
+
+        # open .yaml file
+        reactions = self.open_yaml_file(yamlfile)
+
+        all_rxns = []
+        for rxn in reactions:
+            rxn_name = self.get_rxn_name(rxn)
+            all_rxns.append(rxn_name)
+        return all_rxns
