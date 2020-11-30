@@ -209,7 +209,7 @@ class LowLevelRestart():
 class HighLevelRestart():
     ''' High level restart means that each ASE job that has an unfinished
         status will be restarted. All balsam jobs will be removed. They will be
-        regenerated once ASE jobs start launching.
+        regenerated once ASE jobs start again.
 
     '''
 

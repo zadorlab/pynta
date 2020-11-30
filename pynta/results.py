@@ -462,7 +462,10 @@ class Results():
         rxn_name_title = reactants + ' --> ' + products
         return rxn_name_title
 
-    def plot(self) -> None:
+    def plot(
+            self,
+            plot_filename: str = None,
+            max_barrier: float = None) -> None:
         ''' Plot all results and automatically detect how many reactions and
             facet types exist.
 
@@ -481,7 +484,8 @@ class Results():
                 rxn_name = IO().get_rxn_name(rxn)
                 key = facetpath+'_'+rxn_name
                 Results.plot_rxn(key, reaction_energies,
-                                 activation_barriers, rxn_name, ax, num)
+                                 activation_barriers, rxn_name, ax, num,
+                                 plot_filename, max_barrier)
 
     @staticmethod
     def plot_rxn(
@@ -492,7 +496,7 @@ class Results():
             axes: plt.subplot,
             num: int,
             plot_filename: str = None,
-            apply_max_barrier: bool = False) -> None:
+            max_barrier: float = None) -> None:
         ''' Plot reaction energy diagram for a given reaction and facetpath
 
         Parameters:
@@ -525,10 +529,10 @@ class Results():
         reaction_energy = float(reaction_energies[key])
         activation_barriers_rxn = activation_barriers[key]
 
-        if apply_max_barrier:
+        if max_barrier is not None:
             activation_barriers_rxn = {ts_name: float(barrier) for (
                 ts_name, barrier) in activation_barriers_rxn.items()
-                if float(barrier) < 300}
+                if float(barrier) < max_barrier}
 
         rxn_name_title = Results.rxn_title(rxn_name)
         energy_0 = 0
