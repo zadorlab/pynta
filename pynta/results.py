@@ -22,6 +22,7 @@ class Results():
         self.ev_to_kjmol = 23.06035 * 4.184
         self.slab_paths = ['{}_big_slab_opt.xyz'.format(
             facetpath) for facetpath in self.facetpaths]
+        self.current_dir = os.getcwd()
 
     def get_reaction_energies_all(self) -> None:
         ''' Get reactiom energy (kj/mol) for all facetpaths and reactions
@@ -97,7 +98,6 @@ class Results():
         else:
             reaction_energy = (sum(p_ener_list) -
                                sum(r_ener_list)) * self.ev_to_kjmol
-        # print(reaction_energy)
         reaction_energy = '{:.2f}'.format(round(reaction_energy[0], 3))
         return reaction_energy
 
@@ -119,8 +119,10 @@ class Results():
                 r_name_list, p_name_list = IO.get_reactants_and_products(
                     rxn)
                 rxn_name = IO.get_rxn_name(rxn)
-                ts_path = os.path.join(
-                    facetpath, rxn_name, 'TS_estimate_unique')
+                ts_path = os.path.join(self.current_dir,
+                                       facetpath,
+                                       rxn_name,
+                                       'TS_estimate_unique')
                 ts_ener[facetpath+'_'+rxn_name] = self.get_barrier(
                     minima_path, ts_path, facetpath, r_name_list, p_name_list,
                     slab_path)
@@ -170,6 +172,7 @@ class Results():
         r_ener_list, _, slab_ener, _ = Results.get_data(
             minima_path, facetpath, r_name_list, p_name_list, slab_path)
         tss_ener = Results.get_ts_ener(ts_path)
+        # print(tss_ener)
         tss_name = Results.format_TS_name(ts_path)
 
         activation_barriers = {}
@@ -304,10 +307,15 @@ class Results():
         tss = Results.get_ts_out_files(ts_path)
         for ts in tss:
             with open(ts, 'r') as f:
-                data = f.readlines()
-                enerLine = data[-1]
-                enerVal = enerLine.split()
-                ts_ener_dict[ts] = float(enerVal[3])
+                # error handiling while calculations are in progress and
+                # .out file is empty or it is missing
+                try:
+                    data = f.readlines()
+                    enerLine = data[-1]
+                    enerVal = enerLine.split()
+                    ts_ener_dict[ts] = float(enerVal[3])
+                except IndexError:
+                    pass
         ts_ener_list = list(ts_ener_dict.values())
         return ts_ener_list
 

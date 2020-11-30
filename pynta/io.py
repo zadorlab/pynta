@@ -221,7 +221,7 @@ class IO():
 
         '''
         raw_rxn_name = rxn['reaction']
-        raw_reactants, raw_products = raw_rxn_name.split('<=>')
+        raw_products, raw_reactants = raw_rxn_name.split('<=>')
 
         tmp_reactants = [react[:react.find('*')].strip()
                          if '*' in react else
@@ -238,9 +238,8 @@ class IO():
         p_x_removed = list(filter(('X').__ne__, tmp_products))
 
         # remove all empty '' elements
-        products = [prod for prod in r_x_removed if prod]
         reactants = [react for react in p_x_removed if react]
-
+        products = [prod for prod in r_x_removed if prod]
         return reactants, products
 
     @ staticmethod
