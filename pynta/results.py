@@ -14,13 +14,13 @@ class Results():
     def __init__(self) -> None:
         ''' A class to analyze the results of calculations '''
         surface_types_and_repeats = inputR2S.surface_types_and_repeats
-        symbol = inputR2S.symbol
+        metal_atom = inputR2S.metal_atom
         self.yamlfile = inputR2S.yamlfile
         self.facetpaths = IO().get_facetpaths(
-            symbol, surface_types_and_repeats.keys())
+            metal_atom, surface_types_and_repeats.keys())
         self.reactions = IO().open_yaml_file(self.yamlfile)
         self.ev_to_kjmol = 23.06035 * 4.184
-        self.slab_paths = ['{}_slab_opt_res.xyz'.format(
+        self.slab_paths = ['{}_big_slab_opt.xyz'.format(
             facetpath) for facetpath in self.facetpaths]
 
     def get_reaction_energies_all(self) -> None:
@@ -230,11 +230,9 @@ class Results():
         '''
         r_ener_list = []
         p_ener_list = []
+
         # get the lowest energy for all reactants
         for reactant in r_name_list:
-            # bug to be fixed
-            if reactant == 'OH':
-                reactant = 'HO'
             lowest_reactant_ener = Results.get_lowest_species_ener(
                 minima_path, reactant, facetpath)
             r_ener_list.append(lowest_reactant_ener)
@@ -248,8 +246,6 @@ class Results():
             raise TypeError
         # get the lowest energy for all products
         for product in p_name_list:
-            if product == 'OH':
-                product = 'HO'
             lowest_product_ener = Results.get_lowest_species_ener(
                 minima_path, product, facetpath)
             p_ener_list.append(lowest_product_ener)
@@ -328,7 +324,7 @@ class Results():
             a path to main minima directory
             e.g. Cu_111/minima
         species : str
-            a symbol of the species
+            a metal_atom of the species
             e.g. 'OH', 'H', 'O'
         facetpath : str
             a path to the workflow's main dir
@@ -394,7 +390,7 @@ class Results():
             a path to main minima directory
             e.g. Cu_111/minima
         species : str
-            a symbol of the species
+            a metal_atom of the species
             e.g. 'OH', 'H', 'O'
         facetpath : str
             a path to the workflow's main dir

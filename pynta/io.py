@@ -221,21 +221,25 @@ class IO():
 
         '''
         raw_rxn_name = rxn['reaction']
-        reactants, products = raw_rxn_name.split('<=>')
+        raw_reactants, raw_products = raw_rxn_name.split('<=>')
 
-        reactants = [react[:react.find('*')].strip()
-                     if '*' in react else
-                     react[:react.find('(')].strip()
-                     for react in reactants.split('+')]
+        tmp_reactants = [react[:react.find('*')].strip()
+                         if '*' in react else
+                         react[:react.find('(')].strip()
+                         for react in raw_reactants.split('+')]
 
-        products = [prod[:prod.find('*')].strip()
-                    if '*' in prod else
-                    prod[:prod.find('(')].strip()
-                    for prod in products.split('+')]
+        tmp_products = [prod[:prod.find('*')].strip()
+                        if '*' in prod else
+                        prod[:prod.find('(')].strip()
+                        for prod in raw_products.split('+')]
 
         # remove all 'X' species
-        reactants = list(filter(('X').__ne__, reactants))
-        products = list(filter(('X').__ne__, products))
+        r_x_removed = list(filter(('X').__ne__, tmp_reactants))
+        p_x_removed = list(filter(('X').__ne__, tmp_products))
+
+        # remove all empty '' elements
+        products = [prod for prod in r_x_removed if prod]
+        reactants = [react for react in p_x_removed if react]
 
         return reactants, products
 
