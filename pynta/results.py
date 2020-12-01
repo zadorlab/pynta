@@ -172,7 +172,6 @@ class Results():
         r_ener_list, _, slab_ener, _ = Results.get_data(
             minima_path, facetpath, r_name_list, p_name_list, slab_path)
         tss_ener = Results.get_ts_ener(ts_path)
-        # print(tss_ener)
         tss_name = Results.format_TS_name(ts_path)
 
         activation_barriers = {}
@@ -380,9 +379,18 @@ class Results():
 
         '''
         ts_out_file_list = []
-        ts_file_list = Path(ts_path).glob('*out')
-        for ts_out_file in ts_file_list:
-            ts_out_file_list.append(str(ts_out_file))
+        unique_ts_prefixes = IO.get_unique_final_ts_prefixes(ts_path)
+
+        try:
+            for outfile in os.listdir(ts_path):
+                for uq_ts_prefix in unique_ts_prefixes:
+                    if outfile.startswith(uq_ts_prefix) and outfile.endswith('out'):
+                        uq_ts_outfile_path = os.path.join(ts_path, outfile)
+                        ts_out_file_list.append(str(uq_ts_outfile_path))
+
+        except FileNotFoundError:
+            pass
+
         return sorted(ts_out_file_list)
 
     @staticmethod
@@ -482,6 +490,7 @@ class Results():
         all_rxn_names = IO().get_list_all_rxns_names(self.yamlfile)
         n_facets = len(self.facetpaths)
         n_rxns = len(all_rxn_names)
+        n_facets = 2
         _, axes = plt.subplots(n_facets, n_rxns)
         for num, rxn in enumerate(self.reactions):
             for ax, facetpath, in zip(axes, self.facetpaths):
@@ -581,5 +590,5 @@ class Results():
         # plt.show()
         plt.tight_layout()
         figure = plt.gcf()
-        figure.set_size_inches(10, 10)
+        figure.set_size_inches(15, 6)
         plt.savefig(plot_filename)

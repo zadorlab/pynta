@@ -8,6 +8,7 @@ import numpy as np
 from ase.io import read, write
 from ase.dft.kpoints import monkhorst_pack
 from ase.utils.structure_comparator import SymmetryEquivalenceCheck
+from ase.io.formats import UnknownFileTypeError
 
 
 class IO():
@@ -406,7 +407,7 @@ class IO():
             unique_adsorbates_prefixes[species] = uq_prefixes
         return unique_adsorbates_prefixes
 
-    @ staticmethod
+    @staticmethod
     def get_unique_prefixes(
             path_to_species: str) -> List[str]:
         ''' Compare each conformers for a given adsorbate and returns a list
@@ -440,6 +441,45 @@ class IO():
             if result is False:
                 unique_minima_prefixes.append(prefix)
         return unique_minima_prefixes
+
+    @staticmethod
+    def get_unique_final_ts_prefixes(
+            path_to_ts: str) -> List[str]:
+        ''' Compare each conformers for a given adsorbate and returns a list
+            with prefixes of a symmetrty dictinct structures
+
+        Parameters
+        ----------
+        path_to_species : str
+            a path to species
+            e.g. 'Cu_111/minima/CO'
+
+        Returns
+        -------
+        unique_minima_prefixes : List[str]
+            a list with prefixes of symmetry distinct structures for a given
+            adsorbate
+
+        '''
+        unique_ts = []
+        result_dict = {}
+        unique_ts_prefixes = []
+        trajlist = sorted(Path(path_to_ts).glob('**/*traj'), key=str)
+        for traj in trajlist:
+            try:
+                ts = read(traj)
+                comparator = SymmetryEquivalenceCheck(to_primitive=True)
+                result = comparator.compare(ts, unique_ts)
+                result_dict[str(os.path.basename(traj)[:2])] = result
+                if result is False:
+                    unique_ts.append(ts)
+            # error handling while calculations are still running/unfinished
+            except UnknownFileTypeError:
+                pass
+        for prefix, result in result_dict.items():
+            if result is False:
+                unique_ts_prefixes.append(prefix)
+        return unique_ts_prefixes
 
     def get_list_all_rxns_names(
             self,
