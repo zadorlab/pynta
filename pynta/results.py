@@ -477,7 +477,9 @@ class Results():
     def plot(
             self,
             plot_filename: str = None,
-            max_barrier: float = None) -> None:
+            max_barrier: float = None,
+            x_size_in: float = 8,
+            y_size_in: float = 6) -> None:
         ''' Plot all results and automatically detect how many reactions and
             facet types exist.
 
@@ -496,9 +498,16 @@ class Results():
             for ax, facetpath, in zip(axes, self.facetpaths):
                 rxn_name = IO().get_rxn_name(rxn)
                 key = facetpath+'_'+rxn_name
-                Results.plot_rxn(key, reaction_energies,
-                                 activation_barriers, rxn_name, ax, num,
-                                 plot_filename, max_barrier)
+                Results.plot_rxn(key,
+                                 reaction_energies,
+                                 activation_barriers,
+                                 rxn_name,
+                                 ax,
+                                 num,
+                                 plot_filename,
+                                 max_barrier,
+                                 x_size_in,
+                                 y_size_in)
 
     @staticmethod
     def plot_rxn(
@@ -509,7 +518,9 @@ class Results():
             axes: plt.subplot,
             num: int,
             plot_filename: str = None,
-            max_barrier: float = None) -> None:
+            max_barrier: float = None,
+            x_size_in: float = 8,
+            y_size_in: float = 6) -> None:
         ''' Plot reaction energy diagram for a given reaction and facetpath
 
         Parameters:
@@ -559,7 +570,8 @@ class Results():
             x = np.arange(6)
             y = np.array([0, 0, barrier, barrier,
                           reaction_energy, reaction_energy])
-            axes[num].plot(x, y, label=ts_name)
+            axes[num].plot(
+                x, y, label='{}; {} kJ/mol'.format(ts_name, barrier))
             axes[num].hlines(barrier, 0, 2.0, linestyles='dotted')
             # add label with ener of the TS
             # barrier_position = barrier + 5
@@ -590,5 +602,5 @@ class Results():
         # plt.show()
         plt.tight_layout()
         figure = plt.gcf()
-        figure.set_size_inches(15, 6)
+        figure.set_size_inches(x_size_in, y_size_in)
         plt.savefig(plot_filename)
