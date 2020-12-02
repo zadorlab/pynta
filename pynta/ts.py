@@ -530,7 +530,6 @@ class TS():
 
         '''
         sp_index = TS.get_index_adatom(species, adsorbate_atoms_idxs)
-
         if species in visited_species:
             _count = visited_species.count(species)
             visited_species.append(species)
@@ -546,6 +545,9 @@ class TS():
                 adsorbate_atoms_idxs))
             raise KeyError
         return sp_index
+
+    # @staticmethod
+    # def is_double_atom_ts_guess(adsorbate_atoms_idxs):
 
     @staticmethod
     def is_valid_sp_index(
@@ -917,7 +919,7 @@ class TS():
     @staticmethod
     def get_index_adatom(
             ads_atom: str,
-            adsorbate_atoms_idx: Dict[str, float]) -> int:
+            adsorbate_atoms_idxs: Dict[str, float]) -> int:
         ''' Specify adsorbate atom symbol and its index will be returned.
 
         Parameters:
@@ -930,13 +932,19 @@ class TS():
 
         Returns:
         ________
-        adsorbate_atom[0] : int
+        ads_index : int
             index of the adsorbed atom
 
         '''
-        for key, val in adsorbate_atoms_idx.items():
+        vals = []
+        for key, val in adsorbate_atoms_idxs.items():
             if key.startswith(ads_atom):
-                return val
+                vals.append(val)
+        if len(vals) > 1:
+            ads_index = vals[0] + len(vals) - 1
+        else:
+            ads_index = vals[0]
+        return ads_index
 
     @staticmethod
     def get_index_surface_atom(

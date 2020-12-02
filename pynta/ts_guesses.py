@@ -54,7 +54,7 @@ class TSGuessesGenerator():
 
 
 class TSEstimator():
-    @ staticmethod
+    @staticmethod
     def build_ts_guess(ts_est: str) -> Gratoms:
         ''' Convert ts_est string into a list of Gratoms objects.
 
@@ -81,7 +81,7 @@ class TSEstimator():
         ts_guess_list = Molecule().molecule(ts_est)
         return ts_guess_list
 
-    @ staticmethod
+    @staticmethod
     def get_surface_bonded_atom_idx(
             rxn: Dict[str, str],
             reacting_sp: str) -> int:
