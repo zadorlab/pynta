@@ -572,6 +572,8 @@ class Results():
                           reaction_energy, reaction_energy])
             axes[num].plot(
                 x, y, label='{}; {} kJ/mol'.format(ts_name, barrier))
+            # axes[num].plot(
+            #     x, y, label='{}'.format(ts_name))
             axes[num].hlines(barrier, 0, 2.0, linestyles='dotted')
             # add label with ener of the TS
             # barrier_position = barrier + 5
