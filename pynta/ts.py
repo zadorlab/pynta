@@ -1,7 +1,7 @@
 from typing import List, Tuple, Dict
 from pynta.excatkit.gratoms import Gratoms
 from pynta.excatkit.adsorption import Builder
-from pynta.ts_guesses import TSGuessesGenerator
+from pynta.general_ts_guesses import GeneralTSGuessesGenerator
 from pynta.adsorbates import Adsorbates
 from pynta.io import IO
 
@@ -68,7 +68,7 @@ class TS():
             scfactor_surface: float,
             pytemplate_xtb: str,
             species_list: List[str],
-            reacting_species: List[str],
+            easier_to_buildes: List[str],
             metal_atom: str,
             scaled1: bool,
             scaled2: bool) -> None:
@@ -97,7 +97,7 @@ class TS():
             a list of species which atoms take part in the reaction,
             i.e. for ['CO2'] ['C'] is taking part in reaction
             e.g. ['O', 'H'] or ['CO2', 'H']
-        reacting_species : list(str)
+        easier_to_buildes : list(str)
             a list of species that are considerd as the reactiong one
         metal_atom : str
             a checmical symbol for the surface atoms (only metallic surfaces
@@ -126,20 +126,20 @@ class TS():
             rxn_name,
             r_name_list,
             p_name_list,
-            reacting_species)
+            easier_to_buildes)
 
-        self.filtered_out_equiv_ts_estimate(
-            ts_estimate_path,
-            rxn_name)
+        # self.filtered_out_equiv_ts_estimate(
+        #     ts_estimate_path,
+        #     rxn_name)
 
-        self.set_up_penalty_xtb(
-            ts_estimate_path,
-            pytemplate_xtb,
-            species_list,
-            reacting_species,
-            metal_atom,
-            scaled1,
-            scfactor_surface)
+        # self.set_up_penalty_xtb(
+        #     ts_estimate_path,
+        #     pytemplate_xtb,
+        #     species_list,
+        #     easier_to_buildes,
+        #     metal_atom,
+        #     scaled1,
+        #     scfactor_surface)
 
     def get_max_rot_angle(self) -> None:
         ''' Get the maximum angle of rotation for a given slab that will
@@ -176,7 +176,7 @@ class TS():
             rxn_name: str,
             r_name_list: List[str],
             p_name_list: List[str],
-            reacting_species: List[str]) -> None:
+            easier_to_buildes: List[str]) -> None:
         ''' Place adsorbates on the surface to estimate TS
 
         Parameters:
@@ -207,10 +207,10 @@ class TS():
         # decide whether reactant or product is easier to use
         # to build a ts_guess
         if len(r_name_list) <= len(p_name_list):
-            reacting_sp = 'reactant'
+            easier_to_build = 'reactant'
             ts_estimators = r_name_list
         else:
-            reacting_sp = 'product'
+            easier_to_build = 'product'
             ts_estimators = p_name_list
 
         # Developing assuming there is only one element in the list, e.g 'OH'
@@ -219,17 +219,18 @@ class TS():
         # all species adsorbed to the surface - there will be 2 elements in
         # ts_estimators
         for ts_est in ts_estimators:
-            ts_guess_generator = TSGuessesGenerator(
-                ts_est, rxn, rxn_name, reacting_sp, reacting_species, scfactor)
-            ts_guess, bonded_idx = ts_guess_generator.decide()
+            ts_guess_generator = GeneralTSGuessesGenerator(
+                ts_est, rxn, rxn_name, easier_to_build, scfactor)
+            ts_guess_generator.get_surface_bonded_atom_idx()
+            # ts_guess, bonded_idx = ts_guess_generator.decide()
 
             # convert slab (Atom) to grslab(Gratom)
             ads_builder = self.prepare_slab_for_ts_guess(slab_atom)
 
             # put ts_guess on the surface in all possible spots and rotate
-            self.ts_guess_place_and_rotate(ts_guess, ads_builder,
-                                           bonded_idx, slab_atom,
-                                           ts_estimate_path, rxn_name)
+            # self.ts_guess_place_and_rotate(ts_guess, ads_builder,
+            #                                bonded_idx, slab_atom,
+            #                                ts_estimate_path, rxn_name)
 
     def prepare_slab_for_ts_guess(
             self,
@@ -372,7 +373,7 @@ class TS():
             ts_estimate_path: str,
             pytemplate: str,
             species_list: List[str],
-            reacting_species: List[str],
+            easier_to_buildes: List[str],
             metal_atom: str,
             scaled1: bool,
             scfactor_surface) -> None:
@@ -393,7 +394,7 @@ class TS():
             a list of species which atoms take part in the reaction,
             i.e. for ['CO2'] ['C'] is taking part in reaction
             e.g. ['O', 'H'] or ['CO2', 'H']
-        reacting_species : list(str)
+        easier_to_buildes : list(str)
             a list of species that are considerd as the reactiong one
         metal_atom : str
             a checmical symbol for the surface atoms (only metallic surfaces
@@ -431,7 +432,7 @@ class TS():
         # calculations many times, e.g. ['C', 'H', 'O', 'O'], so the av_dist
         # for the 'O' have to be specified twice (order not important)
         av_dists_tuple = TS.get_av_dists_tuple(
-            reacting_species, sp_surf_av_dists)
+            easier_to_buildes, sp_surf_av_dists)
 
         # get all .xyz files with TS estimates
         ts_estimates_xyz_files = []
@@ -465,7 +466,7 @@ class TS():
             visited_species = []
 
             # Loop through all relevant_species
-            for species in reacting_species:
+            for species in easier_to_buildes:
                 sp_index = TS.get_sp_index(
                     species, visited_species, adsorbate_atoms_idxs)
 
@@ -503,7 +504,7 @@ class TS():
             adsorbate_atoms_idxs: Dict[str, int]) -> int:
         '''Count how many times the given species have been already considered
 
-            e.g. If reacting_species = ['O', 'O'] the logic below
+            e.g. If easier_to_buildes = ['O', 'O'] the logic below
             will return the correct index for the second 'O', calculated as
             index of the first 'O' + how many times 'O's already analyzed
 
@@ -583,19 +584,19 @@ class TS():
 
     @staticmethod
     def get_av_dists_tuple(
-            reacting_species: List[str],
+            easier_to_buildes: List[str],
             sp_surf_av_dists: Dict[str, float]):
         ''' Create a av_dists_tuple with all relevant average bond distances.
 
             This method loops through sp_surf_av_dists dictionary. If
-            particular key exists n > 1 times in reacting_species, this
+            particular key exists n > 1 times in easier_to_buildes, this
             entry is added n times to a new dictionary. Otherwise, a new
             dictionary is updated with the keys and values of sp_surf_av_dists.
             At the end, the valuses of the new dict are transformed into tuple
 
         Parameters
         ----------
-        reacting_species : list(str)
+        easier_to_buildes : list(str)
             a list of species that are considerd as the reactiong one
         sp_surf_av_dists : dict(str:float)
             a dictionary with keys being species name and average distances
@@ -607,7 +608,7 @@ class TS():
             a tuple with all relevant average bond distances
 
         '''
-        count = Counter(reacting_species)
+        count = Counter(easier_to_buildes)
         av_dists_dict = {}
         for key, value in sp_surf_av_dists.items():
             n = count[key]
