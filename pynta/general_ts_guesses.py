@@ -1,3 +1,4 @@
+from operator import le
 from pynta.excatkit.molecule import Molecule
 from pynta.excatkit.gratoms import Gratoms
 from typing import Dict, List, Tuple
@@ -18,24 +19,26 @@ class GeneralTSGuessesGenerator():
         self.reacting_species_connectivity = self.rxn[self.easier_to_build].split(
             '\n')
 
-    def get_ts_guess_and_bonded_idx(self):
-        ts_guess_list = self.build_ts_guess()
-        # For diatimics, there is only one possible topology, so
-        ts_guess_el = ts_guess_list[0]
+    def decide(self):
+        ts_guess_el, s_bonded_idx = None, None
 
-        print(self.reacting_species_connectivity)
+        how_many_atoms_react = len(self.get_reacting_atoms_idx())
 
-        s_bonded_idx, reacting_idxs = self.get_bondend_and_reacting_idxs()
+        if how_many_atoms_react == 2:
+            ts_guess_el, s_bonded_idx = Diatomic(
+                self.ts_est,
+                self.rxn,
+                self.rxn_name,
+                self.easier_to_build,
+                self.scfactor).get_ts_guess_and_bonded_idx()
 
-        react_ind_1, react_ind_2 = reacting_idxs
-
-        bondlen = ts_guess_el.get_distance(react_ind_1, react_ind_2)
-        ts_guess_el.rotate(90, 'y')
-        ts_guess_el.set_distance(
-            react_ind_1, react_ind_2, bondlen * self.scfactor, fix=0)
-        # print(ts_guess_el, s_bonded_idx)
-        # for atom in ts_guess_el:
-        #     print(atom)
+        elif how_many_atoms_react == 3:
+            ts_guess_el, s_bonded_idx = Triatomic(
+                self.ts_est,
+                self.rxn,
+                self.rxn_name,
+                self.easier_to_build,
+                self.scfactor).get_ts_guess_and_bonded_idx()
         return ts_guess_el, s_bonded_idx
 
     def build_ts_guess(self) -> Gratoms:
@@ -119,3 +122,49 @@ class GeneralTSGuessesGenerator():
             if '*' in line and 'X' not in line:
                 reacting_idxs.append(num - 1)
         return reacting_idxs
+
+
+class Diatomic(GeneralTSGuessesGenerator):
+    # def __init__(self, ts_est, rxn, rxn_name, easier_to_build, scfactor):
+    #     GeneralTSGuessesGenerator.__init__(
+    #         self, ts_est, rxn, rxn_name, easier_to_build, scfactor)
+
+    def get_ts_guess_and_bonded_idx(self):
+        # Convert adsorbate (string) to a list of Gratoms object.
+        ts_guess_list = self.build_ts_guess()
+
+        # For diatimics, there is only one possible topology, so
+        ts_guess_el = ts_guess_list[0]
+        s_bonded_idx, reacting_idxs = self.get_bondend_and_reacting_idxs()
+
+        react_ind_1, react_ind_2 = reacting_idxs
+        bondlen = ts_guess_el.get_distance(react_ind_1, react_ind_2)
+
+        n_total_ads_atoms = len(ts_guess_el)
+        if n_total_ads_atoms == 2:
+            ts_guess_el.rotate(90, 'y')
+            ts_guess_el.set_distance(
+                react_ind_1, react_ind_2, bondlen * self.scfactor, fix=0)
+        elif n_total_ads_atoms == 3:
+            ts_guess_el.rotate(90, 'z')
+            ts_guess_el.set_distance(
+                react_ind_1, react_ind_2, bondlen * self.scfactor, fix=0)
+            # hardcoded values based on empirical tests
+            # 2 1 0
+            ts_guess_el.set_angle(
+                2, 1, 0, -30, indices=[2, 1, 0], add=True)
+        else:
+            raise NotImplementedError('Currently, only reactions with max 3 '
+                                      'total adsorbed atoms are supported')
+
+        return ts_guess_el, s_bonded_idx
+
+
+class Triatomic(GeneralTSGuessesGenerator):
+    def get_ts_guess_and_bonded_idx(self):
+        raise NotImplementedError('Only diatomic reactions at this moment')
+    # ts_guess_list = Triatomic.build_ts_guess(ts_est)
+    #    if conf == 'sp':
+    #         ts_guess_el = ts_guess_list[1]
+    #     else:
+    #         ts_guess_el = ts_guess_list[0]
