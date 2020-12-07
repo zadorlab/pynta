@@ -34,7 +34,7 @@ class Show():
             job_states.append(job.state)
         current_state = Counter(job_states)
         for key, val in current_state.items():
-            print('{:>15} : {:>4}'.format(key, val))
+            print('{:>17} : {:>4}'.format(key, val))
 
     def not_finished(self) -> None:
         ''' Show info about all jobs that did not finish:

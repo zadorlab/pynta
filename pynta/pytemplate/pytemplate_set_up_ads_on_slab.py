@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 from balsam.launcher.dag import BalsamJob, add_dependency
-from rmgcat_to_sella.vib import minimaVib
 import os
 import shutil
 
@@ -57,7 +56,7 @@ atoms.calc = EspressoBalsamSocketIO(
 atoms.calc.set(**extra_calc_keywords)
 
 opt = QuasiNewton(atoms=atoms, trajectory=jobdir + '.traj')
-opt.run(fmax=0.06)
+opt.run(fmax=0.01, steps=70)
 atoms.calc.close()
 
 png_write_dir = os.path.join(jobdir + '_final.png')

@@ -58,7 +58,7 @@ else:
     scaled2 = inputR2S.scaled2
     all_reacting_atoms = inputR2S.all_reacting_atoms
     species_dict = IO().get_species_dict(check_yaml)
-    all_species = IO().get_all_species(check_yaml)
+    all_species = IO().get_all_unique_species(check_yaml)
     executable = inputR2S.executable
     node_packing_count = inputR2S.node_packing_count
     balsam_exe_settings = inputR2S.balsam_exe_settings
@@ -170,7 +170,7 @@ class WorkFlow:
         reactions = IO().open_yaml_file(yamlfile)
         ts_with_xtb_py_script_list = []
         for rxn in reactions:
-            rxn_name = IO().get_rxn_name(rxn)
+            rxn_name = IO.get_rxn_name(rxn)
             fname = '02_{}_set_up_TS_with_xtb_{}.py'.format(
                 facetpath, rxn_name)
             ts_with_xtb_py_script_list.append(fname)
@@ -196,7 +196,7 @@ class WorkFlow:
         reactions = IO().open_yaml_file(yamlfile)
         ts_sella_py_script_list = []
         for rxn in reactions:
-            rxn_name = IO().get_rxn_name(rxn)
+            rxn_name = IO.get_rxn_name(rxn)
             fname = '03_{}_run_TS_{}.py'.format(facetpath, rxn_name)
             ts_sella_py_script_list.append(fname)
         return ts_sella_py_script_list
@@ -221,7 +221,7 @@ class WorkFlow:
         reactions = IO().open_yaml_file(yamlfile)
         ts_vib_py_scripts_list = []
         for rxn in reactions:
-            rxn_name = IO().get_rxn_name(rxn)
+            rxn_name = IO.get_rxn_name(rxn)
             fname = '04_{}_set_up_TS_vib_{}.py'.format(facetpath, rxn_name)
             ts_vib_py_scripts_list.append(fname)
         return ts_vib_py_scripts_list
@@ -246,7 +246,7 @@ class WorkFlow:
         reactions = IO().open_yaml_file(yamlfile)
         after_ts_py_scripts_list = []
         for rxn in reactions:
-            rxn_name = IO().get_rxn_name(rxn)
+            rxn_name = IO.get_rxn_name(rxn)
             fname = '05_{}_set_up_after_TS_{}.py'.format(facetpath, rxn_name)
             after_ts_py_scripts_list.append(fname)
         return after_ts_py_scripts_list
@@ -689,7 +689,7 @@ class WorkFlow:
         '''
         with open(template, 'r') as r:
             template_text = r.read()
-            rxn_name = IO().get_rxn_name(rxn)
+            rxn_name = IO.get_rxn_name(rxn)
             rxn_no = rxn['index']
 
             py_job_fname = os.path.join(
@@ -755,7 +755,7 @@ class WorkFlow:
         '''
         with open(template, 'r') as r:
             template_text = r.read()
-            rxn_name = IO().get_rxn_name(rxn)
+            rxn_name = IO.get_rxn_name(rxn)
             py_job_fname = os.path.join(
                 py_job_dir, '03_{}_run_TS_{}.py'.format(
                     facetpath, rxn_name))
@@ -816,7 +816,7 @@ class WorkFlow:
         '''
         with open(template, 'r') as r:
             template_text = r.read()
-            rxn_name = IO().get_rxn_name(rxn)
+            rxn_name = IO.get_rxn_name(rxn)
             py_job_fname = os.path.join(
                 py_job_dir, '04_{}_set_up_TS_vib_{}.py'.format(
                     facetpath, rxn_name))
@@ -879,7 +879,7 @@ class WorkFlow:
         '''
         with open(template, 'r') as r:
             template_text = r.read()
-            rxn_name = IO().get_rxn_name(rxn)
+            rxn_name = IO.get_rxn_name(rxn)
             py_job_fname = os.path.join(
                 py_job_dir, '05_{}_set_up_after_TS_{}.py'.format(
                     facetpath, rxn_name))
@@ -1232,7 +1232,7 @@ class WorkFlow:
 
         '''
         checked_species = {}
-        all_species = IO().get_all_species(yamlfile)
+        all_species = IO().get_all_unique_species(yamlfile)
         for species in all_species:
             checked_species[species] = WorkFlow.is_minima_out_files(
                 species, facetpath)

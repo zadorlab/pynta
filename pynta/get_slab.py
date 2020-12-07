@@ -95,6 +95,16 @@ class GetSlab:
             GetSlab.opt_fcc211(self)
         elif self.surface_type == 'fcc100':
             GetSlab.opt_fcc100(self)
+        elif self.surface_type == 'bcc111':
+            GetSlab.opt_bcc111(self)
+        elif self.surface_type == 'bcc110':
+            GetSlab.opt_bcc110(self)
+        elif self.surface_type == 'hcp0001':
+            GetSlab.opt_hcp0001(self)
+        elif self.surface_type == 'diamond111':
+            GetSlab.opt_diamond111(self)
+        elif self.surface_type == 'diamond100':
+            GetSlab.opt_diamond100(self)
         else:
             print('{} not implemented. Avaiable parameters are:'.format(
                 self.surface_type))

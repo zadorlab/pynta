@@ -86,7 +86,10 @@ class LowLevelRestart():
         all_unfinished = self.get_jobs_to_restart()
         unfinished_tss = []
         for key, value in all_unfinished.items():
-            if 'ts' in key and 'AWAITING_PARENTS' not in value:
+            only_ts = 'ts' in key and all(
+                [k not in key for k in ['ts_vib', 'after_ts']])
+            # comparator = 'ts' in key and 'after_ts' not in key and 'ts_vib' not in key
+            if only_ts and 'AWAITING_PARENTS' not in value:
                 unfinished_tss.append(key)
         return unfinished_tss
 
@@ -131,8 +134,8 @@ class LowLevelRestart():
                 # try to convert last step in *traj file to a new .xyz file
                 write(path_to_species + '.xyz',
                       read(path_to_species + '.traj'))
-            except UnknownFileTypeError:
-                # continue if *traj file is empty
+            except (FileNotFoundError, UnknownFileTypeError):
+                # continue if *traj file is missing or it is empty
                 # hard HighLevelRestart is required
                 continue
 
@@ -150,16 +153,22 @@ class LowLevelRestart():
                 '_')
             facetpath = metal_symbol + '_' + facet
             rxn_name = react + '_' + prod
-            ts_name = os.path.join(
+
+            # BUG to be fixed
+            ts_name_write = os.path.join(
                 prefix + '_' + facetpath + '_' + rxn_name + '_ts')
+            ts_name = os.path.join(prefix + '_' + rxn_name)
             path_to_ts = os.path.join(
                 facetpath, rxn_name, 'TS_estimate_unique', prefix, ts_name)
+            path_to_ts_write = os.path.join(
+                facetpath, rxn_name, 'TS_estimate_unique', prefix,
+                ts_name_write)
 
             try:
                 # try to convert last step in *traj file to a new .xyz file
-                write(path_to_ts + '.xyz', read(path_to_ts + '.traj'))
-            except UnknownFileTypeError:
-                # continue if *traj file is empty
+                write(path_to_ts_write + '.xyz', read(path_to_ts + '.traj'))
+            except (FileNotFoundError, UnknownFileTypeError):
+                # continue if *traj file is missing or it is empty
                 # hard HighLevelRestart is required
                 continue
 
@@ -191,8 +200,8 @@ class LowLevelRestart():
                 # try to convert last step in *traj file to a new .xyz file
                 write(path_to_after_ts + '.xyz',
                       read(path_to_after_ts + '.traj'))
-            except UnknownFileTypeError:
-                # continue if *traj file is empty
+            except (FileNotFoundError, UnknownFileTypeError):
+                # continue if *traj file is missing or it is empty
                 # hard HighLevelRestart is required
                 continue
 
@@ -200,7 +209,7 @@ class LowLevelRestart():
 class HighLevelRestart():
     ''' High level restart means that each ASE job that has an unfinished
         status will be restarted. All balsam jobs will be removed. They will be
-        regenerated once ASE jobs start launching.
+        regenerated once ASE jobs start again.
 
     '''
 

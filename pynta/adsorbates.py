@@ -1,11 +1,9 @@
 #!/usr/bin/env python
 import os
 from pathlib import PosixPath
-import yaml
 from typing import Tuple, List, Dict
 
 import numpy as np
-import networkx as nx
 
 from ase.io import read, write
 from ase.data import covalent_radii
@@ -13,7 +11,6 @@ from ase.data import covalent_radii
 from pynta.excatkit.molecule import Molecule
 from pynta.excatkit.adsorption import Builder
 from pynta.excatkit.gratoms import Gratoms
-from pynta.graph_utils import node_test
 from pynta.io import IO
 
 # Instead of using CatKit's built in slab generator routines, we want to
@@ -56,8 +53,8 @@ class Adsorbates:
         self.facetpath = facetpath
         self.slab = slab
         self.repeats = repeats
-        self.yamlfile = yamlfile
         self.creation_dir = creation_dir
+        self.yamlfile = os.path.join(self.creation_dir, yamlfile)
 
     def get_edges(
             self,
@@ -165,158 +162,36 @@ class Adsorbates:
                 surface[i] = int(np.sign(pairvec[2]))
         return edges, surface
 
-    @staticmethod
-    def rmgcat_to_gratoms(
-            adjtxt: str) -> Tuple[List[Gratoms], List[int]]:
-        ''' Convert a slice of .yaml file to Catkit's Gratoms object
-
-        Parameters:
-        ___________
-
-        adjtxt : list
-            a list with a connectivity info for reactant or product
-            as from the .yaml file.
-            e.g. for given reaction (reactant or product)
-
-            In .yaml file we have something like that:
-
-                    multiplicity -187
-                1 *1 C u0 p0 c0 { 2,S} {4,S}
-                2    O u0 p0 c0 {1,S}
-                3 *2 H u0 p0 c0 {5,S}
-                4 *3 X u0 p0 c0 {1,S}
-                5 *4 X u0 p0 c0 {3,S}
-
-            but we need here a list like that:
-
-            ['multiplicity -187', '1 *1 C u0 p0 c0 {2,S} {4,S}',
-            '2    O u0 p0 c0 {1,S}', '3 *2 H u0 p0 c0 {5,S}',
-            '4 *3 X u0 p0 c0 {1,S}', '5 *4 X u0 p0 c0 {3,S}', '']
-
-            So it can be simply converted using the following:
-
-            yamlfile = 'reactions.yaml'
-            with open(yamlfile, 'r') as f:
-                text = f.read()
-            reactions = yaml.safe_load(text)
-            for rxn in reactions:
-                adjtxt = rxn['reactant'].split('\n')
-
-        Returns:
-        ________
-        gratoms_list : list
-            a Gratom like object
-        bonds : list
-            a list of bonds to the metal
-
-        '''
-        symbols = []
-        edges = []
-        tags = []
-        # bond_index = None
-        for i, line in enumerate(adjtxt):
-            if i == 0:
-                continue
-            if not line:
-                break
-
-            line = line.split()
-            inc = 0
-            if line[1][0] == '*':
-                inc = 1
-                tags.append(int(line[1][1]))
-            else:
-                tags.append(0)
-
-            symbols.append(line[1 + inc])
-            conn = line[5 + inc:]
-
-            for bond in conn:
-                j = int(bond.strip('{}').split(',')[0])
-                if j > i:
-                    edges.append((i - 1, j - 1))
-
-        gratoms = Gratoms(symbols, edges=edges)
-
-        del_indices = []
-
-        for i, atom in enumerate(gratoms):
-            if atom.symbol == 'X':
-                for j in gratoms.graph.neighbors(i):
-                    tags[j] *= -1
-                del_indices.append(i)
-
-        gratoms.set_tags(tags)
-        del gratoms[del_indices]
-
-        gratoms_list = []
-        bonds = []
-        for i, subgraph in enumerate(
-            nx.connected_component_subgraphs(gratoms.graph)
-        ):
-            indices = list(subgraph.nodes)
-            symbols = gratoms[indices].symbols
-            # new_gratoms = gratoms[indices].copy()
-            new_indices = {old: new for new, old in enumerate(indices)}
-            new_edges = []
-            for edge in subgraph.edges:
-                newa = new_indices[edge[0]]
-                newb = new_indices[edge[1]]
-                new_edges.append((newa, newb))
-            new_gratoms = Gratoms(symbols, edges=new_edges)
-
-            bond = None
-            tags = new_gratoms.get_tags()
-            for i, tag in enumerate(tags):
-                if tag < 0:
-                    if bond is None:
-                        bond = [i]
-                    elif len(bond) == 1:
-                        bond.append(i)
-                    else:
-                        raise RuntimeError(
-                            'At most two bonds to the metal are allowed '
-                            'per adsorbate!'
-                        )
-                    tags[i] = abs(tags[i])
-            new_gratoms.set_tags(tags)
-            bonds.append(bond)
-            gratoms_list.append(new_gratoms)
-
-        return gratoms_list, bonds
-
     def adjacency_to_3d(self) -> None:
         ''' Place adsorbates on the surface '''
-        with open(self.creation_dir + '/' + self.yamlfile, 'r') as f:
-            text = f.read()
-        reactions = yaml.safe_load(text)
+        # by default, each atom is bonded to the surface through the atom
+        # at index 0. This can be overwrite by using this dict
+        edge_cases_bonded_dict = dict(CO3=1, CH3O=1, CH3OH=1)
 
-        species = []
-        bonds = []
-        for rxn in reactions:
-            reactants, rbonds = Adsorbates.rmgcat_to_gratoms(
-                rxn['reactant'].split('\n'))
-            products, pbonds = Adsorbates.rmgcat_to_gratoms(
-                rxn['product'].split('\n'))
-            species += reactants + products
-            bonds += rbonds + pbonds
+        # by default, the first topology structure is used to generate
+        # adsorbates. This can be modified using this dict
+        edge_cases_topology_dict = dict(COOH=1, HCOOH=1, CH3O2=1, HCOOCH3=17)
 
-        unique_species = []
-        unique_bonds = []
+        # get all species
+        all_species_symbols = IO.get_all_unique_species(self.yamlfile)
+
+        # convert str to Gratoms and deal with edge cases
         images = []
-        # check if any products are the same as any reactants
-        for species1, bond in zip(species, bonds):
-            for species2 in unique_species:
-                if nx.is_isomorphic(species1.graph, species2.graph, node_test):
-                    break
-            else:
-                images.append(Molecule().get_3D_positions(species1))
-                unique_species.append(species1)
-                unique_bonds.append(bond)
+        for sp_symbol in all_species_symbols:
+            index = 0
+            # deal with edge cases - which topology to use
+            if sp_symbol in edge_cases_topology_dict.keys():
+                index = edge_cases_topology_dict[sp_symbol]
+            images.append(Molecule().molecule(sp_symbol)[index])
+
         slabedges, tags = Adsorbates.get_edges(self, True)
-        # slab_atom = read(self.slab)
+
+        # convert .xyz file to Atoms object
         slab_atom = read(os.path.join(self.creation_dir, self.slab))
-        # slab transfromed to gratom object
+        big_slab = slab_atom * self.repeats
+        nslab = len(slab_atom)
+
+        # transform Atoms to Gratoms object
         grslab = Gratoms(numbers=slab_atom.numbers,
                          positions=slab_atom.positions,
                          cell=slab_atom.cell,
@@ -324,45 +199,44 @@ class Adsorbates:
                          edges=slabedges)
         grslab.arrays['surface_atoms'] = tags
 
+        # prepare surface for placing adsorbates
         ads_builder = Builder(grslab)
 
+        # build adsorbates
         structures = dict()
-        for adsorbate, bond in zip(images, unique_bonds):
-            if len(adsorbate) == 0:
+        for sp_symbol, sp_gratoms in zip(all_species_symbols, images):
+            if len(sp_gratoms) == 0:
                 continue
-            if bond is None:
-                bond = [0]
-            key = adsorbate.symbols
-            try:
-                key = str(key)
-                if key == 'CHO2':  # connect through oxygen
-                    bond = [2]
-                elif key == 'CH3O':
-                    bond = [1]
-                elif key == 'CH2O':
-                    bond = [2]
-                elif key == 'C2H5O2':
-                    bond = [6]
-                else:
-                    bond = [0]
-                structs = ads_builder.add_adsorbate(
-                    adsorbate, bonds=bond, index=-1)
-                structures[str(key)] = structs
-            except IndexError:
-                print(adsorbate, adsorbate.edges, adsorbate.get_tags())
-        big_slab = slab_atom * self.repeats
-        nslab = len(slab_atom)
 
-        for species_name, adsorbate in structures.items():
+            # deal with edge cases - which atom connects to the surface
+            bonded = [0]
+            if sp_symbol in edge_cases_bonded_dict.keys():
+                bonded = [edge_cases_bonded_dict[sp_symbol]]
+
+            try:
+                # put adsorbates on the surface
+                structs = ads_builder.add_adsorbate(
+                    sp_gratoms, index=-1, bonds=bonded)
+                structures[str(sp_symbol)] = structs
+            except IndexError:
+                # TODO an idea to put -1 in adsorbate.get_tags() for
+                # surface bonded atom
+                print(sp_gratoms, sp_gratoms.edges,
+                      sp_gratoms.get_tags())
+
+        for sp_symbol, adsorbate in structures.items():
+            # create dir
             savedir = os.path.join(
-                self.creation_dir, self.facetpath, 'minima', species_name)
+                self.creation_dir, self.facetpath, 'minima', sp_symbol)
             os.makedirs(savedir, exist_ok=True)
-            for j, structure in enumerate(adsorbate):
+
+            for prefix, structure in enumerate(adsorbate):
                 big_slab_ads = big_slab + structure[nslab:]
+                # save adsorbates as .xyz and .png
                 write(os.path.join(savedir, '{}.xyz'.format(
-                    str(j).zfill(2))), big_slab_ads)
+                    str(prefix).zfill(2))), big_slab_ads)
                 write(os.path.join(savedir, '{}.png'.format(
-                    str(j).zfill(2))), big_slab_ads)
+                    str(prefix).zfill(2))), big_slab_ads)
 
     def create_relax_jobs(
             self,

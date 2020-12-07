@@ -20,23 +20,24 @@ class Gratoms(ase.Atoms):
     Networkx Graph.
     """
 
-    def __init__(self,
-                 symbols=None,
-                 positions=None,
-                 numbers=None,
-                 tags=None,
-                 momenta=None,
-                 masses=None,
-                 magmoms=None,
-                 charges=None,
-                 scaled_positions=None,
-                 cell=None,
-                 pbc=None,
-                 celldisp=None,
-                 constraint=None,
-                 calculator=None,
-                 info=None,
-                 edges=None):
+    def __init__(
+            self,
+            symbols=None,
+            positions=None,
+            numbers=None,
+            tags=None,
+            momenta=None,
+            masses=None,
+            magmoms=None,
+            charges=None,
+            scaled_positions=None,
+            cell=None,
+            pbc=None,
+            celldisp=None,
+            constraint=None,
+            calculator=None,
+            info=None,
+            edges=None):
         super().__init__(
             symbols, positions, numbers, tags, momenta,
             masses, magmoms, charges, scaled_positions, cell,

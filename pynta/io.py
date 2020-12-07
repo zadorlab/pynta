@@ -1,18 +1,14 @@
 import os
 import shutil
 import yaml
-import networkx as nx
 from pathlib import Path, PosixPath
 from typing import List, Tuple, Optional, Dict
 import numpy as np
 
-from pynta.excatkit.gratoms import Gratoms
-from pynta.excatkit.molecule import Molecule
-from pynta.graph_utils import node_test
-
 from ase.io import read, write
 from ase.dft.kpoints import monkhorst_pack
 from ase.utils.structure_comparator import SymmetryEquivalenceCheck
+from ase.io.formats import UnknownFileTypeError
 
 
 class IO():
@@ -145,7 +141,8 @@ class IO():
         species_dict = {}
         reactions = self.open_yaml_file(yamlfile)
         for num, rxn in enumerate(reactions):
-            r_name_list, p_name_list, _ = self.prepare_react_list(rxn)
+            r_name_list, p_name_list = IO.get_reactants_and_products(
+                rxn)
             if len(r_name_list) >= len(p_name_list):
                 species_dict['rxn{}'.format(num)] = r_name_list
             else:
@@ -173,273 +170,102 @@ class IO():
         reactions = yaml.safe_load(yamltxt)
         return reactions
 
-    def get_all_species(
-            self,
+    @ staticmethod
+    def get_all_unique_species(
             yamlfile: str) -> List[str]:
-        ''' Generate a list with all unique species for all reactions
-            combined
+        ''' Generate a list with all unique species names
 
-        Parameters:
-        ___________
+        Parameters
+        ----------
         yamlfile : str
             a name of the .yaml file with a reaction list
 
-        Returns:
-        ________
-
-        all_species_unique : list[str]
-            a list with all unique species
+        Returns
+        -------
+        all_species : List[str]
+            a list with all unique species names in all reactions
 
         '''
-        reactions = self.open_yaml_file(yamlfile)
-        all_species = []
+        reactions = IO().open_yaml_file(yamlfile)
+
+        all_sp_tmp = []
         for rxn in reactions:
-            r_name_list, p_name_list, _ = self.prepare_react_list(rxn)
-            all_species.append(r_name_list)
-            all_species.append(p_name_list)
-        all_species_unique = list(
-            set([sp for sublist in all_species for sp in sublist]))
-        return all_species_unique
+            reactants_rxn, products_rxn = IO.get_reactants_and_products(
+                rxn)
+            all_sp_tmp.append(reactants_rxn)
+            all_sp_tmp.append(products_rxn)
 
-    def get_all_species_given_rxn(
-            self,
-            rxn: Dict[str, str]) -> List[str]:
-        ''' Get the reaction name
+        all_species = [
+            species for sublist in all_sp_tmp for species in sublist]
 
-        Paremeters:
-        ___________
+        # remove empty elements, such as ''
+        all_species = [species for species in all_species if species]
 
-        rxn : dict(yaml[str:str])
-            a dictionary with info about the paricular reaction. This can be
-            view as a splitted many reaction .yaml file into a single reaction
-            .yaml file
+        return(list(set(all_species)))
 
-        Returns:
-        _______
-        rxn_name : str
-            a name of the reaction in the following format:
-            'OH_H+O'
-        '''
-        r_name_list, p_name_list, _ = self.prepare_react_list(rxn)
-        all_species_rxn = r_name_list + p_name_list
-        return all_species_rxn
+    @staticmethod
+    def get_reactants_and_products(
+            rxn: Dict[str, str]) -> Tuple[List[str], List[str]]:
+        ''' For a given rxn, get lists with all reactants and products
 
-    def prepare_react_list(
-            self,
-            rxn: Dict[str, str]) -> Tuple[List[str], List[str], List[Gratoms]]:
-        '''Convert yaml file to more useful format
-
-        Paremeters:
-        ___________
-
+        Parameters
+        ----------
         rxn : dict(yaml[str:str])
             a dictionary with info about the paricular reaction. This can be
             view as a splitted many reaction .yaml file to a single reaction
             .yaml file
 
-        Returns:
-        _______
-        r_name_list : list(str)
-            a list with all reactants for the given reaction
-        p_name_list : list(str)
-            a list with all products for the given reaction
-        images : list(Gratoms)
-            a list of CatKit's Gratom object (both reactants and products)
+        Returns
+        -------
+        Tuple[List[str], List[str]]
+            lists with species names for reactants and products
 
         '''
+        raw_rxn_name = rxn['reaction']
+        raw_products, raw_reactants = raw_rxn_name.split('<=>')
 
-        species_ind = []
-        bonds = []
-        unique_species = []
-        unique_bonds = []
-        images = []
+        tmp_reactants = [react[:react.find('*')].strip()
+                         if '*' in react else
+                         react[:react.find('(')].strip()
+                         for react in raw_reactants.split('+')]
 
-        # transforming reactions data to gratom objects
-        reactants, rbonds = self.rmgcat_to_gratoms(
-            rxn['reactant'].split('\n'))
-        products, pbonds = self.rmgcat_to_gratoms(
-            rxn['product'].split('\n'))
-        species_ind += reactants + products
-        bonds += rbonds + pbonds
+        tmp_products = [prod[:prod.find('*')].strip()
+                        if '*' in prod else
+                        prod[:prod.find('(')].strip()
+                        for prod in raw_products.split('+')]
 
-        # check if any products are the same as anßy reactants
-        for species1, bond in zip(species_ind, bonds):
-            for species2 in unique_species:
-                if nx.is_isomorphic(species1.graph, species2.graph, node_test):
-                    break
-            else:
-                # images.append(Molecule().get_3D_positions(species1))
-                images.append(species1)
-                unique_species.append(species1)
-                unique_bonds.append(bond)
+        # remove all 'X' species
+        r_x_removed = list(filter(('X').__ne__, tmp_reactants))
+        p_x_removed = list(filter(('X').__ne__, tmp_products))
 
-        r_name_list = [str(species.symbols) for species in reactants]
-        p_name_list = [str(species.symbols) for species in products]
+        # remove all empty '' elements
+        reactants = [react for react in p_x_removed if react]
+        products = [prod for prod in r_x_removed if prod]
+        return reactants, products
 
-        return r_name_list, p_name_list, images
-
+    @ staticmethod
     def get_rxn_name(
-            self,
             rxn: Dict[str, str]) -> str:
-        ''' Get the reaction name
+        ''' Get a reaction name for a given rxn
 
-        Paremeters:
-        ___________
-
+        Parameters
+        ----------
         rxn : dict(yaml[str:str])
             a dictionary with info about the paricular reaction. This can be
-            view as a splitted many reaction .yaml file into a single reaction
+            view as a splitted many reaction .yaml file to a single reaction
             .yaml file
 
-        Returns:
-        _______
-        rxn_name : str
-            a name of the reaction in the following format:
-            'OH_H+O'
+        Returns
+        -------
+        rxn_name: str
+            a reaction name, e.g. 'CO_C+O'
+
         '''
-        r_name_list, p_name_list, _ = self.prepare_react_list(rxn)
-
-        r_name = '+'.join([species for species in r_name_list])
-        p_name = '+'.join([species for species in p_name_list])
-
-        rxn_name = r_name + '_' + p_name
+        reactants, products = IO.get_reactants_and_products(rxn)
+        rxn_name = '+'.join(reactants) + '_' + '+'.join(products)
         return rxn_name
 
-    def get_list_all_rxns_names(
-            self,
-            yamlfile):
-        ''' Get a list with all reactions names '''
-
-        # open .yaml file
-        reactions = self.open_yaml_file(yamlfile)
-
-        all_rxns = []
-        for rxn in reactions:
-            rxn_name = self.get_rxn_name(rxn)
-            all_rxns.append(rxn_name)
-        return all_rxns
-
-    @staticmethod
-    def rmgcat_to_gratoms(
-            adjtxt: str) -> Tuple[List[Gratoms], List[int]]:
-        ''' Convert a slice of .yaml file to Catkit's Gratoms object
-
-        Parameters:
-        ___________
-
-        adjtxt : list
-            a list with a connectivity info for reactant or product
-            as from the .yaml file.
-            e.g. for given reaction (reactant or product)
-
-            In .yaml file we have something like that:
-
-                    multiplicity -187
-                1 *1 C u0 p0 c0 { 2,S} {4,S}
-                2    O u0 p0 c0 {1,S}
-                3 *2 H u0 p0 c0 {5,S}
-                4 *3 X u0 p0 c0 {1,S}
-                5 *4 X u0 p0 c0 {3,S}
-
-            but we need here a list like that:
-
-            ['multiplicity -187', '1 *1 C u0 p0 c0 {2,S} {4,S}',
-            '2    O u0 p0 c0 {1,S}', '3 *2 H u0 p0 c0 {5,S}',
-            '4 *3 X u0 p0 c0 {1,S}', '5 *4 X u0 p0 c0 {3,S}', '']
-
-            So it can be simply converted using the following:
-
-            yamlfile = 'reactions.yaml'
-            with open(yamlfile, 'r') as f:
-                text = f.read()
-            reactions = yaml.safe_load(text)
-            for rxn in reactions:
-                adjtxt = rxn['reactant'].split('\n')
-
-        Returns:
-        ________
-        gratoms_list : list
-            a Gratom like object
-        bonds : list
-            a list of bonds to the metal
-
-        '''
-        symbols = []
-        edges = []
-        tags = []
-        # bond_index = None
-        for i, line in enumerate(adjtxt):
-            if i == 0:
-                continue
-            if not line:
-                break
-
-            line = line.split()
-            inc = 0
-            if line[1][0] == '*':
-                inc = 1
-                tags.append(int(line[1][1]))
-            else:
-                tags.append(0)
-
-            symbols.append(line[1 + inc])
-            conn = line[5 + inc:]
-
-            for bond in conn:
-                j = int(bond.strip('{}').split(',')[0])
-                if j > i:
-                    edges.append((i - 1, j - 1))
-
-        gratoms = Gratoms(symbols, edges=edges)
-
-        del_indices = []
-
-        for i, atom in enumerate(gratoms):
-            if atom.symbol == 'X':
-                for j in gratoms.graph.neighbors(i):
-                    tags[j] *= -1
-                del_indices.append(i)
-
-        gratoms.set_tags(tags)
-        del gratoms[del_indices]
-
-        gratoms_list = []
-        bonds = []
-        for i, subgraph in enumerate(
-            nx.connected_component_subgraphs(gratoms.graph)
-        ):
-            indices = list(subgraph.nodes)
-            symbols = gratoms[indices].symbols
-            # new_gratoms = gratoms[indices].copy()
-            new_indices = {old: new for new, old in enumerate(indices)}
-            new_edges = []
-            for edge in subgraph.edges:
-                newa = new_indices[edge[0]]
-                newb = new_indices[edge[1]]
-                new_edges.append((newa, newb))
-            new_gratoms = Gratoms(symbols, edges=new_edges)
-
-            bond = None
-            tags = new_gratoms.get_tags()
-            for i, tag in enumerate(tags):
-                if tag < 0:
-                    if bond is None:
-                        bond = [i]
-                    elif len(bond) == 1:
-                        bond.append(i)
-                    else:
-                        raise RuntimeError(
-                            'At most two bonds to the metal are allowed '
-                            'per adsorbate!'
-                        )
-                    tags[i] = abs(tags[i])
-            new_gratoms.set_tags(tags)
-            bonds.append(bond)
-            gratoms_list.append(new_gratoms)
-
-        return gratoms_list, bonds
-
-    @staticmethod
+    @ staticmethod
     def get_xyz_from_traj(
             path_to_species: str) -> None:
         ''' Convert all ASE's traj files to .xyz files for a given species
@@ -502,12 +328,13 @@ class IO():
         # loop through all reactions
         for rxn in reactions:
             # get list of reactant and product
-            r_name_list, p_name_list, _ = self.prepare_react_list(rxn)
+            reactants, products = IO.get_reactants_and_products(
+                rxn)
             # get reaction name
-            rxn_name = self.get_rxn_name(rxn)
+            rxn_name = IO.get_rxn_name(rxn)
             minima_py_list = []
             # loop through all reactants
-            for reactant in r_name_list:
+            for reactant in reactants:
                 # I have no idea why OH and HO is getting reverse
                 # a workaround
                 lookup_phrase = '{}_{}_*relax.py'.format(facetpath, reactant)
@@ -519,7 +346,7 @@ class IO():
                     minima_py_list.append(
                         os.path.split((str(minima_py_file)))[1])
             # loop through all products and do the same as for reactants
-            for product in p_name_list:
+            for product in products:
                 lookup_phrase = '{}_{}_*relax.py'.format(facetpath, product)
                 minima_py_files = Path(path_to_minima).glob(lookup_phrase)
                 for minima_py_file in minima_py_files:
@@ -530,7 +357,7 @@ class IO():
             dependancy_dict[rxn_name] = minima_py_list
         return dependancy_dict
 
-    @staticmethod
+    @ staticmethod
     def clean_finished_subjobs() -> None:
         ''' Move finished subjob files to finised_tmp_scripts directory '''
         dir_name = 'finished_tmp_scripts'
@@ -572,7 +399,7 @@ class IO():
         '''
         unique_adsorbates_prefixes = {}
         path_to_minima = os.path.join(creation_dir, facetpath, 'minima')
-        all_species = self.get_all_species(yamlfile)
+        all_species = self.get_unique_all_species(yamlfile)
         for species in all_species:
             path_to_species = os.path.join(path_to_minima, species)
             uq_prefixes = IO.get_unique_prefixes(
@@ -614,3 +441,56 @@ class IO():
             if result is False:
                 unique_minima_prefixes.append(prefix)
         return unique_minima_prefixes
+
+    @staticmethod
+    def get_unique_final_ts_prefixes(
+            path_to_ts: str) -> List[str]:
+        ''' Compare each conformers for a given adsorbate and returns a list
+            with prefixes of a symmetrty dictinct structures
+
+        Parameters
+        ----------
+        path_to_species : str
+            a path to species
+            e.g. 'Cu_111/minima/CO'
+
+        Returns
+        -------
+        unique_minima_prefixes : List[str]
+            a list with prefixes of symmetry distinct structures for a given
+            adsorbate
+
+        '''
+        unique_ts = []
+        result_dict = {}
+        unique_ts_prefixes = []
+        trajlist = sorted(Path(path_to_ts).glob('**/*traj'), key=str)
+        for traj in trajlist:
+            try:
+                ts = read(traj)
+                comparator = SymmetryEquivalenceCheck(to_primitive=True)
+                result = comparator.compare(ts, unique_ts)
+                result_dict[str(os.path.basename(traj)[:2])] = result
+                if result is False:
+                    unique_ts.append(ts)
+            # error handling while calculations are still running/unfinished
+            except UnknownFileTypeError:
+                pass
+        for prefix, result in result_dict.items():
+            if result is False:
+                unique_ts_prefixes.append(prefix)
+        return unique_ts_prefixes
+
+    def get_list_all_rxns_names(
+            self,
+            yamlfile):
+        ''' Get a list with all reactions names '''
+
+        # open .yaml file
+        reactions = self.open_yaml_file(yamlfile)
+
+        all_rxns = []
+        for rxn in reactions:
+            rxn_name = self.get_rxn_name(rxn)
+            all_rxns.append(rxn_name)
+        return all_rxns
