@@ -1,4 +1,5 @@
 from operator import le
+from networkx.readwrite.graph6 import n_to_data
 from pynta.excatkit.molecule import Molecule
 from pynta.excatkit.gratoms import Gratoms
 from typing import Dict, List, Tuple
@@ -137,22 +138,38 @@ class Diatomic(GeneralTSGuessesGenerator):
         ts_guess_el = ts_guess_list[0]
         s_bonded_idx, reacting_idxs = self.get_bondend_and_reacting_idxs()
 
-        react_ind_1, react_ind_2 = reacting_idxs
-        bondlen = ts_guess_el.get_distance(react_ind_1, react_ind_2)
+        react_atom_idx_1, react_atom_idx_2 = reacting_idxs
+        bondlen = ts_guess_el.get_distance(react_atom_idx_1, react_atom_idx_2)
 
         n_total_ads_atoms = len(ts_guess_el)
+
         if n_total_ads_atoms == 2:
             ts_guess_el.rotate(90, 'y')
             ts_guess_el.set_distance(
-                react_ind_1, react_ind_2, bondlen * self.scfactor, fix=0)
+                react_atom_idx_1,
+                react_atom_idx_2,
+                bondlen * self.scfactor,
+                fix=0)
+
         elif n_total_ads_atoms == 3:
+            remaining_atom_idx = n_total_ads_atoms - \
+                (react_atom_idx_1 + react_atom_idx_2)
             ts_guess_el.rotate(90, 'z')
             ts_guess_el.set_distance(
-                react_ind_1, react_ind_2, bondlen * self.scfactor, fix=0)
-            # hardcoded values based on empirical tests
+                react_atom_idx_1,
+                react_atom_idx_2,
+                bondlen * self.scfactor,
+                fix=0)
             # 2 1 0
             ts_guess_el.set_angle(
-                2, 1, 0, -30, indices=[2, 1, 0], add=True)
+                remaining_atom_idx,
+                react_atom_idx_1,
+                react_atom_idx_2,
+                30,
+                indices=[remaining_atom_idx,
+                         react_atom_idx_1, react_atom_idx_2],
+                add=True)
+
         else:
             raise NotImplementedError('Currently, only reactions with max 3 '
                                       'total adsorbed atoms are supported')
