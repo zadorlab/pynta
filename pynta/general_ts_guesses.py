@@ -134,6 +134,8 @@ class GeneralTSGuessesGenerator():
             if 'X' in line:
                 surface_atoms_before_adsorbate += 1
             else:
+                if surface_atoms_before_adsorbate != 0:
+                    surface_atoms_before_adsorbate -= 1
                 break
 
         for num, line in enumerate(self.reacting_species_connectivity):
