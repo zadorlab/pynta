@@ -67,38 +67,6 @@ class GeneralTSGuessesGenerator():
         ts_guess_list = Molecule().molecule(self.ts_est)
         return ts_guess_list
 
-    # def get_bondend_and_reacting_idxs(self) -> int:
-    #     ''' Get an index of surface bonded atom
-
-    #     Parameters
-    #     ----------
-    #     ts_guess_el : Gratoms
-    #         a Gratom object of ts_guess with the chosen topology, if more than
-    #         one topologies are possible
-    #     rxn : Dict[str, str]
-    #         a dictionary with info about the paricular reaction. This can be
-    #         view as a splitted many reaction .yaml file to a single reaction
-    #         .yaml file
-    #     reacting_sp : str
-    #         a key to rxn dictionary
-    #         'reactant' or 'product' are the only avaiable options options
-
-    #     Returns
-    #     -------
-    #     s_bonded_idx : int
-    #         an int with index of atom bonded to the surface
-
-    #     Raises
-    #     ------
-    #     NotImplementedError
-    #         when there are more than one atoms connected to the surface
-
-    #     '''
-    #     s_bonded_idxs = self.get_s_bonded_idx()
-    #     reacting_atoms_idx = self.get_reacting_atoms_idx()
-
-    #     return s_bonded_idxs, reacting_atoms_idx
-
     def get_s_bonded_idx(self) -> int:
         surface_indicies = []
         s_bonded_idxs = []
@@ -123,19 +91,16 @@ class GeneralTSGuessesGenerator():
         # gas phase reaction
         else:
             s_bonded_idx = self.get_the_most_connected_atom()
-        print(s_bonded_idx)
         return s_bonded_idx
 
     def get_the_most_connected_atom(self):
         number_of_connections = {}
-        surface_atoms_before_adsorbate = 0
+        n_surf_at_befor_ads = 0
 
         for line in (self.reacting_species_connectivity):
             if 'X' in line:
-                surface_atoms_before_adsorbate += 1
+                n_surf_at_befor_ads += 1
             else:
-                if surface_atoms_before_adsorbate != 0:
-                    surface_atoms_before_adsorbate -= 1
                 break
 
         for num, line in enumerate(self.reacting_species_connectivity):
@@ -144,22 +109,8 @@ class GeneralTSGuessesGenerator():
 
         for tmp_idx, n_connect in number_of_connections.items():
             if n_connect == max(number_of_connections.values()):
-                max_connections_idx = tmp_idx - surface_atoms_before_adsorbate
+                max_connections_idx = (tmp_idx - n_surf_at_befor_ads - 1)
                 return max_connections_idx
-
-    # def get_reacting_atoms_idx(self):
-    #     reacting_idxs = []
-    #     surface_atoms_before_adsorbate = 0
-
-    #     for line in (self.reacting_species_connectivity):
-    #         if 'X' in line:
-    #             surface_atoms_before_adsorbate += 1
-    #         else:
-    #             break
-    #     for num, line in enumerate(self.reacting_species_connectivity):
-    #         if '*' in line and 'X' not in line:
-    #             reacting_idxs.append(num - surface_atoms_before_adsorbate)
-    #     return reacting_idxs
 
 
 class Diatomic(GeneralTSGuessesGenerator):
@@ -205,10 +156,8 @@ class Diatomic(GeneralTSGuessesGenerator):
                 add=True)
 
         else:
-            # do nothing if there is more than 3 adsorbate atoms in total
+            # continue with defaults
             pass
-            # raise NotImplementedError('Currently, only reactions with max 3 '
-            #                           'total adsorbed atoms are supported')
 
         # scale the bond distance between reacting part
         ts_guess_el.set_distance(react_atom_idx_1, react_atom_idx_2,
@@ -220,8 +169,3 @@ class Diatomic(GeneralTSGuessesGenerator):
 class Triatomic(GeneralTSGuessesGenerator):
     def get_ts_guess_and_bonded_idx(self):
         raise NotImplementedError('Only diatomic reactions at this moment')
-    # ts_guess_list = Triatomic.build_ts_guess(ts_est)
-    #    if conf == 'sp':
-    #         ts_guess_el = ts_guess_list[1]
-    #     else:
-    #         ts_guess_el = ts_guess_list[0]

@@ -519,19 +519,18 @@ class IO():
     @staticmethod
     def get_reacting_atoms_idx_dict(reacting_species_connectivity):
         reacting_idxs = {}
-        surface_atoms_before_adsorbate = 0
+        n_surf_at_befor_ads = 0
 
         for line in (reacting_species_connectivity):
             if 'X' in line:
-                surface_atoms_before_adsorbate += 1
+                n_surf_at_befor_ads += 1
             else:
-                if surface_atoms_before_adsorbate != 0:
-                    surface_atoms_before_adsorbate -= 1
+                if n_surf_at_befor_ads != 0:
+                    n_surf_at_befor_ads -= 1
                 break
 
         for num, line in enumerate(reacting_species_connectivity):
             if '*' in line and 'X' not in line:
                 atom_symbol = line.split()[2]
-                reacting_idxs[atom_symbol] = (
-                    num - surface_atoms_before_adsorbate - 1)
+                reacting_idxs[atom_symbol] = (num - n_surf_at_befor_ads - 1)
         return reacting_idxs
