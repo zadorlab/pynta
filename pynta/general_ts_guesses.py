@@ -22,7 +22,6 @@ class GeneralTSGuessesGenerator():
 
     def decide(self):
         ts_guess_el, s_bonded_idx = None, None
-
         how_many_atoms_react = len(self.get_reacting_atoms_idx())
 
         if how_many_atoms_react == 2:
@@ -112,16 +111,51 @@ class GeneralTSGuessesGenerator():
             for line in self.reacting_species_connectivity:
                 if keyphrase in line:
                     s_bonded_idxs.append(line.split()[0])
-        if len(s_bonded_idxs) > 1:
-            raise NotImplementedError('Only monodendate type of adsorbtion is '
-                                      'currently supported.')
-        return int(s_bonded_idxs[0]) - 1
+
+        # surface reaction, at least one atom connected to the surface
+        if s_bonded_idxs:
+            if len(s_bonded_idxs) > 1:
+                raise NotImplementedError('Only monodendate type of adsorbtion is '
+                                          'currently supported.')
+            else:
+                s_bonded_idx = int(s_bonded_idxs[0]) - 1
+
+        # gas phase reaction
+        else:
+            s_bonded_idx = self.get_the_most_connected_atom()
+        return s_bonded_idx
+
+    def get_the_most_connected_atom(self):
+        number_of_connections = {}
+        surface_atoms_before_adsorbate = 0
+
+        for line in (self.reacting_species_connectivity):
+            if 'X' in line:
+                surface_atoms_before_adsorbate += 1
+            else:
+                break
+
+        for num, line in enumerate(self.reacting_species_connectivity):
+            if 'X' not in line:
+                number_of_connections[num + 1] = line.count('{')
+
+        for tmp_idx, n_connect in number_of_connections.items():
+            if n_connect == max(number_of_connections.values()):
+                max_connections_idx = tmp_idx - surface_atoms_before_adsorbate
+                return max_connections_idx
 
     def get_reacting_atoms_idx(self):
         reacting_idxs = []
+        surface_atoms_before_adsorbate = 0
+
+        for line in (self.reacting_species_connectivity):
+            if 'X' in line:
+                surface_atoms_before_adsorbate += 1
+            else:
+                break
         for num, line in enumerate(self.reacting_species_connectivity):
             if '*' in line and 'X' not in line:
-                reacting_idxs.append(num - 1)
+                reacting_idxs.append(num - surface_atoms_before_adsorbate)
         return reacting_idxs
 
 
@@ -129,6 +163,7 @@ class Diatomic(GeneralTSGuessesGenerator):
     def get_ts_guess_and_bonded_idx(self):
         # Convert adsorbate (string) to a list of Gratoms object.
         ts_guess_list = self.build_ts_guess()
+        print(ts_guess_list)
 
         # For two atoms in adsorbat, there is only one possible topology
         ts_guess_el = ts_guess_list[0]
@@ -166,8 +201,10 @@ class Diatomic(GeneralTSGuessesGenerator):
                 add=True)
 
         else:
-            raise NotImplementedError('Currently, only reactions with max 3 '
-                                      'total adsorbed atoms are supported')
+            # do nothing if there is more than 3 adsorbate atoms in total
+            pass
+            # raise NotImplementedError('Currently, only reactions with max 3 '
+            #                           'total adsorbed atoms are supported')
 
         # scale the bond distance between reacting part
         ts_guess_el.set_distance(react_atom_idx_1, react_atom_idx_2,
