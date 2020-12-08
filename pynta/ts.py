@@ -222,7 +222,6 @@ class TS():
             ts_guess_generator = GeneralTSGuessesGenerator(
                 ts_est, rxn, rxn_name, easier_to_build, scfactor)
             ts_guess, bonded_idx = ts_guess_generator.decide()
-            # ts_guess, bonded_idx = ts_guess_generator.decide()
 
             # convert slab (Atom) to grslab(Gratom)
             ads_builder = self.prepare_slab_for_ts_guess(slab_atom)
@@ -373,10 +372,10 @@ class TS():
             ts_estimate_path: str,
             pytemplate: str,
             species_list: List[str],
-            easier_to_build: List[str],
+            reacting_species: List[str],
             metal_atom: str,
             scaled1: bool,
-            scfactor_surface) -> None:
+            scfactor_surface,) -> None:
         ''' Prepare calculations of the penalty function
 
         Parameters:
@@ -432,7 +431,7 @@ class TS():
         # calculations many times, e.g. ['C', 'H', 'O', 'O'], so the av_dist
         # for the 'O' have to be specified twice (order not important)
         av_dists_tuple = TS.get_av_dists_tuple(
-            easier_to_build, sp_surf_av_dists)
+            reacting_species, sp_surf_av_dists)
 
         # get all .xyz files with TS estimates
         ts_estimates_xyz_files = []
@@ -466,7 +465,7 @@ class TS():
             visited_species = []
 
             # Loop through all relevant_species
-            for species in easier_to_build:
+            for species in reacting_species:
                 sp_index = TS.get_sp_index(
                     species, visited_species, adsorbate_atoms_idxs)
 
@@ -495,12 +494,14 @@ class TS():
                                           geom_name=f_name_xyz,
                                           slabopt=self.slab))
             # move .xyz file
-                shutil.move(xyz_file, calc_dir)
+            shutil.move(xyz_file, calc_dir)
 
     @staticmethod
-    def get_sp_index(
+    def get_sp_index_all(
             species: str,
             visited_species: List[str],
+            rxn,
+            easier_to_build,
             adsorbate_atoms_idxs: Dict[str, int]) -> int:
         '''Count how many times the given species have been already considered
 
@@ -530,22 +531,30 @@ class TS():
             if key not found in adsorbate_atoms_idx
 
         '''
-        sp_index = TS.get_index_adatom(species, adsorbate_atoms_idxs)
-        if species in visited_species:
-            _count = visited_species.count(species)
-            visited_species.append(species)
-            sp_index = sp_index + _count
-        else:
-            visited_species.append(species)
-        if not TS.is_valid_sp_index(species, sp_index,
-                                    adsorbate_atoms_idxs):
-            print('Index {} is not a valid index for a species {}. \n'
-                  'Check your reacting_atoms definition \n'
-                  ''.format(sp_index, species))
-            print('The folowing indicies are possible: \n     {}'.format(
-                adsorbate_atoms_idxs))
-            raise KeyError
-        return sp_index
+        print(adsorbate_atoms_idxs)
+        reacting_species_connectivity = rxn[easier_to_build].split(
+            '\n')
+        reacting_sp_idxs = []
+        for num, line in enumerate(reacting_species_connectivity):
+            if '*' in line and 'X' not in line:
+                reacting_sp_idxs.append(num - 1)
+        return reacting_sp_idxs
+        # sp_index = TS.get_index_adatom(species, adsorbate_atoms_idxs)
+        # if species in visited_species:
+        #     _count = visited_species.count(species)
+        #     visited_species.append(species)
+        #     sp_index = sp_index + _count
+        # else:
+        #     visited_species.append(species)
+        # if not TS.is_valid_sp_index(species, sp_index,
+        #                             adsorbate_atoms_idxs):
+        #     print('Index {} is not a valid index for a species {}. \n'
+        #           'Check your reacting_atoms definition \n'
+        #           ''.format(sp_index, species))
+        #     print('The folowing indicies are possible: \n     {}'.format(
+        #         adsorbate_atoms_idxs))
+        #     raise KeyError
+        # return sp_index
 
     # @staticmethod
     # def is_double_atom_ts_guess(adsorbate_atoms_idxs):

@@ -494,3 +494,33 @@ class IO():
             rxn_name = self.get_rxn_name(rxn)
             all_rxns.append(rxn_name)
         return all_rxns
+
+    @staticmethod
+    def get_all_reacting_atoms(yamlfile):
+        all_reacting_atoms = {}
+        reactions = IO.open_yaml_file(yamlfile)
+        for num, rxn in enumerate(reactions):
+            r_name_list, p_name_list = IO.get_reactants_and_products(rxn)
+            if len(r_name_list) <= len(p_name_list):
+                easier_to_build = 'reactant'
+                ts_estimators = r_name_list
+            else:
+                easier_to_build = 'product'
+                ts_estimators = p_name_list
+
+            reacting_species_connectivity = rxn[easier_to_build].split(
+                '\n')
+
+            reacting_atoms_and_idxs = IO.get_reacting_atoms_idx_dict(
+                reacting_species_connectivity)
+            all_reacting_atoms['rxn_{}'.format(num)] = reacting_atoms_and_idxs
+        return all_reacting_atoms
+
+    @staticmethod
+    def get_reacting_atoms_idx_dict(reacting_species_connectivity):
+        reacting_idxs = {}
+        for num, line in enumerate(reacting_species_connectivity):
+            if '*' in line and 'X' not in line:
+                atom_symbol = line.split()[2]
+                reacting_idxs[atom_symbol] = (num - 1)
+        return reacting_idxs
