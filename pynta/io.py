@@ -525,11 +525,13 @@ class IO():
             if 'X' in line:
                 surface_atoms_before_adsorbate += 1
             else:
+                if surface_atoms_before_adsorbate != 0:
+                    surface_atoms_before_adsorbate -= 1
                 break
 
         for num, line in enumerate(reacting_species_connectivity):
             if '*' in line and 'X' not in line:
                 atom_symbol = line.split()[2]
                 reacting_idxs[atom_symbol] = (
-                    num - surface_atoms_before_adsorbate)
+                    num - surface_atoms_before_adsorbate - 1)
         return reacting_idxs

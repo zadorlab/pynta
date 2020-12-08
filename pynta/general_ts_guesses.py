@@ -1,5 +1,3 @@
-from operator import le
-from networkx.readwrite.graph6 import n_to_data
 from pynta.excatkit.molecule import Molecule
 from pynta.excatkit.gratoms import Gratoms
 from typing import Dict, List, Tuple
@@ -20,9 +18,11 @@ class GeneralTSGuessesGenerator():
         self.reacting_species_connectivity = self.rxn[self.easier_to_build].split(
             '\n')
 
-    def decide(self):
+    def decide(
+            self,
+            reacting_idxs):
         ts_guess_el, s_bonded_idx = None, None
-        how_many_atoms_react = len(self.get_reacting_atoms_idx())
+        how_many_atoms_react = len(reacting_idxs)
 
         if how_many_atoms_react == 2:
             ts_guess_el, s_bonded_idx = Diatomic(
@@ -30,7 +30,7 @@ class GeneralTSGuessesGenerator():
                 self.rxn,
                 self.rxn_name,
                 self.easier_to_build,
-                self.scfactor).get_ts_guess_and_bonded_idx()
+                self.scfactor).get_ts_guess_and_bonded_idx(reacting_idxs)
 
         elif how_many_atoms_react == 3:
             ts_guess_el, s_bonded_idx = Triatomic(
@@ -38,7 +38,7 @@ class GeneralTSGuessesGenerator():
                 self.rxn,
                 self.rxn_name,
                 self.easier_to_build,
-                self.scfactor).get_ts_guess_and_bonded_idx()
+                self.scfactor).get_ts_guess_and_bonded_idx(reacting_idxs)
         return ts_guess_el, s_bonded_idx
 
     def build_ts_guess(self) -> Gratoms:
@@ -67,37 +67,37 @@ class GeneralTSGuessesGenerator():
         ts_guess_list = Molecule().molecule(self.ts_est)
         return ts_guess_list
 
-    def get_bondend_and_reacting_idxs(self) -> int:
-        ''' Get an index of surface bonded atom
+    # def get_bondend_and_reacting_idxs(self) -> int:
+    #     ''' Get an index of surface bonded atom
 
-        Parameters
-        ----------
-        ts_guess_el : Gratoms
-            a Gratom object of ts_guess with the chosen topology, if more than
-            one topologies are possible
-        rxn : Dict[str, str]
-            a dictionary with info about the paricular reaction. This can be
-            view as a splitted many reaction .yaml file to a single reaction
-            .yaml file
-        reacting_sp : str
-            a key to rxn dictionary
-            'reactant' or 'product' are the only avaiable options options
+    #     Parameters
+    #     ----------
+    #     ts_guess_el : Gratoms
+    #         a Gratom object of ts_guess with the chosen topology, if more than
+    #         one topologies are possible
+    #     rxn : Dict[str, str]
+    #         a dictionary with info about the paricular reaction. This can be
+    #         view as a splitted many reaction .yaml file to a single reaction
+    #         .yaml file
+    #     reacting_sp : str
+    #         a key to rxn dictionary
+    #         'reactant' or 'product' are the only avaiable options options
 
-        Returns
-        -------
-        s_bonded_idx : int
-            an int with index of atom bonded to the surface
+    #     Returns
+    #     -------
+    #     s_bonded_idx : int
+    #         an int with index of atom bonded to the surface
 
-        Raises
-        ------
-        NotImplementedError
-            when there are more than one atoms connected to the surface
+    #     Raises
+    #     ------
+    #     NotImplementedError
+    #         when there are more than one atoms connected to the surface
 
-        '''
-        s_bonded_idxs = self.get_s_bonded_idx()
-        reacting_atoms_idx = self.get_reacting_atoms_idx()
+    #     '''
+    #     s_bonded_idxs = self.get_s_bonded_idx()
+    #     reacting_atoms_idx = self.get_reacting_atoms_idx()
 
-        return s_bonded_idxs, reacting_atoms_idx
+    #     return s_bonded_idxs, reacting_atoms_idx
 
     def get_s_bonded_idx(self) -> int:
         surface_indicies = []
@@ -123,6 +123,7 @@ class GeneralTSGuessesGenerator():
         # gas phase reaction
         else:
             s_bonded_idx = self.get_the_most_connected_atom()
+        print(s_bonded_idx)
         return s_bonded_idx
 
     def get_the_most_connected_atom(self):
@@ -137,37 +138,38 @@ class GeneralTSGuessesGenerator():
 
         for num, line in enumerate(self.reacting_species_connectivity):
             if 'X' not in line:
-                number_of_connections[num + 1] = line.count('{')
+                number_of_connections[num] = line.count('{')
 
         for tmp_idx, n_connect in number_of_connections.items():
             if n_connect == max(number_of_connections.values()):
                 max_connections_idx = tmp_idx - surface_atoms_before_adsorbate
                 return max_connections_idx
 
-    def get_reacting_atoms_idx(self):
-        reacting_idxs = []
-        surface_atoms_before_adsorbate = 0
+    # def get_reacting_atoms_idx(self):
+    #     reacting_idxs = []
+    #     surface_atoms_before_adsorbate = 0
 
-        for line in (self.reacting_species_connectivity):
-            if 'X' in line:
-                surface_atoms_before_adsorbate += 1
-            else:
-                break
-        for num, line in enumerate(self.reacting_species_connectivity):
-            if '*' in line and 'X' not in line:
-                reacting_idxs.append(num - surface_atoms_before_adsorbate)
-        return reacting_idxs
+    #     for line in (self.reacting_species_connectivity):
+    #         if 'X' in line:
+    #             surface_atoms_before_adsorbate += 1
+    #         else:
+    #             break
+    #     for num, line in enumerate(self.reacting_species_connectivity):
+    #         if '*' in line and 'X' not in line:
+    #             reacting_idxs.append(num - surface_atoms_before_adsorbate)
+    #     return reacting_idxs
 
 
 class Diatomic(GeneralTSGuessesGenerator):
-    def get_ts_guess_and_bonded_idx(self):
+    def get_ts_guess_and_bonded_idx(
+            self,
+            reacting_idxs):
         # Convert adsorbate (string) to a list of Gratoms object.
         ts_guess_list = self.build_ts_guess()
-        print(ts_guess_list)
 
         # For two atoms in adsorbat, there is only one possible topology
         ts_guess_el = ts_guess_list[0]
-        s_bonded_idx, reacting_idxs = self.get_bondend_and_reacting_idxs()
+        s_bonded_idx = self.get_s_bonded_idx()
 
         react_atom_idx_1, react_atom_idx_2 = reacting_idxs
         bondlen = ts_guess_el.get_distance(react_atom_idx_1, react_atom_idx_2)

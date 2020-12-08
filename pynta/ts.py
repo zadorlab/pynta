@@ -178,7 +178,7 @@ class TS():
             rxn_name: str,
             r_name_list: List[str],
             p_name_list: List[str],
-            easier_to_build: List[str]) -> None:
+            reacting_atoms: Dict[str, int]) -> None:
         ''' Place adsorbates on the surface to estimate TS
 
         Parameters:
@@ -223,7 +223,8 @@ class TS():
         for ts_est in ts_estimators:
             ts_guess_generator = GeneralTSGuessesGenerator(
                 ts_est, rxn, rxn_name, easier_to_build, scfactor)
-            ts_guess, bonded_idx = ts_guess_generator.decide()
+            ts_guess, bonded_idx = ts_guess_generator.decide(
+                reacting_atoms.values())
 
             # convert slab (Atom) to grslab(Gratom)
             ads_builder = self.prepare_slab_for_ts_guess(slab_atom)
