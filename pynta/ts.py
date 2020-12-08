@@ -60,6 +60,8 @@ class TS():
         self.creation_dir = creation_dir
         self.n_kpts = IO().get_kpoints(self.repeats)
         self.path_to_slab = os.path.join(self.creation_dir, self.slab)
+        big_slab = read(self.path_to_slab) * self.repeats
+        self.nslab = len(big_slab)
 
     def prepare_ts_estimate(
             self,
@@ -68,7 +70,7 @@ class TS():
             scfactor_surface: float,
             pytemplate_xtb: str,
             species_list: List[str],
-            easier_to_build: List[str],
+            reacting_atoms: List[str],
             metal_atom: str,
             scaled1: bool,
             scaled2: bool) -> None:
@@ -126,7 +128,7 @@ class TS():
             rxn_name,
             r_name_list,
             p_name_list,
-            easier_to_build)
+            reacting_atoms)
 
         # self.filtered_out_equiv_ts_estimate(
         #     ts_estimate_path,
@@ -136,7 +138,7 @@ class TS():
             ts_estimate_path,
             pytemplate_xtb,
             species_list,
-            easier_to_build,
+            reacting_atoms,
             metal_atom,
             scaled1,
             scfactor_surface)
@@ -372,7 +374,7 @@ class TS():
             ts_estimate_path: str,
             pytemplate: str,
             species_list: List[str],
-            reacting_species: List[str],
+            reacting_atoms: List[str],
             metal_atom: str,
             scaled1: bool,
             scfactor_surface,) -> None:
@@ -431,7 +433,7 @@ class TS():
         # calculations many times, e.g. ['C', 'H', 'O', 'O'], so the av_dist
         # for the 'O' have to be specified twice (order not important)
         av_dists_tuple = TS.get_av_dists_tuple(
-            reacting_species, sp_surf_av_dists)
+            reacting_atoms.values(), sp_surf_av_dists)
 
         # get all .xyz files with TS estimates
         ts_estimates_xyz_files = []
@@ -452,27 +454,21 @@ class TS():
             atom.symbol + '_' + str(atom.index): atom.index
             for atom in tmp_ts_atom if atom.symbol == metal_atom}
 
-        # create adsorbate_atoms_idx dict with all adsorbate atoms and theirs
-        # corresponding indicies
-        adsorbate_atoms_idxs = {
-            atom.symbol + '_' + str(atom.index): atom.index
-            for atom in tmp_ts_atom if atom.symbol != metal_atom}
-
         # Main loop #
         # Loop through all .xyz files
         for prefix, xyz_file in enumerate(ts_estimates_xyz_files):
             bonds = []
-            visited_species = []
 
             # Loop through all relevant_species
-            for species in reacting_species:
-                sp_index = TS.get_sp_index(
-                    species, visited_species, adsorbate_atoms_idxs)
+            for idx in reacting_atoms.values():
+                # sp_index = TS.get_sp_index(
+                #     species, visited_species, adsorbate_atoms_idxs)
+                adsorbed_atom_idx = idx + self.nslab
 
-                metal_index = TS.get_index_surface_atom(
-                    sp_index, surface_atoms_idxs, xyz_file)
+                metal_idx = TS.get_index_surface_atom(
+                    adsorbed_atom_idx, surface_atoms_idxs, xyz_file)
 
-                bonds.append((sp_index, metal_index))
+                bonds.append((adsorbed_atom_idx, metal_idx))
 
             # set up some variables
             prefix = str(prefix).zfill(3)

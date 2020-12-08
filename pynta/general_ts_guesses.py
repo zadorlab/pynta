@@ -154,7 +154,10 @@ class Diatomic(GeneralTSGuessesGenerator):
         elif n_total_ads_atoms == 3:
             remaining_atom_idx = n_total_ads_atoms - \
                 (react_atom_idx_1 + react_atom_idx_2)
-            ts_guess_el.rotate(-90, 'z')
+            if react_atom_idx_2 != 2:
+                ts_guess_el.rotate(-90, 'z')
+            else:
+                ts_guess_el.rotate(90, 'z')
             ts_guess_el.set_distance(
                 react_atom_idx_1,
                 react_atom_idx_2,
