@@ -126,15 +126,11 @@ class GeneralTSGuessesGenerator():
 
 
 class Diatomic(GeneralTSGuessesGenerator):
-    # def __init__(self, ts_est, rxn, rxn_name, easier_to_build, scfactor):
-    #     GeneralTSGuessesGenerator.__init__(
-    #         self, ts_est, rxn, rxn_name, easier_to_build, scfactor)
-
     def get_ts_guess_and_bonded_idx(self):
         # Convert adsorbate (string) to a list of Gratoms object.
         ts_guess_list = self.build_ts_guess()
 
-        # For diatimics, there is only one possible topology, so
+        # For two atoms in adsorbat, there is only one possible topology
         ts_guess_el = ts_guess_list[0]
         s_bonded_idx, reacting_idxs = self.get_bondend_and_reacting_idxs()
 
@@ -143,39 +139,39 @@ class Diatomic(GeneralTSGuessesGenerator):
 
         n_total_ads_atoms = len(ts_guess_el)
 
+        # edge cases
         if n_total_ads_atoms == 2:
             ts_guess_el.rotate(90, 'y')
-            ts_guess_el.set_distance(
-                react_atom_idx_1,
-                react_atom_idx_2,
-                bondlen * self.scfactor,
-                fix=0)
 
         elif n_total_ads_atoms == 3:
             remaining_atom_idx = n_total_ads_atoms - \
                 (react_atom_idx_1 + react_atom_idx_2)
+
             if react_atom_idx_2 != 2:
+                # Symetrically not important, but structure looks
+                # better visually
                 ts_guess_el.rotate(-90, 'z')
             else:
                 ts_guess_el.rotate(90, 'z')
-            ts_guess_el.set_distance(
-                react_atom_idx_1,
-                react_atom_idx_2,
-                bondlen * self.scfactor,
-                fix=0)
-            # 2 1 0
+
+            # set angle that puts react_atom_idx_2 closer to the surface
             ts_guess_el.set_angle(
                 remaining_atom_idx,
                 react_atom_idx_1,
                 react_atom_idx_2,
                 30,
                 indices=[remaining_atom_idx,
-                         react_atom_idx_1, react_atom_idx_2],
+                         react_atom_idx_1,
+                         react_atom_idx_2],
                 add=True)
 
         else:
             raise NotImplementedError('Currently, only reactions with max 3 '
                                       'total adsorbed atoms are supported')
+
+        # scale the bond distance between reacting part
+        ts_guess_el.set_distance(react_atom_idx_1, react_atom_idx_2,
+                                 bondlen * self.scfactor, fix=0)
 
         return ts_guess_el, s_bonded_idx
 
