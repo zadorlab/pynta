@@ -483,9 +483,20 @@ class IO():
 
     def get_list_all_rxns_names(
             self,
-            yamlfile):
-        ''' Get a list with all reactions names '''
+            yamlfile: str) -> List[str]:
+        ''' Get a list with all reactions names
 
+        Parameters
+        ----------
+        yamlfile : str
+            a name of the .yaml file with a reaction list
+
+        Returns
+        -------
+        all_rxns : List[str]
+            a list with all reactions names
+
+        '''
         # open .yaml file
         reactions = self.open_yaml_file(yamlfile)
 
@@ -496,9 +507,30 @@ class IO():
         return all_rxns
 
     @staticmethod
-    def get_all_reacting_atoms(yamlfile):
+    def get_all_reacting_atoms(yamlfile: str) -> Dict[str, Dict[str, float]]:
+        ''' Read a .yaml file with all reactions and extract reacting atoms
+            symbols and indicies - the one with asterisk in the .yaml file
+
+        Parameters
+        ----------
+        yamlfile : str
+            a name of the .yaml file with a reaction list
+
+        Returns
+        -------
+        Dict[str, Dict[str, float]]
+            a dictionary with keys are 'rxn_1, rxn_2...'' and values are
+            another dicts, where keys are atomic symbols, values are indicies,
+            as they appear in the
+            .yaml file,
+            e.g.
+            OH for H + O -> OH
+            {'O': 0, 'H': 1}
+
+        '''
         all_reacting_atoms = {}
         reactions = IO.open_yaml_file(yamlfile)
+
         for num, rxn in enumerate(reactions):
             r_name_list, p_name_list = IO.get_reactants_and_products(rxn)
             if len(r_name_list) <= len(p_name_list):
@@ -517,7 +549,32 @@ class IO():
         return all_reacting_atoms
 
     @staticmethod
-    def get_reacting_atoms_idx_dict(reacting_species_connectivity):
+    def get_reacting_atoms_idx_dict(
+            reacting_species_connectivity: List[str]) -> Dict[str, int]:
+        ''' Get a dict with atomic symbols and indicies of reacting atoms -
+            the one with asterisk in the .yaml file
+
+        Parameters
+        ----------
+        reacting_species_connectivity : List[str]
+            conectivity info for the species that is easier to use as a
+            TS guess skeleton
+            e.g.
+            OH for H + O -> OH
+            ['multiplicity -187', '1 *1 O u0 p0 c0 {2,S} {4,S}',
+            '2 *2 H u0 p0 c0 {1,S}', '3 *3 X u0 p0 c0',
+            '4    X u0 p0 c0 {1,S}', '']
+
+        Returns
+        -------
+        reacting_idxs = Dict[str, int]
+            keys are atomic symbols, values are indicies, as they appear in the
+            .yaml file,
+            e.g.
+            OH for H + O -> OH
+            {'O': 0, 'H': 1}
+
+        '''
         reacting_idxs = {}
         n_surf_at_befor_ads = 0
 

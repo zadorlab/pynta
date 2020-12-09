@@ -493,68 +493,48 @@ class TS():
             # move .xyz file
             shutil.move(xyz_file, calc_dir)
 
-    @staticmethod
-    def get_sp_index_all(
-            species: str,
-            visited_species: List[str],
-            rxn,
-            easier_to_build,
-            adsorbate_atoms_idxs: Dict[str, int]) -> int:
-        '''Count how many times the given species have been already considered
-
-            e.g. If easier_to_build = ['O', 'O'] the logic below
-            will return the correct index for the second 'O', calculated as
-            index of the first 'O' + how many times 'O's already analyzed
-
-        Parameters
-        ----------
-        species : str
-            a species symbol
-            e.g. 'H', 'C' or 'O', etc.
-        visited_species : list(str)
-            a list holding all species that have been already visited
-        adsorbate_atoms_idxs : dict(str:int)
-            a dictionary with all adsorbate atoms and theirs corresponding
-            indicies
-
-        Returns
-        -------
-        sp_index : int
-            an index for a given species
-
-        Raises
-        ------
-        KeyError
-            if key not found in adsorbate_atoms_idx
-
-        '''
-        print(adsorbate_atoms_idxs)
-        reacting_species_connectivity = rxn[easier_to_build].split(
-            '\n')
-        reacting_sp_idxs = []
-        for num, line in enumerate(reacting_species_connectivity):
-            if '*' in line and 'X' not in line:
-                reacting_sp_idxs.append(num - 1)
-        return reacting_sp_idxs
-        # sp_index = TS.get_index_adatom(species, adsorbate_atoms_idxs)
-        # if species in visited_species:
-        #     _count = visited_species.count(species)
-        #     visited_species.append(species)
-        #     sp_index = sp_index + _count
-        # else:
-        #     visited_species.append(species)
-        # if not TS.is_valid_sp_index(species, sp_index,
-        #                             adsorbate_atoms_idxs):
-        #     print('Index {} is not a valid index for a species {}. \n'
-        #           'Check your reacting_atoms definition \n'
-        #           ''.format(sp_index, species))
-        #     print('The folowing indicies are possible: \n     {}'.format(
-        #         adsorbate_atoms_idxs))
-        #     raise KeyError
-        # return sp_index
-
     # @staticmethod
-    # def is_double_atom_ts_guess(adsorbate_atoms_idxs):
+    # def get_sp_index_all(
+    #         species: str,
+    #         visited_species: List[str],
+    #         rxn,
+    #         easier_to_build,
+    #         adsorbate_atoms_idxs: Dict[str, int]) -> int:
+    #     '''Count how many times the given species have been already considered
+
+    #         e.g. If easier_to_build = ['O', 'O'] the logic below
+    #         will return the correct index for the second 'O', calculated as
+    #         index of the first 'O' + how many times 'O's already analyzed
+
+    #     Parameters
+    #     ----------
+    #     species : str
+    #         a species symbol
+    #         e.g. 'H', 'C' or 'O', etc.
+    #     visited_species : list(str)
+    #         a list holding all species that have been already visited
+    #     adsorbate_atoms_idxs : dict(str:int)
+    #         a dictionary with all adsorbate atoms and theirs corresponding
+    #         indicies
+
+    #     Returns
+    #     -------
+    #     sp_index : int
+    #         an index for a given species
+
+    #     Raises
+    #     ------
+    #     KeyError
+    #         if key not found in adsorbate_atoms_idx
+
+    #     '''
+    #     reacting_species_connectivity = rxn[easier_to_build].split(
+    #         '\n')
+    #     reacting_sp_idxs = []
+    #     for num, line in enumerate(reacting_species_connectivity):
+    #         if '*' in line and 'X' not in line:
+    #             reacting_sp_idxs.append(num - 1)
+    #     return reacting_sp_idxs
 
     @staticmethod
     def is_valid_sp_index(

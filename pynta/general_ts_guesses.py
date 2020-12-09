@@ -83,8 +83,8 @@ class GeneralTSGuessesGenerator():
         # surface reaction, at least one atom connected to the surface
         if s_bonded_idxs:
             if len(s_bonded_idxs) > 1:
-                raise NotImplementedError('Only monodendate type of adsorbtion is '
-                                          'currently supported.')
+                raise NotImplementedError('Only monodendate type of adsorbtion'
+                                          ' is currently supported.')
             else:
                 s_bonded_idx = int(s_bonded_idxs[0]) - 1
 
