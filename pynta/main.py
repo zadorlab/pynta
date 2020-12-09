@@ -654,7 +654,7 @@ class WorkFlow:
         Parameters:
         ___________
 
-        rxn : dict(yaml[str:str])
+        rxn : Dict[str, str]
             a dictionary with info about the paricular reaction. This can be
             view as a splitted many reaction .yaml file to a single reaction
             .yaml file

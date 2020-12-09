@@ -5,22 +5,64 @@ from typing import Dict, List, Tuple
 
 class GeneralTSGuessesGenerator():
     def __init__(self,
-                 ts_est,
-                 rxn,
-                 rxn_name,
-                 easier_to_build,
-                 scfactor):
+                 ts_est: str,
+                 rxn: Dict[str, str],
+                 rxn_name: str,
+                 easier_to_build: str,
+                 scfactor: float) -> None:
+        '''[summary]
+
+        Parameters
+        ----------
+        ts_est : str
+            string representations of the species which is use as a TS guess
+            skeleton - the one that is used to construct TS guess,
+            e.g.
+            'OH'
+            e.g OH_O+H
+        rxn : Dict[str, str]
+            a dictionary with info about the paricular reaction. This can be
+            view as a splitted many reaction .yaml file to a single reaction
+            .yaml file
+        rxn_name : str
+            a reaction name
+            e.g OH_O+H
+        easier_to_build : str
+            a keys to ts_guess_skeleton; 'product' or 'reatant'
+                scfator : float
+            a scaling factor to scale a bond distance between
+            atoms taking part in the reaction
+
+        '''
         self.ts_est = ts_est
         self.rxn = rxn
         self.rxn_name = rxn_name
         self.easier_to_build = easier_to_build
         self.scfactor = scfactor
-        self.reacting_species_connectivity = self.rxn[self.easier_to_build].split(
+        self.ts_guess_skeleton = self.rxn[self.easier_to_build]
+        self.reacting_species_connectivity = self.ts_guess_skeleton.split(
             '\n')
 
     def decide(
             self,
-            reacting_idxs):
+            reacting_idxs: List[int]) -> Tuple[Gratoms, int]:
+        ''' Main method to decide to which family of reactions given
+            reaction belongs
+
+        Parameters
+        ----------
+        reacting_idxs : List[int]
+            list with indicies of reacting atoms, in order as they appear in
+            .yaml file but not necessary with the same indicies
+
+        Returns
+        -------
+        ts_guess_el, s_bonded_idx : Tuple[Gratoms, int]
+            ts_geuss_el is Gratoms representation of TS guess, whereas
+            s_bonded_idx is the index of adsorbate atom that bonds to surface
+
+        '''
+
         ts_guess_el, s_bonded_idx = None, None
         how_many_atoms_react = len(reacting_idxs)
 
@@ -39,6 +81,7 @@ class GeneralTSGuessesGenerator():
                 self.rxn_name,
                 self.easier_to_build,
                 self.scfactor).get_ts_guess_and_bonded_idx(reacting_idxs)
+
         return ts_guess_el, s_bonded_idx
 
     def build_ts_guess(self) -> Gratoms:
@@ -51,12 +94,6 @@ class GeneralTSGuessesGenerator():
             For other types, more than one structure is possible, e.g.
             ts_est = 'COH' --> ts_guess_list = ['COH' (sp), 'CHO' (sp2)]
 
-        Parameters
-        ----------
-        ts_est : str
-            a string representing species that will be used to get ts_guess
-            e.g. 'OH', 'COH'
-
         Returns
         -------
         ts_guess_list : List[Gratoms]
@@ -68,6 +105,20 @@ class GeneralTSGuessesGenerator():
         return ts_guess_list
 
     def get_s_bonded_idx(self) -> int:
+        ''' Get index of the atoms that connects adsorbate to the surface
+
+        Returns
+        -------
+        s_bonded_idx: int
+            an index of an adsorbate atom that bonds it to surface
+
+        Raises
+        ------
+        NotImplementedError
+            if more then 1 atoms connects adsorbate to the surface - curently,
+            only monodentate adsorbtion is supported.
+
+        '''
         surface_indicies = []
         s_bonded_idxs = []
         for line in self.reacting_species_connectivity:
@@ -93,7 +144,15 @@ class GeneralTSGuessesGenerator():
             s_bonded_idx = self.get_the_most_connected_atom()
         return s_bonded_idx
 
-    def get_the_most_connected_atom(self):
+    def get_the_most_connected_atom(self) -> int:
+        '''[summary]
+
+        Returns
+        -------
+        max_conected_atom_idx : int
+            an index of an atom that has the most connections to other atoms
+
+        '''
         number_of_connections = {}
         n_surf_at_befor_ads = 0
 
@@ -109,14 +168,29 @@ class GeneralTSGuessesGenerator():
 
         for tmp_idx, n_connect in number_of_connections.items():
             if n_connect == max(number_of_connections.values()):
-                max_connections_idx = (tmp_idx - n_surf_at_befor_ads - 1)
-                return max_connections_idx
+                max_conected_atom_idx = (tmp_idx - n_surf_at_befor_ads - 1)
+                return max_conected_atom_idx
 
 
 class Diatomic(GeneralTSGuessesGenerator):
     def get_ts_guess_and_bonded_idx(
             self,
-            reacting_idxs):
+            reacting_idxs: List[int]) -> Tuple[Gratoms, int]:
+        '''[summary]
+
+        Parameters
+        ----------
+        reacting_idxs : List[int]
+            list with indicies of reacting atoms, in order as they appear in
+            .yaml file but not necessary with the same indicies
+
+        Returns
+        -------
+        ts_guess_el, s_bonded_idx : Tuple[Gratoms, int]
+            ts_geuss_el is Gratoms representation of TS guess, whereas
+            s_bonded_idx is the index of adsorbate atom that bonds to surface
+
+        '''
         # Convert adsorbate (string) to a list of Gratoms object.
         ts_guess_list = self.build_ts_guess()
 
