@@ -84,7 +84,14 @@ Make sure it works by running tests posted on the `balsam` GitHub page.
 1.1.7 Install [`xtb-python`](https://github.com/grimme-lab/xtb-python) following instruction provided there. Make sure to correctly link all required libraries, e.g. with `OpenBlas` and `GCC`.
 
 ```bash
-LDFLAGS="-L/opt/custom/OpenBLAS/0.3.7/lib" meson setup build --prefix=$PWD --libdir=xtb/xtb --buildtype release --optimization 2 -Dla_backend=openblas
+git clone https://github.com/grimme-lab/xtb-python.git
+cd xtb-python
+git submodule update --init
+CC=icc CXX=icpc FC=ifort meson setup build --prefix=$PWD --libdir=xtb
+ninja -C build install
+pip install --user -e .
+# alternatively, try:
+# LDFLAGS="-L/opt/custom/OpenBLAS/0.3.7/lib" meson setup build --prefix=$PWD --libdir=xtb/xtb --buildtype release --optimization 2 -Dla_backend=openblas
 ```
 
 Make sure it works. If fails, try to install [`xtb`](https://github.com/grimme-lab/xtb) and test `xtb` itself for any errors.
