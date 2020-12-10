@@ -602,10 +602,11 @@ class IO():
         return reacting_idxs
 
     def get_all_images(yamlfile):
+        # TODO probably a bug when names are different but the same specie
         reactions = IO.open_yaml_file(yamlfile)
         unique_species = []
         all_images = []
-        for num, rxn in enumerate(reactions):
+        for rxn in reactions:
             images = IO.get_images(rxn)
             all_images.append(images)
         all_images_flat = [item for sublist in all_images for item in sublist]
@@ -614,18 +615,7 @@ class IO():
                 pass
             else:
                 unique_species.append(images)
-        # all_images_dict = {species: species for species in all_images_flat}
-        # print(unique_species)
-        # print(all_images_flat)
-        # check if any products are the same as any reactants
-        # for species1 in all_images_flat:
-        #     for species2 in unique_species:
-        #         if nx.is_isomorphic(
-        #                 species1.graph, species2.graph, node_test):
-        #             pass
-        #         else:
-        #             unique_species.append(species1)
-        # print(unique_species)
+
         return unique_species
 
     @ staticmethod
