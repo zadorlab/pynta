@@ -1,5 +1,4 @@
-from sys import path
-from rmgcat_to_sella.io import IO
+from pynta.io import IO
 from ase.io import read, write
 from pathlib import Path, PosixPath
 from typing import Tuple, Dict, List

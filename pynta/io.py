@@ -602,7 +602,6 @@ class IO():
         return reacting_idxs
 
     def get_all_images(yamlfile):
-        # TODO probably a bug when names are different but the same specie
         reactions = IO.open_yaml_file(yamlfile)
         unique_species = []
         all_images = []
@@ -610,6 +609,8 @@ class IO():
             images = IO.get_images(rxn)
             all_images.append(images)
         all_images_flat = [item for sublist in all_images for item in sublist]
+        # TODO probably a bug when names are different but the same species
+        # (use networkx)
         for images in all_images_flat:
             if images in unique_species:
                 pass
@@ -620,9 +621,6 @@ class IO():
 
     @ staticmethod
     def get_images(rxn):
-        # open .yaml file
-        # reactions = IO.open_yaml_file(yamlfile)
-
         species = []
         bonds = []
         # for rxn in reactions:
