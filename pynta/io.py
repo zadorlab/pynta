@@ -603,13 +603,32 @@ class IO():
 
     def get_all_images(yamlfile):
         reactions = IO.open_yaml_file(yamlfile)
-        all_images = {}
+        unique_species = []
+        all_images = []
         for num, rxn in enumerate(reactions):
             images = IO.get_images(rxn)
-            all_images['rxn_{}'.format(num)] = images
-        return all_images
+            all_images.append(images)
+        all_images_flat = [item for sublist in all_images for item in sublist]
+        for images in all_images_flat:
+            if images in unique_species:
+                pass
+            else:
+                unique_species.append(images)
+        # all_images_dict = {species: species for species in all_images_flat}
+        # print(unique_species)
+        # print(all_images_flat)
+        # check if any products are the same as any reactants
+        # for species1 in all_images_flat:
+        #     for species2 in unique_species:
+        #         if nx.is_isomorphic(
+        #                 species1.graph, species2.graph, node_test):
+        #             pass
+        #         else:
+        #             unique_species.append(species1)
+        # print(unique_species)
+        return unique_species
 
-    @staticmethod
+    @ staticmethod
     def get_images(rxn):
         # open .yaml file
         # reactions = IO.open_yaml_file(yamlfile)
@@ -638,7 +657,7 @@ class IO():
                 unique_species.append(species1)
         return images
 
-    @staticmethod
+    @ staticmethod
     def rmgcat_to_gratoms(adjtxt):
         ''' Convert a slice of .yaml file to Catkit's Gratoms object
 

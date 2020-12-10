@@ -364,24 +364,23 @@ class Adsorbates:
 
         # build adsorbates
         structures = dict()
-        for sp_symbol, sp_gratoms_rxn in zip(all_species_symbols, images.values()):
-            for sp_gratoms in sp_gratoms_rxn:
-                if len(sp_gratoms) == 0:
-                    continue
-                # which atom connects to the surface
-                bonded = [0]
+        for sp_symbol, sp_gratoms in zip(all_species_symbols, images):
+            if len(sp_gratoms) == 0:
+                continue
+            # which atom connects to the surface
+            bonded = [0]
 
-                if sp_symbol in edge_cases_bonded_dict.keys():
-                    bonded = [edge_cases_bonded_dict[sp_symbol]]
+            if sp_symbol in edge_cases_bonded_dict.keys():
+                bonded = [edge_cases_bonded_dict[sp_symbol]]
 
-                try:
-                    # put adsorbates on the surface
-                    structs = ads_builder.add_adsorbate(
-                        sp_gratoms, index=-1, bonds=bonded)
-                    structures[str(sp_symbol)] = structs
-                except IndexError:
-                    print(sp_gratoms, sp_gratoms.edges,
-                          sp_gratoms.get_tags())
+            try:
+                # put adsorbates on the surface
+                structs = ads_builder.add_adsorbate(
+                    sp_gratoms, index=-1, bonds=bonded)
+                structures[str(sp_symbol)] = structs
+            except IndexError:
+                print(sp_gratoms, sp_gratoms.edges,
+                      sp_gratoms.get_tags())
 
         for sp_symbol, adsorbate in structures.items():
             # create directory where all adsorbates are stored
