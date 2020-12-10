@@ -262,7 +262,6 @@ class Adsorbates:
                 if j > i:
                     edges.append((i - 1, j - 1))
         gratoms = Gratoms(symbols, edges=edges)
-        print(gratoms)
 
         del_indices = []
 
@@ -279,7 +278,6 @@ class Adsorbates:
         bonds = []
         for i, subgraph in enumerate(nx.connected_component_subgraphs(gratoms.graph)):
             indices = list(subgraph.nodes)
-            print(indices)
             symbols = gratoms[indices].symbols
             # new_gratoms = gratoms[indices].copy()
             new_indices = {old: new for new, old in enumerate(indices)}
@@ -380,11 +378,10 @@ class Adsorbates:
         for sp_symbol, sp_gratoms in zip(all_species_symbols, images):
             if len(sp_gratoms) == 0:
                 continue
-            print('---')
-            for atom in sp_gratoms:
-                print(atom)
+
             # deal with edge cases - which atom connects to the surface
             bonded = [0]
+
             if sp_symbol in edge_cases_bonded_dict.keys():
                 bonded = [edge_cases_bonded_dict[sp_symbol]]
 
