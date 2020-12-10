@@ -1,5 +1,6 @@
 from pynta.excatkit.molecule import Molecule
 from pynta.excatkit.gratoms import Gratoms
+from pynta.io import IO
 from pynta.utils import edge_cases_bonded_dict, edge_cases_topology_dict
 from typing import Dict, List, Tuple
 
@@ -192,14 +193,17 @@ class Diatomic(GeneralTSGuessesGenerator):
             s_bonded_idx is the index of adsorbate atom that bonds to surface
 
         '''
-        # Convert adsorbate (string) to a list of Gratoms object.
-        ts_guess_list = self.build_ts_guess()
-        # print(ts_guess_list)
 
-        desired_topology_idx = 0
-        if self.ts_est in edge_cases_topology_dict:
-            desired_topology_idx = edge_cases_topology_dict[self.ts_est]
-        ts_guess_el = ts_guess_list[desired_topology_idx]
+        ts_guess_el = IO.get_TS_guess_image(self.rxn, self.easier_to_build)
+        print(ts_guess_el)
+        # # Convert adsorbate (string) to a list of Gratoms object.
+        # ts_guess_list = self.build_ts_guess()
+        # # print(ts_guess_list)
+
+        # desired_topology_idx = 0
+        # if self.ts_est in edge_cases_topology_dict:
+        #     desired_topology_idx = edge_cases_topology_dict[self.ts_est]
+        # ts_guess_el = ts_guess_list[desired_topology_idx]
 
         # for num, atom in enumerate(ts_guess_el):
 

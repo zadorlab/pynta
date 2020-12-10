@@ -603,7 +603,7 @@ class IO():
 
     def get_all_images(yamlfile):
         reactions = IO.open_yaml_file(yamlfile)
-        unique_species = []
+        all_images_unique = []
         all_images = []
         for rxn in reactions:
             images = IO.get_images(rxn)
@@ -612,18 +612,26 @@ class IO():
         # TODO probably a bug when names are different but the same species
         # (use networkx)
         for images in all_images_flat:
-            if images in unique_species:
+            if images in all_images_unique:
                 pass
             else:
-                unique_species.append(images)
+                all_images_unique.append(images)
+        return all_images_unique
 
-        return unique_species
+    @staticmethod
+    def get_TS_guess_image(rxn, easier_to_build):
+        # TODO there is only one element for every reaction tested. There will
+        # be a problem for AX + BX -> CX + DX
+        ts_guess, _ = IO.rmgcat_to_gratoms(
+            rxn[easier_to_build].strip().split('\n'))
 
-    @ staticmethod
+        ts_guess_image = Molecule().get_3D_positions(ts_guess[0])
+        return ts_guess_image
+
+    @staticmethod
     def get_images(rxn):
         species = []
         bonds = []
-        # for rxn in reactions:
         reactants, rbonds = IO.rmgcat_to_gratoms(
             rxn['reactant'].strip().split('\n'))
         products, pbonds = IO.rmgcat_to_gratoms(
@@ -645,7 +653,7 @@ class IO():
                 unique_species.append(species1)
         return images
 
-    @ staticmethod
+    @staticmethod
     def rmgcat_to_gratoms(adjtxt):
         ''' Convert a slice of .yaml file to Catkit's Gratoms object
 
