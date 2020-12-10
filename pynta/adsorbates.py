@@ -165,6 +165,34 @@ class Adsorbates:
                 surface[i] = int(np.sign(pairvec[2]))
         return edges, surface
 
+    # def get_how_many_atoms_before_adsorbate(self, adjtxt):
+    #     n_surf_at_befor_ads = 0
+
+    #     for line in adjtxt:
+    #         if 'multiplicity' in line:
+    #             continue
+    #         if 'X' in line:
+    #             n_surf_at_befor_ads += 1
+    #         else:
+    #             if n_surf_at_befor_ads != 0:
+    #                 n_surf_at_befor_ads -= 1
+    #             break
+    #     return n_surf_at_befor_ads
+
+    # def get_proper_atomic_indicies(self, adjtxt):
+    #     correct_atomic_indicies = []
+
+    #     remove_one_more = 0
+    #     for i, line in enumerate(adjtxt):
+    #         if 'multiplicity' in line:
+    #             remove_one_more = 1
+    #             continue
+    #         if 'X' not in line:
+    #             n = self.get_how_many_atoms_before_adsorbate(adjtxt)
+    #             adsorbate_atom_idx = i - n - remove_one_more
+    #             correct_atomic_indicies.append(adsorbate_atom_idx)
+    #     return correct_atomic_indicies
+
     def rmgcat_to_gratoms(self, adjtxt):
         ''' Convert a slice of .yaml file to Catkit's Gratoms object
 
@@ -233,8 +261,8 @@ class Adsorbates:
                 j = int(bond.strip('{}').split(',')[0])
                 if j > i:
                     edges.append((i - 1, j - 1))
-
         gratoms = Gratoms(symbols, edges=edges)
+        print(gratoms)
 
         del_indices = []
 
@@ -251,6 +279,7 @@ class Adsorbates:
         bonds = []
         for i, subgraph in enumerate(nx.connected_component_subgraphs(gratoms.graph)):
             indices = list(subgraph.nodes)
+            print(indices)
             symbols = gratoms[indices].symbols
             # new_gratoms = gratoms[indices].copy()
             new_indices = {old: new for new, old in enumerate(indices)}
@@ -273,6 +302,9 @@ class Adsorbates:
                         raise RuntimeError(
                             'At most two bonds to the metal are allowed per adsorbate!')
                     tags[i] = abs(tags[i])
+            # tags = self.get_proper_atomic_indicies(adjtxt)
+            # print(tags)
+            tags = indices
             new_gratoms.set_tags(tags)
             bonds.append(bond)
             gratoms_list.append(new_gratoms)
@@ -308,9 +340,9 @@ class Adsorbates:
         bonds = []
         for rxn in reactions:
             reactants, rbonds = Adsorbates.rmgcat_to_gratoms(
-                self, rxn['reactant'].split('\n'))
+                self, rxn['reactant'].strip().split('\n'))
             products, pbonds = Adsorbates.rmgcat_to_gratoms(
-                self, rxn['product'].split('\n'))
+                self, rxn['product'].strip().split('\n'))
             species += reactants + products
             bonds += rbonds + pbonds
 

@@ -581,7 +581,7 @@ class IO():
         reacting_idxs = {}
         n_surf_at_befor_ads = 0
 
-        for line in (reacting_species_connectivity):
+        for line in reacting_species_connectivity:
             if 'X' in line:
                 n_surf_at_befor_ads += 1
             else:
