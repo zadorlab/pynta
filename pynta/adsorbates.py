@@ -4,14 +4,17 @@ from pathlib import PosixPath
 from typing import Tuple, List, Dict
 
 import numpy as np
+import networkx as nx
 
 from ase.io import read, write
 from ase.data import covalent_radii
 
+from pynta.utils import edge_cases_bonded_dict, edge_cases_topology_dict
 from pynta.excatkit.molecule import Molecule
 from pynta.excatkit.adsorption import Builder
 from pynta.excatkit.gratoms import Gratoms
 from pynta.io import IO
+from pynta.graph_utils import node_test
 
 # Instead of using CatKit's built in slab generator routines, we want to
 # use pre-relaxed slab geometries to save computer time. In order to use
@@ -162,31 +165,169 @@ class Adsorbates:
                 surface[i] = int(np.sign(pairvec[2]))
         return edges, surface
 
+    def rmgcat_to_gratoms(self, adjtxt):
+        ''' Convert a slice of .yaml file to Catkit's Gratoms object
+
+        Parameters:
+        ___________
+
+        adjtxt : list
+            a list with a connectivity info for reactant or product
+            as from the .yaml file.
+            e.g. for given reaction (reactant or product)
+
+            In .yaml file we have something like that:
+
+                    multiplicity -187
+                1 *1 C u0 p0 c0 { 2,S} {4,S}
+                2    O u0 p0 c0 {1,S}
+                3 *2 H u0 p0 c0 {5,S}
+                4 *3 X u0 p0 c0 {1,S}
+                5 *4 X u0 p0 c0 {3,S}
+
+            but we need here a list like that:
+
+            ['multiplicity -187', '1 *1 C u0 p0 c0 {2,S} {4,S}',
+            '2    O u0 p0 c0 {1,S}', '3 *2 H u0 p0 c0 {5,S}',
+            '4 *3 X u0 p0 c0 {1,S}', '5 *4 X u0 p0 c0 {3,S}', '']
+
+            So it can be simply converted using the following:
+
+            yamlfile = 'reactions.yaml'
+            with open(yamlfile, 'r') as f:
+                text = f.read()
+            reactions = yaml.safe_load(text)
+            for rxn in reactions:
+                adjtxt = rxn['reactant'].split('\n')
+
+        Returns:
+        ________
+        gratoms_list : list
+            a Gratom like object
+        bonds : list
+            a list of bonds to the metal
+
+        '''
+        symbols = []
+        edges = []
+        tags = []
+        # bond_index = None
+        for i, line in enumerate(adjtxt):
+            if i == 0:
+                continue
+            if not line:
+                break
+
+            line = line.split()
+            inc = 0
+            if line[1][0] == '*':
+                inc = 1
+                tags.append(int(line[1][1]))
+            else:
+                tags.append(0)
+
+            symbols.append(line[1 + inc])
+            conn = line[5 + inc:]
+
+            for bond in conn:
+                j = int(bond.strip('{}').split(',')[0])
+                if j > i:
+                    edges.append((i - 1, j - 1))
+
+        gratoms = Gratoms(symbols, edges=edges)
+
+        del_indices = []
+
+        for i, atom in enumerate(gratoms):
+            if atom.symbol == 'X':
+                for j in gratoms.graph.neighbors(i):
+                    tags[j] *= -1
+                del_indices.append(i)
+
+        gratoms.set_tags(tags)
+        del gratoms[del_indices]
+
+        gratoms_list = []
+        bonds = []
+        for i, subgraph in enumerate(nx.connected_component_subgraphs(gratoms.graph)):
+            indices = list(subgraph.nodes)
+            symbols = gratoms[indices].symbols
+            # new_gratoms = gratoms[indices].copy()
+            new_indices = {old: new for new, old in enumerate(indices)}
+            new_edges = []
+            for edge in subgraph.edges:
+                newa = new_indices[edge[0]]
+                newb = new_indices[edge[1]]
+                new_edges.append((newa, newb))
+            new_gratoms = Gratoms(symbols, edges=new_edges)
+
+            bond = None
+            tags = new_gratoms.get_tags()
+            for i, tag in enumerate(tags):
+                if tag < 0:
+                    if bond is None:
+                        bond = [i]
+                    elif len(bond) == 1:
+                        bond.append(i)
+                    else:
+                        raise RuntimeError(
+                            'At most two bonds to the metal are allowed per adsorbate!')
+                    tags[i] = abs(tags[i])
+            new_gratoms.set_tags(tags)
+            bonds.append(bond)
+            gratoms_list.append(new_gratoms)
+
+        return gratoms_list, bonds
+
     def adjacency_to_3d(self) -> None:
         ''' Place adsorbates on the surface '''
-        # by default, each atom is bonded to the surface through the atom
-        # at index 0. This can be overwrite by using this dict
-        edge_cases_bonded_dict = dict(CO3=1, CH3O=1, CH3OH=1)
 
-        # by default, the first topology structure is used to generate
-        # adsorbates. This can be modified using this dict
-        edge_cases_topology_dict = dict(COOH=1, HCOOH=1, CH3O2=1, HCOOCH3=17)
+        # # get all species
+        # all_species_symbols = IO.get_all_unique_species(self.yamlfile)
 
-        # get all species
+        # # convert str to Gratoms and deal with edge cases
+        # images = []
+        # for sp_symbol in all_species_symbols:
+        #     index = 0
+        #     # deal with edge cases - which topology to use
+        #     if sp_symbol in edge_cases_topology_dict.keys():
+        #         index = edge_cases_topology_dict[sp_symbol]
+        #     images.append(Molecule().molecule(sp_symbol)[index])
+
+        # slabedges, tags = Adsorbates.get_edges(self, True)
+
+        # # convert .xyz file to Atoms object
+        # slab_atom = read(os.path.join(self.creation_dir, self.slab))
+        # big_slab = slab_atom * self.repeats
+        # nslab = len(slab_atom)
+
+        reactions = IO.open_yaml_file(self.yamlfile)
         all_species_symbols = IO.get_all_unique_species(self.yamlfile)
 
-        # convert str to Gratoms and deal with edge cases
+        species = []
+        bonds = []
+        for rxn in reactions:
+            reactants, rbonds = Adsorbates.rmgcat_to_gratoms(
+                self, rxn['reactant'].split('\n'))
+            products, pbonds = Adsorbates.rmgcat_to_gratoms(
+                self, rxn['product'].split('\n'))
+            species += reactants + products
+            bonds += rbonds + pbonds
+
+        unique_species = []
+        unique_bonds = []
         images = []
-        for sp_symbol in all_species_symbols:
-            index = 0
-            # deal with edge cases - which topology to use
-            if sp_symbol in edge_cases_topology_dict.keys():
-                index = edge_cases_topology_dict[sp_symbol]
-            images.append(Molecule().molecule(sp_symbol)[index])
+        # check if any products are the same as any reactants
+        for species1, bond in zip(species, bonds):
+            for species2 in unique_species:
+                if nx.is_isomorphic(species1.graph, species2.graph, node_test):
+                    break
+            else:
+                images.append(Molecule().get_3D_positions(species1))
+                unique_species.append(species1)
+                unique_bonds.append(bond)
 
         slabedges, tags = Adsorbates.get_edges(self, True)
-
-        # convert .xyz file to Atoms object
         slab_atom = read(os.path.join(self.creation_dir, self.slab))
         big_slab = slab_atom * self.repeats
         nslab = len(slab_atom)
@@ -207,7 +348,9 @@ class Adsorbates:
         for sp_symbol, sp_gratoms in zip(all_species_symbols, images):
             if len(sp_gratoms) == 0:
                 continue
-
+            print('---')
+            for atom in sp_gratoms:
+                print(atom)
             # deal with edge cases - which atom connects to the surface
             bonded = [0]
             if sp_symbol in edge_cases_bonded_dict.keys():
@@ -250,10 +393,10 @@ class Adsorbates:
 
         Parameters:
         __________
-        pytemplate : python file
+        pytemplate: python file
             a template to prepare submission scripts
             for adsorbate+surface minimization
-        pseudopotentials : dict(str: str)
+        pseudopotentials: dict(str: str)
             a dictionary with QE pseudopotentials for all species.
             e.g.
             dict(Cu='Cu.pbe-spn-kjpaw_psl.1.0.0.UPF',
@@ -261,26 +404,26 @@ class Adsorbates:
                 O='O.pbe-n-kjpaw_psl.1.0.0.UPF',
                 C='C.pbe-n-kjpaw_psl.1.0.0.UPF',
                 )
-        pseudo_dir : str
+        pseudo_dir: str
             a path to the QE's pseudopotentials main directory
             e.g.
             '/home/mgierad/espresso/pseudo'
-        balsam_exe_settings : dict{str:int}
-            a dictionary with balsam execute parameters (cores, nodes, etc.),
+        balsam_exe_settings: dict{str: int}
+            a dictionary with balsam execute parameters(cores, nodes, etc.),
             e.g.
-            balsam_exe_settings = {'num_nodes': 1,
+            balsam_exe_settings={'num_nodes': 1,
                                    'ranks_per_node': 48,
                                    'threads_per_rank': 1}
-        calc_keywords : dict{str:str}
+        calc_keywords: dict{str: str}
             a dictionary with parameters to run DFT package. Quantum Espresso
             is used as default, e.g.
 
-            calc_keywords = {'kpts': (3, 3, 1), 'occupations': 'smearing',
+            calc_keywords={'kpts': (3, 3, 1), 'occupations': 'smearing',
                             'smearing':  'marzari-vanderbilt',
                             'degauss': 0.01, 'ecutwfc': 40, 'nosym': True,
                             'conv_thr': 1e-11, 'mixing_mode': 'local-TF'}
-        shtemplate : .sh file
-            optional, a .sh template (not required by the workflow)
+        shtemplate: .sh file
+            optional, a .sh template(not required by the workflow)
 
         '''
         n_kpts = IO().get_kpoints(self.repeats)

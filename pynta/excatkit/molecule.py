@@ -30,7 +30,6 @@ class Molecule():
             3D structures of the requested chemical species and topologies.
         """
         molecule_graphs = self.get_topologies(species)
-
         images = []
         for atoms in molecule_graphs:
             atoms = self.get_3D_positions(atoms, bond_index)
@@ -131,6 +130,7 @@ class Molecule():
             No 3D positions will be provided for these structures.
         """
         num, cnt = self.get_atomic_numbers(symbols, True)
+        # print(num, cnt)
         mcnt = cnt[num != 1]
         mnum = num[num != 1]
 
@@ -149,7 +149,6 @@ class Molecule():
 
         if saturate:
             hcnt = hmax
-
         if n == 1:
             atoms = Gratoms(elements, cell=[1, 1, 1])
             hatoms = self.hydrogenate(atoms, np.array([hcnt]))

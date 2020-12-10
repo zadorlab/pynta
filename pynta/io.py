@@ -201,7 +201,10 @@ class IO():
         # remove empty elements, such as ''
         all_species = [species for species in all_species if species]
 
-        return(list(set(all_species)))
+        # remove duplicates keeping order - dictionary would do the job
+        all_unique_species = {species: True for species in all_species}
+
+        return list(all_unique_species.keys())
 
     @staticmethod
     def get_reactants_and_products(

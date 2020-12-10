@@ -1,5 +1,6 @@
 from pynta.excatkit.molecule import Molecule
 from pynta.excatkit.gratoms import Gratoms
+from pynta.utils import edge_cases_bonded_dict, edge_cases_topology_dict
 from typing import Dict, List, Tuple
 
 
@@ -193,9 +194,16 @@ class Diatomic(GeneralTSGuessesGenerator):
         '''
         # Convert adsorbate (string) to a list of Gratoms object.
         ts_guess_list = self.build_ts_guess()
+        # print(ts_guess_list)
 
-        # For two atoms in adsorbat, there is only one possible topology
-        ts_guess_el = ts_guess_list[0]
+        desired_topology_idx = 0
+        if self.ts_est in edge_cases_topology_dict:
+            desired_topology_idx = edge_cases_topology_dict[self.ts_est]
+        ts_guess_el = ts_guess_list[desired_topology_idx]
+
+        # for num, atom in enumerate(ts_guess_el):
+
+        #     print(atom)
         s_bonded_idx = self.get_s_bonded_idx()
 
         react_atom_idx_1, react_atom_idx_2 = reacting_idxs
