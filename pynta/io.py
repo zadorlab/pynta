@@ -549,7 +549,7 @@ class IO():
                 easier_to_build = 'product'
                 ts_estimators = p_name_list
 
-            reacting_species_connectivity = rxn[easier_to_build].split(
+            reacting_species_connectivity = rxn[easier_to_build].strip().split(
                 '\n')
 
             reacting_atoms_and_idxs = IO.get_reacting_atoms_idx_dict(
@@ -586,19 +586,26 @@ class IO():
         '''
         reacting_idxs = {}
         n_surf_at_befor_ads = 0
-
+        remove_one_more = 0
         for line in reacting_species_connectivity:
+            if 'multiplicity' in line:
+                continue
             if 'X' in line:
                 n_surf_at_befor_ads += 1
             else:
-                if n_surf_at_befor_ads != 0:
-                    n_surf_at_befor_ads -= 1
+                # if n_surf_at_befor_ads != 0:
+                #     n_surf_at_befor_ads -= 1
                 break
-
+        print('---')
         for num, line in enumerate(reacting_species_connectivity):
+            if 'multiplicity' in line:
+                remove_one_more = 1
             if '*' in line and 'X' not in line:
                 atom_symbol = line.split()[2]
-                reacting_idxs[atom_symbol] = (num - n_surf_at_befor_ads - 1)
+                reacting_idxs[atom_symbol] = (
+                    num - n_surf_at_befor_ads - remove_one_more)
+                print(num)
+                print(n_surf_at_befor_ads)
         return reacting_idxs
 
     def get_all_images(yamlfile):
