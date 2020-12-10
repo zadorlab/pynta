@@ -195,22 +195,19 @@ class Diatomic(GeneralTSGuessesGenerator):
         '''
 
         ts_guess_el = IO.get_TS_guess_image(self.rxn, self.easier_to_build)
-        print(ts_guess_el)
-        # # Convert adsorbate (string) to a list of Gratoms object.
-        # ts_guess_list = self.build_ts_guess()
-        # # print(ts_guess_list)
 
-        # desired_topology_idx = 0
-        # if self.ts_est in edge_cases_topology_dict:
-        #     desired_topology_idx = edge_cases_topology_dict[self.ts_est]
-        # ts_guess_el = ts_guess_list[desired_topology_idx]
-
-        # for num, atom in enumerate(ts_guess_el):
-
-        #     print(atom)
         s_bonded_idx = self.get_s_bonded_idx()
 
-        react_atom_idx_1, react_atom_idx_2 = reacting_idxs
+        yaml_react_atom_idx_1, yaml_react_atom_idx_2 = reacting_idxs
+
+        react_atom_idx_1 = [
+            atom.index for atom in ts_guess_el
+            if atom.tag == yaml_react_atom_idx_1][0]
+
+        react_atom_idx_2 = [
+            atom.index for atom in ts_guess_el
+            if atom.tag == yaml_react_atom_idx_2][0]
+
         bondlen = ts_guess_el.get_distance(react_atom_idx_1, react_atom_idx_2)
 
         n_total_ads_atoms = len(ts_guess_el)
