@@ -9,7 +9,7 @@ import networkx as nx
 from ase.io import read, write
 from ase.data import covalent_radii
 
-from pynta.utils import edge_cases_bonded_dict, edge_cases_topology_dict
+from pynta.utils import edge_cases_bonded_dict
 from pynta.excatkit.molecule import Molecule
 from pynta.excatkit.adsorption import Builder
 from pynta.excatkit.gratoms import Gratoms
@@ -58,6 +58,9 @@ class Adsorbates:
         self.repeats = repeats
         self.creation_dir = creation_dir
         self.yamlfile = os.path.join(self.creation_dir, yamlfile)
+        self.slab_atom = read(os.path.join(self.creation_dir, self.slab))
+        self.big_slab = self.slab_atom * self.repeats
+        self.nslab = len(self.slab_atom)
 
     def get_edges(
             self,
@@ -193,217 +196,201 @@ class Adsorbates:
     #             correct_atomic_indicies.append(adsorbate_atom_idx)
     #     return correct_atomic_indicies
 
-    def rmgcat_to_gratoms(self, adjtxt):
-        ''' Convert a slice of .yaml file to Catkit's Gratoms object
+    # def rmgcat_to_gratoms(self, adjtxt):
+    #     ''' Convert a slice of .yaml file to Catkit's Gratoms object
 
-        Parameters:
-        ___________
+    #     Parameters:
+    #     ___________
 
-        adjtxt : list
-            a list with a connectivity info for reactant or product
-            as from the .yaml file.
-            e.g. for given reaction (reactant or product)
+    #     adjtxt : list
+    #         a list with a connectivity info for reactant or product
+    #         as from the .yaml file.
+    #         e.g. for given reaction (reactant or product)
 
-            In .yaml file we have something like that:
+    #         In .yaml file we have something like that:
 
-                    multiplicity -187
-                1 *1 C u0 p0 c0 { 2,S} {4,S}
-                2    O u0 p0 c0 {1,S}
-                3 *2 H u0 p0 c0 {5,S}
-                4 *3 X u0 p0 c0 {1,S}
-                5 *4 X u0 p0 c0 {3,S}
+    #                 multiplicity -187
+    #             1 *1 C u0 p0 c0 { 2,S} {4,S}
+    #             2    O u0 p0 c0 {1,S}
+    #             3 *2 H u0 p0 c0 {5,S}
+    #             4 *3 X u0 p0 c0 {1,S}
+    #             5 *4 X u0 p0 c0 {3,S}
 
-            but we need here a list like that:
+    #         but we need here a list like that:
 
-            ['multiplicity -187', '1 *1 C u0 p0 c0 {2,S} {4,S}',
-            '2    O u0 p0 c0 {1,S}', '3 *2 H u0 p0 c0 {5,S}',
-            '4 *3 X u0 p0 c0 {1,S}', '5 *4 X u0 p0 c0 {3,S}', '']
+    #         ['multiplicity -187', '1 *1 C u0 p0 c0 {2,S} {4,S}',
+    #         '2    O u0 p0 c0 {1,S}', '3 *2 H u0 p0 c0 {5,S}',
+    #         '4 *3 X u0 p0 c0 {1,S}', '5 *4 X u0 p0 c0 {3,S}', '']
 
-            So it can be simply converted using the following:
+    #         So it can be simply converted using the following:
 
-            yamlfile = 'reactions.yaml'
-            with open(yamlfile, 'r') as f:
-                text = f.read()
-            reactions = yaml.safe_load(text)
-            for rxn in reactions:
-                adjtxt = rxn['reactant'].split('\n')
+    #         yamlfile = 'reactions.yaml'
+    #         with open(yamlfile, 'r') as f:
+    #             text = f.read()
+    #         reactions = yaml.safe_load(text)
+    #         for rxn in reactions:
+    #             adjtxt = rxn['reactant'].split('\n')
 
-        Returns:
-        ________
-        gratoms_list : list
-            a Gratom like object
-        bonds : list
-            a list of bonds to the metal
+    #     Returns:
+    #     ________
+    #     gratoms_list : list
+    #         a Gratom like object
+    #     bonds : list
+    #         a list of bonds to the metal
 
-        '''
-        symbols = []
-        edges = []
-        tags = []
-        # bond_index = None
-        for i, line in enumerate(adjtxt):
-            if i == 0:
-                continue
-            if not line:
-                break
+    #     '''
+    #     symbols = []
+    #     edges = []
+    #     tags = []
+    #     # bond_index = None
+    #     for i, line in enumerate(adjtxt):
+    #         if i == 0:
+    #             continue
+    #         if not line:
+    #             break
 
-            line = line.split()
-            inc = 0
-            if line[1][0] == '*':
-                inc = 1
-                tags.append(int(line[1][1]))
-            else:
-                tags.append(0)
+    #         line = line.split()
+    #         inc = 0
+    #         if line[1][0] == '*':
+    #             inc = 1
+    #             tags.append(int(line[1][1]))
+    #         else:
+    #             tags.append(0)
 
-            symbols.append(line[1 + inc])
-            conn = line[5 + inc:]
+    #         symbols.append(line[1 + inc])
+    #         conn = line[5 + inc:]
 
-            for bond in conn:
-                j = int(bond.strip('{}').split(',')[0])
-                if j > i:
-                    edges.append((i - 1, j - 1))
-        gratoms = Gratoms(symbols, edges=edges)
+    #         for bond in conn:
+    #             j = int(bond.strip('{}').split(',')[0])
+    #             if j > i:
+    #                 edges.append((i - 1, j - 1))
+    #     gratoms = Gratoms(symbols, edges=edges)
 
-        del_indices = []
+    #     del_indices = []
 
-        for i, atom in enumerate(gratoms):
-            if atom.symbol == 'X':
-                for j in gratoms.graph.neighbors(i):
-                    tags[j] *= -1
-                del_indices.append(i)
+    #     for i, atom in enumerate(gratoms):
+    #         if atom.symbol == 'X':
+    #             for j in gratoms.graph.neighbors(i):
+    #                 tags[j] *= -1
+    #             del_indices.append(i)
 
-        gratoms.set_tags(tags)
-        del gratoms[del_indices]
+    #     gratoms.set_tags(tags)
+    #     del gratoms[del_indices]
 
-        gratoms_list = []
-        bonds = []
-        for i, subgraph in enumerate(nx.connected_component_subgraphs(gratoms.graph)):
-            indices = list(subgraph.nodes)
-            symbols = gratoms[indices].symbols
-            # new_gratoms = gratoms[indices].copy()
-            new_indices = {old: new for new, old in enumerate(indices)}
-            new_edges = []
-            for edge in subgraph.edges:
-                newa = new_indices[edge[0]]
-                newb = new_indices[edge[1]]
-                new_edges.append((newa, newb))
-            new_gratoms = Gratoms(symbols, edges=new_edges)
+    #     gratoms_list = []
+    #     bonds = []
+    #     for i, subgraph in enumerate(nx.connected_component_subgraphs(gratoms.graph)):
+    #         indices = list(subgraph.nodes)
+    #         symbols = gratoms[indices].symbols
+    #         # new_gratoms = gratoms[indices].copy()
+    #         new_indices = {old: new for new, old in enumerate(indices)}
+    #         new_edges = []
+    #         for edge in subgraph.edges:
+    #             newa = new_indices[edge[0]]
+    #             newb = new_indices[edge[1]]
+    #             new_edges.append((newa, newb))
+    #         new_gratoms = Gratoms(symbols, edges=new_edges)
 
-            bond = None
-            tags = new_gratoms.get_tags()
-            for i, tag in enumerate(tags):
-                if tag < 0:
-                    if bond is None:
-                        bond = [i]
-                    elif len(bond) == 1:
-                        bond.append(i)
-                    else:
-                        raise RuntimeError(
-                            'At most two bonds to the metal are allowed per adsorbate!')
-                    tags[i] = abs(tags[i])
-            # tags = self.get_proper_atomic_indicies(adjtxt)
-            # print(tags)
-            tags = indices
-            new_gratoms.set_tags(tags)
-            bonds.append(bond)
-            gratoms_list.append(new_gratoms)
+    #         bond = None
+    #         tags = new_gratoms.get_tags()
+    #         for i, tag in enumerate(tags):
+    #             if tag < 0:
+    #                 if bond is None:
+    #                     bond = [i]
+    #                 elif len(bond) == 1:
+    #                     bond.append(i)
+    #                 else:
+    #                     raise RuntimeError(
+    #                         'At most two bonds to the metal are allowed per adsorbate!')
+    #                 tags[i] = abs(tags[i])
+    #         # tags = self.get_proper_atomic_indicies(adjtxt)
+    #         # print(tags)
+    #         tags = indices
+    #         new_gratoms.set_tags(tags)
+    #         bonds.append(bond)
+    #         gratoms_list.append(new_gratoms)
 
-        return gratoms_list, bonds
+    #     return gratoms_list, bonds
 
-    def adjacency_to_3d(self) -> None:
-        ''' Place adsorbates on the surface '''
+    # def get_images(self):
+    #     reactions = IO.open_yaml_file(self.yamlfile)
 
-        # # get all species
-        # all_species_symbols = IO.get_all_unique_species(self.yamlfile)
+    #     species = []
+    #     bonds = []
+    #     for rxn in reactions:
+    #         reactants, rbonds = Adsorbates.rmgcat_to_gratoms(
+    #             self, rxn['reactant'].strip().split('\n'))
+    #         products, pbonds = Adsorbates.rmgcat_to_gratoms(
+    #             self, rxn['product'].strip().split('\n'))
+    #         species += reactants + products
+    #         bonds += rbonds + pbonds
 
-        # # convert str to Gratoms and deal with edge cases
-        # images = []
-        # for sp_symbol in all_species_symbols:
-        #     index = 0
-        #     # deal with edge cases - which topology to use
-        #     if sp_symbol in edge_cases_topology_dict.keys():
-        #         index = edge_cases_topology_dict[sp_symbol]
-        #     images.append(Molecule().molecule(sp_symbol)[index])
+    #         unique_species = []
+    #         images = []
 
-        # slabedges, tags = Adsorbates.get_edges(self, True)
+    #         # check if any products are the same as any reactants
+    #         for species1 in species:
+    #             for species2 in unique_species:
+    #                 if nx.is_isomorphic(
+    #                         species1.graph, species2.graph, node_test):
+    #                     break
+    #             else:
+    #                 images.append(Molecule().get_3D_positions(species1))
+    #                 unique_species.append(species1)
+    #         return images
 
-        # # convert .xyz file to Atoms object
-        # slab_atom = read(os.path.join(self.creation_dir, self.slab))
-        # big_slab = slab_atom * self.repeats
-        # nslab = len(slab_atom)
-
-        reactions = IO.open_yaml_file(self.yamlfile)
-        all_species_symbols = IO.get_all_unique_species(self.yamlfile)
-
-        species = []
-        bonds = []
-        for rxn in reactions:
-            reactants, rbonds = Adsorbates.rmgcat_to_gratoms(
-                self, rxn['reactant'].strip().split('\n'))
-            products, pbonds = Adsorbates.rmgcat_to_gratoms(
-                self, rxn['product'].strip().split('\n'))
-            species += reactants + products
-            bonds += rbonds + pbonds
-
-        unique_species = []
-        unique_bonds = []
-        images = []
-        # check if any products are the same as any reactants
-        for species1, bond in zip(species, bonds):
-            for species2 in unique_species:
-                if nx.is_isomorphic(species1.graph, species2.graph, node_test):
-                    break
-            else:
-                images.append(Molecule().get_3D_positions(species1))
-                unique_species.append(species1)
-                unique_bonds.append(bond)
-
+    def get_grslab(self):
         slabedges, tags = Adsorbates.get_edges(self, True)
-        slab_atom = read(os.path.join(self.creation_dir, self.slab))
-        big_slab = slab_atom * self.repeats
-        nslab = len(slab_atom)
 
         # transform Atoms to Gratoms object
-        grslab = Gratoms(numbers=slab_atom.numbers,
-                         positions=slab_atom.positions,
-                         cell=slab_atom.cell,
-                         pbc=slab_atom.pbc,
+        grslab = Gratoms(numbers=self.slab_atom.numbers,
+                         positions=self.slab_atom.positions,
+                         cell=self.slab_atom.cell,
+                         pbc=self.slab_atom.pbc,
                          edges=slabedges)
         grslab.arrays['surface_atoms'] = tags
 
+        return grslab
+
+    def adjacency_to_3d(self) -> None:
+        ''' Place adsorbates on the surface '''
+        all_species_symbols = IO.get_all_unique_species(self.yamlfile)
+        # reactions = IO.open_yaml_file(self.yamlfile)
+        images = IO.get_all_images(self.yamlfile)
+
         # prepare surface for placing adsorbates
+        grslab = self.get_grslab()
         ads_builder = Builder(grslab)
 
         # build adsorbates
         structures = dict()
-        for sp_symbol, sp_gratoms in zip(all_species_symbols, images):
-            if len(sp_gratoms) == 0:
-                continue
+        for sp_symbol, sp_gratoms_rxn in zip(all_species_symbols, images.values()):
+            for sp_gratoms in sp_gratoms_rxn:
+                if len(sp_gratoms) == 0:
+                    continue
+                # which atom connects to the surface
+                bonded = [0]
 
-            # deal with edge cases - which atom connects to the surface
-            bonded = [0]
+                if sp_symbol in edge_cases_bonded_dict.keys():
+                    bonded = [edge_cases_bonded_dict[sp_symbol]]
 
-            if sp_symbol in edge_cases_bonded_dict.keys():
-                bonded = [edge_cases_bonded_dict[sp_symbol]]
-
-            try:
-                # put adsorbates on the surface
-                structs = ads_builder.add_adsorbate(
-                    sp_gratoms, index=-1, bonds=bonded)
-                structures[str(sp_symbol)] = structs
-            except IndexError:
-                # TODO an idea to put -1 in adsorbate.get_tags() for
-                # surface bonded atom
-                print(sp_gratoms, sp_gratoms.edges,
-                      sp_gratoms.get_tags())
+                try:
+                    # put adsorbates on the surface
+                    structs = ads_builder.add_adsorbate(
+                        sp_gratoms, index=-1, bonds=bonded)
+                    structures[str(sp_symbol)] = structs
+                except IndexError:
+                    print(sp_gratoms, sp_gratoms.edges,
+                          sp_gratoms.get_tags())
 
         for sp_symbol, adsorbate in structures.items():
-            # create dir
+            # create directory where all adsorbates are stored
             savedir = os.path.join(
                 self.creation_dir, self.facetpath, 'minima', sp_symbol)
             os.makedirs(savedir, exist_ok=True)
 
             for prefix, structure in enumerate(adsorbate):
-                big_slab_ads = big_slab + structure[nslab:]
+                big_slab_ads = self.big_slab + structure[self.nslab:]
                 # save adsorbates as .xyz and .png
                 write(os.path.join(savedir, '{}.xyz'.format(
                     str(prefix).zfill(2))), big_slab_ads)
