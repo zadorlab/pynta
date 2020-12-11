@@ -1,8 +1,10 @@
+import re
 from pynta.excatkit.molecule import Molecule
 from pynta.excatkit.gratoms import Gratoms
 from pynta.io import IO
 from pynta.utils import edge_cases_bonded_dict, edge_cases_topology_dict
 from typing import Dict, List, Tuple
+import re
 
 
 class GeneralTSGuessesGenerator():
@@ -173,6 +175,32 @@ class GeneralTSGuessesGenerator():
                 max_conected_atom_idx = (tmp_idx - n_surf_at_befor_ads - 1)
                 return max_conected_atom_idx
 
+    def get_connected_atoms_tag_idxs(self, tag_atom_idx):
+        n_surf_at_befor_ads = 0
+
+        for line in (self.reacting_species_connectivity):
+            if 'multiplicity' in line:
+                continue
+            if 'X' in line:
+                n_surf_at_befor_ads += 1
+            else:
+                break
+
+        # index is counted following an order as in yaml file. Start with 0,
+        # all X is ommited
+        yaml_reference_idx = tag_atom_idx + n_surf_at_befor_ads + 1
+
+        reference_line = self.reacting_species_connectivity[yaml_reference_idx]
+        yaml_connected_atom_idxs = [int(item.split(',')[0][1:])
+                                    for item in reference_line.split()
+                                    if '{' in item]
+
+        tag_connected_atoms_idx = [(yaml_idx - n_surf_at_befor_ads - 1)
+                                   for yaml_idx in yaml_connected_atom_idxs]
+
+        # index follows the order as in yaml file. To get
+        return tag_connected_atoms_idx
+
 
 class Diatomic(GeneralTSGuessesGenerator):
     def get_ts_guess_and_bonded_idx(
@@ -195,18 +223,24 @@ class Diatomic(GeneralTSGuessesGenerator):
         '''
 
         ts_guess_el = IO.get_TS_guess_image(self.rxn, self.easier_to_build)
-
         s_bonded_idx = self.get_s_bonded_idx()
 
-        yaml_react_atom_idx_1, yaml_react_atom_idx_2 = reacting_idxs
+        for atom in ts_guess_el:
+            print(atom)
+
+        tag_react_atom_idx_1, tag_react_atom_idx_2 = reacting_idxs
 
         react_atom_idx_1 = [
             atom.index for atom in ts_guess_el
-            if atom.tag == yaml_react_atom_idx_1][0]
+            if atom.tag == tag_react_atom_idx_1][0]
 
         react_atom_idx_2 = [
             atom.index for atom in ts_guess_el
-            if atom.tag == yaml_react_atom_idx_2][0]
+            if atom.tag == tag_react_atom_idx_2][0]
+
+        # print(tag_react_atom_idx_2, react_atom_idx_2)
+        connected_atoms = self.get_connected_atoms_tag_idxs(
+            tag_react_atom_idx_2)
 
         bondlen = ts_guess_el.get_distance(react_atom_idx_1, react_atom_idx_2)
 
