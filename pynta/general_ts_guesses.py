@@ -1,4 +1,5 @@
 import re
+from numpy.core.numeric import indices
 from pynta.excatkit.molecule import Molecule
 from pynta.excatkit.gratoms import Gratoms
 from pynta.io import IO
@@ -256,10 +257,18 @@ class Diatomic(GeneralTSGuessesGenerator):
             atom.index for atom in ts_guess_el
             if atom.tag == tag_react_atom_idx_2][0]
 
+        print(react_atom_idx_1, react_atom_idx_2)
+
+        # react_atom_idx_2 = 1
+        # react_atom_idx_1 = 0
         # print(tag_react_atom_idx_2, react_atom_idx_2)
+
+        # get all atom idxs connected to atom2
         connected_atoms = self.convert_tag_to_correct_idx(ts_guess_el,
                                                           tag_react_atom_idx_1,
                                                           tag_react_atom_idx_2)
+        # add atom2 idx to the list of connected_atoms
+        connected_atoms.append(react_atom_idx_2)
 
         bondlen = ts_guess_el.get_distance(react_atom_idx_1, react_atom_idx_2)
 
@@ -294,10 +303,15 @@ class Diatomic(GeneralTSGuessesGenerator):
         else:
             # continue with defaults
             pass
-
+        print(connected_atoms)
         # scale the bond distance between reacting part
+
+        # ts_guess_el.set_distance(react_atom_idx_1, react_atom_idx_2,
+        #                          bondlen * self.scfactor, fix=0,
+        #                          indices=[1, 2, 3, 6])
         ts_guess_el.set_distance(react_atom_idx_1, react_atom_idx_2,
-                                 bondlen * self.scfactor, fix=0)
+                                 bondlen * self.scfactor, fix=0,
+                                 indices=connected_atoms)
 
         return ts_guess_el, s_bonded_idx
 
