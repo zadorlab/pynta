@@ -176,7 +176,7 @@ class IO():
         reactions = yaml.safe_load(yamltxt)
         return reactions
 
-    @ staticmethod
+    @staticmethod
     def get_all_unique_species(
             yamlfile: str) -> List[str]:
         ''' Generate a list with all unique species names
@@ -252,7 +252,7 @@ class IO():
         products = [prod for prod in r_x_removed if prod]
         return reactants, products
 
-    @ staticmethod
+    @staticmethod
     def get_rxn_name(
             rxn: Dict[str, str]) -> str:
         ''' Get a reaction name for a given rxn
@@ -274,7 +274,7 @@ class IO():
         rxn_name = '+'.join(reactants) + '_' + '+'.join(products)
         return rxn_name
 
-    @ staticmethod
+    @staticmethod
     def get_xyz_from_traj(
             path_to_species: str) -> None:
         ''' Convert all ASE's traj files to .xyz files for a given species
@@ -408,7 +408,7 @@ class IO():
         '''
         unique_adsorbates_prefixes = {}
         path_to_minima = os.path.join(creation_dir, facetpath, 'minima')
-        all_species = self.get_unique_all_species(yamlfile)
+        all_species = self.get_all_unique_species(yamlfile)
         for species in all_species:
             path_to_species = os.path.join(path_to_minima, species)
             uq_prefixes = IO.get_unique_prefixes(
@@ -594,7 +594,6 @@ class IO():
                 n_surf_at_befor_ads += 1
             else:
                 break
-        print('---')
         for num, line in enumerate(reacting_species_connectivity):
             if 'multiplicity' in line:
                 remove_one_more = 1
@@ -602,8 +601,6 @@ class IO():
                 atom_symbol = line.split()[2]
                 reacting_idxs[atom_symbol] = (
                     num - n_surf_at_befor_ads - remove_one_more)
-                print(num)
-                print(n_surf_at_befor_ads)
         return reacting_idxs
 
     def get_all_images(yamlfile):

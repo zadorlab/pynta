@@ -57,7 +57,6 @@ else:
     scaled1 = inputR2S.scaled1
     scaled2 = inputR2S.scaled2
     all_reacting_atoms = IO.get_all_reacting_atoms(check_yaml)
-    print(all_reacting_atoms)
     species_dict = IO().get_species_dict(check_yaml)
     all_species = IO().get_all_unique_species(check_yaml)
     executable = inputR2S.executable
