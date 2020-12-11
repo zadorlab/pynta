@@ -239,3 +239,10 @@ class HighLevelRestart():
             if job.state not in ['JOB_FINISHED', 'AWAITING_PARENTS']:
                 job.state = 'READY'
                 job.save()
+        self.set_awaiting_status()
+
+    def set_awaiting_status(self):
+        for job in self.ase_jobs:
+            if len(job.parents) > 2 and job.state != 'JOB_FINISHED':
+                job.state = 'AWAITING_PARENTS'
+                job.save()

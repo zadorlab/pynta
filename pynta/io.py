@@ -593,8 +593,6 @@ class IO():
             if 'X' in line:
                 n_surf_at_befor_ads += 1
             else:
-                # if n_surf_at_befor_ads != 0:
-                #     n_surf_at_befor_ads -= 1
                 break
         print('---')
         for num, line in enumerate(reacting_species_connectivity):
