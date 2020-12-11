@@ -201,6 +201,22 @@ class GeneralTSGuessesGenerator():
         # index follows the order as in yaml file. To get
         return tag_connected_atoms_idx
 
+    def convert_tag_to_correct_idx(
+            self,
+            ts_guess_el,
+            tag_atom_idx):
+        tag_connected_atoms_idx = self.get_connected_atoms_tag_idxs(
+            tag_atom_idx)
+        connected_atoms_idx = []
+        for atom in ts_guess_el:
+            if atom.tag in tag_connected_atoms_idx:
+                connected_atoms_idx.append(atom.index)
+        return connected_atoms_idx
+
+        # a = [atom.index for atom in ts_guess_el if atom.tag ==
+        #      [tag for tag in tag_connected_atoms_idx]]
+        # print(a)
+
 
 class Diatomic(GeneralTSGuessesGenerator):
     def get_ts_guess_and_bonded_idx(
@@ -239,8 +255,8 @@ class Diatomic(GeneralTSGuessesGenerator):
             if atom.tag == tag_react_atom_idx_2][0]
 
         # print(tag_react_atom_idx_2, react_atom_idx_2)
-        connected_atoms = self.get_connected_atoms_tag_idxs(
-            tag_react_atom_idx_2)
+        connected_atoms = self.convert_tag_to_correct_idx(ts_guess_el,
+                                                          tag_react_atom_idx_2)
 
         bondlen = ts_guess_el.get_distance(react_atom_idx_1, react_atom_idx_2)
 
