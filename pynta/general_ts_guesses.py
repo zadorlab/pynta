@@ -177,7 +177,7 @@ class GeneralTSGuessesGenerator():
                 max_conected_atom_idx = (tmp_idx - n_surf_at_befor_ads - 1)
                 return max_conected_atom_idx
 
-    def helper(self, yaml_ref_idx1, yaml_ref_idx2, checked_atoms, n_surf_at_befor_ads):
+    def helper(self, yaml_ref_idx1, yaml_ref_idx2, checked_atoms, n_surf_at_befor_ads, multi_line):
 
         # index is counted following an order as in yaml file. Start with 0,
         # all X is ommited
@@ -189,7 +189,6 @@ class GeneralTSGuessesGenerator():
         # print('Line in yaml file of the atom that connectivity is checked')
         # print(yaml_ref_idx1)
         # print('---')
-
         reference_line = self.reacting_species_connectivity[yaml_ref_idx2]
 
         yaml_connected_atom_idxs = [int(item.split(',')[0][1:])
@@ -198,10 +197,10 @@ class GeneralTSGuessesGenerator():
 
         checked_atoms.append(yaml_ref_idx1)
         for tag in yaml_connected_atom_idxs:
-            tag = tag - n_surf_at_befor_ads - 1
+            tag = tag - n_surf_at_befor_ads - multi_line
             if tag not in checked_atoms and tag != yaml_ref_idx1:
                 self.helper(
-                    tag, yaml_ref_idx2, checked_atoms, n_surf_at_befor_ads)
+                    tag, yaml_ref_idx2, checked_atoms, n_surf_at_befor_ads, multi_line)
 
         # print('Checked atoms')
         # print(checked_atoms)
@@ -220,19 +219,21 @@ class GeneralTSGuessesGenerator():
         # connectivity = []
         checked_atoms = []
         n_surf_at_befor_ads = 0
-        for line in (self.reacting_species_connectivity):
+        multi_line = 0
+        for line in self.reacting_species_connectivity:
             if 'multiplicity' in line:
+                multi_line += 1
                 continue
             if 'X' in line:
                 n_surf_at_befor_ads += 1
             else:
                 break
-
-        yaml_ref_idx1 = tag_atom_idx1 + n_surf_at_befor_ads + 1
-        yaml_ref_idx2 = tag_atom_idx2 + n_surf_at_befor_ads + 1
+        print(multi_line)
+        yaml_ref_idx1 = tag_atom_idx1 + n_surf_at_befor_ads + multi_line + 1
+        yaml_ref_idx2 = tag_atom_idx2 + n_surf_at_befor_ads + multi_line + 1
         # print('yaml ref', yaml_ref_idx1, yaml_ref_idx2)
         check = self.helper(yaml_ref_idx1, yaml_ref_idx2,
-                            checked_atoms, n_surf_at_befor_ads)
+                            checked_atoms, n_surf_at_befor_ads, multi_line)
         check.remove(tag_atom_idx1)
         print('tag indicies')
         print(check)
@@ -283,9 +284,6 @@ class Diatomic(GeneralTSGuessesGenerator):
         tag_react_atom_idx_1, tag_react_atom_idx_2 = reacting_idxs
 
         print(tag_react_atom_idx_1, tag_react_atom_idx_2)
-
-        for atom in ts_guess_el:
-            print(atom)
 
         react_atom_idx_1 = [
             atom.index for atom in ts_guess_el

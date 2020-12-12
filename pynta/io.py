@@ -628,6 +628,7 @@ class IO():
             rxn[easier_to_build].strip().split('\n'))
 
         ts_guess_image = Molecule().get_3D_positions(ts_guess[0])
+        print(ts_guess_image)
         return ts_guess_image
 
     @staticmethod
@@ -703,9 +704,14 @@ class IO():
         edges = []
         tags = []
         # bond_index = None
-        for i, line in enumerate(adjtxt):
-            if i == 0:
-                continue
+        for i, line in enumerate(adjtxt, 1):
+            # if i == 0:
+            #     continue
+            # print(line)
+            # if line == 'multiplicity' not in line:
+                # print('here')
+            # i = -1
+            # continue
             if not line:
                 break
 
