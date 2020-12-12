@@ -1,5 +1,3 @@
-import re
-from numpy.core.numeric import indices
 from pynta.excatkit.molecule import Molecule
 from pynta.excatkit.gratoms import Gratoms
 from pynta.io import IO
@@ -70,7 +68,6 @@ class GeneralTSGuessesGenerator():
 
         ts_guess_el, s_bonded_idx = None, None
         how_many_atoms_react = len(reacting_idxs)
-        print(how_many_atoms_react)
 
         if how_many_atoms_react == 2:
             ts_guess_el, s_bonded_idx = Diatomic(
@@ -177,18 +174,13 @@ class GeneralTSGuessesGenerator():
                 max_conected_atom_idx = (tmp_idx - n_surf_at_befor_ads - 1)
                 return max_conected_atom_idx
 
-    def helper(self, yaml_ref_idx1, yaml_ref_idx2, checked_atoms, n_surf_at_befor_ads, multi_line):
-
-        # index is counted following an order as in yaml file. Start with 0,
-        # all X is ommited
-        # print(tag_atom_idx1, tag_atom_idx2)
-
-        # yaml_ref_idx1 = tag_atom_idx1 + n_surf_at_befor_ads + 1
-        # yaml_ref_idx2 = tag_atom_idx2 + n_surf_at_befor_ads + 1
-
-        # print('Line in yaml file of the atom that connectivity is checked')
-        # print(yaml_ref_idx1)
-        # print('---')
+    def helper(
+            self,
+            yaml_ref_idx1,
+            yaml_ref_idx2,
+            checked_atoms,
+            n_surf_at_befor_ads,
+            multi_line):
         reference_line = self.reacting_species_connectivity[yaml_ref_idx2]
 
         yaml_connected_atom_idxs = [int(item.split(',')[0][1:])
@@ -200,23 +192,16 @@ class GeneralTSGuessesGenerator():
             tag = tag - n_surf_at_befor_ads - multi_line
             if tag not in checked_atoms and tag != yaml_ref_idx1:
                 self.helper(
-                    tag, yaml_ref_idx2, checked_atoms, n_surf_at_befor_ads, multi_line)
+                    tag, yaml_ref_idx2,
+                    checked_atoms,
+                    n_surf_at_befor_ads,
+                    multi_line)
 
-        # print('Checked atoms')
-        # print(checked_atoms)
-
-        # print('Connectivity')
-        # print(connectivity)
         return checked_atoms
 
-        # remove connectivity to the atom1
-        # yaml_connected_atom_idxs.remove(yaml_ref_idx2)
-
-        # tag_connected_atoms_idx = [(yaml_idx - n_surf_at_befor_ads - 1)
-        #                            for yaml_idx in yaml_connected_atom_idxs]
-
     def get_connected_atoms_tag_idxs(self, tag_atom_idx1, tag_atom_idx2):
-        # connectivity = []
+        tag_atom_idx1 = tag_atom_idx1
+        tag_atom_idx2 = tag_atom_idx2
         checked_atoms = []
         n_surf_at_befor_ads = 0
         multi_line = 0
@@ -228,15 +213,12 @@ class GeneralTSGuessesGenerator():
                 n_surf_at_befor_ads += 1
             else:
                 break
-        print(multi_line)
-        yaml_ref_idx1 = tag_atom_idx1 + n_surf_at_befor_ads + multi_line + 1
-        yaml_ref_idx2 = tag_atom_idx2 + n_surf_at_befor_ads + multi_line + 1
-        # print('yaml ref', yaml_ref_idx1, yaml_ref_idx2)
+        yaml_ref_idx1 = tag_atom_idx1 + n_surf_at_befor_ads + multi_line
+        yaml_ref_idx2 = tag_atom_idx2 + n_surf_at_befor_ads + multi_line
         check = self.helper(yaml_ref_idx1, yaml_ref_idx2,
                             checked_atoms, n_surf_at_befor_ads, multi_line)
+
         check.remove(tag_atom_idx1)
-        print('tag indicies')
-        print(check)
         return check
 
     def convert_tag_to_correct_idx(
@@ -278,12 +260,7 @@ class Diatomic(GeneralTSGuessesGenerator):
         ts_guess_el = IO.get_TS_guess_image(self.rxn, self.easier_to_build)
         s_bonded_idx = self.get_s_bonded_idx()
 
-        for atom in ts_guess_el:
-            print(atom)
-
         tag_react_atom_idx_1, tag_react_atom_idx_2 = reacting_idxs
-
-        print(tag_react_atom_idx_1, tag_react_atom_idx_2)
 
         react_atom_idx_1 = [
             atom.index for atom in ts_guess_el
@@ -292,10 +269,6 @@ class Diatomic(GeneralTSGuessesGenerator):
         react_atom_idx_2 = [
             atom.index for atom in ts_guess_el
             if atom.tag == tag_react_atom_idx_2][0]
-
-        # react_atom_idx_2 = 1
-        # react_atom_idx_1 = 0
-        # print(tag_react_atom_idx_mao2, react_atom_idx_2)
 
         # get all atom idxs connected to atom2
         connected_atoms = self.convert_tag_to_correct_idx(ts_guess_el,
@@ -338,13 +311,12 @@ class Diatomic(GeneralTSGuessesGenerator):
         else:
             # continue with defaults
             pass
-        print('indicies')
-        print(connected_atoms)
-        # scale the bond distance between reacting part
 
         # ts_guess_el.set_distance(react_atom_idx_1, react_atom_idx_2,
         #                          bondlen * self.scfactor, fix=0,
         #                          indices=[1, 2, 3, 6])
+
+        # scale the bond distance between reacting part
         ts_guess_el.set_distance(react_atom_idx_1, react_atom_idx_2,
                                  bondlen * self.scfactor, fix=0,
                                  indices=connected_atoms)

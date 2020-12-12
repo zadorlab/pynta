@@ -628,7 +628,6 @@ class IO():
             rxn[easier_to_build].strip().split('\n'))
 
         ts_guess_image = Molecule().get_3D_positions(ts_guess[0])
-        print(ts_guess_image)
         return ts_guess_image
 
     @staticmethod
@@ -704,14 +703,14 @@ class IO():
         edges = []
         tags = []
         # bond_index = None
-        for i, line in enumerate(adjtxt, 1):
-            # if i == 0:
-            #     continue
+        # for i, line in enumerate(adjtxt, 1):
+        for i, line in enumerate(adjtxt, 0):
+            if i == 0:
+                continue
             # print(line)
             # if line == 'multiplicity' not in line:
                 # print('here')
-            # i = -1
-            # continue
+
             if not line:
                 break
 
@@ -745,10 +744,11 @@ class IO():
 
         gratoms_list = []
         bonds = []
-        for i, subgraph in enumerate(nx.connected_component_subgraphs(gratoms.graph)):
+
+        graphs = nx.connected_component_subgraphs(gratoms.graph)
+        for i, subgraph in enumerate(graphs):
             indices = list(subgraph.nodes)
             symbols = gratoms[indices].symbols
-            # new_gratoms = gratoms[indices].copy()
             new_indices = {old: new for new, old in enumerate(indices)}
             new_edges = []
             for edge in subgraph.edges:
@@ -758,18 +758,18 @@ class IO():
             new_gratoms = Gratoms(symbols, edges=new_edges)
 
             bond = None
-            tags = new_gratoms.get_tags()
-            for i, tag in enumerate(tags):
-                if tag < 0:
-                    if bond is None:
-                        bond = [i]
-                    elif len(bond) == 1:
-                        bond.append(i)
-                    else:
-                        raise RuntimeError(
-                            'At most two bonds to the metal are allowed per '
-                            'adsorbate!')
-                    tags[i] = abs(tags[i])
+            # tags = new_gratoms.get_tags()
+            # for i, tag in enumerate(tags):
+            #     if tag < 0:
+            #         if bond is None:
+            #             bond = [i]
+            #         elif len(bond) == 1:
+            #             bond.append(i)
+            #         else:
+            #             raise RuntimeError(
+            #                 'At most two bonds to the metal are allowed per '
+            #                 'adsorbate!')
+            #         tags[i] = abs(tags[i])
             # tags = self.get_proper_atomic_indicies(adjtxt)
             # print(tags)
             tags = indices
