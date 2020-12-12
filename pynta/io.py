@@ -704,9 +704,9 @@ class IO():
         tags = []
         # bond_index = None
         # for i, line in enumerate(adjtxt, 1):
-        for i, line in enumerate(adjtxt, 0):
-            if i == 0:
-                continue
+        for i, line in enumerate(adjtxt, 1):
+            # if i == 0:
+            #     continue
             # print(line)
             # if line == 'multiplicity' not in line:
                 # print('here')

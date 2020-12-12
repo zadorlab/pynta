@@ -189,7 +189,7 @@ class GeneralTSGuessesGenerator():
 
         checked_atoms.append(yaml_ref_idx1)
         for tag in yaml_connected_atom_idxs:
-            tag = tag - n_surf_at_befor_ads - multi_line
+            tag = tag - n_surf_at_befor_ads - multi_line - 1
             if tag not in checked_atoms and tag != yaml_ref_idx1:
                 self.helper(
                     tag, yaml_ref_idx2,
@@ -213,12 +213,13 @@ class GeneralTSGuessesGenerator():
                 n_surf_at_befor_ads += 1
             else:
                 break
-        yaml_ref_idx1 = tag_atom_idx1 + n_surf_at_befor_ads + multi_line
+        yaml_ref_idx1 = tag_atom_idx1 + n_surf_at_befor_ads + multi_line + 1
         yaml_ref_idx2 = tag_atom_idx2 + n_surf_at_befor_ads + multi_line
         check = self.helper(yaml_ref_idx1, yaml_ref_idx2,
                             checked_atoms, n_surf_at_befor_ads, multi_line)
 
         check.remove(tag_atom_idx1)
+        print('yaml_indicies_no_x', check)
         return check
 
     def convert_tag_to_correct_idx(
@@ -259,6 +260,9 @@ class Diatomic(GeneralTSGuessesGenerator):
 
         ts_guess_el = IO.get_TS_guess_image(self.rxn, self.easier_to_build)
         s_bonded_idx = self.get_s_bonded_idx()
+
+        for atom in ts_guess_el:
+            print(atom)
 
         tag_react_atom_idx_1, tag_react_atom_idx_2 = reacting_idxs
 
@@ -317,6 +321,7 @@ class Diatomic(GeneralTSGuessesGenerator):
         #                          indices=[1, 2, 3, 6])
 
         # scale the bond distance between reacting part
+        print('connected_atoms', connected_atoms)
         ts_guess_el.set_distance(react_atom_idx_1, react_atom_idx_2,
                                  bondlen * self.scfactor, fix=0,
                                  indices=connected_atoms)
