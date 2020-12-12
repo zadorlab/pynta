@@ -206,9 +206,9 @@ class GeneralTSGuessesGenerator():
         n_surf_at_befor_ads = 0
         multi_line = 0
         for line in self.reacting_species_connectivity:
-            if 'multiplicity' in line:
-                multi_line += 1
-                continue
+            # if 'multiplicity' in line:
+            #     multi_line += 1
+            #     # continue
             if 'X' in line:
                 n_surf_at_befor_ads += 1
             else:
@@ -218,8 +218,8 @@ class GeneralTSGuessesGenerator():
         check = self.helper(yaml_ref_idx1, yaml_ref_idx2,
                             checked_atoms, n_surf_at_befor_ads, multi_line)
 
-        check.remove(tag_atom_idx1)
         print('yaml_indicies_no_x', check)
+        check.remove(tag_atom_idx1)
         return check
 
     def convert_tag_to_correct_idx(
