@@ -70,6 +70,7 @@ class GeneralTSGuessesGenerator():
 
         ts_guess_el, s_bonded_idx = None, None
         how_many_atoms_react = len(reacting_idxs)
+        print(how_many_atoms_react)
 
         if how_many_atoms_react == 2:
             ts_guess_el, s_bonded_idx = Diatomic(
@@ -233,6 +234,7 @@ class GeneralTSGuessesGenerator():
         check = self.helper(yaml_ref_idx1, yaml_ref_idx2,
                             checked_atoms, n_surf_at_befor_ads)
         check.remove(tag_atom_idx1)
+        print('tag indicies')
         print(check)
         return check
 
@@ -282,6 +284,9 @@ class Diatomic(GeneralTSGuessesGenerator):
 
         print(tag_react_atom_idx_1, tag_react_atom_idx_2)
 
+        for atom in ts_guess_el:
+            print(atom)
+
         react_atom_idx_1 = [
             atom.index for atom in ts_guess_el
             if atom.tag == tag_react_atom_idx_1][0]
@@ -292,14 +297,15 @@ class Diatomic(GeneralTSGuessesGenerator):
 
         # react_atom_idx_2 = 1
         # react_atom_idx_1 = 0
-        # print(tag_react_atom_idx_2, react_atom_idx_2)
+        # print(tag_react_atom_idx_mao2, react_atom_idx_2)
 
         # get all atom idxs connected to atom2
         connected_atoms = self.convert_tag_to_correct_idx(ts_guess_el,
                                                           tag_react_atom_idx_1,
                                                           tag_react_atom_idx_2)
         # add atom2 idx to the list of connected_atoms
-        # connected_atoms.append(react_atom_idx_2)
+        if react_atom_idx_2 not in connected_atoms:
+            connected_atoms.append(react_atom_idx_2)
 
         bondlen = ts_guess_el.get_distance(react_atom_idx_1, react_atom_idx_2)
 
@@ -349,5 +355,5 @@ class Diatomic(GeneralTSGuessesGenerator):
 
 
 class Triatomic(GeneralTSGuessesGenerator):
-    def get_ts_guess_and_bonded_idx(self):
+    def get_ts_guess_and_bonded_idx(self, reacting_idxs):
         raise NotImplementedError('Only diatomic reactions at this moment')
