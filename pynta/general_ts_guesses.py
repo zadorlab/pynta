@@ -295,9 +295,33 @@ class GeneralTSGuessesGenerator():
 
     def convert_tag_to_correct_idx(
             self,
-            ts_guess_el,
-            tag_atom_idx1,
-            tag_atom_idx2):
+            ts_guess_el: Gratoms,
+            tag_atom_idx1: int,
+            tag_atom_idx2: int) -> List[int]:
+        ''' Convert tag indiciec (.yaml file is a source) to indicies as they
+            appear in the ts_guess_el Gratoms object
+
+        Parameters
+        ----------
+        ts_guess_el : Gratom
+            Gratoms representation of the TS guess
+        tag_atom_idx1 : int
+            an index of the atom_1 as it appears in yaml file, start from 0,
+            ignore surface atoms multiplicity line.
+            The same idx is used as tag in ts_guess_el.
+        tag_atom_idx2 : int
+            an index of the atom_2 as it appears in yaml file, start from 0,
+            ignore surface atoms multiplicity line.
+            The same idx is used as tag in ts_guess_el.
+
+        Returns
+        -------
+        connected_atoms_idx : List[int]
+            a list with all atomic indicies of the atoms and subatoms
+            connected to the atom_2, excluding atom_1, as they appear in the
+            ts_guess_el, Gratom object.
+
+        '''
         tag_connected_atoms_idx = self.get_connected_atoms_tag_idxs(
             tag_atom_idx1, tag_atom_idx2)
         connected_atoms_idx = []
@@ -322,7 +346,7 @@ class Diatomic(GeneralTSGuessesGenerator):
         Returns
         -------
         ts_guess_el, s_bonded_idx : Tuple[Gratoms, int]
-            ts_geuss_el is Gratoms representation of TS guess, whereas
+            ts_geuss_el is Gratoms representation of the TS guess, whereas
             s_bonded_idx is the index of adsorbate atom that bonds to surface
 
         '''
