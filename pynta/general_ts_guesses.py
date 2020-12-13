@@ -176,12 +176,12 @@ class GeneralTSGuessesGenerator():
 
     def get_connectivity(
             self,
-            yaml_ref_idx1,
-            yaml_ref_idx2,
-            visited_atoms,
-            n_surf_at_befor_ads,
-            multi_line,
-            first_line):
+            yaml_ref_idx1: int,
+            yaml_ref_idx2: int,
+            visited_atoms: List[int],
+            n_surf_at_befor_ads: int,
+            multi_line: int,
+            first_line: int) -> List[int]:
         ref_line_idx = yaml_ref_idx2 - first_line
         reference_line = self.reacting_species_connectivity[ref_line_idx]
 
@@ -202,7 +202,32 @@ class GeneralTSGuessesGenerator():
 
         return visited_atoms
 
-    def get_connected_atoms_tag_idxs(self, tag_atom_idx1, tag_atom_idx2):
+    def get_connected_atoms_tag_idxs(
+            self,
+            tag_atom_idx1: int,
+            tag_atom_idx2: int) -> List[int]:
+        ''' Get a list with all atomic indicies of the atoms and subatoms
+            and so that are connected to the atom_2, excluding atom_1.
+
+        Parameters
+        ----------
+        tag_atom_idx1 : int
+            an index of the atom_1 as it appears in yaml file, start from 0,
+            ignore surface atoms multiplicity line.
+            The same idx is used as tag in ts_guess_el.
+        tag_atom_idx2 : int
+            an index of the atom_2 as it appears in yaml file, start from 0,
+            ignore surface atoms multiplicity line.
+            The same idx is used as tag in ts_guess_el.
+
+        Returns
+        -------
+        tag_indicies : List[int]
+            a list with all atomic indicies of atoms and subatoms that are
+            connected to the atom_2, excluding atom_1. Indicies are as they
+            appear in the yaml file, tart from 0, ignore surface atoms and
+            multiplicity line.
+        '''
         visited_atoms = []
         n_surf_at_befor_ads = 0
 
