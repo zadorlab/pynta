@@ -702,12 +702,11 @@ class IO():
         symbols = []
         edges = []
         tags = []
-        # bond_index = None
-        # for i, line in enumerate(adjtxt, 1):
+
         start_idx = 1
         if 'multiplicity' in adjtxt[0]:
             start_idx -= 1
-        print(start_idx)
+
         for i, line in enumerate(adjtxt, start_idx):
             if i == 0:
                 continue
