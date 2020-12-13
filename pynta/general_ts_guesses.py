@@ -181,7 +181,11 @@ class GeneralTSGuessesGenerator():
             checked_atoms,
             n_surf_at_befor_ads,
             multi_line):
-        reference_line = self.reacting_species_connectivity[yaml_ref_idx2]
+        first_line = 1
+        if 'multiplicity' in self.reacting_species_connectivity[0]:
+            first_line = 0
+        reference_line = self.reacting_species_connectivity[yaml_ref_idx2 - first_line]
+        print(reference_line)
 
         yaml_connected_atom_idxs = [int(item.split(',')[0][1:])
                                     for item in reference_line.split()
@@ -190,6 +194,7 @@ class GeneralTSGuessesGenerator():
         checked_atoms.append(yaml_ref_idx1)
         for tag in yaml_connected_atom_idxs:
             tag = tag - n_surf_at_befor_ads - multi_line - 1
+            print(tag)
             if tag not in checked_atoms and tag != yaml_ref_idx1:
                 self.helper(
                     tag, yaml_ref_idx2,
@@ -200,21 +205,20 @@ class GeneralTSGuessesGenerator():
         return checked_atoms
 
     def get_connected_atoms_tag_idxs(self, tag_atom_idx1, tag_atom_idx2):
-        tag_atom_idx1 = tag_atom_idx1
-        tag_atom_idx2 = tag_atom_idx2
         checked_atoms = []
         n_surf_at_befor_ads = 0
         multi_line = 0
         for line in self.reacting_species_connectivity:
-            # if 'multiplicity' in line:
-            #     multi_line += 1
-            #     # continue
+            if 'multiplicity' in line:
+                multi_line += 2
+                # continue
             if 'X' in line:
                 n_surf_at_befor_ads += 1
             else:
                 break
         yaml_ref_idx1 = tag_atom_idx1 + n_surf_at_befor_ads + multi_line + 1
-        yaml_ref_idx2 = tag_atom_idx2 + n_surf_at_befor_ads + multi_line
+        yaml_ref_idx2 = tag_atom_idx2 + n_surf_at_befor_ads + multi_line + 1
+        print('yamlf_ref ind, ', yaml_ref_idx1, yaml_ref_idx2)
         check = self.helper(yaml_ref_idx1, yaml_ref_idx2,
                             checked_atoms, n_surf_at_befor_ads, multi_line)
 
