@@ -182,14 +182,46 @@ class GeneralTSGuessesGenerator():
             n_surf_at_befor_ads: int,
             multi_line: int,
             first_line: int) -> List[int]:
+        ''' Recursvely retrive information about connectivity of the atom_2
+
+        Parameters
+        ----------
+        yaml_ref_idx1 : int
+            a line in the.yaml file containing information about connectivity
+            of the atom_1
+        yaml_ref_idx2 : int
+            a line in the.yaml file containing information about connectivity
+            of the atom_2
+        visited_atoms : List[int]
+            a list with all atomic indicies (tags - as they appear in the .yaml
+            file, starts from 0, ingoring surface atoms and multiplicity line)
+            that have been alread visited.
+        n_surf_at_befor_ads : int
+            number of surface atoms 'X' that are present before any adsorbate
+            in the .yaml file
+        multi_line : int
+            1 if multiplicity line is present in the .yaml file, 0 otherwise
+        first_line : int
+            0 if multiplicity line is present in the .yaml file, 1 otherwise
+
+        Returns
+        -------
+        visited_atoms: List[int]
+            a list with all atomic indicies (tags - as they appear in the .yaml
+            file, starts from 0, ingoring surface atoms and multiplicity line)
+            that have been alread visited.
+
+        '''
         ref_line_idx = yaml_ref_idx2 - first_line
         reference_line = self.reacting_species_connectivity[ref_line_idx]
 
+        # retrive connectivity information
         yaml_connected_atom_idxs = [int(item.split(',')[0][1:])
                                     for item in reference_line.split()
                                     if '{' in item]
 
         visited_atoms.append(yaml_ref_idx1)
+
         for tag in yaml_connected_atom_idxs:
             tag = tag - n_surf_at_befor_ads - multi_line - first_line
             if tag not in visited_atoms and tag != yaml_ref_idx1:
@@ -227,6 +259,7 @@ class GeneralTSGuessesGenerator():
             connected to the atom_2, excluding atom_1. Indicies are as they
             appear in the yaml file, tart from 0, ignore surface atoms and
             multiplicity line.
+
         '''
         visited_atoms = []
         n_surf_at_befor_ads = 0
