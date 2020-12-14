@@ -852,10 +852,10 @@ class TS():
                     prefix=ts_fname[:2],
                     ts_fname=ts_fname,
                     facetpath=self.facetpath,
-                    pseudopotentials=pseudopotentials,
-                    pseudo_dir=pseudo_dir,
                     balsam_exe_settings=balsam_exe_settings,
                     calc_keywords=calc_keywords,
+                    pseudopotentials=pseudopotentials,
+                    pseudo_dir=pseudo_dir,
                     creation_dir=self.creation_dir,
                     n_kpts=self.n_kpts,
                     repeats=self.repeats
