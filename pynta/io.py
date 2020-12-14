@@ -603,6 +603,37 @@ class IO():
                     num - n_surf_at_befor_ads - remove_one_more)
         return reacting_idxs
 
+    @staticmethod
+    def get_TS_guess_image(
+            rxn: Dict[str, str],
+            easier_to_build: str) -> Gratoms:
+        ''' Convert RMGCat representation of species to Gratom object
+            - the case of TS_guess
+
+        Parameters
+        ----------
+        rxn : Dict[str, str]
+            a dictionary with info about the paricular reaction. This can be
+            view as a splitted many reaction .yaml file to a single reaction
+            .yaml file
+        easier_to_build : str
+            a list of species that are considerd as the reactiong one
+
+        Returns
+        -------
+        ts_guess_image : Gratoms
+            Skeleton of an TS that is used to generate TS_guesses in
+            :meth:`pynta.general_ts_guesses.decide`
+
+        '''
+        # TODO there is only one element for every reaction tested. There will
+        # be a problem for AX + BX -> CX + DX
+        ts_guess = IO.rmgcat_to_gratoms(
+            rxn[easier_to_build].strip().split('\n'))
+
+        ts_guess_image = Molecule().get_3D_positions(ts_guess[0])
+        return ts_guess_image
+
     def get_all_images(yamlfile):
         reactions = IO.open_yaml_file(yamlfile)
         all_images_unique = []
@@ -621,17 +652,24 @@ class IO():
         return all_images_unique
 
     @staticmethod
-    def get_TS_guess_image(rxn, easier_to_build):
-        # TODO there is only one element for every reaction tested. There will
-        # be a problem for AX + BX -> CX + DX
-        ts_guess, _ = IO.rmgcat_to_gratoms(
-            rxn[easier_to_build].strip().split('\n'))
+    def get_images(rxn: Dict[str, str]) -> List[Gratoms]:
+        ''' Convert RMGCat representation of species for a given rxn
+            to a list of Gratoms objects - the case of reactants and products
 
-        ts_guess_image = Molecule().get_3D_positions(ts_guess[0])
-        return ts_guess_image
+        Parameters
+        ----------
+        rxn : Dict[str, str]
+            a dictionary with info about the paricular reaction. This can be
+            view as a splitted many reaction .yaml file to a single reaction
+            .yaml file
 
-    @staticmethod
-    def get_images(rxn):
+        Returns
+        -------
+        images : List[Gratoms]
+            a list with all unique Gratoms object representing each species
+            taking part in reaction rxn
+
+        '''
         species = []
         bonds = []
         reactants, rbonds = IO.rmgcat_to_gratoms(
@@ -656,13 +694,14 @@ class IO():
         return images
 
     @staticmethod
-    def rmgcat_to_gratoms(adjtxt):
+    def rmgcat_to_gratoms(
+            adjtxt: List[str]) -> List[Gratoms]:
         ''' Convert a slice of .yaml file to Catkit's Gratoms object
 
         Parameters:
         ___________
 
-        adjtxt : list
+        adjtxt : List[str]
             a list with a connectivity info for reactant or product
             as from the .yaml file.
             e.g. for given reaction (reactant or product)
@@ -693,10 +732,8 @@ class IO():
 
         Returns:
         ________
-        gratoms_list : list
-            a Gratom like object
-        bonds : list
-            a list of bonds to the metal
+        gratoms_list : List[Gratoms]
+            a list with all Gratoms objects for a give rxn
 
         '''
         symbols = []
@@ -742,7 +779,7 @@ class IO():
         del gratoms[del_indices]
 
         gratoms_list = []
-        bonds = []
+        # bonds = []
 
         graphs = nx.connected_component_subgraphs(gratoms.graph)
         for i, subgraph in enumerate(graphs):
@@ -773,7 +810,6 @@ class IO():
             # print(tags)
             tags = indices
             new_gratoms.set_tags(tags)
-            bonds.append(bond)
+            # bonds.append(bond)
             gratoms_list.append(new_gratoms)
-
-        return gratoms_list, bonds
+        return gratoms_list

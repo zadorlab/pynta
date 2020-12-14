@@ -201,7 +201,9 @@ class TS():
 
         '''
         # create TS_estimate directory
-        os.makedirs(ts_estimate_path, exist_ok=True)
+        if os.path.isdir(ts_estimate_path):
+            shutil.rmtree(ts_estimate_path)
+        os.makedirs(ts_estimate_path)
 
         slab_atom = read(self.path_to_slab)
         slab_atom.pbc = (True, True, False)
