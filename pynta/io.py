@@ -634,8 +634,22 @@ class IO():
         ts_guess_image = Molecule().get_3D_positions(ts_guess[0])
         return ts_guess_image
 
-    def get_all_images(yamlfile):
+    def get_all_images(yamlfile: str) -> List[Gratoms]:
+        ''' Return a list with all unique images (Gratoms) for all reactions
+
+        Parameters
+        ----------
+        yamlfile : str
+            a name of the .yaml file with a reaction list
+
+        Returns
+        -------
+        all_images_unique : List[Gratoms]
+            a list with all unique Gratoms objects for all reactions
+
+        '''
         reactions = IO.open_yaml_file(yamlfile)
+
         all_images_unique = []
         all_images = []
         for rxn in reactions:
@@ -779,37 +793,22 @@ class IO():
         del gratoms[del_indices]
 
         gratoms_list = []
-        # bonds = []
-
         graphs = nx.connected_component_subgraphs(gratoms.graph)
         for i, subgraph in enumerate(graphs):
             indices = list(subgraph.nodes)
             symbols = gratoms[indices].symbols
             new_indices = {old: new for new, old in enumerate(indices)}
             new_edges = []
+
             for edge in subgraph.edges:
                 newa = new_indices[edge[0]]
                 newb = new_indices[edge[1]]
                 new_edges.append((newa, newb))
+
             new_gratoms = Gratoms(symbols, edges=new_edges)
 
-            bond = None
-            # tags = new_gratoms.get_tags()
-            # for i, tag in enumerate(tags):
-            #     if tag < 0:
-            #         if bond is None:
-            #             bond = [i]
-            #         elif len(bond) == 1:
-            #             bond.append(i)
-            #         else:
-            #             raise RuntimeError(
-            #                 'At most two bonds to the metal are allowed per '
-            #                 'adsorbate!')
-            #         tags[i] = abs(tags[i])
-            # tags = self.get_proper_atomic_indicies(adjtxt)
-            # print(tags)
             tags = indices
             new_gratoms.set_tags(tags)
-            # bonds.append(bond)
             gratoms_list.append(new_gratoms)
+
         return gratoms_list
