@@ -1,9 +1,7 @@
 from pynta.excatkit.molecule import Molecule
 from pynta.excatkit.gratoms import Gratoms
 from pynta.io import IO
-from pynta.utils import edge_cases_bonded_dict, edge_cases_topology_dict
 from typing import Dict, List, Tuple
-import re
 
 
 class GeneralTSGuessesGenerator():
@@ -60,17 +58,17 @@ class GeneralTSGuessesGenerator():
 
         Returns
         -------
-        ts_guess_el, s_bonded_idx : Tuple[Gratoms, int]
+        ts_guess_image, s_bonded_idx : Tuple[Gratoms, int]
             ts_geuss_el is Gratoms representation of TS guess, whereas
             s_bonded_idx is the index of adsorbate atom that bonds to surface
 
         '''
 
-        ts_guess_el, s_bonded_idx = None, None
+        ts_guess_image, s_bonded_idx = None, None
         how_many_atoms_react = len(reacting_idxs)
 
         if how_many_atoms_react == 2:
-            ts_guess_el, s_bonded_idx = Diatomic(
+            ts_guess_image, s_bonded_idx = Diatomic(
                 self.ts_est,
                 self.rxn,
                 self.rxn_name,
@@ -78,14 +76,14 @@ class GeneralTSGuessesGenerator():
                 self.scfactor).get_ts_guess_and_bonded_idx(reacting_idxs)
 
         elif how_many_atoms_react == 3:
-            ts_guess_el, s_bonded_idx = Triatomic(
+            ts_guess_image, s_bonded_idx = Triatomic(
                 self.ts_est,
                 self.rxn,
                 self.rxn_name,
                 self.easier_to_build,
                 self.scfactor).get_ts_guess_and_bonded_idx(reacting_idxs)
 
-        return ts_guess_el, s_bonded_idx
+        return ts_guess_image, s_bonded_idx
 
     def build_ts_guess(self) -> Gratoms:
         ''' Convert ts_est string into a list of Gratoms objects.
@@ -148,7 +146,8 @@ class GeneralTSGuessesGenerator():
         return s_bonded_idx
 
     def get_the_most_connected_atom(self) -> int:
-        '''[summary]
+        ''' Return index of an atom that has the highest numner of connections
+            to the other atoms.
 
         Returns
         -------
@@ -246,11 +245,11 @@ class GeneralTSGuessesGenerator():
         tag_atom_idx1 : int
             an index of the atom_1 as it appears in yaml file, start from 0,
             ignore surface atoms multiplicity line.
-            The same idx is used as tag in ts_guess_el.
+            The same idx is used as tag in ts_guess_image.
         tag_atom_idx2 : int
             an index of the atom_2 as it appears in yaml file, start from 0,
             ignore surface atoms multiplicity line.
-            The same idx is used as tag in ts_guess_el.
+            The same idx is used as tag in ts_guess_image.
 
         Returns
         -------
@@ -295,37 +294,37 @@ class GeneralTSGuessesGenerator():
 
     def convert_tag_to_correct_idx(
             self,
-            ts_guess_el: Gratoms,
+            ts_guess_image: Gratoms,
             tag_atom_idx1: int,
             tag_atom_idx2: int) -> List[int]:
         ''' Convert tag indiciec (.yaml file is a source) to indicies as they
-            appear in the ts_guess_el Gratoms object
+            appear in the ts_guess_image Gratoms object
 
         Parameters
         ----------
-        ts_guess_el : Gratom
+        ts_guess_image : Gratom
             Gratoms representation of the TS guess
         tag_atom_idx1 : int
             an index of the atom_1 as it appears in yaml file, start from 0,
             ignore surface atoms multiplicity line.
-            The same idx is used as tag in ts_guess_el.
+            The same idx is used as tag in ts_guess_image.
         tag_atom_idx2 : int
             an index of the atom_2 as it appears in yaml file, start from 0,
             ignore surface atoms multiplicity line.
-            The same idx is used as tag in ts_guess_el.
+            The same idx is used as tag in ts_guess_image.
 
         Returns
         -------
         connected_atoms_idx : List[int]
             a list with all atomic indicies of the atoms and subatoms
             connected to the atom_2, excluding atom_1, as they appear in the
-            ts_guess_el, Gratom object.
+            ts_guess_image, Gratom object.
 
         '''
         tag_connected_atoms_idx = self.get_connected_atoms_tag_idxs(
             tag_atom_idx1, tag_atom_idx2)
         connected_atoms_idx = []
-        for atom in ts_guess_el:
+        for atom in ts_guess_image:
             if atom.tag in tag_connected_atoms_idx:
                 connected_atoms_idx.append(atom.index)
         return connected_atoms_idx
@@ -335,7 +334,8 @@ class Diatomic(GeneralTSGuessesGenerator):
     def get_ts_guess_and_bonded_idx(
             self,
             reacting_idxs: List[int]) -> Tuple[Gratoms, int]:
-        '''[summary]
+        ''' Get ts_guess (Gratom) and index of atom that connects ts_guess
+            to the surface. Currently, only monodentate adsobrtion is supported
 
         Parameters
         ----------
@@ -345,54 +345,64 @@ class Diatomic(GeneralTSGuessesGenerator):
 
         Returns
         -------
-        ts_guess_el, s_bonded_idx : Tuple[Gratoms, int]
+        ts_guess_image, s_bonded_idx : Tuple[Gratoms, int]
             ts_geuss_el is Gratoms representation of the TS guess, whereas
             s_bonded_idx is the index of adsorbate atom that bonds to surface
 
         '''
+        # get TS guess image
+        ts_guess_image = IO.get_TS_guess_image(self.rxn, self.easier_to_build)
 
-        ts_guess_el = IO.get_TS_guess_image(self.rxn, self.easier_to_build)
+        # get index of surface bonded atom
         s_bonded_idx = self.get_s_bonded_idx()
 
+        # get reacting atoms indices, as they appear in the .yaml file
+        # surface atoms and multiplicity line are ignored
         tag_react_atom_idx_1, tag_react_atom_idx_2 = reacting_idxs
 
+        # convert tag indices to indices as thye appear in the Gratoms object
         react_atom_idx_1 = [
-            atom.index for atom in ts_guess_el
+            atom.index for atom in ts_guess_image
             if atom.tag == tag_react_atom_idx_1][0]
 
         react_atom_idx_2 = [
-            atom.index for atom in ts_guess_el
+            atom.index for atom in ts_guess_image
             if atom.tag == tag_react_atom_idx_2][0]
 
-        # get all atom idxs connected to atom2
-        connected_atoms = self.convert_tag_to_correct_idx(ts_guess_el,
+        # get atomic indices of all atoms connected to atom2
+        connected_atoms = self.convert_tag_to_correct_idx(ts_guess_image,
                                                           tag_react_atom_idx_1,
                                                           tag_react_atom_idx_2)
+
         # add atom2 idx to the list of connected_atoms
         if react_atom_idx_2 not in connected_atoms:
             connected_atoms.append(react_atom_idx_2)
 
-        bondlen = ts_guess_el.get_distance(react_atom_idx_1, react_atom_idx_2)
+        # get lenght of the bond between reacting atoms
+        bondlen = ts_guess_image.get_distance(
+            react_atom_idx_1, react_atom_idx_2)
 
-        n_total_ads_atoms = len(ts_guess_el)
+        n_total_ads_atoms = len(ts_guess_image)
 
-        # edge cases
+        # create a better TS_guess for a couple of common edge cases
         if n_total_ads_atoms == 2:
-            ts_guess_el.rotate(90, 'y')
+            # proper diatomic
+            ts_guess_image.rotate(90, 'y')
 
         elif n_total_ads_atoms == 3:
+            # proper triatomic
             remaining_atom_idx = n_total_ads_atoms - \
                 (react_atom_idx_1 + react_atom_idx_2)
 
             if react_atom_idx_2 != 2:
                 # Symetrically not important, but structure looks
                 # better visually
-                ts_guess_el.rotate(-90, 'z')
+                ts_guess_image.rotate(-90, 'z')
             else:
-                ts_guess_el.rotate(90, 'z')
+                ts_guess_image.rotate(90, 'z')
 
-            # set angle that puts react_atom_idx_2 closer to the surface
-            ts_guess_el.set_angle(
+            # set angle that puts atom_2 closer to the surface
+            ts_guess_image.set_angle(
                 remaining_atom_idx,
                 react_atom_idx_1,
                 react_atom_idx_2,
@@ -404,16 +414,18 @@ class Diatomic(GeneralTSGuessesGenerator):
 
         else:
             # continue with defaults
+            # TODO for now it should work bu should be improved later
             pass
 
-        # scale the bond distance between reacting part
-        ts_guess_el.set_distance(react_atom_idx_1, react_atom_idx_2,
-                                 bondlen * self.scfactor, fix=0,
-                                 indices=connected_atoms)
+        # scale the bond distance between reacting atoms
+        ts_guess_image.set_distance(react_atom_idx_1, react_atom_idx_2,
+                                    bondlen * self.scfactor, fix=0,
+                                    indices=connected_atoms)
 
-        return ts_guess_el, s_bonded_idx
+        return ts_guess_image, s_bonded_idx
 
 
 class Triatomic(GeneralTSGuessesGenerator):
     def get_ts_guess_and_bonded_idx(self, reacting_idxs):
+        # will be done later
         raise NotImplementedError('Only diatomic reactions at this moment')
