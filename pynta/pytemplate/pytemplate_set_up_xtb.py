@@ -5,7 +5,7 @@ import os
 import datetime
 from pathlib import Path
 
-from pynta.prepare_ts_with_xtb import AdsorbatePlacer
+from pynta.penalty_fun import AdsorbatePlacer
 from xtb.ase.calculator import XTB
 
 from ase.io import read, write

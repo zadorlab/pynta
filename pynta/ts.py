@@ -1,7 +1,7 @@
 from typing import List, Tuple, Dict
 from pynta.excatkit.gratoms import Gratoms
 from pynta.excatkit.adsorption import Builder
-from pynta.general_ts_guesses import GeneralTSGuessesGenerator
+from pynta.ts_guesses import GeneralTSGuessesGenerator
 from pynta.adsorbates import Adsorbates
 from pynta.io import IO
 
