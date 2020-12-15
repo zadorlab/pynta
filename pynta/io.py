@@ -685,13 +685,11 @@ class IO():
 
         '''
         species = []
-        bonds = []
-        reactants, rbonds = IO.rmgcat_to_gratoms(
+        reactants = IO.rmgcat_to_gratoms(
             rxn['reactant'].strip().split('\n'))
-        products, pbonds = IO.rmgcat_to_gratoms(
+        products = IO.rmgcat_to_gratoms(
             rxn['product'].strip().split('\n'))
         species += reactants + products
-        bonds += rbonds + pbonds
 
         unique_species = []
         images = []
