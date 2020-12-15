@@ -4,25 +4,14 @@ from pathlib import PosixPath
 from typing import Tuple, List, Dict
 
 import numpy as np
-import networkx as nx
 
 from ase.io import read, write
 from ase.data import covalent_radii
 
 from pynta.utils import edge_cases_bonded_dict
-from pynta.excatkit.molecule import Molecule
 from pynta.excatkit.adsorption import Builder
 from pynta.excatkit.gratoms import Gratoms
 from pynta.io import IO
-from pynta.graph_utils import node_test
-
-# Instead of using CatKit's built in slab generator routines, we want to
-# use pre-relaxed slab geometries to save computer time. In order to use
-# our own geometries, we need to generate connectivities in a way that
-# CatKit understands. CatKit has some built-in routines for doing this,
-# but they are not great, so I wrote my own method. This can be
-# used to convert any ASE Atoms object into a CatKit Gratoms object,
-# though we are only currently using it for the catalyst geometry.
 
 
 class Adsorbates:
@@ -114,6 +103,8 @@ class Adsorbates:
             tvecs = np.dot(offsets, cell).reshape(-1, 3)
 
         edges = []
+        # initialize pairvecs
+        pairvecs = np.ndarray(0)
         if find_surface:
             pairvecs = np.zeros_like(slab_atom.positions)
         for atomi in slab_atom:
