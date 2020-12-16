@@ -81,13 +81,52 @@ cd ../
 
 Make sure it works by running tests posted on the `balsam` GitHub page.
 
-1.1.7 Install [`xtb-python`](https://github.com/grimme-lab/xtb-python) following instruction provided there. Make sure to correctly link all required libraries, e.g. with `OpenBlas` and `GCC`.
+1.1.7 Install [`xTB-python`](https://github.com/grimme-lab/xtb-python) following instruction provided there. Make sure to correctly link all required libraries. For example:
+
+- using `OpenBlas` and `GCC`:
 
 ```bash
+git clone https://github.com/grimme-lab/xtb-python.git
+cd xtb-python
+git submodule update --init
 LDFLAGS="-L/opt/custom/OpenBLAS/0.3.7/lib" meson setup build --prefix=$PWD --libdir=xtb/xtb --buildtype release --optimization 2 -Dla_backend=openblas
+ninja -C build install
+pip install --user -e .
 ```
 
-Make sure it works. If fails, try to install [`xtb`](https://github.com/grimme-lab/xtb) and test `xtb` itself for any errors.
+- using `MKL` and Intel Compilers:
+
+```bash
+git clone https://github.com/grimme-lab/xtb-python.git
+cd xtb-python
+git submodule update --init
+CC=icc CXX=icpc FC=ifort meson setup build --prefix=$PWD --libdir=xtb
+ninja -C build install
+pip install --user -e .
+```
+
+Make sure it works by running:
+
+```python
+from ase.build import molecule
+from xtb.ase.calculator import XTB
+atoms = molecule('H2O')
+atoms.calc = XTB(method="GFN2-xTB")
+total_ener = atoms.get_potential_energy()
+print(total_ener)
+```
+
+The expected output should be something around `-137.9677758730299`
+
+**Warning - You might be getting SEGFAULT error -**
+
+`Segmentation Fault (Core dumped)`
+
+**while executing any** `xTB-python` **job, especially for a relatively large molecules. The easiest solution is to unlimit the system stack to avoid stack overflows. In** `bash` **try:**
+
+`ulimit -s unlimited`
+
+If `xTB-python` still fails, try to install [`xtb`](https://github.com/grimme-lab/xtb) and test `xTB` itself for any errors.
 
 ```bash
 git clone https://github.com/grimme-lab/xtb.git
@@ -102,6 +141,8 @@ echo 'export LD_LIBRARY_PATH=path/to_xtb/xtb/build:$LD_LIBRARY_PATH' >> ~/.bashr
 echo 'export PATH=$HOME/.local/bin:\$PATH' >> ~/.bashrc
 ```
 
+Then rebuild `xTB-python` on your system ignoring `git submodule update --init` and linking you current `xTB` installation.
+
 ## 1.2 Install `pynta`
 
 1.2.1 Clone the project in your preferable location.
@@ -110,7 +151,7 @@ echo 'export PATH=$HOME/.local/bin:\$PATH' >> ~/.bashrc
 git clone https://gitlab-ex.sandia.gov/mgierad/pynta.git
 ```
 
-Usually, `master` branch should be fine. If somehow it is not working, make sure to switch to the latest stable version by checking the tags and looking for `stable`.
+Usually, `master` branch should be fine. If somehow it is not working, make sure to switch to the latest stable version by checking the tags.
 
 1.2.2 Go to `pynta`
 

@@ -1445,6 +1445,7 @@ class WorkFlow:
             if all(WorkFlow.check_all_species(yamlfile, facetpath).values()):
                 # If all minima were calculated some time age pynta
                 # will use that calculations. Start from 02 step
+                self.run_minima_vib_no_depend(facetpath)
                 self.run_ts_estimate_no_depend(facetpath)
             else:
                 # run optimization of surface + reactants; surface + products
