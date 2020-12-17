@@ -100,6 +100,9 @@ pip install --user -e .
 git clone https://github.com/grimme-lab/xtb-python.git
 cd xtb-python
 git submodule update --init
+# (Theta specific)
+# conda instal cffi
+# module swap PrgEnv-intel PrgEnv-cray; module swap PrgEnv-cray PrgEnv-intel
 CC=icc CXX=icpc FC=ifort meson setup build --prefix=$PWD --libdir=xtb -Dla_backed=mkl -Dpy=3
 ninja -C build install
 pip install --user -e .
