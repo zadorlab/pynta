@@ -83,7 +83,7 @@ Make sure it works by running tests posted on the `balsam` GitHub page.
 
 1.1.7 Install [`xTB-python`](https://github.com/grimme-lab/xtb-python) following instruction provided there. Make sure to correctly link all required libraries. For example:
 
-- using `OpenBlas` and `GCC`:
+- using `OpenBlas` and `GNU` based compilers:
 
 ```bash
 git clone https://github.com/grimme-lab/xtb-python.git
@@ -100,7 +100,7 @@ pip install --user -e .
 git clone https://github.com/grimme-lab/xtb-python.git
 cd xtb-python
 git submodule update --init
-CC=icc CXX=icpc FC=ifort meson setup build --prefix=$PWD --libdir=xtb
+CC=icc CXX=icpc FC=ifort meson setup build --prefix=$PWD --libdir=xtb -Dla_backed=mkl -Dpy=3
 ninja -C build install
 pip install --user -e .
 ```
