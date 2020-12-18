@@ -15,34 +15,34 @@ The work-flow designed to automate search for transition states and reaction pat
 
 The following instruction assumes that you have several softwares installed on your system, such as:
 
-- `Slurm`
-- `OpenMPI`
-- `OpenBlas`
-- `GCC`
+- A queue system e.g. `Slurm`, `PBS` or `Cobalt`
+- An MPI e.g. `OpenMPI`
+- A math library e.g. `OpenBlas/LAPACK` or `Intel's MKL`
+- A compilier suite e.g. `Intel` or `GCC`
 
 ## 1.1 Install all prerequisites
 
-1.1.1 Chooose the location you want to build `pynta`. It is suggested to create a virtual environment `pynta` for the `pynta` builds:
+### 1.1.1 Set the location you want to use for `pynta` build. It is suggested to create a virtual environment e.g 'pynta':
 
 ```bash
 cd <path/whr/to/build/pynta>
 python3 -m venv pynta
 ```
 
-1.1.2 Activate your virtual environment:
+### 1.1.2 Activate your virtual environment:
 
 ```bash
 source pynta/bin/activate
 ```
 
-1.1.3 (_Optional_) Install required python packages (If you skip this process, `pynta` installer will do this later.)
+### 1.1.3 (_Optional_) Install required python packages (If you skip this process, `pynta` installer will do this later.)
 
 ```bash
 pip3 install matplotlib<3.2 spglib==1.14.1.post0 networkx<2.4 ase==3.19.0 scipy==1.3.1 numpy==1.18.1 PyYAML==5.3.1 sella==1.0.3
 
 ```
 
-1.1.4 Download [`PostgreSQL`](https://www.enterprisedb.com/download-postgresql-binaries) precompiled binaries that suits your system and add `path_to_PostgreSQL/pgsql/bin` to your `PATH` by modifying `~/.bashrc`
+### 1.1.4 Download [`PostgreSQL`](https://www.enterprisedb.com/download-postgresql-binaries) precompiled binaries that suits your system and add `path_to_PostgreSQL/pgsql/bin` to your `PATH` by modifying `~/.bashrc`
 
 ```bash
 echo 'export PATH=path_to_PostgreSQL/pgsql/bin:$PATH' >> ~/.bashrc
@@ -79,9 +79,9 @@ python3 setup.py install --user
 cd ../
 ```
 
-Make sure it works by running tests posted on the `balsam` GitHub page.
+Make sure it works by running tests posted on the [`balsam`](https://github.com/balsam-alcf/balsam.git) GitHub page.
 
-1.1.7 Install [`xTB-python`](https://github.com/grimme-lab/xtb-python) following instruction provided there. Make sure to correctly link all required libraries. For example:
+### 1.1.7 Install [`xTB-python`](https://github.com/grimme-lab/xtb-python) following instruction provided there. Make sure to correctly link all required libraries. For example:
 
 - using `OpenBlas` and `GNU` based compilers:
 
@@ -111,15 +111,14 @@ pip install --user -e .
 Make sure it works by running:
 
 ```python
-from ase.build import molecule
-from xtb.ase.calculator import XTB
-atoms = molecule('H2O')
-atoms.calc = XTB(method="GFN2-xTB")
-total_ener = atoms.get_potential_energy()
-print(total_ener)
+>>> from ase.build import molecule
+>>> from xtb.ase.calculator import XTB
+>>> atoms = molecule('H2O')
+>>> atoms.calc = XTB(method="GFN2-xTB")
+>>> total_ener = atoms.get_potential_energy()
+>>> total_ener
+-137.9677758730299
 ```
-
-The expected output should be something around `-137.9677758730299`
 
 **Warning - You might be getting SEGFAULT error -**
 
@@ -146,11 +145,11 @@ echo 'export LD_LIBRARY_PATH=path/to_xtb/xtb/build:$LD_LIBRARY_PATH' >> ~/.bashr
 echo 'export PATH=$HOME/.local/bin:\$PATH' >> ~/.bashrc
 ```
 
-Then rebuild `xTB-python` on your system ignoring `git submodule update --init` and linking you current `xTB` installation.
+Then, rebuild `xTB-python` on your system ignoring `git submodule update --init` and linking you current `xTB` installation.
 
 ## 1.2 Install `pynta`
 
-1.2.1 Clone the project in your preferable location.
+### 1.2.1 Clone the project in your preferable location.
 
 ```
 git clone https://gitlab-ex.sandia.gov/mgierad/pynta.git
@@ -158,25 +157,25 @@ git clone https://gitlab-ex.sandia.gov/mgierad/pynta.git
 
 Usually, `master` branch should be fine. If somehow it is not working, make sure to switch to the latest stable version by checking the tags.
 
-1.2.2 Go to `pynta`
+### 1.2.2 Go to `pynta` directory
 
 ```
 cd pynta
 ```
 
-1.2.3a Install `pynta`:
+### 1.2.3a Install `pynta`:
 
 ```
 python setup.py install
 ```
 
-1.2.3b (optional) If you do not have admin privileges (e.g. you use it on a supercomputer), do the following instead of 1.6a:
+### 1.2.3b (optional) If you do not have admin privileges (e.g. you use it on a supercomputer), do the following instead of 1.6a:
 
 ```
 python setup.py install --user
 ```
 
-**You should be ready to go now!**
+**You should be ready to use `pynta`**
 
 Once finished using the workflow:
 
@@ -302,11 +301,10 @@ optimize_slab = True
 ####################################################
 # specify facet orientation, repeats of the slab+ads
 # and repeats of the slab_opt unit cell
-surface_types_and_repeats = {'fcc111': [(3, 3, 1), (1, 1, 4)],
-                             'fcc100': [(3, 4, 1), (1, 1, 4)]}
+surface_types_and_repeats = {'fcc111': [(3, 3, 1), (1, 1, 4)]}
 ####################################################
 # surface atoms
-symbol = 'Cu'
+metal_atom = 'Cu'
 ####################################################
 # lattice constant
 a = 3.6
@@ -319,15 +317,17 @@ vacuum = 8.0
 pseudo_dir = '/home/mgierad/espresso/pseudo'
 
 pseudopotentials = "dict(Cu='Cu.pbe-spn-kjpaw_psl.1.0.0.UPF',"\
-    + "H='H.pbe-kjpaw_psl.1.0.0.UPF',"\
+    + "H='H.pbe-kjpaw_psl.1.0.0.UPF'," \
     + "O='O.pbe-n-kjpaw_psl.1.0.0.UPF'," \
-    + "C='C.pbe-n-kjpaw_psl.1.0.0.UPF')"
+    + "C='C.pbe-n-kjpaw_psl.1.0.0.UPF'," \
+    + "N='N.pbe-n-kjpaw_psl.1.0.0.UPF')" \
 
 executable = '/home/mgierad/00_codes/build/q-e-qe-6.4.1/build/bin/pw.x'
 ####################################################
 # Baslam settings
+node_packing_count = 48
 balsam_exe_settings = {'num_nodes': 1,  # nodes per each balsam job
-                       'ranks_per_node': 48,  # cores per node
+                       'ranks_per_node': node_packing_count,  # cores per node
                        'threads_per_rank': 1
                        }
 calc_keywords = {'kpts': (3, 3, 1),
@@ -346,12 +346,6 @@ creation_dir = Path.cwd().as_posix()
 # filename of the .yaml file with reactions
 yamlfile = 'reactions.yaml'
 ####################################################
-# specify repeats of the surface in (x, y, z) direction
-# repeats_surface = {'fcc111': (1, 1, 4), 'fcc100': (3, 4, 5)}
-####################################################
-# specify repeats of the surface in (x, y, z) direction
-# repeats = {'fcc111': (3, 3, 1), 'fcc100': (3, 4, 1)}
-####################################################
 # specify the scaling factor to scale the bond distance
 # between two atoms taking part in the reaction
 scfactor = 1.4
@@ -360,9 +354,6 @@ scfactor = 1.4
 # i.e. the average bond distance between adsorbate and
 # the nearest surface metal atom
 scfactor_surface = 1.0
-####################################################
-# species list
-species_dict = {'rxn1': ['O', 'H'], 'rxn2': ['O', 'H']}
 ####################################################
 # do you want to apply the scfactor_surface to the species 1?
 scaled1 = False
@@ -373,11 +364,11 @@ scaled2 = False
 
 ```
 
-An example input files are also located at `./rmgcat_to_sella/example_run_files/`.
+An example input files are also located at `./pynta/example_run_files/`.
 
 If you do not have a `.yaml` file with the reaction list but still want to use the work-flow, let me know. Also, stay tuned, as a version of `pynta` that can work without `.yaml` file is currently under development
 
-### 2.2 Using SLURM only
+### 2.2 Using only SLURM
 
 **Warning `dev` branch uses SLURM scheduler to deal with the job dependencies. Be aware that it might be a bit buggy and do not fully support all the features implemented in the `master` branch.**
 
