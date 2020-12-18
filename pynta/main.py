@@ -1472,7 +1472,7 @@ class WorkFlow:
         for facetpath in facetpaths:
             self.execute(facetpath)
 
-    @ staticmethod
+    @staticmethod
     def restart() -> None:
         LowLevelRestart().restart()
         HighLevelRestart().restart()

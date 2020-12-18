@@ -88,7 +88,8 @@ class LowLevelRestart():
         for key, value in all_unfinished.items():
             only_ts = 'ts' in key and all(
                 [k not in key for k in ['ts_vib', 'after_ts']])
-            # comparator = 'ts' in key and 'after_ts' not in key and 'ts_vib' not in key
+            # comparator = 'ts' in key and 'after_ts' not in key
+            # and 'ts_vib' not in key
             if only_ts and 'AWAITING_PARENTS' not in value:
                 unfinished_tss.append(key)
         return unfinished_tss

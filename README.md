@@ -103,7 +103,7 @@ git submodule update --init
 # (Theta specific)
 # conda instal cffi
 # module swap PrgEnv-intel PrgEnv-cray; module swap PrgEnv-cray PrgEnv-intel
-CC=icc CXX=icpc FC=ifort meson setup build --prefix=$PWD --libdir=xtb -Dla_backed=mkl -Dpy=3
+CC=icc CXX=icpc FC=ifort meson setup build --prefix=$PWD --libdir=xtb -Dla_backed=mkl -Dpy=3 --buildtype release --optimization 2
 ninja -C build install
 pip install --user -e .
 ```
@@ -127,7 +127,9 @@ The expected output should be something around `-137.9677758730299`
 
 **while executing any** `xTB-python` **job, especially for a relatively large molecules. The easiest solution is to unlimit the system stack to avoid stack overflows. In** `bash` **try:**
 
-`ulimit -s unlimited`
+```
+ulimit -s unlimited
+```
 
 If `xTB-python` still fails, try to install [`xtb`](https://github.com/grimme-lab/xtb) and test `xTB` itself for any errors.
 
