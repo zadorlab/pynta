@@ -74,10 +74,16 @@ for py_script in Path(path_to_ts_estimate).glob('**/*.py'):
         args=str(py_script),
         input_files='',
         ranks_per_node=1,
+        threads_per_rank=64,
         node_packing_count={node_packing_count},
         user_workdir=job_dir,
     )
     job_to_add.save()
+
+    # for menten
+    # ranks_per_node=1,
+    # node_packing_count={node_packing_count},
+    # threads_per_rank not specified, but 48 should work
 
     # all job_to_add_ are childs of 01 job, as from jobs_to_be_finished
     # nested for loop becouse BalsamJob.objects.filter(name=dep_job) returns
