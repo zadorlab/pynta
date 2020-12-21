@@ -130,18 +130,18 @@ class TS():
             p_name_list,
             reacting_atoms)
 
-        self.filtered_out_equiv_ts_estimate(
-            ts_estimate_path,
-            rxn_name)
+        # self.filtered_out_equiv_ts_estimate(
+        #     ts_estimate_path,
+        #     rxn_name)
 
-        self.set_up_penalty_xtb(
-            ts_estimate_path,
-            pytemplate_xtb,
-            species_list,
-            reacting_atoms,
-            metal_atom,
-            scaled1,
-            scfactor_surface)
+        # self.set_up_penalty_xtb(
+        #     ts_estimate_path,
+        #     pytemplate_xtb,
+        #     species_list,
+        #     reacting_atoms,
+        #     metal_atom,
+        #     scaled1,
+        #     scfactor_surface)
 
     def get_max_rot_angle(self) -> None:
         ''' Get the maximum angle of rotation for a given slab that will

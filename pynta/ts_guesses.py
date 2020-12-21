@@ -1,5 +1,6 @@
 from pynta.excatkit.molecule import Molecule
 from pynta.excatkit.gratoms import Gratoms
+from pynta.utils import edge_cases_bonded_dict
 from pynta.io import IO
 from typing import Dict, List, Tuple
 
@@ -142,7 +143,14 @@ class GeneralTSGuessesGenerator():
 
         # gas phase reaction
         else:
-            s_bonded_idx = self.get_the_most_connected_atom()
+            if self.ts_est == 'CH2O':
+                s_bonded_idx = 0
+            # if self.ts_est in edge_cases_bonded_dict.keys():
+            #     s_bonded_idx = [edge_cases_bonded_dict[self.ts_est]]
+                print('here')
+
+            else:
+                s_bonded_idx = self.get_the_most_connected_atom()
         return s_bonded_idx
 
     def get_the_most_connected_atom(self) -> int:
@@ -415,9 +423,10 @@ class Diatomic(GeneralTSGuessesGenerator):
         else:
             # continue with defaults
             # TODO for now it should work bu should be improved later
-            pass
+            # pass
+            ts_guess_image.rotate(90, 'z')
 
-        # scale the bond distance between reacting atoms
+            # scale the bond distance between reacting atoms
         ts_guess_image.set_distance(react_atom_idx_1, react_atom_idx_2,
                                     bondlen * self.scfactor, fix=0,
                                     indices=connected_atoms)
