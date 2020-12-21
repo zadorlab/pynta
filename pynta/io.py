@@ -656,13 +656,17 @@ class IO():
             images = IO.get_images(rxn)
             all_images.append(images)
         all_images_flat = [item for sublist in all_images for item in sublist]
-        # TODO probably a bug when names are different but the same species
-        # (use networkx)
-        for images in all_images_flat:
-            if images in all_images_unique:
-                pass
+
+        # check if any species in one reaction is the same as any species
+        # in the other reaction
+        for species1 in all_images_flat:
+            for species2 in all_images_unique:
+                if nx.is_isomorphic(
+                        species1.graph, species2.graph, node_test):
+                    break
             else:
-                all_images_unique.append(images)
+                images.append(Molecule().get_3D_positions(species1))
+                all_images_unique.append(species1)
         return all_images_unique
 
     @staticmethod

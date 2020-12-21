@@ -175,10 +175,8 @@ class Adsorbates:
     def adjacency_to_3d(self) -> None:
         ''' Place adsorbates on the surface '''
         all_species_symbols = IO.get_all_unique_species(self.yamlfile)
-        print(all_species_symbols)
         # reactions = IO.open_yaml_file(self.yamlfile)
         images = IO.get_all_images(self.yamlfile)
-        print(images)
 
         # prepare surface for placing adsorbates
         grslab = self.get_grslab()
