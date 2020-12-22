@@ -7,7 +7,6 @@ from pynta.io import IO
 
 from ase.io import read, write
 from ase.utils.structure_comparator import SymmetryEquivalenceCheck
-from ase.collections import g2
 from ase import Atoms
 
 from collections import Counter
@@ -71,7 +70,7 @@ class TS():
             scfactor_surface: float,
             pytemplate_xtb: str,
             species_list: List[str],
-            reacting_atoms: List[str],
+            reacting_atoms: Dict[str, int],
             metal_atom: str,
             scaled1: bool,
             scaled2: bool) -> None:
@@ -96,12 +95,13 @@ class TS():
             e.g. 1.0
         pytemplate_xtb : python script
             a template file for penalty function minimization job
-        species_list : list(str)
+        species_list : List[str]
             a list of species which atoms take part in the reaction,
             i.e. for ['CO2'] ['C'] is taking part in reaction
             e.g. ['O', 'H'] or ['CO2', 'H']
-        easier_to_build : list(str)
-            a list of species that are considerd as the reactiong one
+        reacting_atoms : Dict[str, int]
+            keys are sybols of atoms that takes part in reaction whereas,
+            values are their indicies
         metal_atom : str
             a checmical symbol for the surface atoms (only metallic surfaces
             are allowed)
@@ -131,7 +131,7 @@ class TS():
             p_name_list,
             reacting_atoms)
 
-        self.filtered_out_equiv_ts_estimate(
+        self.filtered_out_equiv_ts_estimates(
             ts_estimate_path,
             rxn_name)
 
@@ -199,6 +199,9 @@ class TS():
             a list with all reactants for the given reaction
         p_name_list : list(str)
             a list with all products for the given reaction
+        reacting_atoms : Dict[str, int]
+            keys are sybols of atoms that takes part in reaction whereas,
+            values are their indicies
 
         '''
         # create TS_estimate directory
@@ -331,7 +334,7 @@ class TS():
             angle += angle_increment
             count += 1
 
-    def filtered_out_equiv_ts_estimate(
+    def filtered_out_equiv_ts_estimates(
             self,
             ts_estimate_path: str,
             rxn_name: str) -> None:
@@ -349,9 +352,9 @@ class TS():
             e.g. OH_O+H
 
         '''
-        # check the symmetry
-        filtered_equivalent_sites = TS.check_symm_before_xtb(
-            ts_estimate_path)
+        # check symmetry of TS guesses
+        filtered_equivalent_sites = TS.check_symm(
+            ts_estimate_path, return_unique=False, compare_traj=False)
 
         # remove all symmetry equivalent structures
         for eqsites in filtered_equivalent_sites:
@@ -390,9 +393,6 @@ class TS():
         ts_estimate_path : str
             a path to TS_estimate directory,
             e.g. {creation_dir}/Cu_111/TS_estimate
-        rxn_name : str
-            a reaction name
-            e.g. OH_O+H
         pytemplate : python script
             a template for the penalty function calculations
         species_list : list(str)
@@ -408,9 +408,6 @@ class TS():
         scaled1 : bool
             specify whether use the optional scfactor_surface
             for the species 1 (sp1)
-        scaled2 : bool
-            specify whether use the optional scfactor_surface
-            for the species 2 (sp2)
         scfactor_surface : float
             a scaling factor to scale the target bond distance, i.e.
             the average distance between adsorbed atom and the nearest
@@ -429,7 +426,7 @@ class TS():
 
         # get a dictionary with average distances for all species in
         # species_list, e.g. {'CO2': 4.14.., 'H': 1.665..., 'O': 1.847...}
-        sp_surf_av_dists = TS.get_av_dists_dict(
+        sp_surf_av_dists = TS.get_av_dist_dict(
             species_list, metal_atom, path_to_minima, scfactor_surface,
             scaled1)
 
@@ -438,7 +435,7 @@ class TS():
         # calculations many times, e.g. ['C', 'H', 'O', 'O'], so the av_dist
         # for the 'O' have to be specified twice (order not important)
         av_dists_tuple = TS.get_av_dists_tuple(
-            reacting_atoms.values(), sp_surf_av_dists)
+            reacting_atoms, sp_surf_av_dists)
 
         # get all .xyz files with TS estimates
         ts_estimates_xyz_files = []
@@ -570,23 +567,28 @@ class TS():
 
     @staticmethod
     def get_av_dists_tuple(
-            easier_to_build: List[str],
+            reacting_atoms: List[str],
             sp_surf_av_dists: Dict[str, float]):
         ''' Create a av_dists_tuple with all relevant average bond distances.
 
             This method loops through sp_surf_av_dists dictionary. If
-            particular key exists n > 1 times in easier_to_build, this
+            particular key exists n > 1 times in reacting_atoms, this
             entry is added n times to a new dictionary. Otherwise, a new
             dictionary is updated with the keys and values of sp_surf_av_dists.
             At the end, the valuses of the new dict are transformed into tuple
 
+            Method required fot O2X <-> OX + OX and similar reactions.
+            Generally, all reactions where two atoms of the same type is
+            consider in a penalty function calculations.
+
         Parameters
         ----------
-        easier_to_build : list(str)
-            a list of species that are considerd as the reactiong one
+        reacting_atoms : Dict[str, int]
+            keys are sybols of atoms that takes part in reaction whereas,
+            values are their indicies
         sp_surf_av_dists : dict(str:float)
-            a dictionary with keys being species name and average distances
-            as values
+            a dictionary with keys being species name and values are
+            average distances
 
         Returns
         -------
@@ -594,7 +596,7 @@ class TS():
             a tuple with all relevant average bond distances
 
         '''
-        count = Counter(easier_to_build)
+        count = Counter(reacting_atoms.values())
         av_dists_dict = {}
         for key, value in sp_surf_av_dists.items():
             n = count[key]
@@ -607,7 +609,7 @@ class TS():
         return av_dist_tuple
 
     @staticmethod
-    def get_av_dists_dict(
+    def get_av_dist_dict(
             species_list: str,
             metal_atom: str,
             path_to_minima: str,
@@ -622,9 +624,9 @@ class TS():
             a list of species which atoms take part in the reaction,
             i.e. for ['CO2'] ['C'] is taking part in reaction
             e.g. ['O', 'H'] or ['CO2', 'H']
-        minima_dir : str
-            a path to minima directory
-            e.g. Cu_111/minima
+        metal_atom : str
+            a checmical symbol for the surface atoms (only metallic surfaces
+            are allowed)
         path_to_minima : str
             a path to minima
             e.g. 'Cu_111/minima'
@@ -641,9 +643,9 @@ class TS():
 
         Returns
         -------
-        sp_surf_av_dists : dict(str:float)
-            a dictionary with keys being species name and average distances
-            as values
+        sp_surf_av_dists : Dict[str, float]
+            a dictionary with keys being species name and values are average
+            distances
 
         '''
         sp_surf_av_dists = {}
@@ -661,7 +663,7 @@ class TS():
             scfactor_surface: float,
             scaled: bool = False) -> float:
         ''' Get the average bond distance between a given adsorbate atom and
-        the nearest surface atom for all symmetrically distinct minima
+            the nearest surface atom for all symmetrically distinct minima
 
         Parameters:
         ___________
@@ -697,8 +699,8 @@ class TS():
         # get unique minima prefixes
         unique_minima_prefixes = IO.get_unique_prefixes(path_to_species)
 
-        # choose a representative traj file based on which surface_atom_idxs
-        # and adsorbate_atom_idxs will be created
+        # choose a representative temp .traj file that will be used to create
+        # surface_atom_idxs and adsorbate_atom_idxs will be created
         path_to_tmp_traj = os.path.join(path_to_species, '00.traj')
         tmp_traj = read(path_to_tmp_traj)
 
@@ -788,8 +790,7 @@ class TS():
                                       )
 
     @staticmethod
-    def create_unique_ts_xyz_and_png(
-            ts_estimate_path: str) -> None:
+    def create_unique_ts_xyz_and_png(ts_estimate_path: str) -> None:
         ''' Create unique TS files for saddle point calculations
             for a given scfactor
 
@@ -802,13 +803,15 @@ class TS():
 
         '''
         # check symmetry of all TS estimates in ts_estimate_path
-        gd_ads_index = TS.check_symm(ts_estimate_path)
+        gd_ads_index = TS.check_symm(ts_estimate_path, return_unique=True)
+        print(gd_ads_index)
 
-        for i, index in enumerate(gd_ads_index):
+        for i, _ in enumerate(gd_ads_index):
             # name of the directory with unique TS_estimates for which saddle
             # point calculations are to be perfomed
             ts_estimate_unique_path = os.path.join(ts_estimate_path +
                                                    '_unique', str(i).zfill(2))
+
             # create TS_estimate_unique directory
             if os.path.isdir(ts_estimate_unique_path):
                 shutil.rmtree(ts_estimate_unique_path)
@@ -817,17 +820,19 @@ class TS():
                 os.makedirs(ts_estimate_unique_path, exist_ok=True)
 
             # search for trajectories of symmetry distinct structures
-            uq_traj_search = '**/{}*traj'.format(gd_ads_index[i])
-            trajs = Path(ts_estimate_path).glob(uq_traj_search)
+            unique_traj_search = '**/{}*traj'.format(gd_ads_index[i])
+            unique_trajs = Path(ts_estimate_path).glob(unique_traj_search)
+
             # loop through all unique trajectory and create .xyz and .png
-            for traj in trajs:
-                traj = str(traj)
+            for unique_traj in unique_trajs:
+                unique_traj = str(unique_traj)
                 # split the path, get file name, remove last 5 characters and
                 # add sufix '_ts'
-                fname = os.path.split(traj)[1][:-5] + '_ts'
+                fname = os.path.split(unique_traj)[1][:-5] + '_ts'
                 uq_ts_file = os.path.join(ts_estimate_unique_path, fname)
-                write(uq_ts_file + '.xyz', read(traj))
-                write(uq_ts_file + '.png', read(traj))
+                write(uq_ts_file + '.xyz', read(unique_traj))
+                write(uq_ts_file + '.png', read(unique_traj))
+
             # rename TS to have prefixes in order with no gaps
             # e.g. was 027_OH_O+H_ts.xyz; is 03_OH_O+H_ts.png
             for ts in os.listdir(ts_estimate_unique_path):
@@ -976,7 +981,9 @@ class TS():
 
     @staticmethod
     def check_symm(
-            path: str) -> List[int]:
+            path: str,
+            return_unique: bool,
+            compare_traj: bool = True) -> List[int]:
         ''' Check for the symmetry equivalent structures in the given path
 
         Parameters:
@@ -985,68 +992,79 @@ class TS():
             a path to a directory where are files to be checked,
             e.g. Cu_111/TS_estimate_unique
 
+        return_unique : bool
+            If True, the method will return a list of unique prefixes.
+            If False, the method will return a list of non-unique prefixes.
+
         Returns:
         ________
-        unique_index : list(str)
+        idx_list : list(str)
             a list with prefixes of all symmetrically distinct sites
 
         '''
+        if compare_traj:
+            key = '**/*.traj'
+        else:
+            key = '*.xyz'
+
+        comparator = SymmetryEquivalenceCheck()
+        geomlist = sorted(Path(path).glob(key))
+
         good_adsorbate = []
         result_list = []
-        geomlist = sorted(Path(path).glob('**/*.traj'))
+
         for geom in geomlist:
             adsorbed = read(geom)
             adsorbed.pbc = True
-            comparator = SymmetryEquivalenceCheck()
             result = comparator.compare(adsorbed, good_adsorbate)
             result_list.append(result)
             if result is False:
                 good_adsorbate.append(adsorbed)
         unique_index = []
         for num, res in enumerate(result_list):
-            if res is False:
+            if res is not return_unique:
                 unique_index.append(str(num).zfill(3))
         return unique_index
 
-    @staticmethod
-    def check_symm_before_xtb(
-            path: str) -> List[int]:
-        ''' Check for the symmetry equivalent structures in the given path
-            before executing penalty function minimization
+    # @staticmethod
+    # def check_symm_before_xtb(
+    #         path: str) -> List[int]:
+    #     ''' Check for the symmetry equivalent structures in the given path
+    #         before executing penalty function minimization
 
-        Parameters:
-        ___________
-        path : str
-            a path to a directory where are files to be checked,
-            e.g. Cu_111/TS_estimate
+    #     Parameters:
+    #     ___________
+    #     path : str
+    #         a path to a directory where are files to be checked,
+    #         e.g. Cu_111/TS_estimate
 
-        Returns:
-        ________
-        not_unique_index : list(str)
-            a list with prefixes of all symmetry equivalent structures, i.e.,
-            files with these prefixes should be deleted
+    #     Returns:
+    #     ________
+    #     not_unique_index : list(str)
+    #         a list with prefixes of all symmetry equivalent structures, i.e.,
+    #         files with these prefixes should be deleted
 
-        '''
-        comparator = SymmetryEquivalenceCheck()
-        geomlist = sorted(Path(path).glob('*.xyz'))
+    #     '''
+    #     comparator = SymmetryEquivalenceCheck()
+    #     geomlist = sorted(Path(path).glob('*.xyz'))
 
-        good_adsorbates = []
-        result_list = []
+    #     good_adsorbates = []
+    #     result_list = []
 
-        for geom in geomlist:
-            adsorbed = read(geom)
-            adsorbed.pbc = True
-            result = comparator.compare(adsorbed, good_adsorbates)
-            result_list.append(result)
-            if result is False:
-                # if compared structures are different, add the current one to
-                # good_adsorbates
-                good_adsorbates.append(adsorbed)
-        not_unique_index = []
-        for num, res in enumerate(result_list):
-            if res is True:
-                # Better to have all symmetry equivalent site here in a list.
-                # The workflow will remove them in getTSestimate function
-                # keeping all symmetry distinct sites
-                not_unique_index.append(str(num).zfill(3))
-        return not_unique_index
+    #     for geom in geomlist:
+    #         adsorbed = read(geom)
+    #         adsorbed.pbc = True
+    #         result = comparator.compare(adsorbed, good_adsorbates)
+    #         result_list.append(result)
+    #         if result is False:
+    #             # if compared structures are different, add the current one to
+    #             # good_adsorbates
+    #             good_adsorbates.append(adsorbed)
+    #     not_unique_index = []
+    #     for num, res in enumerate(result_list):
+    #         if res is True:
+    #             # Better to have all symmetry equivalent site here in a list.
+    #             # The workflow will remove them in getTSestimate function
+    #             # keeping all symmetry distinct sites
+    #             not_unique_index.append(str(num).zfill(3))
+    #     return not_unique_index
