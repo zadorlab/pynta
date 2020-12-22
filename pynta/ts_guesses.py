@@ -31,7 +31,7 @@ class GeneralTSGuessesGenerator():
             e.g OH_O+H
         easier_to_build : str
             a keys to ts_guess_skeleton; 'product' or 'reatant'
-                scfator : float
+        scfator : float
             a scaling factor to scale a bond distance between
             atoms taking part in the reaction
 
@@ -270,12 +270,11 @@ class GeneralTSGuessesGenerator():
         '''
         visited_atoms = []
         n_surf_at_befor_ads = 0
+        multi_line = 0
 
         first_line = 1
         if 'multiplicity' in self.reacting_species_connectivity[0]:
             first_line = 0
-
-        multi_line = 0
 
         for line in self.reacting_species_connectivity:
             if 'multiplicity' in line:
@@ -368,7 +367,7 @@ class Diatomic(GeneralTSGuessesGenerator):
         # surface atoms and multiplicity line are ignored
         tag_react_atom_idx_1, tag_react_atom_idx_2 = reacting_idxs
 
-        # convert tag indices to indices as thye appear in the Gratoms object
+        # convert tag indices to indices as they appear in the Gratoms object
         react_atom_idx_1 = [
             atom.index for atom in ts_guess_image
             if atom.tag == tag_react_atom_idx_1][0]
