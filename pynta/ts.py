@@ -18,6 +18,7 @@ import shutil
 from statistics import mean
 from pathlib import Path, PosixPath
 from spglib import get_symmetry
+import heapq
 
 
 class TS():
@@ -457,21 +458,41 @@ class TS():
             atom.symbol + '_' + str(atom.index): atom.index
             for atom in tmp_ts_atom if atom.symbol == metal_atom}
 
-        # Main loop #
         # Loop through all .xyz files
         for prefix, xyz_file in enumerate(ts_estimates_xyz_files):
             bonds = []
+            visited_metal_idxs = []
 
             # Loop through all relevant_species
             for idx in reacting_atoms.values():
+                print('react idx ', idx)
                 # sp_index = TS.get_sp_index(
                 #     species, visited_species, adsorbate_atoms_idxs)
                 adsorbed_atom_idx = idx + self.nslab
-
-                metal_idx = TS.get_index_surface_atom(
-                    adsorbed_atom_idx, surface_atoms_idxs, xyz_file)
+                n_same_metal_idxs = 1
+                same_metal_idx = False
+                while same_metal_idx is False:
+                    metal_idx = TS.get_index_surface_atom(
+                        adsorbed_atom_idx, surface_atoms_idxs, xyz_file,
+                        n_same_metal_idxs)
+                    print(metal_idx)
+                    print('vis loop', visited_metal_idxs)
+                    if visited_metal_idxs is False:
+                        n_same_metal_idxs += 1
+                        print('break')
+                        break
+                    if metal_idx in visited_metal_idxs:
+                        n_same_metal_idxs += 1
+                        print('continue')
+                    else:
+                        print('end')
+                        visited_metal_idxs.append(metal_idx)
+                        same_metal_idx = True
 
                 bonds.append((adsorbed_atom_idx, metal_idx))
+            print('Visited:', visited_metal_idxs)
+            print(bonds)
+            print('----')
 
             # set up some variables
             prefix = str(prefix).zfill(3)
@@ -897,7 +918,8 @@ class TS():
     def get_index_surface_atom(
             sp_index: int,
             surface_atoms_idxs: Dict[str, int],
-            geom: str) -> int:
+            geom: str,
+            n_same_metal_idxs: int) -> int:
         ''' Specify adsorbate atom symbol and index of the nearest metal atom
             will be returned.
 
@@ -922,7 +944,10 @@ class TS():
         all_dist_surface_adsorbate = ts_est_atom.get_distances(
             sp_index, surface_atoms_idxs_list)
 
-        min_dist_surface_adsorbate = min(all_dist_surface_adsorbate)
+        # min_dist_surface_adsorbate = min(all_dist_surface_adsorbate)
+        min_dist_surface_adsorbate = heapq.nsmallest(n_same_metal_idxs, all_dist_surface_adsorbate)[
+            n_same_metal_idxs-1]
+        # next_lowest = sorted(set(all_dist_surface_adsorbate))[1]
         # get index of the surface atom for which distance to adsorbate is the
         # lowest
         index = np.where(all_dist_surface_adsorbate
