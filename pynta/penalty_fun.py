@@ -137,9 +137,12 @@ class AdsorbatePlacer:
 
         res2 = minimize(self.energy, y1, jac=self.gradient, method='bfgs',
                         options={'disp': True})
+
+        # an alternative but usualy bfgs is better/more stable here
         # res2 = minimize(self.energy, y1, jac=self.gradient,
         #                 method='l-bfgs-b',
         #                 options={'iprint': 1})
+
         print(res2)
 
         y2 = res2['x']

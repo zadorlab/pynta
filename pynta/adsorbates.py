@@ -40,6 +40,8 @@ class Adsorbates:
             eg. (3, 3, 1)
         yamlfile : str
             a name of the .yaml file with reaction list
+        creation_dir : posix
+            a posix path to the working directory
 
         '''
         self.facetpath = facetpath
@@ -159,10 +161,18 @@ class Adsorbates:
                 surface[i] = int(np.sign(pairvec[2]))
         return edges, surface
 
-    def get_grslab(self):
+    def get_grslab(self) -> Gratoms:
+        ''' Convert surface slab Atoms object into Gratoms object
+
+        Returns
+        -------
+        grslab : Gratoms
+            Gratoms representation of the surface slab - ready to place
+            adsorbates
+
+        '''
         slabedges, tags = Adsorbates.get_edges(self, True)
 
-        # transform Atoms to Gratoms object
         grslab = Gratoms(numbers=self.slab_atom.numbers,
                          positions=self.slab_atom.positions,
                          cell=self.slab_atom.cell,
@@ -173,9 +183,10 @@ class Adsorbates:
         return grslab
 
     def adjacency_to_3d(self) -> None:
-        ''' Place adsorbates on the surface '''
+        ''' Place adsorbates on the surface
+
+        '''
         all_species_symbols = IO.get_all_unique_species(self.yamlfile)
-        # reactions = IO.open_yaml_file(self.yamlfile)
         images = IO.get_all_images(self.yamlfile)
 
         # prepare surface for placing adsorbates
@@ -188,6 +199,7 @@ class Adsorbates:
             if len(sp_gratoms) == 0:
                 continue
             # which atom connects to the surface
+            # TODO improve it and account for bidentate
             bonded = [0]
 
             if sp_symbol in edge_cases_bonded_dict.keys():
@@ -258,7 +270,8 @@ class Adsorbates:
                             'degauss': 0.01, 'ecutwfc': 40, 'nosym': True,
                             'conv_thr': 1e-11, 'mixing_mode': 'local-TF'}
         shtemplate: .sh file
-            optional, a .sh template(not required by the workflow)
+            optional, a .sh template(not required by the workflow but possible
+            to specified for special cases)
 
         '''
         n_kpts = IO().get_kpoints(self.repeats)
