@@ -804,7 +804,6 @@ class TS():
         '''
         # check symmetry of all TS estimates in ts_estimate_path
         gd_ads_index = TS.check_symm(ts_estimate_path, return_unique=True)
-        print(gd_ads_index)
 
         for i, _ in enumerate(gd_ads_index):
             # name of the directory with unique TS_estimates for which saddle
@@ -991,10 +990,12 @@ class TS():
         path : str
             a path to a directory where are files to be checked,
             e.g. Cu_111/TS_estimate_unique
-
         return_unique : bool
             If True, the method will return a list of unique prefixes.
             If False, the method will return a list of non-unique prefixes.
+        compare_traj : bool
+            If True, the method will compare .traj files.
+            If False, .xyz files will be compared
 
         Returns:
         ________
@@ -1003,68 +1004,28 @@ class TS():
 
         '''
         if compare_traj:
-            key = '**/*.traj'
+            keyphrase = '**/*.traj'
         else:
-            key = '*.xyz'
+            keyphrase = '*.xyz'
 
         comparator = SymmetryEquivalenceCheck()
-        geomlist = sorted(Path(path).glob(key))
+        list_of_geoms = sorted(Path(path).glob(keyphrase))
 
-        good_adsorbate = []
-        result_list = []
+        good_adsorbates_atom_obj_list = []
+        result = []
 
-        for geom in geomlist:
-            adsorbed = read(geom)
-            adsorbed.pbc = True
-            result = comparator.compare(adsorbed, good_adsorbate)
-            result_list.append(result)
-            if result is False:
-                good_adsorbate.append(adsorbed)
-        unique_index = []
-        for num, res in enumerate(result_list):
+        for geom in list_of_geoms:
+            adsorbate_atom_obj = read(geom)
+            adsorbate_atom_obj.pbc = True
+            comparision = comparator.compare(
+                adsorbate_atom_obj, good_adsorbates_atom_obj_list)
+            result.append(comparision)
+
+            if comparision is False:
+                good_adsorbates_atom_obj_list.append(adsorbate_atom_obj)
+
+        list_of_prefixes = []
+        for num, res in enumerate(result):
             if res is not return_unique:
-                unique_index.append(str(num).zfill(3))
-        return unique_index
-
-    # @staticmethod
-    # def check_symm_before_xtb(
-    #         path: str) -> List[int]:
-    #     ''' Check for the symmetry equivalent structures in the given path
-    #         before executing penalty function minimization
-
-    #     Parameters:
-    #     ___________
-    #     path : str
-    #         a path to a directory where are files to be checked,
-    #         e.g. Cu_111/TS_estimate
-
-    #     Returns:
-    #     ________
-    #     not_unique_index : list(str)
-    #         a list with prefixes of all symmetry equivalent structures, i.e.,
-    #         files with these prefixes should be deleted
-
-    #     '''
-    #     comparator = SymmetryEquivalenceCheck()
-    #     geomlist = sorted(Path(path).glob('*.xyz'))
-
-    #     good_adsorbates = []
-    #     result_list = []
-
-    #     for geom in geomlist:
-    #         adsorbed = read(geom)
-    #         adsorbed.pbc = True
-    #         result = comparator.compare(adsorbed, good_adsorbates)
-    #         result_list.append(result)
-    #         if result is False:
-    #             # if compared structures are different, add the current one to
-    #             # good_adsorbates
-    #             good_adsorbates.append(adsorbed)
-    #     not_unique_index = []
-    #     for num, res in enumerate(result_list):
-    #         if res is True:
-    #             # Better to have all symmetry equivalent site here in a list.
-    #             # The workflow will remove them in getTSestimate function
-    #             # keeping all symmetry distinct sites
-    #             not_unique_index.append(str(num).zfill(3))
-    #     return not_unique_index
+                list_of_prefixes.append(str(num).zfill(3))
+        return list_of_prefixes
