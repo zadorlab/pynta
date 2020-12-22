@@ -378,7 +378,7 @@ class TS():
             ts_estimate_path: str,
             pytemplate: str,
             species_list: List[str],
-            reacting_atoms: List[str],
+            reacting_atoms: Dict[str, int],
             metal_atom: str,
             scaled1: bool,
             scfactor_surface,) -> None:
@@ -399,8 +399,9 @@ class TS():
             a list of species which atoms take part in the reaction,
             i.e. for ['CO2'] ['C'] is taking part in reaction
             e.g. ['O', 'H'] or ['CO2', 'H']
-        easier_to_build : list(str)
-            a list of species that are considerd as the reactiong one
+        reacting_atoms : Dict[str, int]
+            keys are sybols of atoms that takes part in reaction whereas,
+            values are their indicies
         metal_atom : str
             a checmical symbol for the surface atoms (only metallic surfaces
             are allowed)
@@ -460,39 +461,10 @@ class TS():
 
         # Loop through all .xyz files
         for prefix, xyz_file in enumerate(ts_estimates_xyz_files):
-            bonds = []
-            visited_metal_idxs = []
-
-            # Loop through all relevant_species
-            for idx in reacting_atoms.values():
-                print('react idx ', idx)
-                # sp_index = TS.get_sp_index(
-                #     species, visited_species, adsorbate_atoms_idxs)
-                adsorbed_atom_idx = idx + self.nslab
-                n_same_metal_idxs = 1
-                same_metal_idx = False
-                while same_metal_idx is False:
-                    metal_idx = TS.get_index_surface_atom(
-                        adsorbed_atom_idx, surface_atoms_idxs, xyz_file,
-                        n_same_metal_idxs)
-                    print(metal_idx)
-                    print('vis loop', visited_metal_idxs)
-                    if visited_metal_idxs is False:
-                        n_same_metal_idxs += 1
-                        print('break')
-                        break
-                    if metal_idx in visited_metal_idxs:
-                        n_same_metal_idxs += 1
-                        print('continue')
-                    else:
-                        print('end')
-                        visited_metal_idxs.append(metal_idx)
-                        same_metal_idx = True
-
-                bonds.append((adsorbed_atom_idx, metal_idx))
-            print('Visited:', visited_metal_idxs)
-            print(bonds)
-            print('----')
+            bonds = self.get_bonds_penalty(
+                reacting_atoms,
+                surface_atoms_idxs,
+                xyz_file)
 
             # set up some variables
             prefix = str(prefix).zfill(3)
@@ -513,8 +485,56 @@ class TS():
                                           prefix=prefix,
                                           geom_name=f_name_xyz,
                                           slabopt=self.slab))
-            # move .xyz file
-            shutil.move(xyz_file, calc_dir)
+                # move .xyz file
+                shutil.move(xyz_file, calc_dir)
+
+    def get_bonds_penalty(
+            self,
+            reacting_atoms: Dict[str, int],
+            surface_atoms_idxs: Dict[str, int],
+            xyz_file: str) -> List[Tuple[int, int]]:
+        ''' Get a list of tuples for all bonds between reacting atoms and
+            the nearest surface metal atoms connected to adsorbates
+
+        Parameters
+        ----------
+        reacting_atoms : Dict[str, int]
+            keys are sybols of atoms that takes part in reaction whereas,
+            values are their indicies
+        surface_atoms_idxs : Dict[str, int]
+            keys are metal atom symbol and index and values are indicies
+            e.g.
+            {'Cu_0': 0, 'Cu_1': 1}
+        xyz_file : str
+            path to .xyz file with TS guess geometry before xtb calculations
+
+        Returns
+        -------
+        bonds: List[Tuple[int, int]]
+            a list with all bonds between reacting atoms and surface metal
+            atom connected to them
+
+        '''
+        bonds = []
+        visited_metal_idxs = []
+
+        for idx in reacting_atoms.values():
+            adsorbed_atom_idx = idx + self.nslab
+            n_same_metal_idxs = 1
+            is_metal_atom_already_connected = False
+
+            while is_metal_atom_already_connected is False:
+                metal_idx = TS.get_index_surface_atom(
+                    adsorbed_atom_idx, surface_atoms_idxs, xyz_file,
+                    n_same_metal_idxs)
+                if metal_idx in visited_metal_idxs:
+                    n_same_metal_idxs += 1
+                else:
+                    visited_metal_idxs.append(metal_idx)
+                    is_metal_atom_already_connected = True
+
+            bonds.append((adsorbed_atom_idx, metal_idx))
+        return bonds
 
     @staticmethod
     def is_valid_sp_index(
@@ -930,6 +950,8 @@ class TS():
         geom : str
             a .xyz of .traj file name with geometry of the structure
             to be analysed
+        n_same_metal_idxs : int
+            how many times an adsorbed atom wanted to connect to the same metal
 
         Returns:
         ________
@@ -944,12 +966,10 @@ class TS():
         all_dist_surface_adsorbate = ts_est_atom.get_distances(
             sp_index, surface_atoms_idxs_list)
 
-        # min_dist_surface_adsorbate = min(all_dist_surface_adsorbate)
-        min_dist_surface_adsorbate = heapq.nsmallest(n_same_metal_idxs, all_dist_surface_adsorbate)[
-            n_same_metal_idxs-1]
-        # next_lowest = sorted(set(all_dist_surface_adsorbate))[1]
-        # get index of the surface atom for which distance to adsorbate is the
-        # lowest
+        min_dist_surface_adsorbate = heapq.nsmallest(
+            n_same_metal_idxs,
+            all_dist_surface_adsorbate)[n_same_metal_idxs-1]
+
         index = np.where(all_dist_surface_adsorbate
                          == min_dist_surface_adsorbate)
         return surface_atoms_idxs_list[index[0][0]]
