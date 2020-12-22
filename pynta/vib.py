@@ -1,7 +1,7 @@
 from pynta.io import IO
 from ase.io import read, write
 from pathlib import Path, PosixPath
-from typing import Tuple, Dict, List
+from typing import Tuple, Dict
 from numpy import floor
 import os
 import shutil
@@ -32,7 +32,7 @@ class AfterTS():
             calc_keywords: Dict[str, str],
             pseudopotentials: Dict[str, str],
             pseudo_dir: str) -> None:
-        '''Set up files for TSs vibration calculations
+        ''' Set up files for TSs vibration calculations.
 
         Parameters
         ----------
@@ -118,7 +118,7 @@ class AfterTS():
             pseudo_dir: str,
             nimages: int = 30,
             n: int = 0) -> None:
-        ''' Create job submission .py files for frequency calculation of TSs
+        ''' Create job submission .py files for frequency calculation of TSs.
 
         Parameters
         ----------
@@ -186,7 +186,7 @@ class AfterTS():
             pseudopotentials: Dict[str, str],
             pseudo_dir: str) -> None:
         ''' Create files for after_TS calculations - to verify TS structures
-            and get corresponding reactant and product minima[summary]
+            and get corresponding reactant and product minima[summary].
 
         Parameters
         ----------
@@ -269,7 +269,7 @@ class AfterTS():
             fname_reverse: str,
             nimages: int = 30) -> None:
         ''' Get forward and reverse .xyz file by nudging TS towards imaginary
-        mode of oscilations summary
+            mode of oscilations summary.
 
         Parameters
         ----------
@@ -319,7 +319,7 @@ class AfterTS():
             pseudopotentials: Dict[str, str],
             pseudo_dir: str) -> None:
         ''' Create job submission files for minimization displaced structures
-            after TS
+            after TS.
 
         Parameters
         ----------
@@ -377,7 +377,7 @@ class AfterTS():
 
     def get_all_distances(self) -> None:
         ''' Get distances between reacting species for ts, forward and
-        reverse structure
+            reverse structure.
 
         '''
         all_rxn_names = IO().get_list_all_rxns_names(self.yamlfile)
@@ -393,7 +393,7 @@ class AfterTS():
             forward_dist_dict: Dict[str, float],
             reverse_dist_dict: Dict[str, float]) -> None:
         ''' Print information about bond distances (reacting atoms) for TS,
-        forward and reverse .xyz file
+            forward and reverse .xyz file/
 
         Parameters
         ----------
@@ -421,7 +421,7 @@ class AfterTS():
             self,
             rxn_name: str) -> Dict[str, float]:
         ''' For given rxn_name get distances between reacting species
-            in TS structure
+            in TS structure.
 
         Parameters
         ----------
@@ -520,11 +520,11 @@ class minimaVib():
 
         Parameters
         ----------
-        species : str
-            a chemical symbol of the adsorbate
-        species_list : List[str]
-            a list with all species taking part in all reactions,
-            e.g. ['H', 'C', 'CH', 'O', 'OH']
+        facetpath : str
+            a path to the workflow's main dir
+            e.g. 'Cu_111'
+        yamlfile_path : posix
+            a path to .yaml file with all reactions e.g. 'reactions.yaml'
         pytemplate : str
             a pytemplate for frequency calculations of minima
         balsam_exe_settings : Dict[str, int]
@@ -601,8 +601,11 @@ class minimaVib():
 
         Parameters
         ----------
-        species : str
+        adsorbate : str
             a chemical symbol of a reacting species
+        prefix : str
+            a prefix for unique minimum for which vibrational frequencies
+            will be calculated
         traj_fname : str
             a name of a new traj file
         minima_vib_path : str
