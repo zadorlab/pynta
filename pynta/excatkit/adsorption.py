@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from pynta import defaults
 from pynta.excatkit.utils import Utils
-from pynta.excatkit import symmetry
+from pynta.excatkit.symmetry import Symmetry
 from pynta.excatkit.molecule import Molecule
 
 import matplotlib.pyplot as plt
@@ -285,7 +285,7 @@ class AdsorptionSites():
         symmetry_match = self._symmetric_sites
 
         if symmetry_match is None:
-            sym = symmetry.Symmetry(self.slab, tol=self.tol)
+            sym = Symmetry(self.slab, tol=self.tol)
 
             rotations, translations = sym.get_symmetry_operations(affine=False)
             rotations = np.swapaxes(rotations, 1, 2)
