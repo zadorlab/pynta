@@ -3,7 +3,13 @@ import shutil
 import yaml
 from pathlib import Path, PosixPath
 from typing import List, Tuple, Optional, Dict
+
 import numpy as np
+import networkx as nx
+
+from pynta.excatkit.molecule import Molecule
+from pynta.excatkit.gratoms import Gratoms
+from pynta.graph_utils import node_test
 
 from ase.io import read, write
 from ase.dft.kpoints import monkhorst_pack
@@ -170,7 +176,7 @@ class IO():
         reactions = yaml.safe_load(yamltxt)
         return reactions
 
-    @ staticmethod
+    @staticmethod
     def get_all_unique_species(
             yamlfile: str) -> List[str]:
         ''' Generate a list with all unique species names
@@ -201,7 +207,10 @@ class IO():
         # remove empty elements, such as ''
         all_species = [species for species in all_species if species]
 
-        return(list(set(all_species)))
+        # remove duplicates keeping order - dictionary would do the job
+        all_unique_species = {species: True for species in all_species}
+
+        return list(all_unique_species.keys())
 
     @staticmethod
     def get_reactants_and_products(
@@ -243,7 +252,7 @@ class IO():
         products = [prod for prod in r_x_removed if prod]
         return reactants, products
 
-    @ staticmethod
+    @staticmethod
     def get_rxn_name(
             rxn: Dict[str, str]) -> str:
         ''' Get a reaction name for a given rxn
@@ -265,7 +274,7 @@ class IO():
         rxn_name = '+'.join(reactants) + '_' + '+'.join(products)
         return rxn_name
 
-    @ staticmethod
+    @staticmethod
     def get_xyz_from_traj(
             path_to_species: str) -> None:
         ''' Convert all ASE's traj files to .xyz files for a given species
@@ -357,7 +366,7 @@ class IO():
             dependancy_dict[rxn_name] = minima_py_list
         return dependancy_dict
 
-    @ staticmethod
+    @staticmethod
     def clean_finished_subjobs() -> None:
         ''' Move finished subjob files to finised_tmp_scripts directory '''
         dir_name = 'finished_tmp_scripts'
@@ -399,7 +408,7 @@ class IO():
         '''
         unique_adsorbates_prefixes = {}
         path_to_minima = os.path.join(creation_dir, facetpath, 'minima')
-        all_species = self.get_unique_all_species(yamlfile)
+        all_species = self.get_all_unique_species(yamlfile)
         for species in all_species:
             path_to_species = os.path.join(path_to_minima, species)
             uq_prefixes = IO.get_unique_prefixes(
@@ -483,9 +492,20 @@ class IO():
 
     def get_list_all_rxns_names(
             self,
-            yamlfile):
-        ''' Get a list with all reactions names '''
+            yamlfile: str) -> List[str]:
+        ''' Get a list with all reactions names
 
+        Parameters
+        ----------
+        yamlfile : str
+            a name of the .yaml file with a reaction list
+
+        Returns
+        -------
+        all_rxns : List[str]
+            a list with all reactions names
+
+        '''
         # open .yaml file
         reactions = self.open_yaml_file(yamlfile)
 
@@ -494,3 +514,303 @@ class IO():
             rxn_name = self.get_rxn_name(rxn)
             all_rxns.append(rxn_name)
         return all_rxns
+
+    @staticmethod
+    def get_all_reacting_atoms(yamlfile: str) -> Dict[str, Dict[str, float]]:
+        ''' Read a .yaml file with all reactions and extract reacting atoms
+            symbols and indicies - the one with asterisk in the .yaml file
+
+        Parameters
+        ----------
+        yamlfile : str
+            a name of the .yaml file with a reaction list
+
+        Returns
+        -------
+        Dict[str, Dict[str, float]]
+            a dictionary with keys are 'rxn_1, rxn_2...'' and values are
+            another dicts, where keys are atomic symbols, values are indicies,
+            as they appear in the
+            .yaml file,
+            e.g.
+            OH for H + O -> OH
+            {'O': 0, 'H': 1}
+
+        '''
+        all_reacting_atoms = {}
+        reactions = IO.open_yaml_file(yamlfile)
+
+        for num, rxn in enumerate(reactions):
+            r_name_list, p_name_list = IO.get_reactants_and_products(rxn)
+            if len(r_name_list) <= len(p_name_list):
+                easier_to_build = 'reactant'
+                ts_estimators = r_name_list
+            else:
+                easier_to_build = 'product'
+                ts_estimators = p_name_list
+
+            reacting_species_connectivity = rxn[easier_to_build].strip().split(
+                '\n')
+
+            reacting_atoms_and_idxs = IO.get_reacting_atoms_idx_dict(
+                reacting_species_connectivity)
+            all_reacting_atoms['rxn_{}'.format(num)] = reacting_atoms_and_idxs
+        return all_reacting_atoms
+
+    @staticmethod
+    def get_reacting_atoms_idx_dict(
+            reacting_species_connectivity: List[str]) -> Dict[str, int]:
+        ''' Get a dict with atomic symbols and indicies of reacting atoms -
+            the one with asterisk in the .yaml file
+
+        Parameters
+        ----------
+        reacting_species_connectivity : List[str]
+            conectivity info for the species that is easier to use as a
+            TS guess skeleton
+            e.g.
+            OH for H + O -> OH
+            ['multiplicity -187', '1 *1 O u0 p0 c0 {2,S} {4,S}',
+            '2 *2 H u0 p0 c0 {1,S}', '3 *3 X u0 p0 c0',
+            '4    X u0 p0 c0 {1,S}', '']
+
+        Returns
+        -------
+        reacting_idxs = Dict[str, int]
+            keys are atomic symbols, values are indicies, as they appear in the
+            .yaml file,
+            e.g.
+            OH for H + O -> OH
+            {'O': 0, 'H': 1}
+
+        '''
+        reacting_idxs = {}
+        n_surf_at_befor_ads = 0
+        remove_one_more = 0
+        for line in reacting_species_connectivity:
+            if 'multiplicity' in line:
+                continue
+            if 'X' in line:
+                n_surf_at_befor_ads += 1
+            else:
+                break
+        for num, line in enumerate(reacting_species_connectivity):
+            if 'multiplicity' in line:
+                remove_one_more = 1
+            if '*' in line and 'X' not in line:
+                atom_symbol = line.split()[2]
+                reacting_idxs[atom_symbol] = (
+                    num - n_surf_at_befor_ads - remove_one_more)
+        return reacting_idxs
+
+    @staticmethod
+    def get_TS_guess_image(
+            rxn: Dict[str, str],
+            easier_to_build: str) -> Gratoms:
+        ''' Convert RMGCat representation of species to Gratom object
+            - the case of TS_guess
+
+        Parameters
+        ----------
+        rxn : Dict[str, str]
+            a dictionary with info about the paricular reaction. This can be
+            view as a splitted many reaction .yaml file to a single reaction
+            .yaml file
+        easier_to_build : str
+            a list of species that are considerd as the reactiong one
+
+        Returns
+        -------
+        ts_guess_image : Gratoms
+            Skeleton of an TS that is used to generate TS_guesses in
+            :meth:`pynta.general_ts_guesses.decide`
+
+        '''
+        # TODO there is only one element for every reaction tested. There will
+        # be a problem for AX + BX -> CX + DX
+        ts_guess = IO.rmgcat_to_gratoms(
+            rxn[easier_to_build].strip().split('\n'))
+
+        ts_guess_image = Molecule().get_3D_positions(ts_guess[0])
+        return ts_guess_image
+
+    def get_all_images(yamlfile: str) -> List[Gratoms]:
+        ''' Return a list with all unique images (Gratoms) for all reactions
+
+        Parameters
+        ----------
+        yamlfile : str
+            a name of the .yaml file with a reaction list
+
+        Returns
+        -------
+        all_images_unique : List[Gratoms]
+            a list with all unique Gratoms objects for all reactions
+
+        '''
+        reactions = IO.open_yaml_file(yamlfile)
+
+        all_images_unique = []
+        all_images = []
+        for rxn in reactions:
+            images = IO.get_images(rxn)
+            all_images.append(images)
+        all_images_flat = [item for sublist in all_images for item in sublist]
+
+        # check if any species in one reaction is the same as any species
+        # in the other reaction
+        for species1 in all_images_flat:
+            for species2 in all_images_unique:
+                if nx.is_isomorphic(
+                        species1.graph, species2.graph, node_test):
+                    break
+            else:
+                images.append(Molecule().get_3D_positions(species1))
+                all_images_unique.append(species1)
+        return all_images_unique
+
+    @staticmethod
+    def get_images(rxn: Dict[str, str]) -> List[Gratoms]:
+        ''' Convert RMGCat representation of species for a given rxn
+            to a list of Gratoms objects - the case of reactants and products
+
+        Parameters
+        ----------
+        rxn : Dict[str, str]
+            a dictionary with info about the paricular reaction. This can be
+            view as a splitted many reaction .yaml file to a single reaction
+            .yaml file
+
+        Returns
+        -------
+        images : List[Gratoms]
+            a list with all unique Gratoms object representing each species
+            taking part in reaction rxn
+
+        '''
+        species = []
+        reactants = IO.rmgcat_to_gratoms(
+            rxn['reactant'].strip().split('\n'))
+        products = IO.rmgcat_to_gratoms(
+            rxn['product'].strip().split('\n'))
+        species += reactants + products
+
+        unique_species = []
+        images = []
+
+        # check if any products are the same as any reactants
+        for species1 in species:
+            for species2 in unique_species:
+                if nx.is_isomorphic(
+                        species1.graph, species2.graph, node_test):
+                    break
+            else:
+                images.append(Molecule().get_3D_positions(species1))
+                unique_species.append(species1)
+        return images
+
+    @staticmethod
+    def rmgcat_to_gratoms(
+            adjtxt: List[str]) -> List[Gratoms]:
+        ''' Convert a slice of .yaml file to Catkit's Gratoms object
+
+        Parameters:
+        ___________
+
+        adjtxt : List[str]
+            a list with a connectivity info for reactant or product
+            as from the .yaml file.
+            e.g. for given reaction (reactant or product)
+
+            In .yaml file we have something like that:
+
+                    multiplicity -187
+                1 *1 C u0 p0 c0 { 2,S} {4,S}
+                2    O u0 p0 c0 {1,S}
+                3 *2 H u0 p0 c0 {5,S}
+                4 *3 X u0 p0 c0 {1,S}
+                5 *4 X u0 p0 c0 {3,S}
+
+            but we need here a list like that:
+
+            ['multiplicity -187', '1 *1 C u0 p0 c0 {2,S} {4,S}',
+            '2    O u0 p0 c0 {1,S}', '3 *2 H u0 p0 c0 {5,S}',
+            '4 *3 X u0 p0 c0 {1,S}', '5 *4 X u0 p0 c0 {3,S}', '']
+
+            So it can be simply converted using the following:
+
+            yamlfile = 'reactions.yaml'
+            with open(yamlfile, 'r') as f:
+                text = f.read()
+            reactions = yaml.safe_load(text)
+            for rxn in reactions:
+                adjtxt = rxn['reactant'].split('\n')
+
+        Returns:
+        ________
+        gratoms_list : List[Gratoms]
+            a list with all Gratoms objects for a give rxn
+
+        '''
+        symbols = []
+        edges = []
+        tags = []
+
+        start_idx = 1
+        if 'multiplicity' in adjtxt[0]:
+            start_idx -= 1
+
+        for i, line in enumerate(adjtxt, start_idx):
+            if i == 0:
+                continue
+            if not line:
+                break
+
+            line = line.split()
+            inc = 0
+            if line[1][0] == '*':
+                inc = 1
+                tags.append(int(line[1][1]))
+            else:
+                tags.append(0)
+
+            symbols.append(line[1 + inc])
+            conn = line[5 + inc:]
+
+            for bond in conn:
+                j = int(bond.strip('{}').split(',')[0])
+                if j > i:
+                    edges.append((i - 1, j - 1))
+        gratoms = Gratoms(symbols, edges=edges)
+
+        del_indices = []
+
+        for i, atom in enumerate(gratoms):
+            if atom.symbol == 'X':
+                for j in gratoms.graph.neighbors(i):
+                    tags[j] *= -1
+                del_indices.append(i)
+
+        gratoms.set_tags(tags)
+        del gratoms[del_indices]
+
+        gratoms_list = []
+        graphs = nx.connected_component_subgraphs(gratoms.graph)
+        for i, subgraph in enumerate(graphs):
+            indices = list(subgraph.nodes)
+            symbols = gratoms[indices].symbols
+            new_indices = {old: new for new, old in enumerate(indices)}
+            new_edges = []
+
+            for edge in subgraph.edges:
+                newa = new_indices[edge[0]]
+                newb = new_indices[edge[1]]
+                new_edges.append((newa, newb))
+
+            new_gratoms = Gratoms(symbols, edges=new_edges)
+
+            tags = indices
+            new_gratoms.set_tags(tags)
+            gratoms_list.append(new_gratoms)
+
+        return gratoms_list

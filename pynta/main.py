@@ -56,7 +56,7 @@ else:
     scfactor_surface = inputR2S.scfactor_surface
     scaled1 = inputR2S.scaled1
     scaled2 = inputR2S.scaled2
-    all_reacting_atoms = inputR2S.all_reacting_atoms
+    all_reacting_atoms = IO.get_all_reacting_atoms(check_yaml)
     species_dict = IO().get_species_dict(check_yaml)
     all_species = IO().get_all_unique_species(check_yaml)
     executable = inputR2S.executable
@@ -654,7 +654,7 @@ class WorkFlow:
         Parameters:
         ___________
 
-        rxn : dict(yaml[str:str])
+        rxn : Dict[str, str]
             a dictionary with info about the paricular reaction. This can be
             view as a splitted many reaction .yaml file to a single reaction
             .yaml file
@@ -1445,6 +1445,7 @@ class WorkFlow:
             if all(WorkFlow.check_all_species(yamlfile, facetpath).values()):
                 # If all minima were calculated some time age pynta
                 # will use that calculations. Start from 02 step
+                self.run_minima_vib_no_depend(facetpath)
                 self.run_ts_estimate_no_depend(facetpath)
             else:
                 # run optimization of surface + reactants; surface + products
@@ -1471,7 +1472,7 @@ class WorkFlow:
         for facetpath in facetpaths:
             self.execute(facetpath)
 
-    @ staticmethod
+    @staticmethod
     def restart() -> None:
         LowLevelRestart().restart()
         HighLevelRestart().restart()

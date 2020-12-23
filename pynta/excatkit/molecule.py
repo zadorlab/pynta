@@ -10,8 +10,12 @@ import re
 
 
 class Molecule():
-    def molecule(self, species, bond_index=None, vacuum=0):
-        """Return list of enumerated gas-phase molecule structures based
+    def molecule(
+            self,
+            species,
+            bond_index=None,
+            vacuum=0):
+        '''Return list of enumerated gas-phase molecule structures based
         on species and topology.
 
         Parameters
@@ -28,19 +32,22 @@ class Molecule():
         -------
         images : list of Gratoms objects
             3D structures of the requested chemical species and topologies.
-        """
-        molecule_graphs = self.get_topologies(species)
 
+        '''
+        molecule_graphs = self.get_topologies(species)
         images = []
         for atoms in molecule_graphs:
-            atoms = self.get_3D_positions(atoms, bond_index)
+            atoms = Molecule.get_3D_positions(atoms, bond_index)
             atoms.center(vacuum)
             images += [atoms]
 
         return images
 
-    def get_atomic_numbers(self, formula, return_count=False):
-        """Return the atomic numbers associated with a chemical formula.
+    @staticmethod
+    def get_atomic_numbers(
+            formula,
+            return_count=False):
+        ''' Return the atomic numbers associated with a chemical formula.
 
         Parameters
         ----------
@@ -55,7 +62,7 @@ class Molecule():
             Element numbers in associated species.
         counts : ndarray (n,)
             Count of each element in a species.
-        """
+        '''
         parse = re.findall('[A-Z][a-z]?|[0-9]+', formula)
 
         values = {}
@@ -80,8 +87,14 @@ class Molecule():
 
         return numbers
 
-    def hydrogenate(self, atoms, bins, copy=True):
-        """Add hydrogens to a gratoms object via provided bins"""
+    @staticmethod
+    def hydrogenate(
+            atoms,
+            bins,
+            copy=True):
+        ''' Add hydrogens to a gratoms object via provided bins
+
+        '''
         h_index = len(atoms)
 
         edges = []
@@ -97,10 +110,14 @@ class Molecule():
 
         return atoms
 
-    def bin_hydrogen(self, hydrogens=1, bins=1):
-        """Recursive function for determining distributions of
-        hydrogens across bins.
-        """
+    def bin_hydrogen(
+            self,
+            hydrogens=1,
+            bins=1):
+        ''' Recursive function for determining distributions of
+            hydrogens across bins.
+
+        '''
         if bins == 1:
             yield [hydrogens]
 
@@ -113,8 +130,11 @@ class Molecule():
                     for k in self.bin_hydrogen(i, bins - 1):
                         yield j + k
 
-    def get_topologies(self, symbols, saturate=False):
-        """Return the possible topologies of a given chemical species.
+    def get_topologies(
+            self,
+            symbols,
+            saturate=False):
+        ''' Return the possible topologies of a given chemical species.
 
         Parameters
         ----------
@@ -129,8 +149,10 @@ class Molecule():
         molecules : list (N,)
             Gratoms objects with unique connectivity matrix attached.
             No 3D positions will be provided for these structures.
-        """
-        num, cnt = self.get_atomic_numbers(symbols, True)
+
+        '''
+        num, cnt = Molecule.get_atomic_numbers(symbols, True)
+        # print(num, cnt)
         mcnt = cnt[num != 1]
         mnum = num[num != 1]
 
@@ -149,10 +171,9 @@ class Molecule():
 
         if saturate:
             hcnt = hmax
-
         if n == 1:
             atoms = Gratoms(elements, cell=[1, 1, 1])
-            hatoms = self.hydrogenate(atoms, np.array([hcnt]))
+            hatoms = Molecule.hydrogenate(atoms, np.array([hcnt]))
             return [hatoms]
         elif n == 0:
             hatoms = Gratoms('H{}'.format(hcnt))
@@ -202,7 +223,7 @@ class Molecule():
 
                 # The backbone is saturated, do not enumerate
                 if hcnt == hmax:
-                    hatoms = self.hydrogenate(atoms, remaining_bonds)
+                    hatoms = Molecule.hydrogenate(atoms, remaining_bonds)
                     molecules += [hatoms]
                     continue
 
@@ -211,7 +232,7 @@ class Molecule():
                     if not np.all(bins <= remaining_bonds):
                         continue
 
-                    hatoms = self.hydrogenate(atoms, bins)
+                    hatoms = Molecule.hydrogenate(atoms, bins)
 
                     isomorph = False
                     for G0 in molecules:
@@ -224,9 +245,10 @@ class Molecule():
 
         return molecules
 
-    def get_basis_vectors(self, coordinates):
-        """Return a set of basis vectors for a given array of
-        3D coordinates.
+    @staticmethod
+    def get_basis_vectors(coordinates):
+        ''' Return a set of basis vectors for a given array of
+            3D coordinates.
 
         Parameters
         ----------
@@ -240,7 +262,8 @@ class Molecule():
         basis_vectors : ndarray (3, 3)
             Automatically generated basis vectors from the given
             positions.
-        """
+
+        '''
         if len(coordinates) == 3:
             c0, c1, c2 = coordinates
         else:
@@ -257,15 +280,15 @@ class Molecule():
 
         return basis_vectors
 
+    @staticmethod
     def branch_molecule(
-            self,
             atoms,
             branch,
             basis=None,
             adsorption=None):
-        """Return the positions of a Gratoms object for a segment of its
-        attached graph. This function is mean to be iterated over by a depth
-        first search form NetworkX.
+        ''' Return the positions of a Gratoms object for a segment of its
+            attached graph. This function is mean to be iterated over by a
+            depth first search form NetworkX.
 
         Parameters
         ----------
@@ -287,7 +310,8 @@ class Molecule():
         -------
         positions : ndarray (N, 3)
             Estimated positions for the branch nodes.
-        """
+
+        '''
         root, nodes = branch
         root_position = atoms[root].position
 
@@ -315,7 +339,7 @@ class Molecule():
 
         # Place the atoms of this segment of the branch
         if basis is None:
-            basis = self.get_basis_vectors(
+            basis = Molecule.get_basis_vectors(
                 [root_position, [0, 0, -1]])
         basis = np.repeat(basis[None, :, :], len(dist), axis=0)
 
@@ -333,9 +357,12 @@ class Molecule():
 
         return positions
 
-    def get_3D_positions(self, atoms, bond_index=None):
-        """Return an estimation of the 3D structure of a Gratoms object
-        based on its graph.
+    @staticmethod
+    def get_3D_positions(
+            atoms,
+            bond_index=None):
+        ''' Return an estimation of the 3D structure of a Gratoms object
+            based on its graph.
 
         WARNING: This function operates on the atoms object in-place.
 
@@ -351,7 +378,8 @@ class Molecule():
         -------
         atoms : Gratoms object
             Structure with updated 3D positions.
-        """
+
+        '''
         branches = dfs_successors(atoms.graph, bond_index)
 
         complete = []
@@ -363,7 +391,7 @@ class Molecule():
 
             c0 = atoms[root].position
             if i == 0:
-                basis = self.get_basis_vectors([c0, [0, 0, -1]])
+                basis = Molecule.get_basis_vectors([c0, [0, 0, -1]])
             else:
                 bond_index = None
                 for j, base_root in enumerate(complete):
@@ -371,13 +399,14 @@ class Molecule():
                         c1 = atoms[base_root].position
                         # Flip the basis for every alternate step down
                         # the chain.
-                        basis = self.get_basis_vectors([c0, c1])
+                        basis = Molecule.get_basis_vectors([c0, c1])
                         if (i - j) % 2 != 0:
                             basis[2] *= -1
                         break
             complete.insert(0, root)
 
-            positions = self.branch_molecule(atoms, branch, basis, bond_index)
+            positions = Molecule.branch_molecule(
+                atoms, branch, basis, bond_index)
             atoms.positions[nodes] = positions
 
         return atoms

@@ -88,7 +88,8 @@ class LowLevelRestart():
         for key, value in all_unfinished.items():
             only_ts = 'ts' in key and all(
                 [k not in key for k in ['ts_vib', 'after_ts']])
-            # comparator = 'ts' in key and 'after_ts' not in key and 'ts_vib' not in key
+            # comparator = 'ts' in key and 'after_ts' not in key
+            # and 'ts_vib' not in key
             if only_ts and 'AWAITING_PARENTS' not in value:
                 unfinished_tss.append(key)
         return unfinished_tss
@@ -124,7 +125,9 @@ class LowLevelRestart():
 
         '''
         unfinished_minima = self.get_minima_to_restart()
+        print('Restarting minima:')
         for minimum in unfinished_minima:
+            print('    {}'.format(minimum))
             metal_symbol, facet, species, prefix, _ = minimum.split('_')
             facetpath = metal_symbol + '_' + facet
             path_to_species = os.path.join(
@@ -148,7 +151,9 @@ class LowLevelRestart():
 
         '''
         unfinished_tss = self.get_tss_to_restart()
+        print('Restarting TSs:')
         for ts in unfinished_tss:
+            print('    {}'.format(ts))
             prefix, metal_symbol, facet, react, prod, _ = ts.split(
                 '_')
             facetpath = metal_symbol + '_' + facet
@@ -181,7 +186,9 @@ class LowLevelRestart():
 
         '''
         unfinished_after_tss = self.get_after_ts_to_restart()
+        print('Restarting After TSs:')
         for after_ts in unfinished_after_tss:
+            print('    {}'.format(after_ts))
             prefix, metal_atom, facet, react, prod, * \
                 _, letter = after_ts.split('_')
             facetpath = metal_atom + '_' + facet
@@ -232,4 +239,11 @@ class HighLevelRestart():
         for job in self.ase_jobs:
             if job.state not in ['JOB_FINISHED', 'AWAITING_PARENTS']:
                 job.state = 'READY'
+                job.save()
+        self.set_awaiting_status()
+
+    def set_awaiting_status(self):
+        for job in self.ase_jobs:
+            if len(job.parents) > 2 and job.state != 'JOB_FINISHED':
+                job.state = 'AWAITING_PARENTS'
                 job.save()

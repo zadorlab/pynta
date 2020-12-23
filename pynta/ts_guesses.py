@@ -1,61 +1,92 @@
 from pynta.excatkit.molecule import Molecule
 from pynta.excatkit.gratoms import Gratoms
-from typing import List, Dict, Tuple
-from collections import Counter
+from pynta.utils import edge_cases_bonded_dict
+from pynta.io import IO
+from typing import Dict, List, Tuple
 
 
-class TSGuessesGenerator():
+class GeneralTSGuessesGenerator():
     def __init__(self,
-                 ts_est,
-                 rxn,
-                 rxn_name,
-                 reacting_sp,
-                 reacting_species,
-                 scfactor):
+                 ts_est: str,
+                 rxn: Dict[str, str],
+                 rxn_name: str,
+                 easier_to_build: str,
+                 scfactor: float) -> None:
+        '''[summary]
+
+        Parameters
+        ----------
+        ts_est : str
+            string representations of the species which is use as a TS guess
+            skeleton - the one that is used to construct TS guess,
+            e.g.
+            'OH'
+            e.g OH_O+H
+        rxn : Dict[str, str]
+            a dictionary with info about the paricular reaction. This can be
+            view as a splitted many reaction .yaml file to a single reaction
+            .yaml file
+        rxn_name : str
+            a reaction name
+            e.g OH_O+H
+        easier_to_build : str
+            a keys to ts_guess_skeleton; 'product' or 'reatant'
+        scfator : float
+            a scaling factor to scale a bond distance between
+            atoms taking part in the reaction
+
+        '''
         self.ts_est = ts_est
         self.rxn = rxn
         self.rxn_name = rxn_name
-        self.reacting_sp = reacting_sp
-        self.reacting_species = reacting_species
+        self.easier_to_build = easier_to_build
         self.scfactor = scfactor
+        self.ts_guess_skeleton = self.rxn[self.easier_to_build]
+        self.reacting_species_connectivity = self.ts_guess_skeleton.split(
+            '\n')
 
-    def decide(self):
-        ts_guess_list = TSEstimator.build_ts_guess(self.ts_est)
-        ts_guess_check_atomicity = ts_guess_list[0]
-        n_atoms = len(ts_guess_check_atomicity)
+    def decide(
+            self,
+            reacting_idxs: List[int]) -> Tuple[Gratoms, int]:
+        ''' Main method to decide to which family of reactions given
+            reaction belongs
 
-        if n_atoms == 2:
-            print('Reaction {} is a diatomic reaction'.format(self.rxn_name))
+        Parameters
+        ----------
+        reacting_idxs : List[int]
+            list with indicies of reacting atoms, in order as they appear in
+            .yaml file but not necessary with the same indicies
 
-            # get ts_guess (Gratom) and index of bonded atom (int)
-            ts_guess, bonded_idx = Diatomic().get_ts_guess_and_bonded_idx(
-                self.ts_est, self.rxn, self.reacting_sp, self.reacting_species,
-                self.scfactor)
+        Returns
+        -------
+        ts_guess_image, s_bonded_idx : Tuple[Gratoms, int]
+            ts_geuss_el is Gratoms representation of TS guess, whereas
+            s_bonded_idx is the index of adsorbate atom that bonds to surface
 
-        elif n_atoms == 3:
-            print('Reaction {} is a triatomic reaction'.format(self.rxn_name))
+        '''
 
-            ts_guess, bonded_idx = Triatomic().get_ts_guess_and_bonded_idx(
-                self.ts_est, self.rxn, self.reacting_sp, self.reacting_species,
-                self.scfactor)
+        ts_guess_image, s_bonded_idx = None, None
+        how_many_atoms_react = len(reacting_idxs)
 
-        elif n_atoms == 4:
-            print('Reaction {} is a '
-                  'tetraatomic reaction'.format(self.rxn_name))
+        if how_many_atoms_react == 2:
+            ts_guess_image, s_bonded_idx = Diatomic(
+                self.ts_est,
+                self.rxn,
+                self.rxn_name,
+                self.easier_to_build,
+                self.scfactor).get_ts_guess_and_bonded_idx(reacting_idxs)
 
-            ts_guess, bonded_idx = Tetraatomic().get_ts_guess_and_bonded_idx(
-                self.ts_est, self.rxn, self.reacting_sp, self.reacting_species,
-                self.scfactor)
+        elif how_many_atoms_react == 3:
+            ts_guess_image, s_bonded_idx = Triatomic(
+                self.ts_est,
+                self.rxn,
+                self.rxn_name,
+                self.easier_to_build,
+                self.scfactor).get_ts_guess_and_bonded_idx(reacting_idxs)
 
-        else:
-            raise NotImplementedError('Only di-, tri- and some tetraatomic '
-                                      'reactions are supported at this moment')
-        return ts_guess, bonded_idx
+        return ts_guess_image, s_bonded_idx
 
-
-class TSEstimator():
-    @staticmethod
-    def build_ts_guess(ts_est: str) -> Gratoms:
+    def build_ts_guess(self) -> Gratoms:
         ''' Convert ts_est string into a list of Gratoms objects.
 
             Numner of elements in the list depends is equal to number of
@@ -65,12 +96,6 @@ class TSEstimator():
             For other types, more than one structure is possible, e.g.
             ts_est = 'COH' --> ts_guess_list = ['COH' (sp), 'CHO' (sp2)]
 
-        Parameters
-        ----------
-        ts_est : str
-            a string representing species that will be used to get ts_guess
-            e.g. 'OH', 'COH'
-
         Returns
         -------
         ts_guess_list : List[Gratoms]
@@ -78,481 +103,337 @@ class TSEstimator():
             ts_est
 
         '''
-        ts_guess_list = Molecule().molecule(ts_est)
+        ts_guess_list = Molecule().molecule(self.ts_est)
         return ts_guess_list
 
-    @staticmethod
-    def get_surface_bonded_atom_idx(
-            rxn: Dict[str, str],
-            reacting_sp: str) -> int:
-        ''' Get an index of surface bonded atom
-
-        Parameters
-        ----------
-        ts_guess_el : Gratoms
-            a Gratom object of ts_guess with the chosen topology, if more than
-            one topologies are possible
-        rxn : Dict[str, str]
-            a dictionary with info about the paricular reaction. This can be
-            view as a splitted many reaction .yaml file to a single reaction
-            .yaml file
-        reacting_sp : str
-            a key to rxn dictionary
-            'reactant' or 'product' are the only avaiable options options
+    def get_s_bonded_idx(self) -> int:
+        ''' Get index of the atoms that connects adsorbate to the surface
 
         Returns
         -------
-        surface_bonded_atom_idx : int
-            an int with index of atom bonded to the surface
+        s_bonded_idx: int
+            an index of an adsorbate atom that bonds it to surface
 
         Raises
         ------
         NotImplementedError
-            when there are more than one atoms connected to the surface
+            if more then 1 atoms connects adsorbate to the surface - curently,
+            only monodentate adsorbtion is supported.
 
         '''
-        reacting_sp_connectivity = rxn[reacting_sp].split('\n')
         surface_indicies = []
-        surface_bonded_atom_idxs = []
-        for line in reacting_sp_connectivity:
+        s_bonded_idxs = []
+        for line in self.reacting_species_connectivity:
             if 'X' in line:
                 index = line.split()[0]
                 surface_indicies.append(index)
         for index in surface_indicies:
             keyphrase = '{' + '{}'.format(index)
-            for line in reacting_sp_connectivity:
+            for line in self.reacting_species_connectivity:
                 if keyphrase in line:
-                    surface_bonded_atom_idxs.append(line.split()[0])
-        if len(surface_bonded_atom_idxs) > 1:
-            raise NotImplementedError('Only monodendate type of adsorbtion is '
-                                      'currently supported.')
+                    s_bonded_idxs.append(line.split()[0])
 
-        return int(surface_bonded_atom_idxs[0]) - 1
-
-    @staticmethod
-    def convert_symbol_to_index(
-            bonded: str,
-            ts_guess_el: Gratoms) -> int:
-        ''' Convert symbol of atom bonded to the surface to its index
-            in a given ts_est
-
-        Parameters
-        ----------
-        bonded : str
-            a chemical symbol of surface bonded atom
-        ts_guess_el : Gratoms
-            a Gratom object of ts_guess with the chosen topology, if more than
-            one topologies are possible
-
-        Returns
-        -------
-        surface_bonded_atom_idx : int
-            an int with index of atom bonded to the surface
-
-        '''
-        symbol = str(ts_guess_el.symbols)
-        surface_bonded_atom_idx = symbol.find(bonded)
-        return surface_bonded_atom_idx
-
-    @staticmethod
-    def get_atomic_connections(
-            rxn: Dict[str, str],
-            reacting_sp: str) -> Dict[str, int]:
-        ''' Get a dictionary describing how mamny connections exists for
-            a given atom of a structure that is used to estimate TS structure
-
-
-        Parameters
-        ----------
-        rxn : Dict[str, str]
-            a dictionary with info about the paricular reaction. This can be
-            view as a splitted many reaction .yaml file to a single reaction
-            .yaml file
-        reacting_sp : str
-            a key to rxn dictionary
-            'reactant' or 'product' are the only avaiable options options
-
-        Returns
-        -------
-        atomic_connections: Dict[str, int]
-            a dict with connectivity info for a given structure that is used
-            to estimate TS structure
-
-        '''
-        atomic_connections = {}
-        reacting_sp_connectivity = rxn[reacting_sp].split('\n')
-        for line in reacting_sp_connectivity:
-            connections = line.count('{')
-            symbol = line.split()[2]
-            atomic_connections[symbol] = connections
-        return atomic_connections
-
-    @staticmethod
-    def get_reacting_atoms_indices(
-            ts_guess_el: Gratoms,
-            reacting_atoms: List[str]) -> Dict[str, int]:
-        ''' Convert a list of reacting atoms (chemical symbols) into a dict
-            where key is a reacting atom and value is its index
-
-        Parameters
-        ----------
-        ts_guess_el : Gratoms
-            a Gratom object of ts_guess with the chosen topology, if more than
-            one topologies are possible
-        reacting_atoms : List[str]
-            a list with chemical symbols of all atoms taking part in
-            the reaction
-
-        Returns
-        -------
-        reacting_atom_indicies: Dict[str, int]
-            a dict with reacting atoms symbol as a key and index as a value
-
-        Raises
-        ------
-        NotImplementedError
-            when more than 2 atoms is taking part in the reaction
-
-        '''
-        symbol = str(ts_guess_el.symbols)
-        reacting_atom_indicies = {}
-        visited_species = []
-        atom_list = [atom.symbol for atom in ts_guess_el]
-        for idx, species in enumerate(reacting_atoms):
-            # deal with the edge case when there are two atoms the same typ
-            # (eg. 'CO2', 'O2')
-            add = 0
-            if species not in visited_species:
-                visited_species.append(species)
+        # surface reaction, at least one atom connected to the surface
+        if s_bonded_idxs:
+            if len(s_bonded_idxs) > 1:
+                raise NotImplementedError('Only monodendate type of adsorbtion'
+                                          ' is currently supported.')
             else:
-                add += visited_species.count(species) - 1
+                s_bonded_idx = int(s_bonded_idxs[0]) - 1
 
-            key = '{}_{}'.format(species, idx)
-            is_repeted_atom = TSEstimator.is_double_atom(atom_list, species)
-            n_atom_list = len(atom_list)
-
-            # deal with the edge case when reactions is not diatomic and there
-            # is a repeted atom that does not take part in the reaction,
-            # eg. 'CO2' -> in that case increase add by one again
-            if is_repeted_atom and n_atom_list > 2:
-                add += 1
-            reacting_atom_indicies[key] = symbol.find(species) + add
-            visited_species.append(species)
-
-        if len(reacting_atom_indicies) > 2:
-            raise NotImplementedError('Only two atoms can take part in '
-                                      'reaction')
-        return reacting_atom_indicies
-
-    @staticmethod
-    def is_double_atom(
-            atom_list: List[str],
-            species: str) -> bool:
-        ''' Check if there are two atoms of the same type chemical symbol in
-            ts_guess_el
-
-        Parameters
-        ----------
-        atom_list : list(str)
-            a list of atoms in ts_guess_el
-        species : str
-            a reacting species, e.g. 'OH', 'CO', 'CO2'
-
-        Returns
-        -------
-        bool
-            True if there are more then one atoms of the same chemical symbol.
-            False otherwise.
-
-        '''
-        count = Counter(atom_list)
-        if count[species] > 1:
-            return True
-        return False
-
-
-class Diatomic(TSEstimator):
-    def get_ts_guess_and_bonded_idx(
-            self,
-            ts_est: str,
-            rxn: Dict[str, str],
-            reacting_sp: str,
-            reacting_atoms: List[str],
-            scfactor: float) -> Tuple[Gratoms, int]:
-        ''' Get a ts_guess Gratom object that is ready to be placed on the
-            surface and index of atom connecting it to the surface
-
-        Parameters
-        ----------
-        ts_est : str
-            a string representing species that will be used to get ts_guess
-            e.g. 'OH', 'COH'
-        rxn : Dict[str, str]
-            a dictionary with info about the paricular reaction. This can be
-            view as a splitted many reaction .yaml file to a single reaction
-            .yaml file
-        reacting_sp : str
-            a key to rxn dictionary
-            'reactant' or 'product' are the only avaiable options options
-        reacting_atom_indicies: Dict[str, int]
-            a dict with reacting atoms symbol as a key and index as a value
-        scfactor : float
-            a scaling factor used to scale bond distance to get ts_guess
-
-        Returns
-        -------
-        ts_guess, surface_bonded_idx = Tuple[Gratoms, int]
-            a tuple with final ts_guess ready to be placed on the surface
-            and index of atom that connects ts_guess with the surface
-
-        '''
-        ts_guess_list = Diatomic.build_ts_guess(ts_est)
-        # For diatimics, there is only one possible topology, so
-        ts_guess_el = ts_guess_list[0]
-        return self.rotate_and_scale(ts_guess_el, rxn, reacting_sp,
-                                     reacting_atoms, scfactor)
-
-    def rotate_and_scale(
-            self,
-            ts_guess_el: Gratoms,
-            rxn: Dict[str, str],
-            reacting_sp: str,
-            reacting_atoms: List[str],
-            scfactor: float) -> Tuple[Gratoms, int]:
-        ''' Rotate ts_guess and scale the bond distance between reacting atoms
-            to get a right structures to be placed on the surface
-
-        Parameters
-        ----------
-        ts_guess_el : Gratoms
-            a Gratom object of ts_guess with the chosen topology, if more than
-            one topologies are possible
-        rxn : Dict[str, str]
-            a dictionary with info about the paricular reaction. This can be
-            view as a splitted many reaction .yaml file to a single reaction
-            .yaml file
-        reacting_sp : str
-            a key to rxn dictionary
-            'reactant' or 'product' are the only avaiable options options
-        reacting_atom_indicies: Dict[str, int]
-            a dict with reacting atoms symbol as a key and index as a value
-        scfactor : float
-            a scaling factor used to scale bond distance to get ts_guess
-
-        Returns
-        -------
-        ts_guess, surface_bonded_idx = Tuple[Gratoms, int]
-            a tuple with final ts_guess ready to be placed on the surface
-            and index of atom that connects ts_guess with the surface
-
-        '''
-        surface_bonded_atom_idx = self.get_surface_bonded_atom_idx(
-            rxn, reacting_sp)
-        reacting_atom_indicies = Diatomic.get_reacting_atoms_indices(
-            ts_guess_el, reacting_atoms)
-
-        react_ind_1, react_ind_2 = reacting_atom_indicies.values()
-
-        bondlen = ts_guess_el.get_distance(react_ind_1, react_ind_2)
-        ts_guess_el.rotate(90, 'y')
-        ts_guess_el.set_distance(
-            react_ind_1, react_ind_2, bondlen * scfactor, fix=0)
-        return ts_guess_el, surface_bonded_atom_idx
-
-
-class Triatomic(TSEstimator):
-    def get_ts_guess_and_bonded_idx(
-            self,
-            ts_est: str,
-            rxn: Dict[str, str],
-            reacting_sp: str,
-            reacting_atoms: List[str],
-            scfactor: float,
-            conf: str = None) -> Tuple[Gratoms, int]:
-        '''[summary]
-
-        Parameters
-        ----------
-        ts_est : str
-            a string representing species that will be used to get ts_guess
-            e.g. 'OH', 'COH'
-        rxn : Dict[str, str]
-            a dictionary with info about the paricular reaction. This can be
-            view as a splitted many reaction .yaml file to a single reaction
-            .yaml file
-        reacting_sp : str
-            a key to rxn dictionary
-            'reactant' or 'product' are the only avaiable options options
-        reacting_atom_indicies: Dict[str, int]
-            a dict with reacting atoms symbol as a key and index as a value
-        scfactor : float
-            a scaling factor used to scale bond distance to get ts_guess
-        conf : str, optional
-            specify which topology to choose to construct ts_guess, e.g 'sp'
-            or None (None -> 'sp2')
-            by default None
-
-        Returns
-        -------
-        ts_guess, surface_bonded_idx = Tuple[Gratoms, int]
-            a tuple with final ts_guess ready to be placed on the surface
-            and index of atom that connects ts_guess with the surface
-
-        '''
-        ts_guess_list = Triatomic.build_ts_guess(ts_est)
-        if conf == 'sp':
-            ts_guess_el = ts_guess_list[1]
+        # gas phase reaction
         else:
-            ts_guess_el = ts_guess_list[0]
+            if self.ts_est == 'CH2O':
+                s_bonded_idx = 0
+            # if self.ts_est in edge_cases_bonded_dict.keys():
+            #     s_bonded_idx = [edge_cases_bonded_dict[self.ts_est]]
+                print('here')
 
-        return self.rotate_and_scale(ts_guess_el, rxn, reacting_sp,
-                                     reacting_atoms, scfactor)
+            else:
+                s_bonded_idx = self.get_the_most_connected_atom()
+        return s_bonded_idx
 
-    def rotate_and_scale(
-            self,
-            ts_guess_el: Gratoms,
-            rxn: Dict[str, str],
-            reacting_sp: str,
-            reacting_atoms: List[str],
-            scfactor: float) -> Tuple[Gratoms, int]:
-        ''' Rotate ts_guess and scale the bond distance between reacting atoms
-            to get a right structures to be placed on the surface
-
-        Parameters
-        ----------
-        ts_guess_el : Gratoms
-            a Gratom object of ts_guess with the chosen topology, if more than
-            one topologies are possible
-        rxn : Dict[str, str]
-            a dictionary with info about the paricular reaction. This can be
-            view as a splitted many reaction .yaml file to a single reaction
-            .yaml file
-        reacting_sp : str
-            a key to rxn dictionary
-            'reactant' or 'product' are the only avaiable options options
-        reacting_atom_indicies: Dict[str, int]
-            a dict with reacting atoms symbol as a key and index as a value
-        scfactor : float
-            a scaling factor used to scale bond distance to get ts_guess
+    def get_the_most_connected_atom(self) -> int:
+        ''' Return index of an atom that has the highest numner of connections
+            to the other atoms.
 
         Returns
         -------
-        ts_guess, surface_bonded_idx = Tuple[Gratoms, int]
-            a tuple with final ts_guess ready to be placed on the surface
-            and index of atom that connects ts_guess with the surface
+        max_conected_atom_idx : int
+            an index of an atom that has the most connections to other atoms
 
         '''
-        surface_bonded_atom_idx = self.get_surface_bonded_atom_idx(
-            rxn, reacting_sp)
-        reacting_atom_indicies = Triatomic.get_reacting_atoms_indices(
-            ts_guess_el, reacting_atoms)
+        number_of_connections = {}
+        n_surf_at_befor_ads = 0
 
-        react_ind_1, react_ind_2 = reacting_atom_indicies.values()
+        for line in (self.reacting_species_connectivity):
+            if 'X' in line:
+                n_surf_at_befor_ads += 1
+            else:
+                break
 
-        bondlen = ts_guess_el.get_distance(react_ind_1, react_ind_2)
-        ts_guess_el.rotate(90, 'z')
-        ts_guess_el.set_distance(
-            react_ind_1, react_ind_2, bondlen * scfactor, fix=0)
-        # hardcoded values based on empirical tests
-        ts_guess_el.set_angle(
-            0, 1, 2, -30, indices=[0, 1, 2], add=True)
-        return ts_guess_el, surface_bonded_atom_idx
+        for num, line in enumerate(self.reacting_species_connectivity):
+            if 'X' not in line:
+                number_of_connections[num] = line.count('{')
+
+        for tmp_idx, n_connect in number_of_connections.items():
+            if n_connect == max(number_of_connections.values()):
+                max_conected_atom_idx = (tmp_idx - n_surf_at_befor_ads - 1)
+                return max_conected_atom_idx
+
+    def get_connectivity(
+            self,
+            yaml_ref_idx1: int,
+            yaml_ref_idx2: int,
+            visited_atoms: List[int],
+            n_surf_at_befor_ads: int,
+            multi_line: int,
+            first_line: int) -> List[int]:
+        ''' Recursvely retrive information about connectivity of the atom_2
+
+        Parameters
+        ----------
+        yaml_ref_idx1 : int
+            a line in the.yaml file containing information about connectivity
+            of the atom_1
+        yaml_ref_idx2 : int
+            a line in the.yaml file containing information about connectivity
+            of the atom_2
+        visited_atoms : List[int]
+            a list with all atomic indicies (tags - as they appear in the .yaml
+            file, starts from 0, ingoring surface atoms and multiplicity line)
+            that have been alread visited.
+        n_surf_at_befor_ads : int
+            number of surface atoms 'X' that are present before any adsorbate
+            in the .yaml file
+        multi_line : int
+            1 if multiplicity line is present in the .yaml file, 0 otherwise
+        first_line : int
+            0 if multiplicity line is present in the .yaml file, 1 otherwise
+
+        Returns
+        -------
+        visited_atoms: List[int]
+            a list with all atomic indicies (tags - as they appear in the .yaml
+            file, starts from 0, ingoring surface atoms and multiplicity line)
+            that have been alread visited.
+
+        '''
+        ref_line_idx = yaml_ref_idx2 - first_line
+        reference_line = self.reacting_species_connectivity[ref_line_idx]
+
+        # retrive connectivity information
+        yaml_connected_atom_idxs = [int(item.split(',')[0][1:])
+                                    for item in reference_line.split()
+                                    if '{' in item]
+
+        visited_atoms.append(yaml_ref_idx1)
+
+        for tag in yaml_connected_atom_idxs:
+            tag = tag - n_surf_at_befor_ads - multi_line - first_line
+            if tag not in visited_atoms and tag != yaml_ref_idx1:
+                self.get_connectivity(
+                    tag, yaml_ref_idx2,
+                    visited_atoms,
+                    n_surf_at_befor_ads,
+                    multi_line,
+                    first_line)
+
+        return visited_atoms
+
+    def get_connected_atoms_tag_idxs(
+            self,
+            tag_atom_idx1: int,
+            tag_atom_idx2: int) -> List[int]:
+        ''' Get a list with all atomic indicies of the atoms and subatoms
+            and so that are connected to the atom_2, excluding atom_1.
+
+        Parameters
+        ----------
+        tag_atom_idx1 : int
+            an index of the atom_1 as it appears in yaml file, start from 0,
+            ignore surface atoms multiplicity line.
+            The same idx is used as tag in ts_guess_image.
+        tag_atom_idx2 : int
+            an index of the atom_2 as it appears in yaml file, start from 0,
+            ignore surface atoms multiplicity line.
+            The same idx is used as tag in ts_guess_image.
+
+        Returns
+        -------
+        tag_indicies : List[int]
+            a list with all atomic indicies of atoms and subatoms that are
+            connected to the atom_2, excluding atom_1. Indicies are as they
+            appear in the yaml file, tart from 0, ignore surface atoms and
+            multiplicity line.
+
+        '''
+        visited_atoms = []
+        n_surf_at_befor_ads = 0
+        multi_line = 0
+
+        first_line = 1
+        if 'multiplicity' in self.reacting_species_connectivity[0]:
+            first_line = 0
+
+        for line in self.reacting_species_connectivity:
+            if 'multiplicity' in line:
+                multi_line += 1
+                continue
+            if 'X' in line:
+                n_surf_at_befor_ads += 1
+            else:
+                break
+
+        yaml_ref_idx1 = tag_atom_idx1 + n_surf_at_befor_ads \
+            + multi_line + first_line
+        yaml_ref_idx2 = tag_atom_idx2 + n_surf_at_befor_ads \
+            + multi_line + first_line
+
+        tag_indicies = self.get_connectivity(yaml_ref_idx1,
+                                             yaml_ref_idx2,
+                                             visited_atoms,
+                                             n_surf_at_befor_ads,
+                                             multi_line, first_line)
+
+        tag_indicies.remove(tag_atom_idx1)
+        return tag_indicies
+
+    def convert_tag_to_correct_idx(
+            self,
+            ts_guess_image: Gratoms,
+            tag_atom_idx1: int,
+            tag_atom_idx2: int) -> List[int]:
+        ''' Convert tag indiciec (.yaml file is a source) to indicies as they
+            appear in the ts_guess_image Gratoms object
+
+        Parameters
+        ----------
+        ts_guess_image : Gratom
+            Gratoms representation of the TS guess
+        tag_atom_idx1 : int
+            an index of the atom_1 as it appears in yaml file, start from 0,
+            ignore surface atoms multiplicity line.
+            The same idx is used as tag in ts_guess_image.
+        tag_atom_idx2 : int
+            an index of the atom_2 as it appears in yaml file, start from 0,
+            ignore surface atoms multiplicity line.
+            The same idx is used as tag in ts_guess_image.
+
+        Returns
+        -------
+        connected_atoms_idx : List[int]
+            a list with all atomic indicies of the atoms and subatoms
+            connected to the atom_2, excluding atom_1, as they appear in the
+            ts_guess_image, Gratom object.
+
+        '''
+        tag_connected_atoms_idx = self.get_connected_atoms_tag_idxs(
+            tag_atom_idx1, tag_atom_idx2)
+        connected_atoms_idx = []
+        for atom in ts_guess_image:
+            if atom.tag in tag_connected_atoms_idx:
+                connected_atoms_idx.append(atom.index)
+        return connected_atoms_idx
 
 
-class Tetraatomic(TSEstimator):
+class Diatomic(GeneralTSGuessesGenerator):
     def get_ts_guess_and_bonded_idx(
             self,
-            ts_est: str,
-            rxn: Dict[str, str],
-            reacting_sp: str,
-            reacting_atoms: List[str],
-            scfactor: float,
-            conf: str = None) -> Tuple[Gratoms, int]:
-        '''[summary]
+            reacting_idxs: List[int]) -> Tuple[Gratoms, int]:
+        ''' Get ts_guess (Gratom) and index of atom that connects ts_guess
+            to the surface. Currently, only monodentate adsobrtion is supported
 
         Parameters
         ----------
-        ts_est : str
-            a string representing species that will be used to get ts_guess
-            e.g. 'OH', 'COH'
-        rxn : Dict[str, str]
-            a dictionary with info about the paricular reaction. This can be
-            view as a splitted many reaction .yaml file to a single reaction
-            .yaml file
-        reacting_sp : str
-            a key to rxn dictionary
-            'reactant' or 'product' are the only avaiable options options
-        reacting_atom_indicies: Dict[str, int]
-            a dict with reacting atoms symbol as a key and index as a value
-        scfactor : float
-            a scaling factor used to scale bond distance to get ts_guess
-        conf : str, optional
-            specify which topology to choose to construct ts_guess, e.g 'sp'
-            or None (None -> 'sp2')
-            by default None
+        reacting_idxs : List[int]
+            list with indicies of reacting atoms, in order as they appear in
+            .yaml file but not necessary with the same indicies
 
         Returns
         -------
-        ts_guess, surface_bonded_idx = Tuple[Gratoms, int]
-            a tuple with final ts_guess ready to be placed on the surface
-            and index of atom that connects ts_guess with the surface
+        ts_guess_image, s_bonded_idx : Tuple[Gratoms, int]
+            ts_geuss_el is Gratoms representation of the TS guess, whereas
+            s_bonded_idx is the index of adsorbate atom that bonds to surface
 
         '''
-        ts_guess_list = Tetraatomic.build_ts_guess(ts_est)
-        if conf == 'sp':
-            ts_guess_el = ts_guess_list[1]
+        # get TS guess image
+        ts_guess_image = IO.get_TS_guess_image(self.rxn, self.easier_to_build)
+
+        # get index of surface bonded atom
+        s_bonded_idx = self.get_s_bonded_idx()
+
+        # get reacting atoms indices, as they appear in the .yaml file
+        # surface atoms and multiplicity line are ignored
+        tag_react_atom_idx_1, tag_react_atom_idx_2 = reacting_idxs
+
+        # convert tag indices to indices as they appear in the Gratoms object
+        react_atom_idx_1 = [
+            atom.index for atom in ts_guess_image
+            if atom.tag == tag_react_atom_idx_1][0]
+
+        react_atom_idx_2 = [
+            atom.index for atom in ts_guess_image
+            if atom.tag == tag_react_atom_idx_2][0]
+
+        # get atomic indices of all atoms connected to atom2
+        connected_atoms = self.convert_tag_to_correct_idx(ts_guess_image,
+                                                          tag_react_atom_idx_1,
+                                                          tag_react_atom_idx_2)
+
+        # add atom2 idx to the list of connected_atoms
+        if react_atom_idx_2 not in connected_atoms:
+            connected_atoms.append(react_atom_idx_2)
+
+        # get lenght of the bond between reacting atoms
+        bondlen = ts_guess_image.get_distance(
+            react_atom_idx_1, react_atom_idx_2)
+
+        n_total_ads_atoms = len(ts_guess_image)
+
+        # create a better TS_guess for a couple of common edge cases
+        if n_total_ads_atoms == 2:
+            # proper diatomic
+            ts_guess_image.rotate(90, 'y')
+
+        elif n_total_ads_atoms == 3:
+            # proper triatomic
+            remaining_atom_idx = n_total_ads_atoms - \
+                (react_atom_idx_1 + react_atom_idx_2)
+
+            if react_atom_idx_2 != 2:
+                # Symetrically not important, but structure looks
+                # better visually
+                ts_guess_image.rotate(-90, 'z')
+            else:
+                ts_guess_image.rotate(90, 'z')
+
+            # set angle that puts atom_2 closer to the surface
+            ts_guess_image.set_angle(
+                remaining_atom_idx,
+                react_atom_idx_1,
+                react_atom_idx_2,
+                30,
+                indices=[remaining_atom_idx,
+                         react_atom_idx_1,
+                         react_atom_idx_2],
+                add=True)
+
         else:
-            ts_guess_el = ts_guess_list[0]
+            # continue with defaults
+            # TODO for now it should work bu should be improved later
+            # pass
+            ts_guess_image.rotate(90, 'z')
 
-        return self.rotate_and_scale(ts_guess_el, rxn, reacting_sp,
-                                     reacting_atoms, scfactor)
+            # scale the bond distance between reacting atoms
+        ts_guess_image.set_distance(react_atom_idx_1, react_atom_idx_2,
+                                    bondlen * self.scfactor, fix=0,
+                                    indices=connected_atoms)
 
-    def rotate_and_scale(
-            self,
-            ts_guess_el: Gratoms,
-            rxn: Dict[str, str],
-            reacting_sp: str,
-            reacting_atoms: List[str],
-            scfactor: float) -> Tuple[Gratoms, int]:
-        ''' Rotate ts_guess and scale the bond distance between reacting atoms
-            to get a right structures to be placed on the surface
+        return ts_guess_image, s_bonded_idx
 
-        Parameters
-        ----------
-        ts_guess_el : Gratoms
-            a Gratom object of ts_guess with the chosen topology, if more than
-            one topologies are possible
-        rxn : Dict[str, str]
-            a dictionary with info about the paricular reaction. This can be
-            view as a splitted many reaction .yaml file to a single reaction
-            .yaml file
-        reacting_sp : str
-            a key to rxn dictionary
-            'reactant' or 'product' are the only avaiable options options
-        reacting_atom_indicies: Dict[str, int]
-            a dict with reacting atoms symbol as a key and index as a value
-        scfactor : float
-            a scaling factor used to scale bond distance to get ts_guess
 
-        Returns
-        -------
-        ts_guess, surface_bonded_idx = Tuple[Gratoms, int]
-            a tuple with final ts_guess ready to be placed on the surface
-            and index of atom that connects ts_guess with the surface
-
-        '''
-        surface_bonded_atom_idx = self.get_surface_bonded_atom_idx(
-            rxn, reacting_sp)
-        reacting_atom_indicies = Triatomic.get_reacting_atoms_indices(
-            ts_guess_el, reacting_atoms)
-
-        react_ind_1, react_ind_2 = reacting_atom_indicies.values()
-
-        bondlen = ts_guess_el.get_distance(react_ind_1, react_ind_2)
-        ts_guess_el.rotate(150, 'z')
-        ts_guess_el.set_distance(
-            react_ind_1, react_ind_2, bondlen * scfactor, fix=0)
-        # hardcoded values based on empirical tests
-        ts_guess_el.set_angle(
-            0, 1, 2, -30, indices=[0, 1, 2, 3, 4], add=True)
-        return ts_guess_el, surface_bonded_atom_idx
+class Triatomic(GeneralTSGuessesGenerator):
+    def get_ts_guess_and_bonded_idx(self, reacting_idxs):
+        # will be done later
+        raise NotImplementedError('Only diatomic reactions at this moment')

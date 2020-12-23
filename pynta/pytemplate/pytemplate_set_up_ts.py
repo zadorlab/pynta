@@ -11,10 +11,12 @@ from sella import Sella
 rxn_name = '{rxn_name}'
 prefix = '{prefix}'
 geom = '{ts_fname}'
+facetpath = '{facetpath}'
 balsam_exe_settings = {balsam_exe_settings}
 calc_keywords = {calc_keywords}
 
-trajdir = os.path.join(prefix, prefix + '_' + rxn_name + '.traj')
+trajdir = os.path.join(prefix, prefix + '_' +
+                       facetpath + '_' + rxn_name + '.traj')
 label = os.path.join(prefix, prefix)
 
 start = datetime.datetime.now()
@@ -57,7 +59,7 @@ opt = Sella(ts_atom, order=1, delta0=1e-2, gamma=1e-3, trajectory=trajdir)
 opt.run(fmax=0.01, steps=70)
 ts_atom.calc.close()
 
-write_dir = os.path.join(prefix, prefix + '_' + rxn_name)
+write_dir = os.path.join(prefix, prefix + '_' + facetpath + '_' + rxn_name)
 write(write_dir + '_ts_final.png', read(trajdir))
 write(write_dir + '_ts_final.xyz', read(trajdir))
 

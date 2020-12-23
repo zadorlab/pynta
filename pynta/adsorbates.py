@@ -8,18 +8,10 @@ import numpy as np
 from ase.io import read, write
 from ase.data import covalent_radii
 
-from pynta.excatkit.molecule import Molecule
+from pynta.utils import edge_cases_bonded_dict
 from pynta.excatkit.adsorption import Builder
 from pynta.excatkit.gratoms import Gratoms
 from pynta.io import IO
-
-# Instead of using CatKit's built in slab generator routines, we want to
-# use pre-relaxed slab geometries to save computer time. In order to use
-# our own geometries, we need to generate connectivities in a way that
-# CatKit understands. CatKit has some built-in routines for doing this,
-# but they are not great, so I wrote my own method. This can be
-# used to convert any ASE Atoms object into a CatKit Gratoms object,
-# though we are only currently using it for the catalyst geometry.
 
 
 class Adsorbates:
@@ -48,6 +40,8 @@ class Adsorbates:
             eg. (3, 3, 1)
         yamlfile : str
             a name of the .yaml file with reaction list
+        creation_dir : posix
+            a posix path to the working directory
 
         '''
         self.facetpath = facetpath
@@ -55,6 +49,9 @@ class Adsorbates:
         self.repeats = repeats
         self.creation_dir = creation_dir
         self.yamlfile = os.path.join(self.creation_dir, yamlfile)
+        self.slab_atom = read(os.path.join(self.creation_dir, self.slab))
+        self.big_slab = self.slab_atom * self.repeats
+        self.nslab = len(self.slab_atom)
 
     def get_edges(
             self,
@@ -108,6 +105,8 @@ class Adsorbates:
             tvecs = np.dot(offsets, cell).reshape(-1, 3)
 
         edges = []
+        # initialize pairvecs
+        pairvecs = np.ndarray(0)
         if find_surface:
             pairvecs = np.zeros_like(slab_atom.positions)
         for atomi in slab_atom:
@@ -162,44 +161,36 @@ class Adsorbates:
                 surface[i] = int(np.sign(pairvec[2]))
         return edges, surface
 
-    def adjacency_to_3d(self) -> None:
-        ''' Place adsorbates on the surface '''
-        # by default, each atom is bonded to the surface through the atom
-        # at index 0. This can be overwrite by using this dict
-        edge_cases_bonded_dict = dict(CO3=1, CH3O=1, CH3OH=1)
+    def get_grslab(self) -> Gratoms:
+        ''' Convert surface slab Atoms object into Gratoms object
 
-        # by default, the first topology structure is used to generate
-        # adsorbates. This can be modified using this dict
-        edge_cases_topology_dict = dict(COOH=1, HCOOH=1, CH3O2=1, HCOOCH3=17)
+        Returns
+        -------
+        grslab : Gratoms
+            Gratoms representation of the surface slab - ready to place
+            adsorbates
 
-        # get all species
-        all_species_symbols = IO.get_all_unique_species(self.yamlfile)
-
-        # convert str to Gratoms and deal with edge cases
-        images = []
-        for sp_symbol in all_species_symbols:
-            index = 0
-            # deal with edge cases - which topology to use
-            if sp_symbol in edge_cases_topology_dict.keys():
-                index = edge_cases_topology_dict[sp_symbol]
-            images.append(Molecule().molecule(sp_symbol)[index])
-
+        '''
         slabedges, tags = Adsorbates.get_edges(self, True)
 
-        # convert .xyz file to Atoms object
-        slab_atom = read(os.path.join(self.creation_dir, self.slab))
-        big_slab = slab_atom * self.repeats
-        nslab = len(slab_atom)
-
-        # transform Atoms to Gratoms object
-        grslab = Gratoms(numbers=slab_atom.numbers,
-                         positions=slab_atom.positions,
-                         cell=slab_atom.cell,
-                         pbc=slab_atom.pbc,
+        grslab = Gratoms(numbers=self.slab_atom.numbers,
+                         positions=self.slab_atom.positions,
+                         cell=self.slab_atom.cell,
+                         pbc=self.slab_atom.pbc,
                          edges=slabedges)
         grslab.arrays['surface_atoms'] = tags
 
+        return grslab
+
+    def adjacency_to_3d(self) -> None:
+        ''' Place adsorbates on the surface
+
+        '''
+        all_species_symbols = IO.get_all_unique_species(self.yamlfile)
+        images = IO.get_all_images(self.yamlfile)
+
         # prepare surface for placing adsorbates
+        grslab = self.get_grslab()
         ads_builder = Builder(grslab)
 
         # build adsorbates
@@ -207,9 +198,10 @@ class Adsorbates:
         for sp_symbol, sp_gratoms in zip(all_species_symbols, images):
             if len(sp_gratoms) == 0:
                 continue
-
-            # deal with edge cases - which atom connects to the surface
+            # which atom connects to the surface
+            # TODO improve it and account for bidentate
             bonded = [0]
+
             if sp_symbol in edge_cases_bonded_dict.keys():
                 bonded = [edge_cases_bonded_dict[sp_symbol]]
 
@@ -219,19 +211,17 @@ class Adsorbates:
                     sp_gratoms, index=-1, bonds=bonded)
                 structures[str(sp_symbol)] = structs
             except IndexError:
-                # TODO an idea to put -1 in adsorbate.get_tags() for
-                # surface bonded atom
                 print(sp_gratoms, sp_gratoms.edges,
                       sp_gratoms.get_tags())
 
         for sp_symbol, adsorbate in structures.items():
-            # create dir
+            # create directory where all adsorbates are stored
             savedir = os.path.join(
                 self.creation_dir, self.facetpath, 'minima', sp_symbol)
             os.makedirs(savedir, exist_ok=True)
 
             for prefix, structure in enumerate(adsorbate):
-                big_slab_ads = big_slab + structure[nslab:]
+                big_slab_ads = self.big_slab + structure[self.nslab:]
                 # save adsorbates as .xyz and .png
                 write(os.path.join(savedir, '{}.xyz'.format(
                     str(prefix).zfill(2))), big_slab_ads)
@@ -250,10 +240,10 @@ class Adsorbates:
 
         Parameters:
         __________
-        pytemplate : python file
+        pytemplate: python file
             a template to prepare submission scripts
             for adsorbate+surface minimization
-        pseudopotentials : dict(str: str)
+        pseudopotentials: dict(str: str)
             a dictionary with QE pseudopotentials for all species.
             e.g.
             dict(Cu='Cu.pbe-spn-kjpaw_psl.1.0.0.UPF',
@@ -261,26 +251,27 @@ class Adsorbates:
                 O='O.pbe-n-kjpaw_psl.1.0.0.UPF',
                 C='C.pbe-n-kjpaw_psl.1.0.0.UPF',
                 )
-        pseudo_dir : str
+        pseudo_dir: str
             a path to the QE's pseudopotentials main directory
             e.g.
             '/home/mgierad/espresso/pseudo'
-        balsam_exe_settings : dict{str:int}
-            a dictionary with balsam execute parameters (cores, nodes, etc.),
+        balsam_exe_settings: dict{str: int}
+            a dictionary with balsam execute parameters(cores, nodes, etc.),
             e.g.
-            balsam_exe_settings = {'num_nodes': 1,
+            balsam_exe_settings={'num_nodes': 1,
                                    'ranks_per_node': 48,
                                    'threads_per_rank': 1}
-        calc_keywords : dict{str:str}
+        calc_keywords: dict{str: str}
             a dictionary with parameters to run DFT package. Quantum Espresso
             is used as default, e.g.
 
-            calc_keywords = {'kpts': (3, 3, 1), 'occupations': 'smearing',
+            calc_keywords={'kpts': (3, 3, 1), 'occupations': 'smearing',
                             'smearing':  'marzari-vanderbilt',
                             'degauss': 0.01, 'ecutwfc': 40, 'nosym': True,
                             'conv_thr': 1e-11, 'mixing_mode': 'local-TF'}
-        shtemplate : .sh file
-            optional, a .sh template (not required by the workflow)
+        shtemplate: .sh file
+            optional, a .sh template(not required by the workflow but possible
+            to specified for special cases)
 
         '''
         n_kpts = IO().get_kpoints(self.repeats)
