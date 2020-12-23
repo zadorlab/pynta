@@ -76,7 +76,7 @@ class TS():
             scaled2: bool) -> None:
         ''' Prepare TS estimates for subsequent xTB calculations
 
-        Parameters:
+        Parameters
         ___________
 
         rxn : dict(yaml[str:str])

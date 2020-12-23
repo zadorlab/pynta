@@ -8,26 +8,21 @@ Pynta
 
 .. raw:: html
 
-   <!-- ![workflow_idea](./workflow_idea.png) -->
-
-
-
 The work-flow designed to automate search for transition states and reaction paths on various surfaces.
 
 ``pynta`` reads the .yaml files from the previous RMGCat calculations, puts reactants and products on the surface, calculates TSs and returns reaction energies as well as barriers heights represented as a free energy reaction path diagrams. The general idea of the code can be summarized in the following figure.
 
-:raw-html-m2r:`<center><img src='./workflow_idea.png' style="width:400px"></center>`
-:raw-html-m2r:`<br>`
+.. image:: workflow_idea.png
+   :width: 800
+   :align: center
 
 1. Installation
 ===============
 
 **Instalation can be a bit tricky because pynta depends on a several different packages that are under constant development (balsam, xtb-python)**
 
-inclusion-marker-do-not-remove
 
 The following instruction assumes that you have several softwares installed on your system, such as:
-
 
 * A queue system e.g. ``Slurm``\ , ``PBS`` or ``Cobalt``
 * An MPI e.g. ``OpenMPI``
@@ -42,48 +37,52 @@ The following instruction assumes that you have several softwares installed on y
 
 .. code-block:: bash
 
-   cd <path/whr/to/build/pynta>
-   python3 -m venv pynta
+   $ cd <path/whr/to/build/pynta>
+   $ python3 -m venv pynta
 
 1.1.2 Activate your virtual environment:
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. code-block:: bash
 
-   source pynta/bin/activate
+   $ source pynta/bin/activate
 
 1.1.3 (\ *Optional*\ ) Install required python packages (if you skip this process, ``pynta`` installer will do this later.)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. code-block:: bash
 
-   pip3 install matplotlib<3.2 spglib==1.14.1.post0 networkx<2.4 ase==3.19.0 scipy==1.3.1 numpy==1.18.1 PyYAML==5.3.1 sella==1.0.3
+   $ pip3 install matplotlib<3.2 spglib==1.14.1.post0 networkx<2.4 ase==3.19.0 scipy==1.3.1 numpy==1.18.1 PyYAML==5.3.1 sella==1.0.3
 
-1.1.4 Download `PostgreSQL <https://www.enterprisedb.com/download-postgresql-binaries>`_ precompiled binaries that suits your system and add ``path_to_PostgreSQL/pgsql/bin`` to your ``PATH`` by modifying ``~/.bashrc``
+1.1.4 Download `PostgreSQL <https://www.enterprisedb.com/download-postgresql-binaries>`_ precompiled binaries that suits your system and add ``path_to_PostgreSQL/pgsql/bin`` to your ``PATH`` by modifying ``~/.bashrc``:
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. code-block:: bash
 
-   echo 'export PATH=path_to_PostgreSQL/pgsql/bin:$PATH' >> ~/.bashrc
+   $ echo 'export PATH=path_to_PostgreSQL/pgsql/bin:$PATH' >> ~/.bashrc'
+
+
 
 1.1.5 Install `mpi4py <https://github.com/mpi4py/mpi4py.git>`_\ :
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. code-block:: bash
 
-   git clone https://github.com/mpi4py/mpi4py.git
-   cd mpi4py
-   python3 setup.py install --user
-   cd ../
+   $ git clone https://github.com/mpi4py/mpi4py.git
+   $ cd mpi4py
+   $ python3 setup.py install --user
+   $ cd ../
 
 Make sure it works by running
 
-.. code-block:: python
+.. code-block:: bash
 
-   >>> srun -n 2 python3 -c 'from mpi4py import MPI; print(MPI.COMM_WORLD.Get_rank())'
+   $ srun -n 2 python3 -c 'from mpi4py import MPI; print(MPI.COMM_WORLD.Get_rank())'
    0
    1
 
 1.1.6 Install `balsam <https://github.com/balsam-alcf/balsam.git>`_ using `serial-mode-perf <https://github.com/balsam-alcf/balsam/tree/serial-mode-perf>`_ branch.
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. code-block:: bash
 
@@ -215,8 +214,8 @@ Before you run any ``pynta`` calculations, make sure your ``balsam`` DB is initi
 
 .. code-block:: bash
 
-   balsam init ~/myWorkflow
-   source balsamactivate ~/myWorkflow
+   $ balsam init ~/myWorkflow
+   $ source balsamactivate ~/myWorkflow
 
 You will need **4** files to run the workflow:
 
@@ -398,7 +397,7 @@ If you do not have a ``.yaml`` file with the reaction list but still want to use
 2.2 Using only SLURM
 --------------------
 
-**Warning ``dev`` branch uses SLURM scheduler to deal with the job dependencies. Be aware that it might be a bit buggy and do not fully support all the features implemented in the ``master`` branch.**
+**Warning `dev` branch uses SLURM scheduler to deal with the job dependencies. Be aware that it might be a bit buggy and do not fully support all the features implemented in the `master` branch.**
 
 An example script (using ``dev`` branch - SLURM):
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

@@ -6,18 +6,32 @@
 .. include:: README.rst
 =================================
 __________________
+
 .. toctree::
-   :maxdepth: 2
+   :numbered:
+   :maxdepth: 5
    :caption: Contents:
+   
+
 
 Modules 
 ==================
-General objects - List of all methods
+
+General objects
 ------------------
 
-.. autoclass:: pynta.io.IO
-   :members:
+IO class
+^^^^^^^^^^^^^^^^^
 
+List of all methods:
+
+
+
+:mod:`pynta.io (IO) <pynta.io.IO>`
+
+
+.. toctree::
+   :maxdepth: 2
 
 
 Indices and tables

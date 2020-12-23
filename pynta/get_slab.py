@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 from pynta.balsamcalc import EspressoBalsamSocketIO
 
 from pathlib import PosixPath
@@ -30,7 +29,7 @@ class GetSlab:
             creation_dir: PosixPath) -> None:
         ''' A class for preparing and optimizing a user defined slab
 
-        Parameters:
+        Parameters
         __________
 
         surface_type : str
