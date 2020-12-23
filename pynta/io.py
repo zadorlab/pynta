@@ -368,7 +368,7 @@ class IO():
 
     @staticmethod
     def clean_finished_subjobs() -> None:
-        ''' Move finished subjob files to finised_tmp_scripts directory '''
+        ''' Move finished subjob files to finished_tmp_scripts directory '''
         dir_name = 'finished_tmp_scripts'
         os.makedirs(dir_name, exist_ok=True)
         for prefix in range(0, 6):

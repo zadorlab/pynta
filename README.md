@@ -9,9 +9,11 @@ The work-flow designed to automate search for transition states and reaction pat
 <center><img src='./workflow_idea.png' style="width:400px"></center>
 <br>
 
-# 1. Installations
+# 1. Installation
 
 **Instalation can be a bit tricky because pynta depends on a several different packages that are under constant development (balsam, xtb-python)**
+
+inclusion-marker-do-not-remove
 
 The following instruction assumes that you have several softwares installed on your system, such as:
 

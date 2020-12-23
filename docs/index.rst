@@ -3,9 +3,8 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-.. mdinclude:: README.md
+.. include:: README.rst
 =================================
-
 __________________
 .. toctree::
    :maxdepth: 2
@@ -13,14 +12,9 @@ __________________
 
 Modules 
 ==================
+General objects - List of all methods
 ------------------
-Here is something I want to talk about::
 
-    def my_fn(foo, bar=True):
-        """A really useful function.
-
-        Returns None
-        """
 .. autoclass:: pynta.io.IO
    :members:
 
@@ -33,5 +27,9 @@ Indices and tables
 * :ref:`modindex`
 * :ref:`search`
 
-Installation
-==================
+Acknowledgments
+===============
+
+If you are using ``pynta`` or you wish to use it, let me know!
+
+This work was supported by the U.S. Department of Energy, Office of Science, Basic Energy Sciences, Chemical Sciences, Geosciences and Biosciences Division, as part of the Computational Chemistry Sciences Program.
