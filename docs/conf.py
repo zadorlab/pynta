@@ -39,7 +39,7 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 napoleon_google_docstring = False
 napoleon_use_param = True
 napoleon_use_ivar = True
-
+napoleon_include_init_with_doc = True
 
 # -- Options for HTML output -------------------------------------------------
 
@@ -54,4 +54,4 @@ html_style = 'ase.css'
 html_static_path = ['_static']
 html_last_updated_fmt = '%a, %d %b %Y %H:%M:%S'
 
-autodoc_mock_imports = ['xtb']
+autodoc_mock_imports = ['balsam']

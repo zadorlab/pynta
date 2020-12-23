@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 from pynta.check_input import InputChecker
 from pynta.restart import LowLevelRestart, HighLevelRestart
 from pynta.io import IO
