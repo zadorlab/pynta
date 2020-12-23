@@ -9,6 +9,10 @@ test/
 00_sent_DB/
 build/
 dist
+# docs/
+_build*
+_static*
+_templates*
 *workspace
 *project
 .vscode/

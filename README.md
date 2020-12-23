@@ -9,9 +9,9 @@ The work-flow designed to automate search for transition states and reaction pat
 <center><img src='./workflow_idea.png' style="width:400px"></center>
 <br>
 
-# 1. How to install
+# 1. Installations
 
-**Instalation can be a bit tricky because `pynta` depends on a several different packages that are under constant development (`balsam`, `xtb-python`)**
+**Instalation can be a bit tricky because pynta depends on a several different packages that are under constant development (balsam, xtb-python)**
 
 The following instruction assumes that you have several softwares installed on your system, such as:
 
@@ -35,20 +35,20 @@ python3 -m venv pynta
 source pynta/bin/activate
 ```
 
-### 1.1.3 (_Optional_) Install required python packages (If you skip this process, `pynta` installer will do this later.)
+### 1.1.3 (_Optional_) Install required python packages (if you skip this process, `pynta` installer will do this later.)
 
 ```bash
 pip3 install matplotlib<3.2 spglib==1.14.1.post0 networkx<2.4 ase==3.19.0 scipy==1.3.1 numpy==1.18.1 PyYAML==5.3.1 sella==1.0.3
 
 ```
 
-### 1.1.4 Download [`PostgreSQL`](https://www.enterprisedb.com/download-postgresql-binaries) precompiled binaries that suits your system and add `path_to_PostgreSQL/pgsql/bin` to your `PATH` by modifying `~/.bashrc`
+### 1.1.4 Download [PostgreSQL](https://www.enterprisedb.com/download-postgresql-binaries) precompiled binaries that suits your system and add `path_to_PostgreSQL/pgsql/bin` to your `PATH` by modifying `~/.bashrc`
 
 ```bash
 echo 'export PATH=path_to_PostgreSQL/pgsql/bin:$PATH' >> ~/.bashrc
 ```
 
-1.1.5 Install [`mpi4py`](https://github.com/mpi4py/mpi4py.git):
+1.1.5 Install [mpi4py](https://github.com/mpi4py/mpi4py.git):
 
 ```bash
 git clone https://github.com/mpi4py/mpi4py.git
@@ -59,18 +59,13 @@ cd ../
 
 Make sure it works by running
 
-```bash
-srun -n 2 python3 -c 'from mpi4py import MPI; print(MPI.COMM_WORLD.Get_rank())'
-```
-
-Which should give
-
-```
+```python
+>>> srun -n 2 python3 -c 'from mpi4py import MPI; print(MPI.COMM_WORLD.Get_rank())'
 0
 1
 ```
 
-1.1.6 Install [`balsam`](https://github.com/balsam-alcf/balsam.git) using [`serial-mode-perf`](https://github.com/balsam-alcf/balsam/tree/serial-mode-perf) branch.
+1.1.6 Install [balsam](https://github.com/balsam-alcf/balsam.git) using [serial-mode-perf](https://github.com/balsam-alcf/balsam/tree/serial-mode-perf) branch.
 
 ```bash
 git clone https://github.com/balsam-alcf/balsam.git -b serial-mode-perf
@@ -79,9 +74,9 @@ python3 setup.py install --user
 cd ../
 ```
 
-Make sure it works by running tests posted on the [`balsam`](https://github.com/balsam-alcf/balsam.git) GitHub page.
+Make sure it works by running tests posted on the [balsam](https://github.com/balsam-alcf/balsam.git) GitHub page.
 
-### 1.1.7 Install [`xTB-python`](https://github.com/grimme-lab/xtb-python) following instruction provided there. Make sure to correctly link all required libraries. For example:
+### 1.1.7 Install [xTB-python](https://github.com/grimme-lab/xtb-python) following instruction provided there. Make sure to correctly link all required libraries. For example:
 
 - using `OpenBlas` and `GNU` based compilers:
 
@@ -130,7 +125,7 @@ Make sure it works by running:
 ulimit -s unlimited
 ```
 
-If `xTB-python` still fails, try to install [`xtb`](https://github.com/grimme-lab/xtb) and test `xTB` itself for any errors.
+If `xTB-python` still fails, try to install [xtb](https://github.com/grimme-lab/xtb) and test `xTB` itself for any errors.
 
 ```bash
 git clone https://github.com/grimme-lab/xtb.git

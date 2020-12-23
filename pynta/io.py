@@ -305,7 +305,7 @@ class IO():
         (step 01; .py files) that has to be finished before starting step 02
         for a particular reaction
 
-        Parameters:
+        Parameters
         ___________
 
         facetpath : str
@@ -316,7 +316,7 @@ class IO():
         creation_dir : str
             a path to the main working directory
 
-        Returns:
+        Returns
         ________
 
         dependancy_dict : [str:list(str)]
@@ -518,7 +518,7 @@ class IO():
     @staticmethod
     def get_all_reacting_atoms(yamlfile: str) -> Dict[str, Dict[str, float]]:
         ''' Read a .yaml file with all reactions and extract reacting atoms
-            symbols and indicies - the one with asterisk in the .yaml file
+        symbols and indicies - the one with asterisk in the .yaml file
 
         Parameters
         ----------
@@ -534,7 +534,8 @@ class IO():
             .yaml file,
             e.g.
             OH for H + O -> OH
-            {'O': 0, 'H': 1}
+
+            >>> {'O': 0, 'H': 1}
 
         '''
         all_reacting_atoms = {}
@@ -608,7 +609,7 @@ class IO():
             rxn: Dict[str, str],
             easier_to_build: str) -> Gratoms:
         ''' Convert RMGCat representation of species to Gratom object
-            - the case of TS_guess
+        - the case of TS_guess
 
         Parameters
         ----------
