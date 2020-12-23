@@ -31,7 +31,7 @@ class TS():
             creation_dir: PosixPath) -> None:
         ''' Initializing
 
-        Parameters:
+        Parameters
         ___________
         facetpath : str
             a path to the workflow's main dir
@@ -148,7 +148,7 @@ class TS():
         ''' Get the maximum angle of rotation for a given slab that will
         generate all symmetrically distinct TS estimates.
 
-        Returns:
+        Returns
         ________
         max_rot_angle : float
             a maximum angle of rotation of TS adducts on the given slab that
@@ -244,7 +244,7 @@ class TS():
             self,
             slab_atom: Atoms) -> Builder:
         ''' Convert slab_atom to Gratom object and finally to Builder object
-            to have a suitable format for ts_guess placement
+        to have a suitable format for ts_guess placement
 
         Parameters
         ----------
@@ -284,8 +284,8 @@ class TS():
             angle: int = 0,
             angle_increment: int = 5) -> None:
         ''' Place ts_est on the surface (ads_builder) in all possible
-            locations, rotate and save all obtained structures as a
-            seperate .xyz files
+        locations, rotate and save all obtained structures as a
+        seperate .xyz files
 
         Parameters
         ----------
@@ -338,8 +338,8 @@ class TS():
             self,
             ts_estimate_path: str,
             rxn_name: str) -> None:
-        '''Filtered out symmetry equivalent sites and remove them keeping
-            only symmetry disctinct structures.
+        ''' Filtered out symmetry equivalent sites and remove them keeping
+        only symmetry disctinct structures.
 
         Parameters
         __________
@@ -387,18 +387,26 @@ class TS():
             scfactor_surface,) -> None:
         ''' Prepare calculations of the penalty function
 
-        Parameters:
+        Parameters
         __________
 
         ts_estimate_path : str
             a path to TS_estimate directory,
-            e.g. {creation_dir}/Cu_111/TS_estimate
+            e.g.
+            ``{creation_dir}/Cu_111/TS_estimate``
         pytemplate : python script
             a template for the penalty function calculations
         species_list : list(str)
             a list of species which atoms take part in the reaction,
-            i.e. for ['CO2'] ['C'] is taking part in reaction
-            e.g. ['O', 'H'] or ['CO2', 'H']
+            e.g.
+            for OH <--> O + H
+
+            >>> species_list = ['O', 'H'] 
+
+            for CO3 <--> CO2 + O
+
+            >>> species_list = ['CO2', 'O'] 
+
         reacting_atoms : Dict[str, int]
             keys are sybols of atoms that takes part in reaction whereas,
             values are their indicies
@@ -491,7 +499,7 @@ class TS():
             surface_atoms_idxs: Dict[str, int],
             xyz_file: str) -> List[Tuple[int, int]]:
         ''' Get a list of tuples for all bonds between reacting atoms and
-            the nearest surface metal atoms connected to adsorbates
+        the nearest surface metal atoms connected to adsorbates
 
         Parameters
         ----------
@@ -571,15 +579,15 @@ class TS():
             sp_surf_av_dists: Dict[str, float]):
         ''' Create a av_dists_tuple with all relevant average bond distances.
 
-            This method loops through sp_surf_av_dists dictionary. If
-            particular key exists n > 1 times in reacting_atoms, this
-            entry is added n times to a new dictionary. Otherwise, a new
-            dictionary is updated with the keys and values of sp_surf_av_dists.
-            At the end, the valuses of the new dict are transformed into tuple
+        This method loops through sp_surf_av_dists dictionary. If
+        particular key exists n > 1 times in reacting_atoms, this
+        entry is added n times to a new dictionary. Otherwise, a new
+        dictionary is updated with the keys and values of sp_surf_av_dists.
+        At the end, the valuses of the new dict are transformed into tuple
 
-            Method required fot O2X <-> OX + OX and similar reactions.
-            Generally, all reactions where two atoms of the same type is
-            consider in a penalty function calculations.
+        Method required fot O2X <-> OX + OX and similar reactions.
+        Generally, all reactions where two atoms of the same type is
+        consider in a penalty function calculations.
 
         Parameters
         ----------
@@ -616,7 +624,7 @@ class TS():
             scfactor_surface: float,
             scaled1: bool) -> Dict[str, float]:
         ''' Get a dictionary with average distances for all species in
-            species_list
+        species_list
 
         Parameters
         ----------
@@ -663,16 +671,16 @@ class TS():
             scfactor_surface: float,
             scaled: bool = False) -> float:
         ''' Get the average bond distance between a given adsorbate atom and
-            the nearest surface atom for all symmetrically distinct minima
+        the nearest surface atom for all symmetrically distinct minima
 
-        Parameters:
+        Parameters
         ___________
         path_to_minima : str
             a path to minima
-            e.g. 'Cu_111/minima'
+            e.g. ``'Cu_111/minima'``
         species : str
             a species symbol
-            e.g. 'H' or 'CO'
+            e.g. ``'H'`` or ``'CO'``
         metal_atom : str
             a checmical symbol for the surface atoms (only metallic surfaces
             are allowed)
@@ -687,7 +695,7 @@ class TS():
             for the given species
             default = False
 
-        Returns:
+        Returns
         ________
         av_dist : float
             an average bond distance between the given species and the nearest
@@ -753,24 +761,25 @@ class TS():
 
         ts_estimate_path : str
             a path to TS_estimate directory,
-            e.g. {creation_dir}/Cu_111/TS_estimate
+            e.g. ``{creation_dir}/Cu_111/TS_estimate``
         rxn_name : str
             a reaction name
-            e.g. OH_O+H
+            e.g. ``'OH_O+H'``
         pytemplate : python script
             a template file for saddle point minimization with Sella
         pseudopotentials : dict(str: str)
             a dictionary with QE pseudopotentials for all species.
             e.g.
-            dict(Cu='Cu.pbe-spn-kjpaw_psl.1.0.0.UPF',
-                H='H.pbe-kjpaw_psl.1.0.0.UPF',
-                O='O.pbe-n-kjpaw_psl.1.0.0.UPF',
-                C='C.pbe-n-kjpaw_psl.1.0.0.UPF',
-                )
+
+            >>> dict(Cu='Cu.pbe-spn-kjpaw_psl.1.0.0.UPF',
+                    H='H.pbe-kjpaw_psl.1.0.0.UPF',
+                    O='O.pbe-n-kjpaw_psl.1.0.0.UPF',
+                    C='C.pbe-n-kjpaw_psl.1.0.0.UPF')
+
         pseudo_dir : str
             a path to the QE's pseudopotentials main directory
             e.g.
-            '/home/mgierad/espresso/pseudo'
+            ``'/home/mgierad/espresso/pseudo'``
         balsam_exe_settings : dict(str:str)
             a dictionary with balsam settings
         calc_keywords : dict(str:str)
@@ -792,14 +801,14 @@ class TS():
     @staticmethod
     def create_unique_ts_xyz_and_png(ts_estimate_path: str) -> None:
         ''' Create unique TS files for saddle point calculations
-            for a given scfactor
+        for a given scfactor
 
-        Parameters:
+        Parameters
         ___________
 
         ts_estimate_path : str
             a path to TS_estimate directory,
-            e.g. {creation_dir}/Cu_111/TS_estimate
+            e.g. ``'{creation_dir}/Cu_111/TS_estimate'``
 
         '''
         # check symmetry of all TS estimates in ts_estimate_path
@@ -851,29 +860,30 @@ class TS():
             calc_keywords: Dict[str, str]) -> None:
         ''' Create job submission files for TS calculation with Sella
 
-        Parameters:
+        Parameters
         ___________
 
         pytemplate : python script
             a template file for saddle point minimization with Sella
         rxn_name : str
             a reaction name
-            e.g. OH_O+H
+            e.g. ``'OH_O+H'``
         pseudopotentials : dict(str: str)
             a dictionary with QE pseudopotentials for all species.
             e.g.
-            dict(Cu='Cu.pbe-spn-kjpaw_psl.1.0.0.UPF',
-                H='H.pbe-kjpaw_psl.1.0.0.UPF',
-                O='O.pbe-n-kjpaw_psl.1.0.0.UPF',
-                C='C.pbe-n-kjpaw_psl.1.0.0.UPF',
-                )
+
+            >>> dict(Cu='Cu.pbe-spn-kjpaw_psl.1.0.0.UPF',
+                    H='H.pbe-kjpaw_psl.1.0.0.UPF',
+                    O='O.pbe-n-kjpaw_psl.1.0.0.UPF',
+                    C='C.pbe-n-kjpaw_psl.1.0.0.UPF')
+
         pseudo_dir : str
             a path to the QE's pseudopotentials main directory
             e.g.
-            '/home/mgierad/espresso/pseudo'
+            ```'/home/mgierad/espresso/pseudo'```
         ts_estimate_path : str
             a path to TS_estimate directory,
-            e.g. {creation_dir}/Cu_111/TS_estimate
+            e.g. ``'{creation_dir}/Cu_111/TS_estimate'``
         balsam_exe_settings : dict(str:str)
             a dictionary with balsam settings
         calc_keywords : dict(str:str)
@@ -914,7 +924,7 @@ class TS():
             adsorbate_atoms_idxs: Dict[str, float]) -> int:
         ''' Specify adsorbate atom symbol and its index will be returned.
 
-        Parameters:
+        Parameters
         ___________
         ads_atom : str
             an atom of the species bonded to the surface, e.g. 'O' for OH
@@ -922,7 +932,7 @@ class TS():
             a dictionary with all adsorbate atoms and theirs corresponding
             indicies
 
-        Returns:
+        Returns
         ________
         ads_index : int
             index of the adsorbed atom
@@ -945,9 +955,9 @@ class TS():
             geom: str,
             n_same_metal_idxs: int) -> int:
         ''' Specify adsorbate atom symbol and index of the nearest metal atom
-            will be returned.
+        will be returned.
 
-        Parameters:
+        Parameters
         ___________
         ads_atom : str
             an atom of the species bonded to the surface, e.g. 'O' for OH
@@ -957,7 +967,7 @@ class TS():
         n_same_metal_idxs : int
             how many times an adsorbed atom wanted to connect to the same metal
 
-        Returns:
+        Returns
         ________
         surface_atoms[index[0][0]] : float
             index of the metal atom to which ads_atom is bonded
@@ -985,11 +995,11 @@ class TS():
             compare_traj: bool = True) -> List[int]:
         ''' Check for the symmetry equivalent structures in the given path
 
-        Parameters:
+        Parameters
         ___________
         path : str
             a path to a directory where are files to be checked,
-            e.g. Cu_111/TS_estimate_unique
+            e.g. ``'Cu_111/TS_estimate_unique'``
         return_unique : bool
             If True, the method will return a list of unique prefixes.
             If False, the method will return a list of non-unique prefixes.
@@ -997,7 +1007,7 @@ class TS():
             If True, the method will compare .traj files.
             If False, .xyz files will be compared
 
-        Returns:
+        Returns
         ________
         idx_list : list(str)
             a list with prefixes of all symmetrically distinct sites

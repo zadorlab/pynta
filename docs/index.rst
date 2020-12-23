@@ -17,17 +17,13 @@ __________________
 Modules 
 ==================
 
-General objects
+Quick list of all methods:
 ------------------
 
-IO class
-^^^^^^^^^^^^^^^^^
-
-List of all methods:
-
-
-
-:mod:`pynta.io (IO) <pynta.io.IO>`
+- :mod:`WorkFlow <pynta.main.WorkFlow>`
+- :mod:`IO <pynta.io.IO>`
+- :mod:`TS <pynta.ts.TS>`
+- :mod:`GeneralTSGuessesGenerator <pynta.ts_guesses.GeneralTSGuessesGenerator>`
 
 
 .. toctree::

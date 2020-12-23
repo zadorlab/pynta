@@ -54,4 +54,4 @@ html_style = 'ase.css'
 html_static_path = ['_static']
 html_last_updated_fmt = '%a, %d %b %Y %H:%M:%S'
 
-autodoc_mock_imports = ['balsam']
+autodoc_mock_imports = ['balsam', 'inputR2S']
