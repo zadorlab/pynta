@@ -96,18 +96,18 @@ class IO():
     def get_kpoints(
             size: Tuple[int, int, int],
             get_uniq_kpts: bool = False) -> Tuple[int, Optional[np.ndarray]]:
-        ''' Returns number of unique k-points for a given size of the slab
+        '''Returns number of unique k-points for a given size of the slab
 
-        Parameters:
-        ___________
-        size : tuple(int, int, int):
+        Parameters
+        ----------
+        size : Tuple[int, int, int]
             a size or repeats of the slab,
             e.g. (3, 3, 1)
         get_uniq_kpts : bool, optional
             If True, return size and an ndarray of unique kpoints
-            Otherwise False.
+            Otherwise False. By default False
 
-        Returns:
+        Returns
         -------
         m_uniq_kpts : int
             a number of unique k-points

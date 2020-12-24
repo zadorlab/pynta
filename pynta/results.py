@@ -29,10 +29,11 @@ class Results():
 
         Returns
         -------
-        reaction_energies : dict(str:float)
+        reaction_energies : Dict[str:float]
             a dictionary with reaction energies for a given facetpath and
             rxn_name, e.g.
-            {'Cu_111_OH_O+H': 70.81}
+
+            >>> reaction_energies = {'Cu_111_OH_O+H': 70.81}
 
         '''
         reaction_energies = {}
@@ -55,28 +56,28 @@ class Results():
             p_name_list: List[str],
             slab_path: str) -> str:
         ''' Calclate reaction energy as a difference between
-            the most stable product and the most stable reactant
+        the most stable product and the most stable reactant
 
-        Parameters:
-        ___________
+        Parameters
+        ----------
         minima_path : str
             a path to main minima directory
-            e.g. Cu_111/minima
+            e.g. ``'Cu_111/minima'``
         facetpath : str
             a path to the workflow's main dir
-            e.g. 'Cu_111'
+            e.g. ``'Cu_111'``
         r_name_list : list(str)
             a list with all reactants for the given reaction
-            e.g. ['OH']
+            e.g. ``['OH']``
         p_name_list : list(str)
             a list with all products for the given reaction
-            e.g. ['O', 'H']
+            e.g. ``['O', 'H']``
         slab_path : str
             a path to the slab
-            e.g. 'Cu_111_slab_opt.xyz'
+            e.g. ``'Cu_111_slab_opt.xyz'``
 
-        Returns:
-        ________
+        Returns
+        -------
         reaction_energy : str
             an energy of reaction calculated a difference between
             the most stable product and the most stable reactant
@@ -109,7 +110,9 @@ class Results():
         ts_ener : dict(str:dict(str:str))
             a dictionary with all barrier heights (kj/mol)
             in a format like below
-            {'Cu_111_OH_O+H': {'TS_00': '155.27', 'TS_01': '157.97'}}
+
+            >>> ts_ener = {'Cu_111_OH_O+H':
+                {'TS_00': '155.27', 'TS_01': '157.97'}}
 
         '''
         ts_ener = {}
@@ -138,32 +141,32 @@ class Results():
             slab_path: str) -> Dict[str, float]:
         ''' Calculate reaction energy relatively to the most stable reactant
 
-        Parameters:
-        ___________
+        Parameters
+        ----------
         minima_path : str
             a path to main minima directory
-            e.g. Cu_111/minima
+            e.g. ``'Cu_111/minima'``
         ts_path : str
             a path to main TS directory
-            e.g. 'Cu_111/TS_estimate_unique'
+            e.g. ``'Cu_111/TS_estimate_unique'``
         facetpath : str
             a path to the workflow's main dir
-            e.g. 'Cu_111'
+            e.g. ``'Cu_111'``
         r_name_list : list(str)
             a list with all reactants for the given reaction
-            e.g. ['OH']
+            e.g. ``['OH']``
         p_name_list : list(str)
             a list with all products for the given reaction
-            e.g. ['O', 'H']
+            e.g. ``['O', 'H']``
         slab_path : str
             a path to the slab
-            e.g. 'Cu_111_slab_opt.xyz'
+            e.g. ``'Cu_111_slab_opt.xyz'``
 
 
-        Returns:
-        ________
+        Returns
+        -------
 
-        activation_barriers : dict('str'=float)
+        activation_barriers : Dict[str, float]
             a dictonary with all barrier heights relatively
             to the most stable reactant (in kJ/mol)
 
@@ -193,41 +196,51 @@ class Results():
             slab_path: str) -> Tuple[List[float], List[float], float, int]:
         ''' Returns the lowest energies lists for reactants and products.
 
-        Parameters:
-        ___________
+        Parameters
+        ----------
         minima_path : str
             a path to main minima directory
-            e.g. Cu_111/minima
+            e.g. ``'Cu_111/minima'``
         facetpath : str
             a path to the workflow's main dir
-            e.g. 'Cu_111'
+            e.g. ``'Cu_111'``
         r_name_list : list(str)
             a list with all reactants for the given reaction
-            e.g. ['OH']
+            e.g. ``['OH']``
         p_name_list : list(str)
             a list with all products for the given reaction
-            e.g. ['O', 'H']
+            e.g. ``['O', 'H']``
         slab_path : str
             a path to the slab
-            e.g. 'Cu_111_slab_opt.xyz'
+            e.g. ``'Cu_111_slab_opt.xyz'``
 
 
-        Returns:
-        ________
-        r_ener_list : list(float)
+        Returns
+        -------
+        r_ener_list : List[float]
             a list with the lowest energy conformer for each reactant
-        p_ener_list : list(float)
+        p_ener_list : List[float]
             a list with the lowest energy conformer for each products
         slab_ener : float
             an energy of the representative slab
             of the size the same as reactants, TS, or product
         nslabs : int
-            a number specifying how many additional slabs have to be considered
-            in a stoichiometric reaction. Its defined as the absoulute value
-            of the difference between amount of products and reactants
+            a number specifying how many additional slabs have to be
+            considered in a stoichiometric reaction. Its defined as the
+            absoulute valueof the difference between amount of products and
+            reactants
             e.g.
-            O + H --> OH (1 slab)
+            O + H --> OH
+
+            >>> nslabs = 1
             C + O + H --> COH (2 slabs)
+
+            >>> nslabs = 2
+
+        Raises
+        ------
+        TypeError
+            If .out files are missing either for reactants or products
 
         '''
         r_ener_list = []
@@ -269,15 +282,15 @@ class Results():
             slab_path: str) -> float:
         ''' Get energy of the slab
 
-        Parameters:
-        ___________
-        slab_path : str
+        Parameters
+        ----------
+        slab_path: str
             a path to the slab
-            e.g. 'Cu_111_slab_opt.xyz'
+            e.g. ``'Cu_111_slab_opt.xyz'``
 
-        Returns:
-        ________
-        slab_ener : float
+        Returns
+        -------
+        slab_ener: float
             an energy of the slab in eV
 
         '''
@@ -290,15 +303,15 @@ class Results():
             ts_path: str) -> List[float]:
         ''' Get energy of all TSs
 
-        Parameters:
-        ___________
-        ts_path : str
+        Parameters
+        ----------
+        ts_path: str
             a path to main TS directory
-            e.g. 'Cu_111/TS_estimate_unique'
+            e.g. ``'Cu_111/TS_estimate_unique'``
 
-        Returns:
-        ________
-        ts_ener_list : list(float)
+        Returns
+        -------
+        ts_ener_list: List[float]
             a sorted list with energy value for each TS
 
         '''
@@ -325,21 +338,21 @@ class Results():
             facetpath: str) -> float:
         ''' Get the lowest energy of the most stable species
 
-        Parameters:
-        ___________
-        minima_path : str
+        Parameters
+        ----------
+        minima_path: str
             a path to main minima directory
-            e.g. Cu_111/minima
-        species : str
+            e.g. ``'Cu_111/minima'``
+        species: str
             a metal_atom of the species
-            e.g. 'OH', 'H', 'O'
-        facetpath : str
+            e.g. ``'OH', 'H', 'O'``
+        facetpath: str
             a path to the workflow's main dir
-            e.g. 'Cu_111'
+            e.g. ``'Cu_111'``
 
-        Returns:
-        ________
-        lowest_species_ener : float
+        Returns
+        -------
+        lowest_species_ener: float
             conformer of the lowest energy among all
             calculated for the given species
 
@@ -366,15 +379,15 @@ class Results():
             ts_path: str) -> List[str]:
         ''' Get TS .out files
 
-        Parameters:
-        ___________
-        ts_path : str
+        Parameters
+        ----------
+        ts_path: str
             a path to main TS directory
-            e.g. 'Cu_111/TS_estimate_unique'
+            e.g. ``'Cu_111/TS_estimate_unique'``
 
-        Returns:
-        ________
-        ts_out_file_list : list(str)
+        Returns
+        -------
+        ts_out_file_list: List[str]
             a sorted list with paths to Sella's .out files for each TSs
 
         '''
@@ -400,26 +413,29 @@ class Results():
             facetpath: str) -> List[str]:
         ''' Get .out files for each reactants
 
-        Parameters:
-        ___________
-        minima_path : str
+        Parameters
+        ----------
+        minima_path: str
             a path to main minima directory
-            e.g. Cu_111/minima
-        species : str
+            e.g. ``'Cu_111/minima'``
+        species: str
             a metal_atom of the species
-            e.g. 'OH', 'H', 'O'
-        facetpath : str
+            e.g. ``'OH', 'H', 'O'``
+        facetpath: str
             a path to the workflow's main dir
-            e.g. 'Cu_111'
+            e.g. ``'Cu_111'``
 
-        Returns:
-        ________
-        species_out_file_path_list : list(str)
-            a list with paths to all minima Sella's *out files for given
+        Returns
+        -------
+        species_out_file_path_list: List[str]
+            a list with paths to all minima Sella's * out files for given
             species
-            e.g. ['Cu_111/minima/OH_01_relax.out',
-            'Cu_111/minima/OH_00_relax.out',
-            'Cu_111/minima/OH_03_relax.out', 'Cu_111/minima/OH_02_relax.out']
+            e.g.
+
+            >>> species_out_file_path_list = ['Cu_111/minima/OH_01_relax.out',
+                    'Cu_111/minima/OH_00_relax.out',
+                    'Cu_111/minima/OH_03_relax.out',
+                    'Cu_111/minima/OH_02_relax.out']
 
         '''
         species_out_file_path_list = []
@@ -435,15 +451,15 @@ class Results():
             ts_path: str) -> List[str]:
         ''' Function to get prefixes of TSs
 
-        Parameters:
-        ___________
-        ts_path : str
+        Parameters
+        ----------
+        ts_path: str
             a path to main TS directory
-            e.g. 'Cu_111/TS_estimate_unique'
+            e.g. ``'Cu_111/TS_estimate_unique'``
 
-        Returns:
-        ________
-        prefix_list : list(str)
+        Returns
+        -------
+        prefix_list: List[str]
             a list with all prefixes for TSs
 
         '''
@@ -459,15 +475,15 @@ class Results():
             rxn_name: str) -> str:
         ''' Return rxn name with arrow between reactants and products
 
-        Parameters:
-        ___________
-        rxn_name : str
-            a reaction name having a format like OH_O+H
+        Parameters
+        ----------
+        rxn_name: str
+            a reaction name having a format ``'OH_O+H'``
 
-        Returns:
-        ___________
-        rxn_name_title : str
-            a reaction name having a format like OH --> O+H
+        Returns
+        ----------
+        rxn_name_title: str
+            a reaction name having a format ``'OH --> O+H'``
 
         '''
         reactants, products = rxn_name.split('_')
@@ -481,10 +497,18 @@ class Results():
             x_size_in: float = 8,
             y_size_in: float = 6) -> None:
         ''' Plot all results and automatically detect how many reactions and
-            facet types exist.
+        facet types exist.
 
-            columns : rxn_name
-            rows : facetpath
+        Parameters
+        ----------
+        plot_filename: str, optional
+            a name of the file of generated plot, by default None
+        max_barrier: float, optional
+            all barriers lower then max_barrier will be ploted, by default None
+        x_size_in: float, optional
+            x size of the plot in inches, by default 8
+        y_size_in: float, optional
+            y size of the plot in inches, by default 6
 
         '''
         reaction_energies = self.get_reaction_energies_all()
@@ -523,26 +547,31 @@ class Results():
             y_size_in: float = 6) -> None:
         ''' Plot reaction energy diagram for a given reaction and facetpath
 
-        Parameters:
-        ___________
-        key : str
+        Parameters
+        ----------
+        key: str
             a key to look up for a correct reactions, e.g.
-            'Cu_111_OH_O+H'
-        reaction_energies : dict(str:float)
+            ``'Cu_111_OH_O+H'``
+        reaction_energies: Dict[str: float]
             a dictionary with reaction energies for a given facetpath and
             rxn_name, e.g.
-            {'Cu_111_OH_O+H': 70.81}
-        activation_barriers : dict(str:dict(str:str))
-            a dictionary with all barrier heights (kj/mol)
-            in a format like below
-            {'Cu_111_OH_O+H': {'TS_00': '155.27', 'TS_01': '157.97'}}
-        axes : matplotlib.subplot object
+
+            >>> reaction_energies = {'Cu_111_OH_O+H': 70.81}
+
+        activation_barriers: Dict[str: Dict[str, str]]
+            a dictionary with all barrier heights(kj/mol)
+            in a format like below:
+
+            >>> activation_barriers = {'Cu_111_OH_O+H':
+                    {'TS_00': '155.27', 'TS_01': '157.97'}}
+
+        axes: matplotlib.subplot object
             an axis for matplotlib.subplot
-        num : int
-            a num indicating column of the axes (an index of axes)
-        plot_file_name : str
+        num: int
+            a num indicating column of the axes(an index of axes)
+        plot_file_name: str
             provide a title for the plot, optional
-        apply_max_barrier : bool
+        apply_max_barrier: bool
             specify whether to apply a filter for a max barrier,
             default = False
 
