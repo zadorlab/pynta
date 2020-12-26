@@ -14,19 +14,21 @@ class InputChecker():
             working_dir: str) -> None:
         ''' Initialize
 
-        Parameters:
-        ___________
+        Parameters
+        ----------
 
         yamlfile : str
             a name of the .yaml file with reaction list
         slab : str
-            a '.xyz' file name with the optimized slab
+            a :literal:`*.xyz` file name with the optimized slab
             e.g.
-            'Cu_100_slab_opt.xyz'
+            ``'Cu_100_slab_opt.xyz'``
         inputR2S : python file
             an input file with paramters to the workflow
-        run_me : python script
+        run_me : str
             the workflow execution script
+            e.g.
+            ``'run_me.py'``
         working_dir : str
             a main dir where all files are stored
 

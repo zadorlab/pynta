@@ -5,9 +5,6 @@
 Pynta
 =====
 
-
-.. raw:: html
-
 The work-flow designed to automate search for transition states and reaction paths on various surfaces.
 
 ``pynta`` reads the .yaml files from the previous RMGCat calculations, puts reactants and products on the surface, calculates TSs and returns reaction energies as well as barriers heights represented as a free energy reaction path diagrams. The general idea of the code can be summarized in the following figure.
@@ -59,7 +56,7 @@ The following instruction assumes that you have several softwares installed on y
 
 .. code-block:: bash
 
-   $ echo 'export PATH=path_to_PostgreSQL/pgsql/bin:$PATH' >> ~/.bashrc'
+   $ echo "export PATH=path_to_PostgreSQL/pgsql/bin:$PATH' >> ~/.bashrc"
 
 
 
@@ -195,7 +192,7 @@ Usually, ``master`` branch should be fine. If somehow it is not working, make su
 
    python setup.py install --user
 
-**You should be ready to use ``pynta``\ **
+You should be ready to use ``pynta``
 
 Once finished using the workflow:
 
@@ -225,7 +222,7 @@ You will need **4** files to run the workflow:
 * ``inputR2S.py`` a python script holding all user-modifiable parameters of the ``pynta``
 * ``reactions.yaml`` a yaml file with all reactions to be studied
 
-An example ``run_me.py`` file:
+An example ``run_me.py`` file
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. code-block:: python
@@ -240,7 +237,7 @@ An example ``run_me.py`` file:
    # execute the workflow
    workflow.execute_all()
 
-An example ``run_me.sh`` file:
+An example ``run_me.sh`` file
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. code-block:: bash
@@ -274,8 +271,8 @@ An example ``run_me.sh`` file:
    # deactivate balsam environment
    source balsamdeactivate
 
-An example ``reactions.yaml`` file:
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+An example ``reactions.yaml`` file
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. code-block:: yaml
 
@@ -312,8 +309,8 @@ An example ``reactions.yaml`` file:
            4    X u0 p0 c0 {1,S}
            5 *3 X u0 p0 c0 {3,S}
 
-An example ``inputR2S.py`` file:
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+An example ``inputR2S.py`` file
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. code-block:: python
 

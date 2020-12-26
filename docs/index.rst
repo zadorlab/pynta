@@ -4,7 +4,7 @@
    contain the root `toctree` directive.
 
 .. include:: README.rst
-=================================
+=======================
 __________________
 
 .. toctree::
@@ -15,15 +15,18 @@ __________________
 
 
 Modules 
-==================
+=======
 
-Quick list of all methods:
-------------------
+Quick list of all methods
+--------------------------
 
 - :mod:`WorkFlow <pynta.main.WorkFlow>`
 - :mod:`IO <pynta.io.IO>`
 - :mod:`TS <pynta.ts.TS>`
 - :mod:`GeneralTSGuessesGenerator <pynta.ts_guesses.GeneralTSGuessesGenerator>`
+
+IO module
+---------
 
 
 .. toctree::

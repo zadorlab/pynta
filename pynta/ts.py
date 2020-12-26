@@ -182,8 +182,8 @@ class TS():
             reacting_atoms: Dict[str, int]) -> None:
         ''' Place adsorbates on the surface to estimate TS
 
-        Parameters:
-        ___________
+        Parameters
+        ----------
 
         ts_estimate_path : str
             a path to TS_estimate directory,
@@ -756,8 +756,8 @@ class TS():
             calc_keywords: Dict[str, str]) -> None:
         ''' Create all TS_estimate_unique files
 
-        Parameters:
-        ___________
+        Parameters
+        ----------
 
         ts_estimate_path : str
             a path to TS_estimate directory,
