@@ -19,29 +19,29 @@ from ase.io.formats import UnknownFileTypeError
 
 class IO():
     ''' Class for handling Input/Output and transforming it to more usefull
-        format for the pynta '''
+    format for the pynta '''
 
     @staticmethod
     def get_facetpath(
             symbol: str,
             surface_type: str) -> None:
         ''' Get a facetpath for a given surface defined by a
-            symbol and a surface_type
+        symbol and a surface_type
 
         Parameters
         ----------
         symbol : str
             atomic symbol of the studied metal surface
-            e.g. 'Cu'
+            e.g. ``'Cu'``
         surface_type : str
             type of the surface, i.e. facet.
-            e.g. 'fcc111'
+            e.g. ``'fcc111'``
 
         Returns
         -------
         facetpath : str
             a name of the facetpath,
-            eg. 'Cu_111'
+            eg. ``'Cu_111'``
 
         '''
         nums = []
@@ -59,23 +59,27 @@ class IO():
     def get_facetpaths(
             symbol: str,
             surface_types: List[str]) -> List[str]:
-        ''' Generate a list with all facetpaths for a
-        given surface defined by a symbol and a surface_type
+        ''' Generate a list with all facetpaths for a given surface defined by
+        a symbol and a surface_type
 
         Parameters
         ----------
         symbol : str
             atomic symbol of the studied metal surface
-            e.g. 'Cu'
-        surface_types : list(str)
+            e.g. ``'Cu'``
+        surface_types : List[str]
             a list with all surface types, i.e. facets.
-            e.g. ['fcc111', 'fcc100']
+            e.g.
+
+            >>> surface_types = ['fcc111', 'fcc100']
 
         Returns
         -------
-        facetpaths : list(str)
+        facetpaths : List[str]
             a list with all facetpath names,
-            e.g. ['Cu_111', 'Cu_100']
+            e.g.
+
+            >>> facetpaths = ['Cu_111', 'Cu_100']
 
         '''
         facetpaths = []
@@ -96,13 +100,16 @@ class IO():
     def get_kpoints(
             size: Tuple[int, int, int],
             get_uniq_kpts: bool = False) -> Tuple[int, Optional[np.ndarray]]:
-        '''Returns number of unique k-points for a given size of the slab
+        ''' Returns number of unique k-points for a given size of the slab
 
         Parameters
         ----------
         size : Tuple[int, int, int]
             a size or repeats of the slab,
-            e.g. (3, 3, 1)
+            e.g.
+
+            >>> size = (3, 3, 1)
+
         get_uniq_kpts : bool, optional
             If True, return size and an ndarray of unique kpoints
             Otherwise False. By default False
@@ -125,23 +132,24 @@ class IO():
             self,
             yamlfile: str) -> Dict[str, List[str]]:
         ''' For a given reaction get a dictionary with all species that takes
-            part in the reaction.
+        part in the reaction.
 
-            Those species will be considered as a reacting species by the
-            TS esitmate constructor
+        Those species will be considered as a reacting species by the
+        TS esitmate constructor
 
         Parameters
         ----------
         yamlfile : str
-            a name of the .yaml file with a reaction list
+            a name of the :literal:`*.yaml` file with a reaction list
 
         Returns
         -------
-        species_dict
+        species_dict : Dict[str, List[str]]
             a dictionary where keys are reactions (in a rxn{#} format)
             and values are species considered to moved in that reaction
             e.g.
-            species_dict = {'rxn1': ['O', 'H'], 'rxn2': ['C', 'H']}
+
+            >>> species_dict = {'rxn1': ['O', 'H'], 'rxn2': ['C', 'H']}
 
         '''
         species_dict = {}
@@ -160,14 +168,14 @@ class IO():
             yamlfile: str) -> List[Dict[str, str]]:
         ''' Open yaml file with list of reactions
 
-        Parameters:
-        ___________
+        Parameters
+        ----------
         yamlfile : str
             a name of the .yaml file with a reaction list
 
-        Returns:
-        __________
-        reactions : list[dict{str:str}]
+        Returns
+        -------__
+        reactions : List[Dict[str,str]]
             a list with each reaction details stored as a dictionary
 
         '''
@@ -184,7 +192,7 @@ class IO():
         Parameters
         ----------
         yamlfile : str
-            a name of the .yaml file with a reaction list
+            a name of the :literal:`*.yaml` file with a reaction list
 
         Returns
         -------
@@ -219,10 +227,10 @@ class IO():
 
         Parameters
         ----------
-        rxn : dict(yaml[str:str])
+        rxn : Dict[str,str]
             a dictionary with info about the paricular reaction. This can be
-            view as a splitted many reaction .yaml file to a single reaction
-            .yaml file
+            view as a splitted many reaction :literal:`*.yaml` file to a
+            single reaction :literal:`*.yaml` file
 
         Returns
         -------
@@ -259,15 +267,16 @@ class IO():
 
         Parameters
         ----------
-        rxn : dict(yaml[str:str])
+        rxn : Dict[str,str]
             a dictionary with info about the paricular reaction. This can be
-            view as a splitted many reaction .yaml file to a single reaction
-            .yaml file
+            view as a splitted many reaction :literal:`*.yaml` file to a
+            single reaction :literal:`*.yaml` file
 
         Returns
         -------
         rxn_name: str
-            a reaction name, e.g. 'CO_C+O'
+            a reaction name,
+            e.g. ``'CO_C+O'``
 
         '''
         reactants, products = IO.get_reactants_and_products(rxn)
@@ -279,14 +288,14 @@ class IO():
             path_to_species: str) -> None:
         ''' Convert all ASE's traj files to .xyz files for a given species
 
-        Parameters:
-        ___________
+        Parameters
+        ----------
         path_to_minima : str
             a path to minima
-            e.g. 'Cu_111/minima'
+            e.g. ``'Cu_111/minima'``
         species : str
             a species symbol
-            e.g. 'H' or 'CO'
+            e.g. ``'H'`` or ``'CO'``
 
         '''
         for traj in sorted(os.listdir(path_to_species), key=str):
@@ -302,27 +311,27 @@ class IO():
             yamlfile: str,
             creation_dir: PosixPath) -> Dict[str, List[str]]:
         ''' Returns a dictionary of adsorbate + surface calculations
-        (step 01; .py files) that has to be finished before starting step 02
-        for a particular reaction
+        (step 01; :literal:`*.py` files) that has to be finished before
+        starting step 02 for a particular reaction
 
         Parameters
-        ___________
+        ----------
 
         facetpath : str
             a path to the workflow's main dir
-            e.g. 'Cu_111'
+            e.g. ``'Cu_111'``
         yamlfile : str
             a name of the .yaml file with a reaction list
         creation_dir : str
             a path to the main working directory
 
         Returns
-        ________
+        -------
 
-        dependancy_dict : [str:list(str)]
+        dependancy_dict : [str:List[str]]
             a dictionary with keys being reaction names and values are lists
-            of .py files for step 01 that have to be finished to start 02 step
-            for a given reaction
+            of :literal:`*.py` files for step 01 that have to be finished to
+            start 02 step for a given reaction
             e.g.
 
         '''
@@ -389,15 +398,15 @@ class IO():
             yamlfile: str,
             creation_dir: PosixPath) -> Dict[str, List[str]]:
         ''' Get a dictionary with a list with prefixes of symmetry distinct
-            conformers for a given adsorbate
+        conformers for a given adsorbate
 
         Parameters
         ----------
         facetpath : str
             a name of the facetpath,
-            eg. 'Cu_111'
+            eg. ``'Cu_111'``
         yamlfile : str
-            a name of the .yaml file with a reaction list
+            a name of the :literal:`*.yaml` file with a reaction list
 
         Returns
         -------
@@ -420,13 +429,13 @@ class IO():
     def get_unique_prefixes(
             path_to_species: str) -> List[str]:
         ''' Compare each conformers for a given adsorbate and returns a list
-            with prefixes of a symmetrty dictinct structures
+        with prefixes of a symmetrty dictinct structures
 
         Parameters
         ----------
         path_to_species : str
             a path to species
-            e.g. 'Cu_111/minima/CO'
+            e.g. ``'Cu_111/minima/CO'``
 
         Returns
         -------
@@ -455,13 +464,13 @@ class IO():
     def get_unique_final_ts_prefixes(
             path_to_ts: str) -> List[str]:
         ''' Compare each conformers for a given adsorbate and returns a list
-            with prefixes of a symmetrty dictinct structures
+        with prefixes of a symmetrty dictinct structures
 
         Parameters
         ----------
         path_to_species : str
             a path to species
-            e.g. 'Cu_111/minima/CO'
+            e.g. ``'Cu_111/minima/CO'``
 
         Returns
         -------
@@ -498,7 +507,7 @@ class IO():
         Parameters
         ----------
         yamlfile : str
-            a name of the .yaml file with a reaction list
+            a name of the :literal:`*.yaml` file with a reaction list
 
         Returns
         -------
@@ -517,25 +526,25 @@ class IO():
 
     @staticmethod
     def get_all_reacting_atoms(yamlfile: str) -> Dict[str, Dict[str, float]]:
-        ''' Read a .yaml file with all reactions and extract reacting atoms
-        symbols and indicies - the one with asterisk in the .yaml file
+        ''' Read a :literal:`*.yaml` file with all reactions and extract
+        reacting atoms symbols and indicies - the one with asterisk in the
+        :literal:`*.yaml` file
 
         Parameters
         ----------
         yamlfile : str
-            a name of the .yaml file with a reaction list
+            a name of the :literal:`*.yaml` file with a reaction list
 
         Returns
         -------
         Dict[str, Dict[str, float]]
             a dictionary with keys are 'rxn_1, rxn_2...'' and values are
             another dicts, where keys are atomic symbols, values are indicies,
-            as they appear in the
-            .yaml file,
-            e.g.
-            OH for H + O -> OH
+            as they appear in the :literal:`*.yaml` file,
 
-            >>> {'O': 0, 'H': 1}
+            e.g. ``'OH'`` for ``'H + O -> OH'``
+
+            >>> all_reacting_atoms = {'O': 0, 'H': 1}
 
         '''
         all_reacting_atoms = {}
@@ -562,27 +571,31 @@ class IO():
     def get_reacting_atoms_idx_dict(
             reacting_species_connectivity: List[str]) -> Dict[str, int]:
         ''' Get a dict with atomic symbols and indicies of reacting atoms -
-            the one with asterisk in the .yaml file
+        the one with asterisk in the :literal:`*.yaml` file
 
         Parameters
         ----------
         reacting_species_connectivity : List[str]
             conectivity info for the species that is easier to use as a
             TS guess skeleton
-            e.g.
-            OH for H + O -> OH
-            ['multiplicity -187', '1 *1 O u0 p0 c0 {2,S} {4,S}',
-            '2 *2 H u0 p0 c0 {1,S}', '3 *3 X u0 p0 c0',
-            '4    X u0 p0 c0 {1,S}', '']
+
+            e.g. ``'OH'`` for ``'H + O -> OH'``
+
+            >>> reacting_species_connectivity = ['multiplicity -187',
+                                                '1 *1 O u0 p0 c0 {2,S} {4,S}',
+                                                '2 *2 H u0 p0 c0 {1,S}',
+                                                '3 *3 X u0 p0 c0',
+                                                '4    X u0 p0 c0 {1,S}',
+                                                '']
 
         Returns
         -------
         reacting_idxs = Dict[str, int]
             keys are atomic symbols, values are indicies, as they appear in the
-            .yaml file,
-            e.g.
-            OH for H + O -> OH
-            {'O': 0, 'H': 1}
+            :literal:`*.yaml` file,
+            e.g. ``'OH'`` for ``'H + O -> OH'``
+
+            >>> reacting_idxs = {'O': 0, 'H': 1}
 
         '''
         reacting_idxs = {}
@@ -616,7 +629,7 @@ class IO():
         rxn : Dict[str, str]
             a dictionary with info about the paricular reaction. This can be
             view as a splitted many reaction .yaml file to a single reaction
-            .yaml file
+            :literal:`*.yaml` file
         easier_to_build : str
             a list of species that are considerd as the reactiong one
 
@@ -627,7 +640,8 @@ class IO():
             :meth:`pynta.general_ts_guesses.decide`
 
         '''
-        # TODO there is only one element for every reaction tested. There will
+        # TODO
+        # there is only one element for every reaction tested. There will
         # be a problem for AX + BX -> CX + DX
         ts_guess = IO.rmgcat_to_gratoms(
             rxn[easier_to_build].strip().split('\n'))
@@ -641,7 +655,7 @@ class IO():
         Parameters
         ----------
         yamlfile : str
-            a name of the .yaml file with a reaction list
+            a name of the :literal:`*.yaml` file with a reaction list
 
         Returns
         -------
@@ -666,21 +680,21 @@ class IO():
                         species1.graph, species2.graph, node_test):
                     break
             else:
-                images.append(Molecule().get_3D_positions(species1))
+                # images.append(Molecule().get_3D_positions(species1))
                 all_images_unique.append(species1)
         return all_images_unique
 
     @staticmethod
     def get_images(rxn: Dict[str, str]) -> List[Gratoms]:
         ''' Convert RMGCat representation of species for a given rxn
-            to a list of Gratoms objects - the case of reactants and products
+        to a list of Gratoms objects - the case of reactants and products
 
         Parameters
         ----------
         rxn : Dict[str, str]
             a dictionary with info about the paricular reaction. This can be
-            view as a splitted many reaction .yaml file to a single reaction
-            .yaml file
+            view as a splitted many reaction :literal:`*.yaml` file to a
+            single reaction :literal:`*.yaml` file
 
         Returns
         -------
@@ -713,20 +727,20 @@ class IO():
     @staticmethod
     def rmgcat_to_gratoms(
             adjtxt: List[str]) -> List[Gratoms]:
-        ''' Convert a slice of .yaml file to Catkit's Gratoms object
+        ''' Convert a slice of :literal:`*.yaml` file to Catkit's Gratoms object
 
-        Parameters:
-        ___________
-
+        Parameters
+        ----------
         adjtxt : List[str]
             a list with a connectivity info for reactant or product
-            as from the .yaml file.
+            as from the .yaml file
+
             e.g. for given reaction (reactant or product)
 
-            In .yaml file we have something like that:
+            In :literal:`*.yaml` file we have something like that::
 
                     multiplicity -187
-                1 *1 C u0 p0 c0 { 2,S} {4,S}
+                1 *1 C u0 p0 c0 {2,S} {4,S}
                 2    O u0 p0 c0 {1,S}
                 3 *2 H u0 p0 c0 {5,S}
                 4 *3 X u0 p0 c0 {1,S}
@@ -734,21 +748,22 @@ class IO():
 
             but we need here a list like that:
 
-            ['multiplicity -187', '1 *1 C u0 p0 c0 {2,S} {4,S}',
-            '2    O u0 p0 c0 {1,S}', '3 *2 H u0 p0 c0 {5,S}',
-            '4 *3 X u0 p0 c0 {1,S}', '5 *4 X u0 p0 c0 {3,S}', '']
+            >>> tmp_list = ['multiplicity -187', '1 *1 C u0 p0 c0 {2,S} {4,S}',
+                            '2    O u0 p0 c0 {1,S}', '3 *2 H u0 p0 c0 {5,S}',
+                            '4 *3 X u0 p0 c0 {1,S}', '5 *4 X u0 p0 c0 {3,S}',
+                            '']
 
             So it can be simply converted using the following:
 
-            yamlfile = 'reactions.yaml'
-            with open(yamlfile, 'r') as f:
-                text = f.read()
-            reactions = yaml.safe_load(text)
-            for rxn in reactions:
-                adjtxt = rxn['reactant'].split('\n')
+            >>> yamlfile = 'reactions.yaml'
+            >>> with open(yamlfile, 'r') as f:
+                    text = f.read()
+            >>> reactions = yaml.safe_load(text)
+            >>> for rxn in reactions:
+                    adjtxt = rxn['reactant'].split('\\n')
 
-        Returns:
-        ________
+        Returns
+        -------
         gratoms_list : List[Gratoms]
             a list with all Gratoms objects for a give rxn
 
