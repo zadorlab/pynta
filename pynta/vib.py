@@ -32,42 +32,46 @@ class AfterTS():
             calc_keywords: Dict[str, str],
             pseudopotentials: Dict[str, str],
             pseudo_dir: str) -> None:
-        ''' Set up files for TSs vibration calculations.
+        ''' Set up files for TSs vibration calculations
 
         Parameters
         ----------
-        rxn : dict(yaml[str:str])
+        rxn : Dict[str, str]
             a dictionary with info about the paricular reaction. This can be
             view as a splitted many reaction .yaml file to a single reaction
-            .yaml file
+            :literal:`*.yaml` file
         pytemplate : python script
             a template for TS_vib calculations
-        balsam_exe_settings : dict{str:int}
+        balsam_exe_settings : Dict[str, int],
             a dictionary with balsam execute parameters (cores, nodes, etc.),
             e.g.
-            balsam_exe_settings = {'num_nodes': 1,
-                                   'ranks_per_node': 48,
-                                   'threads_per_rank': 1}
-        calc_keywords : dict{str:str}
+
+            >>> balsam_exe_settings = {'num_nodes': 1,
+                                    'ranks_per_node': 48,
+                                    'threads_per_rank': 1}
+
+        calc_keywords : Dict[str, str]
             a dictionary with parameters to run DFT package. Quantum Espresso
             is used as default, e.g.
 
-            calc_keywords = {'kpts': (3, 3, 1), 'occupations': 'smearing',
-                            'smearing':  'marzari-vanderbilt',
-                            'degauss': 0.01, 'ecutwfc': 40, 'nosym': True,
-                            'conv_thr': 1e-11, 'mixing_mode': 'local-TF'}
-        pseudopotentials : dict{str:str}
+            >>> calc_keywords = {'kpts': (3, 3, 1), 'occupations': 'smearing',
+                                'smearing':  'marzari-vanderbilt',
+                                'degauss': 0.01, 'ecutwfc': 40, 'nosym': True,
+                                'conv_thr': 1e-11, 'mixing_mode': 'local-TF'}
+
+        pseudopotentials : Dict[str, str]
             a dictionary with QE pseudopotentials for all species.
             e.g.
-            dict(Cu='Cu.pbe-spn-kjpaw_psl.1.0.0.UPF',
-                H='H.pbe-kjpaw_psl.1.0.0.UPF',
-                O='O.pbe-n-kjpaw_psl.1.0.0.UPF',
-                C='C.pbe-n-kjpaw_psl.1.0.0.UPF',
-                )
+
+            >>> dict(Cu='Cu.pbe-spn-kjpaw_psl.1.0.0.UPF',
+                    H='H.pbe-kjpaw_psl.1.0.0.UPF',
+                    O='O.pbe-n-kjpaw_psl.1.0.0.UPF',
+                    C='C.pbe-n-kjpaw_psl.1.0.0.UPF')
+
         pseudo_dir : str
             a path to the QE's pseudopotentials main directory
             e.g.
-            '/home/mgierad/espresso/pseudo'
+            ``'/home/mgierad/espresso/pseudo'``
 
         '''
         rxn_name = IO().get_rxn_name(rxn)
@@ -127,32 +131,36 @@ class AfterTS():
         py_fname : str
             path to the the .py (including the .py file name) file that is
             about to be created
-        balsam_exe_settings : dict(str:int)
+        balsam_exe_settings : Dict[str, int]
             a dictionary with balsam execute parameters (cores, nodes, etc.),
             e.g.
-            balsam_exe_settings = {'num_nodes': 1,
-                                'ranks_per_node': 48,
-                                'threads_per_rank': 1}
-        calc_keywords : dict(str:str)
+
+            >>> balsam_exe_settings = {'num_nodes': 1,
+                                    'ranks_per_node': 48,
+                                    'threads_per_rank': 1}
+
+        calc_keywords : Dict[str, str]
             a dictionary with parameters to run DFT package. Quantum Espresso
             is used as default, e.g.
 
-            calc_keywords = {'kpts': (3, 3, 1), 'occupations': 'smearing',
-                            'smearing':  'marzari-vanderbilt',
-                            'degauss': 0.01, 'ecutwfc': 40, 'nosym': True,
-                            'conv_thr': 1e-11, 'mixing_mode': 'local-TF'}
-        pseudopotentials : dict(str:str)
+            >>> calc_keywords = {'kpts': (3, 3, 1), 'occupations': 'smearing',
+                                'smearing':  'marzari-vanderbilt',
+                                'degauss': 0.01, 'ecutwfc': 40, 'nosym': True,
+                                'conv_thr': 1e-11, 'mixing_mode': 'local-TF'}
+
+        pseudopotentials : Dict[str, str]
             a dictionary with QE pseudopotentials for all species.
             e.g.
-            dict(Cu='Cu.pbe-spn-kjpaw_psl.1.0.0.UPF',
-                H='H.pbe-kjpaw_psl.1.0.0.UPF',
-                O='O.pbe-n-kjpaw_psl.1.0.0.UPF',
-                C='C.pbe-n-kjpaw_psl.1.0.0.UPF',
-                )
+
+            >>> dict(Cu='Cu.pbe-spn-kjpaw_psl.1.0.0.UPF',
+                    H='H.pbe-kjpaw_psl.1.0.0.UPF',
+                    O='O.pbe-n-kjpaw_psl.1.0.0.UPF',
+                    C='C.pbe-n-kjpaw_psl.1.0.0.UPF')
+
         pseudo_dir : str
             a path to the QE's pseudopotentials main directory
             e.g.
-            '/home/mgierad/espresso/pseudo'
+            ``'/home/mgierad/espresso/pseudo'``
         nimages : int, optional
             how many strucutres to use to construct a trajectory visualizing
             oscilations, by default 30
@@ -186,42 +194,46 @@ class AfterTS():
             pseudopotentials: Dict[str, str],
             pseudo_dir: str) -> None:
         ''' Create files for after_TS calculations - to verify TS structures
-            and get corresponding reactant and product minima[summary].
+        and get corresponding reactant and product minima
 
         Parameters
         ----------
-        rxn : dict(yaml[str:str])
+        rxn : Dict[str, str]
             a dictionary with info about the paricular reaction. This can be
             view as a splitted many reaction .yaml file to a single reaction
-            .yaml file
+            :literal:`*.yaml` file
         pytemplate : python script
             a template for after_TS calculations
-        balsam_exe_settings : dict{str:int}
+        balsam_exe_settings : Dict[str, int]
             a dictionary with balsam execute parameters (cores, nodes, etc.),
             e.g.
-            balsam_exe_settings = {'num_nodes': 1,
-                                   'ranks_per_node': 48,
-                                   'threads_per_rank': 1}
-        calc_keywords : dict{str:str}
+
+            >>> balsam_exe_settings = {'num_nodes': 1,
+                                    'ranks_per_node': 48,
+                                    'threads_per_rank': 1}
+
+        calc_keywords : Dict[str, str]
             a dictionary with parameters to run DFT package. Quantum Espresso
             is used as default, e.g.
 
-            calc_keywords = {'kpts': (3, 3, 1), 'occupations': 'smearing',
-                            'smearing':  'marzari-vanderbilt',
-                            'degauss': 0.01, 'ecutwfc': 40, 'nosym': True,
-                            'conv_thr': 1e-11, 'mixing_mode': 'local-TF'}
-        pseudopotentials : dict{str:str}
+            >>> calc_keywords = {'kpts': (3, 3, 1), 'occupations': 'smearing',
+                                'smearing':  'marzari-vanderbilt',
+                                'degauss': 0.01, 'ecutwfc': 40, 'nosym': True,
+                                'conv_thr': 1e-11, 'mixing_mode': 'local-TF'}
+
+        pseudopotentials : Dict[str, str]
             a dictionary with QE pseudopotentials for all species.
             e.g.
-            dict(Cu='Cu.pbe-spn-kjpaw_psl.1.0.0.UPF',
-                H='H.pbe-kjpaw_psl.1.0.0.UPF',
-                O='O.pbe-n-kjpaw_psl.1.0.0.UPF',
-                C='C.pbe-n-kjpaw_psl.1.0.0.UPF',
-                )
+
+            >>> dict(Cu='Cu.pbe-spn-kjpaw_psl.1.0.0.UPF',
+                    H='H.pbe-kjpaw_psl.1.0.0.UPF',
+                    O='O.pbe-n-kjpaw_psl.1.0.0.UPF',
+                    C='C.pbe-n-kjpaw_psl.1.0.0.UPF')
+
         pseudo_dir : str
             a path to the QE's pseudopotentials main directory
             e.g.
-            '/home/mgierad/espresso/pseudo'
+            ``'/home/mgierad/espresso/pseudo'``
 
         '''
         rxn_name = IO().get_rxn_name(rxn)
@@ -268,8 +280,8 @@ class AfterTS():
             fname_forward: str,
             fname_reverse: str,
             nimages: int = 30) -> None:
-        ''' Get forward and reverse .xyz file by nudging TS towards imaginary
-            mode of oscilations summary.
+        ''' Get forward and reverse :literal:`*.xyz` file by nudging TS
+        towards imaginary mode of oscilations summary.
 
         Parameters
         ----------
@@ -279,7 +291,6 @@ class AfterTS():
             a path for forward calculations
         fname_reverse : str
             a path for reverse calculations
-            [description]
         nimages : int, optional
             how many strucutres to use to construct a trajectory visualizing
             oscilations, by default 30
@@ -287,7 +298,8 @@ class AfterTS():
         Raises
         ------
         ValueError
-            raised if there are more than one *traj file visualizing vibrations
+            raised if there are more than one :literal:`*.traj` files
+            collecting vibration trajectory
 
         '''
 
@@ -319,7 +331,7 @@ class AfterTS():
             pseudopotentials: Dict[str, str],
             pseudo_dir: str) -> None:
         ''' Create job submission files for minimization displaced structures
-            after TS.
+        after TS.
 
         Parameters
         ----------
@@ -329,32 +341,36 @@ class AfterTS():
             a path for forward calculations
         fname_reverse : str
             a path for reverse calculations
-        balsam_exe_settings : dict(str:int)
+        balsam_exe_settings : Dict[str, int]
             a dictionary with balsam execute parameters (cores, nodes, etc.),
             e.g.
-            balsam_exe_settings = {'num_nodes': 1,
-                                'ranks_per_node': 48,
-                                'threads_per_rank': 1}
-        calc_keywords : dict(str:str)
+
+            >>> balsam_exe_settings = {'num_nodes': 1,
+                                    'ranks_per_node': 48,
+                                    'threads_per_rank': 1}
+
+        calc_keywords : Dict[str, str]
             a dictionary with parameters to run DFT package. Quantum Espresso
             is used as default, e.g.
 
-            calc_keywords = {'kpts': (3, 3, 1), 'occupations': 'smearing',
-                            'smearing':  'marzari-vanderbilt',
-                            'degauss': 0.01, 'ecutwfc': 40, 'nosym': True,
-                            'conv_thr': 1e-11, 'mixing_mode': 'local-TF'}
-        pseudopotentials : dict(str:str)
+            >>> calc_keywords = {'kpts': (3, 3, 1), 'occupations': 'smearing',
+                                'smearing':  'marzari-vanderbilt',
+                                'degauss': 0.01, 'ecutwfc': 40, 'nosym': True,
+                                'conv_thr': 1e-11, 'mixing_mode': 'local-TF'}
+
+        pseudopotentials : Dict[str, str]
             a dictionary with QE pseudopotentials for all species.
             e.g.
-            dict(Cu='Cu.pbe-spn-kjpaw_psl.1.0.0.UPF',
-                H='H.pbe-kjpaw_psl.1.0.0.UPF',
-                O='O.pbe-n-kjpaw_psl.1.0.0.UPF',
-                C='C.pbe-n-kjpaw_psl.1.0.0.UPF',
-                )
+
+            >>> dict(Cu='Cu.pbe-spn-kjpaw_psl.1.0.0.UPF',
+                    H='H.pbe-kjpaw_psl.1.0.0.UPF',
+                    O='O.pbe-n-kjpaw_psl.1.0.0.UPF',
+                    C='C.pbe-n-kjpaw_psl.1.0.0.UPF')
+
         pseudo_dir : str
             a path to the QE's pseudopotentials main directory
             e.g.
-            '/home/mgierad/espresso/pseudo'
+            ``'/home/mgierad/espresso/pseudo'``
 
         '''
         with open(pytemplate, 'r') as f:
@@ -377,7 +393,7 @@ class AfterTS():
 
     def get_all_distances(self) -> None:
         ''' Get distances between reacting species for ts, forward and
-            reverse structure.
+        reverse structure.
 
         '''
         all_rxn_names = IO().get_list_all_rxns_names(self.yamlfile)
@@ -392,18 +408,18 @@ class AfterTS():
             ts_dist_dict: Dict[str, float],
             forward_dist_dict: Dict[str, float],
             reverse_dist_dict: Dict[str, float]) -> None:
-        ''' Print information about bond distances (reacting atoms) for TS,
-            forward and reverse .xyz file/
+        ''' Print information about bond distances (reacting atoms only) for TS,
+        forward and reverse :literal:`*.xyz` files
 
         Parameters
         ----------
-        ts_dist_dict : dict(str:float)
+        ts_dist_dict : Dict[str:float]
             a dictionary with keys being TS file names while values are
             bond distance beteween of reacting species
-        f_dist_dict : dict(str:float)
+        f_dist_dict : Dict[str:float]
             a dictionary with keys being paths to forward files while values
             are bond distance beteween of reacting species
-        r_dist_dict : dict(str:float)
+        r_dist_dict : Dict[str:float]
             a dictionary with keys being paths to reverse files while values
             are bond distance beteween of reacting species
 
@@ -421,17 +437,18 @@ class AfterTS():
             self,
             rxn_name: str) -> Dict[str, float]:
         ''' For given rxn_name get distances between reacting species
-            in TS structure.
+        in TS structure.
 
         Parameters
         ----------
         rxn_name : str
-            a name of the reaction in the following format:
-            'OH_H+O'
+            a name of the reaction in the following format,
+            e.g.:
+            ``'OH_H+O'``
 
         Returns
         -------
-        ts_dist_dict : dict(str:float)
+        ts_dist_dict : Dict[str:float]
             a dictionary with keys being TS file names while values are
             bond distance beteween of reacting species
 
@@ -455,20 +472,20 @@ class AfterTS():
             self,
             rxn_name: str) -> Tuple[Dict[str, float], Dict[str, float]]:
         ''' For given rxn_name get distances between reacting species in
-            forward and reverse .xyz file
+        forward and reverse .xyz file
 
         Parameters
         ----------
         rxn_name : str
             a name of the reaction in the following format:
-            'OH_H+O'
+            ```'OH_H+O'```
 
         Returns
         -------
-        f_dist_dict : dict(str:float)
+        f_dist_dict : Dict[str:float]
             a dictionary with keys being paths to forward files while values
             are bond distance beteween of reacting species
-        r_dist_dict : dict(str:float)
+        r_dist_dict : Dict[str:float]
             a dictionary with keys being paths to reverse files while values
             are bond distance beteween of reacting species
 
@@ -516,13 +533,13 @@ class minimaVib():
             calc_keywords: Dict[str, str],
             creation_dir: PosixPath) -> None:
         ''' Create all files for frequency calculations for the most stable
-            conformer for a given species.
+        conformer for a given species.
 
         Parameters
         ----------
         facetpath : str
             a path to the workflow's main dir
-            e.g. 'Cu_111'
+            e.g. ``'Cu_111'``
         yamlfile_path : posix
             a path to .yaml file with all reactions e.g. 'reactions.yaml'
         pytemplate : str
@@ -530,29 +547,47 @@ class minimaVib():
         balsam_exe_settings : Dict[str, int]
             a dictionary with balsam execute parameters (cores, nodes, etc.),
             e.g.
-            balsam_exe_settings = {'num_nodes': 1,
-                                   'ranks_per_node': 48,
-                                   'threads_per_rank': 1}
-        pseudo_dir : str
-            a path to the QE's pseudopotentials main directory
-            e.g.
-            '/home/mgierad/espresso/pseudo'
-        pseudopotentials : Dict[str, str]
-            a dictionary with QE pseudopotentials for all species.
-            e.g.
-            dict(Cu='Cu.pbe-spn-kjpaw_psl.1.0.0.UPF',
-                H='H.pbe-kjpaw_psl.1.0.0.UPF',
-                O='O.pbe-n-kjpaw_psl.1.0.0.UPF',
-                C='C.pbe-n-kjpaw_psl.1.0.0.UPF',
-                )
+
+            >>> balsam_exe_settings = {'num_nodes': 1,
+                                    'ranks_per_node': 48,
+                                    'threads_per_rank': 1}
+
         calc_keywords : Dict[str, str]
             a dictionary with parameters to run DFT package. Quantum Espresso
             is used as default, e.g.
 
-            calc_keywords = {'kpts': (3, 3, 1), 'occupations': 'smearing',
-                            'smearing':  'marzari-vanderbilt',
-                            'degauss': 0.01, 'ecutwfc': 40, 'nosym': True,
-                            'conv_thr': 1e-11, 'mixing_mode': 'local-TF'}
+            >>> calc_keywords = {'kpts': (3, 3, 1), 'occupations': 'smearing',
+                                'smearing':  'marzari-vanderbilt',
+                                'degauss': 0.01, 'ecutwfc': 40, 'nosym': True,
+                                'conv_thr': 1e-11, 'mixing_mode': 'local-TF'}
+
+        pseudo_dir : str
+            a path to the QE's pseudopotentials main directory
+            e.g.
+            ``'/home/mgierad/espresso/pseudo'``
+
+        pseudopotentials : Dict[str, str]
+            a dictionary with QE pseudopotentials for all species.
+            e.g.
+
+            >>> dict(Cu='Cu.pbe-spn-kjpaw_psl.1.0.0.UPF',
+                    H='H.pbe-kjpaw_psl.1.0.0.UPF',
+                    O='O.pbe-n-kjpaw_psl.1.0.0.UPF',
+                    C='C.pbe-n-kjpaw_psl.1.0.0.UPF')
+
+        calc_keywords : Dict[str, str]
+            a dictionary with parameters to run DFT package. Quantum Espresso
+            is used as default, e.g.
+
+            >>> calc_keywords = {'kpts': (3, 3, 1),
+                    'occupations': 'smearing',
+                    'smearing': 'marzari-vanderbilt',
+                    'degauss': 0.01,
+                    'ecutwfc': 40,
+                    'nosym': True,
+                    'conv_thr': 1e-11,
+                    'mixing_mode':'local-TF'}
+
         creation_dir : PosixPath
             a posix path to the working directory
 
@@ -596,8 +631,8 @@ class minimaVib():
             creation_dir: PosixPath,
             nimages: int = 30,
             n: int = 0) -> None:
-        ''' Create a .py files for a vibrational frequiency calculations
-            for a given species
+        ''' Create a :literal:`*.py` files for a vibrational frequiency
+        calculations for a given species
 
         Parameters
         ----------
@@ -610,35 +645,53 @@ class minimaVib():
             a name of a new traj file
         minima_vib_path : str
             a path to vibrational frequency calculations of minima,
-            e.g. 'Cu_111/minima_vib'
+            e.g. ``'Cu_111/minima_vib'``
         pytemplate : str
             a pytemplate for frequency calculations of minima
         balsam_exe_settings : Dict[str, int]
             a dictionary with balsam execute parameters (cores, nodes, etc.),
             e.g.
-            balsam_exe_settings = {'num_nodes': 1,
-                                   'ranks_per_node': 48,
-                                   'threads_per_rank': 1}
-        pseudo_dir : str
-            a path to the QE's pseudopotentials main directory
-            e.g.
-            '/home/mgierad/espresso/pseudo'
-        pseudopotentials : Dict[str, str]
-            a dictionary with QE pseudopotentials for all species.
-            e.g.
-            dict(Cu='Cu.pbe-spn-kjpaw_psl.1.0.0.UPF',
-                H='H.pbe-kjpaw_psl.1.0.0.UPF',
-                O='O.pbe-n-kjpaw_psl.1.0.0.UPF',
-                C='C.pbe-n-kjpaw_psl.1.0.0.UPF',
-                )
+
+            >>> balsam_exe_settings = {'num_nodes': 1,
+                                    'ranks_per_node': 48,
+                                    'threads_per_rank': 1}
+
         calc_keywords : Dict[str, str]
             a dictionary with parameters to run DFT package. Quantum Espresso
             is used as default, e.g.
 
-            calc_keywords = {'kpts': (3, 3, 1), 'occupations': 'smearing',
-                            'smearing':  'marzari-vanderbilt',
-                            'degauss': 0.01, 'ecutwfc': 40, 'nosym': True,
-                            'conv_thr': 1e-11, 'mixing_mode': 'local-TF'}
+            >>> calc_keywords = {'kpts': (3, 3, 1), 'occupations': 'smearing',
+                                'smearing':  'marzari-vanderbilt',
+                                'degauss': 0.01, 'ecutwfc': 40, 'nosym': True,
+                                'conv_thr': 1e-11, 'mixing_mode': 'local-TF'}
+
+        pseudo_dir : str
+            a path to the QE's pseudopotentials main directory
+            e.g.
+            ``'/home/mgierad/espresso/pseudo'``
+
+        pseudopotentials : Dict[str, str]
+            a dictionary with QE pseudopotentials for all species.
+            e.g.
+
+            >>> dict(Cu='Cu.pbe-spn-kjpaw_psl.1.0.0.UPF',
+                    H='H.pbe-kjpaw_psl.1.0.0.UPF',
+                    O='O.pbe-n-kjpaw_psl.1.0.0.UPF',
+                    C='C.pbe-n-kjpaw_psl.1.0.0.UPF')
+
+        calc_keywords : Dict[str, str]
+            a dictionary with parameters to run DFT package. Quantum Espresso
+            is used as default, e.g.
+
+            >>> calc_keywords = {'kpts': (3, 3, 1),
+                    'occupations': 'smearing',
+                    'smearing': 'marzari-vanderbilt',
+                    'degauss': 0.01,
+                    'ecutwfc': 40,
+                    'nosym': True,
+                    'conv_thr': 1e-11,
+                    'mixing_mode':'local-TF'}
+
         creation_dir : PosixPath
             a posix path to the working directory
         nimages : int, optional
