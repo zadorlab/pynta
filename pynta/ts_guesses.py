@@ -12,25 +12,23 @@ class GeneralTSGuessesGenerator():
                  rxn_name: str,
                  easier_to_build: str,
                  scfactor: float) -> None:
-        '''[summary]
+        ''' Initialize :meth:GeneralTSGuessesGenerator method
 
         Parameters
         ----------
         ts_est : str
             string representations of the species which is use as a TS guess
             skeleton - the one that is used to construct TS guess,
-            e.g.
-            'OH'
-            e.g OH_O+H
+            e.g. ``'OH'`` for ``'OH_O+H'``
         rxn : Dict[str, str]
             a dictionary with info about the paricular reaction. This can be
-            view as a splitted many reaction .yaml file to a single reaction
-            .yaml file
+            view as a splitted many reaction :literal:`*.yaml` file to a
+            single reaction :literal:`*.yaml` file
         rxn_name : str
             a reaction name
-            e.g OH_O+H
+            e.g ``'OH_O+H'``
         easier_to_build : str
-            a keys to ts_guess_skeleton; 'product' or 'reatant'
+            a keys to ts_guess_skeleton; ``'product'`` or ``'reatant'``
         scfator : float
             a scaling factor to scale a bond distance between
             atoms taking part in the reaction
@@ -49,13 +47,13 @@ class GeneralTSGuessesGenerator():
             self,
             reacting_idxs: List[int]) -> Tuple[Gratoms, int]:
         ''' Main method to decide to which family of reactions given
-            reaction belongs
+        reaction belongs
 
         Parameters
         ----------
         reacting_idxs : List[int]
             list with indicies of reacting atoms, in order as they appear in
-            .yaml file but not necessary with the same indicies
+            :literal:`*.yaml` file but not necessary with the same indicies
 
         Returns
         -------
@@ -87,14 +85,17 @@ class GeneralTSGuessesGenerator():
         return ts_guess_image, s_bonded_idx
 
     def build_ts_guess(self) -> Gratoms:
-        ''' Convert ts_est string into a list of Gratoms objects.
+        ''' Convert ``'ts_est'`` string into a list of Gratoms objects.
 
-            Numner of elements in the list depends is equal to number of
-            distinct topologies available for given ts_est.
+        Numner of elements in the list depends is equal to number of
+        distinct topologies available for given ``'ts_est'``.
 
-            For diatomics there will always be one element in the list.
-            For other types, more than one structure is possible, e.g.
-            ts_est = 'COH' --> ts_guess_list = ['COH' (sp), 'CHO' (sp2)]
+        For diatomics there will always be one element in the list.
+        For other types, more than one structure is possible, e.g.
+
+        >>> ts_est = 'COH'
+        >>> print(ts_guess_list)
+        ['COH' (sp), 'CHO' (sp2)]
 
         Returns
         -------
@@ -155,7 +156,7 @@ class GeneralTSGuessesGenerator():
 
     def get_the_most_connected_atom(self) -> int:
         ''' Return index of an atom that has the highest numner of connections
-            to the other atoms.
+        to the other atoms.
 
         Returns
         -------
@@ -194,29 +195,32 @@ class GeneralTSGuessesGenerator():
         Parameters
         ----------
         yaml_ref_idx1 : int
-            a line in the.yaml file containing information about connectivity
-            of the atom_1
+            a line in the :literal:`*.yaml` file containing information about
+            connectivity of the ``'atom_1'``
         yaml_ref_idx2 : int
-            a line in the.yaml file containing information about connectivity
-            of the atom_2
+            a line in the :literal:`*.yaml` file containing information about
+            connectivity of the ``'atom_2'``
         visited_atoms : List[int]
-            a list with all atomic indicies (tags - as they appear in the .yaml
+            a list with all atomic indicies (tags - as they appear in the
+            :literal:`*.yaml`
             file, starts from 0, ingoring surface atoms and multiplicity line)
             that have been alread visited.
         n_surf_at_befor_ads : int
             number of surface atoms 'X' that are present before any adsorbate
-            in the .yaml file
+            in the :literal:`*.yaml` file
         multi_line : int
-            1 if multiplicity line is present in the .yaml file, 0 otherwise
+            ``1`` if multiplicity line is present in the :literal:`*.yaml`
+            file, ``0`` otherwise
         first_line : int
-            0 if multiplicity line is present in the .yaml file, 1 otherwise
+            ``0`` if multiplicity line is present in the :literal:`*.yaml`
+            file, ``1`` otherwise
 
         Returns
         -------
         visited_atoms: List[int]
-            a list with all atomic indicies (tags - as they appear in the .yaml
-            file, starts from 0, ingoring surface atoms and multiplicity line)
-            that have been alread visited.
+            a list with all atomic indicies (tags - as they appear in the
+            :literal:`*.yaml` file, starts from 0, ingoring surface atoms and
+            multiplicity line) that have been alread visited.
 
         '''
         ref_line_idx = yaml_ref_idx2 - first_line
@@ -246,7 +250,7 @@ class GeneralTSGuessesGenerator():
             tag_atom_idx1: int,
             tag_atom_idx2: int) -> List[int]:
         ''' Get a list with all atomic indicies of the atoms and subatoms
-            and so that are connected to the atom_2, excluding atom_1.
+        and so that are connected to the atom_2, excluding atom_1.
 
         Parameters
         ----------
@@ -304,8 +308,8 @@ class GeneralTSGuessesGenerator():
             ts_guess_image: Gratoms,
             tag_atom_idx1: int,
             tag_atom_idx2: int) -> List[int]:
-        ''' Convert tag indiciec (.yaml file is a source) to indicies as they
-            appear in the ts_guess_image Gratoms object
+        ''' Convert tag indicies (:literal:`*.yaml` file is a source) to
+        indicies as they appear in the ts_guess_image Gratoms object
 
         Parameters
         ----------
@@ -342,7 +346,7 @@ class Diatomic(GeneralTSGuessesGenerator):
             self,
             reacting_idxs: List[int]) -> Tuple[Gratoms, int]:
         ''' Get ts_guess (Gratom) and index of atom that connects ts_guess
-            to the surface. Currently, only monodentate adsobrtion is supported
+        to the surface. Currently, only monodentate adsobrtion is supported
 
         Parameters
         ----------

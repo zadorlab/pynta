@@ -229,11 +229,12 @@ class Results():
             considered in a stoichiometric reaction. Its defined as the
             absoulute valueof the difference between amount of products and
             reactants
-            e.g.
+            e.g. for
             O + H --> OH
 
             >>> nslabs = 1
-            C + O + H --> COH (2 slabs)
+
+            or, for C + O + H --> COH
 
             >>> nslabs = 2
 

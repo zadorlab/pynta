@@ -77,7 +77,7 @@ class InputChecker():
             return False
 
     def check_yaml(self) -> bool:
-        ''' Check for .yaml file '''
+        ''' Check for :literal:`*.yaml` file with list of reactions '''
         if not os.path.isfile(self.yamlfile):
             print('!    .yaml file ({}) is not in your working '
                   'directory: \n{}'.format(self.yamlfile, self.working_dir))
@@ -86,7 +86,7 @@ class InputChecker():
             return True
 
     def check_slab(self) -> bool:
-        ''' Check for slab .xyz file '''
+        ''' Check for slab :literal:`*.xyz` file with slab geometry '''
         if not os.path.isfile(self.slab):
             print('!    .xyz file ({}) with optimized slab is not in your '
                   'working directory: '
@@ -105,7 +105,7 @@ class InputChecker():
             return True
 
     def check_run_me_py(self) -> bool:
-        ''' Check for run_me.py file '''
+        ''' Check for ``'run_me.py'`` file '''
         if not os.path.isfile(self.run_me_py):
             print('!    run_me.py file ({}) is not in your current working '
                   'directory: \n{}'.format(self.run_me_py, self.working_dir))
@@ -114,7 +114,7 @@ class InputChecker():
             return True
 
     def check_run_me_sh(self) -> bool:
-        ''' Check for run_me.sh file '''
+        ''' Check for ``'run_me.sh'`` file '''
         if not os.path.isfile(self.run_me_sh):
             print('!    run_me.sh file ({}) is not in your current working '
                   'directory: \n{}'.format(self.run_me_sh, self.working_dir))

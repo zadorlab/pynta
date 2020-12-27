@@ -30,14 +30,16 @@ class Adsorbates:
         ___________
         facetpath : str
             a path to the workflow's main dir
-            e.g. 'Cu_111'
+            e.g. ``'Cu_111'``
         slab : str
             a '.xyz' file name with the optimized slab
             e.g.
-            'Cu_111_slab_opt.xyz'
+            ``'Cu_111_slab_opt.xyz'``
         repeats: tuple
             specify reapeats in (x, y, z) direction,
-            eg. (3, 3, 1)
+            eg.
+
+            >>> repeats = (3, 3, 1)
         yamlfile : str
             a name of the .yaml file with reaction list
         creation_dir : posix
@@ -240,10 +242,10 @@ class Adsorbates:
 
         Parameters
         __________
-        pytemplate: python file
+        pytemplate: str
             a template to prepare submission scripts
             for adsorbate+surface minimization
-        pseudopotentials: dict(str: str)
+        pseudopotentials: Dict[str, str]
             a dictionary with QE pseudopotentials for all species.
             e.g.
 
@@ -256,7 +258,7 @@ class Adsorbates:
             a path to the QE's pseudopotentials main directory
             e.g.
             ``'/home/mgierad/espresso/pseudo'``
-        balsam_exe_settings: dict{str: int}
+        balsam_exe_settings: Dict[str, int]
             a dictionary with balsam execute parameters(cores, nodes, etc.),
             e.g.
 
@@ -264,7 +266,7 @@ class Adsorbates:
                 'ranks_per_node': 48,
                 'threads_per_rank': 1}
 
-        calc_keywords: dict{str: str}
+        calc_keywords: Dict[str, str]
             a dictionary with parameters to run DFT package. Quantum Espresso
             is used as default, e.g.
 
@@ -277,9 +279,9 @@ class Adsorbates:
                     'conv_thr': 1e-11,
                     'mixing_mode': 'local-TF'}
 
-        shtemplate: .sh file
-            optional, a .sh template(not required by the workflow but possible
-            to specified for special cases)
+        shtemplate: str
+            optional, a path to :literal:`*.sh` template(not required by the
+            workflow but possible to specified for special cases)
 
         '''
         n_kpts = IO().get_kpoints(self.repeats)
