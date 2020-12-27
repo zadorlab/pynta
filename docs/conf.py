@@ -23,6 +23,7 @@ release = 'Jan 7, 2020'
 # ones.
 extensions = ['sphinx.ext.autodoc',
               'sphinx.ext.napoleon',
+              'sphinx.ext.viewcode',
               'm2r']
 
 # extensions = ['sphinx.ext.autodoc', 'sphinx.ext.napoleon']

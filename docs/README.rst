@@ -13,7 +13,7 @@ The work-flow designed to automate search for transition states and reaction pat
    :width: 800
    :align: center
 
-1. Installation
+Installation
 ===============
 
 **Instalation can be a bit tricky because pynta depends on a several different packages that are under constant development (balsam, xtb-python)**
@@ -26,10 +26,10 @@ The following instruction assumes that you have several softwares installed on y
 * A math library e.g. ``OpenBlas/LAPACK`` or ``Intel's MKL``
 * A compilier suite e.g. ``Intel`` or ``GCC``
 
-1.1 Install all prerequisites
+Install all prerequisites
 -----------------------------
 
-1.1.1 Set the location you want to use for ``pynta`` build. It is suggested to create a virtual environment e.g 'pynta':
+Set the location you want to use for ``pynta`` build. It is suggested to create a virtual environment e.g 'pynta':
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. code-block:: bash
@@ -37,21 +37,21 @@ The following instruction assumes that you have several softwares installed on y
    $ cd <path/whr/to/build/pynta>
    $ python3 -m venv pynta
 
-1.1.2 Activate your virtual environment:
+Activate your virtual environment:
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. code-block:: bash
 
    $ source pynta/bin/activate
 
-1.1.3 (\ *Optional*\ ) Install required python packages (if you skip this process, ``pynta`` installer will do this later.)
+(\ *Optional*\ ) Install required python packages (if you skip this process, ``pynta`` installer will do this later.)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. code-block:: bash
 
    $ pip3 install matplotlib<3.2 spglib==1.14.1.post0 networkx<2.4 ase==3.19.0 scipy==1.3.1 numpy==1.18.1 PyYAML==5.3.1 sella==1.0.3
 
-1.1.4 Download `PostgreSQL <https://www.enterprisedb.com/download-postgresql-binaries>`_ precompiled binaries that suits your system and add ``path_to_PostgreSQL/pgsql/bin`` to your ``PATH`` by modifying ``~/.bashrc``:
+Download `PostgreSQL <https://www.enterprisedb.com/download-postgresql-binaries>`_ precompiled binaries that suits your system and add ``path_to_PostgreSQL/pgsql/bin`` to your ``PATH`` by modifying ``~/.bashrc``:
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. code-block:: bash
@@ -59,9 +59,8 @@ The following instruction assumes that you have several softwares installed on y
    $ echo "export PATH=path_to_PostgreSQL/pgsql/bin:$PATH' >> ~/.bashrc"
 
 
-
-1.1.5 Install `mpi4py <https://github.com/mpi4py/mpi4py.git>`_\ :
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Install `mpi4py <https://github.com/mpi4py/mpi4py.git>`_\ :
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. code-block:: bash
 
@@ -78,7 +77,7 @@ Make sure it works by running
    0
    1
 
-1.1.6 Install `balsam <https://github.com/balsam-alcf/balsam.git>`_ using `serial-mode-perf <https://github.com/balsam-alcf/balsam/tree/serial-mode-perf>`_ branch.
+Install `balsam <https://github.com/balsam-alcf/balsam.git>`_ using `serial-mode-perf <https://github.com/balsam-alcf/balsam/tree/serial-mode-perf>`_ branch.
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. code-block:: bash
@@ -90,7 +89,7 @@ Make sure it works by running
 
 Make sure it works by running tests posted on the `balsam <https://github.com/balsam-alcf/balsam.git>`_ GitHub page.
 
-1.1.7 Install `xTB-python <https://github.com/grimme-lab/xtb-python>`_ following instruction provided there. Make sure to correctly link all required libraries. For example:
+Install `xTB-python <https://github.com/grimme-lab/xtb-python>`_ following instruction provided there. Make sure to correctly link all required libraries. For example:
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 
@@ -159,10 +158,10 @@ If ``xTB-python`` still fails, try to install `xtb <https://github.com/grimme-la
 
 Then, rebuild ``xTB-python`` on your system ignoring ``git submodule update --init`` and linking you current ``xTB`` installation.
 
-1.2 Install ``pynta``
+Install ``pynta``
 -------------------------
 
-1.2.1 Clone the project in your preferable location.
+Clone the project in your preferable location.
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. code-block::
@@ -171,21 +170,21 @@ Then, rebuild ``xTB-python`` on your system ignoring ``git submodule update --in
 
 Usually, ``master`` branch should be fine. If somehow it is not working, make sure to switch to the latest stable version by checking the tags.
 
-1.2.2 Go to ``pynta`` directory
+Go to ``pynta`` directory
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. code-block::
 
    cd pynta
 
-1.2.3a Install ``pynta``\ :
+Install ``pynta``\ :
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. code-block::
 
    python setup.py install
 
-1.2.3b (optional) If you do not have admin privileges (e.g. you use it on a supercomputer), do the following instead of 1.6a:
+(\ *Optional*\ )  If you do not have admin privileges (e.g. you use it on a supercomputer), do the following instead of 1.6a:
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. code-block::
@@ -201,10 +200,10 @@ Once finished using the workflow:
    cd pynta
    deactivate
 
-2. How to run
+How to run
 ================
 
-2.1 Using Balsam
+Using Balsam
 -------------------------
 
 Before you run any ``pynta`` calculations, make sure your ``balsam`` DB is initialized and activated, e.g.
@@ -391,7 +390,7 @@ An example input files are also located at ``./pynta/example_run_files/``.
 
 If you do not have a ``.yaml`` file with the reaction list but still want to use the work-flow, let me know. Also, stay tuned, as a version of ``pynta`` that can work without ``.yaml`` file is currently under development
 
-2.2 Using only SLURM
+Using only SLURM
 --------------------
 
 **Warning `dev` branch uses SLURM scheduler to deal with the job dependencies. Be aware that it might be a bit buggy and do not fully support all the features implemented in the `master` branch.**

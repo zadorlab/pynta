@@ -1,8 +1,6 @@
-pynta package
+Modules
 =============
 
-Submodules
-----------
 
 pynta.adsorbates module
 -----------------------
@@ -107,6 +105,7 @@ pynta.ts module
    :members:
    :undoc-members:
    :show-inheritance:
+   :noindex:
 
 pynta.ts\_guesses module
 ------------------------

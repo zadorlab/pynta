@@ -3,35 +3,23 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-.. include:: README.rst
-=======================
-__________________
-
 .. toctree::
-   :numbered:
    :maxdepth: 5
    :caption: Contents:
-   
 
+.. include:: README.rst
+=======================
+  
+.. include:: source/pynta.rst
+=============================
 
-Modules 
-=======
-
-Quick list of all methods
---------------------------
+Quick links
+-----------
 
 - :mod:`WorkFlow <pynta.main.WorkFlow>`
 - :mod:`IO <pynta.io.IO>`
 - :mod:`TS <pynta.ts.TS>`
 - :mod:`GeneralTSGuessesGenerator <pynta.ts_guesses.GeneralTSGuessesGenerator>`
-
-IO module
----------
-
-
-.. toctree::
-   :maxdepth: 2
-
 
 Indices and tables
 ==================
