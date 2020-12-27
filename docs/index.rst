@@ -14,7 +14,7 @@
 =============================
 
 Quick links
------------
+===========
 
 - :mod:`WorkFlow <pynta.main.WorkFlow>`
 - :mod:`IO <pynta.io.IO>`

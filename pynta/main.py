@@ -67,9 +67,9 @@ else:
     facetpaths = IO().get_facetpaths(metal_atom, surface_types)
     job_file_dir_name = 'job_files'
 
-####################################################
-#                    Scripts                       #
-####################################################
+# ###################################################
+#                     Scripts                       #
+# ###################################################
 
 # These template and pytemplate scripts can be modified by users
 # (np intended, though) to tune them to given calculation setup,
