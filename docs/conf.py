@@ -23,8 +23,8 @@ release = 'Jan 7, 2020'
 # ones.
 extensions = ['sphinx.ext.autodoc',
               'sphinx.ext.napoleon',
-              'sphinx.ext.viewcode',
-              'm2r']
+              'sphinx.ext.viewcode']
+# 'm2r'
 
 # extensions = ['sphinx.ext.autodoc', 'sphinx.ext.napoleon']
 pygments_style = 'sphinx'
@@ -51,9 +51,15 @@ napoleon_include_init_with_doc = True
 html_theme = 'sphinx_rtd_theme'
 
 html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
-html_style = 'ase.css'
+# html_style = 'ase.css'
 # html_favicon = 'static/ase.ico'
 html_static_path = ['_static']
 html_last_updated_fmt = '%a, %d %b %Y %H:%M:%S'
 
-autodoc_mock_imports = ['balsam', 'inputR2S']
+autodoc_mock_imports = [
+    'balsam', 'inputR2S.optimize_slab', 'inputR2S.surface_types_and_repeats',
+    'inputR2S.a', 'inputR2S.vacuum', 'inputR2S.pseudo_dir',
+    'inputR2S.pseudopotentials', 'inputR2S.yamlfile', 'inputR2S.scfactor',
+    'inputR2S.scaled1', 'inputR2S.scaled2', 'inputR2S.executable',
+    'inputR2S.node_packing_count', 'inputR2S.balsam_exe_settings',
+    'inputR2S.calc_keywords', 'inputR2S.creation_dir']

@@ -1,3 +1,4 @@
+
 from pynta.check_input import InputChecker
 from pynta.restart import LowLevelRestart, HighLevelRestart
 from pynta.io import IO
@@ -23,19 +24,15 @@ check_inputR2S = os.path.join(working_dir, 'inputR2S.py')
 check_run_me_py = os.path.join(working_dir, 'run_me.py')
 check_run_me_sh = os.path.join(working_dir, 'run_me.sh')
 
-InputChecker(check_yaml, check_inputR2S, check_run_me_py,
-             check_run_me_sh, working_dir).check_all()
 
 # add working dir to system path
 sys.path.insert(1, working_dir)
-
 try:
     import inputR2S
-    """
-    User defined parameters
-
-    Here we only read them. They are set up in inputR2S.py (submit directory)
-    """
+    InputChecker(check_yaml, check_inputR2S, check_run_me_py,
+                 check_run_me_sh, working_dir).check_all()
+    # User defined parameters. Here pynta willonly read them. They are set up
+    # in inputR2S.py (submit directory)
 except ImportError:
     warn(
         'Missing input file. You cannot run calculations '
@@ -431,7 +428,7 @@ class WorkFlow:
             a lattice constant
         repeats_surface : tuple(int, int, int)
             surface multiplication in (x, y, z) direction
-             eg. (1, 1, 4)
+            eg. (1, 1, 4)
         vacuum : float
             amout of empty space in z direction (Angstrem)
         slab_name : str
@@ -454,8 +451,8 @@ class WorkFlow:
             a dictionary with balsam execute parameters (cores, nodes, etc.),
             e.g.
             balsam_exe_settings = {'num_nodes': 1,
-                                   'ranks_per_node': 48,
-                                   'threads_per_rank': 1}
+                                    'ranks_per_node': 48,
+                                    'threads_per_rank': 1}
         calc_keywords : dict{str:str}
             a dictionary with parameters to run DFT package. Quantum Espresso
             is used as default, e.g.
