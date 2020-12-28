@@ -1,4 +1,3 @@
-import inputR2S
 from pynta.io import IO
 
 import os
@@ -13,6 +12,12 @@ from matplotlib.ticker import AutoMinorLocator
 class Results():
     def __init__(self) -> None:
         ''' A class to analyze the results of calculations '''
+
+        try:
+            import inputR2S
+        except ImportError:
+            pass
+
         surface_types_and_repeats = inputR2S.surface_types_and_repeats
         metal_atom = inputR2S.metal_atom
         self.yamlfile = inputR2S.yamlfile
@@ -55,26 +60,39 @@ class Results():
             r_name_list: List[str],
             p_name_list: List[str],
             slab_path: str) -> str:
-        ''' Calclate reaction energy as a difference between
-        the most stable product and the most stable reactant
+        ''' Calclate reaction energy as a difference between the most stable
+        product and the most stable reactant
 
         Parameters
         ----------
         minima_path : str
             a path to main minima directory
-            e.g. ``'Cu_111/minima'``
+            e.g.
+
+            >>> minima_path - 'Cu_111/minima'
+
         facetpath : str
             a path to the workflow's main dir
-            e.g. ``'Cu_111'``
-        r_name_list : list(str)
+
+            >>> facetpath = 'Cu_111'
+
+        r_name_list : List[str]
             a list with all reactants for the given reaction
-            e.g. ``['OH']``
-        p_name_list : list(str)
+            e.g.
+
+            >>> r_name_list = ['OH']
+
+        p_name_list : List[str]
             a list with all products for the given reaction
-            e.g. ``['O', 'H']``
+            e.g.
+
+            >>> p_name_list = ['O', 'H']
+
         slab_path : str
             a path to the slab
-            e.g. ``'Cu_111_slab_opt.xyz'``
+            e.g.
+
+            >>> slab_path = 'Cu_111_slab_opt.xyz'
 
         Returns
         -------
@@ -107,12 +125,12 @@ class Results():
 
         Returns
         -------
-        ts_ener : dict(str:dict(str:str))
+        ts_ener : Dict[str,Dict[str,str]]
             a dictionary with all barrier heights (kj/mol)
             in a format like below
 
             >>> ts_ener = {'Cu_111_OH_O+H':
-                {'TS_00': '155.27', 'TS_01': '157.97'}}
+                    {'TS_00': '155.27', 'TS_01': '157.97'}}
 
         '''
         ts_ener = {}
@@ -144,23 +162,37 @@ class Results():
         Parameters
         ----------
         minima_path : str
-            a path to main minima directory
-            e.g. ``'Cu_111/minima'``
+            a path to main minima directory, e.g.
+
+            >>> minima_path = 'Cu_111/minima'
+
         ts_path : str
-            a path to main TS directory
-            e.g. ``'Cu_111/TS_estimate_unique'``
+            a path to main TS directory, e.g.
+
+            >>> ts_path = 'Cu_111/TS_estimate_unique'
+
         facetpath : str
             a path to the workflow's main dir
-            e.g. ``'Cu_111'``
-        r_name_list : list(str)
+
+            >>> facetpath = 'Cu_111'
+
+        r_name_list : List[str]
             a list with all reactants for the given reaction
-            e.g. ``['OH']``
-        p_name_list : list(str)
+            e.g.
+
+            >>> r_name_list = ['OH']
+
+        p_name_list : List[str]
             a list with all products for the given reaction
-            e.g. ``['O', 'H']``
+            e.g.
+
+            >>> p_name_list = ['O', 'H']
+
         slab_path : str
             a path to the slab
-            e.g. ``'Cu_111_slab_opt.xyz'``
+            e.g.
+
+            >>> slab_path = 'Cu_111_slab_opt.xyz'
 
 
         Returns
@@ -199,21 +231,32 @@ class Results():
         Parameters
         ----------
         minima_path : str
-            a path to main minima directory
-            e.g. ``'Cu_111/minima'``
+            a path to main minima directory, e.g.
+
+            >>> minima_path = 'Cu_111/minima'
+
         facetpath : str
             a path to the workflow's main dir
-            e.g. ``'Cu_111'``
-        r_name_list : list(str)
+
+            >>> facetpath = 'Cu_111'
+
+        r_name_list : List[str]
             a list with all reactants for the given reaction
-            e.g. ``['OH']``
-        p_name_list : list(str)
+            e.g.
+
+            >>> r_name_list = ['OH']
+
+        p_name_list : List[str]
             a list with all products for the given reaction
-            e.g. ``['O', 'H']``
+            e.g.
+
+            >>> p_name_list = ['O', 'H']
+
         slab_path : str
             a path to the slab
-            e.g. ``'Cu_111_slab_opt.xyz'``
+            e.g.
 
+            >>> slab_path = 'Cu_111_slab_opt.xyz'
 
         Returns
         -------
@@ -241,7 +284,8 @@ class Results():
         Raises
         ------
         TypeError
-            If .out files are missing either for reactants or products
+            If :literal:`*.out` files are missing either for reactants
+            or products
 
         '''
         r_ener_list = []
@@ -285,13 +329,14 @@ class Results():
 
         Parameters
         ----------
-        slab_path: str
-            a path to the slab
-            e.g. ``'Cu_111_slab_opt.xyz'``
+        slab_path : str
+            a path to the slab, e.g.
+
+            >>> slab_path = 'Cu_111_slab_opt.xyz'
 
         Returns
         -------
-        slab_ener: float
+        slab_ener : float
             an energy of the slab in eV
 
         '''
@@ -306,13 +351,14 @@ class Results():
 
         Parameters
         ----------
-        ts_path: str
-            a path to main TS directory
-            e.g. ``'Cu_111/TS_estimate_unique'``
+        ts_path : str
+            a path to main TS directory, e.g.
+
+            >>> ts_path = 'Cu_111/TS_estimate_unique'
 
         Returns
         -------
-        ts_ener_list: List[float]
+        ts_ener_list : List[float]
             a sorted list with energy value for each TS
 
         '''
@@ -341,15 +387,23 @@ class Results():
 
         Parameters
         ----------
-        minima_path: str
-            a path to main minima directory
-            e.g. ``'Cu_111/minima'``
-        species: str
+        minima_path : str
+            a path to main minima directory, e.g.
+
+            >>> minima_path = 'Cu_111/minima'
+
+        species : str
             a metal_atom of the species
-            e.g. ``'OH', 'H', 'O'``
-        facetpath: str
+            e.g.
+
+            >>> species = 'OH'
+            >>> species = 'H'
+            >>> species = 'O'
+
+        facetpath : str
             a path to the workflow's main dir
-            e.g. ``'Cu_111'``
+
+            >>> facetpath = 'Cu_111'
 
         Returns
         -------
@@ -378,17 +432,17 @@ class Results():
     @staticmethod
     def get_ts_out_files(
             ts_path: str) -> List[str]:
-        ''' Get TS .out files
+        ''' Get TS :literal:`*.out` files
 
         Parameters
-        ----------
-        ts_path: str
-            a path to main TS directory
-            e.g. ``'Cu_111/TS_estimate_unique'``
+        ts_path : str
+            a path to main TS directory, e.g.
+
+            >>> ts_path = 'Cu_111/TS_estimate_unique'
 
         Returns
         -------
-        ts_out_file_list: List[str]
+        ts_out_file_list : List[str]
             a sorted list with paths to Sella's .out files for each TSs
 
         '''
@@ -416,19 +470,27 @@ class Results():
 
         Parameters
         ----------
-        minima_path: str
-            a path to main minima directory
-            e.g. ``'Cu_111/minima'``
-        species: str
+        minima_path : str
+            a path to main minima directory, e.g.
+
+            >>> minima_path = 'Cu_111/minima'
+
+        species : str
             a metal_atom of the species
-            e.g. ``'OH', 'H', 'O'``
-        facetpath: str
+            e.g.
+
+            >>> species = 'OH'
+            >>> species = 'H'
+            >>> species = 'O'
+
+        facetpath : str
             a path to the workflow's main dir
-            e.g. ``'Cu_111'``
+
+            >>> facetpath = 'Cu_111'
 
         Returns
         -------
-        species_out_file_path_list: List[str]
+        species_out_file_path_list : List[str]
             a list with paths to all minima Sella's * out files for given
             species
             e.g.
@@ -454,13 +516,14 @@ class Results():
 
         Parameters
         ----------
-        ts_path: str
-            a path to main TS directory
-            e.g. ``'Cu_111/TS_estimate_unique'``
+        ts_path : str
+            a path to main TS directory, e.g.
+
+            >>> ts_path = 'Cu_111/TS_estimate_unique'
 
         Returns
         -------
-        prefix_list: List[str]
+        prefix_list : List[str]
             a list with all prefixes for TSs
 
         '''
@@ -478,13 +541,17 @@ class Results():
 
         Parameters
         ----------
-        rxn_name: str
-            a reaction name having a format ``'OH_O+H'``
+        rxn_name : str
+            a reaction formatted as:
+
+            >>> rxn_name = 'OH_O+H'
 
         Returns
         ----------
-        rxn_name_title: str
-            a reaction name having a format ``'OH --> O+H'``
+        rxn_name_title : str
+            a reaction name having a format
+
+            >>> rxn_name_title = 'OH --> O+H'
 
         '''
         reactants, products = rxn_name.split('_')
@@ -503,13 +570,15 @@ class Results():
         Parameters
         ----------
         plot_filename: str, optional
-            a name of the file of generated plot, by default None
+            a name of the file of generated plot,
+            by default ``None``
         max_barrier: float, optional
-            all barriers lower then max_barrier will be ploted, by default None
+            all barriers lower then max_barrier will be ploted,
+            by default ``None``
         x_size_in: float, optional
-            x size of the plot in inches, by default 8
+            x size of the plot in inches, by default ``8``
         y_size_in: float, optional
-            y size of the plot in inches, by default 6
+            y size of the plot in inches, by default ``6``
 
         '''
         reaction_energies = self.get_reaction_energies_all()
@@ -552,7 +621,9 @@ class Results():
         ----------
         key: str
             a key to look up for a correct reactions, e.g.
-            ``'Cu_111_OH_O+H'``
+
+            >>> key = 'Cu_111_OH_O+H'
+
         reaction_energies: Dict[str: float]
             a dictionary with reaction energies for a given facetpath and
             rxn_name, e.g.
@@ -574,7 +645,7 @@ class Results():
             provide a title for the plot, optional
         apply_max_barrier: bool
             specify whether to apply a filter for a max barrier,
-            default = False
+            `False` by default
 
         '''
         if not plot_filename:

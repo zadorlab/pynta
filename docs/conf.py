@@ -8,7 +8,7 @@ sys.path.insert(0, os.path.abspath('../'))
 
 # -- Project information -----------------------------------------------------
 
-project = 'Pynta'
+project = 'Pynta '
 copyright = '2020, Maciej Gierada'
 author = 'Maciej Gierada'
 
@@ -59,7 +59,8 @@ html_last_updated_fmt = '%a, %d %b %Y %H:%M:%S'
 autodoc_mock_imports = [
     'balsam', 'inputR2S.optimize_slab', 'inputR2S.surface_types_and_repeats',
     'inputR2S.a', 'inputR2S.vacuum', 'inputR2S.pseudo_dir',
-    'inputR2S.pseudopotentials', 'inputR2S.yamlfile', 'inputR2S.scfactor',
-    'inputR2S.scaled1', 'inputR2S.scaled2', 'inputR2S.executable',
-    'inputR2S.node_packing_count', 'inputR2S.balsam_exe_settings',
-    'inputR2S.calc_keywords', 'inputR2S.creation_dir']
+    'inputR2S.metal_atom', 'inputR2S.pseudopotentials', 'inputR2S.yamlfile',
+    'inputR2S.scfactor', 'inputR2S.scaled1', 'inputR2S.scaled2',
+    'inputR2S.executable', 'inputR2S.node_packing_count',
+    'inputR2S.balsam_exe_settings', 'inputR2S.calc_keywords',
+    'inputR2S.creation_dir']

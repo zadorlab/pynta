@@ -587,8 +587,9 @@ class WorkFlow:
             pytemplate):
         ''' Create ``'01_{facetpath}_set_up_ads_on_slab_{rxn_name}.py'`` file
 
-        Parameters:
-        ___________
+        Parameters
+        ----------
+
         template : str
             a name of a template to set up `01` job
         py_job_dir : str
