@@ -771,15 +771,17 @@ class TS():
             a dictionary with QE pseudopotentials for all species.
             e.g.
 
-            >>> dict(Cu='Cu.pbe-spn-kjpaw_psl.1.0.0.UPF',
-                    H='H.pbe-kjpaw_psl.1.0.0.UPF',
-                    O='O.pbe-n-kjpaw_psl.1.0.0.UPF',
-                    C='C.pbe-n-kjpaw_psl.1.0.0.UPF')
+            >>> pseudopotentials = dict(Cu='Cu.pbe-spn-kjpaw_psl.1.0.0.UPF',
+                            H='H.pbe-kjpaw_psl.1.0.0.UPF',
+                            O='O.pbe-n-kjpaw_psl.1.0.0.UPF',
+                            C='C.pbe-n-kjpaw_psl.1.0.0.UPF')
 
         pseudo_dir : str
             a path to the QE's pseudopotentials main directory
             e.g.
-            ``'/home/mgierad/espresso/pseudo'``
+
+            >>> pseudo_dir = '/home/mgierad/espresso/pseudo'
+
         balsam_exe_settings : dict(str:str)
             a dictionary with balsam settings
         calc_keywords : dict(str:str)
