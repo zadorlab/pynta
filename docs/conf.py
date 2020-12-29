@@ -8,7 +8,7 @@ sys.path.insert(0, os.path.abspath('../'))
 
 # -- Project information -----------------------------------------------------
 
-project = 'Pynta '
+project = 'Pynta'
 copyright = '2020, Maciej Gierada'
 author = 'Maciej Gierada'
 
@@ -64,3 +64,10 @@ autodoc_mock_imports = [
     'inputR2S.executable', 'inputR2S.node_packing_count',
     'inputR2S.balsam_exe_settings', 'inputR2S.calc_keywords',
     'inputR2S.creation_dir']
+
+# # -- Options for LaTeX output ---------------------------------------------
+
+# latex_elements = {
+#     # Additional stuff for the LaTeX preamble.
+#     'preamble': '\\usepackage{typo3}'
+# }
