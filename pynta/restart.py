@@ -84,6 +84,20 @@ class LowLevelRestart():
         return unfinished_minima
 
     def get_ts_xtb_to_remove(self) -> List[str]:
+        ''' Get a list of all ts_xtb jobs for which initial :literal:`*.xyz`
+        files were generated but :literal:`*.py` not yet.
+
+        This method will take care of edge cases where the workflow execution
+        stopped while symmetry of initially generated :literal:`*.xyz` were
+        checking
+
+        Returns
+        -------
+        unfinished_ts_xtb : List[str]
+            a list of all ts_xtb jobs for which :literal:`*.xyz` files have to
+            be removed
+
+        '''
         all_unfinished = self.get_jobs_to_restart()
         unfinished_ts_xtb = []
         for key, value in all_unfinished.items():
@@ -166,12 +180,13 @@ class LowLevelRestart():
                 continue
 
     def remove_partialy_generated_xtb_run(self):
+        ''' Remove all partially generated :literal:`*.xyz` files as described
+        in :meth:`pynta.restart.LowLevelRestart.get_ts_xtb_to_remove`
+
+        '''
         unfinished_ts_xtb = self.get_ts_xtb_to_remove()
-        # unfinished_ts_xtb = ['02_Cu_111_set_up_TS_with_xtb_HCOOCH3_HCO+CH3O.py',
-        #                      '02_Cu_111_set_up_TS_with_xtb_OH_O+H.py']
 
         print('Removing partially generated TS_xtb jobs:')
-
         for ts_xtb in unfinished_ts_xtb:
             rxn_name = re.search('xtb_(.*).py', ts_xtb).group(1)
             facetpath = re.search('02_(.*)_set', ts_xtb).group(1)
