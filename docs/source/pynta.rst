@@ -26,6 +26,46 @@ pynta.check\_input module
    :undoc-members:
    :show-inheritance:
 
+pynta.excatkit.adsorption module
+--------------------------------
+
+.. automodule:: pynta.excatkit.adsorption
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+pynta.excatkit.gratoms module
+------------------------------
+
+.. automodule:: pynta.excatkit.gratoms
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+pynta.excatkit.molecule module
+------------------------------
+
+.. automodule:: pynta.excatkit.molecule
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+pynta.excatkit.symmetry module
+------------------------------
+
+.. automodule:: pynta.excatkit.symmetry
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+pynta.excatkit.utils module
+---------------------------
+
+.. automodule:: pynta.excatkit.utils
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 pynta.get\_slab module
 ----------------------
 

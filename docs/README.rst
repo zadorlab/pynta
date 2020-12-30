@@ -131,11 +131,7 @@ Make sure it works by running:
    >>> total_ener
    -137.9677758730299
 
-**Warning - You might be getting SEGFAULT error -**
-
-``Segmentation Fault (Core dumped)``
-
-**while executing any** ``xTB-python`` **job, especially for a relatively large molecules. The easiest solution is to unlimit the system stack to avoid stack overflows. In** ``bash`` **try:**
+.. warning:: You might be getting SEGFAULT error - ``Segmentation Fault (Core dumped)`` while executing any ``xTB-python`` job, especially for a relatively large molecules. The easiest solution is to unlimit the system stack to avoid stack overflows. In ``bash`` try
 
 .. code-block::
 
@@ -393,7 +389,8 @@ If you do not have a ``.yaml`` file with the reaction list but still want to use
 Using only SLURM
 --------------------
 
-**Warning `dev` branch uses SLURM scheduler to deal with the job dependencies. Be aware that it might be a bit buggy and do not fully support all the features implemented in the `master` branch.**
+.. warning:: ``dev`` branch uses SLURM scheduler to deal with the job dependencies. Be aware that it might be a bit buggy and do not fully support all the features implemented in the ``master`` branch.
+
 
 An example script (using ``dev`` branch - SLURM):
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

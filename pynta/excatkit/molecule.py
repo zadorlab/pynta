@@ -364,7 +364,7 @@ class Molecule():
         ''' Return an estimation of the 3D structure of a Gratoms object
             based on its graph.
 
-        WARNING: This function operates on the atoms object in-place.
+        .. warning:: This function operates on the atoms object in-place.
 
         Parameters
         ----------
