@@ -1,4 +1,6 @@
 import os
+import re
+import shutil
 from ase.io import read, write
 from ase.io.formats import UnknownFileTypeError
 from typing import Dict, List
@@ -40,6 +42,7 @@ class LowLevelRestart():
 
         '''
         self.prepare_minima_to_restart()
+        self.remove_partialy_generated_xtb_run()
         self.prepare_ts_to_restart()
         self.prepare_after_ts_to_restart()
 
@@ -79,6 +82,14 @@ class LowLevelRestart():
             if 'relax' in key:
                 unfinished_minima.append(key)
         return unfinished_minima
+
+    def get_ts_xtb_to_remove(self) -> List[str]:
+        all_unfinished = self.get_jobs_to_restart()
+        unfinished_ts_xtb = []
+        for key, value in all_unfinished.items():
+            if 'xtb' in key and 'AWAITING_PARENTS' not in value:
+                unfinished_ts_xtb.append(key)
+        return unfinished_ts_xtb
 
     def get_tss_to_restart(self) -> List[str]:
         ''' Go through all_unfinished dictionary and create a list with all
@@ -153,6 +164,27 @@ class LowLevelRestart():
                 # continue if *traj file is missing or it is empty
                 # hard HighLevelRestart is required
                 continue
+
+    def remove_partialy_generated_xtb_run(self):
+        unfinished_ts_xtb = self.get_ts_xtb_to_remove()
+        # unfinished_ts_xtb = ['02_Cu_111_set_up_TS_with_xtb_HCOOCH3_HCO+CH3O.py',
+        #                      '02_Cu_111_set_up_TS_with_xtb_OH_O+H.py']
+
+        print('Removing partially generated TS_xtb jobs:')
+
+        for ts_xtb in unfinished_ts_xtb:
+            rxn_name = re.search('xtb_(.*).py', ts_xtb).group(1)
+            facetpath = re.search('02_(.*)_set', ts_xtb).group(1)
+            path_to_ts_xtb = os.path.join(
+                self.current_dir, facetpath, rxn_name)
+
+            print('    * trying {}'.format(ts_xtb))
+            try:
+                shutil.rmtree(path_to_ts_xtb)
+                print('        Done')
+            except FileNotFoundError:
+                print('        \'.xyz\' files not found. Nothing to remove')
+                print('        ## check {} ##'.format(path_to_ts_xtb))
 
     def prepare_ts_to_restart(self) -> None:
         ''' If there is at least one optimization step in a .traj file
