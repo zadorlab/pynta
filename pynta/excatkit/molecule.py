@@ -62,6 +62,7 @@ class Molecule():
             Element numbers in associated species.
         counts : ndarray (n,)
             Count of each element in a species.
+
         '''
         parse = re.findall('[A-Z][a-z]?|[0-9]+', formula)
 
@@ -287,8 +288,8 @@ class Molecule():
             basis=None,
             adsorption=None):
         ''' Return the positions of a Gratoms object for a segment of its
-            attached graph. This function is mean to be iterated over by a
-            depth first search form NetworkX.
+        attached graph. This function is mean to be iterated over by a
+        depth first search form NetworkX.
 
         Parameters
         ----------
@@ -362,7 +363,7 @@ class Molecule():
             atoms,
             bond_index=None):
         ''' Return an estimation of the 3D structure of a Gratoms object
-            based on its graph.
+        based on its graph.
 
         .. warning:: This function operates on the atoms object in-place.
 

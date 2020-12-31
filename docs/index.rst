@@ -34,3 +34,7 @@ Acknowledgments
 If you are using ``pynta`` or you wish to use it, let me know!
 
 This work was supported by the U.S. Department of Energy, Office of Science, Basic Energy Sciences, Chemical Sciences, Geosciences and Biosciences Division, as part of the Computational Chemistry Sciences Program.
+
+.. |br| raw:: html
+
+   <br />

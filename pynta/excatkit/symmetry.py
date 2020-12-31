@@ -4,11 +4,11 @@ import spglib
 
 
 class Symmetry():
-    ''' Wrapper for the spglib package. '''
+    ''' Wrapper for the ``spglib`` package. '''
 
     def __init__(self, atoms, tol=1e-5, ang_tol=-1):
-        ''' Atoms object interface with spglib symmetry finder:
-            https://atztogo.github.io/spglib/python-spglib.html#python-spglib
+        ''' Atoms object interface with spglib `symmetry finder
+            <https://atztogo.github.io/spglib/python-spglib.html#python-spglib>`:
 
         Parameters
         ----------
@@ -66,6 +66,7 @@ class Symmetry():
             self,
             check_laue=False):
         ''' Return the point group operations of a systems.
+
         Parameters
         ----------
         check_laue: bool
@@ -91,15 +92,15 @@ class Symmetry():
         return pointgroup
 
     def get_lattice_name(self):
-        """Return the lattice name of an atoms object based
-        on its spacegroup number:
-        https: // en.wikipedia.org/wiki/List_of_space_groups
+        ''' Return the lattice name of an atoms object based
+        on its `spacegroup number <https://en.wikipedia.org/wiki/List_of_space_groups/>`:
 
         Returns
         -------
         lattice: str
             The name of the structures lattice.
-        """
+
+        '''
         space_group_number = self.data['number']
 
         if space_group_number in [146, 148, 155, 160, 161, 166, 167]:
@@ -120,10 +121,10 @@ class Symmetry():
 
 def get_modified_spin_symbols(numbers, magmoms):
     '''Return a representation of atomic symbols which is
-        unique to the magnetic moment as well.
+    unique to the magnetic moment as well.
 
-        This is effectivly creating a single integer which contains the
-        atomic number and the magnetic moment multiplied by 10.
+    This is effectivly creating a single integer which contains the
+    atomic number and the magnetic moment multiplied by 10.
 
     Parameters
     ----------

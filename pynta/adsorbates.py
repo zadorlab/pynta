@@ -187,6 +187,8 @@ class Adsorbates:
     def adjacency_to_3d(self) -> None:
         ''' Place adsorbates on the surface
 
+        .. todo:: Add support for a bidentate adsorption
+
         '''
         all_species_symbols = IO.get_all_unique_species(self.yamlfile)
         images = IO.get_all_images(self.yamlfile)

@@ -23,7 +23,8 @@ release = 'Jan 7, 2020'
 # ones.
 extensions = ['sphinx.ext.autodoc',
               'sphinx.ext.napoleon',
-              'sphinx.ext.viewcode']
+              'sphinx.ext.viewcode',
+              'sphinx.ext.todo']
 # 'm2r'
 
 # extensions = ['sphinx.ext.autodoc', 'sphinx.ext.napoleon']
@@ -41,6 +42,7 @@ napoleon_google_docstring = False
 napoleon_use_param = True
 napoleon_use_ivar = True
 napoleon_include_init_with_doc = True
+todo_include_todos = True
 
 # -- Options for HTML output -------------------------------------------------
 

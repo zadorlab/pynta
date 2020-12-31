@@ -624,6 +624,8 @@ class IO():
         ''' Convert RMGCat representation of species to Gratom object
         - the case of TS_guess
 
+        .. todo:: There is only one element for every reaction tested. |br| There will be a problem for AX + BX -> CX + DX
+
         Parameters
         ----------
         rxn : Dict[str, str]
@@ -640,9 +642,6 @@ class IO():
             :meth:`pynta.general_ts_guesses.decide`
 
         '''
-        # TODO
-        # there is only one element for every reaction tested. There will
-        # be a problem for AX + BX -> CX + DX
         ts_guess = IO.rmgcat_to_gratoms(
             rxn[easier_to_build].strip().split('\n'))
 
