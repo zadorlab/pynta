@@ -44,17 +44,49 @@ class AdsorbatePlacer:
 
     @property
     def nslab(self) -> int:
+        ''' How many atoms are in slab
+
+        Returns
+        -------
+        nslab : int
+            number of atoms in slab
+
+        '''
         return len(self.slab)
 
     @property
     def nadsorbate(self) -> int:
+        ''' How many atoms are in adsorbate
+
+        Returns
+        -------
+        nadsorbate : int
+            number of atoms in adsorbate
+
+        '''
         return len(self.adsorbate)
 
     @property
     def nx(self) -> int:
+        ''' Return the product of array elements over a given axis
+
+        Returns
+        -------
+        nx : int
+            product of array of elements self.adsorbate.positions.shape
+
+        '''
         return np.prod(self.adsorbate.positions.shape)
 
     def set_y(self, yin: np.ndarray) -> None:
+        ''' Set y axis
+
+        Parameters
+        ----------
+        yin : np.ndarray
+            an old y which is used to set a new one
+
+        '''
         ads = self.adsorbate.copy()
         center = yin[:3]
         axis = yin[3:]
@@ -64,6 +96,19 @@ class AdsorbatePlacer:
         self.ads_ref.positions[self.nslab:] = ads.positions
 
     def penalty(self, y: np.ndarray) -> float:
+        ''' Define a penalty function
+
+        Parameters
+        ----------
+        y : np.ndarray
+            an axis
+
+        Returns
+        -------
+        pen : float
+            a weighted penalty function
+
+        '''
         self.set_y(y)
         pen = 0.
         for bond, dist in zip(self.bonds, self.dists):
@@ -71,6 +116,19 @@ class AdsorbatePlacer:
         return pen * self.weight
 
     def dpdx(self, y: np.ndarray) -> np.ndarray:
+        ''' Return a flaten dpdx array
+
+        Parameters
+        ----------
+        y : np.ndarray
+            an axis
+
+        Returns
+        -------
+        dpdx : np.ndarray
+            a flaten dpdx array
+
+        '''
         self.set_y(y)
         dpdx = np.zeros((self.nadsorbate, 3))
         for bond, dist in zip(self.bonds, self.dists):
@@ -84,13 +142,52 @@ class AdsorbatePlacer:
         return dpdx.ravel()
 
     def penalty_jac(self, y: np.ndarray) -> np.ndarray:
+        ''' Deal with jacobians
+
+        Parameters
+        ----------
+        y : np.ndarray
+            an axis
+
+        Returns
+        -------
+        self.dpdx(y) @ self.dxdy(y) : np.ndarray
+            a product of multiplied matrix
+
+        '''
         return self.dpdx(y) @ self.dxdy(y)
 
     def x(self, y: np.ndarray) -> np.ndarray:
+        ''' Return a flaten array of adsorbate positions
+
+        Parameters
+        ----------
+        y : np.ndarray
+            an axis
+
+        Returns
+        -------
+        np.ndarray
+            a flaten array of adsorbate positions
+
+        '''
         self.set_y(y)
         return self.ads_ref.positions[self.nslab:].ravel().copy()
 
     def dxdy(self, y: np.ndarray) -> np.ndarray:
+        ''' Get a dxdy array
+
+        Parameters
+        ----------
+        y : np.ndarray
+            an axis
+
+        Returns
+        -------
+        dxdy : np.ndarray
+            a reshaped (-1, 6) dxdy array
+
+        '''
         self.set_y(y)
         dxdy = np.zeros((self.nadsorbate, 3, 6))
         dxdy[:, :, :3] = np.eye(3)[np.newaxis]
@@ -116,9 +213,35 @@ class AdsorbatePlacer:
         return dxdy.reshape((-1, 6))
 
     def energy(self, y: np.ndarray) -> float:
+        ''' Return a sum of penalty function and total energy
+
+        Parameters
+        ----------
+        y : np.ndarray
+            an axis
+
+        Returns
+        -------
+        energy : float
+            a sum of penalty function and total energy
+
+        '''
         return self.penalty(y) + self.ads_ref.get_potential_energy()
 
     def gradient(self, y: np.ndarray) -> np.ndarray:
+        ''' Return a scaled gradient
+
+        Parameters
+        ----------
+        y : np.ndarray
+            an axis
+
+        Returns
+        -------
+        np.ndarray
+            a scaled gradient
+
+        '''
         jac = self.penalty_jac(y)
         forces = self.ads_ref.get_forces()
         if self.trajectory is not None:
@@ -144,8 +267,10 @@ class AdsorbatePlacer:
 
         Returns
         -------
-        Atoms
-            [description]
+        ads_ref : Atoms
+            a new structure with improve location of TS guess for which the
+            penalty function is in minimum
+
         '''
         y0 = np.zeros(6)
         y0[:3] = self.ads_ref.positions[self.nslab:].mean(0)
