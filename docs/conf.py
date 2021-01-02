@@ -24,7 +24,8 @@ release = 'Jan 7, 2020'
 extensions = ['sphinx.ext.autodoc',
               'sphinx.ext.napoleon',
               'sphinx.ext.viewcode',
-              'sphinx.ext.todo']
+              'sphinx.ext.todo',
+              'sphinx.ext.mathjax']
 # 'm2r'
 
 # extensions = ['sphinx.ext.autodoc', 'sphinx.ext.napoleon']

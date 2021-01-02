@@ -127,6 +127,26 @@ class AdsorbatePlacer:
         return jac * self.scale
 
     def optimize(self) -> Atoms:
+        ''' Minimize penalty function defined as:
+
+        .. math::
+            P = min\\left[E_{xTB} + \\sum_{i = 1}^{N}{\\left(r^{ts\\_guess}_{X_i M} - \\overline{{r^{min}_{X_{i} M}}}\\right)^2}\\right]
+
+        Where: 
+
+        :math:`r^{ts\\_guess}_{X_i M}` -- distance between reacting atom and the nearest surface atom in a TS guess;
+
+        :math:`\overline{{r^{min}_{X_{i} M}}}` -- target bond distance, i.e. an average distance between reacting atom and the nearest surface atom calculated for all symmetry distinct minima;
+
+        :math:`N` -- number of atoms included in a penalty function definition;
+
+        :math:`E_{xTB}` -- total energy of the system calculated using a robust semi-empirical xTB code 
+
+        Returns
+        -------
+        Atoms
+            [description]
+        '''
         y0 = np.zeros(6)
         y0[:3] = self.ads_ref.positions[self.nslab:].mean(0)
         y0[3:] = 0.001
