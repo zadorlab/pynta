@@ -586,8 +586,9 @@ class Results():
         all_rxn_names = IO().get_list_all_rxns_names(self.yamlfile)
         n_facets = len(self.facetpaths)
         n_rxns = len(all_rxn_names)
-        n_facets = 2
-        _, axes = plt.subplots(n_facets, n_rxns)
+        _, axes = plt.subplots(n_facets, n_rxns, squeeze=False)
+
+        # print(axes)
         for num, rxn in enumerate(self.reactions):
             for ax, facetpath, in zip(axes, self.facetpaths):
                 rxn_name = IO().get_rxn_name(rxn)
@@ -681,11 +682,11 @@ class Results():
             # plt.annotate('{:.2f}'.format(barrier),
             #              (2.5, barrier_position), ha='center')
 
-        # # add lablel with the 0 ener for reactants
+        # add lablel with the 0 ener for reactants
         axes[num].annotate('{:.2f}'.format(energy_0), (0.5, 5), ha='center')
         axes[num].annotate(reactants, (0.5, -8), ha='center')
 
-        # # add lablel with the reaction energy for products
+        # add lablel with the reaction energy for products
         axes[num].annotate('{:.2f}'.format(reaction_energy),
                            (4.5, rxn_ener_position), ha='center')
         axes[num].annotate(
