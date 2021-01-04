@@ -68,6 +68,29 @@ class BalsamCalculator(FileIOCalculator):
         job_kwargs: Dict[str, Any] = dict(),
         **kwargs: Any
     ) -> None:
+        ''' Define Balsam Calculator
+
+        Parameters
+        ----------
+        workflow : str
+            name of the workflow, e.g.
+
+            >>> workflow='QE_Socket'
+
+        label : str, optional
+            label for the created balsam calculator, by default 'balsam'
+        atoms : Atoms, optional
+            an Atoms object, by default None
+        job_args : str, optional
+            by default None
+        job_kwargs : Dict[str, Any], optional
+            by default dict(), e.g.
+
+            >>> balsam_exe_settings = {'num_nodes': 1,
+                                    'ranks_per_node': 48,
+                                    'threads_per_rank': 1}
+
+        '''
         FileIOCalculator.__init__(
             self,
             restart=None,
@@ -84,6 +107,7 @@ class BalsamCalculator(FileIOCalculator):
 
     @classmethod
     def create_application(cls) -> None:
+        ''' Create a balsam calculator application '''
         try:
             app = ApplicationDefinition.objects.get(
                 name=cls.__name__
@@ -100,6 +124,14 @@ class BalsamCalculator(FileIOCalculator):
                 app.save()
 
     def format_args(self) -> str:
+        ''' Format args
+
+        Returns
+        -------
+        args : str
+            formated args
+
+        '''
         args = self.args.replace('PREFIX', self.prefix)
         if self.job_args is not None:
             args = self.job_args + ' ' + args
@@ -111,6 +143,18 @@ class BalsamCalculator(FileIOCalculator):
         properties: List[str] = None,
         system_changes: List[str] = None
     ) -> None:
+        ''' Prepare input
+
+        Parameters
+        ----------
+        atoms : Atoms
+            an Atom object representing the system studied
+        properties : List[str], optional
+            by default None
+        system_changes : List[str], optional
+            by default None
+
+        '''
         FileIOCalculator.write_input(self, atoms, properties, system_changes)
         write(
             self.inp_name.replace('PREFIX', self.label),
@@ -120,6 +164,14 @@ class BalsamCalculator(FileIOCalculator):
         )
 
     def create_job(self) -> BalsamJob:
+        ''' Create a balsam job
+
+        Returns
+        -------
+        BalsamJob
+            a job that is about to be added to balsam DB
+
+        '''
         return BalsamJob(
             name=self.prefix,
             workflow=self.workflow,
@@ -129,12 +181,38 @@ class BalsamCalculator(FileIOCalculator):
         )
 
     def kill_job(self) -> None:
+        ''' Kill job once its status is in ``UNFINISHED_STATES``
+
+        >>> UNFINISHED_STATES = [
+                            'CREATED',
+                            'AWAITING_PARENTS',
+                            'READY',
+                            'STAGED_IN',
+                            'PREPROCESSED',
+                            'RUNNING',
+                            'RUN_DONE',
+                            'POSTPROCESSED']
+
+        '''
         if self.job is None:
             return
         if self.job.state in UNFINISHED_STATES:
             kill(self.job)
 
     def job_running(self, state: str) -> bool:
+        ''' Check is job is running
+
+        Parameters
+        ----------
+        state : str
+            a state of the job as return from ``job.state``
+
+        Returns
+        -------
+        bool
+            ``True`` if current job is still running. ``False`` otherwise
+
+        '''
         if state in UNFINISHED_STATES:
             return True
         if state in FAIL_STATES:
@@ -151,6 +229,18 @@ class BalsamCalculator(FileIOCalculator):
         properties: List[str] = ['energy'],
         system_changes: List[str] = all_changes
     ) -> None:
+        ''' Run calculator
+
+        Parameters
+        ----------
+        atoms : Atoms
+            an Atom object representing the system studied, by default None
+        properties : List[str], optional
+            by default ['energy']
+        system_changes : List[str], optional
+            by default all_changes
+
+        '''
         Calculator.calculate(self, atoms, properties, system_changes)
         self.job = self.create_job()
         self.directory = self.job.working_directory
@@ -164,6 +254,7 @@ class BalsamCalculator(FileIOCalculator):
         self.read_results()
 
     def read_results(self) -> None:
+        '''Read results of calculations '''
         out = read(
             self.out_name.replace('PREFIX', self.label), format=self.out_format
         )
@@ -194,6 +285,29 @@ class BalsamSocketIOCalculator(BalsamCalculator, SocketIOCalculator):
         job_kwargs: Dict[str, Any] = dict(),
         **kwargs: Any
     ) -> None:
+        ''' Define Balsam Socket IO Calculator
+
+        Parameters
+        ----------
+        workflow : str
+            name of the workflow, e.g.
+
+            >>> workflow='QE_Socket'
+
+        label : str, optional
+            label for the created balsam calculator, by default 'balsam'
+        atoms : Atoms, optional
+            an Atoms object, by default None
+        job_args : str, optional
+            by default None
+        job_kwargs : Dict[str, Any], optional
+            by default dict(), e.g.
+
+            >>> balsam_exe_settings = {'num_nodes': 1,
+                                    'ranks_per_node': 48,
+                                    'threads_per_rank': 1}
+
+        '''
         SocketIOCalculator.__init__(self, port=0)
         self._port = self.server.serversocket.getsockname()[1]
         BalsamCalculator.__init__(
@@ -212,6 +326,18 @@ class BalsamSocketIOCalculator(BalsamCalculator, SocketIOCalculator):
         properties: List[str] = ['energy'],
         system_changes: List[str] = all_changes
     ) -> None:
+        ''' Run calculator
+
+        Parameters
+        ----------
+        atoms : Atoms
+            an Atom object representing the system studied, by default None
+        properties : List[str], optional
+            by default ['energy']
+        system_changes : List[str], optional
+            by default all_changes
+
+        '''
         Calculator.calculate(self, atoms, properties, system_changes)
         if self.job is None or not self.job_running(self.job.state):
             self.job = self.create_job()
@@ -231,6 +357,13 @@ class EspressoBalsamSocketIO(BalsamSocketIOCalculator):
     ignore_fail = True
 
     def format_args(self) -> str:
+        ''' Format args
+
+        Returns
+        -------
+        args str
+            formatted args
+        '''
         return (
             BalsamCalculator.format_args(self)
             .replace('HOSTNAME', socket.gethostname())
