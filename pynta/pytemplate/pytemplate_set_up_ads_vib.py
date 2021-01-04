@@ -19,18 +19,18 @@ timelog_file = os.path.join(outdir, '00_time.log')
 
 atoms = read(geom)
 
-# # freeze half botom of the slab
-# atoms.set_constraint(FixAtoms([
-#     atom.index for atom in atoms if atom.position[2] < atoms.cell[2, 2] / 2.
-# ]))
+# freeze half botom of the slab
+atoms.set_constraint(FixAtoms([
+    atom.index for atom in atoms if atom.position[2] < atoms.cell[2, 2] / 2.
+]))
 # freeze all surface atoms
-atoms.set_constraint(FixAtoms(
-    [atom.index for atom in atoms if atom.symbol == 'Cu']))
+# atoms.set_constraint(FixAtoms(
+#     [atom.index for atom in atoms if atom.symbol == 'Cu']))
 # vibrate only adsorbed species
-indices = [atom.index for atom in atoms if atom.symbol != 'Cu']
+# indices = [atom.index for atom in atoms if atom.symbol != 'Cu']
 # vibrate adsorbates and 2 first layesr of the slab
-# indices = [atom.index for atom in atoms if atom.position[2]
-#            < atoms.cell[2, 2] / 2.]
+indices = [atom.index for atom in atoms if atom.position[2]
+           < atoms.cell[2, 2] / 2.]
 
 extra_calc_keywords = dict(
     pseudopotentials={pseudopotentials},
