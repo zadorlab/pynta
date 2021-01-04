@@ -12,8 +12,8 @@ class Show():
     def how_many_still_running(self):
         ''' Show how many jobs required restart
 
-        Returns:
-        ________
+        Returns
+        -------
         len(running_jobs) : int
             a number of jobs that has to be restarted
 
@@ -26,7 +26,7 @@ class Show():
 
     def status(self) -> None:
         ''' Show info about the current status of the Balsam DB, i.e.
-            How many jobs are running? How many already finished? etc...
+        How many jobs are running? How many already finished? etc...
 
         '''
         job_states = []

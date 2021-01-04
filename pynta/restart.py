@@ -1,4 +1,6 @@
 import os
+import re
+import shutil
 from ase.io import read, write
 from ase.io.formats import UnknownFileTypeError
 from typing import Dict, List
@@ -6,21 +8,24 @@ from typing import Dict, List
 
 class LowLevelRestart():
     ''' Low level restart means that each quantum chemistry job that can be
-        restarted will be restarted. These are:
-            * adsorbates minimization
-            * TSs optimization
-            * optimization of reactants and products as from TS
-            (IRC alternative)
+    restarted will be restarted.
 
-        For those jobs, once restarted, calculations will start from the last
-        converged optimization step.
+    These include:
 
-        For other types of jobs, including:
-            * vibrational frequencies calculations of adsorbates and TSs
-            * xTB + penalty function minimization to get TS guesses
+        * adsorbates minimization
+        * TSs optimization
+        * optimization of reactants and products as from TS (IRC alternative)
 
-        low level restart is not possible, so they will start from scratch,
-        during high level restart.
+    For those jobs, once restarted, calculations will start from the last
+    converged optimization step.
+
+    For other types of jobs, including:
+
+        * vibrational frequencies calculations of adsorbates and TSs
+        * xTB + penalty function minimization to get TS guesses
+
+    low level restart is not possible, so they will start from scratch,
+    during high level restart.
 
     '''
 
@@ -32,18 +37,25 @@ class LowLevelRestart():
             application__contains='python')
 
     def restart(self) -> None:
+        ''' Run low level restart - restart jobs from the last converged point,
+        if possible.
+
+        '''
         self.prepare_minima_to_restart()
+        self.remove_partialy_generated_xtb_run()
         self.prepare_ts_to_restart()
         self.prepare_after_ts_to_restart()
 
     def get_jobs_to_restart(self) -> Dict[str, str]:
         ''' Get a dictionary with all ase_jobs that did not finish
 
-        Returns:
-        ________
+        Returns
+        -------
         all_unfinished: Dict[str, str]
-            a dictionary with all unfinished jobs, e.g.
-            all_unfinished = {Cu_111_C_01_relax.py: 'RUNNING'}
+            a dictionary with all unfinished jobs,
+            e.g.
+
+            >>> all_unfinished = {Cu_111_C_01_relax.py: 'RUNNING'}
 
         '''
         all_unfinished = {}
@@ -54,13 +66,13 @@ class LowLevelRestart():
 
     def get_minima_to_restart(self) -> List[str]:
         ''' Go through all_unfinished dictionary and create a list with all
-            minima ase jobs that started but are not yet finished and require
-            to be restarted.
+        minima ase jobs that started but are not yet finished and require
+        to be restarted.
 
         Returns
         -------
         unfinished_minima : list(str)
-            a list with all *py files for minima optimization which
+            a list with all :literal:`*.py` files for minima optimization which
             did not finished
 
         '''
@@ -71,16 +83,38 @@ class LowLevelRestart():
                 unfinished_minima.append(key)
         return unfinished_minima
 
+    def get_ts_xtb_to_remove(self) -> List[str]:
+        ''' Get a list of all ts_xtb jobs for which initial :literal:`*.xyz`
+        files were generated but :literal:`*.py` not yet.
+
+        This method will take care of edge cases where the workflow execution
+        stopped while symmetry of initially generated :literal:`*.xyz` were
+        checking
+
+        Returns
+        -------
+        unfinished_ts_xtb : List[str]
+            a list of all ts_xtb jobs for which :literal:`*.xyz` files have to
+            be removed
+
+        '''
+        all_unfinished = self.get_jobs_to_restart()
+        unfinished_ts_xtb = []
+        for key, value in all_unfinished.items():
+            if 'xtb' in key and 'AWAITING_PARENTS' not in value:
+                unfinished_ts_xtb.append(key)
+        return unfinished_ts_xtb
+
     def get_tss_to_restart(self) -> List[str]:
         ''' Go through all_unfinished dictionary and create a list with all
-            TS ase jobs that started but are not yet finished and require to be
-            restarted.
+        TS ase jobs that started but are not yet finished and require to be
+        restarted.
 
         Returns
         -------
         unfinished_tss : list(str)
-            a list with all *py files for started but yet finished saddle
-            point optimizations
+            a list with all :literal:`*.py` files for started but yet
+            unfinished 1st order saddle point optimizations
 
         '''
         all_unfinished = self.get_jobs_to_restart()
@@ -96,14 +130,15 @@ class LowLevelRestart():
 
     def get_after_ts_to_restart(self) -> List[str]:
         ''' Go through all_unfinished dictionary and create a list with all
-            after_ts ase jobs that started but are not yet finished and
-            require to berestarted.
+        after_ts ase jobs that started but are not yet finished and
+        require to berestarted.
 
         Returns
         -------
         unfinished_after_tss : list(str)
-            a list with unique *py file names for started but yet finished
-            minimization of reactants and products after TS calculations
+            a list with unique :literal:`*.py` file names for started but
+            yet finishedminimization of reactants and products
+            after TS calculations
 
         '''
         all_unfinished = self.get_jobs_to_restart()
@@ -118,10 +153,12 @@ class LowLevelRestart():
 
     def prepare_minima_to_restart(self) -> None:
         ''' If there is at least one optimization step in a .traj file
-            for a given minima, this method will create a new *.xyz file for
-            that job from the last converged opt step.
-            So, when HighLevelRestart is executed, the optimization can resume
-            from the last converged step, taking advantade of previous calcs.
+        for a given minima, this method will create a new :literal:`*.xyz`
+        file for that job from the last converged opt step.
+
+        So, when :class:`pynta.restart.HighLevelRestart` is executed,
+        the optimization can resume from the last converged step, taking
+        advantade of previous calculations.
 
         '''
         unfinished_minima = self.get_minima_to_restart()
@@ -142,16 +179,42 @@ class LowLevelRestart():
                 # hard HighLevelRestart is required
                 continue
 
+    def remove_partialy_generated_xtb_run(self):
+        ''' Remove all partially generated :literal:`*.xyz` files as described
+        in :meth:`pynta.restart.LowLevelRestart.get_ts_xtb_to_remove`
+
+        '''
+        unfinished_ts_xtb = self.get_ts_xtb_to_remove()
+
+        print('Removing partially generated TS_xtb jobs:')
+        for ts_xtb in unfinished_ts_xtb:
+            rxn_name = re.search('xtb_(.*).py', ts_xtb).group(1)
+            facetpath = re.search('02_(.*)_set', ts_xtb).group(1)
+            path_to_ts_xtb = os.path.join(
+                self.current_dir, facetpath, rxn_name)
+
+            print('    * trying {}'.format(ts_xtb))
+            try:
+                shutil.rmtree(path_to_ts_xtb)
+                print('        Done')
+            except FileNotFoundError:
+                print('        \'.xyz\' files not found. Nothing to remove')
+                print('        ## check {} ##'.format(path_to_ts_xtb))
+
     def prepare_ts_to_restart(self) -> None:
         ''' If there is at least one optimization step in a .traj file
-            for a given ts, this method will create a new *.xyz file for
-            that job from the last converged saddle point opt step.
-            So, when HighLevelRestart is executed, the optimization can resume
-            from the last converged step, taking advantade of previous calcs.
+        for a given ts, this method will create a new :literal:`*.xyz` file for
+        that job from the last converged saddle point opt step.
+
+        So, when :class:`pynta.restart.HighLevelRestart` is executed,
+        the optimization can resume from the last converged step, taking
+        advantade of previous calculations.
 
         '''
         unfinished_tss = self.get_tss_to_restart()
+
         print('Restarting TSs:')
+
         for ts in unfinished_tss:
             print('    {}'.format(ts))
             prefix, metal_symbol, facet, react, prod, _ = ts.split(
@@ -179,10 +242,12 @@ class LowLevelRestart():
 
     def prepare_after_ts_to_restart(self) -> None:
         ''' If there is at least one optimization step in a .traj file
-            for a given after_ts, this method will create a new *.xyz file for
-            that job from the last converge opt step.
-            So, when HighLevelRestart is executed, the optimization can resume
-            from the last converged step, taking advantade of previous calcs.
+        for a given after_ts, this method will create a new :literal:`*.xyz`
+        file for that job from the last converge opt step.
+
+        So, when :class:`pynta.restart.HighLevelRestart` is executed,
+        the optimization can resume from the last converged step, taking
+        advantade of previous calculations.
 
         '''
         unfinished_after_tss = self.get_after_ts_to_restart()
@@ -215,8 +280,8 @@ class LowLevelRestart():
 
 class HighLevelRestart():
     ''' High level restart means that each ASE job that has an unfinished
-        status will be restarted. All balsam jobs will be removed. They will be
-        regenerated once ASE jobs start again.
+    status will be restarted. All balsam jobs will be removed. They will be
+    regenerated once ASE jobs start again.
 
     '''
 
@@ -228,7 +293,7 @@ class HighLevelRestart():
             application__contains='python')
 
     def restart(self) -> None:
-        ''' Prepare all unfinished jobs to restart
+        ''' Prepare all unfinished jobs to restart.
 
         '''
         # remove all balsam calculator objects
@@ -243,6 +308,10 @@ class HighLevelRestart():
         self.set_awaiting_status()
 
     def set_awaiting_status(self):
+        ''' Make sure that jobs which not yet started and depends on other jobs
+        have an ``'AWAITING_PARENTS'`` status
+
+        '''
         for job in self.ase_jobs:
             if len(job.parents) > 2 and job.state != 'JOB_FINISHED':
                 job.state = 'AWAITING_PARENTS'

@@ -16,8 +16,8 @@ nm = nx.algorithms.isomorphism.numerical_node_match('number', 1)
 class Gratoms(ase.Atoms):
     ''' Graph based atoms object.
 
-        An Integrated class for an ASE atoms object with a corresponding
-        Networkx Graph.
+    An Integrated class for an ASE atoms object with a corresponding
+    Networkx Graph.
 
     '''
 
@@ -182,14 +182,14 @@ class Gratoms(ase.Atoms):
             i):
         ''' Return a subset of the atoms.
 
-            i -- scalar integer, list of integers, or slice object
-            describing which atoms to return.
+        i -- scalar integer, list of integers, or slice object
+        describing which atoms to return.
 
-            If i is a scalar, return an Atom object. If i is a list or a
-            slice, return an Atoms object with the same cell, pbc, and
-            other associated info as the original Atoms object. The
-            indices of the constraints will be shuffled so that they match
-            the indexing in the subset returned.
+        If i is a scalar, return an Atom object. If i is a list or a
+        slice, return an Atoms object with the same cell, pbc, and
+        other associated info as the original Atoms object. The
+        indices of the constraints will be shuffled so that they match
+        the indexing in the subset returned.
 
         '''
         if isinstance(i, (int, np.int64)):

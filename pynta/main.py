@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+
 from pynta.check_input import InputChecker
 from pynta.restart import LowLevelRestart, HighLevelRestart
 from pynta.io import IO
@@ -24,19 +24,15 @@ check_inputR2S = os.path.join(working_dir, 'inputR2S.py')
 check_run_me_py = os.path.join(working_dir, 'run_me.py')
 check_run_me_sh = os.path.join(working_dir, 'run_me.sh')
 
-InputChecker(check_yaml, check_inputR2S, check_run_me_py,
-             check_run_me_sh, working_dir).check_all()
 
 # add working dir to system path
 sys.path.insert(1, working_dir)
-
 try:
     import inputR2S
-    """
-    User defined parameters
-
-    Here we only read them. They are set up in inputR2S.py (submit directory)
-    """
+    InputChecker(check_yaml, check_inputR2S, check_run_me_py,
+                 check_run_me_sh, working_dir).check_all()
+    # User defined parameters. Here pynta willonly read them. They are set up
+    # in inputR2S.py (submit directory)
 except ImportError:
     warn(
         'Missing input file. You cannot run calculations '
@@ -68,9 +64,9 @@ else:
     facetpaths = IO().get_facetpaths(metal_atom, surface_types)
     job_file_dir_name = 'job_files'
 
-####################################################
-#                    Scripts                       #
-####################################################
+# ###################################################
+#                     Scripts                       #
+# ###################################################
 
 # These template and pytemplate scripts can be modified by users
 # (np intended, though) to tune them to given calculation setup,
@@ -119,10 +115,11 @@ slab_opt = '00_set_up_slab_opt.py'
 class WorkFlow:
 
     def __init__(self):
-        ''' Setup the balsam application for this workflow run.
+        ''' Setup the balsam application.
 
-            Once we start using QE will want one app for QE,
-            one for xtb most likely
+        Once Quantum Chemistry calculations starts there will be one app for
+        desired QE (e.g. `Quantum Espresso`) package and one for ``xTB``.
+
         '''
         print('Checking Balsam DB...')
         try:
@@ -151,7 +148,7 @@ class WorkFlow:
             print('---')
 
     @staticmethod
-    def get_ts_xtb_py_script_list(
+    def get_ts_xtb_py_scripts_list(
             facetpath: str) -> List[str]:
         '''Get a list with all 02 job scripts
 
@@ -159,12 +156,12 @@ class WorkFlow:
         ----------
         facetpath : str
             a path to the workflow's main dir
-            e.g. 'Cu_111'
+            e.g. ``'Cu_111'``
 
         Returns
         -------
-        ts_with_xtb_py_script_list : list(str)
-            a list with all ts_with_xtb_py jobs for a given facetpath
+        ts_with_xtb_py_script_list : List[str]
+            a list with all ``xTB`` jobs for a given facetpath
 
         '''
         reactions = IO().open_yaml_file(yamlfile)
@@ -181,16 +178,16 @@ class WorkFlow:
             facetpath: str) -> List[str]:
         ''' Get a list with all 03 job scripts
 
-        Parameters:
+        Parameters
         ----------
         facetpath : str
             a path to the workflow's main dir
-            e.g. 'Cu_111'
+            e.g. ``'Cu_111'``
 
-        Returns:
+        Returns
         -------
-        ts_sella_py_script_list : list(str)
-            a list with all ts_sella_py jobs for a given facetpath
+        ts_sella_py_script_list : List[str]
+            a list with all ``ts_sella_py`` jobs for a given facetpath
 
         '''
         reactions = IO().open_yaml_file(yamlfile)
@@ -206,15 +203,15 @@ class WorkFlow:
             facetpath: str) -> List[str]:
         ''' Get a list with all 04 job scripts
 
-        Parameters:
+        Parameters
         ----------
         facetpath : str
             a path to the workflow's main dir
-            e.g. 'Cu_111'
+            e.g. ``'Cu_111'``
 
-        Returns:
+        Returns
         -------
-        ts_vib_py_scripts_list : list(str)
+        ts_vib_py_scripts_list : List[str]
             a list with all ts_vib_py jobs for a given facetpath
 
         '''
@@ -231,15 +228,15 @@ class WorkFlow:
             facetpath: str) -> List[str]:
         ''' Get a list with all 05 job scripts
 
-        Parameters:
+        Parameters
         ----------
         facetpath : str
             a path to the workflow's main dir
-            e.g. 'Cu_111'
+            e.g. ``'Cu_111'``
 
         Returns:
         -------
-        after_ts_py_scripts_list : list(str)
+        after_ts_py_scripts_list : List[str]
             a list with all after_ts_py jobs for a given facetpath
 
         '''
@@ -258,23 +255,31 @@ class WorkFlow:
             slab_name: str,
             repeats: Tuple[int, int, int],
             creation_dir: PosixPath) -> None:
-        ''' Create a ase pyjob for big slab optimization
+        ''' Create a python ASE job file for a big slab optimization
 
         Parameters
         ----------
-        pytemplate : python file
-            a template to prepare submission scripts
+        pytemplate : str
+            a name of a template to prepare submission scripts
             for big_slab minimization
         facetpath : str
             a path to the workflow's main dir
-            e.g. 'Cu_111'
+            e.g.
+
+            >>> facetpath = 'Cu_111'
+
         slab_name : str
             name of the slab file (no extintion) that is about to be created
             e.g.
-            slab_name = 'Cu_111_slab_opt'
-        repeats : tuple(int, int, int)
+
+            >>> slab_name = 'Cu_111_slab_opt'
+
+        repeats : Tuple[int, int, int]
             how to replicate unit cell in (x, y, z) direction,
-            e.g. (3, 3, 1)
+            e.g.
+
+            >>> repeats = (3, 3, 1)
+
         creation_dir : posix
             a posix path to the working directory
 
@@ -298,8 +303,8 @@ class WorkFlow:
 
     @staticmethod
     def create_job_files() -> None:
-        ''' For each surface type and for each reaction
-            generate submit scripts for 6 stages of the workflow
+        ''' For each surface type and for each reaction generate submit scripts
+        for 6 stages of the workflow
 
         '''
         for surface_type, reps in surface_types_and_repeats.items():
@@ -409,62 +414,82 @@ class WorkFlow:
             surface_type: str,
             repeats_surface: Tuple[int, int, int],
             slab_name: str) -> None:
-        ''' Create 00_{facetpath}_set_up_slab_opt.py file
+        ''' Create ``'00_{facetpath}_set_up_slab_opt.py'`` file
 
         Parameters
         ----------
-        template : py file
-            a template for 00 job (slab optimization)
+        template : str
+            a name of a template for ``00`` job (slab optimization)
         py_job_dir : str
-            a path to where all job files 00-05 are about to be created, e.g.
-            {'current_dir'}/job_files/Cu_111
+            a path to where all job files ``00``-``05`` are about to be
+            created, e.g.
+
+            >>> py_job_dir = {'current_dir'}/job_files/Cu_111
+
         facetpath : str
             a path to the workflow's main dir
-            e.g. 'Cu_111'
+
+            >>> facetpath = 'Cu_111'
+
         surface_type : str
             type of the surface. Available options are:
             fcc111, fcc211, fcc100, bcc111, bcc110, hcp0001, diamond111,
             diamond100
         metal_atom : str
             atomic metal_atom of the studied metal surface
-            e.g. 'Cu'
+            e.g. ``'Cu'``
         a : float
             a lattice constant
-        repeats_surface : tuple(int, int, int)
+        repeats_surface : Tuple[int, int, int]
             surface multiplication in (x, y, z) direction
-             eg. (1, 1, 4)
+            eg.
+
+            >>> repeats_surface = (1, 1, 4)
+
         vacuum : float
-            amout of empty space in z direction (Angstrem)
+            amout of empty space in ``z`` direction (Angstrem)
         slab_name : str
             name of the slab file (no extintion) that is about to be created
             e.g.
-            slab_name = 'Cu_111_slab_opt'
-        pseudopotentials : dict{str:str}
+
+            >>> slab_name = 'Cu_111_slab_opt'
+
+        pseudopotentials : Dict[str,str]
             a dictionary with QE pseudopotentials for all species.
             e.g.
-            dict(Cu='Cu.pbe-spn-kjpaw_psl.1.0.0.UPF',
-                H='H.pbe-kjpaw_psl.1.0.0.UPF',
-                O='O.pbe-n-kjpaw_psl.1.0.0.UPF',
-                C='C.pbe-n-kjpaw_psl.1.0.0.UPF',
-                )
+
+            >>> pseudopotentials = dict(Cu='Cu.pbe-spn-kjpaw_psl.1.0.0.UPF',
+                                H='H.pbe-kjpaw_psl.1.0.0.UPF',
+                                O='O.pbe-n-kjpaw_psl.1.0.0.UPF',
+                                C='C.pbe-n-kjpaw_psl.1.0.0.UPF')
+
         pseudo_dir : str
             a path to the QE's pseudopotentials main directory
             e.g.
-            '/home/mgierad/espresso/pseudo'
-        balsam_exe_settings : dict{str:int}
+
+            >>> pseudo_dir = '/home/mgierad/espresso/pseudo'
+
+        balsam_exe_settings : Dict[str,int]
             a dictionary with balsam execute parameters (cores, nodes, etc.),
             e.g.
-            balsam_exe_settings = {'num_nodes': 1,
-                                   'ranks_per_node': 48,
-                                   'threads_per_rank': 1}
-        calc_keywords : dict{str:str}
+
+            >>> balsam_exe_settings = {'num_nodes': 1,
+                                    'ranks_per_node': 48,
+                                    'threads_per_rank': 1}
+
+        calc_keywords : Dict[str,str]
             a dictionary with parameters to run DFT package. Quantum Espresso
             is used as default, e.g.
 
-            calc_keywords = {'kpts': (3, 3, 1), 'occupations': 'smearing',
-                            'smearing':  'marzari-vanderbilt',
-                            'degauss': 0.01, 'ecutwfc': 40, 'nosym': True,
-                            'conv_thr': 1e-11, 'mixing_mode': 'local-TF'}
+            >>> calc_keywords = {'kpts': (3, 3, 1),
+                                'occupations': 'smearing',
+                                'smearing':  'marzari-vanderbilt',
+                                'degauss': 0.01,
+                                'ecutwfc': 40,
+                                'nosym': True,
+                                'conv_thr': 1e-11,
+                                'mixing_mode': 'local-TF'}
+
         creation_dir : posix
             a posix path to the working directory
 
@@ -500,24 +525,34 @@ class WorkFlow:
 
         Parameters
         ----------
-        template : py file
-            a template to set up 01 job
+        template : str
+            a name of a template to set up ``01`` job
         py_job_dir : str
-            a path to where all job files 00-05 are about to be created, e.g.
-            {'current_dir'}/job_files/Cu_111
+            a path to where all job files ``00``-``05`` are about to be
+            created, e.g.
+
+            >>> py_job_dir = {'current_dir'}/job_files/Cu_111
+
         facetpath : str
             a path to the workflow's main dir
-            e.g. 'Cu_111'
+            e.g.
+
+            >>> facetpath = 'Cu_111'
+
         slab_name : str
             name of the slab file (no extintion) that is about to be created
             e.g.
-            slab_name = 'Cu_111_slab_opt'
-        repeats : tuple(int, int, int)
+
+            >>> slab_name = 'Cu_111_slab_opt'
+
+        repeats : Tuple[int, int, int]
             how to replicate unit cell in (x, y, z) direction,
-            e.g. (3, 3, 1)
-        pytemplate : python file
-            a template to prepare submission scripts
-            for big_slab minimization
+            e.g.
+
+            >>> repeats = (3, 3, 1)
+
+        pytemplate : str
+            a template to prepare submission scripts for big_slab minimization
 
         '''
         with open(template, 'r') as r:
@@ -550,28 +585,37 @@ class WorkFlow:
             repeats,
             yamlfile,
             pytemplate):
-        ''' Create 01_{facetpath}_set_up_ads_on_slab_{rxn_name}.pyfile
+        ''' Create ``'01_{facetpath}_set_up_ads_on_slab_{rxn_name}.py'`` file
 
-        Parameters:
-        ___________
-        template : py file
-            a template to set up 01 job
+        Parameters
+        ----------
+
+        template : str
+            a name of a template to set up `01` job
         py_job_dir : str
-            a path to where all job files 00-05 are about to be created, e.g.
-            {'current_dir'}/job_files/Cu_111
+            a path to where all job files ``00``-``05`` are about to be
+            created, e.g.
+
+            >>> py_job_dir = {'current_dir'}/job_files/Cu_111
+
         facetpath : str
             a path to the workflow's main dir
-            e.g. 'Cu_111'
+
+            >>> facetpath = 'Cu_111'
+
         slab : str
-            a path to .xyz file with optimized slab
-        repeats : tuple(int, int, int)
+            a path to :literal:`*.xyz` file with optimized slab
+        repeats : Tuple[int, int, int]
             how to replicate unit cell in (x, y, z) direction,
-            e.g. (3, 3, 1)
+            e.g.
+
+            >>> repeats = (3, 3, 1)
+
         yamlfile : str
-            a name of the .yaml file with a reaction list
-        pytemplate : python file
-            a template to prepare submission scripts
-            for adsorbate+surface minimization
+            a name of the :literal:`*.yaml` file with a reaction list
+        pytemplate : str
+            a name of a template to prepare submission scripts for
+            adsorbate+surface minimization
 
         '''
         with open(template, 'r') as r:
@@ -600,24 +644,28 @@ class WorkFlow:
             py_job_dir: str,
             facetpath: str,
             pytemplate: str) -> None:
-        '''[summary]
+        ''' Create ``'{facetpath}_set_up_ads_vib.py'`` file
 
         Parameters
         ----------
         template : str
             a template file for ads_vib job
         py_job_dir : str
-            a path to where all job files 00-05 are about to be created, e.g.
-            {'current_dir'}/job_files/Cu_111
+            a path to where all job files ``00``-``05`` are about to be
+            created, e.g.
+
+            >>> py_job_dir = {'current_dir'}/job_files/Cu_111
+
         facetpath : str
             a path to the workflow's main dir
-            e.g. 'Cu_111'
+
+            >>> facetpath = 'Cu_111'
+
         pytemplate : str
-            a template to prepare submission scripts for vibfrational
+            a name of a template to prepare submission scripts for vibfrational
             frequencies calculations of symmetry distinct minima
 
         '''
-
         with open(template, 'r') as f:
             template_txt = f.read()
             py_job_fname = os.path.join(
@@ -649,42 +697,58 @@ class WorkFlow:
             scfactor: float,
             scfactor_surface: float,
             pytemplate_xtb: str) -> None:
-        ''' Create 02_{facetpath}_set_up_TS_with_xtb_{rxn_name}.py files
+        ''' Create ``'02_{facetpath}_set_up_TS_with_xtb_{rxn_name}.py'`` files
 
-        Parameters:
-        ___________
+        Parameters
+        ----------
 
         rxn : Dict[str, str]
             a dictionary with info about the paricular reaction. This can be
-            view as a splitted many reaction .yaml file to a single reaction
-            .yaml file
-        template : py file
-            a template to set up 02 job for a particular reaction
+            view as a splitted many reaction :literal:`*.yaml` file to a
+            single reaction :literal:`*.yaml` file
+        template : str
+            a template to set up ``02`` job for a particular reaction
         py_job_dir : str
-            a path to where all job files 00-05 are about to be created, e.g.
-            {'current_dir'}/job_files/Cu_111
+            a path to where all job files ``00``-``05`` are about to be
+            created, e.g.
+
+            >>> py_job_dir = {'current_dir'}/job_files/Cu_111
+
         slab : str
-            a '.xyz' file name with the optimized slab
+            a :literal:`*.xyz` file name with the optimized slab
             e.g.
-            'Cu_111_slab_opt.xyz'
-        repeats : tuple(int, int, int)
+
+            >>> slab = 'Cu_111_slab_opt.xyz'
+
+        repeats : Tuple[int, int, int]
             how to replicate unit cell in (x, y, z) direction,
-            e.g. (3, 3, 1)
+            e.g.
+
+            >>> repeats = (3, 3, 1)
+
         facetpath : str
             a path to the workflow's main dir
-            e.g. 'Cu_111'
+
+            >>> facetpath = 'Cu_111'
+
         scfator : float
-            a scaling factor to scale a bond distance between
-            atoms taking part in the reaction
-            e.g. 1.4
+            a scaling factor to scale a bond distance between atoms taking
+            part in the reaction
+            e.g.
+
+            >>> scfator = 1.4
+
         scfactor_surface : float
             a scaling factor to scale the target bond distance, i.e.
             the average distance between adsorbed atom and the nearest
             surface atom. Helpful e.g. when H is far away form the surface
             in TS, whereas for minima it is close to the surface
-            e.g. 1.0
-        pytemplate_xtb : python script
-            a template file for penalty function minimization job
+            e.g.
+
+            >>> scfactor_surface = 1.0
+
+        pytemplate_xtb : str
+            a name of a template file for penalty function minimization job
 
         '''
         with open(template, 'r') as r:
@@ -725,32 +789,42 @@ class WorkFlow:
             slab: str,
             repeats: Tuple[int, int, int],
             pytemplate: str) -> None:
-        ''' Create 03_{facetpath}_set_up_run_TS_{rxn_name}.py file
+        ''' Create ``'03_{facetpath}_set_up_run_TS_{rxn_name}.py'`` file
 
-        Parameters:
-        ___________
+        Parameters
+        ----------
 
-        rxn : dict(yaml[str:str])
+        rxn : Dict[str, str]
             a dictionary with info about the paricular reaction. This can be
-            view as a splitted many reaction .yaml file to a single reaction
-            .yaml file
-        template : py file
+            view as a splitted many reaction :literal:`*.yaml` file to a
+            single reaction :literal:`*.yaml` file
+        template : str
             a template to set up 03 job for a particular reaction
         py_job_dir : str
-            a path to where all job files 00-05 are about to be created, e.g.
-            {'current_dir'}/job_files/Cu_111
+            a path to where all job files ``00``-``05`` are about to be
+            created, e.g.
+
+            >>> py_job_dir = {'current_dir'}/job_files/Cu_111
+
         facetpath : str
             a path to the workflow's main dir
-            e.g. 'Cu_111'
+
+            >>> facetpath = 'Cu_111'
+
         slab : str
-            a '.xyz' file name with the optimized slab
+            a :literal:`*.xyz` file name with the optimized slab
             e.g.
-            'Cu_111_slab_opt.xyz'
-        repeats : tuple(int, int, int)
+
+            >>> slab = 'Cu_111_slab_opt.xyz'
+
+        repeats : Tuple[int, int, int]
             how to replicate unit cell in (x, y, z) direction,
-            e.g. (3, 3, 1)
-        pytemplate : python script
-            a template file for ts optimization with sella
+            e.g.
+
+            >>> repeats = (3, 3, 1)
+
+        pytemplate : str
+            a name of a template file for ts optimization with sella
 
         '''
         with open(template, 'r') as r:
@@ -786,32 +860,41 @@ class WorkFlow:
             slab: str,
             repeats: Tuple[int, int, int],
             pytemplate: str) -> None:
-        ''' Create '04_{facetpath}_set_up_TS_vib_{rxn_name}.py file
+        ''' Create ``''04_{facetpath}_set_up_TS_vib_{rxn_name}.py'`` file
 
-        Parameters:
-        ___________
+        Parameters
+        ----------
 
-        rxn : dict(yaml[str:str])
+        rxn : Dict[str, str]
             a dictionary with info about the paricular reaction. This can be
-            view as a splitted many reaction .yaml file to a single reaction
-            .yaml file
-        template : py file
-            a template to set up 03 job for a particular reaction
+            view as a splitted many reaction :literal:`*.yaml` file to a
+            single reaction :literal:`*.yaml` file
+        template : str
+            a template to set up `04` job for a particular reaction
         py_job_dir : str
-            a path to where all job files 00-05 are about to be created, e.g.
-            {'current_dir'}/job_files/Cu_111
+            a path to where all job files ``00``-``05`` are about to be
+            created, e.g.
+
+            >>> py_job_dir = {'current_dir'}/job_files/Cu_111
+
         facetpath : str
             a path to the workflow's main dir
-            e.g. 'Cu_111'
+
+            >>> facetpath = 'Cu_111'
+
         slab : str
-            a '.xyz' file name with the optimized slab
+            a :literal:`*.xyz` file name with the optimized slab
             e.g.
-            'Cu_111_slab_opt.xyz'
-        repeats : tuple(int, int, int)
+            >>> slab = 'Cu_111_slab_opt.xyz'
+
+        repeats : Tuple[int, int, int]
             how to replicate unit cell in (x, y, z) direction,
-            e.g. (3, 3, 1)
-        pytemplate : python script
-            a template file for setting up frequencies calculations
+            e.g.
+
+            >>> repeats = (3, 3, 1)
+
+        pytemplate : str
+            a name of a template file for setting up frequencies calculations
 
         '''
         with open(template, 'r') as r:
@@ -847,34 +930,44 @@ class WorkFlow:
             slab: str,
             repeats: Tuple[int, int, int],
             pytemplate: str) -> None:
-        ''' Create 05_{facetpath}_set_up_after_TS_{rxn_name}.py file
+        ''' Create ``'05_{facetpath}_set_up_after_TS_{rxn_name}.py'`` file
 
-        Parameters:
-        ___________
+        Parameters
+        ----------
 
-        rxn : dict(yaml[str:str])
+        rxn : Dict[str, str]
             a dictionary with info about the paricular reaction. This can be
-            view as a splitted many reaction .yaml file to a single reaction
-            .yaml file
-        template : py file
-            a template to set up 03 job for a particular reaction
+            view as a splitted many reaction :literal:`*.yaml` file to a
+            single reaction :literal:`*.yaml` file
+        template : str
+            a template to set up `05` job for a particular reaction
         py_job_dir : str
-            a path to where all job files 00-05 are about to be created, e.g.
-            {'current_dir'}/job_files/Cu_111
+            a path to where all job files ``00``-``05`` are about to be
+            created, e.g.
+
+            >>> py_job_dir = {'current_dir'}/job_files/Cu_111
+
         facetpath : str
             a path to the workflow's main dir
-            e.g. 'Cu_111'
+
+            >>> facetpath = 'Cu_111'
+
         slab : str
-            a '.xyz' file name with the optimized slab
+            a :literal:`*.xyz` file name with the optimized slab
             e.g.
-            'Cu_111_slab_opt.xyz'
-        repeats : tuple(int, int, int)
+
+            >>> slab = 'Cu_111_slab_opt.xyz'
+
+        repeats : Tuple[int, int, int]
             how to replicate unit cell in (x, y, z) direction,
-            e.g. (3, 3, 1)
-        pytemplate : python script
-            a template file for setting up an alternative to IRC (minimization
-            of displaced structures following the imaginary mode of
-            oscillation)
+            e.g.
+
+            >>> repeats = (3, 3, 1)
+
+        pytemplate : str
+            a name of a template file for setting up an alternative to IRC
+            (minimization of displaced structures following the imaginary mode
+            of oscillation)
 
         '''
         with open(template, 'r') as r:
@@ -911,24 +1004,26 @@ class WorkFlow:
             job_script: str,
             facetpath: str,
             cores: int = 1) -> Any:
-        ''' Execute a py script
+        ''' Add python job file to balsam DB
 
-        Parameters:
-        ___________
+        Parameters
+        ----------
 
         parent_job : str
             a parent job on which subbmited jobs depends on. Formatted as:
-            00 or 01 or 02 or 03 or 04, depending on the job
+            ``00`` or ``01`` or ``02`` or ``03`` or ``04`` or ``05``,
+            depending on the job
         job_script : str
             a script that is about to be submitted
         cores : int
             number of cores for exe job
         facetpath : str
             a path to the workflow's main dir
-            e.g. 'Cu_111'
 
-        Returns:
-        ________
+            >>> facetpath = 'Cu_111'
+
+        Returns
+        -------
 
         job_to_add : BalsamJob
             job that will be submitted to balsam database
@@ -1010,14 +1105,21 @@ class WorkFlow:
     def run_slab_optimization(
             self,
             facetpath: str) -> None:
-        ''' Submit slab_optimization_job
+        ''' Submit ``slab_optimization_job``
 
-        Parameters:
-        ___________
+        Parameters
+        ----------
 
         facetpath : str
             a path to the workflow's main dir
-            e.g. 'Cu_111'
+
+            >>> facetpath = 'Cu_111'
+
+        Returns
+        -------
+
+        job_to_add : BalsamJob
+            job that will be submitted to balsam database
 
         '''
         slab_opt = '00_{}_set_up_slab_opt.py'.format(facetpath)
@@ -1026,13 +1128,21 @@ class WorkFlow:
     def run_big_slab_opt(
             self,
             facetpath: str) -> None:
-        ''' Submit big slab optimization
+        ''' Submit ``big_slab_optimization`` job
 
         Parameters
         ----------
+
         facetpath : str
             a path to the workflow's main dir
-            e.g. 'Cu_111'
+
+            >>> facetpath = 'Cu_111'
+
+        Returns
+        -------
+
+        job_to_add : BalsamJob
+            job that will be submitted to balsam database
 
         '''
         big_slab_opt = '00_{}_set_up_big_slab_opt.py'.format(facetpath)
@@ -1043,12 +1153,19 @@ class WorkFlow:
             facetpath: str) -> None:
         ''' Run optmization of adsorbates on the surface
 
-        Parameters:
-        ___________
+        Parameters
+        ----------
 
         facetpath : str
             a path to the workflow's main dir
-            e.g. 'Cu_111'
+
+            >>> facetpath = 'Cu_111'
+
+        Returns
+        -------
+
+        job_to_add : BalsamJob
+            job that will be submitted to balsam database
 
         '''
         ads_surf_opt_script = '01_{}_set_up_ads_on_slab.py'.format(facetpath)
@@ -1058,15 +1175,22 @@ class WorkFlow:
     def run_opt_surf_and_adsorbate_no_depend(
             self,
             facetpath: str) -> None:
-        ''' Run optmization of adsorbates on the surface
-            if there is no dependency on other jobs
+        ''' Run optmization of adsorbates on the surface if there is no
+        dependency on other jobs
 
-        Parameters:
-        ___________
+        Parameters
+        ----------
 
         facetpath : str
             a path to the workflow's main dir
-            e.g. 'Cu_111'
+
+            >>> facetpath = 'Cu_111'
+
+        Returns
+        -------
+
+        job_to_add : BalsamJob
+            job that will be submitted to balsam database
 
         '''
         ads_surf_opt_script = '01_{}_set_up_ads_on_slab.py'.format(facetpath)
@@ -1077,17 +1201,25 @@ class WorkFlow:
             dependent_job: str,
             facetpath: str) -> None:
         ''' Run vibrational frequnecies calculations for the lowest energy
-            conformer of a given adsorbate
+        conformer of a given adsorbate
 
         Parameters
         ----------
         dependant_job : str
             a prefix of the the job (minimum: two integers,
             max: whole job script name) that the current run depends on,
-            e.g. '01'
+            e.g.
+            >>> dependant_job = '01'
         facetpath : str
             a path to the workflow's main dir
-            e.g. 'Cu_111'
+
+            >>> facetpath = 'Cu_111'
+
+        Returns
+        -------
+
+        job_to_add : BalsamJob
+            job that will be submitted to balsam database
 
         '''
         ads_vib_script = '{}_set_up_ads_vib.py'.format(facetpath)
@@ -1096,6 +1228,22 @@ class WorkFlow:
     def run_minima_vib_no_depend(
             self,
             facetpath: str) -> None:
+        ''' Run minima vibrational frequencies job
+
+        Parameters
+        ----------
+        facetpath : str
+            a path to the workflow's main dir
+
+            >>> facetpath = 'Cu_111'
+
+        Returns
+        -------
+
+        job_to_add : BalsamJob
+            job that will be submitted to balsam database
+
+        '''
         ads_vib_script = '{}_set_up_ads_vib.py'.format(facetpath)
         return self.exe('', ads_vib_script, facetpath)
 
@@ -1105,19 +1253,23 @@ class WorkFlow:
             facetpath: str) -> None:
         ''' Run TS estimation calculations
 
-        Parameters:
-        ___________
+        Parameters
+        ----------
 
         dependant_job : str
             a prefix of the the job (minimum: two integers,
             max: whole job script name) that the current run depends on,
-            e.g. '01'
+            e.g.
+
+            >>> dependant_job = '01'
+
         facetpath : str
             a path to the workflow's main dir
-            e.g. 'Cu_111'
+
+            >>> facetpath = 'Cu_111'
 
         '''
-        ts_xtb_py_script_list = WorkFlow.get_ts_xtb_py_script_list(facetpath)
+        ts_xtb_py_script_list = WorkFlow.get_ts_xtb_py_scripts_list(facetpath)
         for ts_xtb in ts_xtb_py_script_list:
             self.exe(dependent_job, ts_xtb, facetpath)
 
@@ -1125,17 +1277,18 @@ class WorkFlow:
             self,
             facetpath: str) -> None:
         ''' Run TS estimate calculations if there is no dependency on the
-            other jobs
+        other jobs
 
-        Parameters:
-        ___________
+        Parameters
+        ----------
 
         facetpath : str
             a path to the workflow's main dir
-            e.g. 'Cu_111'
+
+            >>> facetpath = 'Cu_111'
 
         '''
-        ts_xtb_py_script_list = WorkFlow.get_ts_xtb_py_script_list(facetpath)
+        ts_xtb_py_script_list = WorkFlow.get_ts_xtb_py_scripts_list(facetpath)
         for ts_xtb in ts_xtb_py_script_list:
             self.exe('', ts_xtb, facetpath)
 
@@ -1145,16 +1298,20 @@ class WorkFlow:
             facetpath: str) -> None:
         ''' Run TS minimization with Sella
 
-        Parameters:
-        ___________
+        Parameters
+        ----------
 
         dependant_job : str
             a prefix of the the job (minimum: two integers,
             max: whole job script name) that the current depends on,
-            e.g. '02'
+            e.g.
+
+            >>> dependant_job = '02'
+
         facetpath : str
             a path to the workflow's main dir
-            e.g. 'Cu_111'
+
+            >>> facetpath = 'Cu_111'
 
         '''
         ts_sella_py_script_list = WorkFlow.get_ts_estimate_unique_list(
@@ -1168,16 +1325,20 @@ class WorkFlow:
             facetpath: str) -> None:
         ''' Run frequency calculations for TS
 
-        Parameters:
-        ___________
+        Parameters
+        ----------
 
         dependant_job : str
             a prefix of the the job (minimum: two integers,
             max: whole job script name) that the current depends on,
-            e.g. '03'
+            e.g.
+
+            >>> dependant_job = '03'
+
         facetpath : str
             a path to the workflow's main dir
-            e.g. 'Cu_111'
+
+            >>> facetpath = 'Cu_111'
 
         '''
         ts_vib_py_script_list = WorkFlow.get_ts_vib_list(facetpath)
@@ -1189,18 +1350,22 @@ class WorkFlow:
             dependant_job: str,
             facetpath: str) -> None:
         ''' Run minimization of minima obtained as nudging TS structure
-            towards imaginary mode of oscilation
+        towards imaginary mode of oscilation
 
-        Parameters:
-        ___________
+        Parameters
+        ----------
 
         dependant_job : str
             a prefix of the the job (minimum: two integers,
             max: whole job script name) that the current depends on,
-            e.g. '04'
+            e.g.
+
+            >>> dependant_job = '04'
+
         facetpath : str
             a path to the workflow's main dir
-            e.g. 'Cu_111'
+
+            >>> facetpath = 'Cu_111'
 
         '''
         after_irc_py_scripts = WorkFlow.get_after_ts_py_scripts(facetpath)
@@ -1211,20 +1376,22 @@ class WorkFlow:
     def check_all_species(
             yamlfile: str,
             facetpath: str) -> Dict[str, bool]:
-        ''' Check all species(all reactions) to find whether
-            there are previous calculation the code can use
+        ''' Check all species(all reactions) to find whether there are
+        previous calculation the code can use
 
-        Parameters:
-        ___________
+        Parameters
+        ----------
 
         yamlfile: str
-            a name of the .yaml file with a reaction list
+            a name of the :literal:`*.yaml` file with a reaction list
         facetpath : str
             a path to the workflow's main dir
-            e.g. 'Cu_111'
 
-        Return:
-        _______
+            >>> facetpath = 'Cu_111'
+
+        Return
+        ------
+
         checked_species: dict(str: bool)
             a dictionary with True/False values for every species(keys)
             True if there are previous calculation, otherwise False
@@ -1242,18 +1409,23 @@ class WorkFlow:
     def is_minima_dir(
             species: str,
             facetpath: str) -> bool:
-        ''' Return True if directory for a given species exists in
-            {facepath}/minima. Otherwise, False
+        ''' Check if directory with all minima calculations exists
 
-        Parameters:
-        ___________
+        Parameters
+        ----------
 
         species: str
             a species metal_atom
-            e.g. 'H' or 'CO'
+            e.g. ``'H'`` or ``'CO'``
         facetpath : str
             a path to the workflow's main dir
-            e.g. 'Cu_111'
+
+            >>> facetpath = 'Cu_111'
+
+        Return
+        ------
+            ``True`` if directory for a given species exists in
+            ``{facepath}/minima``. Otherwise, ``False``
 
         '''
         species_minima_dir = os.path.join(
@@ -1266,19 +1438,22 @@ class WorkFlow:
     def is_minima_out_files(
             species: str,
             facetpath: str) -> bool:
-        ''' Check for the previously calculated * relax.out files for a given
-            species. Return True if there are previous calculations. Otherwise,
-            False.
+        ''' Check for the previously calculated :literal:`*.relax.out` files
+        for a given species.
 
-        Parameters:
-        ___________
+        Parameters
+        ----------
 
         species: str
             a species metal_atom
-            e.g. 'H' or 'CO'
+            e.g. ``'H'`` or ``'CO'``
         facetpath : str
             a path to the workflow's main dir
-            e.g. 'Cu_111'
+
+            >>> facetpath = 'Cu_111'
+
+        Return
+            ``True`` if there are previous calculations. Otherwise, ``False``.
 
         '''
         minima_dir = os.path.join(creation_dir, facetpath, 'minima')
@@ -1300,21 +1475,25 @@ class WorkFlow:
             facetpath: str) -> Tuple[bool, Optional[str]]:
         ''' Check whether slab has been already optimized
 
-        Parameters:
-        ___________
+        Parameters
+        ----------
 
         facetpath : str
             a path to the workflow's main dir
-            e.g. 'Cu_111'
 
-        Returns:
-        ________
+            >>> facetpath = 'Cu_111'
 
-        tuple(bool, str=None):
-            True if there are previous calculations
-                (True, path_to_prev_calc)
-            False otherwise
-                (False, )
+        Returns
+        -------
+
+        Tuple[bool, str=None]
+            ``True`` if there are previous calculations
+
+                >>> (True, path_to_prev_calc)
+
+            `False` otherwise
+
+                >>> (False, )
 
         '''
         slab_opt_path_str = []
@@ -1331,16 +1510,22 @@ class WorkFlow:
     @staticmethod
     def is_big_slab(
             facetpath: str) -> bool:
-        ''' Check for big_slab calculations. True if there is a big_slab file,
-            False if not. If multiple matches found, print all and raise error.
+        ''' Check for ``big_slab`` calculations.
 
-        big_slab is a slab multiplied by repeats.
 
-        Parameters:
-        ___________
+        Parameters
+        ----------
+
         facetpath : str
             a path to the workflow's main dir
-            e.g. 'Cu_111'
+
+            >>> facetpath = 'Cu_111'
+
+        Return
+        ------
+        bool:
+            ``True`` if there is a big_slab file, ``False`` otherwise.
+            If multiple matches found, print all and raise error.
 
         '''
         big_slab_list = []
@@ -1366,21 +1551,25 @@ class WorkFlow:
             facetpath: str) -> Tuple[bool, Optional[str]]:
         ''' Check whether slab has been already optimized
 
-        Parameters:
-        ___________
+        Parameters
+        ----------
 
         facetpath : str
             a path to the workflow's main dir
-            e.g. 'Cu_111'
 
-        Returns:
-        ________
+            >>> facetpath = 'Cu_111'
 
-        tuple(bool, str=None):
-            True if there are previous calculations
-                (True, path_to_prev_calc)
-            False otherwise
-                (False, )
+        Returns
+        -------
+
+        Tuple[bool, str=None]:
+            ``True`` if there are previous calculations
+
+                >>> (True, path_to_prev_calc)
+
+            `False` otherwise
+
+                >>> (False, )
 
         '''
         slab_opt_path_str = []
@@ -1399,12 +1588,13 @@ class WorkFlow:
             facetpath: str) -> None:
         ''' The main execute method for a given surface
 
-        Parameters:
-        ___________
+        Parameters
+        ----------
 
         facetpath : str
             a path to the workflow's main dir
-            e.g. 'Cu_111'
+
+            >>> facetpath = 'Cu_111'
 
         '''
         if optimize_slab:
