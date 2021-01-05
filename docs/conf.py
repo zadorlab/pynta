@@ -1,6 +1,7 @@
 import os
 import sys
 import sphinx_rtd_theme
+from datetime import date
 # sys.path.insert(0, os.path.abspath(
 #     '/Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/pynta/'))
 # sys.path.insert(0, os.path.abspath('.'))
@@ -9,11 +10,13 @@ sys.path.insert(0, os.path.abspath('../'))
 # -- Project information -----------------------------------------------------
 
 project = 'Pynta'
-copyright = '2020, Maciej Gierada'
-author = 'Maciej Gierada'
+copyright = '2020, Maciej Gierada, Eric D. Hermes, David H. Bross, Judit Zador'
+author = 'Maciej Gierada, Eric D. Hermes, David H. Bross, Judit Zador'
 
 # The full version, including alpha/beta/rc tags
-release = 'Jan 7, 2020'
+# release = 'Jan 7, 2020'
+today = date.today()
+release = today.strftime('%B %d, %Y')
 
 
 # -- General configuration ---------------------------------------------------
