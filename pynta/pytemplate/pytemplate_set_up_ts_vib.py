@@ -39,7 +39,7 @@ atoms.set_constraint(FixAtoms([
 # indices = [atom.index for atom in atoms if atom.symbol != 'Cu']
 # vibrate adsorbates and 2 first layesr of the slab
 indices = [atom.index for atom in atoms if atom.position[2]
-           < atoms.cell[2, 2] / 2.]
+           > atoms.cell[2, 2] / 2.]
 
 # update balsam_exe_settings with info about a new num_nodes
 # balsam_exe_settings['num_nodes'] = {n_kpts}
