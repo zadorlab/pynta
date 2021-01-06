@@ -40,6 +40,7 @@ except ImportError:
     )
 
 else:
+    calculator = inputR2S.calculator
     optimize_slab = inputR2S.optimize_slab
     surface_types_and_repeats = inputR2S.surface_types_and_repeats
     metal_atom = inputR2S.metal_atom
@@ -341,6 +342,7 @@ class WorkFlow:
             )
 
             WorkFlow.set_up_ads(
+                calculator,
                 template_ads,
                 py_job_dir,
                 facetpath,
@@ -578,6 +580,7 @@ class WorkFlow:
 
     @staticmethod
     def set_up_ads(
+            set_up_ads,
             template,
             py_job_dir,
             facetpath,
@@ -625,6 +628,7 @@ class WorkFlow:
 
             with open(py_job_fname, 'w') as c:
                 c.write(template_text.format(
+                    calculator=calculator,
                     facetpath=facetpath,
                     slab=slab,
                     yamlfile=yamlfile,

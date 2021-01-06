@@ -5,7 +5,8 @@ import os
 import shutil
 
 import datetime
-from pynta.balsamcalc import EspressoBalsamSocketIO
+# from pynta.balsamcalc import EspressoBalsamSocketIO
+from pynta.balsamcalc import {calculator}
 
 from ase.io import read, write
 from ase.constraints import FixAtoms
@@ -47,7 +48,7 @@ extra_calc_keywords = dict(
 # # update balsam_exe_settings with info about a new num_nodes
 # balsam_exe_settings['num_nodes'] = {n_kpts}
 
-atoms.calc = EspressoBalsamSocketIO(
+atoms.calc = {calculator}(
     workflow='QE_Socket',
     job_kwargs=balsam_exe_settings,
     **calc_keywords

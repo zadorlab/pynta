@@ -48,6 +48,8 @@ class BalsamCalculator(FileIOCalculator):
     out_format = None
     # Extra calculation-specific arguments to provide to Balsam
     args = None
+    # The Balsam App for this type of calculation
+    app = None
     # Extra information for the Balsam App
     preprocess = ''
     postprocess = ''
@@ -55,9 +57,6 @@ class BalsamCalculator(FileIOCalculator):
 
     # Ignore when Balsam jobs fail (needed for QE in socket-mode)
     ignore_fail = False
-
-    # Balsam job object
-    job = None
 
     def __init__(
         self,
@@ -273,6 +272,15 @@ class EspressoBalsam(BalsamCalculator):
     ignore_fail = True
 
 
+class NWChemBalsam(BalsamCalculator):
+    implemented_properties = ['energy', 'forces', 'stress', 'dipole']
+    exe = 'nwchem'
+    inpname = 'PREFIX.nwi'
+    inp_format = 'nwchem-in'
+    outname = 'PREFIX.out'
+    out_format = 'nwchem-out'
+
+
 class BalsamSocketIOCalculator(BalsamCalculator, SocketIOCalculator):
     job = None
 
@@ -369,3 +377,32 @@ class EspressoBalsamSocketIO(BalsamSocketIOCalculator):
             .replace('HOSTNAME', socket.gethostname())
             .replace('PORT', str(self._port))
         )
+
+
+class NWChemBalsamSocketIO(BalsamSocketIOCalculator):
+    implemented_properties = ['energy', 'forces', 'stress', 'dipole']
+    exe = 'nwchem'
+    inpname = 'PREFIX.nwi'
+    inp_format = 'nwchem-in'
+    outname = 'PREFIX.out'
+    out_format = 'nwchem-out'
+
+    def format_socket_keywords(self) -> None:
+        socket = 'ipi_client {host}:{port}'.format(
+            host=socket.gethostname(),
+            port=self._port
+        )
+        # NWChem has two way of specifying socket communication:
+        # 1) In the NWPW block, which only works for plane-wave calculations
+        # 2) In the DRIVER block, which works for any calculation but is less
+        #    efficient for plane-wave calculations
+        # Here we look to see whether there already is an NWPW block, and if
+        # so, we add the socket parameters there. Otherwise, we add the
+        # socket info to the DRIVER block (creating it if necessary).
+        nwpw = self.parameters.get('nwpw')
+        if nwpw is not None:
+            nwpw['socket'] = socket
+        else:
+            driver = self.parameters.get('driver', dict())
+            driver['socket'] = socket
+            self.parameters['driver'] = driver
