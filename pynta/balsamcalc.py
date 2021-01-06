@@ -275,9 +275,9 @@ class EspressoBalsam(BalsamCalculator):
 class NWChemBalsam(BalsamCalculator):
     implemented_properties = ['energy', 'forces', 'stress', 'dipole']
     exe = 'nwchem'
-    inpname = 'PREFIX.nwi'
+    inp_name = 'PREFIX.nwi'
     inp_format = 'nwchem-in'
-    outname = 'PREFIX.out'
+    out_name = 'PREFIX.out'
     out_format = 'nwchem-out'
 
 
@@ -382,12 +382,16 @@ class EspressoBalsamSocketIO(BalsamSocketIOCalculator):
 class NWChemBalsamSocketIO(BalsamSocketIOCalculator):
     implemented_properties = ['energy', 'forces', 'stress', 'dipole']
     exe = 'nwchem'
-    inpname = 'PREFIX.nwi'
+    inp_name = 'PREFIX.nwi'
     inp_format = 'nwchem-in'
-    outname = 'PREFIX.out'
+    out_name = 'PREFIX.out'
     out_format = 'nwchem-out'
+    args = f'{inp_name}'
+
+    print(args)
 
     def format_socket_keywords(self) -> None:
+        # def format_args(self) -> str:
         socket = 'ipi_client {host}:{port}'.format(
             host=socket.gethostname(),
             port=self._port
@@ -400,6 +404,7 @@ class NWChemBalsamSocketIO(BalsamSocketIOCalculator):
         # so, we add the socket parameters there. Otherwise, we add the
         # socket info to the DRIVER block (creating it if necessary).
         nwpw = self.parameters.get('nwpw')
+        print('here')
         if nwpw is not None:
             nwpw['socket'] = socket
         else:

@@ -136,13 +136,20 @@ class WorkFlow:
             # TODO: instead of directly importing EspressoBalsam, we should
             # write a function which returns the appropriate class from
             # balsamcalc.py based on the user-provided input file
+            # from pynta.balsamcalc import (
+            #     EspressoBalsam, EspressoBalsamSocketIO
+            # )
+            # EspressoBalsam.exe = executable
+            # EspressoBalsamSocketIO.exe = executable
+            # EspressoBalsam.create_application()
+            # EspressoBalsamSocketIO.create_application()
             from pynta.balsamcalc import (
-                EspressoBalsam, EspressoBalsamSocketIO
+                NWChemBalsam, NWChemBalsamSocketIO
             )
-            EspressoBalsam.exe = executable
-            EspressoBalsamSocketIO.exe = executable
-            EspressoBalsam.create_application()
-            EspressoBalsamSocketIO.create_application()
+            NWChemBalsam.exe = executable
+            NWChemBalsamSocketIO.exe = executable
+            NWChemBalsam.create_application()
+            NWChemBalsamSocketIO.create_application()
         except SystemExit:
             print('---')
             print('Please create Balsam DB and/or activate it')
@@ -1607,59 +1614,59 @@ class WorkFlow:
                 # If the code cannot locate optimized slab .xyz file,
                 # a slab optimization will be launched.
                 self.run_slab_optimization(facetpath)
-            if WorkFlow.is_big_slab(facetpath) is False:
-                self.run_big_slab_opt(facetpath)
-            # check if species were already calculated
-            # TODO there is a bug here as it counts CO as C
-            if all(WorkFlow.check_all_species(yamlfile, facetpath).values()):
-                # If all are True, start by generating TS guesses and run
-                # the penalty function minimization
-                self.run_minima_vib_no_depend(facetpath)
-                self.run_ts_estimate_no_depend(facetpath)
-            else:
-                # If any of sp_check_list is False
-                # run optimization of surface + reactants; surface + products
-                try:
-                    self.run_opt_surf_and_adsorbate(facetpath)
-                except NameError:
-                    self.run_opt_surf_and_adsorbate_no_depend(facetpath)
-                self.run_minima_vib('01', facetpath)
-                self.run_ts_estimate('01', facetpath)
-        else:
-            # this is executed if user provide .xyz with the optimized slab
-            # and explicitly define oiptimize_slab = False
-            if WorkFlow.check_if_slab_opt_exists(facetpath)[0]:
-                pass
-            else:
-                raise FileNotFoundError(
-                    'It appears there is no slab_opt.xyz file'
-                )
-            if WorkFlow.is_big_slab(facetpath) is False:
-                self.run_big_slab_opt(facetpath)
-            if all(WorkFlow.check_all_species(yamlfile, facetpath).values()):
-                # If all minima were calculated some time age pynta
-                # will use that calculations. Start from 02 step
-                self.run_minima_vib_no_depend(facetpath)
-                self.run_ts_estimate_no_depend(facetpath)
-            else:
-                # run optimization of surface + reactants; surface + products
-                # May need to put a post process on surface adsorbate
-                # to call the next step
-                # wait until optimization of surface + reactants; surface
-                # + products finish and submit calculations to get TS guesses
-                try:
-                    self.run_opt_surf_and_adsorbate(facetpath)
-                except NameError:
-                    self.run_opt_surf_and_adsorbate_no_depend(facetpath)
-                self.run_minima_vib('01', facetpath)
-                self.run_ts_estimate('01', facetpath)
-        # search for the 1st order saddle point
-        self.run_ts_with_sella('02', facetpath)
-        # run frequencies calculations for all TSs
-        self.run_ts_vib('03', facetpath)
-        # for each distinct TS, nudge towards imaginary frequency and
-        # optimize to minima
-        self.run_opt_after_ts('04', facetpath)
+        #     # if WorkFlow.is_big_slab(facetpath) is False:
+        #     #     self.run_big_slab_opt(facetpath)
+        #     # check if species were already calculated
+        #     # TODO there is a bug here as it counts CO as C
+        #     if all(WorkFlow.check_all_species(yamlfile, facetpath).values()):
+        #         # If all are True, start by generating TS guesses and run
+        #         # the penalty function minimization
+        #         self.run_minima_vib_no_depend(facetpath)
+        #         self.run_ts_estimate_no_depend(facetpath)
+        #     else:
+        #         # If any of sp_check_list is False
+        #         # run optimization of surface + reactants; surface + products
+        #         try:
+        #             self.run_opt_surf_and_adsorbate(facetpath)
+        #         except NameError:
+        #             self.run_opt_surf_and_adsorbate_no_depend(facetpath)
+        #         self.run_minima_vib('01', facetpath)
+        #         self.run_ts_estimate('01', facetpath)
+        # else:
+        #     # this is executed if user provide .xyz with the optimized slab
+        #     # and explicitly define oiptimize_slab = False
+        #     if WorkFlow.check_if_slab_opt_exists(facetpath)[0]:
+        #         pass
+        #     else:
+        #         raise FileNotFoundError(
+        #             'It appears there is no slab_opt.xyz file'
+        #         )
+        #     if WorkFlow.is_big_slab(facetpath) is False:
+        #         self.run_big_slab_opt(facetpath)
+        #     if all(WorkFlow.check_all_species(yamlfile, facetpath).values()):
+        #         # If all minima were calculated some time age pynta
+        #         # will use that calculations. Start from 02 step
+        #         self.run_minima_vib_no_depend(facetpath)
+        #         self.run_ts_estimate_no_depend(facetpath)
+        #     else:
+        #         # run optimization of surface + reactants; surface + products
+        #         # May need to put a post process on surface adsorbate
+        #         # to call the next step
+        #         # wait until optimization of surface + reactants; surface
+        #         # + products finish and submit calculations to get TS guesses
+        #         try:
+        #             self.run_opt_surf_and_adsorbate(facetpath)
+        #         except NameError:
+        #             self.run_opt_surf_and_adsorbate_no_depend(facetpath)
+        #         self.run_minima_vib('01', facetpath)
+        #         self.run_ts_estimate('01', facetpath)
+        # # search for the 1st order saddle point
+        # self.run_ts_with_sella('02', facetpath)
+        # # run frequencies calculations for all TSs
+        # self.run_ts_vib('03', facetpath)
+        # # for each distinct TS, nudge towards imaginary frequency and
+        # # optimize to minima
+        # self.run_opt_after_ts('04', facetpath)
 
     def execute_all(self) -> None:
         ''' Main execute method for the entire workflow '''

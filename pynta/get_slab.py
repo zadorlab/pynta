@@ -1,4 +1,5 @@
-from pynta.balsamcalc import EspressoBalsamSocketIO
+# from pynta.balsamcalc import EspressoBalsamSocketIO
+from pynta.balsamcalc import NWChemBalsamSocketIO
 
 from pathlib import PosixPath
 from typing import Dict, Tuple
@@ -51,7 +52,7 @@ class GetSlab:
             a dictionary with all pseudopotentials, as for Quantum Espresso
             keys() - symbol
             values() - file name of a pseudopotential
-            e.g. 
+            e.g.
 
             >>> dict(Cu='Cu.pbe-spn-kjpaw_psl.1.0.0.UPF')
         pseudo_dir : str
@@ -174,11 +175,18 @@ class GetSlab:
         # change how k-points are distrubuted among nodes
         # job_kwargs.update([('num_nodes', n_kpts)])
 
-        slab.calc = EspressoBalsamSocketIO(
+        # slab.calc = EspressoBalsamSocketIO(
+        #     workflow='QE_Socket',
+        #     job_kwargs=job_kwargs,
+        #     pseudopotentials=self.pseudopotentials,
+        #     pseudo_dir=self.pseudo_dir,
+        #     **extra_calc_keywords
+        # )
+        slab.calc = NWChemBalsamSocketIO(
             workflow='QE_Socket',
             job_kwargs=job_kwargs,
-            pseudopotentials=self.pseudopotentials,
-            pseudo_dir=self.pseudo_dir,
+            # pseudopotentials=self.pseudopotentials,
+            # pseudo_dir=self.pseudo_dir,
             **extra_calc_keywords
         )
 
