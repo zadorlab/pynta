@@ -350,9 +350,15 @@ class BalsamSocketIOCalculator(BalsamCalculator, SocketIOCalculator):
         if self.job is None or not self.job_running(self.job.state):
             self.job = self.create_job()
             self.directory = self.job.working_directory
+            self.format_socket_keywords()
             self.write_input(self.atoms, properties, system_changes)
             self.job.save()
         SocketIOCalculator.calculate(self, atoms, properties, system_changes)
+
+    def format_socket_keywords(self) -> None:
+        ''' Adds socket keywords to Calculator parameters
+        '''
+        pass
 
 
 class EspressoBalsamSocketIO(BalsamSocketIOCalculator):
@@ -386,13 +392,10 @@ class NWChemBalsamSocketIO(BalsamSocketIOCalculator):
     inp_format = 'nwchem-in'
     out_name = 'PREFIX.out'
     out_format = 'nwchem-out'
-    args = f'{inp_name}'
-
-    print(args)
+    args = f'{inp_name} > {out_name}'
 
     def format_socket_keywords(self) -> None:
-        # def format_args(self) -> str:
-        socket = 'ipi_client {host}:{port}'.format(
+        sock = 'ipi_client {host}:{port}'.format(
             host=socket.gethostname(),
             port=self._port
         )
@@ -404,10 +407,10 @@ class NWChemBalsamSocketIO(BalsamSocketIOCalculator):
         # so, we add the socket parameters there. Otherwise, we add the
         # socket info to the DRIVER block (creating it if necessary).
         nwpw = self.parameters.get('nwpw')
-        print('here')
         if nwpw is not None:
-            nwpw['socket'] = socket
+            nwpw['socket'] = sock
         else:
             driver = self.parameters.get('driver', dict())
-            driver['socket'] = socket
+            driver['socket'] = sock
             self.parameters['driver'] = driver
+        self.parameters['task'] = 'optimize'
