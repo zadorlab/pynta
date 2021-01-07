@@ -29,17 +29,17 @@ with open(geom_prefix + '_time.log', 'w+') as f:
 atoms = read(os.path.join(prefix, geom))
 
 # freeze all surface atoms
-atoms.set_constraint(FixAtoms(
-    [atom.index for atom in atoms if atom.symbol == 'Cu']))
+# atoms.set_constraint(FixAtoms(
+#     [atom.index for atom in atoms if atom.symbol == 'Cu']))
 # freeze half botom of the slab
-# atoms.set_constraint(FixAtoms([
-#     atom.index for atom in atoms if atom.position[2] < atoms.cell[2, 2] / 2.
-# ]))
+atoms.set_constraint(FixAtoms([
+    atom.index for atom in atoms if atom.position[2] < atoms.cell[2, 2] / 2.
+]))
 # vibrate only adsorbed species
-indices = [atom.index for atom in atoms if atom.symbol != 'Cu']
+# indices = [atom.index for atom in atoms if atom.symbol != 'Cu']
 # vibrate adsorbates and 2 first layesr of the slab
-# indices = [atom.index for atom in atoms if atom.position[2]
-#    < atoms.cell[2, 2] / 2.]
+indices = [atom.index for atom in atoms if atom.position[2]
+           > atoms.cell[2, 2] / 2.]
 
 # update balsam_exe_settings with info about a new num_nodes
 # balsam_exe_settings['num_nodes'] = {n_kpts}
