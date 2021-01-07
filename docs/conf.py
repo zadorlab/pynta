@@ -10,8 +10,8 @@ sys.path.insert(0, os.path.abspath('../'))
 # -- Project information -----------------------------------------------------
 
 project = 'Pynta'
-copyright = '2020, Maciej Gierada, Eric D. Hermes, David H. Bross, Judit Zador'
-author = 'Maciej Gierada, Eric D. Hermes, David H. Bross, Judit Zador'
+copyright = '2020, Maciej Gierada, Eric D. Hermes, David H. Bross'
+author = 'Maciej Gierada, Eric D. Hermes, David H. Bross'
 
 # The full version, including alpha/beta/rc tags
 # release = 'Jan 7, 2020'
