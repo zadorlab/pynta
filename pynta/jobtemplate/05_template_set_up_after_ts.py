@@ -7,6 +7,7 @@ from pynta.vib import AfterTS
 
 from balsam.launcher.dag import BalsamJob, add_dependency
 
+socket_calculator = '{socket_calculator}'
 slab = '{slab}'
 repeats = {repeats}
 yamlfile = '{yamlfile}'
@@ -30,6 +31,7 @@ after_ts = AfterTS(
     creation_dir)
 
 after_ts.prepare_opt_after_ts(
+    socket_calculator,
     rxn,
     pytemplate,
     balsam_exe_settings,

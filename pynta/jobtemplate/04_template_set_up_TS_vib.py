@@ -7,6 +7,7 @@ from pynta.vib import AfterTS
 
 from balsam.launcher.dag import BalsamJob, add_dependency
 
+socket_calculator = '{socket_calculator}'
 facetpath = '{facetpath}'
 slab = '{slab}'
 repeats = {repeats}
@@ -31,6 +32,7 @@ after_ts = AfterTS(
     creation_dir)
 
 after_ts.set_up_ts_vib(
+    socket_calculator,
     rxn,
     pytemplate,
     balsam_exe_settings,

@@ -1,6 +1,7 @@
 import os
 import shutil
 import yaml
+import sys
 from pathlib import Path, PosixPath
 from typing import List, Tuple, Optional, Dict
 
@@ -829,3 +830,29 @@ class IO():
             gratoms_list.append(new_gratoms)
 
         return gratoms_list
+
+    @staticmethod
+    def get_calculators(quantum_chemistry):
+        if quantum_chemistry == 'espresso':
+            calculator = 'EspressoBalsam'
+        elif quantum_chemistry == 'nwchem':
+            calculator = 'NWChemBalsam'
+        else:
+            raise Exception('Pynta only supports the following '
+                            'quantum chemistry packages (keywords): '
+                            '   espresso'
+                            '   nwchem')
+        socket_calculator = calculator + 'SocketIO'
+
+        return calculator, socket_calculator
+
+    @staticmethod
+    def set_calculators(calculator, socket_calculator):
+        executable = sys.executable
+        from pynta.balsamcalc import (
+            calculator, socket_calculator
+        )
+        calculator.exe = executable
+        socket_calculator.exe = executable
+        calculator.create_application()
+        socket_calculator.create_application()

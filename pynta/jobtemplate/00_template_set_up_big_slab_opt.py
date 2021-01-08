@@ -4,6 +4,7 @@ import os
 
 from balsam.launcher.dag import BalsamJob, add_dependency
 
+socket_calculator = '{socket_calculator}'
 facetpath = '{facetpath}'
 slab_name = '{slab_name}'
 repeats = {repeats}
@@ -15,6 +16,7 @@ calc_keywords = {calc_keywords}
 creation_dir = '{creation_dir}'
 
 WorkFlow().create_big_slab_pyjob(
+    socket_calculator,
     pytemplate,
     facetpath,
     slab_name,

@@ -747,6 +747,7 @@ class TS():
 
     def create_unique_ts_all(
             self,
+            create_unique_ts_all: str,
             ts_estimate_path: str,
             rxn_name: str,
             pytemplate: str,
@@ -791,7 +792,8 @@ class TS():
         # create .xyz and .png files
         TS.create_unique_ts_xyz_and_png(ts_estimate_path)
         # create job files (.py scripts)
-        self.create_ts_unique_py_file(pytemplate,
+        self.create_ts_unique_py_file(create_unique_ts_all,
+                                      pytemplate,
                                       rxn_name,
                                       pseudopotentials,
                                       pseudo_dir,

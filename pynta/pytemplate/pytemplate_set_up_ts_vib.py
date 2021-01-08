@@ -3,7 +3,7 @@
 import os
 
 import datetime
-from pynta.balsamcalc import EspressoBalsamSocketIO
+from pynta.balsamcalc import {socket_calculator}
 
 from ase.constraints import FixAtoms
 from ase.vibrations import Vibrations
@@ -53,7 +53,7 @@ extra_calc_keywords = dict(
 # kpts={repeats},
 # jobs_args='-nk {n_kpts}',
 
-atoms.calc = EspressoBalsamSocketIO(
+atoms.calc = {socket_calculator}(
     workflow='QE_Socket',
     job_kwargs=balsam_exe_settings,
     **calc_keywords

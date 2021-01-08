@@ -8,6 +8,7 @@ from pynta.ts import TS
 
 from balsam.launcher.dag import BalsamJob, add_dependency
 
+socket_calculator = '{socket_calculator}'
 slab = '{slab}'
 repeats = {repeats}
 yamlfile = '{yamlfile}'
@@ -36,6 +37,7 @@ ts = TS(
     creation_dir)
 
 ts.create_unique_ts_all(
+    socket_calculator,
     ts_estimate_path,
     rxn_name,
     pytemplate,

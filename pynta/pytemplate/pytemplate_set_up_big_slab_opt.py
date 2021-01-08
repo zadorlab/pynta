@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import os
 
-from pynta.balsamcalc import EspressoBalsamSocketIO
+from pynta.balsamcalc import {socket_calculator}
 
 from ase.io import read, write
 from ase.constraints import FixAtoms
@@ -29,7 +29,7 @@ extra_calc_keywords = dict(
     label=big_slab_name
 )
 
-atoms.calc = EspressoBalsamSocketIO(
+atoms.calc = {socket_calculator}(
     workflow='QE_Socket',
     job_kwargs=balsam_exe_settings,
     **calc_keywords

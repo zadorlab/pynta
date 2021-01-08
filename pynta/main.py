@@ -40,7 +40,8 @@ except ImportError:
     )
 
 else:
-    calculator = inputR2S.calculator
+    quantum_chemistry = inputR2S.quantum_chemistry
+    calculator, socket_calculator = IO.get_calculators(quantum_chemistry)
     optimize_slab = inputR2S.optimize_slab
     surface_types_and_repeats = inputR2S.surface_types_and_repeats
     metal_atom = inputR2S.metal_atom
@@ -133,23 +134,26 @@ class WorkFlow:
             self.myPython.save()
             self.slab_opt_job = ''
 
-            # TODO: instead of directly importing EspressoBalsam, we should
-            # write a function which returns the appropriate class from
-            # balsamcalc.py based on the user-provided input file
+            # # TODO: instead of directly importing EspressoBalsam, we should
+            # # write a function which returns the appropriate class from
+            # # balsamcalc.py based on the user-provided input file
+            # # from pynta.balsamcalc import (
+            # #     EspressoBalsam, EspressoBalsamSocketIO
+            # # )
+            # # EspressoBalsam.exe = executable
+            # # EspressoBalsamSocketIO.exe = executable
+            # # EspressoBalsam.create_application()
+            # # EspressoBalsamSocketIO.create_application()
             # from pynta.balsamcalc import (
-            #     EspressoBalsam, EspressoBalsamSocketIO
+            #     NWChemBalsam, NWChemBalsamSocketIO
             # )
-            # EspressoBalsam.exe = executable
-            # EspressoBalsamSocketIO.exe = executable
-            # EspressoBalsam.create_application()
-            # EspressoBalsamSocketIO.create_application()
-            from pynta.balsamcalc import (
-                NWChemBalsam, NWChemBalsamSocketIO
-            )
-            NWChemBalsam.exe = executable
-            NWChemBalsamSocketIO.exe = executable
-            NWChemBalsam.create_application()
-            NWChemBalsamSocketIO.create_application()
+            # NWChemBalsam.exe = executable
+            # NWChemBalsamSocketIO.exe = executable
+            # NWChemBalsam.create_application()
+            # NWChemBalsamSocketIO.create_application()
+
+            IO.set_calculators(calculator, socket_calculator)
+
         except SystemExit:
             print('---')
             print('Please create Balsam DB and/or activate it')
@@ -258,6 +262,7 @@ class WorkFlow:
 
     @staticmethod
     def create_big_slab_pyjob(
+            socket_calculator: str,
             pytemplate: str,
             facetpath: str,
             slab_name: str,
@@ -299,6 +304,7 @@ class WorkFlow:
                 creation_dir, job_file_dir_name, facetpath, py_job_name)
             with open(py_job, 'w') as c:
                 c.write(pytemplate_text.format(
+                    socket_calculator=socket_calculator,
                     facetpath=facetpath,
                     slab_name=slab_name,
                     repeats=repeats,
@@ -340,6 +346,7 @@ class WorkFlow:
             )
 
             WorkFlow.set_up_big_slab(
+                socket_calculator,
                 template_big_slab_opt,
                 py_job_dir,
                 facetpath,
@@ -349,7 +356,7 @@ class WorkFlow:
             )
 
             WorkFlow.set_up_ads(
-                calculator,
+                socket_calculator,
                 template_ads,
                 py_job_dir,
                 facetpath,
@@ -360,6 +367,7 @@ class WorkFlow:
             )
 
             WorkFlow.set_up_ads_vib(
+                socket_calculator,
                 template_ads_vib,
                 py_job_dir,
                 facetpath,
@@ -383,6 +391,7 @@ class WorkFlow:
                 )
 
                 WorkFlow.set_up_run_TS(
+                    socket_calculator,
                     rxn,
                     template_set_up_ts,
                     py_job_dir,
@@ -393,6 +402,7 @@ class WorkFlow:
                 )
 
                 WorkFlow.set_up_TS_vib(
+                    socket_calculator,
                     rxn,
                     template_set_up_ts_vib,
                     py_job_dir,
@@ -403,6 +413,7 @@ class WorkFlow:
                 )
 
                 WorkFlow.set_up_opt_after_TS(
+                    socket_calculator,
                     rxn,
                     template_set_up_after_ts,
                     py_job_dir,
@@ -524,6 +535,7 @@ class WorkFlow:
 
     @staticmethod
     def set_up_big_slab(
+            socket_calculator: str,
             template: str,
             py_job_dir: str,
             facetpath: str,
@@ -571,6 +583,7 @@ class WorkFlow:
 
             with open(py_job_fname, 'w') as c:
                 c.write(template_text.format(
+                    socket_calculator=socket_calculator,
                     facetpath=facetpath,
                     slab_name=slab_name,
                     repeats=repeats,
@@ -635,7 +648,7 @@ class WorkFlow:
 
             with open(py_job_fname, 'w') as c:
                 c.write(template_text.format(
-                    calculator=calculator,
+                    socket_calculator=socket_calculator,
                     facetpath=facetpath,
                     slab=slab,
                     yamlfile=yamlfile,
@@ -651,6 +664,7 @@ class WorkFlow:
 
     @staticmethod
     def set_up_ads_vib(
+            socket_calculator: str,
             template: str,
             py_job_dir: str,
             facetpath: str,
@@ -685,6 +699,7 @@ class WorkFlow:
                 '{}_set_up_ads_vib.py'.format(facetpath))
             with open(py_job_fname, 'w') as c:
                 c.write(template_txt.format(
+                    socket_calculator=socket_calculator,
                     facetpath=facetpath,
                     yamlfile=yamlfile,
                     pytemplate=pytemplate,
@@ -793,6 +808,7 @@ class WorkFlow:
 
     @staticmethod
     def set_up_run_TS(
+            socket_calculator: str,
             rxn: Dict[str, str],
             template: str,
             py_job_dir: str,
@@ -847,6 +863,7 @@ class WorkFlow:
 
             with open(py_job_fname, 'w') as c:
                 c.write(template_text.format(
+                    socket_calculator=socket_calculator,
                     facetpath=facetpath,
                     slab=slab,
                     repeats=repeats,
@@ -864,6 +881,7 @@ class WorkFlow:
 
     @staticmethod
     def set_up_TS_vib(
+            socket_calculator: str,
             rxn: Dict[str, str],
             template: str,
             py_job_dir: str,
@@ -917,6 +935,7 @@ class WorkFlow:
 
             with open(py_job_fname, 'w') as c:
                 c.write(template_text.format(
+                    socket_calculator=socket_calculator,
                     facetpath=facetpath,
                     slab=slab,
                     repeats=repeats,
@@ -934,6 +953,7 @@ class WorkFlow:
 
     @staticmethod
     def set_up_opt_after_TS(
+            socket_calculator: str,
             rxn: Dict[str, str],
             template: str,
             py_job_dir: str,
@@ -990,6 +1010,7 @@ class WorkFlow:
 
             with open(py_job_fname, 'w') as c:
                 c.write(template_text.format(
+                    socket_calculator=socket_calculator,
                     facetpath=facetpath,
                     slab=slab,
                     repeats=repeats,

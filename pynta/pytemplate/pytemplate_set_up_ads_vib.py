@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import os
 import datetime
-from pynta.balsamcalc import EspressoBalsamSocketIO
+from pynta.balsamcalc import {socket_calculator}
 
 from ase.io import read
 from ase.constraints import FixAtoms
@@ -38,7 +38,7 @@ extra_calc_keywords = dict(
     label=geom
 )
 
-atoms.calc = EspressoBalsamSocketIO(
+atoms.calc = {socket_calculator}(
     workflow='QE_Socket',
     job_kwargs=balsam_exe_settings,
     **calc_keywords

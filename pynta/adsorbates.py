@@ -234,7 +234,7 @@ class Adsorbates:
 
     def create_relax_jobs(
             self,
-            calculator: str,
+            socket_calculator: str,
             pytemplate: str,
             pseudopotentials: Dict[str, str],
             pseudo_dir: str,
@@ -308,7 +308,7 @@ class Adsorbates:
                         + prefix + '_relax.py')
                     with open(fname, 'w') as f:
                         f.write(pytemplate.format(
-                            calculator=calculator,
+                            socket_calculator=socket_calculator,
                             adsorbate=species,
                             prefix=prefix,
                             pseudopotentials=pseudopotentials,

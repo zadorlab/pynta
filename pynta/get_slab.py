@@ -182,6 +182,8 @@ class GetSlab:
         #     pseudo_dir=self.pseudo_dir,
         #     **extra_calc_keywords
         # )
+        slab.pbc = True
+
         slab.calc = NWChemBalsamSocketIO(
             workflow='QE_Socket',
             job_kwargs=job_kwargs,

@@ -26,6 +26,7 @@ class AfterTS():
 
     def set_up_ts_vib(
             self,
+            socket_calculator: str
             rxn: Dict[str, str],
             pytemplate: str,
             balsam_exe_settings: Dict[str, int],
@@ -103,6 +104,7 @@ class AfterTS():
                 self.facetpath + '_' + rxn_name + '_ts_vib.py'
 
             self.create_ts_vib_py_files(
+                socket_calculator,
                 pytemplate,
                 geom,
                 py_fname,
@@ -113,6 +115,7 @@ class AfterTS():
 
     def create_ts_vib_py_files(
             self,
+            socket_calculator: str,
             pytemplate: str,
             geom: str,
             py_fname: str,
@@ -173,6 +176,7 @@ class AfterTS():
             pytemplate = f.read()
         with open(py_fname, 'w') as f:
             f.write(pytemplate.format(
+                socket_calculator=socket_calculator,
                 geom=geom,
                 balsam_exe_settings=balsam_exe_settings,
                 calc_keywords=calc_keywords,
@@ -187,6 +191,7 @@ class AfterTS():
 
     def prepare_opt_after_ts(
             self,
+            socket_calculator: str,
             rxn: Dict[str, str],
             pytemplate: str,
             balsam_exe_settings: Dict[str, int],
@@ -266,6 +271,7 @@ class AfterTS():
                 fname_reverse)
 
             self.create_after_ts_py_files(
+                socket_calculator,
                 pytemplate,
                 fname_forward,
                 fname_reverse,
@@ -323,6 +329,7 @@ class AfterTS():
 
     def create_after_ts_py_files(
             self,
+            socket_calculator: str,
             pytemplate: str,
             fname_forward: str,
             fname_reverse: str,
@@ -381,6 +388,7 @@ class AfterTS():
             fname = os.path.join(os.path.split(tmp)[0], geom + '.py')
             with open(fname, 'w') as f:
                 f.write(pytemplate.format(
+                    socket_calculator=socket_calculator,
                     geom=geom,
                     balsam_exe_settings=balsam_exe_settings,
                     calc_keywords=calc_keywords,
@@ -524,6 +532,7 @@ class minimaVib():
 
     def create_minima_vib_all(
             self,
+            socket_calculator: str,
             facetpath: str,
             yamlfile_path: PosixPath,
             pytemplate: str,
@@ -613,12 +622,13 @@ class minimaVib():
                 shutil.copy2(path_to_minimum_traj, traj_to_start_vib)
 
                 self.create_minima_vib_py_files(
-                    adsorbate, prefix, traj_to_start_vib, minima_vib_path,
-                    pytemplate, balsam_exe_settings, pseudo_dir,
-                    pseudopotentials, calc_keywords, creation_dir)
+                    socket_calculator, adsorbate, prefix, traj_to_start_vib,
+                    minima_vib_path, pytemplate, balsam_exe_settings,
+                    pseudo_dir, pseudopotentials, calc_keywords, creation_dir)
 
     def create_minima_vib_py_files(
             self,
+            socket_calculator: str,
             adsorbate: str,
             prefix: str,
             traj_to_start_vib: str,
@@ -709,6 +719,7 @@ class minimaVib():
             py_file = os.path.join(minima_vib_path, py_file_name)
             with open(py_file, 'w') as c:
                 c.write(pytemplate_txt.format(
+                    socket_calculator=socket_calculator,
                     geom=traj_to_start_vib,
                     balsam_exe_settings=balsam_exe_settings,
                     creation_dir=creation_dir,

@@ -4,6 +4,7 @@ from pynta.vib import minimaVib
 from pathlib import Path
 from balsam.launcher.dag import BalsamJob
 
+socket_calculator = '{socket_calculator}'
 facetpath = '{facetpath}'
 yamlfile = '{yamlfile}'
 pytemplate = '{pytemplate}'
@@ -17,8 +18,8 @@ yamlfile_path = os.path.join(creation_dir, yamlfile)
 path_to_minima_vib = os.path.join(creation_dir, facetpath, 'minima_vib')
 
 mv = minimaVib(facetpath, creation_dir)
-mv.create_minima_vib_all(facetpath, yamlfile_path, pytemplate,
-                         balsam_exe_settings, pseudo_dir,
+mv.create_minima_vib_all(socket_calculator, facetpath, yamlfile_path,
+                         pytemplate, balsam_exe_settings, pseudo_dir,
                          pseudopotentials, calc_keywords,
                          creation_dir)
 

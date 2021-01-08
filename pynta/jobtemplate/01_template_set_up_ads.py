@@ -6,7 +6,7 @@ from pynta.io import IO
 
 from balsam.launcher.dag import BalsamJob, add_dependency
 
-calculator = '{calculator}'
+socket_calculator = '{socket_calculator}'
 facetpath = '{facetpath}'
 slab = '{slab}'
 repeats = {repeats}
@@ -21,7 +21,7 @@ creation_dir = '{creation_dir}'
 put_adsorbates = Adsorbates(facetpath, slab, repeats, yamlfile, creation_dir)
 put_adsorbates.adjacency_to_3d()
 put_adsorbates.create_relax_jobs(
-    calculator, pytemplate, pseudopotentials, pseudo_dir,
+    socket_calculator, pytemplate, pseudopotentials, pseudo_dir,
     balsam_exe_settings, calc_keywords
 )
 
