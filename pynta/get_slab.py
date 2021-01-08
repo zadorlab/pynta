@@ -1,7 +1,8 @@
 # from pynta.balsamcalc import EspressoBalsamSocketIO
-from pynta.balsamcalc import NWChemBalsamSocketIO
+# from pynta.balsamcalc import NWChemBalsamSocketIO
 
 from pathlib import PosixPath
+from socket import socket
 from typing import Dict, Tuple
 
 from ase.build import fcc111, fcc211, fcc100
@@ -17,6 +18,7 @@ import os
 class GetSlab:
     def __init__(
             self,
+            socket_calculator: str,
             surface_type: str,
             symbol: str,
             a: str,
@@ -79,6 +81,7 @@ class GetSlab:
             a posix path to the main working directory
 
         '''
+        self.socket_calculator = socket_calculator
         self.surface_type = surface_type
         self.symbol = symbol
         self.a = a
@@ -164,6 +167,12 @@ class GetSlab:
             self,
             slab: Atoms) -> None:
         ''' Prepare slab optimization with Quantum Espresso '''
+        # from pynta.balsamcalc import self.socket_calculator
+
+        balsamcalc_module = __import__('pynta.balsamcalc', fromlist=[
+            self.socket_calculator])
+
+        sock_calc = getattr(balsamcalc_module, self.socket_calculator)
 
         # n_kpts = IO().get_kpoints(self.repeats_surface)
 
@@ -184,7 +193,7 @@ class GetSlab:
         # )
         slab.pbc = True
 
-        slab.calc = NWChemBalsamSocketIO(
+        slab.calc = sock_calc(
             workflow='QE_Socket',
             job_kwargs=job_kwargs,
             # pseudopotentials=self.pseudopotentials,

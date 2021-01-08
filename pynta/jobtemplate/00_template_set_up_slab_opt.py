@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from pynta.get_slab import GetSlab
 
+socket_calculator = '{socket_calculator}'
 surface_type = '{surface_type}'
 metal_atom = '{metal_atom}'
 a = {a}
@@ -14,7 +15,8 @@ balsam_exe_settings = {balsam_exe_settings}
 calc_keywords = {calc_keywords}
 creation_dir = '{creation_dir}'
 
-get_slab = GetSlab(surface_type, metal_atom, a, repeats_surface, vacuum,
-                   slab_name, pseudopotentials, pseudo_dir,
-                   balsam_exe_settings, calc_keywords, creation_dir)
+get_slab = GetSlab(socket_calculator, surface_type, metal_atom, a,
+                   repeats_surface, vacuum, slab_name, pseudopotentials,
+                   pseudo_dir, balsam_exe_settings, calc_keywords,
+                   creation_dir)
 get_slab.run_slab_opt()

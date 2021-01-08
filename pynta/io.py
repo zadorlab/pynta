@@ -847,12 +847,15 @@ class IO():
         return calculator, socket_calculator
 
     @staticmethod
-    def set_calculators(calculator, socket_calculator):
-        executable = sys.executable
-        from pynta.balsamcalc import (
-            calculator, socket_calculator
-        )
-        calculator.exe = executable
-        socket_calculator.exe = executable
-        calculator.create_application()
-        socket_calculator.create_application()
+    def set_calculators(executable, calculator, socket_calculator):
+
+        balsamcalc_module = __import__('pynta.balsamcalc', fromlist=[
+            socket_calculator])
+
+        calc = getattr(balsamcalc_module, calculator)
+        sock_calc = getattr(balsamcalc_module, socket_calculator)
+
+        calc.exe = executable
+        sock_calc.exe = executable
+        calc.create_application()
+        sock_calc.create_application()

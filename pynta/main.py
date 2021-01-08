@@ -42,6 +42,7 @@ except ImportError:
 else:
     quantum_chemistry = inputR2S.quantum_chemistry
     calculator, socket_calculator = IO.get_calculators(quantum_chemistry)
+    print(calculator, socket_calculator)
     optimize_slab = inputR2S.optimize_slab
     surface_types_and_repeats = inputR2S.surface_types_and_repeats
     metal_atom = inputR2S.metal_atom
@@ -152,7 +153,7 @@ class WorkFlow:
             # NWChemBalsam.create_application()
             # NWChemBalsamSocketIO.create_application()
 
-            IO.set_calculators(calculator, socket_calculator)
+            IO.set_calculators(executable, calculator, socket_calculator)
 
         except SystemExit:
             print('---')
@@ -337,6 +338,7 @@ class WorkFlow:
 
             # create all input files for each main job 00-05
             WorkFlow.set_up_slab(
+                socket_calculator,
                 template_slab_opt,
                 py_job_dir,
                 facetpath,
@@ -428,6 +430,7 @@ class WorkFlow:
 ###########################
     @staticmethod
     def set_up_slab(
+            socket_calculator: str,
             template: str,
             py_job_dir: str,
             facetpath: str,
@@ -520,6 +523,7 @@ class WorkFlow:
                 py_job_dir, '00_{}_set_up_slab_opt.py'.format(facetpath))
             with open(py_job_fname, 'w') as c:
                 c.write(template_text.format(
+                    socket_calculator=socket_calculator,
                     surface_type=surface_type,
                     metal_atom=metal_atom,
                     a=a,
