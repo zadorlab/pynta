@@ -409,6 +409,7 @@ class NWChemBalsamSocketIO(BalsamSocketIOCalculator):
         nwpw = self.parameters.get('nwpw')
         if nwpw is not None:
             nwpw['socket'] = sock
+            self.parameters['task'] = 'gradient'
         else:
             driver = self.parameters.get('driver', dict())
             driver['socket'] = sock
