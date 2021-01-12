@@ -222,22 +222,18 @@ class LowLevelRestart():
             facetpath = metal_symbol + '_' + facet
             rxn_name = react + '_' + prod
 
-            # BUG to be fixed
-            ts_name_write = os.path.join(
-                prefix + '_' + facetpath + '_' + rxn_name + '_ts')
-            ts_name = os.path.join(prefix + '_' + rxn_name)
+            ts_name = os.path.join(
+                prefix + '_' + facetpath + '_' + rxn_name)
             path_to_ts = os.path.join(
                 facetpath, rxn_name, 'TS_estimate_unique', prefix, ts_name)
-            path_to_ts_write = os.path.join(
-                facetpath, rxn_name, 'TS_estimate_unique', prefix,
-                ts_name_write)
 
             try:
                 # try to convert last step in *traj file to a new .xyz file
-                write(path_to_ts_write + '.xyz', read(path_to_ts + '.traj'))
+                write(path_to_ts + '_ts.xyz',
+                      read(path_to_ts + '.traj'))
             except (FileNotFoundError, UnknownFileTypeError):
                 # continue if *traj file is missing or it is empty
-                # hard HighLevelRestart is required
+                # hard :meth:HighLevelRestart is required
                 continue
 
     def prepare_after_ts_to_restart(self) -> None:
