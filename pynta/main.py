@@ -42,7 +42,6 @@ except ImportError:
 else:
     quantum_chemistry = inputR2S.quantum_chemistry
     calculator, socket_calculator = IO.get_calculators(quantum_chemistry)
-    print(calculator, socket_calculator)
     optimize_slab = inputR2S.optimize_slab
     surface_types_and_repeats = inputR2S.surface_types_and_repeats
     metal_atom = inputR2S.metal_atom
@@ -1643,19 +1642,19 @@ class WorkFlow:
         #     #     self.run_big_slab_opt(facetpath)
         #     # check if species were already calculated
         #     # TODO there is a bug here as it counts CO as C
-        #     if all(WorkFlow.check_all_species(yamlfile, facetpath).values()):
-        #         # If all are True, start by generating TS guesses and run
-        #         # the penalty function minimization
-        #         self.run_minima_vib_no_depend(facetpath)
-        #         self.run_ts_estimate_no_depend(facetpath)
-        #     else:
-        #         # If any of sp_check_list is False
-        #         # run optimization of surface + reactants; surface + products
-        #         try:
-        #             self.run_opt_surf_and_adsorbate(facetpath)
-        #         except NameError:
-        #             self.run_opt_surf_and_adsorbate_no_depend(facetpath)
-        #         self.run_minima_vib('01', facetpath)
+            # if all(WorkFlow.check_all_species(yamlfile, facetpath).values()):
+            #     # If all are True, start by generating TS guesses and run
+            #     # the penalty function minimization
+            #     self.run_minima_vib_no_depend(facetpath)
+            #     self.run_ts_estimate_no_depend(facetpath)
+            # else:
+            #     # If any of sp_check_list is False
+            #     # run optimization of surface + reactants; surface + products
+            #     try:
+            #         self.run_opt_surf_and_adsorbate(facetpath)
+            #     except NameError:
+            #         self.run_opt_surf_and_adsorbate_no_depend(facetpath)
+            #     self.run_minima_vib('01', facetpath)
         #         self.run_ts_estimate('01', facetpath)
         # else:
         #     # this is executed if user provide .xyz with the optimized slab

@@ -413,4 +413,4 @@ class NWChemBalsamSocketIO(BalsamSocketIOCalculator):
             driver = self.parameters.get('driver', dict())
             driver['socket'] = sock
             self.parameters['driver'] = driver
-        # self.parameters['task'] = 'optimize'
+        self.parameters['task'] = 'optimize'

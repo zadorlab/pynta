@@ -237,7 +237,7 @@ class LowLevelRestart():
                 write(path_to_ts_write + '.xyz', read(path_to_ts + '.traj'))
             except (FileNotFoundError, UnknownFileTypeError):
                 # continue if *traj file is missing or it is empty
-                # hard HighLevelRestart is required
+                # hard :meth:HighLevelRestart is required
                 continue
 
     def prepare_after_ts_to_restart(self) -> None:

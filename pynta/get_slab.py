@@ -2,14 +2,13 @@
 # from pynta.balsamcalc import NWChemBalsamSocketIO
 
 from pathlib import PosixPath
-from socket import socket
 from typing import Dict, Tuple
 
 from ase.build import fcc111, fcc211, fcc100
 from ase.build import bcc111, bcc110, hcp0001
 from ase.build import diamond111, diamond100
 from ase.optimize import BFGSLineSearch
-from ase.io import write
+from ase.io import write, Trajectory
 from ase import Atoms
 
 import os
@@ -167,7 +166,6 @@ class GetSlab:
             self,
             slab: Atoms) -> None:
         ''' Prepare slab optimization with Quantum Espresso '''
-        # from pynta.balsamcalc import self.socket_calculator
 
         balsamcalc_module = __import__('pynta.balsamcalc', fromlist=[
             self.socket_calculator])
@@ -193,15 +191,25 @@ class GetSlab:
         # )
         slab.pbc = True
 
-        slab.calc = sock_calc(
-            workflow='QE_Socket',
-            job_kwargs=job_kwargs,
-            # pseudopotentials=self.pseudopotentials,
-            # pseudo_dir=self.pseudo_dir,
-            **extra_calc_keywords
-        )
+        if self.socket_calculator == 'EspressoBalsamSocketIO':
+            slab.calc = sock_calc(
+                workflow='QE_Socket',
+                job_kwargs=job_kwargs,
+                pseudopotentials=self.pseudopotentials,
+                pseudo_dir=self.pseudo_dir,
+                **extra_calc_keywords
+            )
+        else:
+            slab.calc = sock_calc(
+                workflow='QE_Socket',
+                job_kwargs=job_kwargs,
+                **extra_calc_keywords
+            )
 
         fname = os.path.join(self.creation_dir, self.slab_name)
+        traj = Trajectory('Cu_k.traj', mode='w', atoms=slab)
+        slab.get_potential_energy()
+        traj.write()
 
         opt = BFGSLineSearch(atoms=slab, trajectory=fname + '.traj')
         opt.run(fmax=0.01)
