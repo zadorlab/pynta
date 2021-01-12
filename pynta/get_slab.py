@@ -8,7 +8,7 @@ from ase.build import fcc111, fcc211, fcc100
 from ase.build import bcc111, bcc110, hcp0001
 from ase.build import diamond111, diamond100
 from ase.optimize import BFGSLineSearch
-from ase.io import write, Trajectory
+from ase.io import write
 from ase import Atoms
 
 import os
@@ -207,12 +207,10 @@ class GetSlab:
             )
 
         fname = os.path.join(self.creation_dir, self.slab_name)
-        traj = Trajectory('Cu_k.traj', mode='w', atoms=slab)
-        slab.get_potential_energy()
-        traj.write()
 
         opt = BFGSLineSearch(atoms=slab, trajectory=fname + '.traj')
         opt.run(fmax=0.01)
+        slab.get_potential_energy()
         slab.get_forces()
         slab.calc.close()
         write(fname + '.xyz', slab)
