@@ -1,6 +1,7 @@
 # from .adjacency_to_3d import adjacency_to_3d
 # from .compare_structures import find_all_unique
 # from .relax_3d import create_relax_jobs
+import os
 
 """Catalysis Generator."""
 
@@ -32,3 +33,17 @@ class Defaults(MutableMapping, dict):
 defaults = Defaults()
 
 # __all__ = ['defaults', 'symmetry', 'adsorption', 'surface', 'molecules']
+
+
+class Licence():
+    def __init__(self):
+        path = os.path.dirname(__file__)
+        self.licence_info = os.path.join(path, 'license', 'license_info.py')
+
+    def show_banner(self):
+        with open(self.licence_info) as f:
+            banner = f.read()
+        print(banner)
+
+
+Licence().show_banner()
