@@ -2,6 +2,7 @@
 # from .compare_structures import find_all_unique
 # from .relax_3d import create_relax_jobs
 import os
+from os import path
 
 """Catalysis Generator."""
 
@@ -37,12 +38,18 @@ defaults = Defaults()
 
 class Licence():
     def __init__(self):
-        path = os.path.dirname(__file__)
-        self.licence_info = os.path.join(path, 'license', 'license_info.py')
+        self.path = os.path.dirname(__file__)
+        self.licence_info = os.path.join(self.path, 'license', 'banner.txt')
 
     def show_banner(self):
-        with open(self.licence_info) as f:
-            banner = f.read()
+        path_to_excatkit = os.path.join(self.path, 'excatkit')
+        with open(self.licence_info, 'r') as infile:
+            banner = infile.read()
+            with open(self.licence_info, 'w') as outfile:
+                outfile.write(banner.format(
+                    path_to_excatkit=path_to_excatkit))
+        with open(self.licence_info, 'r') as infile:
+            banner = infile.read()
         print(banner)
 
 

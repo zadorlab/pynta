@@ -1,0 +1,8 @@
+include requirements.txt
+include MANIFEST.in
+include README.md
+include workflow_idea.png
+include pynta/license/banner.txt
+include pynta/excatkit/LICENSE
+include pynta/excatkit/README.md
+include pynta/excatkit/CODEOWNERS

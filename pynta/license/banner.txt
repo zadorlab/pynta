@@ -22,11 +22,18 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
     This code implements modified version of the 3rd party software Catkit.
-    All modification were made to the version as avaiable on Apr 18, 2020
+    All modification were made based on the version as avaiable on Apr 18, 2020
     (master branch; git hash d5aa508eefcbeb3065b4ece0740d695e0787a0b7).
     
-    For a Catkit's source code check
+    All Catkit's code integrated into Pynta is located here:
+    
+    {path_to_excatkit}
+    
+    For a Catkit's source code, check
     <https://github.com/SUNCAT-Center/CatKit>
+
+    For a Catkit's documentations, check
+    <https://catkit.readthedocs.io/en/latest/>
 
     If you have questions, feel free to contact.
     email: maciek.gierada@gmail.com
