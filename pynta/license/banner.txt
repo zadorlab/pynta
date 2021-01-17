@@ -6,7 +6,7 @@
                             metallic surfaces
 
     ---------------------------------------------------------------------
-    Copyright (C) 2020  M. Gierada, E.D. Hermes, D.H. Bross
+    Copyright (C) 2020 M. Gierada, E.D. Hermes, D.H. Bross
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
