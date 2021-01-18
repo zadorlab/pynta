@@ -52,8 +52,7 @@ atoms.calc = {socket_calculator}(
     **calc_keywords
 )
 
-
-# atoms.calc.set(**extra_calc_keywords)
+atoms.calc.set(**extra_calc_keywords)
 
 opt = QuasiNewton(atoms=atoms, trajectory=jobdir + '.traj')
 opt.run(fmax=0.01, steps=70)
