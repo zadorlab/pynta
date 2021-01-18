@@ -1632,6 +1632,7 @@ class WorkFlow:
             >>> facetpath = 'Cu_111'
 
         '''
+        print('Starting calculations...')
         if optimize_slab:
             # if slab found in previous calculation, do nothing
             if WorkFlow.is_slab(facetpath)[0] is False:
@@ -1691,6 +1692,7 @@ class WorkFlow:
         # for each distinct TS, nudge towards imaginary frequency and
         # optimize to minima
         self.run_opt_after_ts('04', facetpath)
+        print('Running!')
 
     def execute_all(self) -> None:
         ''' Main execute method for the entire workflow '''
