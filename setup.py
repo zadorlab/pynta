@@ -7,7 +7,6 @@ with open('README.md', 'r') as f:
 with open('requirements.txt', 'r') as f:
     requirements = f.read().split('\n')
 
-
 setup(name='pynta',
       version='1.0.0',
       summary='A workflow for automated reaction path exploration on '
@@ -25,8 +24,6 @@ setup(name='pynta',
                 'pynta.license'],
       python_requires='>=3.6, <4',
       install_requires=requirements,
-      #   install_requires=['numpy', 'ase', 'spglib',
-      #                     'matplotlib<3.2', 'networkx<2.4'],
       classifiers=[
           'Development Status :: 4 - Beta',
           'Intended Audience :: Developers',
