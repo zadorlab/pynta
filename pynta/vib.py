@@ -26,7 +26,7 @@ class AfterTS():
 
     def set_up_ts_vib(
             self,
-            socket_calculator: str
+            socket_calculator: str,
             rxn: Dict[str, str],
             pytemplate: str,
             balsam_exe_settings: Dict[str, int],
