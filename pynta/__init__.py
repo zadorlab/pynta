@@ -2,7 +2,6 @@
 # from .compare_structures import find_all_unique
 # from .relax_3d import create_relax_jobs
 import os
-from os import path
 
 """Catalysis Generator."""
 
