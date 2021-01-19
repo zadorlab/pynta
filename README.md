@@ -13,8 +13,6 @@ The work-flow designed to automate search for transition states and reaction pat
 
 **Instalation can be a bit tricky because pynta depends on a several different packages that are under constant development (balsam, xtb-python)**
 
-inclusion-marker-do-not-remove
-
 The following instruction assumes that you have several softwares installed on your system, such as:
 
 - A queue system e.g. `Slurm`, `PBS` or `Cobalt`
@@ -166,7 +164,7 @@ cd pynta
 python setup.py install
 ```
 
-### 1.2.3b (optional) If you do not have admin privileges (e.g. you use it on a supercomputer), do the following instead of 1.6a:
+### 1.2.3b (optional) If you do not have admin privileges (e.g. you use it on a supercomputer), do the following instead of 1.2.3a:
 
 ```
 python setup.py install --user
@@ -174,22 +172,28 @@ python setup.py install --user
 
 **You should be ready to use `pynta`**
 
-Once finished using the workflow:
+Once finished using the workflow, type:
 
 ```
 cd pynta
 deactivate
 ```
 
-## 2. How to run
+# 2. How to run
 
-### 2.1 Using Balsam
+## 2.1 Using Balsam
 
 Before you run any `pynta` calculations, make sure your `balsam` DB is initialized and activated, e.g.
 
 ```bash
 balsam init ~/myWorkflow
 source balsamactivate ~/myWorkflow
+```
+
+That will initialize `balsam` DB in your `$HOME` directory and activate it. Your prompt should change to something like
+
+```bash
+~[BalsamDB: myWorkflow] <username>@<host>:
 ```
 
 You will need **4** files to run the workflow:
@@ -365,7 +369,7 @@ An example input files are also located at `./pynta/example_run_files/`.
 
 If you do not have a `.yaml` file with the reaction list but still want to use the work-flow, let me know. Also, stay tuned, as a version of `pynta` that can work without `.yaml` file is currently under development
 
-### 2.2 Using only SLURM
+## 2.2 Using only SLURM
 
 **Warning `dev` branch uses SLURM scheduler to deal with the job dependencies. Be aware that it might be a bit buggy and do not fully support all the features implemented in the `master` branch.**
 
@@ -401,12 +405,26 @@ workflow.gen_job_files()
 workflow.execute()
 ```
 
-## 3. Documentation
+# 3. Documentation
 
-Documentation is currently under development.
+A full documentation is available here.
 
-## Acknowledgments
+# Acknowledgments
 
 If you are using `pynta` or you wish to use it, let me know!
 
 This work was supported by the U.S. Department of Energy, Office of Science, Basic Energy Sciences, Chemical Sciences, Geosciences and Biosciences Division, as part of the Computational Chemistry Sciences Program.
+
+# Copyright Notice
+
+For five (5) years from 1/19/2021 the United States Government is granted for itself and others acting on its behalf a paid-up, nonexclusive, irrevocable worldwide license in this data to reproduce, prepare derivative works, and perform publicly and display publicly, by or on behalf of the Government. There is provision for the possible extension of the term of this license. Subsequent to that period or any extension granted, the United States Government is granted for itself and others acting on its behalf a paid-up, nonexclusive, irrevocable worldwide license in this data to reproduce, prepare derivative works, distribute copies to the public, perform publicly and display publicly, and to permit others to do so. The specific term of the license can be identified by inquiry made to National Technology and Engineering Solutions of Sandia, LLC or DOE.
+
+NEITHER THE UNITED STATES GOVERNMENT, NOR THE UNITED STATES DEPARTMENT OF ENERGY, NOR NATIONAL TECHNOLOGY AND ENGINEERING SOLUTIONS OF SANDIA, LLC, NOR ANY OF THEIR EMPLOYEES, MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR ASSUMES ANY LEGAL RESPONSIBILITY FOR THE ACCURACY, COMPLETENESS, OR USEFULNESS OF ANY INFORMATION, APPARATUS, PRODUCT, OR PROCESS DISCLOSED, OR REPRESENTS THAT ITS USE WOULD NOT INFRINGE PRIVATELY OWNED RIGHTS.
+
+Any licensee of this software has the obligation and responsibility to abide by the applicable export control laws, regulations, and general prohibitions relating to the export of technical data. Failure to obtain an export control license or other authority from the Government may result in criminal liability under U.S. laws.
+
+# License Notice
+
+Copyright 2021 National Technology & Engineering Solutions of Sandia,
+LLC (NTESS). Under the terms of Contract DE-NA0003525 with NTESS, the
+U.S. Government retains certain rights in this software.
