@@ -1,4 +1,4 @@
-
+#!/usr/bin/env python
 from pynta.check_input import InputChecker
 from pynta.restart import LowLevelRestart, HighLevelRestart
 from pynta.io import IO
@@ -133,24 +133,6 @@ class WorkFlow:
             )
             self.myPython.save()
             self.slab_opt_job = ''
-
-            # # TODO: instead of directly importing EspressoBalsam, we should
-            # # write a function which returns the appropriate class from
-            # # balsamcalc.py based on the user-provided input file
-            # # from pynta.balsamcalc import (
-            # #     EspressoBalsam, EspressoBalsamSocketIO
-            # # )
-            # # EspressoBalsam.exe = executable
-            # # EspressoBalsamSocketIO.exe = executable
-            # # EspressoBalsam.create_application()
-            # # EspressoBalsamSocketIO.create_application()
-            # from pynta.balsamcalc import (
-            #     NWChemBalsam, NWChemBalsamSocketIO
-            # )
-            # NWChemBalsam.exe = executable
-            # NWChemBalsamSocketIO.exe = executable
-            # NWChemBalsam.create_application()
-            # NWChemBalsamSocketIO.create_application()
 
             IO.set_calculators(executable, calculator, socket_calculator)
 
