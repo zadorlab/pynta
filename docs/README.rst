@@ -33,7 +33,7 @@ acceleration. We use the Atomic Simulation Environment (ASE) that enables
 coupling to a large variety of ab initio quantum chemistry codes.
 
 
-.. image:: workflow_idea.png
+.. image:: ../workflow_idea.png
    :width: 800
    :align: center
 
