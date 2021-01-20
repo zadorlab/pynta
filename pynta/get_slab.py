@@ -1,6 +1,3 @@
-# from pynta.balsamcalc import EspressoBalsamSocketIO
-# from pynta.balsamcalc import NWChemBalsamSocketIO
-
 from pathlib import PosixPath
 from typing import Dict, Tuple
 
