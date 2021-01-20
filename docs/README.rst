@@ -24,7 +24,7 @@ well-characterized reaction pathways, which can be in turn used to calculate
 rate coefficients and can be implemented in microkinetic mechanisms/models.
 
 Pynta is designed to work with the workflow code
-`balsam <https://balsam.readthedocs.io/en/latest/>`_ , which enables the seamless
+`balsam <https://balsam.readthedocs.io/en/latest/>`_ , which enables a seamless
 running of embarrassingly parallel computations on supercomputers. ``pynta``
 includes several so-called apps that are run through ``balsam``, and appear as
 one monolithic job submission in the queue system. Another level of parallelism

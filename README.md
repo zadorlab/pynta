@@ -22,7 +22,7 @@ rate coefficients and can be implemented in microkinetic mechanisms/models.
 
 `pynta` is designed to work with the workflow code
 [`balsam`](https://balsam.readthedocs.io/en/latest/), which
-enables the seamless running of embarrassingly parallel computations on
+enables a seamless running of embarrassingly parallel computations on
 supercomputers. `pynta` includes several so-called apps that are run through
 `balsam`, and appear as one monolithic job submission in the queue system.
 Another level of parallelism is gained from the ab initio programs, which may

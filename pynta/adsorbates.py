@@ -203,7 +203,6 @@ class Adsorbates:
             if len(sp_gratoms) == 0:
                 continue
             # which atom connects to the surface
-            # TODO improve it and account for bidentate
             bonded = [0]
 
             if sp_symbol in edge_cases_bonded_dict.keys():
@@ -252,9 +251,9 @@ class Adsorbates:
             a dictionary with QE pseudopotentials for all species.
             e.g.
 
-            >>> dict(Cu='Cu.pbe-spn-kjpaw_psl.1.0.0.UPF', 
+            >>> dict(Cu='Cu.pbe-spn-kjpaw_psl.1.0.0.UPF',
                     H='H.pbe-kjpaw_psl.1.0.0.UPF',
-                    O='O.pbe-n-kjpaw_psl.1.0.0.UPF', 
+                    O='O.pbe-n-kjpaw_psl.1.0.0.UPF',
                     C='C.pbe-n-kjpaw_psl.1.0.0.UPF')
 
         pseudo_dir: str
