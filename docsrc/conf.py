@@ -10,7 +10,7 @@ sys.path.insert(0, os.path.abspath('../'))
 # -- Project information -----------------------------------------------------
 
 project = 'Pynta'
-copyright = '2020, Maciej Gierada, Eric D. Hermes, David H. Bross'
+copyright = 'Copyright 2021 National Technology & Engineering Solutions of Sandia, LLC (NTESS). Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government retains certain rights in this software.'
 author = 'Maciej Gierada, Eric D. Hermes, David H. Bross'
 
 # The full version, including alpha/beta/rc tags
