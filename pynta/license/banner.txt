@@ -34,7 +34,7 @@
     
     All Catkit's code integrated into Pynta is located here:
     
-    {path_to_excatkit}
+    /Users/mgierad/00_SANDIA_WORK/05_rmgcat_to_stella/pynta/excatkit
     
     For a Catkit's source code, check
     <https://github.com/SUNCAT-Center/CatKit>

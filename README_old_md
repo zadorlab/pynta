@@ -20,30 +20,27 @@ adsorbates can undergo. After a series of such calculations the code arrives at
 well-characterized reaction pathways, which can be in turn used to calculate
 rate coefficients and can be implemented in microkinetic mechanisms/models.
 
-Pynta is designed to work with the workflow code
+`pynta` is designed to work with the workflow code
 [`balsam`](https://balsam.readthedocs.io/en/latest/), which
 enables the seamless running of embarrassingly parallel computations on
-supercomputers. Pynta includes several so-called apps that are run through
-`balsam`, and appear as one monolithic job submission in the queue system. We
-have tested the code on Argonne's ALCF Theta machine as part of our project
-supporting the development. Another level of parallelism is gained from the ab
-initio programs, which may or may not include GPU acceleration. We use the
-Atomic Simulation Environment (ASE) that enables coupling to a large variety of
-ab initio quantum chemistry codes.
+supercomputers. `pynta` includes several so-called apps that are run through
+`balsam`, and appear as one monolithic job submission in the queue system.
+Another level of parallelism is gained from the ab initio programs, which may
+or may not include GPU acceleration. We use the Atomic Simulation Environment
+(ASE) that enables coupling to a large variety of ab initio quantum
+chemistry codes.
 
 <center><img src='./workflow_idea.png' style="width:400px"></center>
 <br>
 
 # 1. Installation
 
-**Instalation can be a bit tricky because pynta depends on a several different packages that are under constant development (balsam, xtb-python)**
-
 The following instruction assumes that you have several softwares installed on your system, such as:
 
 - A queue system e.g. `Slurm`, `PBS` or `Cobalt`
 - An MPI e.g. `OpenMPI`
 - A math library e.g. `OpenBlas/LAPACK` or `Intel's MKL`
-- A compilier suite e.g. `Intel` or `GCC`
+- A compilier suite e.g. `GCC` or `Intel`
 
 ## 1.1 Install all prerequisites
 
@@ -189,13 +186,13 @@ cd pynta
 python setup.py install
 ```
 
-### 1.2.3b (optional) If you do not have admin privileges (e.g. you use it on a supercomputer), do the following instead of 1.2.3a:
+### 1.2.3b (optional) If you do not have admin privileges (e.g. you will be using `pynta` on a supercomputer), do the following instead of 1.2.3a:
 
 ```
 python setup.py install --user
 ```
 
-**You should be ready to use `pynta`**
+**You should be good to go with `pynta`**
 
 Once finished using the workflow, type:
 
@@ -223,7 +220,8 @@ Your prompt should change to something like:
 
 You will need **4** files to run the workflow:
 
-- `run_me.py` a python script that executes the workflow
+- `run_me.py` a python script that executes the workflow or alternatively,
+  `restart_me.py` to restart unfinished calculations
 - `run_me.sh` a bash script that submits jobs to the `balsam` database
 - `inputR2S.py` a python script holding all user-modifiable parameters of the `pynta`
 - `reactions.yaml` a yaml file with all reactions to be studied
@@ -234,6 +232,7 @@ An example `run_me.py` file:
 #!/usr/bin/env python3
 from pynta.main import WorkFlow
 
+
 def run():
     # instantiate a WorkFlow() class
     workflow = WorkFlow()
@@ -242,8 +241,24 @@ def run():
     # execute the workflow
     workflow.execute_all()
 
+
 if __name__ == '__main__':
-    runt()
+    run()
+```
+
+An example `run_me.py` file:
+
+```python
+#!/usr/bin/env python3
+from pynta.main import WorkFlow
+
+
+def restart():
+    return WorkFlow().restart()
+
+
+if __name__ == '__main__':
+    restart()
 ```
 
 An example `run_me.sh` file:
@@ -402,7 +417,6 @@ scaled1 = False
 # do you want to apply scfactor_surface to the species 2?
 scaled2 = False
 ####################################################
-
 
 ```
 
