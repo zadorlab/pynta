@@ -1,0 +1,603 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>pynta.excatkit.molecule &mdash; Pynta January 20, 2021 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> Pynta
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <!-- Local TOC -->
+              <div class="local-toc"></div>
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Pynta</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+          <li><a href="../../pynta.html">pynta</a> &raquo;</li>
+        
+      <li>pynta.excatkit.molecule</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for pynta.excatkit.molecule</h1><div class="highlight"><pre>
+<span></span><span class="ch">#!/usr/bin/env python3</span>
+<span class="kn">from</span> <span class="nn">pynta.excatkit.gratoms</span> <span class="k">import</span> <span class="n">Gratoms</span>
+<span class="kn">from</span> <span class="nn">pynta</span> <span class="k">import</span> <span class="n">defaults</span>
+
+<span class="kn">from</span> <span class="nn">ase.data</span> <span class="k">import</span> <span class="n">chemical_symbols</span>
+<span class="kn">from</span> <span class="nn">networkx</span> <span class="k">import</span> <span class="n">dfs_successors</span><span class="p">,</span> <span class="n">is_connected</span><span class="p">,</span> <span class="n">from_numpy_matrix</span>
+<span class="kn">from</span> <span class="nn">itertools</span> <span class="k">import</span> <span class="n">combinations</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">re</span>
+
+
+<div class="viewcode-block" id="Molecule"><a class="viewcode-back" href="../../../source/pynta.html#pynta.excatkit.molecule.Molecule">[docs]</a><span class="k">class</span> <span class="nc">Molecule</span><span class="p">():</span>
+<div class="viewcode-block" id="Molecule.molecule"><a class="viewcode-back" href="../../../source/pynta.html#pynta.excatkit.molecule.Molecule.molecule">[docs]</a>    <span class="k">def</span> <span class="nf">molecule</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">species</span><span class="p">,</span>
+            <span class="n">bond_index</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">vacuum</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Return list of enumerated gas-phase molecule structures based</span>
+<span class="sd">        on species and topology.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        species : str</span>
+<span class="sd">            The chemical symbols to construct a molecule from.</span>
+<span class="sd">        bond_index : int</span>
+<span class="sd">            Construct the molecule as though it were adsorbed to a surface</span>
+<span class="sd">            parallel to the z-axis. Will bond by the atom index given.</span>
+<span class="sd">        vacuum : float</span>
+<span class="sd">            Angstroms of vacuum to pad the molecules with.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        images : list of Gratoms objects</span>
+<span class="sd">            3D structures of the requested chemical species and topologies.</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">molecule_graphs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_topologies</span><span class="p">(</span><span class="n">species</span><span class="p">)</span>
+        <span class="n">images</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">atoms</span> <span class="ow">in</span> <span class="n">molecule_graphs</span><span class="p">:</span>
+            <span class="n">atoms</span> <span class="o">=</span> <span class="n">Molecule</span><span class="o">.</span><span class="n">get_3D_positions</span><span class="p">(</span><span class="n">atoms</span><span class="p">,</span> <span class="n">bond_index</span><span class="p">)</span>
+            <span class="n">atoms</span><span class="o">.</span><span class="n">center</span><span class="p">(</span><span class="n">vacuum</span><span class="p">)</span>
+            <span class="n">images</span> <span class="o">+=</span> <span class="p">[</span><span class="n">atoms</span><span class="p">]</span>
+
+        <span class="k">return</span> <span class="n">images</span></div>
+
+<div class="viewcode-block" id="Molecule.get_atomic_numbers"><a class="viewcode-back" href="../../../source/pynta.html#pynta.excatkit.molecule.Molecule.get_atomic_numbers">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">get_atomic_numbers</span><span class="p">(</span>
+            <span class="n">formula</span><span class="p">,</span>
+            <span class="n">return_count</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39; Return the atomic numbers associated with a chemical formula.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        formula : string</span>
+<span class="sd">            A chemical formula to parse into atomic numbers.</span>
+<span class="sd">        return_count : bool</span>
+<span class="sd">            Return the count of each element in the formula.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        numbers : ndarray (n,)</span>
+<span class="sd">            Element numbers in associated species.</span>
+<span class="sd">        counts : ndarray (n,)</span>
+<span class="sd">            Count of each element in a species.</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">parse</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="s1">&#39;[A-Z][a-z]?|[0-9]+&#39;</span><span class="p">,</span> <span class="n">formula</span><span class="p">)</span>
+
+        <span class="n">values</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">e</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">parse</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">e</span><span class="o">.</span><span class="n">isdigit</span><span class="p">():</span>
+                <span class="n">values</span><span class="p">[</span><span class="n">parse</span><span class="p">[</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]]</span> <span class="o">+=</span> <span class="nb">int</span><span class="p">(</span><span class="n">e</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">e</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">values</span><span class="p">:</span>
+                    <span class="n">values</span><span class="p">[</span><span class="n">e</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">values</span><span class="p">[</span><span class="n">e</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="n">numbers</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span>
+            <span class="n">chemical_symbols</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">k</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">values</span><span class="o">.</span><span class="n">keys</span><span class="p">()])</span>
+        <span class="n">srt</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">numbers</span><span class="p">)</span>
+        <span class="n">numbers</span> <span class="o">=</span> <span class="n">numbers</span><span class="p">[</span><span class="n">srt</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">return_count</span><span class="p">:</span>
+            <span class="n">counts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">v</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">values</span><span class="o">.</span><span class="n">values</span><span class="p">()])[</span><span class="n">srt</span><span class="p">]</span>
+
+            <span class="k">return</span> <span class="n">numbers</span><span class="p">,</span> <span class="n">counts</span>
+
+        <span class="k">return</span> <span class="n">numbers</span></div>
+
+<div class="viewcode-block" id="Molecule.hydrogenate"><a class="viewcode-back" href="../../../source/pynta.html#pynta.excatkit.molecule.Molecule.hydrogenate">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">hydrogenate</span><span class="p">(</span>
+            <span class="n">atoms</span><span class="p">,</span>
+            <span class="n">bins</span><span class="p">,</span>
+            <span class="n">copy</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39; Add hydrogens to a gratoms object via provided bins</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">h_index</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">atoms</span><span class="p">)</span>
+
+        <span class="n">edges</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">bins</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">j</span><span class="p">):</span>
+                <span class="n">edges</span> <span class="o">+=</span> <span class="p">[(</span><span class="n">i</span><span class="p">,</span> <span class="n">h_index</span><span class="p">)]</span>
+                <span class="n">h_index</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="k">if</span> <span class="n">copy</span><span class="p">:</span>
+            <span class="n">atoms</span> <span class="o">=</span> <span class="n">atoms</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">atoms</span> <span class="o">+=</span> <span class="n">Gratoms</span><span class="p">(</span><span class="s1">&#39;H</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">sum</span><span class="p">(</span><span class="n">bins</span><span class="p">)))</span>
+        <span class="n">atoms</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">add_edges_from</span><span class="p">(</span><span class="n">edges</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">atoms</span></div>
+
+<div class="viewcode-block" id="Molecule.bin_hydrogen"><a class="viewcode-back" href="../../../source/pynta.html#pynta.excatkit.molecule.Molecule.bin_hydrogen">[docs]</a>    <span class="k">def</span> <span class="nf">bin_hydrogen</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">hydrogens</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+            <span class="n">bins</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39; Recursive function for determining distributions of</span>
+<span class="sd">            hydrogens across bins.</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">if</span> <span class="n">bins</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">yield</span> <span class="p">[</span><span class="n">hydrogens</span><span class="p">]</span>
+
+        <span class="k">elif</span> <span class="n">hydrogens</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">yield</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">bins</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">hydrogens</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">bin_hydrogen</span><span class="p">(</span><span class="n">hydrogens</span> <span class="o">-</span> <span class="n">i</span><span class="p">,</span> <span class="mi">1</span><span class="p">):</span>
+                    <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">bin_hydrogen</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">bins</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+                        <span class="k">yield</span> <span class="n">j</span> <span class="o">+</span> <span class="n">k</span></div>
+
+<div class="viewcode-block" id="Molecule.get_topologies"><a class="viewcode-back" href="../../../source/pynta.html#pynta.excatkit.molecule.Molecule.get_topologies">[docs]</a>    <span class="k">def</span> <span class="nf">get_topologies</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">symbols</span><span class="p">,</span>
+            <span class="n">saturate</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39; Return the possible topologies of a given chemical species.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        symbols : str</span>
+<span class="sd">            Atomic symbols to construct the topologies from.</span>
+<span class="sd">        saturate : bool</span>
+<span class="sd">            Saturate the molecule with hydrogen based on the</span>
+<span class="sd">            default.radicals set.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        molecules : list (N,)</span>
+<span class="sd">            Gratoms objects with unique connectivity matrix attached.</span>
+<span class="sd">            No 3D positions will be provided for these structures.</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">num</span><span class="p">,</span> <span class="n">cnt</span> <span class="o">=</span> <span class="n">Molecule</span><span class="o">.</span><span class="n">get_atomic_numbers</span><span class="p">(</span><span class="n">symbols</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+        <span class="c1"># print(num, cnt)</span>
+        <span class="n">mcnt</span> <span class="o">=</span> <span class="n">cnt</span><span class="p">[</span><span class="n">num</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="n">mnum</span> <span class="o">=</span> <span class="n">num</span><span class="p">[</span><span class="n">num</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">cnt</span><span class="p">[</span><span class="n">num</span> <span class="o">==</span> <span class="mi">1</span><span class="p">]:</span>
+            <span class="n">hcnt</span> <span class="o">=</span> <span class="n">cnt</span><span class="p">[</span><span class="n">num</span> <span class="o">==</span> <span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">hcnt</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="n">elements</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">mnum</span><span class="p">,</span> <span class="n">mcnt</span><span class="p">)</span>
+        <span class="n">max_degree</span> <span class="o">=</span> <span class="n">defaults</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;radicals&#39;</span><span class="p">)[</span><span class="n">elements</span><span class="p">]</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="n">mcnt</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+
+        <span class="n">hmax</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">max_degree</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">-</span> <span class="p">(</span><span class="n">n</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">hcnt</span> <span class="o">&gt;</span> <span class="n">hmax</span><span class="p">:</span>
+            <span class="n">hcnt</span> <span class="o">=</span> <span class="n">hmax</span>
+
+        <span class="k">if</span> <span class="n">saturate</span><span class="p">:</span>
+            <span class="n">hcnt</span> <span class="o">=</span> <span class="n">hmax</span>
+        <span class="k">if</span> <span class="n">n</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">atoms</span> <span class="o">=</span> <span class="n">Gratoms</span><span class="p">(</span><span class="n">elements</span><span class="p">,</span> <span class="n">cell</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
+            <span class="n">hatoms</span> <span class="o">=</span> <span class="n">Molecule</span><span class="o">.</span><span class="n">hydrogenate</span><span class="p">(</span><span class="n">atoms</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">hcnt</span><span class="p">]))</span>
+            <span class="k">return</span> <span class="p">[</span><span class="n">hatoms</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="n">n</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">hatoms</span> <span class="o">=</span> <span class="n">Gratoms</span><span class="p">(</span><span class="s1">&#39;H</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">hcnt</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">hcnt</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+                <span class="n">hatoms</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">bonds</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+            <span class="k">return</span> <span class="p">[</span><span class="n">hatoms</span><span class="p">]</span>
+
+        <span class="n">ln</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">n</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+        <span class="n">il</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">tril_indices</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="n">backbones</span><span class="p">,</span> <span class="n">molecules</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[]</span>
+        <span class="n">combos</span> <span class="o">=</span> <span class="n">combinations</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">ln</span><span class="p">),</span> <span class="n">n</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">combos</span><span class="p">:</span>
+            <span class="c1"># Construct the connectivity matrix</span>
+            <span class="n">ltm</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">ln</span><span class="p">)</span>
+            <span class="n">ltm</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">atleast_2d</span><span class="p">(</span><span class="n">c</span><span class="p">)]</span> <span class="o">=</span> <span class="mi">1</span>
+
+            <span class="n">connectivity</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">n</span><span class="p">,</span> <span class="n">n</span><span class="p">))</span>
+            <span class="n">connectivity</span><span class="p">[</span><span class="n">il</span><span class="p">]</span> <span class="o">=</span> <span class="n">ltm</span>
+            <span class="n">connectivity</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">connectivity</span><span class="p">,</span> <span class="n">connectivity</span><span class="o">.</span><span class="n">T</span><span class="p">)</span>
+
+            <span class="n">degree</span> <span class="o">=</span> <span class="n">connectivity</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+            <span class="c1"># Not fully connected (subgraph)</span>
+            <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">degree</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> \
+                    <span class="n">is_connected</span><span class="p">(</span><span class="n">from_numpy_matrix</span><span class="p">(</span><span class="n">connectivity</span><span class="p">)):</span>
+                <span class="k">continue</span>
+
+            <span class="c1"># Overbonded atoms.</span>
+            <span class="n">remaining_bonds</span> <span class="o">=</span> <span class="p">(</span><span class="n">max_degree</span> <span class="o">-</span> <span class="n">degree</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">remaining_bonds</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">):</span>
+                <span class="k">continue</span>
+
+            <span class="n">atoms</span> <span class="o">=</span> <span class="n">Gratoms</span><span class="p">(</span>
+                <span class="n">numbers</span><span class="o">=</span><span class="n">elements</span><span class="p">,</span>
+                <span class="n">edges</span><span class="o">=</span><span class="n">connectivity</span><span class="p">,</span>
+                <span class="n">cell</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
+
+            <span class="n">isomorph</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="k">for</span> <span class="n">G0</span> <span class="ow">in</span> <span class="n">backbones</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">atoms</span><span class="o">.</span><span class="n">is_isomorph</span><span class="p">(</span><span class="n">G0</span><span class="p">):</span>
+                    <span class="n">isomorph</span> <span class="o">=</span> <span class="kc">True</span>
+                    <span class="k">break</span>
+
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">isomorph</span><span class="p">:</span>
+                <span class="n">backbones</span> <span class="o">+=</span> <span class="p">[</span><span class="n">atoms</span><span class="p">]</span>
+
+                <span class="c1"># The backbone is saturated, do not enumerate</span>
+                <span class="k">if</span> <span class="n">hcnt</span> <span class="o">==</span> <span class="n">hmax</span><span class="p">:</span>
+                    <span class="n">hatoms</span> <span class="o">=</span> <span class="n">Molecule</span><span class="o">.</span><span class="n">hydrogenate</span><span class="p">(</span><span class="n">atoms</span><span class="p">,</span> <span class="n">remaining_bonds</span><span class="p">)</span>
+                    <span class="n">molecules</span> <span class="o">+=</span> <span class="p">[</span><span class="n">hatoms</span><span class="p">]</span>
+                    <span class="k">continue</span>
+
+                <span class="c1"># Enumerate hydrogens across backbone</span>
+                <span class="k">for</span> <span class="n">bins</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">bin_hydrogen</span><span class="p">(</span><span class="n">hcnt</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">bins</span> <span class="o">&lt;=</span> <span class="n">remaining_bonds</span><span class="p">):</span>
+                        <span class="k">continue</span>
+
+                    <span class="n">hatoms</span> <span class="o">=</span> <span class="n">Molecule</span><span class="o">.</span><span class="n">hydrogenate</span><span class="p">(</span><span class="n">atoms</span><span class="p">,</span> <span class="n">bins</span><span class="p">)</span>
+
+                    <span class="n">isomorph</span> <span class="o">=</span> <span class="kc">False</span>
+                    <span class="k">for</span> <span class="n">G0</span> <span class="ow">in</span> <span class="n">molecules</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="n">hatoms</span><span class="o">.</span><span class="n">is_isomorph</span><span class="p">(</span><span class="n">G0</span><span class="p">):</span>
+                            <span class="n">isomorph</span> <span class="o">=</span> <span class="kc">True</span>
+                            <span class="k">break</span>
+
+                    <span class="k">if</span> <span class="ow">not</span> <span class="n">isomorph</span><span class="p">:</span>
+                        <span class="n">molecules</span> <span class="o">+=</span> <span class="p">[</span><span class="n">hatoms</span><span class="p">]</span>
+
+        <span class="k">return</span> <span class="n">molecules</span></div>
+
+<div class="viewcode-block" id="Molecule.get_basis_vectors"><a class="viewcode-back" href="../../../source/pynta.html#pynta.excatkit.molecule.Molecule.get_basis_vectors">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">get_basis_vectors</span><span class="p">(</span><span class="n">coordinates</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39; Return a set of basis vectors for a given array of</span>
+<span class="sd">            3D coordinates.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        coordinates : array_like (3, 3) | (2, 3)</span>
+<span class="sd">            Cartesian coordinates to determine the basis of. If</span>
+<span class="sd">            only 2 positions are given 3rd is chosen as the positive</span>
+<span class="sd">            y-axis.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        basis_vectors : ndarray (3, 3)</span>
+<span class="sd">            Automatically generated basis vectors from the given</span>
+<span class="sd">            positions.</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">coordinates</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="n">c0</span><span class="p">,</span> <span class="n">c1</span><span class="p">,</span> <span class="n">c2</span> <span class="o">=</span> <span class="n">coordinates</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">c0</span><span class="p">,</span> <span class="n">c1</span> <span class="o">=</span> <span class="n">coordinates</span>
+            <span class="n">c2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+
+        <span class="n">basis1</span> <span class="o">=</span> <span class="n">c0</span> <span class="o">-</span> <span class="n">c1</span>
+        <span class="n">basis2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cross</span><span class="p">(</span><span class="n">basis1</span><span class="p">,</span> <span class="n">c0</span> <span class="o">-</span> <span class="n">c2</span><span class="p">)</span>
+        <span class="n">basis3</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cross</span><span class="p">(</span><span class="n">basis1</span><span class="p">,</span> <span class="n">basis2</span><span class="p">)</span>
+
+        <span class="n">basis_vectors</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">([</span><span class="n">basis1</span><span class="p">,</span> <span class="n">basis2</span><span class="p">,</span> <span class="n">basis3</span><span class="p">])</span>
+        <span class="n">basis_vectors</span> <span class="o">/=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span>
+            <span class="n">basis_vectors</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">basis_vectors</span></div>
+
+<div class="viewcode-block" id="Molecule.branch_molecule"><a class="viewcode-back" href="../../../source/pynta.html#pynta.excatkit.molecule.Molecule.branch_molecule">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">branch_molecule</span><span class="p">(</span>
+            <span class="n">atoms</span><span class="p">,</span>
+            <span class="n">branch</span><span class="p">,</span>
+            <span class="n">basis</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">adsorption</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39; Return the positions of a Gratoms object for a segment of its</span>
+<span class="sd">        attached graph. This function is mean to be iterated over by a</span>
+<span class="sd">        depth first search form NetworkX.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        atoms : Gratoms object</span>
+<span class="sd">            Gratoms object to be iterated over. Will have its positions</span>
+<span class="sd">            altered in-place.</span>
+<span class="sd">        branch : tuple (1, [N,])</span>
+<span class="sd">            A single entry from the output of nx.bfs_successors. The</span>
+<span class="sd">            first entry is the root node and the following list is the</span>
+<span class="sd">            nodes branching from the root.</span>
+<span class="sd">        basis : ndarray (3, 3)</span>
+<span class="sd">            The basis vectors to use for this step of the branching.</span>
+<span class="sd">        adsorption : bool</span>
+<span class="sd">            If True, will construct the molecule as though there is a</span>
+<span class="sd">            surface normal to the negative z-axis. Must be None for</span>
+<span class="sd">            all but the first index in the depth first search.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        positions : ndarray (N, 3)</span>
+<span class="sd">            Estimated positions for the branch nodes.</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">root</span><span class="p">,</span> <span class="n">nodes</span> <span class="o">=</span> <span class="n">branch</span>
+        <span class="n">root_position</span> <span class="o">=</span> <span class="n">atoms</span><span class="p">[</span><span class="n">root</span><span class="p">]</span><span class="o">.</span><span class="n">position</span>
+
+        <span class="n">radii</span> <span class="o">=</span> <span class="n">defaults</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;radii&#39;</span><span class="p">)</span>
+        <span class="n">atomic_numbers</span> <span class="o">=</span> <span class="n">atoms</span><span class="o">.</span><span class="n">numbers</span><span class="p">[[</span><span class="n">root</span><span class="p">]</span> <span class="o">+</span> <span class="n">nodes</span><span class="p">]</span>
+        <span class="n">atomic_radii</span> <span class="o">=</span> <span class="n">radii</span><span class="p">[</span><span class="n">atomic_numbers</span><span class="p">]</span>
+        <span class="n">dist</span> <span class="o">=</span> <span class="p">(</span><span class="n">atomic_radii</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">atomic_radii</span><span class="p">[</span><span class="mi">1</span><span class="p">:])[:,</span> <span class="kc">None</span><span class="p">]</span>
+
+        <span class="n">angles</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">109.47</span><span class="p">,</span> <span class="mf">109.47</span><span class="p">,</span> <span class="mf">109.47</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+        <span class="n">dihedral</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">120</span><span class="p">,</span> <span class="o">-</span><span class="mi">120</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+
+        <span class="k">if</span> <span class="n">adsorption</span><span class="p">:</span>
+            <span class="c1"># Move adsorption structures away from surface</span>
+            <span class="n">angles</span> <span class="o">+=</span> <span class="mi">15</span>
+
+        <span class="c1"># Tetrahedral bond arrangement by default</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">nodes</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">n</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="c1"># Linear bond arrangement</span>
+            <span class="n">angles</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">180</span>
+        <span class="k">elif</span> <span class="n">n</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="c1"># Trigonal-planer bond arrangement</span>
+            <span class="n">angles</span><span class="p">[:</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="mi">120</span>
+            <span class="n">dihedral</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">180</span>
+
+        <span class="c1"># Place the atoms of this segment of the branch</span>
+        <span class="k">if</span> <span class="n">basis</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">basis</span> <span class="o">=</span> <span class="n">Molecule</span><span class="o">.</span><span class="n">get_basis_vectors</span><span class="p">(</span>
+                <span class="p">[</span><span class="n">root_position</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">]])</span>
+        <span class="n">basis</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">basis</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:],</span> <span class="nb">len</span><span class="p">(</span><span class="n">dist</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+        <span class="n">ang</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">deg2rad</span><span class="p">(</span><span class="n">angles</span><span class="p">)[:</span><span class="nb">len</span><span class="p">(</span><span class="n">dist</span><span class="p">),</span> <span class="kc">None</span><span class="p">]</span>
+        <span class="n">tor</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">deg2rad</span><span class="p">(</span><span class="n">dihedral</span><span class="p">)[:</span><span class="nb">len</span><span class="p">(</span><span class="n">dist</span><span class="p">),</span> <span class="kc">None</span><span class="p">]</span>
+
+        <span class="n">basis</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">*=</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">tor</span><span class="p">)</span>
+        <span class="n">basis</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">*=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">tor</span><span class="p">)</span>
+
+        <span class="n">vectors</span> <span class="o">=</span> <span class="n">basis</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">basis</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">]</span>
+        <span class="n">vectors</span> <span class="o">*=</span> <span class="n">dist</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">ang</span><span class="p">)</span>
+        <span class="n">basis</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">*=</span> <span class="n">dist</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">ang</span><span class="p">)</span>
+
+        <span class="n">positions</span> <span class="o">=</span> <span class="n">vectors</span> <span class="o">+</span> <span class="n">root_position</span> <span class="o">-</span> <span class="n">basis</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span>
+
+        <span class="k">return</span> <span class="n">positions</span></div>
+
+<div class="viewcode-block" id="Molecule.get_3D_positions"><a class="viewcode-back" href="../../../source/pynta.html#pynta.excatkit.molecule.Molecule.get_3D_positions">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">get_3D_positions</span><span class="p">(</span>
+            <span class="n">atoms</span><span class="p">,</span>
+            <span class="n">bond_index</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39; Return an estimation of the 3D structure of a Gratoms object</span>
+<span class="sd">        based on its graph.</span>
+
+<span class="sd">        .. warning:: This function operates on the atoms object in-place.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        atoms : Gratoms object</span>
+<span class="sd">            Structure with connectivity matrix to provide a 3D structure.</span>
+<span class="sd">        bond_index : int</span>
+<span class="sd">            Index of the atoms to consider as the origin of a surface</span>
+<span class="sd">            bonding site.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        atoms : Gratoms object</span>
+<span class="sd">            Structure with updated 3D positions.</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">branches</span> <span class="o">=</span> <span class="n">dfs_successors</span><span class="p">(</span><span class="n">atoms</span><span class="o">.</span><span class="n">graph</span><span class="p">,</span> <span class="n">bond_index</span><span class="p">)</span>
+
+        <span class="n">complete</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">branch</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">branches</span><span class="o">.</span><span class="n">items</span><span class="p">()):</span>
+            <span class="n">root</span><span class="p">,</span> <span class="n">nodes</span> <span class="o">=</span> <span class="n">branch</span>
+
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">nodes</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">continue</span>
+
+            <span class="n">c0</span> <span class="o">=</span> <span class="n">atoms</span><span class="p">[</span><span class="n">root</span><span class="p">]</span><span class="o">.</span><span class="n">position</span>
+            <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">basis</span> <span class="o">=</span> <span class="n">Molecule</span><span class="o">.</span><span class="n">get_basis_vectors</span><span class="p">([</span><span class="n">c0</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">]])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">bond_index</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">base_root</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">complete</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="n">root</span> <span class="ow">in</span> <span class="n">branches</span><span class="p">[</span><span class="n">base_root</span><span class="p">]:</span>
+                        <span class="n">c1</span> <span class="o">=</span> <span class="n">atoms</span><span class="p">[</span><span class="n">base_root</span><span class="p">]</span><span class="o">.</span><span class="n">position</span>
+                        <span class="c1"># Flip the basis for every alternate step down</span>
+                        <span class="c1"># the chain.</span>
+                        <span class="n">basis</span> <span class="o">=</span> <span class="n">Molecule</span><span class="o">.</span><span class="n">get_basis_vectors</span><span class="p">([</span><span class="n">c0</span><span class="p">,</span> <span class="n">c1</span><span class="p">])</span>
+                        <span class="k">if</span> <span class="p">(</span><span class="n">i</span> <span class="o">-</span> <span class="n">j</span><span class="p">)</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                            <span class="n">basis</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">*=</span> <span class="o">-</span><span class="mi">1</span>
+                        <span class="k">break</span>
+            <span class="n">complete</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">root</span><span class="p">)</span>
+
+            <span class="n">positions</span> <span class="o">=</span> <span class="n">Molecule</span><span class="o">.</span><span class="n">branch_molecule</span><span class="p">(</span>
+                <span class="n">atoms</span><span class="p">,</span> <span class="n">branch</span><span class="p">,</span> <span class="n">basis</span><span class="p">,</span> <span class="n">bond_index</span><span class="p">)</span>
+            <span class="n">atoms</span><span class="o">.</span><span class="n">positions</span><span class="p">[</span><span class="n">nodes</span><span class="p">]</span> <span class="o">=</span> <span class="n">positions</span>
+
+        <span class="k">return</span> <span class="n">atoms</span></div></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, Maciej Gierada, Eric D. Hermes, David H. Bross
+      <span class="lastupdated">
+        Last updated on Wed, 20 Jan 2021 11:36:46.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

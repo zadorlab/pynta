@@ -1,0 +1,313 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>pynta.check_input &mdash; Pynta January 20, 2021 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/doctools.js"></script>
+        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> Pynta
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <!-- Local TOC -->
+              <div class="local-toc"></div>
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">Pynta</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+        
+          <li><a href="../pynta.html">pynta</a> &raquo;</li>
+        
+      <li>pynta.check_input</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for pynta.check_input</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+
+
+<div class="viewcode-block" id="InputChecker"><a class="viewcode-back" href="../../source/pynta.html#pynta.check_input.InputChecker">[docs]</a><span class="k">class</span> <span class="nc">InputChecker</span><span class="p">():</span>
+    <span class="sd">&#39;&#39;&#39; A class to check for input files &#39;&#39;&#39;</span>
+
+<div class="viewcode-block" id="InputChecker.__init__"><a class="viewcode-back" href="../../source/pynta.html#pynta.check_input.InputChecker.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">yamlfile</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">inputR2S</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">run_me_py</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">run_me_sh</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">working_dir</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&#39;&#39;&#39; Initialize</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+
+<span class="sd">        yamlfile : str</span>
+<span class="sd">            a name of the .yaml file with reaction list</span>
+<span class="sd">        slab : str</span>
+<span class="sd">            a :literal:`*.xyz` file name with the optimized slab</span>
+<span class="sd">            e.g.</span>
+<span class="sd">            ``&#39;Cu_100_slab_opt.xyz&#39;``</span>
+<span class="sd">        inputR2S : python file</span>
+<span class="sd">            an input file with paramters to the workflow</span>
+<span class="sd">        run_me : str</span>
+<span class="sd">            the workflow execution script</span>
+<span class="sd">            e.g.</span>
+<span class="sd">            ``&#39;run_me.py&#39;``</span>
+<span class="sd">        working_dir : str</span>
+<span class="sd">            a main dir where all files are stored</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">yamlfile</span> <span class="o">=</span> <span class="n">yamlfile</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inputR2S</span> <span class="o">=</span> <span class="n">inputR2S</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">run_me_py</span> <span class="o">=</span> <span class="n">run_me_py</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">run_me_sh</span> <span class="o">=</span> <span class="n">run_me_sh</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">working_dir</span> <span class="o">=</span> <span class="n">working_dir</span></div>
+
+<div class="viewcode-block" id="InputChecker.check_all"><a class="viewcode-back" href="../../source/pynta.html#pynta.check_input.InputChecker.check_all">[docs]</a>    <span class="k">def</span> <span class="nf">check_all</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&#39;&#39;&#39; Print info about checking input files &#39;&#39;&#39;</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Checking input...&#39;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;---&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_input_file</span><span class="p">():</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;---&#39;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Error&#39;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Make sure all input files are &#39;</span>
+                  <span class="s1">&#39;in your working directory&#39;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;---&#39;</span><span class="p">)</span>
+            <span class="c1"># exit if at least one error</span>
+            <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Passed!&#39;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;---&#39;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="InputChecker.is_input_file"><a class="viewcode-back" href="../../source/pynta.html#pynta.check_input.InputChecker.is_input_file">[docs]</a>    <span class="k">def</span> <span class="nf">is_input_file</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="sd">&#39;&#39;&#39; Check if there are input files in the working directory &#39;&#39;&#39;</span>
+        <span class="c1"># create check list</span>
+        <span class="n">check_list</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="c1"># check inputs</span>
+        <span class="n">check_yaml</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">check_yaml</span><span class="p">()</span>
+        <span class="n">check_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">check_yaml</span><span class="p">)</span>
+        <span class="n">check_inputR2S</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">check_inputR2S</span><span class="p">()</span>
+        <span class="n">check_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">check_inputR2S</span><span class="p">)</span>
+        <span class="n">check_run_me_py</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">check_run_me_py</span><span class="p">()</span>
+        <span class="n">check_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">check_run_me_py</span><span class="p">)</span>
+        <span class="n">check_run_me_sh</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">check_run_me_sh</span><span class="p">()</span>
+        <span class="n">check_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">check_run_me_sh</span><span class="p">)</span>
+
+        <span class="c1"># There is an error if at least one element of check_list is False</span>
+        <span class="k">if</span> <span class="nb">all</span><span class="p">(</span><span class="n">check_list</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span></div>
+
+<div class="viewcode-block" id="InputChecker.check_yaml"><a class="viewcode-back" href="../../source/pynta.html#pynta.check_input.InputChecker.check_yaml">[docs]</a>    <span class="k">def</span> <span class="nf">check_yaml</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="sd">&#39;&#39;&#39; Check for :literal:`*.yaml` file with list of reactions &#39;&#39;&#39;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">yamlfile</span><span class="p">):</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;!    .yaml file (</span><span class="si">{}</span><span class="s1">) is not in your working &#39;</span>
+                  <span class="s1">&#39;directory: </span><span class="se">\n</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">yamlfile</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">working_dir</span><span class="p">))</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">True</span></div>
+
+<div class="viewcode-block" id="InputChecker.check_slab"><a class="viewcode-back" href="../../source/pynta.html#pynta.check_input.InputChecker.check_slab">[docs]</a>    <span class="k">def</span> <span class="nf">check_slab</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="sd">&#39;&#39;&#39; Check for slab :literal:`*.xyz` file with slab geometry &#39;&#39;&#39;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">slab</span><span class="p">):</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;!    .xyz file (</span><span class="si">{}</span><span class="s1">) with optimized slab is not in your &#39;</span>
+                  <span class="s1">&#39;working directory: &#39;</span>
+                  <span class="s1">&#39;</span><span class="se">\n</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">slab</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">working_dir</span><span class="p">))</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">True</span></div>
+
+<div class="viewcode-block" id="InputChecker.check_inputR2S"><a class="viewcode-back" href="../../source/pynta.html#pynta.check_input.InputChecker.check_inputR2S">[docs]</a>    <span class="k">def</span> <span class="nf">check_inputR2S</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="sd">&#39;&#39;&#39; Check for inputR2S file &#39;&#39;&#39;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">inputR2S</span><span class="p">):</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;!    inputR2S.py file (</span><span class="si">{}</span><span class="s1">) is not in your current working &#39;</span>
+                  <span class="s1">&#39;directory: </span><span class="se">\n</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">inputR2S</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">working_dir</span><span class="p">))</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">True</span></div>
+
+<div class="viewcode-block" id="InputChecker.check_run_me_py"><a class="viewcode-back" href="../../source/pynta.html#pynta.check_input.InputChecker.check_run_me_py">[docs]</a>    <span class="k">def</span> <span class="nf">check_run_me_py</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="sd">&#39;&#39;&#39; Check for ``&#39;run_me.py&#39;`` file &#39;&#39;&#39;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">run_me_py</span><span class="p">):</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;!    run_me.py file (</span><span class="si">{}</span><span class="s1">) is not in your current working &#39;</span>
+                  <span class="s1">&#39;directory: </span><span class="se">\n</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">run_me_py</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">working_dir</span><span class="p">))</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">True</span></div>
+
+<div class="viewcode-block" id="InputChecker.check_run_me_sh"><a class="viewcode-back" href="../../source/pynta.html#pynta.check_input.InputChecker.check_run_me_sh">[docs]</a>    <span class="k">def</span> <span class="nf">check_run_me_sh</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="sd">&#39;&#39;&#39; Check for ``&#39;run_me.sh&#39;`` file &#39;&#39;&#39;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">run_me_sh</span><span class="p">):</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;!    run_me.sh file (</span><span class="si">{}</span><span class="s1">) is not in your current working &#39;</span>
+                  <span class="s1">&#39;directory: </span><span class="se">\n</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">run_me_sh</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">working_dir</span><span class="p">))</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">True</span></div></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, Maciej Gierada, Eric D. Hermes, David H. Bross
+      <span class="lastupdated">
+        Last updated on Wed, 20 Jan 2021 11:36:46.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

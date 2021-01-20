@@ -1,0 +1,1235 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>pynta.ts &mdash; Pynta January 20, 2021 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/doctools.js"></script>
+        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> Pynta
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <!-- Local TOC -->
+              <div class="local-toc"></div>
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">Pynta</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+        
+          <li><a href="../pynta.html">pynta</a> &raquo;</li>
+        
+      <li>pynta.ts</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for pynta.ts</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">typing</span> <span class="k">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Dict</span>
+<span class="kn">from</span> <span class="nn">pynta.excatkit.gratoms</span> <span class="k">import</span> <span class="n">Gratoms</span>
+<span class="kn">from</span> <span class="nn">pynta.excatkit.adsorption</span> <span class="k">import</span> <span class="n">Builder</span>
+<span class="kn">from</span> <span class="nn">pynta.ts_guesses</span> <span class="k">import</span> <span class="n">GeneralTSGuessesGenerator</span>
+<span class="kn">from</span> <span class="nn">pynta.adsorbates</span> <span class="k">import</span> <span class="n">Adsorbates</span>
+<span class="kn">from</span> <span class="nn">pynta.io</span> <span class="k">import</span> <span class="n">IO</span>
+
+<span class="kn">from</span> <span class="nn">ase.io</span> <span class="k">import</span> <span class="n">read</span><span class="p">,</span> <span class="n">write</span>
+<span class="kn">from</span> <span class="nn">ase.utils.structure_comparator</span> <span class="k">import</span> <span class="n">SymmetryEquivalenceCheck</span>
+<span class="kn">from</span> <span class="nn">ase</span> <span class="k">import</span> <span class="n">Atoms</span>
+
+<span class="kn">from</span> <span class="nn">collections</span> <span class="k">import</span> <span class="n">Counter</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">shutil</span>
+<span class="kn">from</span> <span class="nn">statistics</span> <span class="k">import</span> <span class="n">mean</span>
+<span class="kn">from</span> <span class="nn">pathlib</span> <span class="k">import</span> <span class="n">Path</span><span class="p">,</span> <span class="n">PosixPath</span>
+<span class="kn">from</span> <span class="nn">spglib</span> <span class="k">import</span> <span class="n">get_symmetry</span>
+<span class="kn">import</span> <span class="nn">heapq</span>
+
+
+<div class="viewcode-block" id="TS"><a class="viewcode-back" href="../../source/pynta.html#pynta.ts.TS">[docs]</a><span class="k">class</span> <span class="nc">TS</span><span class="p">():</span>
+<div class="viewcode-block" id="TS.__init__"><a class="viewcode-back" href="../../source/pynta.html#pynta.ts.TS.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">facetpath</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">slab</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">ts_estimate_dir</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">yamlfile</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">repeats</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span>
+            <span class="n">creation_dir</span><span class="p">:</span> <span class="n">PosixPath</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&#39;&#39;&#39; Initializing</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ___________</span>
+<span class="sd">        facetpath : str</span>
+<span class="sd">            a path to the workflow&#39;s main dir</span>
+<span class="sd">            e.g. &#39;Cu_111&#39;</span>
+<span class="sd">        slab : str</span>
+<span class="sd">            a &#39;.xyz&#39; file name with the optimized slab</span>
+<span class="sd">            e.g.</span>
+<span class="sd">            &#39;Cu_111_slab_opt.xyz&#39;</span>
+<span class="sd">        ts_estimate_dir : str</span>
+<span class="sd">            a path to directory with TSs</span>
+<span class="sd">            e.g. &#39;TS_estimate&#39;</span>
+<span class="sd">        yamlfile : str</span>
+<span class="sd">            a name of the .yaml file with a reactions list</span>
+<span class="sd">        repeats : tuple(int, int, int)</span>
+<span class="sd">            how to replicate unit cell in (x, y, z) direction,</span>
+<span class="sd">            e.g. (3, 3, 1)</span>
+<span class="sd">        creation_dir : posix</span>
+<span class="sd">            a posix path to the main working directory</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">facetpath</span> <span class="o">=</span> <span class="n">facetpath</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">slab</span> <span class="o">=</span> <span class="n">slab</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ts_estimate_dir</span> <span class="o">=</span> <span class="n">ts_estimate_dir</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">yamlfile</span> <span class="o">=</span> <span class="n">yamlfile</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">repeats</span> <span class="o">=</span> <span class="n">repeats</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">creation_dir</span> <span class="o">=</span> <span class="n">creation_dir</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_kpts</span> <span class="o">=</span> <span class="n">IO</span><span class="p">()</span><span class="o">.</span><span class="n">get_kpoints</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">repeats</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">path_to_slab</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">creation_dir</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">slab</span><span class="p">)</span>
+        <span class="n">big_slab</span> <span class="o">=</span> <span class="n">read</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path_to_slab</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">repeats</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nslab</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">big_slab</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="TS.prepare_ts_estimate"><a class="viewcode-back" href="../../source/pynta.html#pynta.ts.TS.prepare_ts_estimate">[docs]</a>    <span class="k">def</span> <span class="nf">prepare_ts_estimate</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">rxn</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
+            <span class="n">scfactor</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+            <span class="n">scfactor_surface</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+            <span class="n">pytemplate_xtb</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">species_list</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+            <span class="n">reacting_atoms</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span>
+            <span class="n">metal_atom</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">scaled1</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+            <span class="n">scaled2</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&#39;&#39;&#39; Prepare TS estimates for subsequent xTB calculations</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ___________</span>
+
+<span class="sd">        rxn : dict(yaml[str:str])</span>
+<span class="sd">            a dictionary with info about the paricular reaction. This can be</span>
+<span class="sd">            view as a splitted many reaction .yaml file to a single reaction</span>
+<span class="sd">            .yaml file</span>
+<span class="sd">        scfator : float</span>
+<span class="sd">            a scaling factor to scale a bond distance between</span>
+<span class="sd">            atoms taking part in the reaction</span>
+<span class="sd">            e.g. 1.4</span>
+<span class="sd">        scfactor_surface : float</span>
+<span class="sd">            a scaling factor to scale the target bond distance, i.e.</span>
+<span class="sd">            the average distance between adsorbed atom and the nearest</span>
+<span class="sd">            surface atom. Helpful e.g. when H is far away form the surface</span>
+<span class="sd">            in TS, whereas for minima it is close to the surface</span>
+<span class="sd">            e.g. 1.0</span>
+<span class="sd">        pytemplate_xtb : python script</span>
+<span class="sd">            a template file for penalty function minimization job</span>
+<span class="sd">        species_list : List[str]</span>
+<span class="sd">            a list of species which atoms take part in the reaction,</span>
+<span class="sd">            i.e. for [&#39;CO2&#39;] [&#39;C&#39;] is taking part in reaction</span>
+<span class="sd">            e.g. [&#39;O&#39;, &#39;H&#39;] or [&#39;CO2&#39;, &#39;H&#39;]</span>
+<span class="sd">        reacting_atoms : Dict[str, int]</span>
+<span class="sd">            keys are sybols of atoms that takes part in reaction whereas,</span>
+<span class="sd">            values are their indicies</span>
+<span class="sd">        metal_atom : str</span>
+<span class="sd">            a checmical symbol for the surface atoms (only metallic surfaces</span>
+<span class="sd">            are allowed)</span>
+<span class="sd">        scaled1 : bool</span>
+<span class="sd">            specify whether use the optional scfactor_surface</span>
+<span class="sd">            for the species 1 (sp1)</span>
+<span class="sd">        scaled2 : bool</span>
+<span class="sd">            specify whether use the optional scfactor_surface</span>
+<span class="sd">            for the species 2 (sp2)</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">r_name_list</span><span class="p">,</span> <span class="n">p_name_list</span> <span class="o">=</span> <span class="n">IO</span><span class="o">.</span><span class="n">get_reactants_and_products</span><span class="p">(</span><span class="n">rxn</span><span class="p">)</span>
+        <span class="n">rxn_name</span> <span class="o">=</span> <span class="n">IO</span><span class="o">.</span><span class="n">get_rxn_name</span><span class="p">(</span><span class="n">rxn</span><span class="p">)</span>
+
+        <span class="n">ts_estimate_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">creation_dir</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">facetpath</span><span class="p">,</span>
+            <span class="n">rxn_name</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ts_estimate_dir</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">TS_placer</span><span class="p">(</span>
+            <span class="n">ts_estimate_path</span><span class="p">,</span>
+            <span class="n">scfactor</span><span class="p">,</span>
+            <span class="n">rxn</span><span class="p">,</span>
+            <span class="n">rxn_name</span><span class="p">,</span>
+            <span class="n">r_name_list</span><span class="p">,</span>
+            <span class="n">p_name_list</span><span class="p">,</span>
+            <span class="n">reacting_atoms</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">filtered_out_equiv_ts_estimates</span><span class="p">(</span>
+            <span class="n">ts_estimate_path</span><span class="p">,</span>
+            <span class="n">rxn_name</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_up_penalty_xtb</span><span class="p">(</span>
+            <span class="n">ts_estimate_path</span><span class="p">,</span>
+            <span class="n">pytemplate_xtb</span><span class="p">,</span>
+            <span class="n">species_list</span><span class="p">,</span>
+            <span class="n">reacting_atoms</span><span class="p">,</span>
+            <span class="n">metal_atom</span><span class="p">,</span>
+            <span class="n">scaled1</span><span class="p">,</span>
+            <span class="n">scfactor_surface</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="TS.get_max_rot_angle"><a class="viewcode-back" href="../../source/pynta.html#pynta.ts.TS.get_max_rot_angle">[docs]</a>    <span class="k">def</span> <span class="nf">get_max_rot_angle</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&#39;&#39;&#39; Get the maximum angle of rotation for a given slab that will</span>
+<span class="sd">        generate all symmetrically distinct TS estimates.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        ________</span>
+<span class="sd">        max_rot_angle : float</span>
+<span class="sd">            a maximum angle of rotation of TS adducts on the given slab that</span>
+<span class="sd">            would generate symmetrically dostinct configurations</span>
+<span class="sd">            i.e. once the TS adduct is rotated by bigger angle than</span>
+<span class="sd">            max_rot_angle, some of the generated structures will be</span>
+<span class="sd">            symetrically equivalent to the others</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="c1"># convert slab to ASE&#39;s Atom object</span>
+        <span class="n">slab</span> <span class="o">=</span> <span class="n">read</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">slab</span><span class="p">)</span>
+        <span class="c1"># get all symmetry operations</span>
+        <span class="n">symm</span> <span class="o">=</span> <span class="n">get_symmetry</span><span class="p">(</span><span class="n">slab</span><span class="p">)</span>
+        <span class="c1"># count rotations operations</span>
+        <span class="n">nrot</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">symm</span><span class="p">[</span><span class="s1">&#39;rotations&#39;</span><span class="p">])</span>
+        <span class="c1"># the angle of rotation is 360 devided by nrot/2 as thera are equal</span>
+        <span class="c1"># number of symmetry operations around the z axis</span>
+        <span class="c1"># (e.g. for Cu_111 therea are 6 z and 6 -z operations)</span>
+        <span class="n">max_rot_angle</span> <span class="o">=</span> <span class="mi">360</span> <span class="o">/</span> <span class="p">(</span><span class="n">nrot</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="c1"># max_rot_angle = 360/(nrot/4) # lets try 120 angle</span>
+        <span class="k">return</span> <span class="n">max_rot_angle</span></div>
+
+<div class="viewcode-block" id="TS.TS_placer"><a class="viewcode-back" href="../../source/pynta.html#pynta.ts.TS.TS_placer">[docs]</a>    <span class="k">def</span> <span class="nf">TS_placer</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">ts_estimate_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">scfactor</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+            <span class="n">rxn</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
+            <span class="n">rxn_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">r_name_list</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+            <span class="n">p_name_list</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+            <span class="n">reacting_atoms</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&#39;&#39;&#39; Place adsorbates on the surface to estimate TS</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+
+<span class="sd">        ts_estimate_path : str</span>
+<span class="sd">            a path to TS_estimate directory,</span>
+<span class="sd">            e.g. {creation_dir}/Cu_111/TS_estimate</span>
+<span class="sd">        scfator : float</span>
+<span class="sd">            a scaling factor to scale a bond distance between</span>
+<span class="sd">            atoms taking part in the reaction</span>
+<span class="sd">            e.g. 1.4</span>
+<span class="sd">        rxn_name : str</span>
+<span class="sd">            a reaction name</span>
+<span class="sd">            e.g OH_O+H</span>
+<span class="sd">        r_name_list : list(str)</span>
+<span class="sd">            a list with all reactants for the given reaction</span>
+<span class="sd">        p_name_list : list(str)</span>
+<span class="sd">            a list with all products for the given reaction</span>
+<span class="sd">        reacting_atoms : Dict[str, int]</span>
+<span class="sd">            keys are sybols of atoms that takes part in reaction whereas,</span>
+<span class="sd">            values are their indicies</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="c1"># create TS_estimate directory</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">ts_estimate_path</span><span class="p">):</span>
+            <span class="n">shutil</span><span class="o">.</span><span class="n">rmtree</span><span class="p">(</span><span class="n">ts_estimate_path</span><span class="p">)</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">ts_estimate_path</span><span class="p">)</span>
+
+        <span class="n">slab_atom</span> <span class="o">=</span> <span class="n">read</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path_to_slab</span><span class="p">)</span>
+        <span class="n">slab_atom</span><span class="o">.</span><span class="n">pbc</span> <span class="o">=</span> <span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+
+        <span class="c1"># decide whether reactant or product is easier to use</span>
+        <span class="c1"># to build a ts_guess</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">r_name_list</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="nb">len</span><span class="p">(</span><span class="n">p_name_list</span><span class="p">):</span>
+            <span class="n">easier_to_build</span> <span class="o">=</span> <span class="s1">&#39;reactant&#39;</span>
+            <span class="n">ts_estimators</span> <span class="o">=</span> <span class="n">r_name_list</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">easier_to_build</span> <span class="o">=</span> <span class="s1">&#39;product&#39;</span>
+            <span class="n">ts_estimators</span> <span class="o">=</span> <span class="n">p_name_list</span>
+
+        <span class="c1"># Developing assuming there is only one element in the list, e.g &#39;OH&#39;</span>
+        <span class="c1"># So the reaction is A + B -&gt; C</span>
+        <span class="c1"># Potentially, one can imagine a reaction where A + B -&gt; C + D with</span>
+        <span class="c1"># all species adsorbed to the surface - there will be 2 elements in</span>
+        <span class="c1"># ts_estimators</span>
+        <span class="k">for</span> <span class="n">ts_est</span> <span class="ow">in</span> <span class="n">ts_estimators</span><span class="p">:</span>
+            <span class="n">ts_guess_generator</span> <span class="o">=</span> <span class="n">GeneralTSGuessesGenerator</span><span class="p">(</span>
+                <span class="n">ts_est</span><span class="p">,</span> <span class="n">rxn</span><span class="p">,</span> <span class="n">rxn_name</span><span class="p">,</span> <span class="n">easier_to_build</span><span class="p">,</span> <span class="n">scfactor</span><span class="p">)</span>
+            <span class="n">ts_guess</span><span class="p">,</span> <span class="n">bonded_idx</span> <span class="o">=</span> <span class="n">ts_guess_generator</span><span class="o">.</span><span class="n">decide</span><span class="p">(</span>
+                <span class="n">reacting_atoms</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+
+            <span class="c1"># convert slab (Atom) to grslab(Gratom)</span>
+            <span class="n">ads_builder</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">prepare_slab_for_ts_guess</span><span class="p">(</span><span class="n">slab_atom</span><span class="p">)</span>
+
+            <span class="c1"># put ts_guess on the surface in all possible spots and rotate</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ts_guess_place_and_rotate</span><span class="p">(</span><span class="n">ts_guess</span><span class="p">,</span> <span class="n">ads_builder</span><span class="p">,</span>
+                                           <span class="n">bonded_idx</span><span class="p">,</span> <span class="n">slab_atom</span><span class="p">,</span>
+                                           <span class="n">ts_estimate_path</span><span class="p">,</span> <span class="n">rxn_name</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="TS.prepare_slab_for_ts_guess"><a class="viewcode-back" href="../../source/pynta.html#pynta.ts.TS.prepare_slab_for_ts_guess">[docs]</a>    <span class="k">def</span> <span class="nf">prepare_slab_for_ts_guess</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">slab_atom</span><span class="p">:</span> <span class="n">Atoms</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Builder</span><span class="p">:</span>
+        <span class="sd">&#39;&#39;&#39; Convert slab_atom to Gratom object and finally to Builder object</span>
+<span class="sd">        to have a suitable format for ts_guess placement</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        slab_atom : Atoms</span>
+<span class="sd">            an initial slab converted to Atoms object, e.g.</span>
+<span class="sd">            ase.io.read(&#39;Cu_111_slab_opt.xyz&#39;)</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        ads_builder : Builder</span>
+<span class="sd">            a slab converted to a Builder object, suitable for ts_guess</span>
+<span class="sd">            placement</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">put_adsorbates</span> <span class="o">=</span> <span class="n">Adsorbates</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">facetpath</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">slab</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">repeats</span><span class="p">,</span>
+                                    <span class="bp">self</span><span class="o">.</span><span class="n">yamlfile</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">creation_dir</span><span class="p">)</span>
+        <span class="n">slabedges</span><span class="p">,</span> <span class="n">tags</span> <span class="o">=</span> <span class="n">put_adsorbates</span><span class="o">.</span><span class="n">get_edges</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="n">grslab</span> <span class="o">=</span> <span class="n">Gratoms</span><span class="p">(</span><span class="n">numbers</span><span class="o">=</span><span class="n">slab_atom</span><span class="o">.</span><span class="n">numbers</span><span class="p">,</span>
+                         <span class="n">positions</span><span class="o">=</span><span class="n">slab_atom</span><span class="o">.</span><span class="n">positions</span><span class="p">,</span>
+                         <span class="n">cell</span><span class="o">=</span><span class="n">slab_atom</span><span class="o">.</span><span class="n">cell</span><span class="p">,</span>
+                         <span class="n">pbc</span><span class="o">=</span><span class="n">slab_atom</span><span class="o">.</span><span class="n">pbc</span><span class="p">,</span>
+                         <span class="n">edges</span><span class="o">=</span><span class="n">slabedges</span><span class="p">)</span>
+        <span class="n">grslab</span><span class="o">.</span><span class="n">arrays</span><span class="p">[</span><span class="s1">&#39;surface_atoms&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">tags</span>
+
+        <span class="n">ads_builder</span> <span class="o">=</span> <span class="n">Builder</span><span class="p">(</span><span class="n">grslab</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">ads_builder</span></div>
+
+<div class="viewcode-block" id="TS.ts_guess_place_and_rotate"><a class="viewcode-back" href="../../source/pynta.html#pynta.ts.TS.ts_guess_place_and_rotate">[docs]</a>    <span class="k">def</span> <span class="nf">ts_guess_place_and_rotate</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">ts_guess</span><span class="p">:</span> <span class="n">Gratoms</span><span class="p">,</span>
+            <span class="n">ads_builder</span><span class="p">:</span> <span class="n">Builder</span><span class="p">,</span>
+            <span class="n">bonded_idx</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+            <span class="n">slab_atom</span><span class="p">:</span> <span class="n">Atoms</span><span class="p">,</span>
+            <span class="n">ts_estimate_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">rxn_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">max_angle</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">360</span><span class="p">,</span>
+            <span class="n">angle</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+            <span class="n">angle_increment</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">5</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&#39;&#39;&#39; Place ts_est on the surface (ads_builder) in all possible</span>
+<span class="sd">        locations, rotate and save all obtained structures as a</span>
+<span class="sd">        seperate .xyz files</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        ts_guess : Gratoms</span>
+<span class="sd">            an estimate TS structure that will be placed on the surface</span>
+<span class="sd">        ads_builder : Builder</span>
+<span class="sd">            a slab converted to a Builder object, suitable for ts_guess</span>
+<span class="sd">            placement</span>
+<span class="sd">        bonded_idx : int</span>
+<span class="sd">            an index of ts_guess atom(s) connected to the surface</span>
+<span class="sd">        slab_atom : Atoms</span>
+<span class="sd">            an initial slab converted to Atoms object, e.g.</span>
+<span class="sd">            ase.io.read(&#39;Cu_111_slab_opt.xyz&#39;)</span>
+<span class="sd">        ts_estimate_path : str</span>
+<span class="sd">            a path where save all generated .xyz files</span>
+<span class="sd">        rxn_name : str</span>
+<span class="sd">            a reaction name</span>
+<span class="sd">            e.g. OH_O+H</span>
+<span class="sd">        max_angle : int, optional</span>
+<span class="sd">            maximum angle of rotation around z axis, by default 360</span>
+<span class="sd">        angle : int, optional</span>
+<span class="sd">            initial angle of rotation around z axis, by default 0</span>
+<span class="sd">        angle_increment : int, optional</span>
+<span class="sd">            an increment of angle of rotation around z axis, by default 5</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">count</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">while</span> <span class="n">angle</span> <span class="o">&lt;=</span> <span class="n">max_angle</span><span class="p">:</span>
+            <span class="n">structs</span> <span class="o">=</span> <span class="n">ads_builder</span><span class="o">.</span><span class="n">add_adsorbate</span><span class="p">(</span>
+                <span class="n">ts_guess</span><span class="p">,</span> <span class="p">[</span><span class="n">bonded_idx</span><span class="p">],</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">auto_construct</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="c1"># change to True will make bonded_through work.</span>
+            <span class="c1"># Now it uses ts_guess,rotate...</span>
+            <span class="c1"># to generate adsorbed strucutres</span>
+            <span class="n">big_slab</span> <span class="o">=</span> <span class="n">slab_atom</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">repeats</span>
+            <span class="n">nslab</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">slab_atom</span><span class="p">)</span>
+
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">struc</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">structs</span><span class="p">):</span>
+                <span class="n">big_slab_ads</span> <span class="o">=</span> <span class="n">big_slab</span> <span class="o">+</span> <span class="n">struc</span><span class="p">[</span><span class="n">nslab</span><span class="p">:]</span>
+                <span class="n">prefix</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">structs</span><span class="p">)</span> <span class="o">*</span> <span class="n">count</span><span class="p">)</span><span class="o">.</span><span class="n">zfill</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+                <span class="n">xyz_fname</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+                    <span class="n">prefix</span> <span class="o">+</span> <span class="s1">&#39;_&#39;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">facetpath</span> <span class="o">+</span> <span class="s1">&#39;_&#39;</span> <span class="o">+</span> <span class="n">rxn_name</span> <span class="o">+</span> <span class="s1">&#39;.xyz&#39;</span><span class="p">)</span>
+                <span class="n">path_to_xyz</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">ts_estimate_path</span><span class="p">,</span> <span class="n">xyz_fname</span><span class="p">)</span>
+                <span class="n">write</span><span class="p">(</span><span class="n">path_to_xyz</span><span class="p">,</span> <span class="n">big_slab_ads</span><span class="p">)</span>
+
+            <span class="n">ts_guess</span><span class="o">.</span><span class="n">rotate</span><span class="p">(</span><span class="n">angle_increment</span><span class="p">,</span> <span class="s1">&#39;z&#39;</span><span class="p">)</span>
+            <span class="n">angle</span> <span class="o">+=</span> <span class="n">angle_increment</span>
+            <span class="n">count</span> <span class="o">+=</span> <span class="mi">1</span></div>
+
+<div class="viewcode-block" id="TS.filtered_out_equiv_ts_estimates"><a class="viewcode-back" href="../../source/pynta.html#pynta.ts.TS.filtered_out_equiv_ts_estimates">[docs]</a>    <span class="k">def</span> <span class="nf">filtered_out_equiv_ts_estimates</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">ts_estimate_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">rxn_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&#39;&#39;&#39; Filtered out symmetry equivalent sites and remove them keeping</span>
+<span class="sd">        only symmetry disctinct structures.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        __________</span>
+
+<span class="sd">        ts_estimate_path : str</span>
+<span class="sd">            a path to TS_estimate directory,</span>
+<span class="sd">            e.g. {creation_dir}/Cu_111/TS_estimate</span>
+<span class="sd">        rxn_name : str</span>
+<span class="sd">            a reaction name</span>
+<span class="sd">            e.g. OH_O+H</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="c1"># check symmetry of TS guesses</span>
+        <span class="n">filtered_equivalent_sites</span> <span class="o">=</span> <span class="n">TS</span><span class="o">.</span><span class="n">check_symm</span><span class="p">(</span>
+            <span class="n">ts_estimate_path</span><span class="p">,</span> <span class="n">return_unique</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">compare_traj</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+        <span class="c1"># remove all symmetry equivalent structures</span>
+        <span class="k">for</span> <span class="n">eqsites</span> <span class="ow">in</span> <span class="n">filtered_equivalent_sites</span><span class="p">:</span>
+            <span class="n">file_to_remove</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+                <span class="n">ts_estimate_path</span><span class="p">,</span> <span class="n">eqsites</span> <span class="o">+</span> <span class="s1">&#39;_&#39;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">facetpath</span> <span class="o">+</span> <span class="s1">&#39;_&#39;</span> <span class="o">+</span>
+                <span class="n">rxn_name</span> <span class="o">+</span> <span class="s1">&#39;.xyz&#39;</span><span class="p">)</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">file_to_remove</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">OSError</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Error while deleting file : &quot;</span><span class="p">,</span> <span class="n">file_to_remove</span><span class="p">)</span>
+
+        <span class="c1"># rename and organize symmetry distinct structures</span>
+        <span class="k">for</span> <span class="n">prefix</span><span class="p">,</span> <span class="n">noneqsites</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span>
+            <span class="nb">sorted</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">ts_estimate_path</span><span class="p">))</span>
+        <span class="p">):</span>
+            <span class="n">prefix</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">prefix</span><span class="p">)</span><span class="o">.</span><span class="n">zfill</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+            <span class="n">old_fname</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">ts_estimate_path</span><span class="p">,</span> <span class="n">noneqsites</span><span class="p">)</span>
+            <span class="n">new_fname</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+                <span class="n">ts_estimate_path</span><span class="p">,</span> <span class="n">prefix</span> <span class="o">+</span> <span class="n">noneqsites</span><span class="p">[</span><span class="mi">3</span><span class="p">:])</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">old_fname</span><span class="p">,</span> <span class="n">new_fname</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="TS.set_up_penalty_xtb"><a class="viewcode-back" href="../../source/pynta.html#pynta.ts.TS.set_up_penalty_xtb">[docs]</a>    <span class="k">def</span> <span class="nf">set_up_penalty_xtb</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">ts_estimate_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">pytemplate</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">species_list</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+            <span class="n">reacting_atoms</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span>
+            <span class="n">metal_atom</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">scaled1</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+            <span class="n">scfactor_surface</span><span class="p">,)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&#39;&#39;&#39; Prepare calculations of the penalty function</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        __________</span>
+
+<span class="sd">        ts_estimate_path : str</span>
+<span class="sd">            a path to TS_estimate directory,</span>
+<span class="sd">            e.g.</span>
+<span class="sd">            ``{creation_dir}/Cu_111/TS_estimate``</span>
+<span class="sd">        pytemplate : python script</span>
+<span class="sd">            a template for the penalty function calculations</span>
+<span class="sd">        species_list : list(str)</span>
+<span class="sd">            a list of species which atoms take part in the reaction,</span>
+<span class="sd">            e.g.</span>
+<span class="sd">            for OH &lt;--&gt; O + H</span>
+
+<span class="sd">            &gt;&gt;&gt; species_list = [&#39;O&#39;, &#39;H&#39;] </span>
+
+<span class="sd">            for CO3 &lt;--&gt; CO2 + O</span>
+
+<span class="sd">            &gt;&gt;&gt; species_list = [&#39;CO2&#39;, &#39;O&#39;] </span>
+
+<span class="sd">        reacting_atoms : Dict[str, int]</span>
+<span class="sd">            keys are sybols of atoms that takes part in reaction whereas,</span>
+<span class="sd">            values are their indicies</span>
+<span class="sd">        metal_atom : str</span>
+<span class="sd">            a checmical symbol for the surface atoms (only metallic surfaces</span>
+<span class="sd">            are allowed)</span>
+<span class="sd">        scaled1 : bool</span>
+<span class="sd">            specify whether use the optional scfactor_surface</span>
+<span class="sd">            for the species 1 (sp1)</span>
+<span class="sd">        scfactor_surface : float</span>
+<span class="sd">            a scaling factor to scale the target bond distance, i.e.</span>
+<span class="sd">            the average distance between adsorbed atom and the nearest</span>
+<span class="sd">            surface atom. Helpful e.g. when H is far away form the surface</span>
+<span class="sd">            in TS, whereas for minima it is close to the surface</span>
+<span class="sd">            e.g. 1.0</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="c1"># load pytemplate</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">pytemplate</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">pytemplate</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+
+        <span class="c1"># set up path to optimized minima files</span>
+        <span class="n">path_to_minima</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">creation_dir</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">facetpath</span><span class="p">,</span> <span class="s1">&#39;minima&#39;</span><span class="p">)</span>
+
+        <span class="c1"># get a dictionary with average distances for all species in</span>
+        <span class="c1"># species_list, e.g. {&#39;CO2&#39;: 4.14.., &#39;H&#39;: 1.665..., &#39;O&#39;: 1.847...}</span>
+        <span class="n">sp_surf_av_dists</span> <span class="o">=</span> <span class="n">TS</span><span class="o">.</span><span class="n">get_av_dist_dict</span><span class="p">(</span>
+            <span class="n">species_list</span><span class="p">,</span> <span class="n">metal_atom</span><span class="p">,</span> <span class="n">path_to_minima</span><span class="p">,</span> <span class="n">scfactor_surface</span><span class="p">,</span>
+            <span class="n">scaled1</span><span class="p">)</span>
+
+        <span class="c1"># convert sp_surf_av_dists dict to a tuple and take into accout that</span>
+        <span class="c1"># the same type of species can be included into penalty function</span>
+        <span class="c1"># calculations many times, e.g. [&#39;C&#39;, &#39;H&#39;, &#39;O&#39;, &#39;O&#39;], so the av_dist</span>
+        <span class="c1"># for the &#39;O&#39; have to be specified twice (order not important)</span>
+        <span class="n">av_dists_tuple</span> <span class="o">=</span> <span class="n">TS</span><span class="o">.</span><span class="n">get_av_dists_tuple</span><span class="p">(</span>
+            <span class="n">reacting_atoms</span><span class="p">,</span> <span class="n">sp_surf_av_dists</span><span class="p">)</span>
+
+        <span class="c1"># get all .xyz files with TS estimates</span>
+        <span class="n">ts_estimates_xyz_files</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">ts_est</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">ts_estimate_path</span><span class="p">)</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s1">&#39;*.xyz&#39;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">ts</span> <span class="ow">in</span> <span class="n">ts_est</span><span class="p">:</span>
+            <span class="n">ts_estimates_xyz_files</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">ts</span><span class="p">))</span>
+
+        <span class="c1"># sort it in increasing order</span>
+        <span class="n">ts_estimates_xyz_files</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">ts_estimates_xyz_files</span><span class="p">)</span>
+
+        <span class="c1"># take a first file and use it as a template to get info about</span>
+        <span class="c1"># surface atom and adsorbate atoms indices</span>
+        <span class="n">tmp_ts_atom</span> <span class="o">=</span> <span class="n">read</span><span class="p">(</span><span class="n">ts_estimates_xyz_files</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+        <span class="c1"># create surface_atoms_idx dict with all surface atoms and theirs</span>
+        <span class="c1"># corresponding indicies</span>
+        <span class="n">surface_atoms_idxs</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">atom</span><span class="o">.</span><span class="n">symbol</span> <span class="o">+</span> <span class="s1">&#39;_&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">atom</span><span class="o">.</span><span class="n">index</span><span class="p">):</span> <span class="n">atom</span><span class="o">.</span><span class="n">index</span>
+            <span class="k">for</span> <span class="n">atom</span> <span class="ow">in</span> <span class="n">tmp_ts_atom</span> <span class="k">if</span> <span class="n">atom</span><span class="o">.</span><span class="n">symbol</span> <span class="o">==</span> <span class="n">metal_atom</span><span class="p">}</span>
+
+        <span class="c1"># Loop through all .xyz files</span>
+        <span class="k">for</span> <span class="n">prefix</span><span class="p">,</span> <span class="n">xyz_file</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">ts_estimates_xyz_files</span><span class="p">):</span>
+            <span class="n">bonds</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_bonds_penalty</span><span class="p">(</span>
+                <span class="n">reacting_atoms</span><span class="p">,</span>
+                <span class="n">surface_atoms_idxs</span><span class="p">,</span>
+                <span class="n">xyz_file</span><span class="p">)</span>
+
+            <span class="c1"># set up some variables</span>
+            <span class="n">prefix</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">prefix</span><span class="p">)</span><span class="o">.</span><span class="n">zfill</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+            <span class="n">calc_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">ts_estimate_path</span><span class="p">,</span> <span class="n">prefix</span><span class="p">)</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">calc_dir</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">f_name_xyz</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">xyz_file</span><span class="p">)[:</span><span class="o">-</span><span class="mi">4</span><span class="p">]</span>
+            <span class="n">traj_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">f_name_xyz</span> <span class="o">+</span> <span class="s1">&#39;.traj&#39;</span><span class="p">)</span>
+            <span class="n">fname</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">calc_dir</span><span class="p">,</span> <span class="n">f_name_xyz</span> <span class="o">+</span> <span class="s1">&#39;.py&#39;</span><span class="p">)</span>
+
+            <span class="c1"># create job_file</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">pytemplate</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">geom</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">xyz_file</span><span class="p">),</span>
+                                          <span class="n">bonds</span><span class="o">=</span><span class="n">bonds</span><span class="p">,</span>
+                                          <span class="n">av_dists_tuple</span><span class="o">=</span><span class="n">av_dists_tuple</span><span class="p">,</span>
+                                          <span class="n">creation_dir</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">creation_dir</span><span class="p">,</span>
+                                          <span class="n">traj_path</span><span class="o">=</span><span class="n">traj_path</span><span class="p">,</span>
+                                          <span class="n">repeats</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">repeats</span><span class="p">,</span>
+                                          <span class="n">prefix</span><span class="o">=</span><span class="n">prefix</span><span class="p">,</span>
+                                          <span class="n">geom_name</span><span class="o">=</span><span class="n">f_name_xyz</span><span class="p">,</span>
+                                          <span class="n">slabopt</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">slab</span><span class="p">))</span>
+                <span class="c1"># move .xyz file</span>
+                <span class="n">shutil</span><span class="o">.</span><span class="n">move</span><span class="p">(</span><span class="n">xyz_file</span><span class="p">,</span> <span class="n">calc_dir</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="TS.get_bonds_penalty"><a class="viewcode-back" href="../../source/pynta.html#pynta.ts.TS.get_bonds_penalty">[docs]</a>    <span class="k">def</span> <span class="nf">get_bonds_penalty</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">reacting_atoms</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span>
+            <span class="n">surface_atoms_idxs</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span>
+            <span class="n">xyz_file</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]:</span>
+        <span class="sd">&#39;&#39;&#39; Get a list of tuples for all bonds between reacting atoms and</span>
+<span class="sd">        the nearest surface metal atoms connected to adsorbates</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        reacting_atoms : Dict[str, int]</span>
+<span class="sd">            keys are sybols of atoms that takes part in reaction whereas,</span>
+<span class="sd">            values are their indicies</span>
+<span class="sd">        surface_atoms_idxs : Dict[str, int]</span>
+<span class="sd">            keys are metal atom symbol and index and values are indicies</span>
+<span class="sd">            e.g.</span>
+<span class="sd">            {&#39;Cu_0&#39;: 0, &#39;Cu_1&#39;: 1}</span>
+<span class="sd">        xyz_file : str</span>
+<span class="sd">            path to .xyz file with TS guess geometry before xtb calculations</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        bonds: List[Tuple[int, int]]</span>
+<span class="sd">            a list with all bonds between reacting atoms and surface metal</span>
+<span class="sd">            atom connected to them</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">bonds</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">visited_metal_idxs</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="n">reacting_atoms</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+            <span class="n">adsorbed_atom_idx</span> <span class="o">=</span> <span class="n">idx</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">nslab</span>
+            <span class="n">n_same_metal_idxs</span> <span class="o">=</span> <span class="mi">1</span>
+            <span class="n">is_metal_atom_already_connected</span> <span class="o">=</span> <span class="kc">False</span>
+
+            <span class="k">while</span> <span class="n">is_metal_atom_already_connected</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">:</span>
+                <span class="n">metal_idx</span> <span class="o">=</span> <span class="n">TS</span><span class="o">.</span><span class="n">get_index_surface_atom</span><span class="p">(</span>
+                    <span class="n">adsorbed_atom_idx</span><span class="p">,</span> <span class="n">surface_atoms_idxs</span><span class="p">,</span> <span class="n">xyz_file</span><span class="p">,</span>
+                    <span class="n">n_same_metal_idxs</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">metal_idx</span> <span class="ow">in</span> <span class="n">visited_metal_idxs</span><span class="p">:</span>
+                    <span class="n">n_same_metal_idxs</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">visited_metal_idxs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">metal_idx</span><span class="p">)</span>
+                    <span class="n">is_metal_atom_already_connected</span> <span class="o">=</span> <span class="kc">True</span>
+
+            <span class="n">bonds</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">adsorbed_atom_idx</span><span class="p">,</span> <span class="n">metal_idx</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">bonds</span></div>
+
+<div class="viewcode-block" id="TS.is_valid_sp_index"><a class="viewcode-back" href="../../source/pynta.html#pynta.ts.TS.is_valid_sp_index">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">is_valid_sp_index</span><span class="p">(</span>
+            <span class="n">species</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">sp_index</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+            <span class="n">adsorbate_atoms_idxs</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="sd">&#39;&#39;&#39; Return True if given sp_index is possible for a given species</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        species : str</span>
+<span class="sd">            a species symbol</span>
+<span class="sd">            e.g. &#39;H&#39;, &#39;C&#39; or &#39;O&#39;, etc.</span>
+<span class="sd">        sp_index : int</span>
+<span class="sd">            an index for a given species</span>
+<span class="sd">        adsorbate_atoms_idxs : dict(str:int)</span>
+<span class="sd">            a dictionary with all adsorbate atoms and theirs corresponding</span>
+<span class="sd">            indicies</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        bool</span>
+<span class="sd">            True if given sp_index is possible for a given species.</span>
+<span class="sd">            False otherwise</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">key</span> <span class="o">=</span> <span class="n">species</span> <span class="o">+</span> <span class="s1">&#39;_&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">sp_index</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">adsorbate_atoms_idxs</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span></div>
+
+<div class="viewcode-block" id="TS.get_av_dists_tuple"><a class="viewcode-back" href="../../source/pynta.html#pynta.ts.TS.get_av_dists_tuple">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">get_av_dists_tuple</span><span class="p">(</span>
+            <span class="n">reacting_atoms</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+            <span class="n">sp_surf_av_dists</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]):</span>
+        <span class="sd">&#39;&#39;&#39; Create a av_dists_tuple with all relevant average bond distances.</span>
+
+<span class="sd">        This method loops through sp_surf_av_dists dictionary. If</span>
+<span class="sd">        particular key exists n &gt; 1 times in reacting_atoms, this</span>
+<span class="sd">        entry is added n times to a new dictionary. Otherwise, a new</span>
+<span class="sd">        dictionary is updated with the keys and values of sp_surf_av_dists.</span>
+<span class="sd">        At the end, the valuses of the new dict are transformed into tuple</span>
+
+<span class="sd">        Method required fot O2X &lt;-&gt; OX + OX and similar reactions.</span>
+<span class="sd">        Generally, all reactions where two atoms of the same type is</span>
+<span class="sd">        consider in a penalty function calculations.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        reacting_atoms : Dict[str, int]</span>
+<span class="sd">            keys are sybols of atoms that takes part in reaction whereas,</span>
+<span class="sd">            values are their indicies</span>
+<span class="sd">        sp_surf_av_dists : dict(str:float)</span>
+<span class="sd">            a dictionary with keys being species name and values are</span>
+<span class="sd">            average distances</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        av_dist_tuple : tuple</span>
+<span class="sd">            a tuple with all relevant average bond distances</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">count</span> <span class="o">=</span> <span class="n">Counter</span><span class="p">(</span><span class="n">reacting_atoms</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+        <span class="n">av_dists_dict</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">sp_surf_av_dists</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">n</span> <span class="o">=</span> <span class="n">count</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">n</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+                    <span class="n">av_dists_dict</span><span class="p">[</span><span class="n">key</span> <span class="o">+</span> <span class="s1">&#39;_&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)]</span> <span class="o">=</span> <span class="n">value</span>
+            <span class="n">av_dists_dict</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+
+        <span class="n">av_dist_tuple</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">av_dists_dict</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+        <span class="k">return</span> <span class="n">av_dist_tuple</span></div>
+
+<div class="viewcode-block" id="TS.get_av_dist_dict"><a class="viewcode-back" href="../../source/pynta.html#pynta.ts.TS.get_av_dist_dict">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">get_av_dist_dict</span><span class="p">(</span>
+            <span class="n">species_list</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">metal_atom</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">path_to_minima</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">scfactor_surface</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+            <span class="n">scaled1</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
+        <span class="sd">&#39;&#39;&#39; Get a dictionary with average distances for all species in</span>
+<span class="sd">        species_list</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        species_list : list(str)</span>
+<span class="sd">            a list of species which atoms take part in the reaction,</span>
+<span class="sd">            i.e. for [&#39;CO2&#39;] [&#39;C&#39;] is taking part in reaction</span>
+<span class="sd">            e.g. [&#39;O&#39;, &#39;H&#39;] or [&#39;CO2&#39;, &#39;H&#39;]</span>
+<span class="sd">        metal_atom : str</span>
+<span class="sd">            a checmical symbol for the surface atoms (only metallic surfaces</span>
+<span class="sd">            are allowed)</span>
+<span class="sd">        path_to_minima : str</span>
+<span class="sd">            a path to minima</span>
+<span class="sd">            e.g. &#39;Cu_111/minima&#39;</span>
+<span class="sd">        scfactor_surface : float</span>
+<span class="sd">            a scaling factor to scale the target bond distance, i.e.</span>
+<span class="sd">            the average distance between adsorbed atom and the nearest</span>
+<span class="sd">            surface atom. Helpful e.g. when H is far away form the surface</span>
+<span class="sd">            in TS, whereas for minima it is close to the surface</span>
+<span class="sd">            e.g. 1.0</span>
+<span class="sd">        scaled : bool</span>
+<span class="sd">            specify whether to use the optional scfactor_surface</span>
+<span class="sd">            for the given species</span>
+<span class="sd">            default = False</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        sp_surf_av_dists : Dict[str, float]</span>
+<span class="sd">            a dictionary with keys being species name and values are average</span>
+<span class="sd">            distances</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">sp_surf_av_dists</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">species</span> <span class="ow">in</span> <span class="n">species_list</span><span class="p">:</span>
+            <span class="n">av_dist</span> <span class="o">=</span> <span class="n">TS</span><span class="o">.</span><span class="n">get_av_dist</span><span class="p">(</span>
+                <span class="n">path_to_minima</span><span class="p">,</span> <span class="n">species</span><span class="p">,</span> <span class="n">metal_atom</span><span class="p">,</span> <span class="n">scfactor_surface</span><span class="p">,</span> <span class="n">scaled1</span><span class="p">)</span>
+            <span class="n">sp_surf_av_dists</span><span class="p">[</span><span class="n">species</span><span class="p">]</span> <span class="o">=</span> <span class="n">av_dist</span>
+        <span class="k">return</span> <span class="n">sp_surf_av_dists</span></div>
+
+<div class="viewcode-block" id="TS.get_av_dist"><a class="viewcode-back" href="../../source/pynta.html#pynta.ts.TS.get_av_dist">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">get_av_dist</span><span class="p">(</span>
+            <span class="n">path_to_minima</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">species</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">metal_atom</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">scfactor_surface</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+            <span class="n">scaled</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+        <span class="sd">&#39;&#39;&#39; Get the average bond distance between a given adsorbate atom and</span>
+<span class="sd">        the nearest surface atom for all symmetrically distinct minima</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ___________</span>
+<span class="sd">        path_to_minima : str</span>
+<span class="sd">            a path to minima</span>
+<span class="sd">            e.g. ``&#39;Cu_111/minima&#39;``</span>
+<span class="sd">        species : str</span>
+<span class="sd">            a species symbol</span>
+<span class="sd">            e.g. ``&#39;H&#39;`` or ``&#39;CO&#39;``</span>
+<span class="sd">        metal_atom : str</span>
+<span class="sd">            a checmical symbol for the surface atoms (only metallic surfaces</span>
+<span class="sd">            are allowed)</span>
+<span class="sd">        scfactor_surface : float</span>
+<span class="sd">            a scaling factor to scale the target bond distance, i.e.</span>
+<span class="sd">            the average distance between adsorbed atom and the nearest</span>
+<span class="sd">            surface atom. Helpful e.g. when H is far away form the surface</span>
+<span class="sd">            in TS, whereas for minima it is close to the surface</span>
+<span class="sd">            e.g. 1.0</span>
+<span class="sd">        scaled : bool</span>
+<span class="sd">            specify whether to use the optional scfactor_surface</span>
+<span class="sd">            for the given species</span>
+<span class="sd">            default = False</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        ________</span>
+<span class="sd">        av_dist : float</span>
+<span class="sd">            an average bond distance between the given species and the nearest</span>
+<span class="sd">            surface atom for all symmetrically dictinct minima</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">path_to_species</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path_to_minima</span><span class="p">,</span> <span class="n">species</span><span class="p">)</span>
+
+        <span class="c1"># get unique minima prefixes</span>
+        <span class="n">unique_minima_prefixes</span> <span class="o">=</span> <span class="n">IO</span><span class="o">.</span><span class="n">get_unique_prefixes</span><span class="p">(</span><span class="n">path_to_species</span><span class="p">)</span>
+
+        <span class="c1"># choose a representative temp .traj file that will be used to create</span>
+        <span class="c1"># surface_atom_idxs and adsorbate_atom_idxs will be created</span>
+        <span class="n">path_to_tmp_traj</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path_to_species</span><span class="p">,</span> <span class="s1">&#39;00.traj&#39;</span><span class="p">)</span>
+        <span class="n">tmp_traj</span> <span class="o">=</span> <span class="n">read</span><span class="p">(</span><span class="n">path_to_tmp_traj</span><span class="p">)</span>
+
+        <span class="c1"># create a list with all surface atom indicies</span>
+        <span class="n">surface_atom_idxs</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">atom</span><span class="o">.</span><span class="n">index</span> <span class="k">for</span> <span class="n">atom</span> <span class="ow">in</span> <span class="n">tmp_traj</span> <span class="k">if</span> <span class="n">atom</span><span class="o">.</span><span class="n">symbol</span> <span class="o">==</span> <span class="n">metal_atom</span><span class="p">]</span>
+
+        <span class="c1"># create a list with all adosorbate atom indicies</span>
+        <span class="n">adsorbate_atom_idxs</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">atom</span><span class="o">.</span><span class="n">symbol</span> <span class="o">+</span> <span class="s1">&#39;_&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">atom</span><span class="o">.</span><span class="n">index</span><span class="p">):</span> <span class="n">atom</span><span class="o">.</span><span class="n">index</span>
+            <span class="k">for</span> <span class="n">atom</span> <span class="ow">in</span> <span class="n">tmp_traj</span> <span class="k">if</span> <span class="n">atom</span><span class="o">.</span><span class="n">symbol</span> <span class="o">!=</span> <span class="n">metal_atom</span><span class="p">}</span>
+
+        <span class="c1"># loop through all unique traj files, e.g. 00.traj, 01.traj ...</span>
+        <span class="n">all_dists_bonded</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">index</span> <span class="ow">in</span> <span class="n">unique_minima_prefixes</span><span class="p">:</span>
+            <span class="n">path_to_unique_minima_traj</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+                <span class="n">path_to_species</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">.traj&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">index</span><span class="p">))</span>
+            <span class="n">uq_species_atom</span> <span class="o">=</span> <span class="n">read</span><span class="p">(</span><span class="n">path_to_unique_minima_traj</span><span class="p">)</span>
+            <span class="n">ads_atom_surf_dist</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">ads_atom_idx</span> <span class="ow">in</span> <span class="n">adsorbate_atom_idxs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="c1"># create a dict storing the shortest distance between given</span>
+                <span class="c1"># adsorbate index atom and surface atoms</span>
+                <span class="n">ads_atom_surf_dist</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">uq_species_atom</span><span class="o">.</span><span class="n">get_distances</span><span class="p">(</span>
+                    <span class="n">ads_atom_idx</span><span class="p">,</span> <span class="n">surface_atom_idxs</span><span class="p">))</span>
+            <span class="c1"># the shortest distance in bonded_ads_atom_surf_dist.values()</span>
+            <span class="c1"># is considered as a distance between atom bonded to the surface</span>
+            <span class="c1"># and the surface</span>
+            <span class="n">bonded_ads_atom_surf_dist</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">ads_atom_surf_dist</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+            <span class="n">all_dists_bonded</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">bonded_ads_atom_surf_dist</span><span class="p">)</span>
+        <span class="c1"># apply the scalling factor</span>
+        <span class="k">if</span> <span class="n">scaled</span><span class="p">:</span>
+            <span class="n">av_dist</span> <span class="o">=</span> <span class="n">mean</span><span class="p">(</span><span class="n">all_dists_bonded</span><span class="p">)</span> <span class="o">*</span> <span class="n">scfactor_surface</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">av_dist</span> <span class="o">=</span> <span class="n">mean</span><span class="p">(</span><span class="n">all_dists_bonded</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">av_dist</span></div>
+
+<div class="viewcode-block" id="TS.create_unique_ts_all"><a class="viewcode-back" href="../../source/pynta.html#pynta.ts.TS.create_unique_ts_all">[docs]</a>    <span class="k">def</span> <span class="nf">create_unique_ts_all</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">create_unique_ts_all</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">ts_estimate_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">rxn_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">pytemplate</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">pseudopotentials</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
+            <span class="n">pseudo_dir</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">balsam_exe_settings</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
+            <span class="n">calc_keywords</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&#39;&#39;&#39; Create all TS_estimate_unique files</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+
+<span class="sd">        ts_estimate_path : str</span>
+<span class="sd">            a path to TS_estimate directory,</span>
+<span class="sd">            e.g. ``{creation_dir}/Cu_111/TS_estimate``</span>
+<span class="sd">        rxn_name : str</span>
+<span class="sd">            a reaction name</span>
+<span class="sd">            e.g. ``&#39;OH_O+H&#39;``</span>
+<span class="sd">        pytemplate : python script</span>
+<span class="sd">            a template file for saddle point minimization with Sella</span>
+<span class="sd">        pseudopotentials : dict(str: str)</span>
+<span class="sd">            a dictionary with QE pseudopotentials for all species.</span>
+<span class="sd">            e.g.</span>
+
+<span class="sd">            &gt;&gt;&gt; pseudopotentials = dict(Cu=&#39;Cu.pbe-spn-kjpaw_psl.1.0.0.UPF&#39;,</span>
+<span class="sd">                            H=&#39;H.pbe-kjpaw_psl.1.0.0.UPF&#39;,</span>
+<span class="sd">                            O=&#39;O.pbe-n-kjpaw_psl.1.0.0.UPF&#39;,</span>
+<span class="sd">                            C=&#39;C.pbe-n-kjpaw_psl.1.0.0.UPF&#39;)</span>
+
+<span class="sd">        pseudo_dir : str</span>
+<span class="sd">            a path to the QE&#39;s pseudopotentials main directory</span>
+<span class="sd">            e.g.</span>
+
+<span class="sd">            &gt;&gt;&gt; pseudo_dir = &#39;/home/mgierad/espresso/pseudo&#39;</span>
+
+<span class="sd">        balsam_exe_settings : dict(str:str)</span>
+<span class="sd">            a dictionary with balsam settings</span>
+<span class="sd">        calc_keywords : dict(str:str)</span>
+<span class="sd">            a dictionary with keywords to Quantum Espresso calculations</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="c1"># create .xyz and .png files</span>
+        <span class="n">TS</span><span class="o">.</span><span class="n">create_unique_ts_xyz_and_png</span><span class="p">(</span><span class="n">ts_estimate_path</span><span class="p">)</span>
+        <span class="c1"># create job files (.py scripts)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">create_ts_unique_py_file</span><span class="p">(</span><span class="n">create_unique_ts_all</span><span class="p">,</span>
+                                      <span class="n">pytemplate</span><span class="p">,</span>
+                                      <span class="n">rxn_name</span><span class="p">,</span>
+                                      <span class="n">pseudopotentials</span><span class="p">,</span>
+                                      <span class="n">pseudo_dir</span><span class="p">,</span>
+                                      <span class="n">ts_estimate_path</span><span class="p">,</span>
+                                      <span class="n">balsam_exe_settings</span><span class="p">,</span>
+                                      <span class="n">calc_keywords</span>
+                                      <span class="p">)</span></div>
+
+<div class="viewcode-block" id="TS.create_unique_ts_xyz_and_png"><a class="viewcode-back" href="../../source/pynta.html#pynta.ts.TS.create_unique_ts_xyz_and_png">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">create_unique_ts_xyz_and_png</span><span class="p">(</span><span class="n">ts_estimate_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&#39;&#39;&#39; Create unique TS files for saddle point calculations</span>
+<span class="sd">        for a given scfactor</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ___________</span>
+
+<span class="sd">        ts_estimate_path : str</span>
+<span class="sd">            a path to TS_estimate directory,</span>
+<span class="sd">            e.g. ``&#39;{creation_dir}/Cu_111/TS_estimate&#39;``</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="c1"># check symmetry of all TS estimates in ts_estimate_path</span>
+        <span class="n">gd_ads_index</span> <span class="o">=</span> <span class="n">TS</span><span class="o">.</span><span class="n">check_symm</span><span class="p">(</span><span class="n">ts_estimate_path</span><span class="p">,</span> <span class="n">return_unique</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">gd_ads_index</span><span class="p">):</span>
+            <span class="c1"># name of the directory with unique TS_estimates for which saddle</span>
+            <span class="c1"># point calculations are to be perfomed</span>
+            <span class="n">ts_estimate_unique_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">ts_estimate_path</span> <span class="o">+</span>
+                                                   <span class="s1">&#39;_unique&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)</span><span class="o">.</span><span class="n">zfill</span><span class="p">(</span><span class="mi">2</span><span class="p">))</span>
+
+            <span class="c1"># create TS_estimate_unique directory</span>
+            <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">ts_estimate_unique_path</span><span class="p">):</span>
+                <span class="n">shutil</span><span class="o">.</span><span class="n">rmtree</span><span class="p">(</span><span class="n">ts_estimate_unique_path</span><span class="p">)</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">ts_estimate_unique_path</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">ts_estimate_unique_path</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+            <span class="c1"># search for trajectories of symmetry distinct structures</span>
+            <span class="n">unique_traj_search</span> <span class="o">=</span> <span class="s1">&#39;**/</span><span class="si">{}</span><span class="s1">*traj&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">gd_ads_index</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+            <span class="n">unique_trajs</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">ts_estimate_path</span><span class="p">)</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">unique_traj_search</span><span class="p">)</span>
+
+            <span class="c1"># loop through all unique trajectory and create .xyz and .png</span>
+            <span class="k">for</span> <span class="n">unique_traj</span> <span class="ow">in</span> <span class="n">unique_trajs</span><span class="p">:</span>
+                <span class="n">unique_traj</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">unique_traj</span><span class="p">)</span>
+                <span class="c1"># split the path, get file name, remove last 5 characters and</span>
+                <span class="c1"># add sufix &#39;_ts&#39;</span>
+                <span class="n">fname</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">unique_traj</span><span class="p">)[</span><span class="mi">1</span><span class="p">][:</span><span class="o">-</span><span class="mi">5</span><span class="p">]</span> <span class="o">+</span> <span class="s1">&#39;_ts&#39;</span>
+                <span class="n">uq_ts_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">ts_estimate_unique_path</span><span class="p">,</span> <span class="n">fname</span><span class="p">)</span>
+                <span class="n">write</span><span class="p">(</span><span class="n">uq_ts_file</span> <span class="o">+</span> <span class="s1">&#39;.xyz&#39;</span><span class="p">,</span> <span class="n">read</span><span class="p">(</span><span class="n">unique_traj</span><span class="p">))</span>
+                <span class="n">write</span><span class="p">(</span><span class="n">uq_ts_file</span> <span class="o">+</span> <span class="s1">&#39;.png&#39;</span><span class="p">,</span> <span class="n">read</span><span class="p">(</span><span class="n">unique_traj</span><span class="p">))</span>
+
+            <span class="c1"># rename TS to have prefixes in order with no gaps</span>
+            <span class="c1"># e.g. was 027_OH_O+H_ts.xyz; is 03_OH_O+H_ts.png</span>
+            <span class="k">for</span> <span class="n">ts</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">ts_estimate_unique_path</span><span class="p">):</span>
+                <span class="n">old_ts_name</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">ts_estimate_unique_path</span><span class="p">,</span> <span class="n">ts</span><span class="p">)</span>
+                <span class="n">new_ts_name</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+                    <span class="n">ts_estimate_unique_path</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)</span><span class="o">.</span><span class="n">zfill</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span> <span class="o">+</span> <span class="n">ts</span><span class="p">[</span><span class="mi">3</span><span class="p">:])</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">old_ts_name</span><span class="p">,</span> <span class="n">new_ts_name</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="TS.create_ts_unique_py_file"><a class="viewcode-back" href="../../source/pynta.html#pynta.ts.TS.create_ts_unique_py_file">[docs]</a>    <span class="k">def</span> <span class="nf">create_ts_unique_py_file</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">pytemplate</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">rxn_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">pseudopotentials</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
+            <span class="n">pseudo_dir</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">ts_estimate_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">balsam_exe_settings</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
+            <span class="n">calc_keywords</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&#39;&#39;&#39; Create job submission files for TS calculation with Sella</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ___________</span>
+
+<span class="sd">        pytemplate : python script</span>
+<span class="sd">            a template file for saddle point minimization with Sella</span>
+<span class="sd">        rxn_name : str</span>
+<span class="sd">            a reaction name</span>
+<span class="sd">            e.g. ``&#39;OH_O+H&#39;``</span>
+<span class="sd">        pseudopotentials : dict(str: str)</span>
+<span class="sd">            a dictionary with QE pseudopotentials for all species.</span>
+<span class="sd">            e.g.</span>
+
+<span class="sd">            &gt;&gt;&gt; dict(Cu=&#39;Cu.pbe-spn-kjpaw_psl.1.0.0.UPF&#39;,</span>
+<span class="sd">                    H=&#39;H.pbe-kjpaw_psl.1.0.0.UPF&#39;,</span>
+<span class="sd">                    O=&#39;O.pbe-n-kjpaw_psl.1.0.0.UPF&#39;,</span>
+<span class="sd">                    C=&#39;C.pbe-n-kjpaw_psl.1.0.0.UPF&#39;)</span>
+
+<span class="sd">        pseudo_dir : str</span>
+<span class="sd">            a path to the QE&#39;s pseudopotentials main directory</span>
+<span class="sd">            e.g.</span>
+<span class="sd">            ```&#39;/home/mgierad/espresso/pseudo&#39;```</span>
+<span class="sd">        ts_estimate_path : str</span>
+<span class="sd">            a path to TS_estimate directory,</span>
+<span class="sd">            e.g. ``&#39;{creation_dir}/Cu_111/TS_estimate&#39;``</span>
+<span class="sd">        balsam_exe_settings : dict(str:str)</span>
+<span class="sd">            a dictionary with balsam settings</span>
+<span class="sd">        calc_keywords : dict(str:str)</span>
+<span class="sd">            a dictionary with keywords to Quantum Espresso calculations</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">ts_estimate_unique_path</span> <span class="o">=</span> <span class="n">ts_estimate_path</span> <span class="o">+</span> <span class="s1">&#39;_unique&#39;</span>
+
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">pytemplate</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">pytemplate</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+
+        <span class="n">tss</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">ts_estimate_unique_path</span><span class="p">)</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s1">&#39;**/*ts.xyz&#39;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">ts</span> <span class="ow">in</span> <span class="n">tss</span><span class="p">:</span>
+            <span class="n">ts</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">ts</span><span class="p">)</span>
+            <span class="n">ts_dir</span><span class="p">,</span> <span class="n">ts_fname</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">ts</span><span class="p">)</span>
+            <span class="n">py_dir</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">ts_dir</span><span class="p">)</span>
+            <span class="n">py_fname</span> <span class="o">=</span> <span class="n">ts_fname</span><span class="p">[:</span><span class="o">-</span><span class="mi">4</span><span class="p">]</span> <span class="o">+</span> <span class="s1">&#39;.py&#39;</span>
+            <span class="n">py_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">py_dir</span><span class="p">,</span> <span class="n">py_fname</span><span class="p">)</span>
+
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">py_file</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">pytemplate</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="n">rxn_name</span><span class="o">=</span><span class="n">rxn_name</span><span class="p">,</span>
+                    <span class="n">prefix</span><span class="o">=</span><span class="n">ts_fname</span><span class="p">[:</span><span class="mi">2</span><span class="p">],</span>
+                    <span class="n">ts_fname</span><span class="o">=</span><span class="n">ts_fname</span><span class="p">,</span>
+                    <span class="n">facetpath</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">facetpath</span><span class="p">,</span>
+                    <span class="n">balsam_exe_settings</span><span class="o">=</span><span class="n">balsam_exe_settings</span><span class="p">,</span>
+                    <span class="n">calc_keywords</span><span class="o">=</span><span class="n">calc_keywords</span><span class="p">,</span>
+                    <span class="n">pseudopotentials</span><span class="o">=</span><span class="n">pseudopotentials</span><span class="p">,</span>
+                    <span class="n">pseudo_dir</span><span class="o">=</span><span class="n">pseudo_dir</span><span class="p">,</span>
+                    <span class="n">creation_dir</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">creation_dir</span><span class="p">,</span>
+                    <span class="n">n_kpts</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">n_kpts</span><span class="p">,</span>
+                    <span class="n">repeats</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">repeats</span>
+                <span class="p">))</span></div>
+
+<div class="viewcode-block" id="TS.get_index_adatom"><a class="viewcode-back" href="../../source/pynta.html#pynta.ts.TS.get_index_adatom">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">get_index_adatom</span><span class="p">(</span>
+            <span class="n">ads_atom</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">adsorbate_atoms_idxs</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="sd">&#39;&#39;&#39; Specify adsorbate atom symbol and its index will be returned.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ___________</span>
+<span class="sd">        ads_atom : str</span>
+<span class="sd">            an atom of the species bonded to the surface, e.g. &#39;O&#39; for OH</span>
+<span class="sd">        adsorbate_atoms_idxs : dict(str:int)</span>
+<span class="sd">            a dictionary with all adsorbate atoms and theirs corresponding</span>
+<span class="sd">            indicies</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        ________</span>
+<span class="sd">        ads_index : int</span>
+<span class="sd">            index of the adsorbed atom</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">vals</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">adsorbate_atoms_idxs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">key</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">ads_atom</span><span class="p">):</span>
+                <span class="n">vals</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">vals</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">ads_index</span> <span class="o">=</span> <span class="n">vals</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">vals</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">ads_index</span> <span class="o">=</span> <span class="n">vals</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">ads_index</span></div>
+
+<div class="viewcode-block" id="TS.get_index_surface_atom"><a class="viewcode-back" href="../../source/pynta.html#pynta.ts.TS.get_index_surface_atom">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">get_index_surface_atom</span><span class="p">(</span>
+            <span class="n">sp_index</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+            <span class="n">surface_atoms_idxs</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span>
+            <span class="n">geom</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">n_same_metal_idxs</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="sd">&#39;&#39;&#39; Specify adsorbate atom symbol and index of the nearest metal atom</span>
+<span class="sd">        will be returned.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ___________</span>
+<span class="sd">        ads_atom : str</span>
+<span class="sd">            an atom of the species bonded to the surface, e.g. &#39;O&#39; for OH</span>
+<span class="sd">        geom : str</span>
+<span class="sd">            a .xyz of .traj file name with geometry of the structure</span>
+<span class="sd">            to be analysed</span>
+<span class="sd">        n_same_metal_idxs : int</span>
+<span class="sd">            how many times an adsorbed atom wanted to connect to the same metal</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        ________</span>
+<span class="sd">        surface_atoms[index[0][0]] : float</span>
+<span class="sd">            index of the metal atom to which ads_atom is bonded</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">surface_atoms_idxs_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">surface_atoms_idxs</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+
+        <span class="n">ts_est_atom</span> <span class="o">=</span> <span class="n">read</span><span class="p">(</span><span class="n">geom</span><span class="p">)</span>
+
+        <span class="n">all_dist_surface_adsorbate</span> <span class="o">=</span> <span class="n">ts_est_atom</span><span class="o">.</span><span class="n">get_distances</span><span class="p">(</span>
+            <span class="n">sp_index</span><span class="p">,</span> <span class="n">surface_atoms_idxs_list</span><span class="p">)</span>
+
+        <span class="n">min_dist_surface_adsorbate</span> <span class="o">=</span> <span class="n">heapq</span><span class="o">.</span><span class="n">nsmallest</span><span class="p">(</span>
+            <span class="n">n_same_metal_idxs</span><span class="p">,</span>
+            <span class="n">all_dist_surface_adsorbate</span><span class="p">)[</span><span class="n">n_same_metal_idxs</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+        <span class="n">index</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">all_dist_surface_adsorbate</span>
+                         <span class="o">==</span> <span class="n">min_dist_surface_adsorbate</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">surface_atoms_idxs_list</span><span class="p">[</span><span class="n">index</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]]</span></div>
+
+<div class="viewcode-block" id="TS.check_symm"><a class="viewcode-back" href="../../source/pynta.html#pynta.ts.TS.check_symm">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">check_symm</span><span class="p">(</span>
+            <span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">return_unique</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+            <span class="n">compare_traj</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]:</span>
+        <span class="sd">&#39;&#39;&#39; Check for the symmetry equivalent structures in the given path</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ___________</span>
+<span class="sd">        path : str</span>
+<span class="sd">            a path to a directory where are files to be checked,</span>
+<span class="sd">            e.g. ``&#39;Cu_111/TS_estimate_unique&#39;``</span>
+<span class="sd">        return_unique : bool</span>
+<span class="sd">            If True, the method will return a list of unique prefixes.</span>
+<span class="sd">            If False, the method will return a list of non-unique prefixes.</span>
+<span class="sd">        compare_traj : bool</span>
+<span class="sd">            If True, the method will compare .traj files.</span>
+<span class="sd">            If False, .xyz files will be compared</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        ________</span>
+<span class="sd">        idx_list : list(str)</span>
+<span class="sd">            a list with prefixes of all symmetrically distinct sites</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">if</span> <span class="n">compare_traj</span><span class="p">:</span>
+            <span class="n">keyphrase</span> <span class="o">=</span> <span class="s1">&#39;**/*.traj&#39;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">keyphrase</span> <span class="o">=</span> <span class="s1">&#39;*.xyz&#39;</span>
+
+        <span class="n">comparator</span> <span class="o">=</span> <span class="n">SymmetryEquivalenceCheck</span><span class="p">()</span>
+        <span class="n">list_of_geoms</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="n">path</span><span class="p">)</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">keyphrase</span><span class="p">))</span>
+
+        <span class="n">good_adsorbates_atom_obj_list</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">for</span> <span class="n">geom</span> <span class="ow">in</span> <span class="n">list_of_geoms</span><span class="p">:</span>
+            <span class="n">adsorbate_atom_obj</span> <span class="o">=</span> <span class="n">read</span><span class="p">(</span><span class="n">geom</span><span class="p">)</span>
+            <span class="n">adsorbate_atom_obj</span><span class="o">.</span><span class="n">pbc</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="n">comparision</span> <span class="o">=</span> <span class="n">comparator</span><span class="o">.</span><span class="n">compare</span><span class="p">(</span>
+                <span class="n">adsorbate_atom_obj</span><span class="p">,</span> <span class="n">good_adsorbates_atom_obj_list</span><span class="p">)</span>
+            <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">comparision</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">comparision</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">:</span>
+                <span class="n">good_adsorbates_atom_obj_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">adsorbate_atom_obj</span><span class="p">)</span>
+
+        <span class="n">list_of_prefixes</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">num</span><span class="p">,</span> <span class="n">res</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">result</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">res</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">return_unique</span><span class="p">:</span>
+                <span class="n">list_of_prefixes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">num</span><span class="p">)</span><span class="o">.</span><span class="n">zfill</span><span class="p">(</span><span class="mi">3</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">list_of_prefixes</span></div></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, Maciej Gierada, Eric D. Hermes, David H. Bross
+      <span class="lastupdated">
+        Last updated on Wed, 20 Jan 2021 11:36:46.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

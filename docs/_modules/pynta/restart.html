@@ -1,0 +1,504 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>pynta.restart &mdash; Pynta January 20, 2021 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/doctools.js"></script>
+        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> Pynta
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <!-- Local TOC -->
+              <div class="local-toc"></div>
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">Pynta</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+        
+          <li><a href="../pynta.html">pynta</a> &raquo;</li>
+        
+      <li>pynta.restart</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for pynta.restart</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">import</span> <span class="nn">shutil</span>
+<span class="kn">from</span> <span class="nn">ase.io</span> <span class="k">import</span> <span class="n">read</span><span class="p">,</span> <span class="n">write</span>
+<span class="kn">from</span> <span class="nn">ase.io.formats</span> <span class="k">import</span> <span class="n">UnknownFileTypeError</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="k">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span>
+
+
+<div class="viewcode-block" id="LowLevelRestart"><a class="viewcode-back" href="../../source/pynta.html#pynta.restart.LowLevelRestart">[docs]</a><span class="k">class</span> <span class="nc">LowLevelRestart</span><span class="p">():</span>
+    <span class="sd">&#39;&#39;&#39; Low level restart means that each quantum chemistry job that can be</span>
+<span class="sd">    restarted will be restarted.</span>
+
+<span class="sd">    These include:</span>
+
+<span class="sd">        * adsorbates minimization</span>
+<span class="sd">        * TSs optimization</span>
+<span class="sd">        * optimization of reactants and products as from TS (IRC alternative)</span>
+
+<span class="sd">    For those jobs, once restarted, calculations will start from the last</span>
+<span class="sd">    converged optimization step.</span>
+
+<span class="sd">    For other types of jobs, including:</span>
+
+<span class="sd">        * vibrational frequencies calculations of adsorbates and TSs</span>
+<span class="sd">        * xTB + penalty function minimization to get TS guesses</span>
+
+<span class="sd">    low level restart is not possible, so they will start from scratch,</span>
+<span class="sd">    during high level restart.</span>
+
+<span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="kn">from</span> <span class="nn">balsam.launcher.dag</span> <span class="k">import</span> <span class="n">BalsamJob</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">current_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">()</span>
+        <span class="c1"># get all python(ASE) jobs</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ase_jobs</span> <span class="o">=</span> <span class="n">BalsamJob</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span>
+            <span class="n">application__contains</span><span class="o">=</span><span class="s1">&#39;python&#39;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="LowLevelRestart.restart"><a class="viewcode-back" href="../../source/pynta.html#pynta.restart.LowLevelRestart.restart">[docs]</a>    <span class="k">def</span> <span class="nf">restart</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&#39;&#39;&#39; Run low level restart - restart jobs from the last converged point,</span>
+<span class="sd">        if possible.</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">prepare_minima_to_restart</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">remove_partialy_generated_xtb_run</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">prepare_ts_to_restart</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">prepare_after_ts_to_restart</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="LowLevelRestart.get_jobs_to_restart"><a class="viewcode-back" href="../../source/pynta.html#pynta.restart.LowLevelRestart.get_jobs_to_restart">[docs]</a>    <span class="k">def</span> <span class="nf">get_jobs_to_restart</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
+        <span class="sd">&#39;&#39;&#39; Get a dictionary with all ase_jobs that did not finish</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        all_unfinished: Dict[str, str]</span>
+<span class="sd">            a dictionary with all unfinished jobs,</span>
+<span class="sd">            e.g.</span>
+
+<span class="sd">            &gt;&gt;&gt; all_unfinished = {Cu_111_C_01_relax.py: &#39;RUNNING&#39;}</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">all_unfinished</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">job</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">ase_jobs</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">job</span><span class="o">.</span><span class="n">state</span> <span class="o">!=</span> <span class="s1">&#39;JOB_FINISHED&#39;</span><span class="p">:</span>
+                <span class="n">all_unfinished</span><span class="p">[</span><span class="n">job</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">job</span><span class="o">.</span><span class="n">state</span>
+        <span class="k">return</span> <span class="n">all_unfinished</span></div>
+
+<div class="viewcode-block" id="LowLevelRestart.get_minima_to_restart"><a class="viewcode-back" href="../../source/pynta.html#pynta.restart.LowLevelRestart.get_minima_to_restart">[docs]</a>    <span class="k">def</span> <span class="nf">get_minima_to_restart</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+        <span class="sd">&#39;&#39;&#39; Go through all_unfinished dictionary and create a list with all</span>
+<span class="sd">        minima ase jobs that started but are not yet finished and require</span>
+<span class="sd">        to be restarted.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        unfinished_minima : list(str)</span>
+<span class="sd">            a list with all :literal:`*.py` files for minima optimization which</span>
+<span class="sd">            did not finished</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">all_unfinished</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_jobs_to_restart</span><span class="p">()</span>
+        <span class="n">unfinished_minima</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">all_unfinished</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="k">if</span> <span class="s1">&#39;relax&#39;</span> <span class="ow">in</span> <span class="n">key</span><span class="p">:</span>
+                <span class="n">unfinished_minima</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">unfinished_minima</span></div>
+
+<div class="viewcode-block" id="LowLevelRestart.get_ts_xtb_to_remove"><a class="viewcode-back" href="../../source/pynta.html#pynta.restart.LowLevelRestart.get_ts_xtb_to_remove">[docs]</a>    <span class="k">def</span> <span class="nf">get_ts_xtb_to_remove</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+        <span class="sd">&#39;&#39;&#39; Get a list of all ts_xtb jobs for which initial :literal:`*.xyz`</span>
+<span class="sd">        files were generated but :literal:`*.py` not yet.</span>
+
+<span class="sd">        This method will take care of edge cases where the workflow execution</span>
+<span class="sd">        stopped while symmetry of initially generated :literal:`*.xyz` were</span>
+<span class="sd">        checking</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        unfinished_ts_xtb : List[str]</span>
+<span class="sd">            a list of all ts_xtb jobs for which :literal:`*.xyz` files have to</span>
+<span class="sd">            be removed</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">all_unfinished</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_jobs_to_restart</span><span class="p">()</span>
+        <span class="n">unfinished_ts_xtb</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">all_unfinished</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="s1">&#39;xtb&#39;</span> <span class="ow">in</span> <span class="n">key</span> <span class="ow">and</span> <span class="s1">&#39;AWAITING_PARENTS&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">value</span><span class="p">:</span>
+                <span class="n">unfinished_ts_xtb</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">unfinished_ts_xtb</span></div>
+
+<div class="viewcode-block" id="LowLevelRestart.get_tss_to_restart"><a class="viewcode-back" href="../../source/pynta.html#pynta.restart.LowLevelRestart.get_tss_to_restart">[docs]</a>    <span class="k">def</span> <span class="nf">get_tss_to_restart</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+        <span class="sd">&#39;&#39;&#39; Go through all_unfinished dictionary and create a list with all</span>
+<span class="sd">        TS ase jobs that started but are not yet finished and require to be</span>
+<span class="sd">        restarted.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        unfinished_tss : list(str)</span>
+<span class="sd">            a list with all :literal:`*.py` files for started but yet</span>
+<span class="sd">            unfinished 1st order saddle point optimizations</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">all_unfinished</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_jobs_to_restart</span><span class="p">()</span>
+        <span class="n">unfinished_tss</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">all_unfinished</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">only_ts</span> <span class="o">=</span> <span class="s1">&#39;ts&#39;</span> <span class="ow">in</span> <span class="n">key</span> <span class="ow">and</span> <span class="nb">all</span><span class="p">(</span>
+                <span class="p">[</span><span class="n">k</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">key</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;ts_vib&#39;</span><span class="p">,</span> <span class="s1">&#39;after_ts&#39;</span><span class="p">]])</span>
+            <span class="c1"># comparator = &#39;ts&#39; in key and &#39;after_ts&#39; not in key</span>
+            <span class="c1"># and &#39;ts_vib&#39; not in key</span>
+            <span class="k">if</span> <span class="n">only_ts</span> <span class="ow">and</span> <span class="s1">&#39;AWAITING_PARENTS&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">value</span><span class="p">:</span>
+                <span class="n">unfinished_tss</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">unfinished_tss</span></div>
+
+<div class="viewcode-block" id="LowLevelRestart.get_after_ts_to_restart"><a class="viewcode-back" href="../../source/pynta.html#pynta.restart.LowLevelRestart.get_after_ts_to_restart">[docs]</a>    <span class="k">def</span> <span class="nf">get_after_ts_to_restart</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+        <span class="sd">&#39;&#39;&#39; Go through all_unfinished dictionary and create a list with all</span>
+<span class="sd">        after_ts ase jobs that started but are not yet finished and</span>
+<span class="sd">        require to berestarted.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        unfinished_after_tss : list(str)</span>
+<span class="sd">            a list with unique :literal:`*.py` file names for started but</span>
+<span class="sd">            yet finishedminimization of reactants and products</span>
+<span class="sd">            after TS calculations</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">all_unfinished</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_jobs_to_restart</span><span class="p">()</span>
+        <span class="n">unfinished_after_tss</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">all_unfinished</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="s1">&#39;after_ts&#39;</span> <span class="ow">in</span> <span class="n">key</span> <span class="ow">and</span> <span class="s1">&#39;AWAITING_PARENTS&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">value</span><span class="p">:</span>
+                <span class="c1"># remove &#39;_f.py&#39; or &#39;_r.py&#39; from the key name</span>
+                <span class="c1"># unfinished_after_tss.append(key[:-5])</span>
+                <span class="n">unfinished_after_tss</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+        <span class="c1"># return list(set(unfinished_after_tss))</span>
+        <span class="k">return</span> <span class="n">unfinished_after_tss</span></div>
+
+<div class="viewcode-block" id="LowLevelRestart.prepare_minima_to_restart"><a class="viewcode-back" href="../../source/pynta.html#pynta.restart.LowLevelRestart.prepare_minima_to_restart">[docs]</a>    <span class="k">def</span> <span class="nf">prepare_minima_to_restart</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&#39;&#39;&#39; If there is at least one optimization step in a .traj file</span>
+<span class="sd">        for a given minima, this method will create a new :literal:`*.xyz`</span>
+<span class="sd">        file for that job from the last converged opt step.</span>
+
+<span class="sd">        So, when :class:`pynta.restart.HighLevelRestart` is executed,</span>
+<span class="sd">        the optimization can resume from the last converged step, taking</span>
+<span class="sd">        advantade of previous calculations.</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">unfinished_minima</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_minima_to_restart</span><span class="p">()</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Restarting minima:&#39;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">minimum</span> <span class="ow">in</span> <span class="n">unfinished_minima</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;    </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">minimum</span><span class="p">))</span>
+            <span class="n">metal_symbol</span><span class="p">,</span> <span class="n">facet</span><span class="p">,</span> <span class="n">species</span><span class="p">,</span> <span class="n">prefix</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">minimum</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;_&#39;</span><span class="p">)</span>
+            <span class="n">facetpath</span> <span class="o">=</span> <span class="n">metal_symbol</span> <span class="o">+</span> <span class="s1">&#39;_&#39;</span> <span class="o">+</span> <span class="n">facet</span>
+            <span class="n">path_to_species</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+                <span class="n">facetpath</span><span class="p">,</span> <span class="s1">&#39;minima&#39;</span><span class="p">,</span> <span class="n">species</span><span class="p">,</span> <span class="n">prefix</span><span class="p">)</span>
+
+            <span class="k">try</span><span class="p">:</span>
+                <span class="c1"># try to convert last step in *traj file to a new .xyz file</span>
+                <span class="n">write</span><span class="p">(</span><span class="n">path_to_species</span> <span class="o">+</span> <span class="s1">&#39;.xyz&#39;</span><span class="p">,</span>
+                      <span class="n">read</span><span class="p">(</span><span class="n">path_to_species</span> <span class="o">+</span> <span class="s1">&#39;.traj&#39;</span><span class="p">))</span>
+            <span class="k">except</span> <span class="p">(</span><span class="ne">FileNotFoundError</span><span class="p">,</span> <span class="n">UnknownFileTypeError</span><span class="p">):</span>
+                <span class="c1"># continue if *traj file is missing or it is empty</span>
+                <span class="c1"># hard HighLevelRestart is required</span>
+                <span class="k">continue</span></div>
+
+<div class="viewcode-block" id="LowLevelRestart.remove_partialy_generated_xtb_run"><a class="viewcode-back" href="../../source/pynta.html#pynta.restart.LowLevelRestart.remove_partialy_generated_xtb_run">[docs]</a>    <span class="k">def</span> <span class="nf">remove_partialy_generated_xtb_run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39; Remove all partially generated :literal:`*.xyz` files as described</span>
+<span class="sd">        in :meth:`pynta.restart.LowLevelRestart.get_ts_xtb_to_remove`</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">unfinished_ts_xtb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_ts_xtb_to_remove</span><span class="p">()</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Removing partially generated TS_xtb jobs:&#39;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">ts_xtb</span> <span class="ow">in</span> <span class="n">unfinished_ts_xtb</span><span class="p">:</span>
+            <span class="n">rxn_name</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="s1">&#39;xtb_(.*).py&#39;</span><span class="p">,</span> <span class="n">ts_xtb</span><span class="p">)</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">facetpath</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="s1">&#39;02_(.*)_set&#39;</span><span class="p">,</span> <span class="n">ts_xtb</span><span class="p">)</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">path_to_ts_xtb</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">current_dir</span><span class="p">,</span> <span class="n">facetpath</span><span class="p">,</span> <span class="n">rxn_name</span><span class="p">)</span>
+
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;    * trying </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">ts_xtb</span><span class="p">))</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">shutil</span><span class="o">.</span><span class="n">rmtree</span><span class="p">(</span><span class="n">path_to_ts_xtb</span><span class="p">)</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;        Done&#39;</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">FileNotFoundError</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;        </span><span class="se">\&#39;</span><span class="s1">.xyz</span><span class="se">\&#39;</span><span class="s1"> files not found. Nothing to remove&#39;</span><span class="p">)</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;        ## check </span><span class="si">{}</span><span class="s1"> ##&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">path_to_ts_xtb</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="LowLevelRestart.prepare_ts_to_restart"><a class="viewcode-back" href="../../source/pynta.html#pynta.restart.LowLevelRestart.prepare_ts_to_restart">[docs]</a>    <span class="k">def</span> <span class="nf">prepare_ts_to_restart</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&#39;&#39;&#39; If there is at least one optimization step in a .traj file</span>
+<span class="sd">        for a given ts, this method will create a new :literal:`*.xyz` file for</span>
+<span class="sd">        that job from the last converged saddle point opt step.</span>
+
+<span class="sd">        So, when :class:`pynta.restart.HighLevelRestart` is executed,</span>
+<span class="sd">        the optimization can resume from the last converged step, taking</span>
+<span class="sd">        advantade of previous calculations.</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">unfinished_tss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_tss_to_restart</span><span class="p">()</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Restarting TSs:&#39;</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">ts</span> <span class="ow">in</span> <span class="n">unfinished_tss</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;    </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">ts</span><span class="p">))</span>
+            <span class="n">prefix</span><span class="p">,</span> <span class="n">metal_symbol</span><span class="p">,</span> <span class="n">facet</span><span class="p">,</span> <span class="n">react</span><span class="p">,</span> <span class="n">prod</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">ts</span><span class="o">.</span><span class="n">split</span><span class="p">(</span>
+                <span class="s1">&#39;_&#39;</span><span class="p">)</span>
+            <span class="n">facetpath</span> <span class="o">=</span> <span class="n">metal_symbol</span> <span class="o">+</span> <span class="s1">&#39;_&#39;</span> <span class="o">+</span> <span class="n">facet</span>
+            <span class="n">rxn_name</span> <span class="o">=</span> <span class="n">react</span> <span class="o">+</span> <span class="s1">&#39;_&#39;</span> <span class="o">+</span> <span class="n">prod</span>
+
+            <span class="n">ts_name</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+                <span class="n">prefix</span> <span class="o">+</span> <span class="s1">&#39;_&#39;</span> <span class="o">+</span> <span class="n">facetpath</span> <span class="o">+</span> <span class="s1">&#39;_&#39;</span> <span class="o">+</span> <span class="n">rxn_name</span><span class="p">)</span>
+            <span class="n">path_to_ts</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+                <span class="n">facetpath</span><span class="p">,</span> <span class="n">rxn_name</span><span class="p">,</span> <span class="s1">&#39;TS_estimate_unique&#39;</span><span class="p">,</span> <span class="n">prefix</span><span class="p">,</span> <span class="n">ts_name</span><span class="p">)</span>
+
+            <span class="k">try</span><span class="p">:</span>
+                <span class="c1"># try to convert last step in *traj file to a new .xyz file</span>
+                <span class="n">write</span><span class="p">(</span><span class="n">path_to_ts</span> <span class="o">+</span> <span class="s1">&#39;_ts.xyz&#39;</span><span class="p">,</span>
+                      <span class="n">read</span><span class="p">(</span><span class="n">path_to_ts</span> <span class="o">+</span> <span class="s1">&#39;.traj&#39;</span><span class="p">))</span>
+            <span class="k">except</span> <span class="p">(</span><span class="ne">FileNotFoundError</span><span class="p">,</span> <span class="n">UnknownFileTypeError</span><span class="p">):</span>
+                <span class="c1"># continue if *traj file is missing or it is empty</span>
+                <span class="c1"># hard :meth:HighLevelRestart is required</span>
+                <span class="k">continue</span></div>
+
+<div class="viewcode-block" id="LowLevelRestart.prepare_after_ts_to_restart"><a class="viewcode-back" href="../../source/pynta.html#pynta.restart.LowLevelRestart.prepare_after_ts_to_restart">[docs]</a>    <span class="k">def</span> <span class="nf">prepare_after_ts_to_restart</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&#39;&#39;&#39; If there is at least one optimization step in a .traj file</span>
+<span class="sd">        for a given after_ts, this method will create a new :literal:`*.xyz`</span>
+<span class="sd">        file for that job from the last converge opt step.</span>
+
+<span class="sd">        So, when :class:`pynta.restart.HighLevelRestart` is executed,</span>
+<span class="sd">        the optimization can resume from the last converged step, taking</span>
+<span class="sd">        advantade of previous calculations.</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">unfinished_after_tss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_after_ts_to_restart</span><span class="p">()</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Restarting After TSs:&#39;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">after_ts</span> <span class="ow">in</span> <span class="n">unfinished_after_tss</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;    </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">after_ts</span><span class="p">))</span>
+            <span class="n">prefix</span><span class="p">,</span> <span class="n">metal_atom</span><span class="p">,</span> <span class="n">facet</span><span class="p">,</span> <span class="n">react</span><span class="p">,</span> <span class="n">prod</span><span class="p">,</span> <span class="o">*</span> \
+                <span class="n">_</span><span class="p">,</span> <span class="n">letter</span> <span class="o">=</span> <span class="n">after_ts</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;_&#39;</span><span class="p">)</span>
+            <span class="n">facetpath</span> <span class="o">=</span> <span class="n">metal_atom</span> <span class="o">+</span> <span class="s1">&#39;_&#39;</span> <span class="o">+</span> <span class="n">facet</span>
+            <span class="n">rxn_name</span> <span class="o">=</span> <span class="n">react</span> <span class="o">+</span> <span class="s1">&#39;_&#39;</span> <span class="o">+</span> <span class="n">prod</span>
+            <span class="n">after_ts_name</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+                <span class="n">prefix</span> <span class="o">+</span> <span class="s1">&#39;_&#39;</span> <span class="o">+</span> <span class="n">facetpath</span> <span class="o">+</span> <span class="s1">&#39;_&#39;</span> <span class="o">+</span> <span class="n">rxn_name</span>
+                <span class="o">+</span> <span class="s1">&#39;_after_ts_&#39;</span> <span class="o">+</span> <span class="n">letter</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="n">path_to_after_ts</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+                <span class="n">facetpath</span><span class="p">,</span>
+                <span class="n">rxn_name</span><span class="p">,</span>
+                <span class="s1">&#39;after_TS&#39;</span><span class="p">,</span>
+                <span class="n">prefix</span><span class="p">,</span>
+                <span class="n">after_ts_name</span><span class="p">)</span>
+
+            <span class="k">try</span><span class="p">:</span>
+                <span class="c1"># try to convert last step in *traj file to a new .xyz file</span>
+                <span class="n">write</span><span class="p">(</span><span class="n">path_to_after_ts</span> <span class="o">+</span> <span class="s1">&#39;.xyz&#39;</span><span class="p">,</span>
+                      <span class="n">read</span><span class="p">(</span><span class="n">path_to_after_ts</span> <span class="o">+</span> <span class="s1">&#39;.traj&#39;</span><span class="p">))</span>
+            <span class="k">except</span> <span class="p">(</span><span class="ne">FileNotFoundError</span><span class="p">,</span> <span class="n">UnknownFileTypeError</span><span class="p">):</span>
+                <span class="c1"># continue if *traj file is missing or it is empty</span>
+                <span class="c1"># hard HighLevelRestart is required</span>
+                <span class="k">continue</span></div></div>
+
+
+<div class="viewcode-block" id="HighLevelRestart"><a class="viewcode-back" href="../../source/pynta.html#pynta.restart.HighLevelRestart">[docs]</a><span class="k">class</span> <span class="nc">HighLevelRestart</span><span class="p">():</span>
+    <span class="sd">&#39;&#39;&#39; High level restart means that each ASE job that has an unfinished</span>
+<span class="sd">    status will be restarted. All balsam jobs will be removed. They will be</span>
+<span class="sd">    regenerated once ASE jobs start again.</span>
+
+<span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># get all python (ASE) jobs</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">balsamjob</span> <span class="o">=</span> <span class="nb">__import__</span><span class="p">(</span>
+            <span class="s1">&#39;balsam.launcher.dag&#39;</span><span class="p">,</span> <span class="n">fromlist</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;BalsamJob&#39;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ase_jobs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">balsamjob</span><span class="o">.</span><span class="n">BalsamJob</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span>
+            <span class="n">application__contains</span><span class="o">=</span><span class="s1">&#39;python&#39;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="HighLevelRestart.restart"><a class="viewcode-back" href="../../source/pynta.html#pynta.restart.HighLevelRestart.restart">[docs]</a>    <span class="k">def</span> <span class="nf">restart</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&#39;&#39;&#39; Prepare all unfinished jobs to restart.</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="c1"># remove all balsam calculator objects</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">balsamjob</span><span class="o">.</span><span class="n">BalsamJob</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">name__contains</span><span class="o">=</span><span class="s1">&#39;balsam&#39;</span><span class="p">,</span>
+                                                <span class="n">workflow</span><span class="o">=</span><span class="s1">&#39;QE_Socket&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">delete</span><span class="p">()</span>
+
+        <span class="c1"># update state of every not finished jobs to &#39;READY&#39;</span>
+        <span class="k">for</span> <span class="n">job</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">ase_jobs</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">job</span><span class="o">.</span><span class="n">state</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;JOB_FINISHED&#39;</span><span class="p">,</span> <span class="s1">&#39;AWAITING_PARENTS&#39;</span><span class="p">]:</span>
+                <span class="n">job</span><span class="o">.</span><span class="n">state</span> <span class="o">=</span> <span class="s1">&#39;READY&#39;</span>
+                <span class="n">job</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_awaiting_status</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="HighLevelRestart.set_awaiting_status"><a class="viewcode-back" href="../../source/pynta.html#pynta.restart.HighLevelRestart.set_awaiting_status">[docs]</a>    <span class="k">def</span> <span class="nf">set_awaiting_status</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39; Make sure that jobs which not yet started and depends on other jobs</span>
+<span class="sd">        have an ``&#39;AWAITING_PARENTS&#39;`` status</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">for</span> <span class="n">job</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">ase_jobs</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">job</span><span class="o">.</span><span class="n">parents</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">2</span> <span class="ow">and</span> <span class="n">job</span><span class="o">.</span><span class="n">state</span> <span class="o">!=</span> <span class="s1">&#39;JOB_FINISHED&#39;</span><span class="p">:</span>
+                <span class="n">job</span><span class="o">.</span><span class="n">state</span> <span class="o">=</span> <span class="s1">&#39;AWAITING_PARENTS&#39;</span>
+                <span class="n">job</span><span class="o">.</span><span class="n">save</span><span class="p">()</span></div></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, Maciej Gierada, Eric D. Hermes, David H. Bross
+      <span class="lastupdated">
+        Last updated on Wed, 20 Jan 2021 11:36:46.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

@@ -1,0 +1,607 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>pynta.balsamcalc &mdash; Pynta January 20, 2021 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/doctools.js"></script>
+        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> Pynta
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <!-- Local TOC -->
+              <div class="local-toc"></div>
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">Pynta</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+        
+          <li><a href="../pynta.html">pynta</a> &raquo;</li>
+        
+      <li>pynta.balsamcalc</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for pynta.balsamcalc</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="k">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Dict</span>
+<span class="kn">import</span> <span class="nn">socket</span>
+<span class="kn">import</span> <span class="nn">atexit</span>
+<span class="kn">from</span> <span class="nn">balsam.launcher.dag</span> <span class="k">import</span> <span class="n">BalsamJob</span><span class="p">,</span> <span class="n">kill</span>
+<span class="kn">from</span> <span class="nn">balsam.core.models</span> <span class="k">import</span> <span class="n">ApplicationDefinition</span>
+
+<span class="kn">from</span> <span class="nn">ase</span> <span class="k">import</span> <span class="n">Atoms</span>
+<span class="kn">from</span> <span class="nn">ase.io</span> <span class="k">import</span> <span class="n">read</span><span class="p">,</span> <span class="n">write</span>
+<span class="kn">from</span> <span class="nn">ase.calculators.calculator</span> <span class="k">import</span> <span class="p">(</span>
+    <span class="n">Calculator</span><span class="p">,</span> <span class="n">FileIOCalculator</span><span class="p">,</span> <span class="n">all_changes</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">ase.calculators.socketio</span> <span class="k">import</span> <span class="n">SocketIOCalculator</span>
+
+
+<span class="n">UNFINISHED_STATES</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s1">&#39;CREATED&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;AWAITING_PARENTS&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;READY&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;STAGED_IN&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;PREPROCESSED&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;RUNNING&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;RUN_DONE&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;POSTPROCESSED&#39;</span>
+<span class="p">]</span>
+
+
+<span class="n">FAIL_STATES</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s1">&#39;RUN_TIMEOUT&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;RUN_ERROR&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;RESTART_READY&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;FAILED&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;USER_KILLED&#39;</span>
+<span class="p">]</span>
+
+
+<div class="viewcode-block" id="BalsamCalculator"><a class="viewcode-back" href="../../source/pynta.html#pynta.balsamcalc.BalsamCalculator">[docs]</a><span class="k">class</span> <span class="nc">BalsamCalculator</span><span class="p">(</span><span class="n">FileIOCalculator</span><span class="p">):</span>
+    <span class="c1"># Command executed by Balsam</span>
+    <span class="n">exe</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="c1"># Naming scheme for the input file written by the calculator</span>
+    <span class="n">inp_name</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="c1"># ASE IO format of the input file</span>
+    <span class="n">inp_format</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="c1"># Naming scheme for the output file read by the calculator</span>
+    <span class="n">out_name</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="c1"># ASE IO format of the output file</span>
+    <span class="n">out_format</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="c1"># Extra calculation-specific arguments to provide to Balsam</span>
+    <span class="n">args</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="c1"># The Balsam App for this type of calculation</span>
+    <span class="n">app</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="c1"># Extra information for the Balsam App</span>
+    <span class="n">preprocess</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+    <span class="n">postprocess</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+    <span class="n">description</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+
+    <span class="c1"># Ignore when Balsam jobs fail (needed for QE in socket-mode)</span>
+    <span class="n">ignore_fail</span> <span class="o">=</span> <span class="kc">False</span>
+
+<div class="viewcode-block" id="BalsamCalculator.__init__"><a class="viewcode-back" href="../../source/pynta.html#pynta.balsamcalc.BalsamCalculator.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">workflow</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">label</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;balsam&#39;</span><span class="p">,</span>
+        <span class="n">atoms</span><span class="p">:</span> <span class="n">Atoms</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">job_args</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">job_kwargs</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(),</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&#39;&#39;&#39; Define Balsam Calculator</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        workflow : str</span>
+<span class="sd">            name of the workflow, e.g.</span>
+
+<span class="sd">            &gt;&gt;&gt; workflow=&#39;QE_Socket&#39;</span>
+
+<span class="sd">        label : str, optional</span>
+<span class="sd">            label for the created balsam calculator, by default &#39;balsam&#39;</span>
+<span class="sd">        atoms : Atoms, optional</span>
+<span class="sd">            an Atoms object, by default None</span>
+<span class="sd">        job_args : str, optional</span>
+<span class="sd">            by default None</span>
+<span class="sd">        job_kwargs : Dict[str, Any], optional</span>
+<span class="sd">            by default dict(), e.g.</span>
+
+<span class="sd">            &gt;&gt;&gt; balsam_exe_settings = {&#39;num_nodes&#39;: 1,</span>
+<span class="sd">                                    &#39;ranks_per_node&#39;: 48,</span>
+<span class="sd">                                    &#39;threads_per_rank&#39;: 1}</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">FileIOCalculator</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">restart</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">ignore_bad_restart_file</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="n">label</span><span class="o">=</span><span class="n">label</span><span class="p">,</span>
+            <span class="n">atoms</span><span class="o">=</span><span class="n">atoms</span><span class="p">,</span>
+            <span class="o">**</span><span class="n">kwargs</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">workflow</span> <span class="o">=</span> <span class="n">workflow</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">job_args</span> <span class="o">=</span> <span class="n">job_args</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">job_kwargs</span> <span class="o">=</span> <span class="n">job_kwargs</span>
+        <span class="n">atexit</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kill_job</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">create_application</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="BalsamCalculator.create_application"><a class="viewcode-back" href="../../source/pynta.html#pynta.balsamcalc.BalsamCalculator.create_application">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">create_application</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&#39;&#39;&#39; Create a balsam calculator application &#39;&#39;&#39;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">app</span> <span class="o">=</span> <span class="n">ApplicationDefinition</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+                <span class="n">name</span><span class="o">=</span><span class="bp">cls</span><span class="o">.</span><span class="vm">__name__</span>
+            <span class="p">)</span>
+        <span class="k">except</span> <span class="n">ApplicationDefinition</span><span class="o">.</span><span class="n">DoesNotExist</span><span class="p">:</span>
+            <span class="n">app</span><span class="p">,</span> <span class="n">created</span> <span class="o">=</span> <span class="n">ApplicationDefinition</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get_or_create</span><span class="p">(</span>
+                <span class="n">name</span><span class="o">=</span><span class="bp">cls</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span>
+                <span class="n">executable</span><span class="o">=</span><span class="bp">cls</span><span class="o">.</span><span class="n">exe</span><span class="p">,</span>
+                <span class="n">preprocess</span><span class="o">=</span><span class="bp">cls</span><span class="o">.</span><span class="n">preprocess</span><span class="p">,</span>
+                <span class="n">postprocess</span><span class="o">=</span><span class="bp">cls</span><span class="o">.</span><span class="n">postprocess</span><span class="p">,</span>
+                <span class="n">description</span><span class="o">=</span><span class="bp">cls</span><span class="o">.</span><span class="n">description</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="k">if</span> <span class="n">created</span><span class="p">:</span>
+                <span class="n">app</span><span class="o">.</span><span class="n">save</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="BalsamCalculator.format_args"><a class="viewcode-back" href="../../source/pynta.html#pynta.balsamcalc.BalsamCalculator.format_args">[docs]</a>    <span class="k">def</span> <span class="nf">format_args</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="sd">&#39;&#39;&#39; Format args</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        args : str</span>
+<span class="sd">            formated args</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">args</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;PREFIX&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">prefix</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">job_args</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">args</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">job_args</span> <span class="o">+</span> <span class="s1">&#39; &#39;</span> <span class="o">+</span> <span class="n">args</span>
+        <span class="k">return</span> <span class="n">args</span></div>
+
+<div class="viewcode-block" id="BalsamCalculator.write_input"><a class="viewcode-back" href="../../source/pynta.html#pynta.balsamcalc.BalsamCalculator.write_input">[docs]</a>    <span class="k">def</span> <span class="nf">write_input</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">atoms</span><span class="p">:</span> <span class="n">Atoms</span><span class="p">,</span>
+        <span class="n">properties</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">system_changes</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&#39;&#39;&#39; Prepare input</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        atoms : Atoms</span>
+<span class="sd">            an Atom object representing the system studied</span>
+<span class="sd">        properties : List[str], optional</span>
+<span class="sd">            by default None</span>
+<span class="sd">        system_changes : List[str], optional</span>
+<span class="sd">            by default None</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">FileIOCalculator</span><span class="o">.</span><span class="n">write_input</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">atoms</span><span class="p">,</span> <span class="n">properties</span><span class="p">,</span> <span class="n">system_changes</span><span class="p">)</span>
+        <span class="n">write</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">inp_name</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;PREFIX&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">label</span><span class="p">),</span>
+            <span class="n">atoms</span><span class="p">,</span>
+            <span class="nb">format</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">inp_format</span><span class="p">,</span>
+            <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span>
+        <span class="p">)</span></div>
+
+<div class="viewcode-block" id="BalsamCalculator.create_job"><a class="viewcode-back" href="../../source/pynta.html#pynta.balsamcalc.BalsamCalculator.create_job">[docs]</a>    <span class="k">def</span> <span class="nf">create_job</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">BalsamJob</span><span class="p">:</span>
+        <span class="sd">&#39;&#39;&#39; Create a balsam job</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        BalsamJob</span>
+<span class="sd">            a job that is about to be added to balsam DB</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="n">BalsamJob</span><span class="p">(</span>
+            <span class="n">name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">prefix</span><span class="p">,</span>
+            <span class="n">workflow</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">workflow</span><span class="p">,</span>
+            <span class="n">application</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span>
+            <span class="n">args</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">format_args</span><span class="p">(),</span>
+            <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">job_kwargs</span>
+        <span class="p">)</span></div>
+
+<div class="viewcode-block" id="BalsamCalculator.kill_job"><a class="viewcode-back" href="../../source/pynta.html#pynta.balsamcalc.BalsamCalculator.kill_job">[docs]</a>    <span class="k">def</span> <span class="nf">kill_job</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&#39;&#39;&#39; Kill job once its status is in ``UNFINISHED_STATES``</span>
+
+<span class="sd">        &gt;&gt;&gt; UNFINISHED_STATES = [</span>
+<span class="sd">                            &#39;CREATED&#39;,</span>
+<span class="sd">                            &#39;AWAITING_PARENTS&#39;,</span>
+<span class="sd">                            &#39;READY&#39;,</span>
+<span class="sd">                            &#39;STAGED_IN&#39;,</span>
+<span class="sd">                            &#39;PREPROCESSED&#39;,</span>
+<span class="sd">                            &#39;RUNNING&#39;,</span>
+<span class="sd">                            &#39;RUN_DONE&#39;,</span>
+<span class="sd">                            &#39;POSTPROCESSED&#39;]</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">job</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">state</span> <span class="ow">in</span> <span class="n">UNFINISHED_STATES</span><span class="p">:</span>
+            <span class="n">kill</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">job</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="BalsamCalculator.job_running"><a class="viewcode-back" href="../../source/pynta.html#pynta.balsamcalc.BalsamCalculator.job_running">[docs]</a>    <span class="k">def</span> <span class="nf">job_running</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="sd">&#39;&#39;&#39; Check is job is running</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        state : str</span>
+<span class="sd">            a state of the job as return from ``job.state``</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        bool</span>
+<span class="sd">            ``True`` if current job is still running. ``False`` otherwise</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">if</span> <span class="n">state</span> <span class="ow">in</span> <span class="n">UNFINISHED_STATES</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">if</span> <span class="n">state</span> <span class="ow">in</span> <span class="n">FAIL_STATES</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">ignore_fail</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">False</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Balsam job failed: &quot;</span> <span class="o">+</span> <span class="n">state</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">state</span> <span class="o">==</span> <span class="s1">&#39;JOB_FINISHED&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Unknown Balsam job state: &quot;</span> <span class="o">+</span> <span class="n">state</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="BalsamCalculator.calculate"><a class="viewcode-back" href="../../source/pynta.html#pynta.balsamcalc.BalsamCalculator.calculate">[docs]</a>    <span class="k">def</span> <span class="nf">calculate</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">atoms</span><span class="p">:</span> <span class="n">Atoms</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">properties</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;energy&#39;</span><span class="p">],</span>
+        <span class="n">system_changes</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">all_changes</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&#39;&#39;&#39; Run calculator</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        atoms : Atoms</span>
+<span class="sd">            an Atom object representing the system studied, by default None</span>
+<span class="sd">        properties : List[str], optional</span>
+<span class="sd">            by default [&#39;energy&#39;]</span>
+<span class="sd">        system_changes : List[str], optional</span>
+<span class="sd">            by default all_changes</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">Calculator</span><span class="o">.</span><span class="n">calculate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">atoms</span><span class="p">,</span> <span class="n">properties</span><span class="p">,</span> <span class="n">system_changes</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">job</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_job</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">directory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">working_directory</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write_input</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">atoms</span><span class="p">,</span> <span class="n">properties</span><span class="p">,</span> <span class="n">system_changes</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+
+        <span class="k">while</span> <span class="bp">self</span><span class="o">.</span><span class="n">job_running</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">state</span><span class="p">):</span>
+            <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">refresh_from_db</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">read_results</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="BalsamCalculator.read_results"><a class="viewcode-back" href="../../source/pynta.html#pynta.balsamcalc.BalsamCalculator.read_results">[docs]</a>    <span class="k">def</span> <span class="nf">read_results</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&#39;&#39;&#39;Read results of calculations &#39;&#39;&#39;</span>
+        <span class="n">out</span> <span class="o">=</span> <span class="n">read</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">out_name</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;PREFIX&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">label</span><span class="p">),</span> <span class="nb">format</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">out_format</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">out_calc</span> <span class="o">=</span> <span class="n">out</span><span class="o">.</span><span class="n">calc</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">results</span> <span class="o">=</span> <span class="n">out</span><span class="o">.</span><span class="n">calc</span><span class="o">.</span><span class="n">results</span></div></div>
+
+
+<div class="viewcode-block" id="EspressoBalsam"><a class="viewcode-back" href="../../source/pynta.html#pynta.balsamcalc.EspressoBalsam">[docs]</a><span class="k">class</span> <span class="nc">EspressoBalsam</span><span class="p">(</span><span class="n">BalsamCalculator</span><span class="p">):</span>
+    <span class="n">implemented_properties</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;energy&#39;</span><span class="p">,</span> <span class="s1">&#39;forces&#39;</span><span class="p">,</span> <span class="s1">&#39;stress&#39;</span><span class="p">,</span> <span class="s1">&#39;magmoms&#39;</span><span class="p">]</span>
+    <span class="n">exe</span> <span class="o">=</span> <span class="s1">&#39;pw.x&#39;</span>
+    <span class="n">inp_name</span> <span class="o">=</span> <span class="s1">&#39;PREFIX.pwi&#39;</span>
+    <span class="n">inp_format</span> <span class="o">=</span> <span class="s1">&#39;espresso-in&#39;</span>
+    <span class="n">out_name</span> <span class="o">=</span> <span class="s1">&#39;PREFIX.out&#39;</span>
+    <span class="n">out_format</span> <span class="o">=</span> <span class="s1">&#39;espresso-out&#39;</span>
+    <span class="n">args</span> <span class="o">=</span> <span class="n">f</span><span class="s1">&#39;-in </span><span class="si">{inp_name}</span><span class="s1">&#39;</span>
+    <span class="n">ignore_fail</span> <span class="o">=</span> <span class="kc">True</span></div>
+
+
+<div class="viewcode-block" id="NWChemBalsam"><a class="viewcode-back" href="../../source/pynta.html#pynta.balsamcalc.NWChemBalsam">[docs]</a><span class="k">class</span> <span class="nc">NWChemBalsam</span><span class="p">(</span><span class="n">BalsamCalculator</span><span class="p">):</span>
+    <span class="n">implemented_properties</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;energy&#39;</span><span class="p">,</span> <span class="s1">&#39;forces&#39;</span><span class="p">,</span> <span class="s1">&#39;stress&#39;</span><span class="p">,</span> <span class="s1">&#39;dipole&#39;</span><span class="p">]</span>
+    <span class="n">exe</span> <span class="o">=</span> <span class="s1">&#39;nwchem&#39;</span>
+    <span class="n">inp_name</span> <span class="o">=</span> <span class="s1">&#39;PREFIX.nwi&#39;</span>
+    <span class="n">inp_format</span> <span class="o">=</span> <span class="s1">&#39;nwchem-in&#39;</span>
+    <span class="n">out_name</span> <span class="o">=</span> <span class="s1">&#39;PREFIX.out&#39;</span>
+    <span class="n">out_format</span> <span class="o">=</span> <span class="s1">&#39;nwchem-out&#39;</span></div>
+
+
+<div class="viewcode-block" id="BalsamSocketIOCalculator"><a class="viewcode-back" href="../../source/pynta.html#pynta.balsamcalc.BalsamSocketIOCalculator">[docs]</a><span class="k">class</span> <span class="nc">BalsamSocketIOCalculator</span><span class="p">(</span><span class="n">BalsamCalculator</span><span class="p">,</span> <span class="n">SocketIOCalculator</span><span class="p">):</span>
+    <span class="n">job</span> <span class="o">=</span> <span class="kc">None</span>
+
+<div class="viewcode-block" id="BalsamSocketIOCalculator.__init__"><a class="viewcode-back" href="../../source/pynta.html#pynta.balsamcalc.BalsamSocketIOCalculator.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">workflow</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">label</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;balsam&#39;</span><span class="p">,</span>
+        <span class="n">atoms</span><span class="p">:</span> <span class="n">Atoms</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">job_args</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">job_kwargs</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(),</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&#39;&#39;&#39; Define Balsam Socket IO Calculator</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        workflow : str</span>
+<span class="sd">            name of the workflow, e.g.</span>
+
+<span class="sd">            &gt;&gt;&gt; workflow=&#39;QE_Socket&#39;</span>
+
+<span class="sd">        label : str, optional</span>
+<span class="sd">            label for the created balsam calculator, by default &#39;balsam&#39;</span>
+<span class="sd">        atoms : Atoms, optional</span>
+<span class="sd">            an Atoms object, by default None</span>
+<span class="sd">        job_args : str, optional</span>
+<span class="sd">            by default None</span>
+<span class="sd">        job_kwargs : Dict[str, Any], optional</span>
+<span class="sd">            by default dict(), e.g.</span>
+
+<span class="sd">            &gt;&gt;&gt; balsam_exe_settings = {&#39;num_nodes&#39;: 1,</span>
+<span class="sd">                                    &#39;ranks_per_node&#39;: 48,</span>
+<span class="sd">                                    &#39;threads_per_rank&#39;: 1}</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">SocketIOCalculator</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_port</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">server</span><span class="o">.</span><span class="n">serversocket</span><span class="o">.</span><span class="n">getsockname</span><span class="p">()[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">BalsamCalculator</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">workflow</span><span class="o">=</span><span class="n">workflow</span><span class="p">,</span>
+            <span class="n">label</span><span class="o">=</span><span class="n">label</span><span class="p">,</span>
+            <span class="n">atoms</span><span class="o">=</span><span class="n">atoms</span><span class="p">,</span>
+            <span class="n">job_args</span><span class="o">=</span><span class="n">job_args</span><span class="p">,</span>
+            <span class="n">job_kwargs</span><span class="o">=</span><span class="n">job_kwargs</span><span class="p">,</span>
+            <span class="o">**</span><span class="n">kwargs</span>
+        <span class="p">)</span></div>
+
+<div class="viewcode-block" id="BalsamSocketIOCalculator.calculate"><a class="viewcode-back" href="../../source/pynta.html#pynta.balsamcalc.BalsamSocketIOCalculator.calculate">[docs]</a>    <span class="k">def</span> <span class="nf">calculate</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">atoms</span><span class="p">:</span> <span class="n">Atoms</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">properties</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;energy&#39;</span><span class="p">],</span>
+        <span class="n">system_changes</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">all_changes</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&#39;&#39;&#39; Run calculator</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        atoms : Atoms</span>
+<span class="sd">            an Atom object representing the system studied, by default None</span>
+<span class="sd">        properties : List[str], optional</span>
+<span class="sd">            by default [&#39;energy&#39;]</span>
+<span class="sd">        system_changes : List[str], optional</span>
+<span class="sd">            by default all_changes</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">Calculator</span><span class="o">.</span><span class="n">calculate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">atoms</span><span class="p">,</span> <span class="n">properties</span><span class="p">,</span> <span class="n">system_changes</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">job</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">job_running</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">state</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">job</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_job</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">directory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">working_directory</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">format_socket_keywords</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">write_input</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">atoms</span><span class="p">,</span> <span class="n">properties</span><span class="p">,</span> <span class="n">system_changes</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+        <span class="n">SocketIOCalculator</span><span class="o">.</span><span class="n">calculate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">atoms</span><span class="p">,</span> <span class="n">properties</span><span class="p">,</span> <span class="n">system_changes</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="BalsamSocketIOCalculator.format_socket_keywords"><a class="viewcode-back" href="../../source/pynta.html#pynta.balsamcalc.BalsamSocketIOCalculator.format_socket_keywords">[docs]</a>    <span class="k">def</span> <span class="nf">format_socket_keywords</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&#39;&#39;&#39; Adds socket keywords to Calculator parameters</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">pass</span></div></div>
+
+
+<div class="viewcode-block" id="EspressoBalsamSocketIO"><a class="viewcode-back" href="../../source/pynta.html#pynta.balsamcalc.EspressoBalsamSocketIO">[docs]</a><span class="k">class</span> <span class="nc">EspressoBalsamSocketIO</span><span class="p">(</span><span class="n">BalsamSocketIOCalculator</span><span class="p">):</span>
+    <span class="n">exe</span> <span class="o">=</span> <span class="s1">&#39;pw.x&#39;</span>
+    <span class="n">inp_name</span> <span class="o">=</span> <span class="s1">&#39;PREFIX.pwi&#39;</span>
+    <span class="n">inp_format</span> <span class="o">=</span> <span class="s1">&#39;espresso-in&#39;</span>
+    <span class="n">out_name</span> <span class="o">=</span> <span class="s1">&#39;PREFIX.out&#39;</span>
+    <span class="n">out_format</span> <span class="o">=</span> <span class="s1">&#39;espresso-out&#39;</span>
+    <span class="n">args</span> <span class="o">=</span> <span class="n">f</span><span class="s1">&#39;--ipi HOSTNAME:PORT -in </span><span class="si">{inp_name}</span><span class="s1">&#39;</span>
+    <span class="n">ignore_fail</span> <span class="o">=</span> <span class="kc">True</span>
+
+<div class="viewcode-block" id="EspressoBalsamSocketIO.format_args"><a class="viewcode-back" href="../../source/pynta.html#pynta.balsamcalc.EspressoBalsamSocketIO.format_args">[docs]</a>    <span class="k">def</span> <span class="nf">format_args</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="sd">&#39;&#39;&#39; Format args</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        args str</span>
+<span class="sd">            formatted args</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="n">BalsamCalculator</span><span class="o">.</span><span class="n">format_args</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+            <span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;HOSTNAME&#39;</span><span class="p">,</span> <span class="n">socket</span><span class="o">.</span><span class="n">gethostname</span><span class="p">())</span>
+            <span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;PORT&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_port</span><span class="p">))</span>
+        <span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="NWChemBalsamSocketIO"><a class="viewcode-back" href="../../source/pynta.html#pynta.balsamcalc.NWChemBalsamSocketIO">[docs]</a><span class="k">class</span> <span class="nc">NWChemBalsamSocketIO</span><span class="p">(</span><span class="n">BalsamSocketIOCalculator</span><span class="p">):</span>
+    <span class="n">implemented_properties</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;energy&#39;</span><span class="p">,</span> <span class="s1">&#39;forces&#39;</span><span class="p">,</span> <span class="s1">&#39;stress&#39;</span><span class="p">,</span> <span class="s1">&#39;dipole&#39;</span><span class="p">]</span>
+    <span class="n">exe</span> <span class="o">=</span> <span class="s1">&#39;nwchem&#39;</span>
+    <span class="n">inp_name</span> <span class="o">=</span> <span class="s1">&#39;PREFIX.nwi&#39;</span>
+    <span class="n">inp_format</span> <span class="o">=</span> <span class="s1">&#39;nwchem-in&#39;</span>
+    <span class="n">out_name</span> <span class="o">=</span> <span class="s1">&#39;PREFIX.out&#39;</span>
+    <span class="n">out_format</span> <span class="o">=</span> <span class="s1">&#39;nwchem-out&#39;</span>
+    <span class="n">args</span> <span class="o">=</span> <span class="n">f</span><span class="s1">&#39;</span><span class="si">{inp_name}</span><span class="s1"> &gt; </span><span class="si">{out_name}</span><span class="s1">&#39;</span>
+
+<div class="viewcode-block" id="NWChemBalsamSocketIO.format_socket_keywords"><a class="viewcode-back" href="../../source/pynta.html#pynta.balsamcalc.NWChemBalsamSocketIO.format_socket_keywords">[docs]</a>    <span class="k">def</span> <span class="nf">format_socket_keywords</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">sock</span> <span class="o">=</span> <span class="s1">&#39;ipi_client </span><span class="si">{host}</span><span class="s1">:</span><span class="si">{port}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="n">host</span><span class="o">=</span><span class="n">socket</span><span class="o">.</span><span class="n">gethostname</span><span class="p">(),</span>
+            <span class="n">port</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_port</span>
+        <span class="p">)</span>
+        <span class="c1"># NWChem has two way of specifying socket communication:</span>
+        <span class="c1"># 1) In the NWPW block, which only works for plane-wave calculations</span>
+        <span class="c1"># 2) In the DRIVER block, which works for any calculation but is less</span>
+        <span class="c1">#    efficient for plane-wave calculations</span>
+        <span class="c1"># Here we look to see whether there already is an NWPW block, and if</span>
+        <span class="c1"># so, we add the socket parameters there. Otherwise, we add the</span>
+        <span class="c1"># socket info to the DRIVER block (creating it if necessary).</span>
+        <span class="n">nwpw</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;nwpw&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">nwpw</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">nwpw</span><span class="p">[</span><span class="s1">&#39;socket&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sock</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;task&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;gradient&#39;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">driver</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;driver&#39;</span><span class="p">,</span> <span class="nb">dict</span><span class="p">())</span>
+            <span class="n">driver</span><span class="p">[</span><span class="s1">&#39;socket&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sock</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;driver&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">driver</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;task&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;optimize&#39;</span></div></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, Maciej Gierada, Eric D. Hermes, David H. Bross
+      <span class="lastupdated">
+        Last updated on Wed, 20 Jan 2021 11:36:46.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

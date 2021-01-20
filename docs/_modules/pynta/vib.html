@@ -1,0 +1,921 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>pynta.vib &mdash; Pynta January 20, 2021 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/doctools.js"></script>
+        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> Pynta
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <!-- Local TOC -->
+              <div class="local-toc"></div>
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">Pynta</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+        
+          <li><a href="../pynta.html">pynta</a> &raquo;</li>
+        
+      <li>pynta.vib</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for pynta.vib</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">pynta.io</span> <span class="k">import</span> <span class="n">IO</span>
+<span class="kn">from</span> <span class="nn">ase.io</span> <span class="k">import</span> <span class="n">read</span><span class="p">,</span> <span class="n">write</span>
+<span class="kn">from</span> <span class="nn">pathlib</span> <span class="k">import</span> <span class="n">Path</span><span class="p">,</span> <span class="n">PosixPath</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="k">import</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Dict</span>
+<span class="kn">from</span> <span class="nn">numpy</span> <span class="k">import</span> <span class="n">floor</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">shutil</span>
+
+
+<div class="viewcode-block" id="AfterTS"><a class="viewcode-back" href="../../source/pynta.html#pynta.vib.AfterTS">[docs]</a><span class="k">class</span> <span class="nc">AfterTS</span><span class="p">():</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">facetpath</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">yamlfile</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">slab</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">repeats</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span>
+            <span class="n">creation_dir</span><span class="p">:</span> <span class="n">PosixPath</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">facetpath</span> <span class="o">=</span> <span class="n">facetpath</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">yamlfile</span> <span class="o">=</span> <span class="n">yamlfile</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">repeats</span> <span class="o">=</span> <span class="n">repeats</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">creation_dir</span> <span class="o">=</span> <span class="n">creation_dir</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">slab_atom_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">creation_dir</span><span class="p">,</span> <span class="n">slab</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nslab</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">read</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">slab_atom_path</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">repeats</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_kpts</span> <span class="o">=</span> <span class="n">IO</span><span class="p">()</span><span class="o">.</span><span class="n">get_kpoints</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">repeats</span><span class="p">)</span>
+
+<div class="viewcode-block" id="AfterTS.set_up_ts_vib"><a class="viewcode-back" href="../../source/pynta.html#pynta.vib.AfterTS.set_up_ts_vib">[docs]</a>    <span class="k">def</span> <span class="nf">set_up_ts_vib</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">socket_calculator</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">rxn</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
+            <span class="n">pytemplate</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">balsam_exe_settings</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span>
+            <span class="n">calc_keywords</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
+            <span class="n">pseudopotentials</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
+            <span class="n">pseudo_dir</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&#39;&#39;&#39; Set up files for TSs vibration calculations</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        rxn : Dict[str, str]</span>
+<span class="sd">            a dictionary with info about the paricular reaction. This can be</span>
+<span class="sd">            view as a splitted many reaction .yaml file to a single reaction</span>
+<span class="sd">            :literal:`*.yaml` file</span>
+<span class="sd">        pytemplate : python script</span>
+<span class="sd">            a template for TS_vib calculations</span>
+<span class="sd">        balsam_exe_settings : Dict[str, int],</span>
+<span class="sd">            a dictionary with balsam execute parameters (cores, nodes, etc.),</span>
+<span class="sd">            e.g.</span>
+
+<span class="sd">            &gt;&gt;&gt; balsam_exe_settings = {&#39;num_nodes&#39;: 1,</span>
+<span class="sd">                                    &#39;ranks_per_node&#39;: 48,</span>
+<span class="sd">                                    &#39;threads_per_rank&#39;: 1}</span>
+
+<span class="sd">        calc_keywords : Dict[str, str]</span>
+<span class="sd">            a dictionary with parameters to run DFT package. Quantum Espresso</span>
+<span class="sd">            is used as default, e.g.</span>
+
+<span class="sd">            &gt;&gt;&gt; calc_keywords = {&#39;kpts&#39;: (3, 3, 1), &#39;occupations&#39;: &#39;smearing&#39;,</span>
+<span class="sd">                                &#39;smearing&#39;:  &#39;marzari-vanderbilt&#39;,</span>
+<span class="sd">                                &#39;degauss&#39;: 0.01, &#39;ecutwfc&#39;: 40, &#39;nosym&#39;: True,</span>
+<span class="sd">                                &#39;conv_thr&#39;: 1e-11, &#39;mixing_mode&#39;: &#39;local-TF&#39;}</span>
+
+<span class="sd">        pseudopotentials : Dict[str, str]</span>
+<span class="sd">            a dictionary with QE pseudopotentials for all species.</span>
+<span class="sd">            e.g.</span>
+
+<span class="sd">            &gt;&gt;&gt; dict(Cu=&#39;Cu.pbe-spn-kjpaw_psl.1.0.0.UPF&#39;,</span>
+<span class="sd">                    H=&#39;H.pbe-kjpaw_psl.1.0.0.UPF&#39;,</span>
+<span class="sd">                    O=&#39;O.pbe-n-kjpaw_psl.1.0.0.UPF&#39;,</span>
+<span class="sd">                    C=&#39;C.pbe-n-kjpaw_psl.1.0.0.UPF&#39;)</span>
+
+<span class="sd">        pseudo_dir : str</span>
+<span class="sd">            a path to the QE&#39;s pseudopotentials main directory</span>
+<span class="sd">            e.g.</span>
+<span class="sd">            ``&#39;/home/mgierad/espresso/pseudo&#39;``</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">rxn_name</span> <span class="o">=</span> <span class="n">IO</span><span class="p">()</span><span class="o">.</span><span class="n">get_rxn_name</span><span class="p">(</span><span class="n">rxn</span><span class="p">)</span>
+
+        <span class="n">ts_estimate_unique_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">creation_dir</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">facetpath</span><span class="p">,</span>
+            <span class="n">rxn_name</span><span class="p">,</span>
+            <span class="s1">&#39;TS_estimate_unique&#39;</span><span class="p">)</span>
+        <span class="n">ts_vib_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">creation_dir</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">facetpath</span><span class="p">,</span>
+            <span class="n">rxn_name</span><span class="p">,</span>
+            <span class="s1">&#39;TS_estimate_unique_vib&#39;</span><span class="p">)</span>
+
+        <span class="n">ts_final_geoms</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">ts_estimate_unique_dir</span><span class="p">)</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s1">&#39;**/*final.xyz&#39;</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">ts_final_geom</span> <span class="ow">in</span> <span class="n">ts_final_geoms</span><span class="p">:</span>
+            <span class="n">ts_final_geom</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">ts_final_geom</span><span class="p">)</span>
+            <span class="n">prefix</span> <span class="o">=</span> <span class="n">ts_final_geom</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)[</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span>
+            <span class="n">ts_vib_dir_prefix</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">ts_vib_dir</span><span class="p">,</span> <span class="n">prefix</span><span class="p">)</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">ts_vib_dir_prefix</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+            <span class="c1"># copy *ts_final.xyz files to ts_vib_dir_prefix - for debug</span>
+            <span class="n">shutil</span><span class="o">.</span><span class="n">copy2</span><span class="p">(</span><span class="n">ts_final_geom</span><span class="p">,</span> <span class="n">ts_vib_dir_prefix</span><span class="p">)</span>
+            <span class="n">_</span><span class="p">,</span> <span class="n">geom</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">ts_final_geom</span><span class="p">)</span>
+
+            <span class="n">py_fname</span> <span class="o">=</span> <span class="n">ts_vib_dir_prefix</span> <span class="o">+</span> <span class="s1">&#39;_&#39;</span> <span class="o">+</span> \
+                <span class="bp">self</span><span class="o">.</span><span class="n">facetpath</span> <span class="o">+</span> <span class="s1">&#39;_&#39;</span> <span class="o">+</span> <span class="n">rxn_name</span> <span class="o">+</span> <span class="s1">&#39;_ts_vib.py&#39;</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">create_ts_vib_py_files</span><span class="p">(</span>
+                <span class="n">socket_calculator</span><span class="p">,</span>
+                <span class="n">pytemplate</span><span class="p">,</span>
+                <span class="n">geom</span><span class="p">,</span>
+                <span class="n">py_fname</span><span class="p">,</span>
+                <span class="n">balsam_exe_settings</span><span class="p">,</span>
+                <span class="n">calc_keywords</span><span class="p">,</span>
+                <span class="n">pseudopotentials</span><span class="p">,</span>
+                <span class="n">pseudo_dir</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="AfterTS.create_ts_vib_py_files"><a class="viewcode-back" href="../../source/pynta.html#pynta.vib.AfterTS.create_ts_vib_py_files">[docs]</a>    <span class="k">def</span> <span class="nf">create_ts_vib_py_files</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">socket_calculator</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">pytemplate</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">geom</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">py_fname</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">balsam_exe_settings</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span>
+            <span class="n">calc_keywords</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
+            <span class="n">pseudopotentials</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
+            <span class="n">pseudo_dir</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">nimages</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">30</span><span class="p">,</span>
+            <span class="n">n</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&#39;&#39;&#39; Create job submission .py files for frequency calculation of TSs.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        pytemplate : python script</span>
+<span class="sd">            a template for TS_vib calculations</span>
+<span class="sd">        py_fname : str</span>
+<span class="sd">            path to the the .py (including the .py file name) file that is</span>
+<span class="sd">            about to be created</span>
+<span class="sd">        balsam_exe_settings : Dict[str, int]</span>
+<span class="sd">            a dictionary with balsam execute parameters (cores, nodes, etc.),</span>
+<span class="sd">            e.g.</span>
+
+<span class="sd">            &gt;&gt;&gt; balsam_exe_settings = {&#39;num_nodes&#39;: 1,</span>
+<span class="sd">                                    &#39;ranks_per_node&#39;: 48,</span>
+<span class="sd">                                    &#39;threads_per_rank&#39;: 1}</span>
+
+<span class="sd">        calc_keywords : Dict[str, str]</span>
+<span class="sd">            a dictionary with parameters to run DFT package. Quantum Espresso</span>
+<span class="sd">            is used as default, e.g.</span>
+
+<span class="sd">            &gt;&gt;&gt; calc_keywords = {&#39;kpts&#39;: (3, 3, 1), &#39;occupations&#39;: &#39;smearing&#39;,</span>
+<span class="sd">                                &#39;smearing&#39;:  &#39;marzari-vanderbilt&#39;,</span>
+<span class="sd">                                &#39;degauss&#39;: 0.01, &#39;ecutwfc&#39;: 40, &#39;nosym&#39;: True,</span>
+<span class="sd">                                &#39;conv_thr&#39;: 1e-11, &#39;mixing_mode&#39;: &#39;local-TF&#39;}</span>
+
+<span class="sd">        pseudopotentials : Dict[str, str]</span>
+<span class="sd">            a dictionary with QE pseudopotentials for all species.</span>
+<span class="sd">            e.g.</span>
+
+<span class="sd">            &gt;&gt;&gt; dict(Cu=&#39;Cu.pbe-spn-kjpaw_psl.1.0.0.UPF&#39;,</span>
+<span class="sd">                    H=&#39;H.pbe-kjpaw_psl.1.0.0.UPF&#39;,</span>
+<span class="sd">                    O=&#39;O.pbe-n-kjpaw_psl.1.0.0.UPF&#39;,</span>
+<span class="sd">                    C=&#39;C.pbe-n-kjpaw_psl.1.0.0.UPF&#39;)</span>
+
+<span class="sd">        pseudo_dir : str</span>
+<span class="sd">            a path to the QE&#39;s pseudopotentials main directory</span>
+<span class="sd">            e.g.</span>
+<span class="sd">            ``&#39;/home/mgierad/espresso/pseudo&#39;``</span>
+<span class="sd">        nimages : int, optional</span>
+<span class="sd">            how many strucutres to use to construct a trajectory visualizing</span>
+<span class="sd">            oscilations, by default 30</span>
+<span class="sd">        n : int, optional</span>
+<span class="sd">            mode of oscilation, i.e. which vibration to analyze.</span>
+<span class="sd">            0 is the first vibration, should be imaginary, by default 0</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">pytemplate</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">pytemplate</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">py_fname</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">pytemplate</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="n">socket_calculator</span><span class="o">=</span><span class="n">socket_calculator</span><span class="p">,</span>
+                <span class="n">geom</span><span class="o">=</span><span class="n">geom</span><span class="p">,</span>
+                <span class="n">balsam_exe_settings</span><span class="o">=</span><span class="n">balsam_exe_settings</span><span class="p">,</span>
+                <span class="n">calc_keywords</span><span class="o">=</span><span class="n">calc_keywords</span><span class="p">,</span>
+                <span class="n">creation_dir</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">creation_dir</span><span class="p">,</span>
+                <span class="n">pseudopotentials</span><span class="o">=</span><span class="n">pseudopotentials</span><span class="p">,</span>
+                <span class="n">pseudo_dir</span><span class="o">=</span><span class="n">pseudo_dir</span><span class="p">,</span>
+                <span class="n">nimages</span><span class="o">=</span><span class="n">nimages</span><span class="p">,</span>
+                <span class="n">n</span><span class="o">=</span><span class="n">n</span><span class="p">,</span>
+                <span class="n">repeats</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">repeats</span><span class="p">,</span>
+                <span class="n">n_kpts</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">n_kpts</span>
+            <span class="p">))</span></div>
+
+<div class="viewcode-block" id="AfterTS.prepare_opt_after_ts"><a class="viewcode-back" href="../../source/pynta.html#pynta.vib.AfterTS.prepare_opt_after_ts">[docs]</a>    <span class="k">def</span> <span class="nf">prepare_opt_after_ts</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">socket_calculator</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">rxn</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
+            <span class="n">pytemplate</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">balsam_exe_settings</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span>
+            <span class="n">calc_keywords</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
+            <span class="n">pseudopotentials</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
+            <span class="n">pseudo_dir</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&#39;&#39;&#39; Create files for after_TS calculations - to verify TS structures</span>
+<span class="sd">        and get corresponding reactant and product minima</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        rxn : Dict[str, str]</span>
+<span class="sd">            a dictionary with info about the paricular reaction. This can be</span>
+<span class="sd">            view as a splitted many reaction .yaml file to a single reaction</span>
+<span class="sd">            :literal:`*.yaml` file</span>
+<span class="sd">        pytemplate : python script</span>
+<span class="sd">            a template for after_TS calculations</span>
+<span class="sd">        balsam_exe_settings : Dict[str, int]</span>
+<span class="sd">            a dictionary with balsam execute parameters (cores, nodes, etc.),</span>
+<span class="sd">            e.g.</span>
+
+<span class="sd">            &gt;&gt;&gt; balsam_exe_settings = {&#39;num_nodes&#39;: 1,</span>
+<span class="sd">                                    &#39;ranks_per_node&#39;: 48,</span>
+<span class="sd">                                    &#39;threads_per_rank&#39;: 1}</span>
+
+<span class="sd">        calc_keywords : Dict[str, str]</span>
+<span class="sd">            a dictionary with parameters to run DFT package. Quantum Espresso</span>
+<span class="sd">            is used as default, e.g.</span>
+
+<span class="sd">            &gt;&gt;&gt; calc_keywords = {&#39;kpts&#39;: (3, 3, 1), &#39;occupations&#39;: &#39;smearing&#39;,</span>
+<span class="sd">                                &#39;smearing&#39;:  &#39;marzari-vanderbilt&#39;,</span>
+<span class="sd">                                &#39;degauss&#39;: 0.01, &#39;ecutwfc&#39;: 40, &#39;nosym&#39;: True,</span>
+<span class="sd">                                &#39;conv_thr&#39;: 1e-11, &#39;mixing_mode&#39;: &#39;local-TF&#39;}</span>
+
+<span class="sd">        pseudopotentials : Dict[str, str]</span>
+<span class="sd">            a dictionary with QE pseudopotentials for all species.</span>
+<span class="sd">            e.g.</span>
+
+<span class="sd">            &gt;&gt;&gt; dict(Cu=&#39;Cu.pbe-spn-kjpaw_psl.1.0.0.UPF&#39;,</span>
+<span class="sd">                    H=&#39;H.pbe-kjpaw_psl.1.0.0.UPF&#39;,</span>
+<span class="sd">                    O=&#39;O.pbe-n-kjpaw_psl.1.0.0.UPF&#39;,</span>
+<span class="sd">                    C=&#39;C.pbe-n-kjpaw_psl.1.0.0.UPF&#39;)</span>
+
+<span class="sd">        pseudo_dir : str</span>
+<span class="sd">            a path to the QE&#39;s pseudopotentials main directory</span>
+<span class="sd">            e.g.</span>
+<span class="sd">            ``&#39;/home/mgierad/espresso/pseudo&#39;``</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">rxn_name</span> <span class="o">=</span> <span class="n">IO</span><span class="p">()</span><span class="o">.</span><span class="n">get_rxn_name</span><span class="p">(</span><span class="n">rxn</span><span class="p">)</span>
+        <span class="n">ts_vib_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">creation_dir</span><span class="p">,</span>
+                                  <span class="bp">self</span><span class="o">.</span><span class="n">facetpath</span><span class="p">,</span>
+                                  <span class="n">rxn_name</span><span class="p">,</span>
+                                  <span class="s1">&#39;TS_estimate_unique_vib&#39;</span><span class="p">)</span>
+
+        <span class="n">vib_traj_files</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">ts_vib_dir</span><span class="p">)</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s1">&#39;**/*traj&#39;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">vib_traj</span> <span class="ow">in</span> <span class="n">vib_traj_files</span><span class="p">:</span>
+            <span class="n">vib_traj</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">vib_traj</span><span class="p">)</span>
+            <span class="n">prefix</span> <span class="o">=</span> <span class="n">vib_traj</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)[</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span>
+
+            <span class="n">after_ts_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">creation_dir</span><span class="p">,</span>
+                                        <span class="bp">self</span><span class="o">.</span><span class="n">facetpath</span><span class="p">,</span>
+                                        <span class="n">rxn_name</span><span class="p">,</span>
+                                        <span class="s1">&#39;after_TS&#39;</span><span class="p">,</span>
+                                        <span class="n">prefix</span><span class="p">)</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">after_ts_dir</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+            <span class="n">fname</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+                <span class="n">prefix</span> <span class="o">+</span> <span class="s1">&#39;_&#39;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">facetpath</span> <span class="o">+</span> <span class="s1">&#39;_&#39;</span> <span class="o">+</span> <span class="n">rxn_name</span> <span class="o">+</span> <span class="s1">&#39;_after_ts&#39;</span><span class="p">)</span>
+
+            <span class="n">fname_forward</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">after_ts_dir</span><span class="p">,</span> <span class="n">fname</span> <span class="o">+</span> <span class="s1">&#39;_f&#39;</span><span class="p">)</span>
+            <span class="n">fname_reverse</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">after_ts_dir</span><span class="p">,</span> <span class="n">fname</span> <span class="o">+</span> <span class="s1">&#39;_r&#39;</span><span class="p">)</span>
+
+            <span class="n">AfterTS</span><span class="o">.</span><span class="n">get_forward_and_reverse</span><span class="p">(</span>
+                <span class="n">vib_traj</span><span class="p">,</span>
+                <span class="n">fname_forward</span><span class="p">,</span>
+                <span class="n">fname_reverse</span><span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">create_after_ts_py_files</span><span class="p">(</span>
+                <span class="n">socket_calculator</span><span class="p">,</span>
+                <span class="n">pytemplate</span><span class="p">,</span>
+                <span class="n">fname_forward</span><span class="p">,</span>
+                <span class="n">fname_reverse</span><span class="p">,</span>
+                <span class="n">balsam_exe_settings</span><span class="p">,</span>
+                <span class="n">calc_keywords</span><span class="p">,</span>
+                <span class="n">pseudopotentials</span><span class="p">,</span>
+                <span class="n">pseudo_dir</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="AfterTS.get_forward_and_reverse"><a class="viewcode-back" href="../../source/pynta.html#pynta.vib.AfterTS.get_forward_and_reverse">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">get_forward_and_reverse</span><span class="p">(</span>
+            <span class="n">vib_traj</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">fname_forward</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">fname_reverse</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">nimages</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">30</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&#39;&#39;&#39; Get forward and reverse :literal:`*.xyz` file by nudging TS</span>
+<span class="sd">        towards imaginary mode of oscilations summary.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        vib_traj : str</span>
+<span class="sd">            a path to trajectory file with optimized TS</span>
+<span class="sd">        fname_forward : str</span>
+<span class="sd">            a path for forward calculations</span>
+<span class="sd">        fname_reverse : str</span>
+<span class="sd">            a path for reverse calculations</span>
+<span class="sd">        nimages : int, optional</span>
+<span class="sd">            how many strucutres to use to construct a trajectory visualizing</span>
+<span class="sd">            oscilations, by default 30</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        ValueError</span>
+<span class="sd">            raised if there are more than one :literal:`*.traj` files</span>
+<span class="sd">            collecting vibration trajectory</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+
+        <span class="c1"># vib_.traj file contains nimages structures visualizing imaginary</span>
+        <span class="c1"># frequency mode. 0 and nimages/2 are the same structures - no</span>
+        <span class="c1"># displacement. Max and min displacement is defined as</span>
+        <span class="c1"># floor(nimages/4) and nimages - floor(nimages/4), respectively.</span>
+        <span class="c1"># for inmages = 16 it would be like this</span>
+        <span class="c1"># start...max...start...min...</span>
+        <span class="n">index_forward</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">floor</span><span class="p">(</span><span class="n">nimages</span><span class="o">/</span><span class="mi">4</span><span class="p">))</span>
+        <span class="n">index_reverse</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">nimages</span> <span class="o">-</span> <span class="n">index_forward</span><span class="p">)</span>
+
+        <span class="n">fname</span> <span class="o">=</span> <span class="p">[</span><span class="n">fname_forward</span><span class="p">,</span> <span class="n">fname_reverse</span><span class="p">]</span>
+        <span class="n">indices</span> <span class="o">=</span> <span class="p">[</span><span class="n">index_forward</span><span class="p">,</span> <span class="n">index_reverse</span><span class="p">]</span>
+        <span class="n">extensions</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;.xyz&#39;</span><span class="p">,</span> <span class="s1">&#39;.png&#39;</span><span class="p">]</span>
+
+        <span class="c1"># get forward and reverse displacement</span>
+        <span class="k">for</span> <span class="n">fn</span><span class="p">,</span> <span class="n">ind</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="n">indices</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">ext</span> <span class="ow">in</span> <span class="n">extensions</span><span class="p">:</span>
+                <span class="n">write</span><span class="p">(</span><span class="n">fn</span> <span class="o">+</span> <span class="n">ext</span><span class="p">,</span> <span class="n">read</span><span class="p">(</span><span class="n">vib_traj</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">ind</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="AfterTS.create_after_ts_py_files"><a class="viewcode-back" href="../../source/pynta.html#pynta.vib.AfterTS.create_after_ts_py_files">[docs]</a>    <span class="k">def</span> <span class="nf">create_after_ts_py_files</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">socket_calculator</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">pytemplate</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">fname_forward</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">fname_reverse</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">balsam_exe_settings</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span>
+            <span class="n">calc_keywords</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
+            <span class="n">pseudopotentials</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
+            <span class="n">pseudo_dir</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&#39;&#39;&#39; Create job submission files for minimization displaced structures</span>
+<span class="sd">        after TS.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        pytemplate : python script</span>
+<span class="sd">            a template for after_TS calculations</span>
+<span class="sd">        fname_forward : str</span>
+<span class="sd">            a path for forward calculations</span>
+<span class="sd">        fname_reverse : str</span>
+<span class="sd">            a path for reverse calculations</span>
+<span class="sd">        balsam_exe_settings : Dict[str, int]</span>
+<span class="sd">            a dictionary with balsam execute parameters (cores, nodes, etc.),</span>
+<span class="sd">            e.g.</span>
+
+<span class="sd">            &gt;&gt;&gt; balsam_exe_settings = {&#39;num_nodes&#39;: 1,</span>
+<span class="sd">                                    &#39;ranks_per_node&#39;: 48,</span>
+<span class="sd">                                    &#39;threads_per_rank&#39;: 1}</span>
+
+<span class="sd">        calc_keywords : Dict[str, str]</span>
+<span class="sd">            a dictionary with parameters to run DFT package. Quantum Espresso</span>
+<span class="sd">            is used as default, e.g.</span>
+
+<span class="sd">            &gt;&gt;&gt; calc_keywords = {&#39;kpts&#39;: (3, 3, 1), &#39;occupations&#39;: &#39;smearing&#39;,</span>
+<span class="sd">                                &#39;smearing&#39;:  &#39;marzari-vanderbilt&#39;,</span>
+<span class="sd">                                &#39;degauss&#39;: 0.01, &#39;ecutwfc&#39;: 40, &#39;nosym&#39;: True,</span>
+<span class="sd">                                &#39;conv_thr&#39;: 1e-11, &#39;mixing_mode&#39;: &#39;local-TF&#39;}</span>
+
+<span class="sd">        pseudopotentials : Dict[str, str]</span>
+<span class="sd">            a dictionary with QE pseudopotentials for all species.</span>
+<span class="sd">            e.g.</span>
+
+<span class="sd">            &gt;&gt;&gt; dict(Cu=&#39;Cu.pbe-spn-kjpaw_psl.1.0.0.UPF&#39;,</span>
+<span class="sd">                    H=&#39;H.pbe-kjpaw_psl.1.0.0.UPF&#39;,</span>
+<span class="sd">                    O=&#39;O.pbe-n-kjpaw_psl.1.0.0.UPF&#39;,</span>
+<span class="sd">                    C=&#39;C.pbe-n-kjpaw_psl.1.0.0.UPF&#39;)</span>
+
+<span class="sd">        pseudo_dir : str</span>
+<span class="sd">            a path to the QE&#39;s pseudopotentials main directory</span>
+<span class="sd">            e.g.</span>
+<span class="sd">            ``&#39;/home/mgierad/espresso/pseudo&#39;``</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">pytemplate</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">pytemplate</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+
+        <span class="k">for</span> <span class="n">fn</span> <span class="ow">in</span> <span class="p">[</span><span class="n">fname_forward</span><span class="p">,</span> <span class="n">fname_reverse</span><span class="p">]:</span>
+            <span class="n">tmp</span><span class="p">,</span> <span class="n">geom</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">fn</span><span class="p">)</span>
+            <span class="n">fname</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">tmp</span><span class="p">)[</span><span class="mi">0</span><span class="p">],</span> <span class="n">geom</span> <span class="o">+</span> <span class="s1">&#39;.py&#39;</span><span class="p">)</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">pytemplate</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="n">socket_calculator</span><span class="o">=</span><span class="n">socket_calculator</span><span class="p">,</span>
+                    <span class="n">geom</span><span class="o">=</span><span class="n">geom</span><span class="p">,</span>
+                    <span class="n">balsam_exe_settings</span><span class="o">=</span><span class="n">balsam_exe_settings</span><span class="p">,</span>
+                    <span class="n">calc_keywords</span><span class="o">=</span><span class="n">calc_keywords</span><span class="p">,</span>
+                    <span class="n">creation_dir</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">creation_dir</span><span class="p">,</span>
+                    <span class="n">pseudopotentials</span><span class="o">=</span><span class="n">pseudopotentials</span><span class="p">,</span>
+                    <span class="n">pseudo_dir</span><span class="o">=</span><span class="n">pseudo_dir</span><span class="p">,</span>
+                    <span class="n">repeats</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">repeats</span><span class="p">,</span>
+                    <span class="n">n_kpts</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">n_kpts</span>
+                <span class="p">))</span></div>
+
+<div class="viewcode-block" id="AfterTS.get_all_distances"><a class="viewcode-back" href="../../source/pynta.html#pynta.vib.AfterTS.get_all_distances">[docs]</a>    <span class="k">def</span> <span class="nf">get_all_distances</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&#39;&#39;&#39; Get distances between reacting species for ts, forward and</span>
+<span class="sd">        reverse structure.</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">all_rxn_names</span> <span class="o">=</span> <span class="n">IO</span><span class="p">()</span><span class="o">.</span><span class="n">get_list_all_rxns_names</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">yamlfile</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">rxn_name</span> <span class="ow">in</span> <span class="n">all_rxn_names</span><span class="p">:</span>
+            <span class="n">ts_dist_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_ts_dist</span><span class="p">(</span><span class="n">rxn_name</span><span class="p">)</span>
+            <span class="n">f_dist_dict</span><span class="p">,</span> <span class="n">r_dist_dict</span> <span class="o">=</span> <span class="n">AfterTS</span><span class="o">.</span><span class="n">get_forward_and_reverse_dist</span><span class="p">(</span>
+                <span class="n">rxn_name</span><span class="p">)</span>
+            <span class="n">AfterTS</span><span class="o">.</span><span class="n">print_table</span><span class="p">(</span><span class="n">ts_dist_dict</span><span class="p">,</span> <span class="n">f_dist_dict</span><span class="p">,</span> <span class="n">r_dist_dict</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="AfterTS.print_table"><a class="viewcode-back" href="../../source/pynta.html#pynta.vib.AfterTS.print_table">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">print_table</span><span class="p">(</span>
+            <span class="n">ts_dist_dict</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">],</span>
+            <span class="n">forward_dist_dict</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">],</span>
+            <span class="n">reverse_dist_dict</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&#39;&#39;&#39; Print information about bond distances (reacting atoms only) for TS,</span>
+<span class="sd">        forward and reverse :literal:`*.xyz` files</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        ts_dist_dict : Dict[str:float]</span>
+<span class="sd">            a dictionary with keys being TS file names while values are</span>
+<span class="sd">            bond distance beteween of reacting species</span>
+<span class="sd">        f_dist_dict : Dict[str:float]</span>
+<span class="sd">            a dictionary with keys being paths to forward files while values</span>
+<span class="sd">            are bond distance beteween of reacting species</span>
+<span class="sd">        r_dist_dict : Dict[str:float]</span>
+<span class="sd">            a dictionary with keys being paths to reverse files while values</span>
+<span class="sd">            are bond distance beteween of reacting species</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">keys</span> <span class="o">=</span> <span class="n">ts_dist_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+        <span class="n">ts_val</span> <span class="o">=</span> <span class="n">ts_dist_dict</span><span class="o">.</span><span class="n">values</span><span class="p">()</span>
+        <span class="n">f_val</span> <span class="o">=</span> <span class="n">forward_dist_dict</span><span class="o">.</span><span class="n">values</span><span class="p">()</span>
+        <span class="n">r_val</span> <span class="o">=</span> <span class="n">reverse_dist_dict</span><span class="o">.</span><span class="n">values</span><span class="p">()</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;TS </span><span class="se">\t</span><span class="s1"> </span><span class="se">\t</span><span class="s1"> TS_dist </span><span class="se">\t</span><span class="s1"> F_dist </span><span class="se">\t</span><span class="s1"> R_dist&#39;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">ts</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">r</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">keys</span><span class="p">,</span> <span class="n">ts_val</span><span class="p">,</span> <span class="n">f_val</span><span class="p">,</span> <span class="n">r_val</span><span class="p">):</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{}</span><span class="s1"> </span><span class="se">\t</span><span class="s1"> </span><span class="si">{:2f}</span><span class="s1"> </span><span class="se">\t</span><span class="s1"> </span><span class="si">{:2f}</span><span class="s1"> </span><span class="se">\t</span><span class="s1"> </span><span class="si">{:2f}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">ts</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">r</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="AfterTS.get_ts_dist"><a class="viewcode-back" href="../../source/pynta.html#pynta.vib.AfterTS.get_ts_dist">[docs]</a>    <span class="k">def</span> <span class="nf">get_ts_dist</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">rxn_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
+        <span class="sd">&#39;&#39;&#39; For given rxn_name get distances between reacting species</span>
+<span class="sd">        in TS structure.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        rxn_name : str</span>
+<span class="sd">            a name of the reaction in the following format,</span>
+<span class="sd">            e.g.:</span>
+<span class="sd">            ``&#39;OH_H+O&#39;``</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        ts_dist_dict : Dict[str:float]</span>
+<span class="sd">            a dictionary with keys being TS file names while values are</span>
+<span class="sd">            bond distance beteween of reacting species</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">ts_dist_dict</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="n">ts_estimate_unique_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">facetpath</span><span class="p">,</span> <span class="n">rxn_name</span><span class="p">,</span> <span class="s1">&#39;TS_estimate_unique&#39;</span><span class="p">)</span>
+
+        <span class="n">traj_files</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">ts_estimate_unique_dir</span><span class="p">)</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s1">&#39;**/*traj&#39;</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">traj</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">traj_files</span><span class="p">):</span>
+            <span class="n">traj</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">traj</span><span class="p">)</span>
+            <span class="n">traj_atoms</span> <span class="o">=</span> <span class="n">read</span><span class="p">(</span><span class="n">traj</span><span class="p">)[</span><span class="bp">self</span><span class="o">.</span><span class="n">nslab</span><span class="p">:]</span>
+            <span class="n">dist</span> <span class="o">=</span> <span class="n">traj_atoms</span><span class="o">.</span><span class="n">get_distance</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="n">traj_fname</span> <span class="o">=</span> <span class="n">traj</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">ts_dist_dict</span><span class="p">[</span><span class="n">traj_fname</span><span class="p">]</span> <span class="o">=</span> <span class="n">dist</span>
+        <span class="k">return</span> <span class="n">ts_dist_dict</span></div>
+
+<div class="viewcode-block" id="AfterTS.get_forward_and_reverse_dist"><a class="viewcode-back" href="../../source/pynta.html#pynta.vib.AfterTS.get_forward_and_reverse_dist">[docs]</a>    <span class="k">def</span> <span class="nf">get_forward_and_reverse_dist</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">rxn_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">],</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]]:</span>
+        <span class="sd">&#39;&#39;&#39; For given rxn_name get distances between reacting species in</span>
+<span class="sd">        forward and reverse .xyz file</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        rxn_name : str</span>
+<span class="sd">            a name of the reaction in the following format:</span>
+<span class="sd">            ```&#39;OH_H+O&#39;```</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        f_dist_dict : Dict[str:float]</span>
+<span class="sd">            a dictionary with keys being paths to forward files while values</span>
+<span class="sd">            are bond distance beteween of reacting species</span>
+<span class="sd">        r_dist_dict : Dict[str:float]</span>
+<span class="sd">            a dictionary with keys being paths to reverse files while values</span>
+<span class="sd">            are bond distance beteween of reacting species</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">f_dist_dict</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">r_dist_dict</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="n">after_ts_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">facetpath</span><span class="p">,</span> <span class="n">rxn_name</span><span class="p">,</span> <span class="s1">&#39;after_TS&#39;</span><span class="p">)</span>
+
+        <span class="n">xyz_files</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">after_ts_dir</span><span class="p">)</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s1">&#39;**/*xyz&#39;</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">xyz</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">xyz_files</span><span class="p">):</span>
+            <span class="n">xyz</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">xyz</span><span class="p">)</span>
+            <span class="k">if</span> <span class="s1">&#39;forward&#39;</span> <span class="ow">in</span> <span class="n">xyz</span><span class="p">:</span>
+                <span class="n">xyz_atom</span> <span class="o">=</span> <span class="n">read</span><span class="p">(</span><span class="n">xyz</span><span class="p">)[</span><span class="bp">self</span><span class="o">.</span><span class="n">nslab</span><span class="p">:]</span>
+                <span class="n">dist</span> <span class="o">=</span> <span class="n">xyz_atom</span><span class="o">.</span><span class="n">get_distance</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+                <span class="n">f_dist_dict</span><span class="p">[</span><span class="n">xyz</span><span class="p">]</span> <span class="o">=</span> <span class="n">dist</span>
+            <span class="k">elif</span> <span class="s1">&#39;reverse&#39;</span> <span class="ow">in</span> <span class="n">xyz</span><span class="p">:</span>
+                <span class="n">xyz_atom</span> <span class="o">=</span> <span class="n">read</span><span class="p">(</span><span class="n">xyz</span><span class="p">)[</span><span class="bp">self</span><span class="o">.</span><span class="n">nslab</span><span class="p">:]</span>
+                <span class="n">dist</span> <span class="o">=</span> <span class="n">xyz_atom</span><span class="o">.</span><span class="n">get_distance</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+                <span class="n">r_dist_dict</span><span class="p">[</span><span class="n">xyz</span><span class="p">]</span> <span class="o">=</span> <span class="n">dist</span>
+        <span class="k">return</span> <span class="n">f_dist_dict</span><span class="p">,</span> <span class="n">r_dist_dict</span></div></div>
+
+
+<div class="viewcode-block" id="minimaVib"><a class="viewcode-back" href="../../source/pynta.html#pynta.vib.minimaVib">[docs]</a><span class="k">class</span> <span class="nc">minimaVib</span><span class="p">():</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">facetpath</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">creation_dir</span><span class="p">:</span> <span class="n">PosixPath</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">facetpath</span> <span class="o">=</span> <span class="n">facetpath</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">creation_dir</span> <span class="o">=</span> <span class="n">creation_dir</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">minima_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">creation_dir</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">facetpath</span><span class="p">,</span> <span class="s1">&#39;minima&#39;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="minimaVib.create_minima_vib_all"><a class="viewcode-back" href="../../source/pynta.html#pynta.vib.minimaVib.create_minima_vib_all">[docs]</a>    <span class="k">def</span> <span class="nf">create_minima_vib_all</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">socket_calculator</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">facetpath</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">yamlfile_path</span><span class="p">:</span> <span class="n">PosixPath</span><span class="p">,</span>
+            <span class="n">pytemplate</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">balsam_exe_settings</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span>
+            <span class="n">pseudo_dir</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">pseudopotentials</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
+            <span class="n">calc_keywords</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
+            <span class="n">creation_dir</span><span class="p">:</span> <span class="n">PosixPath</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&#39;&#39;&#39; Create all files for frequency calculations for the most stable</span>
+<span class="sd">        conformer for a given species.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        facetpath : str</span>
+<span class="sd">            a path to the workflow&#39;s main dir</span>
+<span class="sd">            e.g. ``&#39;Cu_111&#39;``</span>
+<span class="sd">        yamlfile_path : posix</span>
+<span class="sd">            a path to .yaml file with all reactions e.g. &#39;reactions.yaml&#39;</span>
+<span class="sd">        pytemplate : str</span>
+<span class="sd">            a pytemplate for frequency calculations of minima</span>
+<span class="sd">        balsam_exe_settings : Dict[str, int]</span>
+<span class="sd">            a dictionary with balsam execute parameters (cores, nodes, etc.),</span>
+<span class="sd">            e.g.</span>
+
+<span class="sd">            &gt;&gt;&gt; balsam_exe_settings = {&#39;num_nodes&#39;: 1,</span>
+<span class="sd">                                    &#39;ranks_per_node&#39;: 48,</span>
+<span class="sd">                                    &#39;threads_per_rank&#39;: 1}</span>
+
+<span class="sd">        calc_keywords : Dict[str, str]</span>
+<span class="sd">            a dictionary with parameters to run DFT package. Quantum Espresso</span>
+<span class="sd">            is used as default, e.g.</span>
+
+<span class="sd">            &gt;&gt;&gt; calc_keywords = {&#39;kpts&#39;: (3, 3, 1), &#39;occupations&#39;: &#39;smearing&#39;,</span>
+<span class="sd">                                &#39;smearing&#39;:  &#39;marzari-vanderbilt&#39;,</span>
+<span class="sd">                                &#39;degauss&#39;: 0.01, &#39;ecutwfc&#39;: 40, &#39;nosym&#39;: True,</span>
+<span class="sd">                                &#39;conv_thr&#39;: 1e-11, &#39;mixing_mode&#39;: &#39;local-TF&#39;}</span>
+
+<span class="sd">        pseudo_dir : str</span>
+<span class="sd">            a path to the QE&#39;s pseudopotentials main directory</span>
+<span class="sd">            e.g.</span>
+<span class="sd">            ``&#39;/home/mgierad/espresso/pseudo&#39;``</span>
+
+<span class="sd">        pseudopotentials : Dict[str, str]</span>
+<span class="sd">            a dictionary with QE pseudopotentials for all species.</span>
+<span class="sd">            e.g.</span>
+
+<span class="sd">            &gt;&gt;&gt; dict(Cu=&#39;Cu.pbe-spn-kjpaw_psl.1.0.0.UPF&#39;,</span>
+<span class="sd">                    H=&#39;H.pbe-kjpaw_psl.1.0.0.UPF&#39;,</span>
+<span class="sd">                    O=&#39;O.pbe-n-kjpaw_psl.1.0.0.UPF&#39;,</span>
+<span class="sd">                    C=&#39;C.pbe-n-kjpaw_psl.1.0.0.UPF&#39;)</span>
+
+<span class="sd">        calc_keywords : Dict[str, str]</span>
+<span class="sd">            a dictionary with parameters to run DFT package. Quantum Espresso</span>
+<span class="sd">            is used as default, e.g.</span>
+
+<span class="sd">            &gt;&gt;&gt; calc_keywords = {&#39;kpts&#39;: (3, 3, 1),</span>
+<span class="sd">                    &#39;occupations&#39;: &#39;smearing&#39;,</span>
+<span class="sd">                    &#39;smearing&#39;: &#39;marzari-vanderbilt&#39;,</span>
+<span class="sd">                    &#39;degauss&#39;: 0.01,</span>
+<span class="sd">                    &#39;ecutwfc&#39;: 40,</span>
+<span class="sd">                    &#39;nosym&#39;: True,</span>
+<span class="sd">                    &#39;conv_thr&#39;: 1e-11,</span>
+<span class="sd">                    &#39;mixing_mode&#39;:&#39;local-TF&#39;}</span>
+
+<span class="sd">        creation_dir : PosixPath</span>
+<span class="sd">            a posix path to the working directory</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">minima_vib_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">creation_dir</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">facetpath</span><span class="p">,</span> <span class="s1">&#39;minima_vib&#39;</span><span class="p">)</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">minima_vib_path</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="n">unique_adsorbates_prefixes</span> <span class="o">=</span> <span class="n">IO</span><span class="p">()</span><span class="o">.</span><span class="n">get_unique_adsorbates_prefixes</span><span class="p">(</span>
+            <span class="n">facetpath</span><span class="p">,</span> <span class="n">yamlfile_path</span><span class="p">,</span> <span class="n">creation_dir</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">adsorbate</span><span class="p">,</span> <span class="n">unique_prefixes</span> <span class="ow">in</span> <span class="n">unique_adsorbates_prefixes</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">for</span> <span class="n">prefix</span> <span class="ow">in</span> <span class="n">unique_prefixes</span><span class="p">:</span>
+                <span class="n">path_to_minimum_traj</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">minima_path</span><span class="p">,</span> <span class="n">adsorbate</span><span class="p">,</span> <span class="n">prefix</span> <span class="o">+</span> <span class="s1">&#39;.traj&#39;</span><span class="p">)</span>
+
+                <span class="n">path_to_vib_species</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+                    <span class="n">minima_vib_path</span><span class="p">,</span> <span class="n">adsorbate</span><span class="p">,</span> <span class="n">prefix</span><span class="p">)</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">path_to_vib_species</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+                <span class="n">traj_to_start_vib</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+                    <span class="n">path_to_vib_species</span><span class="p">,</span>
+                    <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">_</span><span class="si">{}</span><span class="s1">.traj&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">prefix</span><span class="p">,</span> <span class="n">adsorbate</span><span class="p">))</span>
+                <span class="n">shutil</span><span class="o">.</span><span class="n">copy2</span><span class="p">(</span><span class="n">path_to_minimum_traj</span><span class="p">,</span> <span class="n">traj_to_start_vib</span><span class="p">)</span>
+
+                <span class="bp">self</span><span class="o">.</span><span class="n">create_minima_vib_py_files</span><span class="p">(</span>
+                    <span class="n">socket_calculator</span><span class="p">,</span> <span class="n">adsorbate</span><span class="p">,</span> <span class="n">prefix</span><span class="p">,</span> <span class="n">traj_to_start_vib</span><span class="p">,</span>
+                    <span class="n">minima_vib_path</span><span class="p">,</span> <span class="n">pytemplate</span><span class="p">,</span> <span class="n">balsam_exe_settings</span><span class="p">,</span>
+                    <span class="n">pseudo_dir</span><span class="p">,</span> <span class="n">pseudopotentials</span><span class="p">,</span> <span class="n">calc_keywords</span><span class="p">,</span> <span class="n">creation_dir</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="minimaVib.create_minima_vib_py_files"><a class="viewcode-back" href="../../source/pynta.html#pynta.vib.minimaVib.create_minima_vib_py_files">[docs]</a>    <span class="k">def</span> <span class="nf">create_minima_vib_py_files</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">socket_calculator</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">adsorbate</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">prefix</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">traj_to_start_vib</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">minima_vib_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">pytemplate</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">balsam_exe_settings</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span>
+            <span class="n">pseudo_dir</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">pseudopotentials</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
+            <span class="n">calc_keywords</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
+            <span class="n">creation_dir</span><span class="p">:</span> <span class="n">PosixPath</span><span class="p">,</span>
+            <span class="n">nimages</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">30</span><span class="p">,</span>
+            <span class="n">n</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&#39;&#39;&#39; Create a :literal:`*.py` files for a vibrational frequiency</span>
+<span class="sd">        calculations for a given species</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        adsorbate : str</span>
+<span class="sd">            a chemical symbol of a reacting species</span>
+<span class="sd">        prefix : str</span>
+<span class="sd">            a prefix for unique minimum for which vibrational frequencies</span>
+<span class="sd">            will be calculated</span>
+<span class="sd">        traj_fname : str</span>
+<span class="sd">            a name of a new traj file</span>
+<span class="sd">        minima_vib_path : str</span>
+<span class="sd">            a path to vibrational frequency calculations of minima,</span>
+<span class="sd">            e.g. ``&#39;Cu_111/minima_vib&#39;``</span>
+<span class="sd">        pytemplate : str</span>
+<span class="sd">            a pytemplate for frequency calculations of minima</span>
+<span class="sd">        balsam_exe_settings : Dict[str, int]</span>
+<span class="sd">            a dictionary with balsam execute parameters (cores, nodes, etc.),</span>
+<span class="sd">            e.g.</span>
+
+<span class="sd">            &gt;&gt;&gt; balsam_exe_settings = {&#39;num_nodes&#39;: 1,</span>
+<span class="sd">                                    &#39;ranks_per_node&#39;: 48,</span>
+<span class="sd">                                    &#39;threads_per_rank&#39;: 1}</span>
+
+<span class="sd">        calc_keywords : Dict[str, str]</span>
+<span class="sd">            a dictionary with parameters to run DFT package. Quantum Espresso</span>
+<span class="sd">            is used as default, e.g.</span>
+
+<span class="sd">            &gt;&gt;&gt; calc_keywords = {&#39;kpts&#39;: (3, 3, 1), &#39;occupations&#39;: &#39;smearing&#39;,</span>
+<span class="sd">                                &#39;smearing&#39;:  &#39;marzari-vanderbilt&#39;,</span>
+<span class="sd">                                &#39;degauss&#39;: 0.01, &#39;ecutwfc&#39;: 40, &#39;nosym&#39;: True,</span>
+<span class="sd">                                &#39;conv_thr&#39;: 1e-11, &#39;mixing_mode&#39;: &#39;local-TF&#39;}</span>
+
+<span class="sd">        pseudo_dir : str</span>
+<span class="sd">            a path to the QE&#39;s pseudopotentials main directory</span>
+<span class="sd">            e.g.</span>
+<span class="sd">            ``&#39;/home/mgierad/espresso/pseudo&#39;``</span>
+
+<span class="sd">        pseudopotentials : Dict[str, str]</span>
+<span class="sd">            a dictionary with QE pseudopotentials for all species.</span>
+<span class="sd">            e.g.</span>
+
+<span class="sd">            &gt;&gt;&gt; dict(Cu=&#39;Cu.pbe-spn-kjpaw_psl.1.0.0.UPF&#39;,</span>
+<span class="sd">                    H=&#39;H.pbe-kjpaw_psl.1.0.0.UPF&#39;,</span>
+<span class="sd">                    O=&#39;O.pbe-n-kjpaw_psl.1.0.0.UPF&#39;,</span>
+<span class="sd">                    C=&#39;C.pbe-n-kjpaw_psl.1.0.0.UPF&#39;)</span>
+
+<span class="sd">        calc_keywords : Dict[str, str]</span>
+<span class="sd">            a dictionary with parameters to run DFT package. Quantum Espresso</span>
+<span class="sd">            is used as default, e.g.</span>
+
+<span class="sd">            &gt;&gt;&gt; calc_keywords = {&#39;kpts&#39;: (3, 3, 1),</span>
+<span class="sd">                    &#39;occupations&#39;: &#39;smearing&#39;,</span>
+<span class="sd">                    &#39;smearing&#39;: &#39;marzari-vanderbilt&#39;,</span>
+<span class="sd">                    &#39;degauss&#39;: 0.01,</span>
+<span class="sd">                    &#39;ecutwfc&#39;: 40,</span>
+<span class="sd">                    &#39;nosym&#39;: True,</span>
+<span class="sd">                    &#39;conv_thr&#39;: 1e-11,</span>
+<span class="sd">                    &#39;mixing_mode&#39;:&#39;local-TF&#39;}</span>
+
+<span class="sd">        creation_dir : PosixPath</span>
+<span class="sd">            a posix path to the working directory</span>
+<span class="sd">        nimages : int, optional</span>
+<span class="sd">            how many strucutres to use to construct a trajectory visualizing</span>
+<span class="sd">            oscilations, by default 30</span>
+<span class="sd">        n : int, optional</span>
+<span class="sd">            mode of oscilation, i.e. which vibration to analyze.</span>
+<span class="sd">            0 is the first vibration, should be imaginary, by default 0</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">pytemplate</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">pytemplate_txt</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+            <span class="n">py_file_name</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{}</span><span class="s1">_</span><span class="si">{}</span><span class="s1">_</span><span class="si">{}</span><span class="s1">_vib.py&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">facetpath</span><span class="p">,</span> <span class="n">prefix</span><span class="p">,</span> <span class="n">adsorbate</span><span class="p">))</span>
+            <span class="n">py_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">minima_vib_path</span><span class="p">,</span> <span class="n">py_file_name</span><span class="p">)</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">py_file</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">c</span><span class="p">:</span>
+                <span class="n">c</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">pytemplate_txt</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="n">socket_calculator</span><span class="o">=</span><span class="n">socket_calculator</span><span class="p">,</span>
+                    <span class="n">geom</span><span class="o">=</span><span class="n">traj_to_start_vib</span><span class="p">,</span>
+                    <span class="n">balsam_exe_settings</span><span class="o">=</span><span class="n">balsam_exe_settings</span><span class="p">,</span>
+                    <span class="n">creation_dir</span><span class="o">=</span><span class="n">creation_dir</span><span class="p">,</span>
+                    <span class="n">pseudopotentials</span><span class="o">=</span><span class="n">pseudopotentials</span><span class="p">,</span>
+                    <span class="n">pseudo_dir</span><span class="o">=</span><span class="n">pseudo_dir</span><span class="p">,</span>
+                    <span class="n">calc_keywords</span><span class="o">=</span><span class="n">calc_keywords</span><span class="p">,</span>
+                    <span class="n">nimages</span><span class="o">=</span><span class="n">nimages</span><span class="p">,</span>
+                    <span class="n">n</span><span class="o">=</span><span class="n">n</span><span class="p">,</span>
+                <span class="p">))</span></div></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, Maciej Gierada, Eric D. Hermes, David H. Bross
+      <span class="lastupdated">
+        Last updated on Wed, 20 Jan 2021 11:36:46.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

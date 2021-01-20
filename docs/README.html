@@ -1,0 +1,669 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Pynta &mdash; Pynta January 20, 2021 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home"> Pynta
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <!-- Local TOC -->
+              <div class="local-toc"><ul>
+<li><a class="reference internal" href="#">Pynta</a></li>
+<li><a class="reference internal" href="#installation">Installation</a><ul>
+<li><a class="reference internal" href="#install-all-prerequisites">Install all prerequisites</a><ul>
+<li><a class="reference internal" href="#set-the-location-you-want-to-use-for-pynta-build-it-is-suggested-to-create-a-virtual-environment-e-g-pynta">Set the location you want to use for <code class="docutils literal notranslate"><span class="pre">pynta</span></code> build. It is suggested to create a virtual environment e.g ‘pynta’:</a></li>
+<li><a class="reference internal" href="#activate-your-virtual-environment">Activate your virtual environment:</a></li>
+<li><a class="reference internal" href="#optional-install-required-python-packages-if-you-skip-this-process-pynta-installer-will-do-this-later">(<em>Optional</em>) Install required python packages (if you skip this process, <code class="docutils literal notranslate"><span class="pre">pynta</span></code> installer will do this later.)</a></li>
+<li><a class="reference internal" href="#download-postgresql-precompiled-binaries-that-suits-your-system-and-add-path-to-postgresql-pgsql-bin-to-your-path-by-modifying-bashrc">Download PostgreSQL precompiled binaries that suits your system and add <code class="docutils literal notranslate"><span class="pre">path_to_PostgreSQL/pgsql/bin</span></code> to your <code class="docutils literal notranslate"><span class="pre">PATH</span></code> by modifying <code class="docutils literal notranslate"><span class="pre">~/.bashrc</span></code>:</a></li>
+<li><a class="reference internal" href="#install-mpi4py">Install mpi4py:</a></li>
+<li><a class="reference internal" href="#install-balsam-using-serial-mode-perf-branch">Install balsam using serial-mode-perf branch.</a></li>
+<li><a class="reference internal" href="#install-xtb-python-following-instruction-provided-there-make-sure-to-correctly-link-all-required-libraries-for-example">Install xTB-python following instruction provided there. Make sure to correctly link all required libraries. For example:</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#install-pynta">Install <code class="docutils literal notranslate"><span class="pre">pynta</span></code></a><ul>
+<li><a class="reference internal" href="#clone-the-project-in-your-preferable-location">Clone the project in your preferable location.</a></li>
+<li><a class="reference internal" href="#go-to-pynta-directory">Go to <code class="docutils literal notranslate"><span class="pre">pynta</span></code> directory</a></li>
+<li><a class="reference internal" href="#id3">Install <code class="docutils literal notranslate"><span class="pre">pynta</span></code>:</a></li>
+<li><a class="reference internal" href="#optional-if-you-do-not-have-admin-privileges-e-g-you-use-it-on-a-supercomputer-do-the-following-instead-of-1-6a">(<em>Optional</em>)  If you do not have admin privileges (e.g. you use it on a supercomputer), do the following instead of 1.6a:</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#how-to-run">How to run</a><ul>
+<li><a class="reference internal" href="#using-balsam">Using Balsam</a><ul>
+<li><a class="reference internal" href="#an-example-run-me-py-file">An example <code class="docutils literal notranslate"><span class="pre">run_me.py</span></code> file</a></li>
+<li><a class="reference internal" href="#an-example-restart-me-py-file">An example <code class="docutils literal notranslate"><span class="pre">restart_me.py</span></code> file</a></li>
+<li><a class="reference internal" href="#an-example-run-me-sh-file">An example <code class="docutils literal notranslate"><span class="pre">run_me.sh</span></code> file</a></li>
+<li><a class="reference internal" href="#an-example-reactions-yaml-file">An example <code class="docutils literal notranslate"><span class="pre">reactions.yaml</span></code> file</a></li>
+<li><a class="reference internal" href="#an-example-inputr2s-py-file">An example <code class="docutils literal notranslate"><span class="pre">inputR2S.py</span></code> file</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#using-only-slurm">Using only SLURM</a><ul>
+<li><a class="reference internal" href="#an-example-script-using-dev-branch-slurm">An example script (using <code class="docutils literal notranslate"><span class="pre">dev</span></code> branch - SLURM):</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Pynta</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>Pynta</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/README.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="pynta">
+<h1>Pynta<a class="headerlink" href="#pynta" title="Permalink to this headline">¶</a></h1>
+<p><code class="docutils literal notranslate"><span class="pre">pynta</span></code> is an automated workflow for reaction path exploration on metallic surfaces.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">pynta</span></code> code is designed to automatically characterize chemical reactions
+relevant to heterogeneous catalysis. In particular, it spawns and processes a
+large number of ab initio quantum chemistry calculations to study gas-phase
+reactions on crystal facets. It is designed to run on petascale and upcoming
+exascale machines.</p>
+<p>The code systematically places adsorbates on crystal facets, by enumerating the
+various unique crystal sites and considering the symmetry of the adsorbates and
+the surface. The structures are systematically perturbed, to try to investigate
+all possible adsorption geometries. Following this, the code performs
+modifications to these structures and searches for saddle points on the
+potential energy landscape in order to characterize the reactions these
+adsorbates can undergo. After a series of such calculations the code arrives at
+well-characterized reaction pathways, which can be in turn used to calculate
+rate coefficients and can be implemented in microkinetic mechanisms/models.</p>
+<p>Pynta is designed to work with the workflow code
+<a class="reference external" href="https://balsam.readthedocs.io/en/latest/">balsam</a> , which enables a seamless
+running of embarrassingly parallel computations on supercomputers. <code class="docutils literal notranslate"><span class="pre">pynta</span></code>
+includes several so-called apps that are run through <code class="docutils literal notranslate"><span class="pre">balsam</span></code>, and appear as
+one monolithic job submission in the queue system. Another level of parallelism
+is gained from the ab initio programs, which may or may not include GPU
+acceleration. We use the Atomic Simulation Environment (ASE) that enables
+coupling to a large variety of ab initio quantum chemistry codes.</p>
+<a class="reference internal image-reference" href="_images/workflow_idea.png"><img alt="_images/workflow_idea.png" class="align-center" src="_images/workflow_idea.png" style="width: 800px;" /></a>
+</div>
+<div class="section" id="installation">
+<h1>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h1>
+<p>The following instruction assumes that you have several softwares installed on your system, such as:</p>
+<ul class="simple">
+<li><p>A queue system e.g. <code class="docutils literal notranslate"><span class="pre">Slurm</span></code>, <code class="docutils literal notranslate"><span class="pre">PBS</span></code> or <code class="docutils literal notranslate"><span class="pre">Cobalt</span></code></p></li>
+<li><p>An MPI e.g. <code class="docutils literal notranslate"><span class="pre">OpenMPI</span></code></p></li>
+<li><p>A math library e.g. <code class="docutils literal notranslate"><span class="pre">OpenBlas/LAPACK</span></code> or <code class="docutils literal notranslate"><span class="pre">Intel's</span> <span class="pre">MKL</span></code></p></li>
+<li><p>A compilier suite e.g. <code class="docutils literal notranslate"><span class="pre">GCC</span></code> or <code class="docutils literal notranslate"><span class="pre">Intel</span></code></p></li>
+</ul>
+<div class="section" id="install-all-prerequisites">
+<h2>Install all prerequisites<a class="headerlink" href="#install-all-prerequisites" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="set-the-location-you-want-to-use-for-pynta-build-it-is-suggested-to-create-a-virtual-environment-e-g-pynta">
+<h3>Set the location you want to use for <code class="docutils literal notranslate"><span class="pre">pynta</span></code> build. It is suggested to create a virtual environment e.g ‘pynta’:<a class="headerlink" href="#set-the-location-you-want-to-use-for-pynta-build-it-is-suggested-to-create-a-virtual-environment-e-g-pynta" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$ <span class="nb">cd</span> &lt;path/whr/to/build/pynta&gt;
+$ python3 -m venv pynta
+</pre></div>
+</div>
+</div>
+<div class="section" id="activate-your-virtual-environment">
+<h3>Activate your virtual environment:<a class="headerlink" href="#activate-your-virtual-environment" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$ <span class="nb">source</span> pynta/bin/activate
+</pre></div>
+</div>
+</div>
+<div class="section" id="optional-install-required-python-packages-if-you-skip-this-process-pynta-installer-will-do-this-later">
+<h3>(<em>Optional</em>) Install required python packages (if you skip this process, <code class="docutils literal notranslate"><span class="pre">pynta</span></code> installer will do this later.)<a class="headerlink" href="#optional-install-required-python-packages-if-you-skip-this-process-pynta-installer-will-do-this-later" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$ pip3 install matplotlib&lt;<span class="m">3</span>.2 <span class="nv">spglib</span><span class="o">==</span><span class="m">1</span>.14.1.post0 networkx&lt;<span class="m">2</span>.4 <span class="nv">ase</span><span class="o">==</span><span class="m">3</span>.19.0 <span class="nv">scipy</span><span class="o">==</span><span class="m">1</span>.3.1 <span class="nv">numpy</span><span class="o">==</span><span class="m">1</span>.18.1 <span class="nv">PyYAML</span><span class="o">==</span><span class="m">5</span>.3.1 <span class="nv">sella</span><span class="o">==</span><span class="m">1</span>.0.3
+</pre></div>
+</div>
+</div>
+<div class="section" id="download-postgresql-precompiled-binaries-that-suits-your-system-and-add-path-to-postgresql-pgsql-bin-to-your-path-by-modifying-bashrc">
+<h3>Download <a class="reference external" href="https://www.enterprisedb.com/download-postgresql-binaries">PostgreSQL</a> precompiled binaries that suits your system and add <code class="docutils literal notranslate"><span class="pre">path_to_PostgreSQL/pgsql/bin</span></code> to your <code class="docutils literal notranslate"><span class="pre">PATH</span></code> by modifying <code class="docutils literal notranslate"><span class="pre">~/.bashrc</span></code>:<a class="headerlink" href="#download-postgresql-precompiled-binaries-that-suits-your-system-and-add-path-to-postgresql-pgsql-bin-to-your-path-by-modifying-bashrc" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$ <span class="nb">echo</span> <span class="s2">&quot;export PATH=path_to_PostgreSQL/pgsql/bin:</span><span class="nv">$PATH</span><span class="s2">&#39; &gt;&gt; ~/.bashrc&quot;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="install-mpi4py">
+<h3>Install <a class="reference external" href="https://github.com/mpi4py/mpi4py.git">mpi4py</a>:<a class="headerlink" href="#install-mpi4py" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$ git clone https://github.com/mpi4py/mpi4py.git
+$ <span class="nb">cd</span> mpi4py
+$ python3 setup.py install --user
+$ <span class="nb">cd</span> ../
+</pre></div>
+</div>
+<p>Make sure it works by running</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$ srun -n <span class="m">2</span> python3 -c <span class="s1">&#39;from mpi4py import MPI; print(MPI.COMM_WORLD.Get_rank())&#39;</span>
+<span class="m">0</span>
+<span class="m">1</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="install-balsam-using-serial-mode-perf-branch">
+<h3>Install <a class="reference external" href="https://github.com/balsam-alcf/balsam.git">balsam</a> using <a class="reference external" href="https://github.com/balsam-alcf/balsam/tree/serial-mode-perf">serial-mode-perf</a> branch.<a class="headerlink" href="#install-balsam-using-serial-mode-perf-branch" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git clone https://github.com/balsam-alcf/balsam.git -b serial-mode-perf
+<span class="nb">cd</span> balsam
+python3 setup.py install --user
+<span class="nb">cd</span> ../
+</pre></div>
+</div>
+<p>Make sure it works by running tests posted on the <a class="reference external" href="https://github.com/balsam-alcf/balsam.git">balsam</a> GitHub page.</p>
+</div>
+<div class="section" id="install-xtb-python-following-instruction-provided-there-make-sure-to-correctly-link-all-required-libraries-for-example">
+<h3>Install <a class="reference external" href="https://github.com/grimme-lab/xtb-python">xTB-python</a> following instruction provided there. Make sure to correctly link all required libraries. For example:<a class="headerlink" href="#install-xtb-python-following-instruction-provided-there-make-sure-to-correctly-link-all-required-libraries-for-example" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li><p>using <code class="docutils literal notranslate"><span class="pre">OpenBlas</span></code> and <code class="docutils literal notranslate"><span class="pre">GNU</span></code> based compilers:</p></li>
+</ul>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git clone https://github.com/grimme-lab/xtb-python.git
+<span class="nb">cd</span> xtb-python
+git submodule update --init
+<span class="nv">LDFLAGS</span><span class="o">=</span><span class="s2">&quot;-L/opt/custom/OpenBLAS/0.3.7/lib&quot;</span> meson setup build --prefix<span class="o">=</span><span class="nv">$PWD</span> --libdir<span class="o">=</span>xtb/xtb --buildtype release --optimization <span class="m">2</span> -Dla_backend<span class="o">=</span>openblas
+ninja -C build install
+pip install --user -e .
+</pre></div>
+</div>
+<ul class="simple">
+<li><p>using <code class="docutils literal notranslate"><span class="pre">MKL</span></code> and Intel Compilers:</p></li>
+</ul>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git clone https://github.com/grimme-lab/xtb-python.git
+<span class="nb">cd</span> xtb-python
+git submodule update --init
+<span class="c1"># (Theta specific)</span>
+<span class="c1"># conda instal cffi</span>
+<span class="c1"># module swap PrgEnv-intel PrgEnv-cray; module swap PrgEnv-cray PrgEnv-intel</span>
+<span class="nv">CC</span><span class="o">=</span>icc <span class="nv">CXX</span><span class="o">=</span>icpc <span class="nv">FC</span><span class="o">=</span>ifort meson setup build --prefix<span class="o">=</span><span class="nv">$PWD</span> --libdir<span class="o">=</span>xtb -Dla_backed<span class="o">=</span>mkl -Dpy<span class="o">=</span><span class="m">3</span> --buildtype release --optimization <span class="m">2</span>
+ninja -C build install
+pip install --user -e .
+</pre></div>
+</div>
+<p>Make sure it works by running:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">ase.build</span> <span class="kn">import</span> <span class="n">molecule</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">xtb.ase.calculator</span> <span class="kn">import</span> <span class="n">XTB</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">atoms</span> <span class="o">=</span> <span class="n">molecule</span><span class="p">(</span><span class="s1">&#39;H2O&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">atoms</span><span class="o">.</span><span class="n">calc</span> <span class="o">=</span> <span class="n">XTB</span><span class="p">(</span><span class="n">method</span><span class="o">=</span><span class="s2">&quot;GFN2-xTB&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">total_ener</span> <span class="o">=</span> <span class="n">atoms</span><span class="o">.</span><span class="n">get_potential_energy</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">total_ener</span>
+<span class="go">-137.9677758730299</span>
+</pre></div>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>You might be getting SEGFAULT error - <code class="docutils literal notranslate"><span class="pre">Segmentation</span> <span class="pre">Fault</span> <span class="pre">(Core</span> <span class="pre">dumped)</span></code> while executing any <code class="docutils literal notranslate"><span class="pre">xTB-python</span></code> job, especially for a relatively large molecules. The easiest solution is to unlimit the system stack to avoid stack overflows. In <code class="docutils literal notranslate"><span class="pre">bash</span></code> try</p>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">ulimit</span> <span class="o">-</span><span class="n">s</span> <span class="n">unlimited</span>
+</pre></div>
+</div>
+<p>If <code class="docutils literal notranslate"><span class="pre">xTB-python</span></code> still fails, try to install <a class="reference external" href="https://github.com/grimme-lab/xtb">xtb</a> and test <code class="docutils literal notranslate"><span class="pre">xTB</span></code> itself for any errors.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git clone https://github.com/grimme-lab/xtb.git
+<span class="nb">cd</span> xtb
+mkdir build
+<span class="nb">pushd</span> build
+cmake -DCMAKE_BUILD_TYPE<span class="o">=</span>Release -DCMAKE_C_COMPILER<span class="o">=</span>icc -DCMAKE_CXX_COMPILER<span class="o">=</span>icpc -DCMAKE_FC_COMPILER<span class="o">=</span>ifort ..
+make
+ctest
+<span class="nb">popd</span>
+<span class="nb">echo</span> <span class="s1">&#39;export LD_LIBRARY_PATH=path/to_xtb/xtb/build:$LD_LIBRARY_PATH&#39;</span> &gt;&gt; ~/.bashrc
+<span class="nb">echo</span> <span class="s1">&#39;export PATH=$HOME/.local/bin:\$PATH&#39;</span> &gt;&gt; ~/.bashrc
+</pre></div>
+</div>
+<p>Then, rebuild <code class="docutils literal notranslate"><span class="pre">xTB-python</span></code> on your system ignoring <code class="docutils literal notranslate"><span class="pre">git</span> <span class="pre">submodule</span> <span class="pre">update</span> <span class="pre">--init</span></code> and linking you current <code class="docutils literal notranslate"><span class="pre">xTB</span></code> installation.</p>
+</div>
+</div>
+<div class="section" id="install-pynta">
+<h2>Install <code class="docutils literal notranslate"><span class="pre">pynta</span></code><a class="headerlink" href="#install-pynta" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="clone-the-project-in-your-preferable-location">
+<h3>Clone the project in your preferable location.<a class="headerlink" href="#clone-the-project-in-your-preferable-location" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">git</span> <span class="n">clone</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">gitlab</span><span class="o">-</span><span class="n">ex</span><span class="o">.</span><span class="n">sandia</span><span class="o">.</span><span class="n">gov</span><span class="o">/</span><span class="n">mgierad</span><span class="o">/</span><span class="n">pynta</span><span class="o">.</span><span class="n">git</span>
+</pre></div>
+</div>
+<p>Usually, <code class="docutils literal notranslate"><span class="pre">master</span></code> branch should be fine. If somehow it is not working, make sure to switch to the latest stable version by checking the tags.</p>
+</div>
+<div class="section" id="go-to-pynta-directory">
+<h3>Go to <code class="docutils literal notranslate"><span class="pre">pynta</span></code> directory<a class="headerlink" href="#go-to-pynta-directory" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">cd</span> <span class="n">pynta</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="id3">
+<h3>Install <code class="docutils literal notranslate"><span class="pre">pynta</span></code>:<a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="n">setup</span><span class="o">.</span><span class="n">py</span> <span class="n">install</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="optional-if-you-do-not-have-admin-privileges-e-g-you-use-it-on-a-supercomputer-do-the-following-instead-of-1-6a">
+<h3>(<em>Optional</em>)  If you do not have admin privileges (e.g. you use it on a supercomputer), do the following instead of 1.6a:<a class="headerlink" href="#optional-if-you-do-not-have-admin-privileges-e-g-you-use-it-on-a-supercomputer-do-the-following-instead-of-1-6a" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="n">setup</span><span class="o">.</span><span class="n">py</span> <span class="n">install</span> <span class="o">--</span><span class="n">user</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>You should be ready to use <code class="docutils literal notranslate"><span class="pre">pynta</span></code> at this point!</p>
+</div>
+<p>Once finished using the workflow:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">cd</span> <span class="n">pynta</span>
+<span class="n">deactivate</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="section" id="how-to-run">
+<h1>How to run<a class="headerlink" href="#how-to-run" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="using-balsam">
+<h2>Using Balsam<a class="headerlink" href="#using-balsam" title="Permalink to this headline">¶</a></h2>
+<p>Before you run any <code class="docutils literal notranslate"><span class="pre">pynta</span></code> calculations, make sure your <code class="docutils literal notranslate"><span class="pre">balsam</span></code> DB is initialized and activated, e.g.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$ balsam init ~/myWorkflow
+$ <span class="nb">source</span> balsamactivate ~/myWorkflow
+</pre></div>
+</div>
+<p>You will need <strong>4</strong> files to run the workflow:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">run_me.py</span></code> a python script that executes the workflow or alternatively, <code class="docutils literal notranslate"><span class="pre">restart_me.py</span></code> to restart unfinished calculations</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">run_me.sh</span></code> a bash script that submits jobs to the <code class="docutils literal notranslate"><span class="pre">balsam</span></code> database</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">inputR2S.py</span></code> a python script holding all user-modifiable parameters of the <code class="docutils literal notranslate"><span class="pre">pynta</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">reactions.yaml</span></code> a yaml file with all reactions to be studied</p></li>
+</ul>
+<div class="section" id="an-example-run-me-py-file">
+<h3>An example <code class="docutils literal notranslate"><span class="pre">run_me.py</span></code> file<a class="headerlink" href="#an-example-run-me-py-file" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="ch">#!/usr/bin/env python3</span>
+<span class="kn">from</span> <span class="nn">pynta.main</span> <span class="kn">import</span> <span class="n">WorkFlow</span>
+
+
+<span class="k">def</span> <span class="nf">run</span><span class="p">():</span>
+   <span class="c1"># instantiate a WorkFlow() class</span>
+   <span class="n">workflow</span> <span class="o">=</span> <span class="n">WorkFlow</span><span class="p">()</span>
+   <span class="c1"># create all input files</span>
+   <span class="n">workflow</span><span class="o">.</span><span class="n">gen_job_files</span><span class="p">()</span>
+   <span class="c1"># execute the workflow</span>
+   <span class="n">workflow</span><span class="o">.</span><span class="n">execute_all</span><span class="p">()</span>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+   <span class="n">run</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="an-example-restart-me-py-file">
+<h3>An example <code class="docutils literal notranslate"><span class="pre">restart_me.py</span></code> file<a class="headerlink" href="#an-example-restart-me-py-file" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1">##!/usr/bin/env python3</span>
+<span class="kn">from</span> <span class="nn">pynta.main</span> <span class="kn">import</span> <span class="n">WorkFlow</span>
+
+
+<span class="k">def</span> <span class="nf">restart</span><span class="p">():</span>
+   <span class="k">return</span> <span class="n">WorkFlow</span><span class="p">()</span><span class="o">.</span><span class="n">restart</span><span class="p">()</span>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+   <span class="n">restart</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="an-example-run-me-sh-file">
+<h3>An example <code class="docutils literal notranslate"><span class="pre">run_me.sh</span></code> file<a class="headerlink" href="#an-example-run-me-sh-file" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="ch">#!/bin/bash</span>
+<span class="c1">#SBATCH -J job_name        # name of the job e.g job_name = pynta_workflow</span>
+<span class="c1">#SBATCH --partition=queue  # queue name e.g. queue = day-long-cpu</span>
+<span class="c1">#SBATCH --nodes=x          # number of nodes e.g. x = 2</span>
+<span class="c1">#SBATCH --ntasks=y         # number of CPUs e.g. 2 x 48 = y = 96</span>
+<span class="c1">#SBATCH -e %x.err          # error file name</span>
+<span class="c1">#SBATCH -o %x.out          # out file name</span>
+
+<span class="c1"># load your quantum chemistry calculation package or provide a path to the</span>
+<span class="c1"># executable in &#39;inputR2S.py&#39;</span>
+module load espresso
+
+<span class="c1"># activate balsam environment, e.g.</span>
+<span class="nb">source</span> balsamactivate ~/myWorkflow
+
+<span class="c1"># run python executable script</span>
+python3 <span class="nv">$PWD</span>/run_me.py
+
+<span class="c1"># required environment variable if using balsam branch serial-mode-perf and SLURM</span>
+<span class="nb">export</span> <span class="nv">SLURM_HOSTS</span><span class="o">=</span><span class="k">$(</span>scontrol show hostname<span class="k">)</span>
+
+<span class="c1"># launch serial jobs</span>
+balsam launcher --job-mode<span class="o">=</span>serial --wf-filter _ --limit-nodes<span class="o">=</span><span class="m">1</span> --num-transition-threads<span class="o">=</span><span class="m">1</span> <span class="p">&amp;</span>
+
+<span class="c1"># wait a bit to prevent timeing out you jobs before the sockets are ready</span>
+sleep <span class="m">45</span>
+
+<span class="c1"># launch mpi jobs</span>
+balsam launcher --job-mode<span class="o">=</span>mpi --wf-filter QE_Sock --offset-nodes<span class="o">=</span>x-1 --num-transition-threads<span class="o">=</span><span class="m">1</span> <span class="p">&amp;</span>
+
+<span class="c1"># wait until finished</span>
+<span class="nb">wait</span>
+
+<span class="c1"># deactivate balsam environment</span>
+<span class="nb">source</span> balsamdeactivate
+</pre></div>
+</div>
+</div>
+<div class="section" id="an-example-reactions-yaml-file">
+<h3>An example <code class="docutils literal notranslate"><span class="pre">reactions.yaml</span></code> file<a class="headerlink" href="#an-example-reactions-yaml-file" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="p p-Indicator">-</span> <span class="nt">index</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">0</span>
+  <span class="nt">reaction</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">OHX + X &lt;=&gt; OX + HX</span>
+  <span class="nt">reaction_family</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">Surface_Abstraction</span>
+  <span class="nt">reactant</span><span class="p">:</span> <span class="p p-Indicator">|</span>
+      <span class="no">multiplicity -187</span>
+      <span class="no">1 *1 O u0 p0 c0 {2,S} {4,S}</span>
+      <span class="no">2 *2 H u0 p0 c0 {1,S}</span>
+      <span class="no">3 *3 X u0 p0 c0</span>
+      <span class="no">4    X u0 p0 c0 {1,S}</span>
+  <span class="nt">product</span><span class="p">:</span> <span class="p p-Indicator">|</span>
+      <span class="no">multiplicity -187</span>
+      <span class="no">1 *1 O u0 p0 c0 {4,S}</span>
+      <span class="no">2 *2 H u0 p0 c0 {3,S}</span>
+      <span class="no">3 *3 X u0 p0 c0 {2,S}</span>
+      <span class="no">4    X u0 p0 c0 {1,S}</span>
+  <span class="p p-Indicator">-</span> <span class="nt">index</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">1</span>
+  <span class="nt">reaction</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">H2OX + X &lt;=&gt; OHX + HX</span>
+  <span class="nt">reaction_family</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">Surface_Abstraction</span>
+  <span class="nt">reactant</span><span class="p">:</span> <span class="p p-Indicator">|</span>
+      <span class="no">multiplicity -187</span>
+      <span class="no">1 *1 O u0 p0 c0 {2,S} {3,S} {4,S}</span>
+      <span class="no">2 *2 H u0 p0 c0 {1,S}</span>
+      <span class="no">3    H u0 p0 c0 {1,S}</span>
+      <span class="no">4    X u0 p0 c0 {1,S}</span>
+      <span class="no">5 *3 X u0 p0 c0</span>
+  <span class="nt">product</span><span class="p">:</span> <span class="p p-Indicator">|</span>
+      <span class="no">multiplicity -187</span>
+      <span class="no">1 *1 O u0 p0 c0 {2,S} {4,S}</span>
+      <span class="no">2 *2 H u0 p0 c0 {1,S}</span>
+      <span class="no">3    H u0 p0 c0 {5,S}</span>
+      <span class="no">4    X u0 p0 c0 {1,S}</span>
+      <span class="no">5 *3 X u0 p0 c0 {3,S}</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="an-example-inputr2s-py-file">
+<h3>An example <code class="docutils literal notranslate"><span class="pre">inputR2S.py</span></code> file<a class="headerlink" href="#an-example-inputr2s-py-file" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1">####################################################</span>
+                  <span class="n">Basic</span> <span class="n">Input</span>
+<span class="c1">####################################################</span>
+<span class="s1">&#39;&#39;&#39;</span>
+<span class="s1">####################################################</span>
+<span class="s1"># Define which QE package to use</span>
+<span class="s1"># &#39;espresso&#39; or &#39;nwchem&#39; are currently supported</span>
+<span class="s1">quantum_chemistry = &#39;espresso&#39;</span>
+<span class="s1">####################################################</span>
+<span class="s1"># do you want to run surface optimization</span>
+<span class="s1">optimize_slab = True</span>
+<span class="s1">####################################################</span>
+<span class="s1"># specify facet orientation, repeats of the slab+ads</span>
+<span class="s1"># and repeats of the slab_opt unit cell</span>
+<span class="s1">surface_types_and_repeats = {&#39;fcc111&#39;: [(3, 3, 1), (1, 1, 4)]}</span>
+<span class="s1">####################################################</span>
+<span class="s1"># surface atoms</span>
+<span class="s1">metal_atom = &#39;Cu&#39;</span>
+<span class="s1">####################################################</span>
+<span class="s1"># lattice constant</span>
+<span class="s1">a = 3.6</span>
+<span class="s1">####################################################</span>
+<span class="s1"># vacuum in the z direction (Angstrem)</span>
+<span class="s1">vacuum = 8.0</span>
+<span class="s1">####################################################</span>
+<span class="s1"># Quantum Espresso pseudopotantials and exe settings</span>
+<span class="s1"># for DFT calculations</span>
+<span class="s1">pseudo_dir = &#39;/home/mgierad/espresso/pseudo&#39;</span>
+
+<span class="s1">pseudopotentials = &quot;dict(Cu=&#39;Cu.pbe-spn-kjpaw_psl.1.0.0.UPF&#39;,&quot;</span><span class="se">\</span>
+<span class="s1">   + &quot;H=&#39;H.pbe-kjpaw_psl.1.0.0.UPF&#39;,&quot; </span><span class="se">\</span>
+<span class="s1">   + &quot;O=&#39;O.pbe-n-kjpaw_psl.1.0.0.UPF&#39;,&quot; </span><span class="se">\</span>
+<span class="s1">   + &quot;C=&#39;C.pbe-n-kjpaw_psl.1.0.0.UPF&#39;,&quot; </span><span class="se">\</span>
+<span class="s1">   + &quot;N=&#39;N.pbe-n-kjpaw_psl.1.0.0.UPF&#39;)&quot; </span><span class="se">\</span>
+
+<span class="s1">executable = &#39;/home/mgierad/00_codes/build/q-e-qe-6.4.1/build/bin/pw.x&#39;</span>
+<span class="s1">####################################################</span>
+<span class="s1"># Baslam settings</span>
+<span class="s1">node_packing_count = 48</span>
+<span class="s1">balsam_exe_settings = {&#39;num_nodes&#39;: 1,  # nodes per each balsam job</span>
+<span class="s1">                     &#39;ranks_per_node&#39;: node_packing_count,  # cores per node</span>
+<span class="s1">                     &#39;threads_per_rank&#39;: 1,</span>
+<span class="s1">                     }</span>
+<span class="s1">calc_keywords = {&#39;kpts&#39;: (3, 3, 1),</span>
+<span class="s1">               &#39;occupations&#39;: &#39;smearing&#39;,</span>
+<span class="s1">               &#39;smearing&#39;: &#39;marzari-vanderbilt&#39;,</span>
+<span class="s1">               &#39;degauss&#39;: 0.01,  # Rydberg</span>
+<span class="s1">               &#39;ecutwfc&#39;: 40,  # Rydberg</span>
+<span class="s1">               &#39;nosym&#39;: True,  # Allow symmetry breaking during optimization</span>
+<span class="s1">               &#39;conv_thr&#39;: 1e-11,</span>
+<span class="s1">               &#39;mixing_mode&#39;: &#39;local-TF&#39;,</span>
+<span class="s1">               }</span>
+<span class="s1">####################################################</span>
+<span class="s1"># Set up a working directory (this is default)</span>
+<span class="s1">creation_dir = Path.cwd().as_posix()</span>
+<span class="s1">####################################################</span>
+<span class="s1"># filename of the .yaml file with reactions</span>
+<span class="s1">yamlfile = &#39;reactions.yaml&#39;</span>
+<span class="s1">####################################################</span>
+<span class="s1"># specify the scaling factor to scale the bond distance</span>
+<span class="s1"># between two atoms taking part in the reaction</span>
+<span class="s1">scfactor = 1.4</span>
+<span class="s1">####################################################</span>
+<span class="s1"># specify the scaling factor to scale the target distance</span>
+<span class="s1"># i.e. the average bond distance between adsorbate and</span>
+<span class="s1"># the nearest surface metal atom</span>
+<span class="s1">scfactor_surface = 1.0</span>
+<span class="s1">####################################################</span>
+<span class="s1"># do you want to apply the scfactor_surface to the species 1?</span>
+<span class="s1">scaled1 = False</span>
+<span class="s1">####################################################</span>
+<span class="s1"># do you want to apply scfactor_surface to the species 2?</span>
+<span class="s1">scaled2 = False</span>
+<span class="s1">####################################################</span>
+</pre></div>
+</div>
+<p>An example input files are also located at <code class="docutils literal notranslate"><span class="pre">./pynta/example_run_files/</span></code>.</p>
+</div>
+</div>
+<div class="section" id="using-only-slurm">
+<h2>Using only SLURM<a class="headerlink" href="#using-only-slurm" title="Permalink to this headline">¶</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p><code class="docutils literal notranslate"><span class="pre">dev</span></code> branch uses SLURM scheduler to deal with the job dependencies. Be aware that it might be a bit buggy and do not fully support all the features implemented in the <code class="docutils literal notranslate"><span class="pre">master</span></code> branch.</p>
+</div>
+<div class="section" id="an-example-script-using-dev-branch-slurm">
+<h3>An example script (using <code class="docutils literal notranslate"><span class="pre">dev</span></code> branch - SLURM):<a class="headerlink" href="#an-example-script-using-dev-branch-slurm" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="ch">#!/usr/bin/env python3</span>
+<span class="c1">#SBATCH -J job_name        # name of the job e.g job_name = pynta_workflow</span>
+<span class="c1">#SBATCH --partition=queue  # queue name e.g. queue = day-long-cpu</span>
+<span class="c1">#SBATCH --nodes=x          # number of nodes e.g. x = 2</span>
+<span class="c1">#SBATCH --ntasks=y         # number of CPUs e.g. 2 x 48 = y = 96</span>
+<span class="c1">#SBATCH -e %x.err          # error file name</span>
+<span class="c1">#SBATCH -o %x.out          # out file name</span>
+
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+
+<span class="c1"># get environmental variable</span>
+<span class="n">submitDir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;SLURM_SUBMIT_DIR&#39;</span><span class="p">]</span>
+
+<span class="c1"># change directory to $SLURM_SUBMIT_DIR</span>
+<span class="n">os</span><span class="o">.</span><span class="n">chdir</span><span class="p">(</span><span class="n">submitDir</span><span class="p">)</span>
+
+<span class="c1"># add current working directory to the path</span>
+<span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">())</span>
+
+<span class="c1"># import input file with - can be done only after sys.path.append(os.getcwd())</span>
+<span class="kn">import</span> <span class="nn">inputR2S</span>
+
+<span class="c1"># import executable class of pynta</span>
+<span class="kn">from</span> <span class="nn">pynta.main</span> <span class="kn">import</span> <span class="n">WorkFlow</span>
+
+<span class="c1"># instantiate the WorkFlow class</span>
+<span class="n">workflow</span> <span class="o">=</span> <span class="n">WorkFlow</span><span class="p">()</span>
+
+<span class="c1"># generate input files</span>
+<span class="n">workflow</span><span class="o">.</span><span class="n">gen_job_files</span><span class="p">()</span>
+
+<span class="c1"># execute the work-flow</span>
+<span class="n">workflow</span><span class="o">.</span><span class="n">execute</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, Maciej Gierada, Eric D. Hermes, David H. Bross
+      <span class="lastupdated">
+        Last updated on Wed, 20 Jan 2021 11:36:46.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>
