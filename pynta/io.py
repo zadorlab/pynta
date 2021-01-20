@@ -1,7 +1,6 @@
 import os
 import shutil
 import yaml
-import sys
 from pathlib import Path, PosixPath
 from typing import List, Tuple, Optional, Dict
 
