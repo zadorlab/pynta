@@ -424,7 +424,7 @@ An example input files are also located at `./pynta/example_run_files/`
 
 # 3. Documentation
 
-A full documentation is available here.
+A full documentation is available [here](https://zadorlab.github.io/pynta/).
 
 # Acknowledgments
 
