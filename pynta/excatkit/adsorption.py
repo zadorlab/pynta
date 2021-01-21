@@ -429,7 +429,7 @@ class AdsorptionSites():
 
         '''
         per = self.get_periodic_sites(False)
-        sym = self.get_symmetric_sites()
+        # sym = self.get_symmetric_sites()
         edges = self.get_adsorption_edges(symmetric=False, periodic=False)
         coords = self.coordinates[:, :2]
 
@@ -444,8 +444,8 @@ class AdsorptionSites():
                 cutoff = max(d.max(), cutoff)
         cutoff += self.tol
 
-        diff = coords[:, None] - coords[sym]
-        norm = np.linalg.norm(diff, axis=2)
+        # diff = coords[:, None] - coords[sym]
+        # norm = np.linalg.norm(diff, axis=2)
         # neighbors = np.array(np.where(norm < cutoff))
 
         neighbors = []
