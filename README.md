@@ -1,3 +1,11 @@
+![GitHub last commit](https://img.shields.io/github/last-commit/zadorlab/pynta?label=last%20modified)
+![GitHub](https://img.shields.io/badge/License-GPLv3-orange)
+![GitHub commits since tagged version](https://img.shields.io/github/commits-since/zadorlab/pynta/v1.0.0?color=9cf)
+![GitHub tag (latest by date)](https://img.shields.io/github/v/tag/zadorlab/pynta?label=version)
+![GitHub top language](https://img.shields.io/github/languages/top/zadorlab/pynta?color=brightgreen)
+![GitHub repo size](https://img.shields.io/github/repo-size/zadorlab/pynta)
+![GitHub all releases](https://img.shields.io/github/downloads/zadorlab/pynta/total?color=yellow)
+
 # Pynta
 
 <!-- ![workflow_idea](./workflow_idea.png) -->
