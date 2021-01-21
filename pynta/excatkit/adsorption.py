@@ -446,7 +446,7 @@ class AdsorptionSites():
 
         diff = coords[:, None] - coords[sym]
         norm = np.linalg.norm(diff, axis=2)
-        neighbors = np.array(np.where(norm < cutoff))
+        # neighbors = np.array(np.where(norm < cutoff))
 
         neighbors = []
         for i in index:

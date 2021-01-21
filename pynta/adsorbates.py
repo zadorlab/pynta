@@ -107,10 +107,12 @@ class Adsorbates:
             tvecs = np.dot(offsets, cell).reshape(-1, 3)
 
         edges = []
-        # initialize pairvecs
-        pairvecs = np.ndarray(0)
+
         if find_surface:
             pairvecs = np.zeros_like(slab_atom.positions)
+        else:
+            pairvecs = np.ndarray(0)
+
         for atomi in slab_atom:
             for atomj in slab_atom:
                 i = atomi.index
