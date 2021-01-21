@@ -3237,6 +3237,36 @@ penalty function is in minimum</p>
 <p>High level restart means that each ASE job that has an unfinished
 status will be restarted. All balsam jobs will be removed. They will be
 regenerated once ASE jobs start again.</p>
+<dl class="py attribute">
+<dt id="pynta.restart.HighLevelRestart.error_files">
+<code class="sig-name descname">error_files</code><em class="property"> = ['*/pwscf*', '*/core']</em><a class="headerlink" href="#pynta.restart.HighLevelRestart.error_files" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="pynta.restart.HighLevelRestart.get_workflow_path">
+<em class="property">static </em><code class="sig-name descname">get_workflow_path</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; str<a class="reference internal" href="../_modules/pynta/restart.html#HighLevelRestart.get_workflow_path"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.restart.HighLevelRestart.get_workflow_path" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read run_me.sh` submission script and extract path where stdout
+balsam files are, e.g.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">workflow_path</span> <span class="o">=</span> <span class="s1">&#39;/home/user_name/myWorkflow/data/QE_Socket&#39;</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><strong>workflow_path</strong> – an absolute path to stdout balsam files</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="pynta.restart.HighLevelRestart.remove_error_files">
+<code class="sig-name descname">remove_error_files</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pynta/restart.html#HighLevelRestart.remove_error_files"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.restart.HighLevelRestart.remove_error_files" title="Permalink to this definition">¶</a></dt>
+<dd><p>Remove all error/unfinished files from previous calculations
+including <code class="docutils literal notranslate"><span class="pre">pwscf*</span></code>, <cite>core</cite></p>
+</dd></dl>
+
 <dl class="py method">
 <dt id="pynta.restart.HighLevelRestart.restart">
 <code class="sig-name descname">restart</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="../_modules/pynta/restart.html#HighLevelRestart.restart"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.restart.HighLevelRestart.restart" title="Permalink to this definition">¶</a></dt>
@@ -5139,7 +5169,7 @@ oscilations, by default 30</p></li>
     <p>
         &copy; Copyright Copyright 2021 National Technology &amp; Engineering Solutions of Sandia, LLC (NTESS). Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government retains certain rights in this software.
       <span class="lastupdated">
-        Last updated on Wed, 20 Jan 2021 11:47:54.
+        Last updated on Wed, 20 Jan 2021 17:42:16.
       </span>
 
     </p>

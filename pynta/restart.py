@@ -318,7 +318,18 @@ class HighLevelRestart():
                 job.save()
 
     @staticmethod
-    def get_workflow_path():
+    def get_workflow_path() -> str:
+        ''' Read run_me.sh` submission script and extract path where stdout
+        balsam files are, e.g.
+
+        >>> workflow_path = '/home/user_name/myWorkflow/data/QE_Socket'
+
+        Returns
+        -------
+        workflow_path : str
+            an absolute path to stdout balsam files
+
+        '''
         try:
             with open('run_me.sh') as infile:
                 lines = infile.readlines()
@@ -334,6 +345,10 @@ class HighLevelRestart():
             sys.exit()
 
     def remove_error_files(self):
+        ''' Remove all error/unfinished files from previous calculations
+        including :literal:`pwscf*`, `core`
+
+        '''
         workflow_path = HighLevelRestart.get_workflow_path()
         path_to_balsam_out = os.path.join(workflow_path, 'data', 'QE_Socket')
 

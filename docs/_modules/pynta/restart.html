@@ -144,8 +144,10 @@
             
   <h1>Source code for pynta.restart</h1><div class="highlight"><pre>
 <span></span><span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">from</span> <span class="nn">pathlib</span> <span class="k">import</span> <span class="n">Path</span>
 <span class="kn">import</span> <span class="nn">re</span>
 <span class="kn">import</span> <span class="nn">shutil</span>
+<span class="kn">import</span> <span class="nn">sys</span>
 <span class="kn">from</span> <span class="nn">ase.io</span> <span class="k">import</span> <span class="n">read</span><span class="p">,</span> <span class="n">write</span>
 <span class="kn">from</span> <span class="nn">ase.io.formats</span> <span class="k">import</span> <span class="n">UnknownFileTypeError</span>
 <span class="kn">from</span> <span class="nn">typing</span> <span class="k">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span>
@@ -425,6 +427,7 @@
 <span class="sd">    regenerated once ASE jobs start again.</span>
 
 <span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">error_files</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;*/pwscf*&#39;</span><span class="p">,</span> <span class="s1">&#39;*/core&#39;</span><span class="p">]</span>
 
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="c1"># get all python (ASE) jobs</span>
@@ -446,7 +449,8 @@
             <span class="k">if</span> <span class="n">job</span><span class="o">.</span><span class="n">state</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;JOB_FINISHED&#39;</span><span class="p">,</span> <span class="s1">&#39;AWAITING_PARENTS&#39;</span><span class="p">]:</span>
                 <span class="n">job</span><span class="o">.</span><span class="n">state</span> <span class="o">=</span> <span class="s1">&#39;READY&#39;</span>
                 <span class="n">job</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">set_awaiting_status</span><span class="p">()</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_awaiting_status</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">remove_error_files</span><span class="p">()</span></div>
 
 <div class="viewcode-block" id="HighLevelRestart.set_awaiting_status"><a class="viewcode-back" href="../../source/pynta.html#pynta.restart.HighLevelRestart.set_awaiting_status">[docs]</a>    <span class="k">def</span> <span class="nf">set_awaiting_status</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&#39;&#39;&#39; Make sure that jobs which not yet started and depends on other jobs</span>
@@ -456,7 +460,53 @@
         <span class="k">for</span> <span class="n">job</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">ase_jobs</span><span class="p">:</span>
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">job</span><span class="o">.</span><span class="n">parents</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">2</span> <span class="ow">and</span> <span class="n">job</span><span class="o">.</span><span class="n">state</span> <span class="o">!=</span> <span class="s1">&#39;JOB_FINISHED&#39;</span><span class="p">:</span>
                 <span class="n">job</span><span class="o">.</span><span class="n">state</span> <span class="o">=</span> <span class="s1">&#39;AWAITING_PARENTS&#39;</span>
-                <span class="n">job</span><span class="o">.</span><span class="n">save</span><span class="p">()</span></div></div>
+                <span class="n">job</span><span class="o">.</span><span class="n">save</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="HighLevelRestart.get_workflow_path"><a class="viewcode-back" href="../../source/pynta.html#pynta.restart.HighLevelRestart.get_workflow_path">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">get_workflow_path</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="sd">&#39;&#39;&#39; Read run_me.sh` submission script and extract path where stdout</span>
+<span class="sd">        balsam files are, e.g.</span>
+
+<span class="sd">        &gt;&gt;&gt; workflow_path = &#39;/home/user_name/myWorkflow/data/QE_Socket&#39;</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        workflow_path : str</span>
+<span class="sd">            an absolute path to stdout balsam files</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;run_me.sh&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">infile</span><span class="p">:</span>
+                <span class="n">lines</span> <span class="o">=</span> <span class="n">infile</span><span class="o">.</span><span class="n">readlines</span><span class="p">()</span>
+                <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">lines</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">line</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;source balsamactivate&#39;</span><span class="p">):</span>
+                        <span class="n">workflow_path</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">2</span><span class="p">]</span>
+                        <span class="k">if</span> <span class="s1">&#39;~&#39;</span> <span class="ow">in</span> <span class="n">workflow_path</span><span class="p">:</span>
+                            <span class="n">workflow_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expanduser</span><span class="p">(</span><span class="n">workflow_path</span><span class="p">)</span>
+                        <span class="k">return</span> <span class="n">workflow_path</span>
+        <span class="k">except</span> <span class="ne">FileNotFoundError</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;run_me.sh not found in </span><span class="se">\n</span><span class="s1">&#39;</span>
+                  <span class="s1">&#39;    </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">()))</span>
+            <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="HighLevelRestart.remove_error_files"><a class="viewcode-back" href="../../source/pynta.html#pynta.restart.HighLevelRestart.remove_error_files">[docs]</a>    <span class="k">def</span> <span class="nf">remove_error_files</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39; Remove all error/unfinished files from previous calculations</span>
+<span class="sd">        including :literal:`pwscf*`, `core`</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">workflow_path</span> <span class="o">=</span> <span class="n">HighLevelRestart</span><span class="o">.</span><span class="n">get_workflow_path</span><span class="p">()</span>
+        <span class="n">path_to_balsam_out</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">workflow_path</span><span class="p">,</span> <span class="s1">&#39;data&#39;</span><span class="p">,</span> <span class="s1">&#39;QE_Socket&#39;</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">err_files_type</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">error_files</span><span class="p">:</span>
+            <span class="n">err_files</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">path_to_balsam_out</span><span class="p">)</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">err_files_type</span><span class="p">)</span>
+
+            <span class="k">for</span> <span class="n">err</span> <span class="ow">in</span> <span class="n">err_files</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Removing file: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">err</span><span class="p">))</span>
+                    <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">err</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">IsADirectoryError</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Removing directory: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">err</span><span class="p">))</span>
+                    <span class="n">shutil</span><span class="o">.</span><span class="n">rmtree</span><span class="p">(</span><span class="n">err</span><span class="p">)</span></div></div>
 </pre></div>
 
            </div>
@@ -471,7 +521,7 @@
     <p>
         &copy; Copyright Copyright 2021 National Technology &amp; Engineering Solutions of Sandia, LLC (NTESS). Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government retains certain rights in this software.
       <span class="lastupdated">
-        Last updated on Wed, 20 Jan 2021 11:47:54.
+        Last updated on Wed, 20 Jan 2021 17:42:16.
       </span>
 
     </p>
