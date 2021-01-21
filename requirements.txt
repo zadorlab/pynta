@@ -6,7 +6,7 @@ ase==3.19.0
 scipy==1.3.1
 numpy==1.18.1
 PyYAML==5.3.1
-sella==1.0.3
+Sella==1.0.3
 # xtb-python==20.1
 # mpi4py==3.1.0a0
 # PostgreSQL==10.12
