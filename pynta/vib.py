@@ -407,7 +407,7 @@ class AfterTS():
         all_rxn_names = IO().get_list_all_rxns_names(self.yamlfile)
         for rxn_name in all_rxn_names:
             ts_dist_dict = self.get_ts_dist(rxn_name)
-            f_dist_dict, r_dist_dict = AfterTS.get_forward_and_reverse_dist(
+            f_dist_dict, r_dist_dict = self.get_forward_and_reverse_dist(
                 rxn_name)
             AfterTS.print_table(ts_dist_dict, f_dist_dict, r_dist_dict)
 

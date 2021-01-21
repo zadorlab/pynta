@@ -747,7 +747,7 @@ class TS():
 
     def create_unique_ts_all(
             self,
-            create_unique_ts_all: str,
+            socket_calculator: str,
             ts_estimate_path: str,
             rxn_name: str,
             pytemplate: str,
@@ -792,15 +792,14 @@ class TS():
         # create .xyz and .png files
         TS.create_unique_ts_xyz_and_png(ts_estimate_path)
         # create job files (.py scripts)
-        self.create_ts_unique_py_file(create_unique_ts_all,
+        self.create_ts_unique_py_file(socket_calculator,
                                       pytemplate,
                                       rxn_name,
                                       pseudopotentials,
                                       pseudo_dir,
                                       ts_estimate_path,
                                       balsam_exe_settings,
-                                      calc_keywords
-                                      )
+                                      calc_keywords)
 
     @staticmethod
     def create_unique_ts_xyz_and_png(ts_estimate_path: str) -> None:

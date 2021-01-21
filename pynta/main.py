@@ -1109,7 +1109,6 @@ class WorkFlow:
                     dependency_workflow_name = os.path.join(
                         facetpath + '_' + dependency + '_' + rxn_name)
 
-                BalsamJob = BalsamJob
                 pending_simulations = BalsamJob.objects.filter(
                     workflow__contains=dependency_workflow_name
                 ).exclude(state='JOB_FINISHED')
