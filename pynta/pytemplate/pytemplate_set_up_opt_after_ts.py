@@ -2,7 +2,6 @@
 import os
 
 import datetime
-from pynta.balsamcalc import {socket_calculator}
 
 from ase.io import read, write
 from ase.constraints import FixAtoms
@@ -10,6 +9,7 @@ from ase.optimize import QuasiNewton
 
 geom = '{geom}'
 prefix = geom[:2]
+socket_calculator = '{socket_calculator}'
 balsam_exe_settings = {balsam_exe_settings}
 calc_keywords = {calc_keywords}
 creation_dir = '{creation_dir}'
@@ -39,7 +39,11 @@ extra_calc_keywords = dict(
 # kpts={repeats},
 # jobs_args='-nk {n_kpts}',
 
-atoms.calc = {socket_calculator}(
+balsamcalc_module = __import__('pynta.balsamcalc', fromlist=[
+    socket_calculator])
+sock_calc = getattr(balsamcalc_module, socket_calculator)
+
+atoms.calc = sock_calc(
     workflow='QE_Socket',
     job_kwargs=balsam_exe_settings,
     **calc_keywords
