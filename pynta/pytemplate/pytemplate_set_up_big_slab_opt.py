@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 import os
 
-from pynta.balsamcalc import {socket_calculator}
-
 from ase.io import read, write
 from ase.constraints import FixAtoms
 from ase.optimize import QuasiNewton
@@ -10,6 +8,7 @@ from ase.optimize import QuasiNewton
 slab_name = '{slab_name}'
 big_slab_name = '{facetpath}' + '_big_slab_opt'
 creation_dir = '{creation_dir}'
+socket_calculator = '{socket_calculator}'
 slab_path = os.path.join(creation_dir, slab_name)
 big_slab_path = os.path.join(creation_dir, big_slab_name)
 
@@ -29,7 +28,11 @@ extra_calc_keywords = dict(
     label=big_slab_name
 )
 
-atoms.calc = {socket_calculator}(
+balsamcalc_module = __import__('pynta.balsamcalc', fromlist=[
+    socket_calculator])
+sock_calc = getattr(balsamcalc_module, socket_calculator)
+
+atoms.calc = sock_calc(
     workflow='QE_Socket',
     job_kwargs=balsam_exe_settings,
     **calc_keywords
