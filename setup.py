@@ -30,9 +30,9 @@ setup(name='pynta',
           'Intended Audience :: Science/Research',
           'Topic :: Scientific/Engineering :: Chemistry',
           'Topic :: Scientific/Engineering :: Mathematics',
-          'Topic :: Scientific/Engineering :: Physics'
+          'Topic :: Scientific/Engineering :: Physics',
           'Natural Language :: English',
-          'Operating System :: OS Independent'
+          'Operating System :: OS Independent',
           'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
           'Programming Language :: Python :: 3.6',
           'Programming Language :: Python :: 3.7',
