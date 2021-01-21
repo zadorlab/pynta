@@ -23,6 +23,7 @@ scaled2 = {scaled2}
 creation_dir = '{creation_dir}'
 rxn = {rxn}
 rxn_name = '{rxn_name}'
+balsam_exe_settings = {balsam_exe_settings}
 minima_dir = os.path.join(creation_dir, facetpath, 'minima')
 ts_dir = 'TS_estimate'
 path_to_ts_estimate = os.path.join(creation_dir, facetpath, rxn_name, ts_dir)
@@ -74,7 +75,7 @@ for py_script in Path(path_to_ts_estimate).glob('**/*.py'):
         args=str(py_script),
         input_files='',
         ranks_per_node=1,
-        threads_per_rank={node_packing_count},
+        threads_per_rank=balsam_exe_settings['threads_per_rank'],
         node_packing_count={node_packing_count},
         user_workdir=job_dir,
     )
@@ -83,7 +84,7 @@ for py_script in Path(path_to_ts_estimate).glob('**/*.py'):
     # for menten
     # ranks_per_node=1,
     # node_packing_count={node_packing_count},
-    # threads_per_rank not specified, but 48 should work
+    # threads_per_rank not specified
 
     # all job_to_add_ are childs of 01 job, as from jobs_to_be_finished
     # nested for loop becouse BalsamJob.objects.filter(name=dep_job) returns

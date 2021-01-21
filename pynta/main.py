@@ -788,7 +788,8 @@ class WorkFlow:
                     creation_dir=creation_dir,
                     rxn=rxn,
                     rxn_name=rxn_name,
-                    node_packing_count=node_packing_count
+                    node_packing_count=node_packing_count,
+                    balsam_exe_settings=balsam_exe_settings,
                 ))
 
     @staticmethod
