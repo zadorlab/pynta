@@ -1,3 +1,4 @@
+![Build status](https://github.com/zadorlab/pynta/workflows/Build%20status/badge.svg)
 ![GitHub last commit](https://img.shields.io/github/last-commit/zadorlab/pynta?label=last%20modified)
 ![GitHub](https://img.shields.io/badge/License-GPLv3-orange)
 ![GitHub commits since tagged version](https://img.shields.io/github/commits-since/zadorlab/pynta/v1.0.0?color=9cf)
@@ -7,7 +8,6 @@
 [![Language grade: Python](https://img.shields.io/lgtm/grade/python/g/zadorlab/pynta.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/zadorlab/pynta/context:python)
 ![GitHub repo size](https://img.shields.io/github/repo-size/zadorlab/pynta)
 ![GitHub all releases](https://img.shields.io/github/downloads/zadorlab/pynta/total?color=yellow)
-![Build](https://github.com/zadorlab/pynta/workflows/Python%20package/badge.svg?branch=master)
 
 # Pynta
 
