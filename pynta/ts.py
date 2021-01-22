@@ -854,6 +854,7 @@ class TS():
 
     def create_ts_unique_py_file(
             self,
+            socket_calculator: str,
             pytemplate: str,
             rxn_name: str,
             pseudopotentials: Dict[str, str],
@@ -912,6 +913,7 @@ class TS():
                     prefix=ts_fname[:2],
                     ts_fname=ts_fname,
                     facetpath=self.facetpath,
+                    socket_calculator=socket_calculator,
                     balsam_exe_settings=balsam_exe_settings,
                     calc_keywords=calc_keywords,
                     pseudopotentials=pseudopotentials,
