@@ -147,8 +147,6 @@ class GeneralTSGuessesGenerator():
                 s_bonded_idx = 0
             # if self.ts_est in edge_cases_bonded_dict.keys():
             #     s_bonded_idx = [edge_cases_bonded_dict[self.ts_est]]
-                print('here')
-
             else:
                 s_bonded_idx = self.get_the_most_connected_atom()
         return s_bonded_idx

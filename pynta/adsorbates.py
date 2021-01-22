@@ -196,7 +196,9 @@ class Adsorbates:
 
         '''
         all_species_symbols = IO.get_all_unique_species(self.yamlfile)
+        print(all_species_symbols)
         images = IO.get_all_images(self.yamlfile)
+        # print(images)
 
         # prepare surface for placing adsorbates
         grslab = self.get_grslab()
@@ -208,7 +210,8 @@ class Adsorbates:
             if len(sp_gratoms) == 0:
                 continue
             # which atom connects to the surface
-            bonded = [0]
+            bonded = [1]
+            # print(sp_gratoms)
 
             if sp_symbol in edge_cases_bonded_dict.keys():
                 bonded = [edge_cases_bonded_dict[sp_symbol]]
@@ -219,6 +222,7 @@ class Adsorbates:
                     sp_gratoms, index=-1, bonds=bonded)
                 structures[str(sp_symbol)] = structs
             except IndexError:
+                print('sp_gratoms, sp_gratoms.edges, sp.gratoms.tags')
                 print(sp_gratoms, sp_gratoms.edges,
                       sp_gratoms.get_tags())
 

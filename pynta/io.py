@@ -702,10 +702,24 @@ class IO():
 
         '''
         species = []
-        reactants = IO.rmgcat_to_gratoms(
-            rxn['reactant'].strip().split('\n'))
-        products = IO.rmgcat_to_gratoms(
-            rxn['product'].strip().split('\n'))
+        adjtxt_react = rxn['reactant'].strip().split('\n')
+        reactants = IO.rmgcat_to_gratoms(adjtxt_react)
+        reactant_bonded_idx = IO.get_surface_bonded(adjtxt_react)
+
+        # IO.get_bonded(reactants, reactant_bonded_idx)
+        # print(reactant_bonded_idx)
+
+        adjtxt_prod = rxn['product'].strip().split('\n')
+        products = IO.rmgcat_to_gratoms(adjtxt_prod)
+        prod_bonded_idx = IO.get_surface_bonded(adjtxt_prod)
+        # print(prod_bonded_idx)
+
+        surface_bonded = {'react': reactant_bonded_idx,
+                          'prod': prod_bonded_idx}
+
+        IO.get_bonded(reactants, reactant_bonded_idx)
+        # IO.get_bonded(products, prod_bonded_idx)
+
         species += reactants + products
 
         unique_species = []
@@ -718,11 +732,110 @@ class IO():
                         species1.graph, species2.graph, node_test):
                     break
             else:
+                # IO.get_bonded(species1, surface_bonded)
                 images.append(Molecule().get_3D_positions(species1))
                 unique_species.append(species1)
         return images
 
     @staticmethod
+    def get_bonded(reactants, reactant_bonded_idx):
+        bonded_dict = {}
+        print(reactant_bonded_idx)
+        for r in reactants:
+            print(r)
+            print(r.symbols)
+            for atom in r:
+                print(atom)
+                if atom.tag in reactant_bonded_idx:
+                    bonded_dict[str(r.symbols)] = atom.index
+                elif reactant_bonded_idx is None:
+                    bonded_dict[str(r.symbols)] = 0
+
+                # bonded_dict[str(r.symbols)] = 0
+                # gas phase, I do not have a better idea now
+                # bonded_dict[str(r.symbols)] = 0
+        print(bonded_dict)
+
+        # print(species)
+        # for atom in species:
+        #     print(atom)
+        # print(surface_bonded)
+
+        # @staticmethod
+        # def get_surface_bonded_atoms(adjtxt):
+        #     surface_atom_idxs = []
+        #     s_bonded_idxs = []
+        #     for line in adjtxt:
+        #         if 'X' in line:
+        #             index = line.split()[0]
+        #             surface_atom_idxs.append(index)
+        #     for index in surface_atom_idxs:
+        #         keyphrase = '{' + '{}'.format(index)
+        #         print(keyphrase)
+        #         for line in adjtxt:
+        #             if keyphrase in line:
+        #                 print(line)
+        #                 s_bonded_idxs.append(line.split()[0])
+        # return s_bonded_idxs
+
+    @ staticmethod
+    def get_surface_bonded(adjtxt):
+        symbols = []
+        edges = []
+        tags = []
+
+        n_surf_at_befor_ads = 0
+
+        start_idx = 1
+        if 'multiplicity' in adjtxt[0]:
+            start_idx -= 1
+
+        for i, line in enumerate(adjtxt, start_idx):
+            if i == 0:
+                continue
+            if 'X' in line and int(line.split()[0]) <= 2:
+                n_surf_at_befor_ads += 1
+            if not line:
+                break
+
+            line = line.split()
+            inc = 0
+            if line[1][0] == '*':
+                inc = 1
+                tags.append(int(line[1][1]))
+            else:
+                tags.append(0)
+
+            symbols.append(line[1 + inc])
+            conn = line[5 + inc:]
+
+            for bond in conn:
+                j = int(bond.strip('{}').split(',')[0])
+                if j > i:
+                    edges.append((i - 1, j - 1))
+        gratoms = Gratoms(symbols, edges=edges)
+
+        del_indices = []
+
+        for i, atom in enumerate(gratoms):
+            if atom.symbol == 'X':
+                for j in gratoms.graph.neighbors(i):
+                    tags[j] *= -1
+                del_indices.append(i)
+
+        gratoms.set_tags(tags)
+        idx_surface_bonded_atoms = np.argwhere(
+            gratoms.get_tags() < 0).flatten().tolist()
+
+        idx_surface_bonded_atoms = [
+            idx - n_surf_at_befor_ads for idx in idx_surface_bonded_atoms]
+        return idx_surface_bonded_atoms
+
+        # tags_nd_array = np.array(gratoms.get_tags())
+        # print(tags_nd_array)
+        # return gratoms.get_tags()[np.where(tags_nd_array < 0)]
+
+    @ staticmethod
     def rmgcat_to_gratoms(
             adjtxt: List[str]) -> List[Gratoms]:
         ''' Convert a slice of :literal:`*.yaml` file to Catkit's Gratoms object
@@ -826,10 +939,9 @@ class IO():
             tags = indices
             new_gratoms.set_tags(tags)
             gratoms_list.append(new_gratoms)
-
         return gratoms_list
 
-    @staticmethod
+    @ staticmethod
     def get_calculators(quantum_chemistry):
         if quantum_chemistry == 'espresso':
             calculator = 'EspressoBalsam'
@@ -844,7 +956,7 @@ class IO():
 
         return calculator, socket_calculator
 
-    @staticmethod
+    @ staticmethod
     def set_calculators(executable, calculator, socket_calculator):
 
         balsamcalc_module = __import__('pynta.balsamcalc', fromlist=[
