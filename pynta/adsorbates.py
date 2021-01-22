@@ -108,7 +108,8 @@ class Adsorbates:
 
         edges = []
 
-        pairvecs = np.ndarray(0)
+        # pairvecs = np.ndarray(0)
+        pairvecs = np.zeros_like(slab_atom.positions)
 
         # if find_surface:
         #     pairvecs = np.zeros_like(slab_atom.positions)
