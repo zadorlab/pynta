@@ -401,11 +401,11 @@ class TS():
             e.g.
             for OH <--> O + H
 
-            >>> species_list = ['O', 'H'] 
+            >>> species_list = ['O', 'H']
 
             for CO3 <--> CO2 + O
 
-            >>> species_list = ['CO2', 'O'] 
+            >>> species_list = ['CO2', 'O']
 
         reacting_atoms : Dict[str, int]
             keys are sybols of atoms that takes part in reaction whereas,
@@ -985,7 +985,7 @@ class TS():
 
         min_dist_surface_adsorbate = heapq.nsmallest(
             n_same_metal_idxs,
-            all_dist_surface_adsorbate)[n_same_metal_idxs-1]
+            all_dist_surface_adsorbate)[n_same_metal_idxs - 1]
 
         index = np.where(all_dist_surface_adsorbate
                          == min_dist_surface_adsorbate)

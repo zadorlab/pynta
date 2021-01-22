@@ -315,7 +315,7 @@ class AfterTS():
         # floor(nimages/4) and nimages - floor(nimages/4), respectively.
         # for inmages = 16 it would be like this
         # start...max...start...min...
-        index_forward = int(floor(nimages/4))
+        index_forward = int(floor(nimages / 4))
         index_reverse = int(nimages - index_forward)
 
         fname = [fname_forward, fname_reverse]
