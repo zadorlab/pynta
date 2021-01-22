@@ -7,6 +7,7 @@
 [![Language grade: Python](https://img.shields.io/lgtm/grade/python/g/zadorlab/pynta.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/zadorlab/pynta/context:python)
 ![GitHub repo size](https://img.shields.io/github/repo-size/zadorlab/pynta)
 ![GitHub all releases](https://img.shields.io/github/downloads/zadorlab/pynta/total?color=yellow)
+![Build](https://github.com/zadorlab/pynta/workflows/Python%20package/badge.svg?branch=master)
 
 # Pynta
 
