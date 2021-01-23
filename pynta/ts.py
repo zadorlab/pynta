@@ -457,6 +457,14 @@ class TS():
         # take a first file and use it as a template to get info about
         # surface atom and adsorbate atoms indices
         tmp_ts_atom = read(ts_estimates_xyz_files[0])
+        tmp_adsorbate = tmp_ts_atom[self.nslab:]
+
+        # convert tag indicies into index indicies
+        new_reacting_idx = []
+        for reacting_atom_idx in reacting_atoms.values():
+            for atom in tmp_adsorbate:
+                if atom.tag == reacting_atom_idx:
+                    new_reacting_idx.append(atom.index)
 
         # create surface_atoms_idx dict with all surface atoms and theirs
         # corresponding indicies
@@ -467,7 +475,7 @@ class TS():
         # Loop through all .xyz files
         for prefix, xyz_file in enumerate(ts_estimates_xyz_files):
             bonds = self.get_bonds_penalty(
-                reacting_atoms,
+                new_reacting_idx,
                 surface_atoms_idxs,
                 xyz_file)
 
@@ -503,9 +511,9 @@ class TS():
 
         Parameters
         ----------
-        reacting_atoms : Dict[str, int]
-            keys are sybols of atoms that takes part in reaction whereas,
-            values are their indicies
+        reacting_atoms : List[int]
+            a list with indicies of atoms taking part in the reaction with
+            order as in Gratoms object, not as in :literal:.yaml file
         surface_atoms_idxs : Dict[str, int]
             keys are metal atom symbol and index and values are indicies
             e.g.
@@ -522,8 +530,7 @@ class TS():
         '''
         bonds = []
         visited_metal_idxs = []
-
-        for idx in reacting_atoms.values():
+        for idx in reacting_atoms:
             adsorbed_atom_idx = idx + self.nslab
             n_same_metal_idxs = 1
             is_metal_atom_already_connected = False
