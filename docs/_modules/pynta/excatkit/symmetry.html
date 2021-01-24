@@ -1,0 +1,342 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>pynta.excatkit.symmetry &mdash; Pynta January 20, 2021 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> Pynta
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <!-- Local TOC -->
+              <div class="local-toc"></div>
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Pynta</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+          <li><a href="../../pynta.html">pynta</a> &raquo;</li>
+        
+      <li>pynta.excatkit.symmetry</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for pynta.excatkit.symmetry</h1><div class="highlight"><pre>
+<span></span><span class="ch">#!/usr/bin/env python3</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">spglib</span>
+
+
+<div class="viewcode-block" id="Symmetry"><a class="viewcode-back" href="../../../source/pynta.html#pynta.excatkit.symmetry.Symmetry">[docs]</a><span class="k">class</span> <span class="nc">Symmetry</span><span class="p">():</span>
+    <span class="sd">&#39;&#39;&#39; Wrapper for the ``spglib`` package. &#39;&#39;&#39;</span>
+
+<div class="viewcode-block" id="Symmetry.__init__"><a class="viewcode-back" href="../../../source/pynta.html#pynta.excatkit.symmetry.Symmetry.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">atoms</span><span class="p">,</span> <span class="n">tol</span><span class="o">=</span><span class="mf">1e-5</span><span class="p">,</span> <span class="n">ang_tol</span><span class="o">=-</span><span class="mi">1</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39; Atoms object interface with spglib `symmetry finder</span>
+<span class="sd">            &lt;https://atztogo.github.io/spglib/python-spglib.html#python-spglib&gt;`:</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        atoms : Atoms object</span>
+<span class="sd">            Atomic structure to return the symmetry operations for.</span>
+<span class="sd">        tol : float</span>
+<span class="sd">            Tolerance for floating point precision errors.</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lattice</span> <span class="o">=</span> <span class="n">atoms</span><span class="o">.</span><span class="n">cell</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">positions</span> <span class="o">=</span> <span class="n">atoms</span><span class="o">.</span><span class="n">get_scaled_positions</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">numbers</span> <span class="o">=</span> <span class="n">atoms</span><span class="o">.</span><span class="n">get_atomic_numbers</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">magmoms</span> <span class="o">=</span> <span class="n">atoms</span><span class="o">.</span><span class="n">get_initial_magnetic_moments</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">modified_numbers</span> <span class="o">=</span> <span class="n">get_modified_spin_symbols</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">numbers</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">magmoms</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tol</span> <span class="o">=</span> <span class="n">tol</span>
+
+        <span class="n">cell</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lattice</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">positions</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">modified_numbers</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">spglib</span><span class="o">.</span><span class="n">get_symmetry_dataset</span><span class="p">(</span>
+            <span class="n">cell</span><span class="p">,</span> <span class="n">symprec</span><span class="o">=</span><span class="n">tol</span><span class="p">,</span> <span class="n">angle_tolerance</span><span class="o">=</span><span class="n">ang_tol</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Symmetry.get_symmetry_operations"><a class="viewcode-back" href="../../../source/pynta.html#pynta.excatkit.symmetry.Symmetry.get_symmetry_operations">[docs]</a>    <span class="k">def</span> <span class="nf">get_symmetry_operations</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">affine</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39; Return the symmetry operations for a given atomic structure.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        affine : bool</span>
+<span class="sd">            Whether to return the affine matrix operations.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        rotations : ndarray (N, 3, 3)</span>
+<span class="sd">            Rotation matices of the symmetry operations.</span>
+<span class="sd">        translations ndarray (N, 3)</span>
+<span class="sd">            Translation vector components of the symmetry operations.</span>
+<span class="sd">        affine_matrices ndarray (N, 4, 4)</span>
+<span class="sd">            Affine matrix operations, combinations of the rotation and</span>
+<span class="sd">            translation with ones along the diagonal.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">rotations</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;rotations&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">:]</span>
+        <span class="n">translations</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;translations&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">:]</span>
+
+        <span class="k">if</span> <span class="n">affine</span><span class="p">:</span>
+            <span class="n">affine_matrices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">rotations</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
+            <span class="n">affine_matrices</span><span class="p">[:,</span> <span class="p">:</span><span class="mi">3</span><span class="p">,</span> <span class="p">:</span><span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="n">rotations</span>
+            <span class="n">affine_matrices</span><span class="p">[:,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="p">:</span><span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="n">translations</span>
+            <span class="n">affine_matrices</span><span class="p">[:,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+            <span class="k">return</span> <span class="n">affine_matrices</span>
+
+        <span class="k">return</span> <span class="n">rotations</span><span class="p">,</span> <span class="n">translations</span></div>
+
+<div class="viewcode-block" id="Symmetry.get_pointgroup"><a class="viewcode-back" href="../../../source/pynta.html#pynta.excatkit.symmetry.Symmetry.get_pointgroup">[docs]</a>    <span class="k">def</span> <span class="nf">get_pointgroup</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">check_laue</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39; Return the point group operations of a systems.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        check_laue: bool</span>
+<span class="sd">            Return if the pointgroup is a laue symmetry.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        pointgroup: str</span>
+<span class="sd">            The pointgroup symmetry of the atomic structure.</span>
+<span class="sd">        is_laue: bool</span>
+<span class="sd">            Whether the pointgroup is a laue symmetry.</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">pointgroup</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;pointgroup&#39;</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">check_laue</span><span class="p">:</span>
+            <span class="n">laue</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;-1&#39;</span><span class="p">,</span> <span class="s1">&#39;2/m&#39;</span><span class="p">,</span> <span class="s1">&#39;mmm&#39;</span><span class="p">,</span> <span class="s1">&#39;4/m&#39;</span><span class="p">,</span> <span class="s1">&#39;4/mmm&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;-3&#39;</span><span class="p">,</span> <span class="s1">&#39;-3m&#39;</span><span class="p">,</span> <span class="s1">&#39;6/m&#39;</span><span class="p">,</span> <span class="s1">&#39;6/mmm&#39;</span><span class="p">,</span> <span class="s1">&#39;m-3&#39;</span><span class="p">,</span> <span class="s1">&#39;m-3m&#39;</span><span class="p">]</span>
+            <span class="n">is_laue</span> <span class="o">=</span> <span class="n">pointgroup</span> <span class="ow">in</span> <span class="n">laue</span>
+
+            <span class="k">return</span> <span class="n">pointgroup</span><span class="p">,</span> <span class="n">is_laue</span>
+
+        <span class="k">return</span> <span class="n">pointgroup</span></div>
+
+<div class="viewcode-block" id="Symmetry.get_lattice_name"><a class="viewcode-back" href="../../../source/pynta.html#pynta.excatkit.symmetry.Symmetry.get_lattice_name">[docs]</a>    <span class="k">def</span> <span class="nf">get_lattice_name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39; Return the lattice name of an atoms object based</span>
+<span class="sd">        on its `spacegroup number &lt;https://en.wikipedia.org/wiki/List_of_space_groups/&gt;`:</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        lattice: str</span>
+<span class="sd">            The name of the structures lattice.</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">space_group_number</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;number&#39;</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">space_group_number</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">146</span><span class="p">,</span> <span class="mi">148</span><span class="p">,</span> <span class="mi">155</span><span class="p">,</span> <span class="mi">160</span><span class="p">,</span> <span class="mi">161</span><span class="p">,</span> <span class="mi">166</span><span class="p">,</span> <span class="mi">167</span><span class="p">]:</span>
+            <span class="k">return</span> <span class="s1">&#39;rhombohedral&#39;</span>
+
+        <span class="n">lattices</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;triclinic&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+            <span class="s1">&#39;monoclinic&#39;</span><span class="p">:</span> <span class="mi">15</span><span class="p">,</span>
+            <span class="s1">&#39;orthorhombic&#39;</span><span class="p">:</span> <span class="mi">74</span><span class="p">,</span>
+            <span class="s1">&#39;tetragonal&#39;</span><span class="p">:</span> <span class="mi">142</span><span class="p">,</span>
+            <span class="s1">&#39;hexagonal&#39;</span><span class="p">:</span> <span class="mi">194</span><span class="p">,</span>
+            <span class="s1">&#39;cubic&#39;</span><span class="p">:</span> <span class="mi">230</span><span class="p">}</span>
+
+        <span class="k">for</span> <span class="n">lattice</span><span class="p">,</span> <span class="n">max_number</span> <span class="ow">in</span> <span class="n">lattices</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">space_group_number</span> <span class="o">&lt;=</span> <span class="n">max_number</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">lattice</span></div></div>
+
+
+<div class="viewcode-block" id="get_modified_spin_symbols"><a class="viewcode-back" href="../../../source/pynta.html#pynta.excatkit.symmetry.get_modified_spin_symbols">[docs]</a><span class="k">def</span> <span class="nf">get_modified_spin_symbols</span><span class="p">(</span><span class="n">numbers</span><span class="p">,</span> <span class="n">magmoms</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;Return a representation of atomic symbols which is</span>
+<span class="sd">    unique to the magnetic moment as well.</span>
+
+<span class="sd">    This is effectivly creating a single integer which contains the</span>
+<span class="sd">    atomic number and the magnetic moment multiplied by 10.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    numbers: ndarray(N,)</span>
+<span class="sd">        Atomic numbers to be joined with the magnetic moments.</span>
+<span class="sd">    magmoms: ndarray(N,)</span>
+<span class="sd">        Magnetic moments to be joined to the atomic numbers.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    spin_mod_symbols: ndarray(N,)</span>
+<span class="sd">        The spin modified symbols representation for each atom.</span>
+
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">spin_mod_symbols</span> <span class="o">=</span> <span class="n">numbers</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">magmoms</span> <span class="o">=</span> <span class="n">magmoms</span> <span class="o">*</span> <span class="mi">10</span>
+    <span class="n">magmoms</span> <span class="o">=</span> <span class="n">magmoms</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+
+    <span class="n">sign</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sign</span><span class="p">(</span><span class="n">magmoms</span><span class="p">)</span>
+    <span class="n">spin_mod_symbols</span> <span class="o">*=</span> <span class="mi">1000</span>
+    <span class="n">spin_mod_symbols</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">magmoms</span><span class="p">)</span>
+    <span class="n">ind</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">sign</span><span class="p">)</span>
+    <span class="n">spin_mod_symbols</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span> <span class="o">*=</span> <span class="n">sign</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">spin_mod_symbols</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright Copyright 2021 National Technology &amp; Engineering Solutions of Sandia, LLC (NTESS). Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government retains certain rights in this software.
+      <span class="lastupdated">
+        Last updated on Wed, 20 Jan 2021 17:42:16.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

@@ -1,6 +1,8 @@
 import os
+from pathlib import Path
 import re
 import shutil
+import sys
 from ase.io import read, write
 from ase.io.formats import UnknownFileTypeError
 from typing import Dict, List
@@ -280,6 +282,7 @@ class HighLevelRestart():
     regenerated once ASE jobs start again.
 
     '''
+    error_files = ['*/pwscf*', '*/core']
 
     def __init__(self):
         # get all python (ASE) jobs
@@ -302,6 +305,7 @@ class HighLevelRestart():
                 job.state = 'READY'
                 job.save()
         self.set_awaiting_status()
+        self.remove_error_files()
 
     def set_awaiting_status(self):
         ''' Make sure that jobs which not yet started and depends on other jobs
@@ -312,3 +316,49 @@ class HighLevelRestart():
             if len(job.parents) > 2 and job.state != 'JOB_FINISHED':
                 job.state = 'AWAITING_PARENTS'
                 job.save()
+
+    @staticmethod
+    def get_workflow_path() -> str:
+        ''' Read run_me.sh` submission script and extract path where stdout
+        balsam files are, e.g.
+
+        >>> workflow_path = '/home/user_name/myWorkflow/data/QE_Socket'
+
+        Returns
+        -------
+        workflow_path : str
+            an absolute path to stdout balsam files
+
+        '''
+        try:
+            with open('run_me.sh') as infile:
+                lines = infile.readlines()
+                for line in lines:
+                    if line.startswith('source balsamactivate'):
+                        workflow_path = line.split()[2]
+                        if '~' in workflow_path:
+                            workflow_path = os.path.expanduser(workflow_path)
+                        return workflow_path
+        except FileNotFoundError:
+            print('run_me.sh not found in \n'
+                  '    {}'.format(os.getcwd()))
+            sys.exit()
+
+    def remove_error_files(self):
+        ''' Remove all error/unfinished files from previous calculations
+        including :literal:`pwscf*`, `core`
+
+        '''
+        workflow_path = HighLevelRestart.get_workflow_path()
+        path_to_balsam_out = os.path.join(workflow_path, 'data', 'QE_Socket')
+
+        for err_files_type in self.error_files:
+            err_files = Path(path_to_balsam_out).glob(err_files_type)
+
+            for err in err_files:
+                try:
+                    print('Removing file: {}'.format(err))
+                    os.remove(err)
+                except IsADirectoryError:
+                    print('Removing directory: {}'.format(err))
+                    shutil.rmtree(err)

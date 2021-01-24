@@ -1,6 +1,5 @@
 from pynta.excatkit.molecule import Molecule
 from pynta.excatkit.gratoms import Gratoms
-from pynta.utils import edge_cases_bonded_dict
 from pynta.io import IO
 from typing import Dict, List, Tuple
 

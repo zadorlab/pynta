@@ -2,14 +2,14 @@
 from ase.build import molecule
 from ase.optimize import QuasiNewton
 from rmgcat_to_sella.balsamcalc import EspressoBalsam
-
+from pathlib import Path
 
 # Set up a small, simple system
 atoms = molecule('CH4')
 atoms.rattle()
 atoms.center(vacuum=3)
-#from pathlib import Path
-#cwd = Path.cwd().as_posix()
+
+cwd = Path.cwd().as_posix()
 
 # The calculator
 atoms.calc = EspressoBalsam(
@@ -18,8 +18,8 @@ atoms.calc = EspressoBalsam(
     job_kwargs={
         'num_nodes': 1,
         'ranks_per_node': 1,
-        'threads_per_rank': 1, # OMP threading
-        'threads_per_core': 1, # hyperthreads
+        'threads_per_rank': 1,  # OMP threading
+        'threads_per_core': 1,  # hyperthreads
         'user_workdir': cwd
     },
     # Regular ASE Calculator keywords:

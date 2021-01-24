@@ -47,7 +47,7 @@ class Results():
             for rxn in self.reactions:
                 r_name_list, p_name_list = IO.get_reactants_and_products(rxn)
                 rxn_name = IO.get_rxn_name(rxn)
-                key = facetpath+'_'+rxn_name
+                key = facetpath + '_' + rxn_name
                 reaction_energies[key] = float(self.get_reaction_energy(
                     minima_path, facetpath, r_name_list, p_name_list,
                     slab_path))
@@ -144,7 +144,7 @@ class Results():
                                        facetpath,
                                        rxn_name,
                                        'TS_estimate_unique')
-                ts_ener[facetpath+'_'+rxn_name] = self.get_barrier(
+                ts_ener[facetpath + '_' + rxn_name] = self.get_barrier(
                     minima_path, ts_path, facetpath, r_name_list, p_name_list,
                     slab_path)
         return ts_ener
@@ -592,7 +592,7 @@ class Results():
         for num, rxn in enumerate(self.reactions):
             for ax, facetpath, in zip(axes, self.facetpaths):
                 rxn_name = IO().get_rxn_name(rxn)
-                key = facetpath+'_'+rxn_name
+                key = facetpath + '_' + rxn_name
                 Results.plot_rxn(key,
                                  reaction_energies,
                                  activation_barriers,

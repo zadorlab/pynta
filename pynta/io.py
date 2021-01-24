@@ -1,7 +1,6 @@
 import os
 import shutil
 import yaml
-import sys
 from pathlib import Path, PosixPath
 from typing import List, Tuple, Optional, Dict
 
@@ -555,10 +554,8 @@ class IO():
             r_name_list, p_name_list = IO.get_reactants_and_products(rxn)
             if len(r_name_list) <= len(p_name_list):
                 easier_to_build = 'reactant'
-                ts_estimators = r_name_list
             else:
                 easier_to_build = 'product'
-                ts_estimators = p_name_list
 
             reacting_species_connectivity = rxn[easier_to_build].strip().split(
                 '\n')
@@ -649,6 +646,7 @@ class IO():
         ts_guess_image = Molecule().get_3D_positions(ts_guess[0])
         return ts_guess_image
 
+    @staticmethod
     def get_all_images(yamlfile: str) -> List[Gratoms]:
         ''' Return a list with all unique images (Gratoms) for all reactions
 

@@ -1,26 +1,57 @@
+![Build status](https://github.com/zadorlab/pynta/workflows/Build%20status/badge.svg)
+![GitHub tag (latest by date)](https://img.shields.io/github/v/tag/zadorlab/pynta?label=version)
+![GitHub last commit](https://img.shields.io/github/last-commit/zadorlab/pynta?label=last%20modified)
+![GitHub commits since tagged version](https://img.shields.io/github/commits-since/zadorlab/pynta/v1.0.1?color=9cf)
+![GitHub](https://img.shields.io/badge/License-GPLv3-orange)
+![GitHub top language](https://img.shields.io/github/languages/top/zadorlab/pynta?color=brightgreen)
+[![Language grade: Python](https://img.shields.io/lgtm/grade/python/g/zadorlab/pynta.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/zadorlab/pynta/context:python)
+[![Total alerts](https://img.shields.io/lgtm/alerts/g/zadorlab/pynta.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/zadorlab/pynta/alerts/)
+![GitHub repo size](https://img.shields.io/github/repo-size/zadorlab/pynta)
+![GitHub all releases](https://img.shields.io/github/downloads/zadorlab/pynta/total?color=yellow)
+
 # Pynta
 
 <!-- ![workflow_idea](./workflow_idea.png) -->
 
-The work-flow designed to automate search for transition states and reaction paths on various surfaces.
+`pynta` is an automated workflow for reaction path exploration on metallic surfaces.
 
-`pynta` reads the .yaml files from the previous RMGCat calculations, puts reactants and products on the surface, calculates TSs and returns reaction energies as well as barriers heights represented as a free energy reaction path diagrams. The general idea of the code can be summarized in the following figure.
+The `pynta` code is designed to automatically characterize chemical reactions
+relevant to heterogeneous catalysis. In particular, it spawns and processes a
+large number of ab initio quantum chemistry calculations to study gas-phase
+reactions on crystal facets. It is designed to run on petascale and upcoming
+exascale machines.
+
+The code systematically places adsorbates on crystal facets, by enumerating the
+various unique crystal sites and considering the symmetry of the adsorbates and
+the surface. The structures are systematically perturbed, to try to investigate
+all possible adsorption geometries. Following this, the code performs
+modifications to these structures and searches for saddle points on the
+potential energy landscape in order to characterize the reactions these
+adsorbates can undergo. After a series of such calculations the code arrives at
+well-characterized reaction pathways, which can be in turn used to calculate
+rate coefficients and can be implemented in microkinetic mechanisms/models.
+
+`pynta` is designed to work with the workflow code
+[`balsam`](https://balsam.readthedocs.io/en/latest/), which
+enables a seamless running of embarrassingly parallel computations on
+supercomputers. `pynta` includes several so-called apps that are run through
+`balsam`, and appear as one monolithic job submission in the queue system.
+Another level of parallelism is gained from the ab initio programs, which may
+or may not include GPU acceleration. We use the Atomic Simulation Environment
+(ASE) that enables coupling to a large variety of ab initio quantum
+chemistry codes.
 
 <center><img src='./workflow_idea.png' style="width:400px"></center>
 <br>
 
 # 1. Installation
 
-**Instalation can be a bit tricky because pynta depends on a several different packages that are under constant development (balsam, xtb-python)**
-
-inclusion-marker-do-not-remove
-
 The following instruction assumes that you have several softwares installed on your system, such as:
 
 - A queue system e.g. `Slurm`, `PBS` or `Cobalt`
 - An MPI e.g. `OpenMPI`
 - A math library e.g. `OpenBlas/LAPACK` or `Intel's MKL`
-- A compilier suite e.g. `Intel` or `GCC`
+- A compilier suite e.g. `GCC` or `Intel`
 
 ## 1.1 Install all prerequisites
 
@@ -97,7 +128,7 @@ pip install --user -e .
 git clone https://github.com/grimme-lab/xtb-python.git
 cd xtb-python
 git submodule update --init
-# (Theta specific)
+# (ALCF's Theta specific)
 # conda instal cffi
 # module swap PrgEnv-intel PrgEnv-cray; module swap PrgEnv-cray PrgEnv-intel
 CC=icc CXX=icpc FC=ifort meson setup build --prefix=$PWD --libdir=xtb -Dla_backed=mkl -Dpy=3 --buildtype release --optimization 2
@@ -152,7 +183,7 @@ Then, rebuild `xTB-python` on your system ignoring `git submodule update --init`
 git clone https://gitlab-ex.sandia.gov/mgierad/pynta.git
 ```
 
-Usually, `master` branch should be fine. If somehow it is not working, make sure to switch to the latest stable version by checking the tags.
+Usually, `master` branch should be fine. If somehow it is not working, make sure to switch to the latest stable release version by checking the tags.
 
 ### 1.2.2 Go to `pynta` directory
 
@@ -166,24 +197,24 @@ cd pynta
 python setup.py install
 ```
 
-### 1.2.3b (optional) If you do not have admin privileges (e.g. you use it on a supercomputer), do the following instead of 1.6a:
+### 1.2.3b (optional) If you do not have admin privileges (e.g. you will be using `pynta` on a supercomputer), do the following instead of 1.2.3a:
 
 ```
 python setup.py install --user
 ```
 
-**You should be ready to use `pynta`**
+**You should be good to go with `pynta`**
 
-Once finished using the workflow:
+Once finished using the workflow, type:
 
 ```
 cd pynta
 deactivate
 ```
 
-## 2. How to run
+# 2. How to run
 
-### 2.1 Using Balsam
+## 2.1 Using Balsam
 
 Before you run any `pynta` calculations, make sure your `balsam` DB is initialized and activated, e.g.
 
@@ -192,9 +223,16 @@ balsam init ~/myWorkflow
 source balsamactivate ~/myWorkflow
 ```
 
+Your prompt should change to something like:
+
+```bash
+~[BalsamDB: myWorkflow] <username>@<host>:
+```
+
 You will need **4** files to run the workflow:
 
-- `run_me.py` a python script that executes the workflow
+- `run_me.py` a python script that executes the workflow or alternatively,
+  `restart_me.py` to restart unfinished calculations
 - `run_me.sh` a bash script that submits jobs to the `balsam` database
 - `inputR2S.py` a python script holding all user-modifiable parameters of the `pynta`
 - `reactions.yaml` a yaml file with all reactions to be studied
@@ -205,12 +243,33 @@ An example `run_me.py` file:
 #!/usr/bin/env python3
 from pynta.main import WorkFlow
 
-# instantiate a WorkFlow() class
-workflow = WorkFlow()
-# create all input files
-workflow.gen_job_files()
-# execute the workflow
-workflow.execute_all()
+
+def run():
+    # instantiate a WorkFlow() class
+    workflow = WorkFlow()
+    # create all input files
+    workflow.gen_job_files()
+    # execute the workflow
+    workflow.execute_all()
+
+
+if __name__ == '__main__':
+    run()
+```
+
+An example `run_me.py` file:
+
+```python
+#!/usr/bin/env python3
+from pynta.main import WorkFlow
+
+
+def restart():
+    return WorkFlow().restart()
+
+
+if __name__ == '__main__':
+    restart()
 ```
 
 An example `run_me.sh` file:
@@ -224,24 +283,31 @@ An example `run_me.sh` file:
 #SBATCH -e %x.err          # error file name
 #SBATCH -o %x.out          # out file name
 
-# load your quantum chemistry calculation package.
-# Alternatively, provide a path to the preferred executable in 'inputR2S.py'
+# load your quantum chemistry calculation package or provide a path to the
+# executable in 'inputR2S.py'
 module load espresso
+
 # activate balsam environment, e.g.
 source balsamactivate ~/myWorkflow
+
 # run python executable script
 python3 $PWD/run_me.py
+
 # required environment variable if using balsam branch serial-mode-perf and SLURM
 export SLURM_HOSTS=$(scontrol show hostname)
+
 # launch serial jobs
 balsam launcher --job-mode=serial --wf-filter _ --limit-nodes=1 --num-transition-threads=1 &
-# give some time to prevent time out before the sockets are ready
-# for the quantum chemistry application, e.g. pw.x for Quantum Espresso
+
+# wait a bit to prevent timeing out you jobs before the sockets are ready
 sleep 45
+
 # launch mpi jobs
 balsam launcher --job-mode=mpi --wf-filter QE_Sock --offset-nodes=x-1 --num-transition-threads=1 &
+
 # wait until finished
 wait
+
 # deactivate balsam environment
 source balsamdeactivate
 ```
@@ -293,6 +359,10 @@ from pathlib import Path
 ####################################################
 '''
 ####################################################
+# Define which QE package to use
+# 'espresso' or 'nwchem' are currently supported
+quantum_chemistry = 'espresso'
+####################################################
 # do you want to run surface optimization
 optimize_slab = True
 ####################################################
@@ -325,7 +395,7 @@ executable = '/home/mgierad/00_codes/build/q-e-qe-6.4.1/build/bin/pw.x'
 node_packing_count = 48
 balsam_exe_settings = {'num_nodes': 1,  # nodes per each balsam job
                        'ranks_per_node': node_packing_count,  # cores per node
-                       'threads_per_rank': 1
+                       'threads_per_rank': 1,
                        }
 calc_keywords = {'kpts': (3, 3, 1),
                  'occupations': 'smearing',
@@ -334,7 +404,7 @@ calc_keywords = {'kpts': (3, 3, 1),
                  'ecutwfc': 40,  # Rydberg
                  'nosym': True,  # Allow symmetry breaking during optimization
                  'conv_thr': 1e-11,
-                 'mixing_mode': 'local-TF'
+                 'mixing_mode': 'local-TF',
                  }
 ####################################################
 # Set up a working directory (this is default)
@@ -361,52 +431,46 @@ scaled2 = False
 
 ```
 
-An example input files are also located at `./pynta/example_run_files/`.
+An example input files are also located at `./pynta/example_run_files/`
 
-If you do not have a `.yaml` file with the reaction list but still want to use the work-flow, let me know. Also, stay tuned, as a version of `pynta` that can work without `.yaml` file is currently under development
+# 3. Documentation
 
-### 2.2 Using only SLURM
+A full documentation is available [here](https://zadorlab.github.io/pynta/).
 
-**Warning `dev` branch uses SLURM scheduler to deal with the job dependencies. Be aware that it might be a bit buggy and do not fully support all the features implemented in the `master` branch.**
-
-An example script (using `dev` branch - SLURM):
-
-```python
-#!/usr/bin/env python3
-#SBATCH -J job_name        # name of the job e.g job_name = pynta_workflow
-#SBATCH --partition=queue  # queue name e.g. queue = day-long-cpu
-#SBATCH --nodes=x          # number of nodes e.g. x = 2
-#SBATCH --ntasks=y         # number of CPUs e.g. 2 x 48 = y = 96
-#SBATCH -e %x.err          # error file name
-#SBATCH -o %x.out          # out file name
-
-import os
-import sys
-
-# get environmental variable
-submitDir = os.environ['SLURM_SUBMIT_DIR']
-# change directory to $SLURM_SUBMIT_DIR
-os.chdir(submitDir)
-# add current working directory to the path
-sys.path.append(os.getcwd())
-# import input file with - can be done only after sys.path.append(os.getcwd())
-import inputR2S
-# import executable class of pynta
-from pynta.main import WorkFlow
-# instantiate the WorkFlow class
-workflow = WorkFlow()
-# generate input files
-workflow.gen_job_files()
-# execute the work-flow
-workflow.execute()
-```
-
-## 3. Documentation
-
-Documentation is currently under development.
-
-## Acknowledgments
+# Acknowledgments
 
 If you are using `pynta` or you wish to use it, let me know!
 
-This work was supported by the U.S. Department of Energy, Office of Science, Basic Energy Sciences, Chemical Sciences, Geosciences and Biosciences Division, as part of the Computational Chemistry Sciences Program.
+# Copyright Notice
+
+For five (5) years from 1/19/2021 the United States Government is granted for
+itself and others acting on its behalf a paid-up, nonexclusive, irrevocable
+worldwide license in this data to reproduce, prepare derivative works, and
+perform publicly and display publicly, by or on behalf of the Government. There
+is provision for the possible extension of the term of this license. Subsequent
+to that period or any extension granted, the United States Government is
+granted for itself and others acting on its behalf a paid-up, nonexclusive,
+irrevocable worldwide license in this data to reproduce, prepare derivative
+works, distribute copies to the public, perform publicly and display publicly,
+and to permit others to do so. The specific term of the license can be
+identified by inquiry made to National Technology and Engineering Solutions of
+Sandia, LLC or DOE.
+
+NEITHER THE UNITED STATES GOVERNMENT, NOR THE UNITED STATES DEPARTMENT OF
+ENERGY, NOR NATIONAL TECHNOLOGY AND ENGINEERING SOLUTIONS OF SANDIA, LLC, NOR
+ANY OF THEIR EMPLOYEES, MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR ASSUMES ANY
+LEGAL RESPONSIBILITY FOR THE ACCURACY, COMPLETENESS, OR USEFULNESS OF ANY
+INFORMATION, APPARATUS, PRODUCT, OR PROCESS DISCLOSED, OR REPRESENTS THAT ITS
+USE WOULD NOT INFRINGE PRIVATELY OWNED RIGHTS.
+
+Any licensee of this software has the obligation and responsibility to abide by
+the applicable export control laws, regulations, and general prohibitions
+relating to the export of technical data. Failure to obtain an export control
+license or other authority from the Government may result in criminal liability
+under U.S. laws.
+
+# License Notice
+
+Copyright 2021 National Technology & Engineering Solutions of Sandia,
+LLC (NTESS). Under the terms of Contract DE-NA0003525 with NTESS, the
+U.S. Government retains certain rights in this software.

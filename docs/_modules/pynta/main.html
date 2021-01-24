@@ -1,0 +1,1877 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>pynta.main &mdash; Pynta January 20, 2021 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/doctools.js"></script>
+        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> Pynta
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <!-- Local TOC -->
+              <div class="local-toc"></div>
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">Pynta</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+        
+          <li><a href="../pynta.html">pynta</a> &raquo;</li>
+        
+      <li>pynta.main</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for pynta.main</h1><div class="highlight"><pre>
+<span></span><span class="ch">#!/usr/bin/env python</span>
+<span class="kn">from</span> <span class="nn">pynta.check_input</span> <span class="k">import</span> <span class="n">InputChecker</span>
+<span class="kn">from</span> <span class="nn">pynta.restart</span> <span class="k">import</span> <span class="n">LowLevelRestart</span><span class="p">,</span> <span class="n">HighLevelRestart</span>
+<span class="kn">from</span> <span class="nn">pynta.io</span> <span class="k">import</span> <span class="n">IO</span>
+
+<span class="kn">from</span> <span class="nn">typing</span> <span class="k">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Optional</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">__main__</span>
+<span class="kn">from</span> <span class="nn">pathlib</span> <span class="k">import</span> <span class="n">Path</span><span class="p">,</span> <span class="n">PosixPath</span>
+<span class="kn">from</span> <span class="nn">warnings</span> <span class="k">import</span> <span class="n">warn</span>
+
+
+<span class="c1"># check which file calls this module and adjust working_dir path accordingly</span>
+<span class="n">calling_py</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">__main__</span><span class="o">.</span><span class="vm">__file__</span><span class="p">)</span>
+<span class="k">if</span> <span class="nb">any</span><span class="p">([</span><span class="n">calling_py</span> <span class="o">==</span> <span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;run_me.py&#39;</span><span class="p">,</span> <span class="s1">&#39;restart_me.py&#39;</span><span class="p">]]):</span>
+    <span class="n">working_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">()</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="n">working_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">()))</span>
+
+<span class="c1"># check if all necessary input files are in your working directory</span>
+<span class="n">check_yaml</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">working_dir</span><span class="p">,</span> <span class="s1">&#39;reactions.yaml&#39;</span><span class="p">)</span>
+<span class="n">check_inputR2S</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">working_dir</span><span class="p">,</span> <span class="s1">&#39;inputR2S.py&#39;</span><span class="p">)</span>
+<span class="n">check_run_me_py</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">working_dir</span><span class="p">,</span> <span class="s1">&#39;run_me.py&#39;</span><span class="p">)</span>
+<span class="n">check_run_me_sh</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">working_dir</span><span class="p">,</span> <span class="s1">&#39;run_me.sh&#39;</span><span class="p">)</span>
+
+
+<span class="c1"># add working dir to system path</span>
+<span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">working_dir</span><span class="p">)</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">inputR2S</span>
+    <span class="n">InputChecker</span><span class="p">(</span><span class="n">check_yaml</span><span class="p">,</span> <span class="n">check_inputR2S</span><span class="p">,</span> <span class="n">check_run_me_py</span><span class="p">,</span>
+                 <span class="n">check_run_me_sh</span><span class="p">,</span> <span class="n">working_dir</span><span class="p">)</span><span class="o">.</span><span class="n">check_all</span><span class="p">()</span>
+    <span class="c1"># User defined parameters. Here pynta willonly read them. They are set up</span>
+    <span class="c1"># in inputR2S.py (submit directory)</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="n">warn</span><span class="p">(</span>
+        <span class="s1">&#39;Missing input file. You cannot run calculations &#39;</span>
+        <span class="s1">&#39;but will be able to use most of the workflow.&#39;</span>
+    <span class="p">)</span>
+
+<span class="k">else</span><span class="p">:</span>
+    <span class="n">quantum_chemistry</span> <span class="o">=</span> <span class="n">inputR2S</span><span class="o">.</span><span class="n">quantum_chemistry</span>
+    <span class="n">calculator</span><span class="p">,</span> <span class="n">socket_calculator</span> <span class="o">=</span> <span class="n">IO</span><span class="o">.</span><span class="n">get_calculators</span><span class="p">(</span><span class="n">quantum_chemistry</span><span class="p">)</span>
+    <span class="n">optimize_slab</span> <span class="o">=</span> <span class="n">inputR2S</span><span class="o">.</span><span class="n">optimize_slab</span>
+    <span class="n">surface_types_and_repeats</span> <span class="o">=</span> <span class="n">inputR2S</span><span class="o">.</span><span class="n">surface_types_and_repeats</span>
+    <span class="n">metal_atom</span> <span class="o">=</span> <span class="n">inputR2S</span><span class="o">.</span><span class="n">metal_atom</span>
+    <span class="n">a</span> <span class="o">=</span> <span class="n">inputR2S</span><span class="o">.</span><span class="n">a</span>
+    <span class="n">vacuum</span> <span class="o">=</span> <span class="n">inputR2S</span><span class="o">.</span><span class="n">vacuum</span>
+    <span class="n">pseudo_dir</span> <span class="o">=</span> <span class="n">inputR2S</span><span class="o">.</span><span class="n">pseudo_dir</span>
+    <span class="n">pseudopotentials</span> <span class="o">=</span> <span class="n">inputR2S</span><span class="o">.</span><span class="n">pseudopotentials</span>
+    <span class="n">yamlfile</span> <span class="o">=</span> <span class="n">inputR2S</span><span class="o">.</span><span class="n">yamlfile</span>
+    <span class="n">scfactor</span> <span class="o">=</span> <span class="n">inputR2S</span><span class="o">.</span><span class="n">scfactor</span>
+    <span class="n">scfactor_surface</span> <span class="o">=</span> <span class="n">inputR2S</span><span class="o">.</span><span class="n">scfactor_surface</span>
+    <span class="n">scaled1</span> <span class="o">=</span> <span class="n">inputR2S</span><span class="o">.</span><span class="n">scaled1</span>
+    <span class="n">scaled2</span> <span class="o">=</span> <span class="n">inputR2S</span><span class="o">.</span><span class="n">scaled2</span>
+    <span class="n">all_reacting_atoms</span> <span class="o">=</span> <span class="n">IO</span><span class="o">.</span><span class="n">get_all_reacting_atoms</span><span class="p">(</span><span class="n">check_yaml</span><span class="p">)</span>
+    <span class="n">species_dict</span> <span class="o">=</span> <span class="n">IO</span><span class="p">()</span><span class="o">.</span><span class="n">get_species_dict</span><span class="p">(</span><span class="n">check_yaml</span><span class="p">)</span>
+    <span class="n">all_species</span> <span class="o">=</span> <span class="n">IO</span><span class="p">()</span><span class="o">.</span><span class="n">get_all_unique_species</span><span class="p">(</span><span class="n">check_yaml</span><span class="p">)</span>
+    <span class="n">executable</span> <span class="o">=</span> <span class="n">inputR2S</span><span class="o">.</span><span class="n">executable</span>
+    <span class="n">node_packing_count</span> <span class="o">=</span> <span class="n">inputR2S</span><span class="o">.</span><span class="n">node_packing_count</span>
+    <span class="n">balsam_exe_settings</span> <span class="o">=</span> <span class="n">inputR2S</span><span class="o">.</span><span class="n">balsam_exe_settings</span>
+    <span class="n">calc_keywords</span> <span class="o">=</span> <span class="n">inputR2S</span><span class="o">.</span><span class="n">calc_keywords</span>
+    <span class="n">creation_dir</span> <span class="o">=</span> <span class="n">inputR2S</span><span class="o">.</span><span class="n">creation_dir</span>
+    <span class="n">surface_types</span> <span class="o">=</span> <span class="n">surface_types_and_repeats</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+    <span class="n">facetpaths</span> <span class="o">=</span> <span class="n">IO</span><span class="p">()</span><span class="o">.</span><span class="n">get_facetpaths</span><span class="p">(</span><span class="n">metal_atom</span><span class="p">,</span> <span class="n">surface_types</span><span class="p">)</span>
+    <span class="n">job_file_dir_name</span> <span class="o">=</span> <span class="s1">&#39;job_files&#39;</span>
+
+<span class="c1"># ###################################################</span>
+<span class="c1">#                     Scripts                       #</span>
+<span class="c1"># ###################################################</span>
+
+<span class="c1"># These template and pytemplate scripts can be modified by users</span>
+<span class="c1"># (np intended, though) to tune them to given calculation setup,</span>
+<span class="c1"># i.e. calculator, method, queue system,</span>
+<span class="c1"># etc. The current version works for SLURM and Quantum Espresso.</span>
+
+<span class="n">path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span>
+<span class="n">dir_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+<span class="n">path_template</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dir_path</span><span class="p">,</span> <span class="s1">&#39;jobtemplate/&#39;</span><span class="p">)</span>
+<span class="n">path_pytemplate</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dir_path</span><span class="p">,</span> <span class="s1">&#39;pytemplate/&#39;</span><span class="p">)</span>
+<span class="n">template_slab_opt</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+    <span class="n">path_template</span> <span class="o">+</span> <span class="s1">&#39;00_template_set_up_slab_opt.py&#39;</span><span class="p">)</span>
+<span class="n">template_big_slab_opt</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+    <span class="n">path_template</span> <span class="o">+</span> <span class="s1">&#39;00_template_set_up_big_slab_opt.py&#39;</span><span class="p">)</span>
+<span class="n">template_ads</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path_template</span> <span class="o">+</span> <span class="s1">&#39;01_template_set_up_ads.py&#39;</span><span class="p">)</span>
+<span class="n">template_ads_vib</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+    <span class="n">path_template</span> <span class="o">+</span> <span class="s1">&#39;01_template_set_up_ads_vib.py&#39;</span><span class="p">)</span>
+<span class="n">template_set_up_ts_with_xtb</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+    <span class="n">path_template</span> <span class="o">+</span> <span class="s1">&#39;02_template_set_up_ts_with_xtb.py&#39;</span><span class="p">)</span>
+<span class="n">template_set_up_ts</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+    <span class="n">path_template</span> <span class="o">+</span> <span class="s1">&#39;03_template_checksym_xtb_runTS.py&#39;</span><span class="p">)</span>
+<span class="n">template_set_up_ts_vib</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+    <span class="n">path_template</span> <span class="o">+</span> <span class="s1">&#39;04_template_set_up_TS_vib.py&#39;</span><span class="p">)</span>
+<span class="n">template_set_up_after_ts</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+    <span class="n">path_template</span> <span class="o">+</span> <span class="s1">&#39;05_template_set_up_after_ts.py&#39;</span><span class="p">)</span>
+<span class="n">pytemplate_big_slab_opt</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+    <span class="n">path_pytemplate</span> <span class="o">+</span> <span class="s1">&#39;pytemplate_set_up_big_slab_opt.py&#39;</span><span class="p">)</span>
+<span class="n">pytemplate_relax_ads</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+    <span class="n">path_pytemplate</span> <span class="o">+</span> <span class="s1">&#39;pytemplate_set_up_ads_on_slab.py&#39;</span><span class="p">)</span>
+<span class="n">pytemplate_set_up_ads_vib</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+    <span class="n">path_pytemplate</span> <span class="o">+</span> <span class="s1">&#39;pytemplate_set_up_ads_vib.py&#39;</span><span class="p">)</span>
+<span class="n">pytemplate_xtb</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path_pytemplate</span> <span class="o">+</span> <span class="s1">&#39;pytemplate_set_up_xtb.py&#39;</span><span class="p">)</span>
+<span class="n">pytemplate_set_up_ts</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+    <span class="n">path_pytemplate</span> <span class="o">+</span> <span class="s1">&#39;pytemplate_set_up_ts.py&#39;</span><span class="p">)</span>
+<span class="n">pytemplate_set_up_ts_vib</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+    <span class="n">path_pytemplate</span> <span class="o">+</span> <span class="s1">&#39;pytemplate_set_up_ts_vib.py&#39;</span><span class="p">)</span>
+<span class="n">pytemplate_set_up_after_ts</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+    <span class="n">path_pytemplate</span> <span class="o">+</span> <span class="s1">&#39;pytemplate_set_up_opt_after_ts.py&#39;</span><span class="p">)</span>
+<span class="n">slab_opt</span> <span class="o">=</span> <span class="s1">&#39;00_set_up_slab_opt.py&#39;</span>
+
+<span class="c1">####################################################</span>
+<span class="c1">#                    Initialize                    #</span>
+<span class="c1">####################################################</span>
+
+
+<div class="viewcode-block" id="WorkFlow"><a class="viewcode-back" href="../../source/pynta.html#pynta.main.WorkFlow">[docs]</a><span class="k">class</span> <span class="nc">WorkFlow</span><span class="p">:</span>
+
+<div class="viewcode-block" id="WorkFlow.__init__"><a class="viewcode-back" href="../../source/pynta.html#pynta.main.WorkFlow.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39; Setup the balsam application.</span>
+
+<span class="sd">        Once Quantum Chemistry calculations starts there will be one app for</span>
+<span class="sd">        desired QE (e.g. `Quantum Espresso`) package and one for ``xTB``.</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Checking Balsam DB...&#39;</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="kn">from</span> <span class="nn">balsam.core.models</span> <span class="k">import</span> <span class="n">ApplicationDefinition</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">myPython</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">ApplicationDefinition</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get_or_create</span><span class="p">(</span>
+                <span class="n">name</span><span class="o">=</span><span class="s2">&quot;python&quot;</span><span class="p">,</span>
+                <span class="n">executable</span><span class="o">=</span><span class="n">sys</span><span class="o">.</span><span class="n">executable</span>
+            <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">myPython</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">slab_opt_job</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+
+            <span class="n">IO</span><span class="o">.</span><span class="n">set_calculators</span><span class="p">(</span><span class="n">executable</span><span class="p">,</span> <span class="n">calculator</span><span class="p">,</span> <span class="n">socket_calculator</span><span class="p">)</span>
+
+        <span class="k">except</span> <span class="ne">SystemExit</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;---&#39;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Please create Balsam DB and/or activate it&#39;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;---&#39;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="WorkFlow.get_ts_xtb_py_scripts_list"><a class="viewcode-back" href="../../source/pynta.html#pynta.main.WorkFlow.get_ts_xtb_py_scripts_list">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">get_ts_xtb_py_scripts_list</span><span class="p">(</span>
+            <span class="n">facetpath</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+        <span class="sd">&#39;&#39;&#39;Get a list with all 02 job scripts</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        facetpath : str</span>
+<span class="sd">            a path to the workflow&#39;s main dir</span>
+<span class="sd">            e.g. ``&#39;Cu_111&#39;``</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        ts_with_xtb_py_script_list : List[str]</span>
+<span class="sd">            a list with all ``xTB`` jobs for a given facetpath</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">reactions</span> <span class="o">=</span> <span class="n">IO</span><span class="p">()</span><span class="o">.</span><span class="n">open_yaml_file</span><span class="p">(</span><span class="n">yamlfile</span><span class="p">)</span>
+        <span class="n">ts_with_xtb_py_script_list</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">rxn</span> <span class="ow">in</span> <span class="n">reactions</span><span class="p">:</span>
+            <span class="n">rxn_name</span> <span class="o">=</span> <span class="n">IO</span><span class="o">.</span><span class="n">get_rxn_name</span><span class="p">(</span><span class="n">rxn</span><span class="p">)</span>
+            <span class="n">fname</span> <span class="o">=</span> <span class="s1">&#39;02_</span><span class="si">{}</span><span class="s1">_set_up_TS_with_xtb_</span><span class="si">{}</span><span class="s1">.py&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="n">facetpath</span><span class="p">,</span> <span class="n">rxn_name</span><span class="p">)</span>
+            <span class="n">ts_with_xtb_py_script_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">fname</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">ts_with_xtb_py_script_list</span></div>
+
+<div class="viewcode-block" id="WorkFlow.get_ts_estimate_unique_list"><a class="viewcode-back" href="../../source/pynta.html#pynta.main.WorkFlow.get_ts_estimate_unique_list">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">get_ts_estimate_unique_list</span><span class="p">(</span>
+            <span class="n">facetpath</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+        <span class="sd">&#39;&#39;&#39; Get a list with all 03 job scripts</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        facetpath : str</span>
+<span class="sd">            a path to the workflow&#39;s main dir</span>
+<span class="sd">            e.g. ``&#39;Cu_111&#39;``</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        ts_sella_py_script_list : List[str]</span>
+<span class="sd">            a list with all ``ts_sella_py`` jobs for a given facetpath</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">reactions</span> <span class="o">=</span> <span class="n">IO</span><span class="p">()</span><span class="o">.</span><span class="n">open_yaml_file</span><span class="p">(</span><span class="n">yamlfile</span><span class="p">)</span>
+        <span class="n">ts_sella_py_script_list</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">rxn</span> <span class="ow">in</span> <span class="n">reactions</span><span class="p">:</span>
+            <span class="n">rxn_name</span> <span class="o">=</span> <span class="n">IO</span><span class="o">.</span><span class="n">get_rxn_name</span><span class="p">(</span><span class="n">rxn</span><span class="p">)</span>
+            <span class="n">fname</span> <span class="o">=</span> <span class="s1">&#39;03_</span><span class="si">{}</span><span class="s1">_run_TS_</span><span class="si">{}</span><span class="s1">.py&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">facetpath</span><span class="p">,</span> <span class="n">rxn_name</span><span class="p">)</span>
+            <span class="n">ts_sella_py_script_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">fname</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">ts_sella_py_script_list</span></div>
+
+<div class="viewcode-block" id="WorkFlow.get_ts_vib_list"><a class="viewcode-back" href="../../source/pynta.html#pynta.main.WorkFlow.get_ts_vib_list">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">get_ts_vib_list</span><span class="p">(</span>
+            <span class="n">facetpath</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+        <span class="sd">&#39;&#39;&#39; Get a list with all 04 job scripts</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        facetpath : str</span>
+<span class="sd">            a path to the workflow&#39;s main dir</span>
+<span class="sd">            e.g. ``&#39;Cu_111&#39;``</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        ts_vib_py_scripts_list : List[str]</span>
+<span class="sd">            a list with all ts_vib_py jobs for a given facetpath</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">reactions</span> <span class="o">=</span> <span class="n">IO</span><span class="p">()</span><span class="o">.</span><span class="n">open_yaml_file</span><span class="p">(</span><span class="n">yamlfile</span><span class="p">)</span>
+        <span class="n">ts_vib_py_scripts_list</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">rxn</span> <span class="ow">in</span> <span class="n">reactions</span><span class="p">:</span>
+            <span class="n">rxn_name</span> <span class="o">=</span> <span class="n">IO</span><span class="o">.</span><span class="n">get_rxn_name</span><span class="p">(</span><span class="n">rxn</span><span class="p">)</span>
+            <span class="n">fname</span> <span class="o">=</span> <span class="s1">&#39;04_</span><span class="si">{}</span><span class="s1">_set_up_TS_vib_</span><span class="si">{}</span><span class="s1">.py&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">facetpath</span><span class="p">,</span> <span class="n">rxn_name</span><span class="p">)</span>
+            <span class="n">ts_vib_py_scripts_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">fname</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">ts_vib_py_scripts_list</span></div>
+
+<div class="viewcode-block" id="WorkFlow.get_after_ts_py_scripts"><a class="viewcode-back" href="../../source/pynta.html#pynta.main.WorkFlow.get_after_ts_py_scripts">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">get_after_ts_py_scripts</span><span class="p">(</span>
+            <span class="n">facetpath</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+        <span class="sd">&#39;&#39;&#39; Get a list with all 05 job scripts</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        facetpath : str</span>
+<span class="sd">            a path to the workflow&#39;s main dir</span>
+<span class="sd">            e.g. ``&#39;Cu_111&#39;``</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">        -------</span>
+<span class="sd">        after_ts_py_scripts_list : List[str]</span>
+<span class="sd">            a list with all after_ts_py jobs for a given facetpath</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">reactions</span> <span class="o">=</span> <span class="n">IO</span><span class="p">()</span><span class="o">.</span><span class="n">open_yaml_file</span><span class="p">(</span><span class="n">yamlfile</span><span class="p">)</span>
+        <span class="n">after_ts_py_scripts_list</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">rxn</span> <span class="ow">in</span> <span class="n">reactions</span><span class="p">:</span>
+            <span class="n">rxn_name</span> <span class="o">=</span> <span class="n">IO</span><span class="o">.</span><span class="n">get_rxn_name</span><span class="p">(</span><span class="n">rxn</span><span class="p">)</span>
+            <span class="n">fname</span> <span class="o">=</span> <span class="s1">&#39;05_</span><span class="si">{}</span><span class="s1">_set_up_after_TS_</span><span class="si">{}</span><span class="s1">.py&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">facetpath</span><span class="p">,</span> <span class="n">rxn_name</span><span class="p">)</span>
+            <span class="n">after_ts_py_scripts_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">fname</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">after_ts_py_scripts_list</span></div>
+
+<div class="viewcode-block" id="WorkFlow.create_big_slab_pyjob"><a class="viewcode-back" href="../../source/pynta.html#pynta.main.WorkFlow.create_big_slab_pyjob">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">create_big_slab_pyjob</span><span class="p">(</span>
+            <span class="n">socket_calculator</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">pytemplate</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">facetpath</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">slab_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">repeats</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span>
+            <span class="n">creation_dir</span><span class="p">:</span> <span class="n">PosixPath</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&#39;&#39;&#39; Create a python ASE job file for a big slab optimization</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        pytemplate : str</span>
+<span class="sd">            a name of a template to prepare submission scripts</span>
+<span class="sd">            for big_slab minimization</span>
+<span class="sd">        facetpath : str</span>
+<span class="sd">            a path to the workflow&#39;s main dir</span>
+<span class="sd">            e.g.</span>
+
+<span class="sd">            &gt;&gt;&gt; facetpath = &#39;Cu_111&#39;</span>
+
+<span class="sd">        slab_name : str</span>
+<span class="sd">            name of the slab file (no extintion) that is about to be created</span>
+<span class="sd">            e.g.</span>
+
+<span class="sd">            &gt;&gt;&gt; slab_name = &#39;Cu_111_slab_opt&#39;</span>
+
+<span class="sd">        repeats : Tuple[int, int, int]</span>
+<span class="sd">            how to replicate unit cell in (x, y, z) direction,</span>
+<span class="sd">            e.g.</span>
+
+<span class="sd">            &gt;&gt;&gt; repeats = (3, 3, 1)</span>
+
+<span class="sd">        creation_dir : posix</span>
+<span class="sd">            a posix path to the working directory</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">pytemplate</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">r</span><span class="p">:</span>
+            <span class="n">pytemplate_text</span> <span class="o">=</span> <span class="n">r</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+            <span class="n">py_job_name</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">_big_slab_opt_job.py&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">facetpath</span><span class="p">)</span>
+            <span class="n">py_job</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+                <span class="n">creation_dir</span><span class="p">,</span> <span class="n">job_file_dir_name</span><span class="p">,</span> <span class="n">facetpath</span><span class="p">,</span> <span class="n">py_job_name</span><span class="p">)</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">py_job</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">c</span><span class="p">:</span>
+                <span class="n">c</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">pytemplate_text</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="n">socket_calculator</span><span class="o">=</span><span class="n">socket_calculator</span><span class="p">,</span>
+                    <span class="n">facetpath</span><span class="o">=</span><span class="n">facetpath</span><span class="p">,</span>
+                    <span class="n">slab_name</span><span class="o">=</span><span class="n">slab_name</span><span class="p">,</span>
+                    <span class="n">repeats</span><span class="o">=</span><span class="n">repeats</span><span class="p">,</span>
+                    <span class="n">balsam_exe_settings</span><span class="o">=</span><span class="n">balsam_exe_settings</span><span class="p">,</span>
+                    <span class="n">calc_keywords</span><span class="o">=</span><span class="n">calc_keywords</span><span class="p">,</span>
+                    <span class="n">pseudopotentials</span><span class="o">=</span><span class="n">pseudopotentials</span><span class="p">,</span>
+                    <span class="n">pseudo_dir</span><span class="o">=</span><span class="n">pseudo_dir</span><span class="p">,</span>
+                    <span class="n">creation_dir</span><span class="o">=</span><span class="n">creation_dir</span>
+                <span class="p">))</span></div>
+
+<div class="viewcode-block" id="WorkFlow.create_job_files"><a class="viewcode-back" href="../../source/pynta.html#pynta.main.WorkFlow.create_job_files">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">create_job_files</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&#39;&#39;&#39; For each surface type and for each reaction generate submit scripts</span>
+<span class="sd">        for 6 stages of the workflow</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">for</span> <span class="n">surface_type</span><span class="p">,</span> <span class="n">reps</span> <span class="ow">in</span> <span class="n">surface_types_and_repeats</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="c1"># get a facetpath</span>
+            <span class="n">facetpath</span> <span class="o">=</span> <span class="n">IO</span><span class="p">()</span><span class="o">.</span><span class="n">get_facetpath</span><span class="p">(</span><span class="n">metal_atom</span><span class="p">,</span> <span class="n">surface_type</span><span class="p">)</span>
+            <span class="c1"># Create a directory to store six (00-05) main *py job files</span>
+            <span class="n">py_job_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">job_file_dir_name</span><span class="p">,</span> <span class="n">facetpath</span><span class="p">)</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">py_job_dir</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+            <span class="c1"># naming convetion for the slab file</span>
+            <span class="n">slab_name</span> <span class="o">=</span> <span class="n">facetpath</span> <span class="o">+</span> <span class="s1">&#39;_slab_opt&#39;</span>
+            <span class="n">slab</span> <span class="o">=</span> <span class="n">slab_name</span> <span class="o">+</span> <span class="s1">&#39;.xyz&#39;</span>
+
+            <span class="c1"># define repeats and repeats_surface</span>
+            <span class="n">repeats</span><span class="p">,</span> <span class="n">repeats_surface</span> <span class="o">=</span> <span class="n">reps</span>
+
+            <span class="c1"># create all input files for each main job 00-05</span>
+            <span class="n">WorkFlow</span><span class="o">.</span><span class="n">set_up_slab</span><span class="p">(</span>
+                <span class="n">socket_calculator</span><span class="p">,</span>
+                <span class="n">template_slab_opt</span><span class="p">,</span>
+                <span class="n">py_job_dir</span><span class="p">,</span>
+                <span class="n">facetpath</span><span class="p">,</span>
+                <span class="n">surface_type</span><span class="p">,</span>
+                <span class="n">repeats_surface</span><span class="p">,</span>
+                <span class="n">slab_name</span>
+            <span class="p">)</span>
+
+            <span class="n">WorkFlow</span><span class="o">.</span><span class="n">set_up_big_slab</span><span class="p">(</span>
+                <span class="n">socket_calculator</span><span class="p">,</span>
+                <span class="n">template_big_slab_opt</span><span class="p">,</span>
+                <span class="n">py_job_dir</span><span class="p">,</span>
+                <span class="n">facetpath</span><span class="p">,</span>
+                <span class="n">slab_name</span><span class="p">,</span>
+                <span class="n">repeats</span><span class="p">,</span>
+                <span class="n">pytemplate_big_slab_opt</span>
+            <span class="p">)</span>
+
+            <span class="n">WorkFlow</span><span class="o">.</span><span class="n">set_up_ads</span><span class="p">(</span>
+                <span class="n">socket_calculator</span><span class="p">,</span>
+                <span class="n">template_ads</span><span class="p">,</span>
+                <span class="n">py_job_dir</span><span class="p">,</span>
+                <span class="n">facetpath</span><span class="p">,</span>
+                <span class="n">slab</span><span class="p">,</span>
+                <span class="n">repeats</span><span class="p">,</span>
+                <span class="n">yamlfile</span><span class="p">,</span>
+                <span class="n">pytemplate_relax_ads</span>
+            <span class="p">)</span>
+
+            <span class="n">WorkFlow</span><span class="o">.</span><span class="n">set_up_ads_vib</span><span class="p">(</span>
+                <span class="n">socket_calculator</span><span class="p">,</span>
+                <span class="n">template_ads_vib</span><span class="p">,</span>
+                <span class="n">py_job_dir</span><span class="p">,</span>
+                <span class="n">facetpath</span><span class="p">,</span>
+                <span class="n">pytemplate_set_up_ads_vib</span>
+            <span class="p">)</span>
+
+            <span class="n">reactions</span> <span class="o">=</span> <span class="n">IO</span><span class="p">()</span><span class="o">.</span><span class="n">open_yaml_file</span><span class="p">(</span><span class="n">yamlfile</span><span class="p">)</span>
+            <span class="c1"># the rest of jobs depends on reaction and reacting_atoms</span>
+            <span class="k">for</span> <span class="n">rxn</span><span class="p">,</span> <span class="n">react_at</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">reactions</span><span class="p">,</span> <span class="n">all_reacting_atoms</span><span class="o">.</span><span class="n">values</span><span class="p">()):</span>
+                <span class="n">WorkFlow</span><span class="o">.</span><span class="n">set_up_TS_with_xtb</span><span class="p">(</span>
+                    <span class="n">rxn</span><span class="p">,</span>
+                    <span class="n">react_at</span><span class="p">,</span>
+                    <span class="n">template_set_up_ts_with_xtb</span><span class="p">,</span>
+                    <span class="n">py_job_dir</span><span class="p">,</span>
+                    <span class="n">slab</span><span class="p">,</span>
+                    <span class="n">repeats</span><span class="p">,</span>
+                    <span class="n">facetpath</span><span class="p">,</span>
+                    <span class="n">scfactor</span><span class="p">,</span>
+                    <span class="n">scfactor_surface</span><span class="p">,</span>
+                    <span class="n">pytemplate_xtb</span>
+                <span class="p">)</span>
+
+                <span class="n">WorkFlow</span><span class="o">.</span><span class="n">set_up_run_TS</span><span class="p">(</span>
+                    <span class="n">socket_calculator</span><span class="p">,</span>
+                    <span class="n">rxn</span><span class="p">,</span>
+                    <span class="n">template_set_up_ts</span><span class="p">,</span>
+                    <span class="n">py_job_dir</span><span class="p">,</span>
+                    <span class="n">facetpath</span><span class="p">,</span>
+                    <span class="n">slab</span><span class="p">,</span>
+                    <span class="n">repeats</span><span class="p">,</span>
+                    <span class="n">pytemplate_set_up_ts</span>
+                <span class="p">)</span>
+
+                <span class="n">WorkFlow</span><span class="o">.</span><span class="n">set_up_TS_vib</span><span class="p">(</span>
+                    <span class="n">socket_calculator</span><span class="p">,</span>
+                    <span class="n">rxn</span><span class="p">,</span>
+                    <span class="n">template_set_up_ts_vib</span><span class="p">,</span>
+                    <span class="n">py_job_dir</span><span class="p">,</span>
+                    <span class="n">facetpath</span><span class="p">,</span>
+                    <span class="n">slab</span><span class="p">,</span>
+                    <span class="n">repeats</span><span class="p">,</span>
+                    <span class="n">pytemplate_set_up_ts_vib</span>
+                <span class="p">)</span>
+
+                <span class="n">WorkFlow</span><span class="o">.</span><span class="n">set_up_opt_after_TS</span><span class="p">(</span>
+                    <span class="n">socket_calculator</span><span class="p">,</span>
+                    <span class="n">rxn</span><span class="p">,</span>
+                    <span class="n">template_set_up_after_ts</span><span class="p">,</span>
+                    <span class="n">py_job_dir</span><span class="p">,</span>
+                    <span class="n">facetpath</span><span class="p">,</span>
+                    <span class="n">slab</span><span class="p">,</span>
+                    <span class="n">repeats</span><span class="p">,</span>
+                    <span class="n">pytemplate_set_up_after_ts</span>
+                <span class="p">)</span></div>
+
+<span class="c1">###########################</span>
+<span class="c1">#   Create submit files   #</span>
+<span class="c1">###########################</span>
+<div class="viewcode-block" id="WorkFlow.set_up_slab"><a class="viewcode-back" href="../../source/pynta.html#pynta.main.WorkFlow.set_up_slab">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">set_up_slab</span><span class="p">(</span>
+            <span class="n">socket_calculator</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">template</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">py_job_dir</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">facetpath</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">surface_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">repeats_surface</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span>
+            <span class="n">slab_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&#39;&#39;&#39; Create ``&#39;00_{facetpath}_set_up_slab_opt.py&#39;`` file</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        template : str</span>
+<span class="sd">            a name of a template for ``00`` job (slab optimization)</span>
+<span class="sd">        py_job_dir : str</span>
+<span class="sd">            a path to where all job files ``00``-``05`` are about to be</span>
+<span class="sd">            created, e.g.</span>
+
+<span class="sd">            &gt;&gt;&gt; py_job_dir = {&#39;current_dir&#39;}/job_files/Cu_111</span>
+
+<span class="sd">        facetpath : str</span>
+<span class="sd">            a path to the workflow&#39;s main dir</span>
+
+<span class="sd">            &gt;&gt;&gt; facetpath = &#39;Cu_111&#39;</span>
+
+<span class="sd">        surface_type : str</span>
+<span class="sd">            type of the surface. Available options are:</span>
+<span class="sd">            fcc111, fcc211, fcc100, bcc111, bcc110, hcp0001, diamond111,</span>
+<span class="sd">            diamond100</span>
+<span class="sd">        metal_atom : str</span>
+<span class="sd">            atomic metal_atom of the studied metal surface</span>
+<span class="sd">            e.g. ``&#39;Cu&#39;``</span>
+<span class="sd">        a : float</span>
+<span class="sd">            a lattice constant</span>
+<span class="sd">        repeats_surface : Tuple[int, int, int]</span>
+<span class="sd">            surface multiplication in (x, y, z) direction</span>
+<span class="sd">            eg.</span>
+
+<span class="sd">            &gt;&gt;&gt; repeats_surface = (1, 1, 4)</span>
+
+<span class="sd">        vacuum : float</span>
+<span class="sd">            amout of empty space in ``z`` direction (Angstrem)</span>
+<span class="sd">        slab_name : str</span>
+<span class="sd">            name of the slab file (no extintion) that is about to be created</span>
+<span class="sd">            e.g.</span>
+
+<span class="sd">            &gt;&gt;&gt; slab_name = &#39;Cu_111_slab_opt&#39;</span>
+
+<span class="sd">        pseudopotentials : Dict[str,str]</span>
+<span class="sd">            a dictionary with QE pseudopotentials for all species.</span>
+<span class="sd">            e.g.</span>
+
+<span class="sd">            &gt;&gt;&gt; pseudopotentials = dict(Cu=&#39;Cu.pbe-spn-kjpaw_psl.1.0.0.UPF&#39;,</span>
+<span class="sd">                                H=&#39;H.pbe-kjpaw_psl.1.0.0.UPF&#39;,</span>
+<span class="sd">                                O=&#39;O.pbe-n-kjpaw_psl.1.0.0.UPF&#39;,</span>
+<span class="sd">                                C=&#39;C.pbe-n-kjpaw_psl.1.0.0.UPF&#39;)</span>
+
+<span class="sd">        pseudo_dir : str</span>
+<span class="sd">            a path to the QE&#39;s pseudopotentials main directory</span>
+<span class="sd">            e.g.</span>
+
+<span class="sd">            &gt;&gt;&gt; pseudo_dir = &#39;/home/mgierad/espresso/pseudo&#39;</span>
+
+<span class="sd">        balsam_exe_settings : Dict[str,int]</span>
+<span class="sd">            a dictionary with balsam execute parameters (cores, nodes, etc.),</span>
+<span class="sd">            e.g.</span>
+
+<span class="sd">            &gt;&gt;&gt; balsam_exe_settings = {&#39;num_nodes&#39;: 1,</span>
+<span class="sd">                                    &#39;ranks_per_node&#39;: 48,</span>
+<span class="sd">                                    &#39;threads_per_rank&#39;: 1}</span>
+
+<span class="sd">        calc_keywords : Dict[str,str]</span>
+<span class="sd">            a dictionary with parameters to run DFT package. Quantum Espresso</span>
+<span class="sd">            is used as default, e.g.</span>
+
+<span class="sd">            &gt;&gt;&gt; calc_keywords = {&#39;kpts&#39;: (3, 3, 1),</span>
+<span class="sd">                                &#39;occupations&#39;: &#39;smearing&#39;,</span>
+<span class="sd">                                &#39;smearing&#39;:  &#39;marzari-vanderbilt&#39;,</span>
+<span class="sd">                                &#39;degauss&#39;: 0.01,</span>
+<span class="sd">                                &#39;ecutwfc&#39;: 40,</span>
+<span class="sd">                                &#39;nosym&#39;: True,</span>
+<span class="sd">                                &#39;conv_thr&#39;: 1e-11,</span>
+<span class="sd">                                &#39;mixing_mode&#39;: &#39;local-TF&#39;}</span>
+
+<span class="sd">        creation_dir : posix</span>
+<span class="sd">            a posix path to the working directory</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">template</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">r</span><span class="p">:</span>
+            <span class="n">template_text</span> <span class="o">=</span> <span class="n">r</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+            <span class="n">py_job_fname</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+                <span class="n">py_job_dir</span><span class="p">,</span> <span class="s1">&#39;00_</span><span class="si">{}</span><span class="s1">_set_up_slab_opt.py&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">facetpath</span><span class="p">))</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">py_job_fname</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">c</span><span class="p">:</span>
+                <span class="n">c</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">template_text</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="n">socket_calculator</span><span class="o">=</span><span class="n">socket_calculator</span><span class="p">,</span>
+                    <span class="n">surface_type</span><span class="o">=</span><span class="n">surface_type</span><span class="p">,</span>
+                    <span class="n">metal_atom</span><span class="o">=</span><span class="n">metal_atom</span><span class="p">,</span>
+                    <span class="n">a</span><span class="o">=</span><span class="n">a</span><span class="p">,</span>
+                    <span class="n">repeats_surface</span><span class="o">=</span><span class="n">repeats_surface</span><span class="p">,</span>
+                    <span class="n">vacuum</span><span class="o">=</span><span class="n">vacuum</span><span class="p">,</span>
+                    <span class="n">slab_name</span><span class="o">=</span><span class="n">slab_name</span><span class="p">,</span>
+                    <span class="n">pseudopotentials</span><span class="o">=</span><span class="n">pseudopotentials</span><span class="p">,</span>
+                    <span class="n">pseudo_dir</span><span class="o">=</span><span class="n">pseudo_dir</span><span class="p">,</span>
+                    <span class="n">balsam_exe_settings</span><span class="o">=</span><span class="n">balsam_exe_settings</span><span class="p">,</span>
+                    <span class="n">calc_keywords</span><span class="o">=</span><span class="n">calc_keywords</span><span class="p">,</span>
+                    <span class="n">creation_dir</span><span class="o">=</span><span class="n">creation_dir</span>
+                <span class="p">))</span></div>
+
+<div class="viewcode-block" id="WorkFlow.set_up_big_slab"><a class="viewcode-back" href="../../source/pynta.html#pynta.main.WorkFlow.set_up_big_slab">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">set_up_big_slab</span><span class="p">(</span>
+            <span class="n">socket_calculator</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">template</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">py_job_dir</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">facetpath</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">slab_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">repeats</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span>
+            <span class="n">pytemplate</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&#39;&#39;&#39; Set up a big_slab_opt ase py job generator</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        template : str</span>
+<span class="sd">            a name of a template to set up ``01`` job</span>
+<span class="sd">        py_job_dir : str</span>
+<span class="sd">            a path to where all job files ``00``-``05`` are about to be</span>
+<span class="sd">            created, e.g.</span>
+
+<span class="sd">            &gt;&gt;&gt; py_job_dir = {&#39;current_dir&#39;}/job_files/Cu_111</span>
+
+<span class="sd">        facetpath : str</span>
+<span class="sd">            a path to the workflow&#39;s main dir</span>
+<span class="sd">            e.g.</span>
+
+<span class="sd">            &gt;&gt;&gt; facetpath = &#39;Cu_111&#39;</span>
+
+<span class="sd">        slab_name : str</span>
+<span class="sd">            name of the slab file (no extintion) that is about to be created</span>
+<span class="sd">            e.g.</span>
+
+<span class="sd">            &gt;&gt;&gt; slab_name = &#39;Cu_111_slab_opt&#39;</span>
+
+<span class="sd">        repeats : Tuple[int, int, int]</span>
+<span class="sd">            how to replicate unit cell in (x, y, z) direction,</span>
+<span class="sd">            e.g.</span>
+
+<span class="sd">            &gt;&gt;&gt; repeats = (3, 3, 1)</span>
+
+<span class="sd">        pytemplate : str</span>
+<span class="sd">            a template to prepare submission scripts for big_slab minimization</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">template</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">r</span><span class="p">:</span>
+            <span class="n">template_text</span> <span class="o">=</span> <span class="n">r</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+            <span class="n">py_job_fname</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+                <span class="n">py_job_dir</span><span class="p">,</span> <span class="s1">&#39;00_</span><span class="si">{}</span><span class="s1">_set_up_big_slab_opt.py&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">facetpath</span><span class="p">))</span>
+
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">py_job_fname</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">c</span><span class="p">:</span>
+                <span class="n">c</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">template_text</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="n">socket_calculator</span><span class="o">=</span><span class="n">socket_calculator</span><span class="p">,</span>
+                    <span class="n">facetpath</span><span class="o">=</span><span class="n">facetpath</span><span class="p">,</span>
+                    <span class="n">slab_name</span><span class="o">=</span><span class="n">slab_name</span><span class="p">,</span>
+                    <span class="n">repeats</span><span class="o">=</span><span class="n">repeats</span><span class="p">,</span>
+                    <span class="n">pytemplate</span><span class="o">=</span><span class="n">pytemplate</span><span class="p">,</span>
+                    <span class="n">pseudopotentials</span><span class="o">=</span><span class="n">pseudopotentials</span><span class="p">,</span>
+                    <span class="n">pseudo_dir</span><span class="o">=</span><span class="n">pseudo_dir</span><span class="p">,</span>
+                    <span class="n">balsam_exe_settings</span><span class="o">=</span><span class="n">balsam_exe_settings</span><span class="p">,</span>
+                    <span class="n">calc_keywords</span><span class="o">=</span><span class="n">calc_keywords</span><span class="p">,</span>
+                    <span class="n">creation_dir</span><span class="o">=</span><span class="n">creation_dir</span><span class="p">,</span>
+                    <span class="n">job_file_dir_name</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+                        <span class="n">creation_dir</span><span class="p">,</span> <span class="n">job_file_dir_name</span><span class="p">,</span> <span class="n">facetpath</span><span class="p">),</span>
+                    <span class="n">node_packing_count</span><span class="o">=</span><span class="n">node_packing_count</span>
+                <span class="p">))</span></div>
+
+<div class="viewcode-block" id="WorkFlow.set_up_ads"><a class="viewcode-back" href="../../source/pynta.html#pynta.main.WorkFlow.set_up_ads">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">set_up_ads</span><span class="p">(</span>
+            <span class="n">set_up_ads</span><span class="p">,</span>
+            <span class="n">template</span><span class="p">,</span>
+            <span class="n">py_job_dir</span><span class="p">,</span>
+            <span class="n">facetpath</span><span class="p">,</span>
+            <span class="n">slab</span><span class="p">,</span>
+            <span class="n">repeats</span><span class="p">,</span>
+            <span class="n">yamlfile</span><span class="p">,</span>
+            <span class="n">pytemplate</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39; Create ``&#39;01_{facetpath}_set_up_ads_on_slab_{rxn_name}.py&#39;`` file</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+
+<span class="sd">        template : str</span>
+<span class="sd">            a name of a template to set up `01` job</span>
+<span class="sd">        py_job_dir : str</span>
+<span class="sd">            a path to where all job files ``00``-``05`` are about to be</span>
+<span class="sd">            created, e.g.</span>
+
+<span class="sd">            &gt;&gt;&gt; py_job_dir = {&#39;current_dir&#39;}/job_files/Cu_111</span>
+
+<span class="sd">        facetpath : str</span>
+<span class="sd">            a path to the workflow&#39;s main dir</span>
+
+<span class="sd">            &gt;&gt;&gt; facetpath = &#39;Cu_111&#39;</span>
+
+<span class="sd">        slab : str</span>
+<span class="sd">            a path to :literal:`*.xyz` file with optimized slab</span>
+<span class="sd">        repeats : Tuple[int, int, int]</span>
+<span class="sd">            how to replicate unit cell in (x, y, z) direction,</span>
+<span class="sd">            e.g.</span>
+
+<span class="sd">            &gt;&gt;&gt; repeats = (3, 3, 1)</span>
+
+<span class="sd">        yamlfile : str</span>
+<span class="sd">            a name of the :literal:`*.yaml` file with a reaction list</span>
+<span class="sd">        pytemplate : str</span>
+<span class="sd">            a name of a template to prepare submission scripts for</span>
+<span class="sd">            adsorbate+surface minimization</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">template</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">r</span><span class="p">:</span>
+            <span class="n">template_text</span> <span class="o">=</span> <span class="n">r</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+            <span class="n">py_job_fname</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+                <span class="n">py_job_dir</span><span class="p">,</span> <span class="s1">&#39;01_</span><span class="si">{}</span><span class="s1">_set_up_ads_on_slab.py&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">facetpath</span><span class="p">))</span>
+
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">py_job_fname</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">c</span><span class="p">:</span>
+                <span class="n">c</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">template_text</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="n">socket_calculator</span><span class="o">=</span><span class="n">socket_calculator</span><span class="p">,</span>
+                    <span class="n">facetpath</span><span class="o">=</span><span class="n">facetpath</span><span class="p">,</span>
+                    <span class="n">slab</span><span class="o">=</span><span class="n">slab</span><span class="p">,</span>
+                    <span class="n">yamlfile</span><span class="o">=</span><span class="n">yamlfile</span><span class="p">,</span>
+                    <span class="n">repeats</span><span class="o">=</span><span class="n">repeats</span><span class="p">,</span>
+                    <span class="n">pytemplate</span><span class="o">=</span><span class="n">pytemplate</span><span class="p">,</span>
+                    <span class="n">pseudopotentials</span><span class="o">=</span><span class="n">pseudopotentials</span><span class="p">,</span>
+                    <span class="n">pseudo_dir</span><span class="o">=</span><span class="n">pseudo_dir</span><span class="p">,</span>
+                    <span class="n">node_packing_count</span><span class="o">=</span><span class="n">node_packing_count</span><span class="p">,</span>
+                    <span class="n">balsam_exe_settings</span><span class="o">=</span><span class="n">balsam_exe_settings</span><span class="p">,</span>
+                    <span class="n">calc_keywords</span><span class="o">=</span><span class="n">calc_keywords</span><span class="p">,</span>
+                    <span class="n">creation_dir</span><span class="o">=</span><span class="n">creation_dir</span>
+                <span class="p">))</span></div>
+
+<div class="viewcode-block" id="WorkFlow.set_up_ads_vib"><a class="viewcode-back" href="../../source/pynta.html#pynta.main.WorkFlow.set_up_ads_vib">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">set_up_ads_vib</span><span class="p">(</span>
+            <span class="n">socket_calculator</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">template</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">py_job_dir</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">facetpath</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">pytemplate</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&#39;&#39;&#39; Create ``&#39;{facetpath}_set_up_ads_vib.py&#39;`` file</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        template : str</span>
+<span class="sd">            a template file for ads_vib job</span>
+<span class="sd">        py_job_dir : str</span>
+<span class="sd">            a path to where all job files ``00``-``05`` are about to be</span>
+<span class="sd">            created, e.g.</span>
+
+<span class="sd">            &gt;&gt;&gt; py_job_dir = {&#39;current_dir&#39;}/job_files/Cu_111</span>
+
+<span class="sd">        facetpath : str</span>
+<span class="sd">            a path to the workflow&#39;s main dir</span>
+
+<span class="sd">            &gt;&gt;&gt; facetpath = &#39;Cu_111&#39;</span>
+
+<span class="sd">        pytemplate : str</span>
+<span class="sd">            a name of a template to prepare submission scripts for vibfrational</span>
+<span class="sd">            frequencies calculations of symmetry distinct minima</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">template</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">template_txt</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+            <span class="n">py_job_fname</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+                <span class="n">creation_dir</span><span class="p">,</span>
+                <span class="n">py_job_dir</span><span class="p">,</span>
+                <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">_set_up_ads_vib.py&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">facetpath</span><span class="p">))</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">py_job_fname</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">c</span><span class="p">:</span>
+                <span class="n">c</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">template_txt</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="n">socket_calculator</span><span class="o">=</span><span class="n">socket_calculator</span><span class="p">,</span>
+                    <span class="n">facetpath</span><span class="o">=</span><span class="n">facetpath</span><span class="p">,</span>
+                    <span class="n">yamlfile</span><span class="o">=</span><span class="n">yamlfile</span><span class="p">,</span>
+                    <span class="n">pytemplate</span><span class="o">=</span><span class="n">pytemplate</span><span class="p">,</span>
+                    <span class="n">pseudopotentials</span><span class="o">=</span><span class="n">pseudopotentials</span><span class="p">,</span>
+                    <span class="n">pseudo_dir</span><span class="o">=</span><span class="n">pseudo_dir</span><span class="p">,</span>
+                    <span class="n">node_packing_count</span><span class="o">=</span><span class="n">node_packing_count</span><span class="p">,</span>
+                    <span class="n">balsam_exe_settings</span><span class="o">=</span><span class="n">balsam_exe_settings</span><span class="p">,</span>
+                    <span class="n">calc_keywords</span><span class="o">=</span><span class="n">calc_keywords</span><span class="p">,</span>
+                    <span class="n">creation_dir</span><span class="o">=</span><span class="n">creation_dir</span>
+                <span class="p">))</span></div>
+
+<div class="viewcode-block" id="WorkFlow.set_up_TS_with_xtb"><a class="viewcode-back" href="../../source/pynta.html#pynta.main.WorkFlow.set_up_TS_with_xtb">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">set_up_TS_with_xtb</span><span class="p">(</span>
+            <span class="n">rxn</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
+            <span class="n">reacting_atoms</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+            <span class="n">template</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">py_job_dir</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">slab</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">repeats</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span>
+            <span class="n">facetpath</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">scfactor</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+            <span class="n">scfactor_surface</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+            <span class="n">pytemplate_xtb</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&#39;&#39;&#39; Create ``&#39;02_{facetpath}_set_up_TS_with_xtb_{rxn_name}.py&#39;`` files</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+
+<span class="sd">        rxn : Dict[str, str]</span>
+<span class="sd">            a dictionary with info about the paricular reaction. This can be</span>
+<span class="sd">            view as a splitted many reaction :literal:`*.yaml` file to a</span>
+<span class="sd">            single reaction :literal:`*.yaml` file</span>
+<span class="sd">        template : str</span>
+<span class="sd">            a template to set up ``02`` job for a particular reaction</span>
+<span class="sd">        py_job_dir : str</span>
+<span class="sd">            a path to where all job files ``00``-``05`` are about to be</span>
+<span class="sd">            created, e.g.</span>
+
+<span class="sd">            &gt;&gt;&gt; py_job_dir = {&#39;current_dir&#39;}/job_files/Cu_111</span>
+
+<span class="sd">        slab : str</span>
+<span class="sd">            a :literal:`*.xyz` file name with the optimized slab</span>
+<span class="sd">            e.g.</span>
+
+<span class="sd">            &gt;&gt;&gt; slab = &#39;Cu_111_slab_opt.xyz&#39;</span>
+
+<span class="sd">        repeats : Tuple[int, int, int]</span>
+<span class="sd">            how to replicate unit cell in (x, y, z) direction,</span>
+<span class="sd">            e.g.</span>
+
+<span class="sd">            &gt;&gt;&gt; repeats = (3, 3, 1)</span>
+
+<span class="sd">        facetpath : str</span>
+<span class="sd">            a path to the workflow&#39;s main dir</span>
+
+<span class="sd">            &gt;&gt;&gt; facetpath = &#39;Cu_111&#39;</span>
+
+<span class="sd">        scfator : float</span>
+<span class="sd">            a scaling factor to scale a bond distance between atoms taking</span>
+<span class="sd">            part in the reaction</span>
+<span class="sd">            e.g.</span>
+
+<span class="sd">            &gt;&gt;&gt; scfator = 1.4</span>
+
+<span class="sd">        scfactor_surface : float</span>
+<span class="sd">            a scaling factor to scale the target bond distance, i.e.</span>
+<span class="sd">            the average distance between adsorbed atom and the nearest</span>
+<span class="sd">            surface atom. Helpful e.g. when H is far away form the surface</span>
+<span class="sd">            in TS, whereas for minima it is close to the surface</span>
+<span class="sd">            e.g.</span>
+
+<span class="sd">            &gt;&gt;&gt; scfactor_surface = 1.0</span>
+
+<span class="sd">        pytemplate_xtb : str</span>
+<span class="sd">            a name of a template file for penalty function minimization job</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">template</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">r</span><span class="p">:</span>
+            <span class="n">template_text</span> <span class="o">=</span> <span class="n">r</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+            <span class="n">rxn_name</span> <span class="o">=</span> <span class="n">IO</span><span class="o">.</span><span class="n">get_rxn_name</span><span class="p">(</span><span class="n">rxn</span><span class="p">)</span>
+            <span class="n">rxn_no</span> <span class="o">=</span> <span class="n">rxn</span><span class="p">[</span><span class="s1">&#39;index&#39;</span><span class="p">]</span>
+
+            <span class="n">py_job_fname</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+                <span class="n">py_job_dir</span><span class="p">,</span> <span class="s1">&#39;02_</span><span class="si">{}</span><span class="s1">_set_up_TS_with_xtb_</span><span class="si">{}</span><span class="s1">.py&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="n">facetpath</span><span class="p">,</span> <span class="n">rxn_name</span><span class="p">))</span>
+
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">py_job_fname</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">c</span><span class="p">:</span>
+                <span class="n">c</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">template_text</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="n">facetpath</span><span class="o">=</span><span class="n">facetpath</span><span class="p">,</span>
+                    <span class="n">slab</span><span class="o">=</span><span class="n">slab</span><span class="p">,</span>
+                    <span class="n">repeats</span><span class="o">=</span><span class="n">repeats</span><span class="p">,</span>
+                    <span class="n">yamlfile</span><span class="o">=</span><span class="n">yamlfile</span><span class="p">,</span>
+                    <span class="n">scfactor</span><span class="o">=</span><span class="n">scfactor</span><span class="p">,</span>
+                    <span class="n">scfactor_surface</span><span class="o">=</span><span class="n">scfactor_surface</span><span class="p">,</span>
+                    <span class="n">pytemplate_xtb</span><span class="o">=</span><span class="n">pytemplate_xtb</span><span class="p">,</span>
+                    <span class="n">species_list</span><span class="o">=</span><span class="n">species_dict</span><span class="p">[</span><span class="s1">&#39;rxn&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">rxn_no</span><span class="p">)],</span>
+                    <span class="n">metal_atom</span><span class="o">=</span><span class="n">metal_atom</span><span class="p">,</span>
+                    <span class="n">scaled1</span><span class="o">=</span><span class="n">scaled1</span><span class="p">,</span>
+                    <span class="n">scaled2</span><span class="o">=</span><span class="n">scaled2</span><span class="p">,</span>
+                    <span class="n">reacting_atoms</span><span class="o">=</span><span class="n">reacting_atoms</span><span class="p">,</span>
+                    <span class="n">creation_dir</span><span class="o">=</span><span class="n">creation_dir</span><span class="p">,</span>
+                    <span class="n">rxn</span><span class="o">=</span><span class="n">rxn</span><span class="p">,</span>
+                    <span class="n">rxn_name</span><span class="o">=</span><span class="n">rxn_name</span><span class="p">,</span>
+                    <span class="n">node_packing_count</span><span class="o">=</span><span class="n">node_packing_count</span>
+                <span class="p">))</span></div>
+
+<div class="viewcode-block" id="WorkFlow.set_up_run_TS"><a class="viewcode-back" href="../../source/pynta.html#pynta.main.WorkFlow.set_up_run_TS">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">set_up_run_TS</span><span class="p">(</span>
+            <span class="n">socket_calculator</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">rxn</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
+            <span class="n">template</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">py_job_dir</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">facetpath</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">slab</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">repeats</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span>
+            <span class="n">pytemplate</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&#39;&#39;&#39; Create ``&#39;03_{facetpath}_set_up_run_TS_{rxn_name}.py&#39;`` file</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+
+<span class="sd">        rxn : Dict[str, str]</span>
+<span class="sd">            a dictionary with info about the paricular reaction. This can be</span>
+<span class="sd">            view as a splitted many reaction :literal:`*.yaml` file to a</span>
+<span class="sd">            single reaction :literal:`*.yaml` file</span>
+<span class="sd">        template : str</span>
+<span class="sd">            a template to set up 03 job for a particular reaction</span>
+<span class="sd">        py_job_dir : str</span>
+<span class="sd">            a path to where all job files ``00``-``05`` are about to be</span>
+<span class="sd">            created, e.g.</span>
+
+<span class="sd">            &gt;&gt;&gt; py_job_dir = {&#39;current_dir&#39;}/job_files/Cu_111</span>
+
+<span class="sd">        facetpath : str</span>
+<span class="sd">            a path to the workflow&#39;s main dir</span>
+
+<span class="sd">            &gt;&gt;&gt; facetpath = &#39;Cu_111&#39;</span>
+
+<span class="sd">        slab : str</span>
+<span class="sd">            a :literal:`*.xyz` file name with the optimized slab</span>
+<span class="sd">            e.g.</span>
+
+<span class="sd">            &gt;&gt;&gt; slab = &#39;Cu_111_slab_opt.xyz&#39;</span>
+
+<span class="sd">        repeats : Tuple[int, int, int]</span>
+<span class="sd">            how to replicate unit cell in (x, y, z) direction,</span>
+<span class="sd">            e.g.</span>
+
+<span class="sd">            &gt;&gt;&gt; repeats = (3, 3, 1)</span>
+
+<span class="sd">        pytemplate : str</span>
+<span class="sd">            a name of a template file for ts optimization with sella</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">template</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">r</span><span class="p">:</span>
+            <span class="n">template_text</span> <span class="o">=</span> <span class="n">r</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+            <span class="n">rxn_name</span> <span class="o">=</span> <span class="n">IO</span><span class="o">.</span><span class="n">get_rxn_name</span><span class="p">(</span><span class="n">rxn</span><span class="p">)</span>
+            <span class="n">py_job_fname</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+                <span class="n">py_job_dir</span><span class="p">,</span> <span class="s1">&#39;03_</span><span class="si">{}</span><span class="s1">_run_TS_</span><span class="si">{}</span><span class="s1">.py&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="n">facetpath</span><span class="p">,</span> <span class="n">rxn_name</span><span class="p">))</span>
+
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">py_job_fname</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">c</span><span class="p">:</span>
+                <span class="n">c</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">template_text</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="n">socket_calculator</span><span class="o">=</span><span class="n">socket_calculator</span><span class="p">,</span>
+                    <span class="n">facetpath</span><span class="o">=</span><span class="n">facetpath</span><span class="p">,</span>
+                    <span class="n">slab</span><span class="o">=</span><span class="n">slab</span><span class="p">,</span>
+                    <span class="n">repeats</span><span class="o">=</span><span class="n">repeats</span><span class="p">,</span>
+                    <span class="n">yamlfile</span><span class="o">=</span><span class="n">yamlfile</span><span class="p">,</span>
+                    <span class="n">pytemplate</span><span class="o">=</span><span class="n">pytemplate</span><span class="p">,</span>
+                    <span class="n">pseudo_dir</span><span class="o">=</span><span class="n">pseudo_dir</span><span class="p">,</span>
+                    <span class="n">pseudopotentials</span><span class="o">=</span><span class="n">pseudopotentials</span><span class="p">,</span>
+                    <span class="n">node_packing_count</span><span class="o">=</span><span class="n">node_packing_count</span><span class="p">,</span>
+                    <span class="n">balsam_exe_settings</span><span class="o">=</span><span class="n">balsam_exe_settings</span><span class="p">,</span>
+                    <span class="n">calc_keywords</span><span class="o">=</span><span class="n">calc_keywords</span><span class="p">,</span>
+                    <span class="n">creation_dir</span><span class="o">=</span><span class="n">creation_dir</span><span class="p">,</span>
+                    <span class="n">rxn</span><span class="o">=</span><span class="n">rxn</span><span class="p">,</span>
+                    <span class="n">rxn_name</span><span class="o">=</span><span class="n">rxn_name</span>
+                <span class="p">))</span></div>
+
+<div class="viewcode-block" id="WorkFlow.set_up_TS_vib"><a class="viewcode-back" href="../../source/pynta.html#pynta.main.WorkFlow.set_up_TS_vib">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">set_up_TS_vib</span><span class="p">(</span>
+            <span class="n">socket_calculator</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">rxn</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
+            <span class="n">template</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">py_job_dir</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">facetpath</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">slab</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">repeats</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span>
+            <span class="n">pytemplate</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&#39;&#39;&#39; Create ``&#39;&#39;04_{facetpath}_set_up_TS_vib_{rxn_name}.py&#39;`` file</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+
+<span class="sd">        rxn : Dict[str, str]</span>
+<span class="sd">            a dictionary with info about the paricular reaction. This can be</span>
+<span class="sd">            view as a splitted many reaction :literal:`*.yaml` file to a</span>
+<span class="sd">            single reaction :literal:`*.yaml` file</span>
+<span class="sd">        template : str</span>
+<span class="sd">            a template to set up `04` job for a particular reaction</span>
+<span class="sd">        py_job_dir : str</span>
+<span class="sd">            a path to where all job files ``00``-``05`` are about to be</span>
+<span class="sd">            created, e.g.</span>
+
+<span class="sd">            &gt;&gt;&gt; py_job_dir = {&#39;current_dir&#39;}/job_files/Cu_111</span>
+
+<span class="sd">        facetpath : str</span>
+<span class="sd">            a path to the workflow&#39;s main dir</span>
+
+<span class="sd">            &gt;&gt;&gt; facetpath = &#39;Cu_111&#39;</span>
+
+<span class="sd">        slab : str</span>
+<span class="sd">            a :literal:`*.xyz` file name with the optimized slab</span>
+<span class="sd">            e.g.</span>
+<span class="sd">            &gt;&gt;&gt; slab = &#39;Cu_111_slab_opt.xyz&#39;</span>
+
+<span class="sd">        repeats : Tuple[int, int, int]</span>
+<span class="sd">            how to replicate unit cell in (x, y, z) direction,</span>
+<span class="sd">            e.g.</span>
+
+<span class="sd">            &gt;&gt;&gt; repeats = (3, 3, 1)</span>
+
+<span class="sd">        pytemplate : str</span>
+<span class="sd">            a name of a template file for setting up frequencies calculations</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">template</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">r</span><span class="p">:</span>
+            <span class="n">template_text</span> <span class="o">=</span> <span class="n">r</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+            <span class="n">rxn_name</span> <span class="o">=</span> <span class="n">IO</span><span class="o">.</span><span class="n">get_rxn_name</span><span class="p">(</span><span class="n">rxn</span><span class="p">)</span>
+            <span class="n">py_job_fname</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+                <span class="n">py_job_dir</span><span class="p">,</span> <span class="s1">&#39;04_</span><span class="si">{}</span><span class="s1">_set_up_TS_vib_</span><span class="si">{}</span><span class="s1">.py&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="n">facetpath</span><span class="p">,</span> <span class="n">rxn_name</span><span class="p">))</span>
+
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">py_job_fname</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">c</span><span class="p">:</span>
+                <span class="n">c</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">template_text</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="n">socket_calculator</span><span class="o">=</span><span class="n">socket_calculator</span><span class="p">,</span>
+                    <span class="n">facetpath</span><span class="o">=</span><span class="n">facetpath</span><span class="p">,</span>
+                    <span class="n">slab</span><span class="o">=</span><span class="n">slab</span><span class="p">,</span>
+                    <span class="n">repeats</span><span class="o">=</span><span class="n">repeats</span><span class="p">,</span>
+                    <span class="n">yamlfile</span><span class="o">=</span><span class="n">yamlfile</span><span class="p">,</span>
+                    <span class="n">pytemplate</span><span class="o">=</span><span class="n">pytemplate</span><span class="p">,</span>
+                    <span class="n">pseudo_dir</span><span class="o">=</span><span class="n">pseudo_dir</span><span class="p">,</span>
+                    <span class="n">pseudopotentials</span><span class="o">=</span><span class="n">pseudopotentials</span><span class="p">,</span>
+                    <span class="n">node_packing_count</span><span class="o">=</span><span class="n">node_packing_count</span><span class="p">,</span>
+                    <span class="n">balsam_exe_settings</span><span class="o">=</span><span class="n">balsam_exe_settings</span><span class="p">,</span>
+                    <span class="n">calc_keywords</span><span class="o">=</span><span class="n">calc_keywords</span><span class="p">,</span>
+                    <span class="n">creation_dir</span><span class="o">=</span><span class="n">creation_dir</span><span class="p">,</span>
+                    <span class="n">rxn</span><span class="o">=</span><span class="n">rxn</span><span class="p">,</span>
+                    <span class="n">rxn_name</span><span class="o">=</span><span class="n">rxn_name</span>
+                <span class="p">))</span></div>
+
+<div class="viewcode-block" id="WorkFlow.set_up_opt_after_TS"><a class="viewcode-back" href="../../source/pynta.html#pynta.main.WorkFlow.set_up_opt_after_TS">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">set_up_opt_after_TS</span><span class="p">(</span>
+            <span class="n">socket_calculator</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">rxn</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
+            <span class="n">template</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">py_job_dir</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">facetpath</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">slab</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">repeats</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span>
+            <span class="n">pytemplate</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&#39;&#39;&#39; Create ``&#39;05_{facetpath}_set_up_after_TS_{rxn_name}.py&#39;`` file</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+
+<span class="sd">        rxn : Dict[str, str]</span>
+<span class="sd">            a dictionary with info about the paricular reaction. This can be</span>
+<span class="sd">            view as a splitted many reaction :literal:`*.yaml` file to a</span>
+<span class="sd">            single reaction :literal:`*.yaml` file</span>
+<span class="sd">        template : str</span>
+<span class="sd">            a template to set up `05` job for a particular reaction</span>
+<span class="sd">        py_job_dir : str</span>
+<span class="sd">            a path to where all job files ``00``-``05`` are about to be</span>
+<span class="sd">            created, e.g.</span>
+
+<span class="sd">            &gt;&gt;&gt; py_job_dir = {&#39;current_dir&#39;}/job_files/Cu_111</span>
+
+<span class="sd">        facetpath : str</span>
+<span class="sd">            a path to the workflow&#39;s main dir</span>
+
+<span class="sd">            &gt;&gt;&gt; facetpath = &#39;Cu_111&#39;</span>
+
+<span class="sd">        slab : str</span>
+<span class="sd">            a :literal:`*.xyz` file name with the optimized slab</span>
+<span class="sd">            e.g.</span>
+
+<span class="sd">            &gt;&gt;&gt; slab = &#39;Cu_111_slab_opt.xyz&#39;</span>
+
+<span class="sd">        repeats : Tuple[int, int, int]</span>
+<span class="sd">            how to replicate unit cell in (x, y, z) direction,</span>
+<span class="sd">            e.g.</span>
+
+<span class="sd">            &gt;&gt;&gt; repeats = (3, 3, 1)</span>
+
+<span class="sd">        pytemplate : str</span>
+<span class="sd">            a name of a template file for setting up an alternative to IRC</span>
+<span class="sd">            (minimization of displaced structures following the imaginary mode</span>
+<span class="sd">            of oscillation)</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">template</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">r</span><span class="p">:</span>
+            <span class="n">template_text</span> <span class="o">=</span> <span class="n">r</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+            <span class="n">rxn_name</span> <span class="o">=</span> <span class="n">IO</span><span class="o">.</span><span class="n">get_rxn_name</span><span class="p">(</span><span class="n">rxn</span><span class="p">)</span>
+            <span class="n">py_job_fname</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+                <span class="n">py_job_dir</span><span class="p">,</span> <span class="s1">&#39;05_</span><span class="si">{}</span><span class="s1">_set_up_after_TS_</span><span class="si">{}</span><span class="s1">.py&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="n">facetpath</span><span class="p">,</span> <span class="n">rxn_name</span><span class="p">))</span>
+
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">py_job_fname</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">c</span><span class="p">:</span>
+                <span class="n">c</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">template_text</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="n">socket_calculator</span><span class="o">=</span><span class="n">socket_calculator</span><span class="p">,</span>
+                    <span class="n">facetpath</span><span class="o">=</span><span class="n">facetpath</span><span class="p">,</span>
+                    <span class="n">slab</span><span class="o">=</span><span class="n">slab</span><span class="p">,</span>
+                    <span class="n">repeats</span><span class="o">=</span><span class="n">repeats</span><span class="p">,</span>
+                    <span class="n">yamlfile</span><span class="o">=</span><span class="n">yamlfile</span><span class="p">,</span>
+                    <span class="n">pytemplate</span><span class="o">=</span><span class="n">pytemplate</span><span class="p">,</span>
+                    <span class="n">pseudo_dir</span><span class="o">=</span><span class="n">pseudo_dir</span><span class="p">,</span>
+                    <span class="n">pseudopotentials</span><span class="o">=</span><span class="n">pseudopotentials</span><span class="p">,</span>
+                    <span class="n">node_packing_count</span><span class="o">=</span><span class="n">node_packing_count</span><span class="p">,</span>
+                    <span class="n">balsam_exe_settings</span><span class="o">=</span><span class="n">balsam_exe_settings</span><span class="p">,</span>
+                    <span class="n">calc_keywords</span><span class="o">=</span><span class="n">calc_keywords</span><span class="p">,</span>
+                    <span class="n">creation_dir</span><span class="o">=</span><span class="n">creation_dir</span><span class="p">,</span>
+                    <span class="n">rxn</span><span class="o">=</span><span class="n">rxn</span><span class="p">,</span>
+                    <span class="n">rxn_name</span><span class="o">=</span><span class="n">rxn_name</span>
+                <span class="p">))</span></div>
+
+<span class="c1">##############################</span>
+<span class="c1"># Submit jobs and execute it #</span>
+<span class="c1">##############################</span>
+
+<div class="viewcode-block" id="WorkFlow.exe"><a class="viewcode-back" href="../../source/pynta.html#pynta.main.WorkFlow.exe">[docs]</a>    <span class="k">def</span> <span class="nf">exe</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">parent_job</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">job_script</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">facetpath</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">cores</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+        <span class="sd">&#39;&#39;&#39; Add python job file to balsam DB</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+
+<span class="sd">        parent_job : str</span>
+<span class="sd">            a parent job on which subbmited jobs depends on. Formatted as:</span>
+<span class="sd">            ``00`` or ``01`` or ``02`` or ``03`` or ``04`` or ``05``,</span>
+<span class="sd">            depending on the job</span>
+<span class="sd">        job_script : str</span>
+<span class="sd">            a script that is about to be submitted</span>
+<span class="sd">        cores : int</span>
+<span class="sd">            number of cores for exe job</span>
+<span class="sd">        facetpath : str</span>
+<span class="sd">            a path to the workflow&#39;s main dir</span>
+
+<span class="sd">            &gt;&gt;&gt; facetpath = &#39;Cu_111&#39;</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+
+<span class="sd">        job_to_add : BalsamJob</span>
+<span class="sd">            job that will be submitted to balsam database</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="kn">from</span> <span class="nn">balsam.launcher.dag</span> <span class="k">import</span> <span class="n">BalsamJob</span>
+
+        <span class="n">job_files_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+            <span class="n">creation_dir</span><span class="p">,</span> <span class="n">job_file_dir_name</span><span class="p">,</span> <span class="n">facetpath</span><span class="p">)</span>
+
+        <span class="c1"># get rxn_name from job_script by spliting and joining job_script name</span>
+        <span class="c1"># exeption for two first jobs</span>
+        <span class="n">slab_opt</span> <span class="o">=</span> <span class="s1">&#39;00_</span><span class="si">{}</span><span class="s1">_set_up_slab_opt.py&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">facetpath</span><span class="p">)</span>
+        <span class="n">big_slab_opt</span> <span class="o">=</span> <span class="s1">&#39;00_</span><span class="si">{}</span><span class="s1">_set_up_big_slab_opt.py&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">facetpath</span><span class="p">)</span>
+        <span class="n">ads_opt</span> <span class="o">=</span> <span class="s1">&#39;01_</span><span class="si">{}</span><span class="s1">_set_up_ads_on_slab.py&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">facetpath</span><span class="p">)</span>
+        <span class="n">ads_vib</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">_set_up_ads_vib.py&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">facetpath</span><span class="p">)</span>
+
+        <span class="c1"># specify rxn_name TODO a better method required!</span>
+        <span class="k">if</span> <span class="n">job_script</span> <span class="ow">in</span> <span class="p">[</span><span class="n">ads_opt</span><span class="p">,</span> <span class="n">slab_opt</span><span class="p">,</span> <span class="n">ads_vib</span><span class="p">]:</span>
+            <span class="n">rxn_name</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">rxn_name</span> <span class="o">=</span> <span class="s1">&#39;_&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">job_script</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;_&#39;</span><span class="p">)[</span><span class="o">-</span><span class="mi">2</span><span class="p">:])[:</span><span class="o">-</span><span class="mi">3</span><span class="p">]</span>
+
+        <span class="c1"># specify workflow name</span>
+        <span class="k">if</span> <span class="n">job_script</span> <span class="o">==</span> <span class="n">big_slab_opt</span><span class="p">:</span>
+            <span class="c1"># special case for big_slab_opt jobs</span>
+            <span class="n">workflow_name</span> <span class="o">=</span> <span class="n">facetpath</span> <span class="o">+</span> <span class="s1">&#39;_big_slab_opt&#39;</span>
+        <span class="k">elif</span> <span class="n">job_script</span> <span class="o">==</span> <span class="n">ads_vib</span><span class="p">:</span>
+            <span class="c1"># special case for ads_vib jobs</span>
+            <span class="n">workflow_name</span> <span class="o">=</span> <span class="n">facetpath</span> <span class="o">+</span> <span class="s1">&#39;_vib&#39;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># default name for the workflow</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">workflow_name</span> <span class="o">=</span> <span class="n">facetpath</span> <span class="o">+</span> <span class="s1">&#39;_&#39;</span> <span class="o">+</span> \
+                    <span class="n">job_script</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">2</span><span class="p">]</span> <span class="o">+</span> <span class="s1">&#39;_&#39;</span> <span class="o">+</span> <span class="n">rxn_name</span>
+            <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                <span class="n">workflow_name</span> <span class="o">=</span> <span class="n">facetpath</span> <span class="o">+</span> <span class="s1">&#39;_error&#39;</span>
+
+        <span class="n">job</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">job_files_path</span><span class="p">,</span> <span class="n">job_script</span><span class="p">)</span>
+        <span class="n">job_to_add</span> <span class="o">=</span> <span class="n">BalsamJob</span><span class="p">(</span>
+            <span class="n">name</span><span class="o">=</span><span class="n">job_script</span><span class="p">,</span>
+            <span class="n">workflow</span><span class="o">=</span><span class="n">workflow_name</span><span class="p">,</span>
+            <span class="n">application</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">myPython</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+            <span class="n">args</span><span class="o">=</span><span class="n">job</span><span class="p">,</span>
+            <span class="n">ranks_per_node</span><span class="o">=</span><span class="n">cores</span><span class="p">,</span>
+            <span class="n">input_files</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span>
+            <span class="n">node_packing_count</span><span class="o">=</span><span class="n">node_packing_count</span><span class="p">,</span>
+            <span class="n">user_workdir</span><span class="o">=</span><span class="n">job_files_path</span>
+        <span class="p">)</span>
+        <span class="n">job_to_add</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+
+        <span class="c1"># if there is a parent job, specify dependency</span>
+        <span class="k">if</span> <span class="n">parent_job</span> <span class="o">!=</span> <span class="s1">&#39;&#39;</span><span class="p">:</span>
+            <span class="kn">from</span> <span class="nn">balsam.launcher.dag</span> <span class="k">import</span> <span class="n">add_dependency</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">add_dependency</span><span class="p">(</span><span class="n">parent_job</span><span class="p">,</span> <span class="n">job_to_add</span><span class="p">)</span>  <span class="c1"># parent, child</span>
+            <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                <span class="n">dependency</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">parent_job</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">2</span><span class="p">])</span>
+
+                <span class="k">if</span> <span class="n">parent_job</span> <span class="o">==</span> <span class="s1">&#39;01&#39;</span><span class="p">:</span>
+                    <span class="c1"># a special case for 01 where there is on job script</span>
+                    <span class="c1"># for all reactions for a given facet</span>
+                    <span class="n">dependency_workflow_name</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+                        <span class="n">facetpath</span> <span class="o">+</span> <span class="s1">&#39;_&#39;</span> <span class="o">+</span> <span class="n">dependency</span> <span class="o">+</span> <span class="s1">&#39;_&#39;</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">dependency_workflow_name</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+                        <span class="n">facetpath</span> <span class="o">+</span> <span class="s1">&#39;_&#39;</span> <span class="o">+</span> <span class="n">dependency</span> <span class="o">+</span> <span class="s1">&#39;_&#39;</span> <span class="o">+</span> <span class="n">rxn_name</span><span class="p">)</span>
+
+                <span class="n">BalsamJob</span> <span class="o">=</span> <span class="n">BalsamJob</span>
+                <span class="n">pending_simulations</span> <span class="o">=</span> <span class="n">BalsamJob</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span>
+                    <span class="n">workflow__contains</span><span class="o">=</span><span class="n">dependency_workflow_name</span>
+                <span class="p">)</span><span class="o">.</span><span class="n">exclude</span><span class="p">(</span><span class="n">state</span><span class="o">=</span><span class="s1">&#39;JOB_FINISHED&#39;</span><span class="p">)</span>
+
+                <span class="k">for</span> <span class="n">job</span> <span class="ow">in</span> <span class="n">pending_simulations</span><span class="p">:</span>
+                    <span class="n">add_dependency</span><span class="p">(</span><span class="n">job</span><span class="p">,</span> <span class="n">job_to_add</span><span class="p">)</span>  <span class="c1"># parent, child</span>
+
+        <span class="k">return</span> <span class="n">job_to_add</span></div>
+
+<div class="viewcode-block" id="WorkFlow.run_slab_optimization"><a class="viewcode-back" href="../../source/pynta.html#pynta.main.WorkFlow.run_slab_optimization">[docs]</a>    <span class="k">def</span> <span class="nf">run_slab_optimization</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">facetpath</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&#39;&#39;&#39; Submit ``slab_optimization_job``</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+
+<span class="sd">        facetpath : str</span>
+<span class="sd">            a path to the workflow&#39;s main dir</span>
+
+<span class="sd">            &gt;&gt;&gt; facetpath = &#39;Cu_111&#39;</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+
+<span class="sd">        job_to_add : BalsamJob</span>
+<span class="sd">            job that will be submitted to balsam database</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">slab_opt</span> <span class="o">=</span> <span class="s1">&#39;00_</span><span class="si">{}</span><span class="s1">_set_up_slab_opt.py&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">facetpath</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">slab_opt_job</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">exe</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">slab_opt</span><span class="p">,</span> <span class="n">facetpath</span><span class="p">,</span> <span class="n">cores</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="WorkFlow.run_big_slab_opt"><a class="viewcode-back" href="../../source/pynta.html#pynta.main.WorkFlow.run_big_slab_opt">[docs]</a>    <span class="k">def</span> <span class="nf">run_big_slab_opt</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">facetpath</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&#39;&#39;&#39; Submit ``big_slab_optimization`` job</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+
+<span class="sd">        facetpath : str</span>
+<span class="sd">            a path to the workflow&#39;s main dir</span>
+
+<span class="sd">            &gt;&gt;&gt; facetpath = &#39;Cu_111&#39;</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+
+<span class="sd">        job_to_add : BalsamJob</span>
+<span class="sd">            job that will be submitted to balsam database</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">big_slab_opt</span> <span class="o">=</span> <span class="s1">&#39;00_</span><span class="si">{}</span><span class="s1">_set_up_big_slab_opt.py&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">facetpath</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">exe</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">big_slab_opt</span><span class="p">,</span> <span class="n">facetpath</span><span class="p">,</span> <span class="n">cores</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="WorkFlow.run_opt_surf_and_adsorbate"><a class="viewcode-back" href="../../source/pynta.html#pynta.main.WorkFlow.run_opt_surf_and_adsorbate">[docs]</a>    <span class="k">def</span> <span class="nf">run_opt_surf_and_adsorbate</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">facetpath</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&#39;&#39;&#39; Run optmization of adsorbates on the surface</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+
+<span class="sd">        facetpath : str</span>
+<span class="sd">            a path to the workflow&#39;s main dir</span>
+
+<span class="sd">            &gt;&gt;&gt; facetpath = &#39;Cu_111&#39;</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+
+<span class="sd">        job_to_add : BalsamJob</span>
+<span class="sd">            job that will be submitted to balsam database</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">ads_surf_opt_script</span> <span class="o">=</span> <span class="s1">&#39;01_</span><span class="si">{}</span><span class="s1">_set_up_ads_on_slab.py&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">facetpath</span><span class="p">)</span>
+        <span class="n">slab_opt</span> <span class="o">=</span> <span class="s1">&#39;00_</span><span class="si">{}</span><span class="s1">_set_up_slab_opt.py&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">facetpath</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">exe</span><span class="p">(</span><span class="n">slab_opt</span><span class="p">,</span> <span class="n">ads_surf_opt_script</span><span class="p">,</span> <span class="n">facetpath</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="WorkFlow.run_opt_surf_and_adsorbate_no_depend"><a class="viewcode-back" href="../../source/pynta.html#pynta.main.WorkFlow.run_opt_surf_and_adsorbate_no_depend">[docs]</a>    <span class="k">def</span> <span class="nf">run_opt_surf_and_adsorbate_no_depend</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">facetpath</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&#39;&#39;&#39; Run optmization of adsorbates on the surface if there is no</span>
+<span class="sd">        dependency on other jobs</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+
+<span class="sd">        facetpath : str</span>
+<span class="sd">            a path to the workflow&#39;s main dir</span>
+
+<span class="sd">            &gt;&gt;&gt; facetpath = &#39;Cu_111&#39;</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+
+<span class="sd">        job_to_add : BalsamJob</span>
+<span class="sd">            job that will be submitted to balsam database</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">ads_surf_opt_script</span> <span class="o">=</span> <span class="s1">&#39;01_</span><span class="si">{}</span><span class="s1">_set_up_ads_on_slab.py&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">facetpath</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">exe</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">ads_surf_opt_script</span><span class="p">,</span> <span class="n">facetpath</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="WorkFlow.run_minima_vib"><a class="viewcode-back" href="../../source/pynta.html#pynta.main.WorkFlow.run_minima_vib">[docs]</a>    <span class="k">def</span> <span class="nf">run_minima_vib</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">dependent_job</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">facetpath</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&#39;&#39;&#39; Run vibrational frequnecies calculations for the lowest energy</span>
+<span class="sd">        conformer of a given adsorbate</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        dependant_job : str</span>
+<span class="sd">            a prefix of the the job (minimum: two integers,</span>
+<span class="sd">            max: whole job script name) that the current run depends on,</span>
+<span class="sd">            e.g.</span>
+<span class="sd">            &gt;&gt;&gt; dependant_job = &#39;01&#39;</span>
+<span class="sd">        facetpath : str</span>
+<span class="sd">            a path to the workflow&#39;s main dir</span>
+
+<span class="sd">            &gt;&gt;&gt; facetpath = &#39;Cu_111&#39;</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+
+<span class="sd">        job_to_add : BalsamJob</span>
+<span class="sd">            job that will be submitted to balsam database</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">ads_vib_script</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">_set_up_ads_vib.py&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">facetpath</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">exe</span><span class="p">(</span><span class="n">dependent_job</span><span class="p">,</span> <span class="n">ads_vib_script</span><span class="p">,</span> <span class="n">facetpath</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="WorkFlow.run_minima_vib_no_depend"><a class="viewcode-back" href="../../source/pynta.html#pynta.main.WorkFlow.run_minima_vib_no_depend">[docs]</a>    <span class="k">def</span> <span class="nf">run_minima_vib_no_depend</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">facetpath</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&#39;&#39;&#39; Run minima vibrational frequencies job</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        facetpath : str</span>
+<span class="sd">            a path to the workflow&#39;s main dir</span>
+
+<span class="sd">            &gt;&gt;&gt; facetpath = &#39;Cu_111&#39;</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+
+<span class="sd">        job_to_add : BalsamJob</span>
+<span class="sd">            job that will be submitted to balsam database</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">ads_vib_script</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">_set_up_ads_vib.py&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">facetpath</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">exe</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">ads_vib_script</span><span class="p">,</span> <span class="n">facetpath</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="WorkFlow.run_ts_estimate"><a class="viewcode-back" href="../../source/pynta.html#pynta.main.WorkFlow.run_ts_estimate">[docs]</a>    <span class="k">def</span> <span class="nf">run_ts_estimate</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">dependent_job</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">facetpath</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&#39;&#39;&#39; Run TS estimation calculations</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+
+<span class="sd">        dependant_job : str</span>
+<span class="sd">            a prefix of the the job (minimum: two integers,</span>
+<span class="sd">            max: whole job script name) that the current run depends on,</span>
+<span class="sd">            e.g.</span>
+
+<span class="sd">            &gt;&gt;&gt; dependant_job = &#39;01&#39;</span>
+
+<span class="sd">        facetpath : str</span>
+<span class="sd">            a path to the workflow&#39;s main dir</span>
+
+<span class="sd">            &gt;&gt;&gt; facetpath = &#39;Cu_111&#39;</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">ts_xtb_py_script_list</span> <span class="o">=</span> <span class="n">WorkFlow</span><span class="o">.</span><span class="n">get_ts_xtb_py_scripts_list</span><span class="p">(</span><span class="n">facetpath</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">ts_xtb</span> <span class="ow">in</span> <span class="n">ts_xtb_py_script_list</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">exe</span><span class="p">(</span><span class="n">dependent_job</span><span class="p">,</span> <span class="n">ts_xtb</span><span class="p">,</span> <span class="n">facetpath</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="WorkFlow.run_ts_estimate_no_depend"><a class="viewcode-back" href="../../source/pynta.html#pynta.main.WorkFlow.run_ts_estimate_no_depend">[docs]</a>    <span class="k">def</span> <span class="nf">run_ts_estimate_no_depend</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">facetpath</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&#39;&#39;&#39; Run TS estimate calculations if there is no dependency on the</span>
+<span class="sd">        other jobs</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+
+<span class="sd">        facetpath : str</span>
+<span class="sd">            a path to the workflow&#39;s main dir</span>
+
+<span class="sd">            &gt;&gt;&gt; facetpath = &#39;Cu_111&#39;</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">ts_xtb_py_script_list</span> <span class="o">=</span> <span class="n">WorkFlow</span><span class="o">.</span><span class="n">get_ts_xtb_py_scripts_list</span><span class="p">(</span><span class="n">facetpath</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">ts_xtb</span> <span class="ow">in</span> <span class="n">ts_xtb_py_script_list</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">exe</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">ts_xtb</span><span class="p">,</span> <span class="n">facetpath</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="WorkFlow.run_ts_with_sella"><a class="viewcode-back" href="../../source/pynta.html#pynta.main.WorkFlow.run_ts_with_sella">[docs]</a>    <span class="k">def</span> <span class="nf">run_ts_with_sella</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">dependant_job</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">facetpath</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&#39;&#39;&#39; Run TS minimization with Sella</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+
+<span class="sd">        dependant_job : str</span>
+<span class="sd">            a prefix of the the job (minimum: two integers,</span>
+<span class="sd">            max: whole job script name) that the current depends on,</span>
+<span class="sd">            e.g.</span>
+
+<span class="sd">            &gt;&gt;&gt; dependant_job = &#39;02&#39;</span>
+
+<span class="sd">        facetpath : str</span>
+<span class="sd">            a path to the workflow&#39;s main dir</span>
+
+<span class="sd">            &gt;&gt;&gt; facetpath = &#39;Cu_111&#39;</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">ts_sella_py_script_list</span> <span class="o">=</span> <span class="n">WorkFlow</span><span class="o">.</span><span class="n">get_ts_estimate_unique_list</span><span class="p">(</span>
+            <span class="n">facetpath</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">ts_sella</span> <span class="ow">in</span> <span class="n">ts_sella_py_script_list</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">exe</span><span class="p">(</span><span class="n">dependant_job</span><span class="p">,</span> <span class="n">ts_sella</span><span class="p">,</span> <span class="n">facetpath</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="WorkFlow.run_ts_vib"><a class="viewcode-back" href="../../source/pynta.html#pynta.main.WorkFlow.run_ts_vib">[docs]</a>    <span class="k">def</span> <span class="nf">run_ts_vib</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">dependant_job</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">facetpath</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&#39;&#39;&#39; Run frequency calculations for TS</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+
+<span class="sd">        dependant_job : str</span>
+<span class="sd">            a prefix of the the job (minimum: two integers,</span>
+<span class="sd">            max: whole job script name) that the current depends on,</span>
+<span class="sd">            e.g.</span>
+
+<span class="sd">            &gt;&gt;&gt; dependant_job = &#39;03&#39;</span>
+
+<span class="sd">        facetpath : str</span>
+<span class="sd">            a path to the workflow&#39;s main dir</span>
+
+<span class="sd">            &gt;&gt;&gt; facetpath = &#39;Cu_111&#39;</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">ts_vib_py_script_list</span> <span class="o">=</span> <span class="n">WorkFlow</span><span class="o">.</span><span class="n">get_ts_vib_list</span><span class="p">(</span><span class="n">facetpath</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">ts_vib</span> <span class="ow">in</span> <span class="n">ts_vib_py_script_list</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">exe</span><span class="p">(</span><span class="n">dependant_job</span><span class="p">,</span> <span class="n">ts_vib</span><span class="p">,</span> <span class="n">facetpath</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="WorkFlow.run_opt_after_ts"><a class="viewcode-back" href="../../source/pynta.html#pynta.main.WorkFlow.run_opt_after_ts">[docs]</a>    <span class="k">def</span> <span class="nf">run_opt_after_ts</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">dependant_job</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">facetpath</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&#39;&#39;&#39; Run minimization of minima obtained as nudging TS structure</span>
+<span class="sd">        towards imaginary mode of oscilation</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+
+<span class="sd">        dependant_job : str</span>
+<span class="sd">            a prefix of the the job (minimum: two integers,</span>
+<span class="sd">            max: whole job script name) that the current depends on,</span>
+<span class="sd">            e.g.</span>
+
+<span class="sd">            &gt;&gt;&gt; dependant_job = &#39;04&#39;</span>
+
+<span class="sd">        facetpath : str</span>
+<span class="sd">            a path to the workflow&#39;s main dir</span>
+
+<span class="sd">            &gt;&gt;&gt; facetpath = &#39;Cu_111&#39;</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">after_irc_py_scripts</span> <span class="o">=</span> <span class="n">WorkFlow</span><span class="o">.</span><span class="n">get_after_ts_py_scripts</span><span class="p">(</span><span class="n">facetpath</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">after_irc</span> <span class="ow">in</span> <span class="n">after_irc_py_scripts</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">exe</span><span class="p">(</span><span class="n">dependant_job</span><span class="p">,</span> <span class="n">after_irc</span><span class="p">,</span> <span class="n">facetpath</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="WorkFlow.check_all_species"><a class="viewcode-back" href="../../source/pynta.html#pynta.main.WorkFlow.check_all_species">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">check_all_species</span><span class="p">(</span>
+            <span class="n">yamlfile</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">facetpath</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">bool</span><span class="p">]:</span>
+        <span class="sd">&#39;&#39;&#39; Check all species(all reactions) to find whether there are</span>
+<span class="sd">        previous calculation the code can use</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+
+<span class="sd">        yamlfile: str</span>
+<span class="sd">            a name of the :literal:`*.yaml` file with a reaction list</span>
+<span class="sd">        facetpath : str</span>
+<span class="sd">            a path to the workflow&#39;s main dir</span>
+
+<span class="sd">            &gt;&gt;&gt; facetpath = &#39;Cu_111&#39;</span>
+
+<span class="sd">        Return</span>
+<span class="sd">        ------</span>
+
+<span class="sd">        checked_species: dict(str: bool)</span>
+<span class="sd">            a dictionary with True/False values for every species(keys)</span>
+<span class="sd">            True if there are previous calculation, otherwise False</span>
+<span class="sd">            e.g. {&#39;C&#39;: True, &#39;H&#39;: True, &#39;O&#39;: False, &#39;OH&#39;: True, &#39;CH&#39;: True}</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">checked_species</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">all_species</span> <span class="o">=</span> <span class="n">IO</span><span class="p">()</span><span class="o">.</span><span class="n">get_all_unique_species</span><span class="p">(</span><span class="n">yamlfile</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">species</span> <span class="ow">in</span> <span class="n">all_species</span><span class="p">:</span>
+            <span class="n">checked_species</span><span class="p">[</span><span class="n">species</span><span class="p">]</span> <span class="o">=</span> <span class="n">WorkFlow</span><span class="o">.</span><span class="n">is_minima_out_files</span><span class="p">(</span>
+                <span class="n">species</span><span class="p">,</span> <span class="n">facetpath</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">checked_species</span></div>
+
+<div class="viewcode-block" id="WorkFlow.is_minima_dir"><a class="viewcode-back" href="../../source/pynta.html#pynta.main.WorkFlow.is_minima_dir">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">is_minima_dir</span><span class="p">(</span>
+            <span class="n">species</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">facetpath</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="sd">&#39;&#39;&#39; Check if directory with all minima calculations exists</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+
+<span class="sd">        species: str</span>
+<span class="sd">            a species metal_atom</span>
+<span class="sd">            e.g. ``&#39;H&#39;`` or ``&#39;CO&#39;``</span>
+<span class="sd">        facetpath : str</span>
+<span class="sd">            a path to the workflow&#39;s main dir</span>
+
+<span class="sd">            &gt;&gt;&gt; facetpath = &#39;Cu_111&#39;</span>
+
+<span class="sd">        Return</span>
+<span class="sd">        ------</span>
+<span class="sd">            ``True`` if directory for a given species exists in</span>
+<span class="sd">            ``{facepath}/minima``. Otherwise, ``False``</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">species_minima_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+            <span class="n">creation_dir</span><span class="p">,</span> <span class="n">facetpath</span><span class="p">,</span> <span class="s1">&#39;minima&#39;</span><span class="p">,</span> <span class="n">species</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">species_minima_dir</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">return</span> <span class="kc">False</span></div>
+
+<div class="viewcode-block" id="WorkFlow.is_minima_out_files"><a class="viewcode-back" href="../../source/pynta.html#pynta.main.WorkFlow.is_minima_out_files">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">is_minima_out_files</span><span class="p">(</span>
+            <span class="n">species</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">facetpath</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="sd">&#39;&#39;&#39; Check for the previously calculated :literal:`*.relax.out` files</span>
+<span class="sd">        for a given species.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+
+<span class="sd">        species: str</span>
+<span class="sd">            a species metal_atom</span>
+<span class="sd">            e.g. ``&#39;H&#39;`` or ``&#39;CO&#39;``</span>
+<span class="sd">        facetpath : str</span>
+<span class="sd">            a path to the workflow&#39;s main dir</span>
+
+<span class="sd">            &gt;&gt;&gt; facetpath = &#39;Cu_111&#39;</span>
+
+<span class="sd">        Return</span>
+<span class="sd">            ``True`` if there are previous calculations. Otherwise, ``False``.</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">minima_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">creation_dir</span><span class="p">,</span> <span class="n">facetpath</span><span class="p">,</span> <span class="s1">&#39;minima&#39;</span><span class="p">)</span>
+        <span class="c1"># if minima dir exists, check for outfiles</span>
+        <span class="k">if</span> <span class="n">WorkFlow</span><span class="o">.</span><span class="n">is_minima_dir</span><span class="p">(</span><span class="n">species</span><span class="p">,</span> <span class="n">facetpath</span><span class="p">):</span>
+            <span class="n">keyphrase</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">_</span><span class="si">{}</span><span class="s1">_*relax.py.out&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">facetpath</span><span class="p">,</span> <span class="n">species</span><span class="p">)</span>
+            <span class="n">search_for_outfiles</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">minima_dir</span><span class="p">)</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">keyphrase</span><span class="p">)</span>
+            <span class="n">outfiles</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">outfile</span> <span class="ow">in</span> <span class="n">search_for_outfiles</span><span class="p">:</span>
+                <span class="n">outfiles</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">outfile</span><span class="p">))</span>
+            <span class="c1"># empty list</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">outfiles</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">False</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">return</span> <span class="kc">False</span></div>
+
+<div class="viewcode-block" id="WorkFlow.is_slab"><a class="viewcode-back" href="../../source/pynta.html#pynta.main.WorkFlow.is_slab">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">is_slab</span><span class="p">(</span>
+            <span class="n">facetpath</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">bool</span><span class="p">,</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]]:</span>
+        <span class="sd">&#39;&#39;&#39; Check whether slab has been already optimized</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+
+<span class="sd">        facetpath : str</span>
+<span class="sd">            a path to the workflow&#39;s main dir</span>
+
+<span class="sd">            &gt;&gt;&gt; facetpath = &#39;Cu_111&#39;</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+
+<span class="sd">        Tuple[bool, str=None]</span>
+<span class="sd">            ``True`` if there are previous calculations</span>
+
+<span class="sd">                &gt;&gt;&gt; (True, path_to_prev_calc)</span>
+
+<span class="sd">            `False` otherwise</span>
+
+<span class="sd">                &gt;&gt;&gt; (False, )</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">slab_opt_path_str</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="c1"># the code will look for anything like Cu_111*.xyz starting from the</span>
+        <span class="c1"># facetpath directory including all subdirectories.</span>
+        <span class="n">keyphrase</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">facetpath</span> <span class="o">+</span> <span class="s1">&#39;_slab_opt.xyz&#39;</span><span class="p">)</span>
+        <span class="n">slab_opt_path_posix</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">()))</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">keyphrase</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">slab_opt_path</span> <span class="ow">in</span> <span class="n">slab_opt_path_posix</span><span class="p">:</span>
+            <span class="n">slab_opt_path_str</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">slab_opt_path</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">slab_opt_path_str</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">True</span><span class="p">,</span> <span class="n">slab_opt_path_str</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">return</span> <span class="p">(</span><span class="kc">False</span><span class="p">,</span> <span class="p">)</span></div>
+
+<div class="viewcode-block" id="WorkFlow.is_big_slab"><a class="viewcode-back" href="../../source/pynta.html#pynta.main.WorkFlow.is_big_slab">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">is_big_slab</span><span class="p">(</span>
+            <span class="n">facetpath</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="sd">&#39;&#39;&#39; Check for ``big_slab`` calculations.</span>
+
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+
+<span class="sd">        facetpath : str</span>
+<span class="sd">            a path to the workflow&#39;s main dir</span>
+
+<span class="sd">            &gt;&gt;&gt; facetpath = &#39;Cu_111&#39;</span>
+
+<span class="sd">        Return</span>
+<span class="sd">        ------</span>
+<span class="sd">        bool:</span>
+<span class="sd">            ``True`` if there is a big_slab file, ``False`` otherwise.</span>
+<span class="sd">            If multiple matches found, print all and raise error.</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">big_slab_list</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">keyphrase</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">_big_slab_opt*.xyz&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">facetpath</span><span class="p">)</span>
+        <span class="n">big_slab_paths</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">creation_dir</span><span class="p">)</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">keyphrase</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">big_slab_path</span> <span class="ow">in</span> <span class="n">big_slab_paths</span><span class="p">:</span>
+            <span class="n">big_slab_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">big_slab_path</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">big_slab_list</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Multiple matches found. Please check the work dir&#39;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">big_slab_list</span><span class="p">)</span>
+            <span class="n">exit</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">big_slab_list</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;No matches found for </span><span class="si">{}</span><span class="s1"> &#39;</span>
+                  <span class="s1">&#39;Big slab optimization required&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">keyphrase</span><span class="p">))</span>
+            <span class="k">return</span> <span class="kc">False</span></div>
+
+<div class="viewcode-block" id="WorkFlow.check_if_slab_opt_exists"><a class="viewcode-back" href="../../source/pynta.html#pynta.main.WorkFlow.check_if_slab_opt_exists">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">check_if_slab_opt_exists</span><span class="p">(</span>
+            <span class="n">facetpath</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">bool</span><span class="p">,</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]]:</span>
+        <span class="sd">&#39;&#39;&#39; Check whether slab has been already optimized</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+
+<span class="sd">        facetpath : str</span>
+<span class="sd">            a path to the workflow&#39;s main dir</span>
+
+<span class="sd">            &gt;&gt;&gt; facetpath = &#39;Cu_111&#39;</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+
+<span class="sd">        Tuple[bool, str=None]:</span>
+<span class="sd">            ``True`` if there are previous calculations</span>
+
+<span class="sd">                &gt;&gt;&gt; (True, path_to_prev_calc)</span>
+
+<span class="sd">            `False` otherwise</span>
+
+<span class="sd">                &gt;&gt;&gt; (False, )</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">slab_opt_path_str</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="c1"># the code will look for anything like Cu_111*.xyz starting from the</span>
+        <span class="c1"># facetpath directory including all subdirectories.</span>
+        <span class="n">keyphrase</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">facetpath</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;*.xyz&#39;</span>
+        <span class="n">slab_opt_path_posix</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">()))</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">keyphrase</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">slab_opt_path</span> <span class="ow">in</span> <span class="n">slab_opt_path_posix</span><span class="p">:</span>
+            <span class="n">slab_opt_path_str</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">slab_opt_path</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">slab_opt_path_str</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">True</span><span class="p">,</span> <span class="n">slab_opt_path_str</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">return</span> <span class="p">(</span><span class="kc">False</span><span class="p">,</span> <span class="p">)</span></div>
+
+<div class="viewcode-block" id="WorkFlow.execute"><a class="viewcode-back" href="../../source/pynta.html#pynta.main.WorkFlow.execute">[docs]</a>    <span class="k">def</span> <span class="nf">execute</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">facetpath</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&#39;&#39;&#39; The main execute method for a given surface</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+
+<span class="sd">        facetpath : str</span>
+<span class="sd">            a path to the workflow&#39;s main dir</span>
+
+<span class="sd">            &gt;&gt;&gt; facetpath = &#39;Cu_111&#39;</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Starting calculations...&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">optimize_slab</span><span class="p">:</span>
+            <span class="c1"># if slab found in previous calculation, do nothing</span>
+            <span class="k">if</span> <span class="n">WorkFlow</span><span class="o">.</span><span class="n">is_slab</span><span class="p">(</span><span class="n">facetpath</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">:</span>
+                <span class="c1"># If the code cannot locate optimized slab .xyz file,</span>
+                <span class="c1"># a slab optimization will be launched.</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">run_slab_optimization</span><span class="p">(</span><span class="n">facetpath</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">WorkFlow</span><span class="o">.</span><span class="n">is_big_slab</span><span class="p">(</span><span class="n">facetpath</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">run_big_slab_opt</span><span class="p">(</span><span class="n">facetpath</span><span class="p">)</span>
+            <span class="c1"># check if species were already calculated</span>
+            <span class="c1"># TODO there is a bug here as it counts CO as C</span>
+            <span class="k">if</span> <span class="nb">all</span><span class="p">(</span><span class="n">WorkFlow</span><span class="o">.</span><span class="n">check_all_species</span><span class="p">(</span><span class="n">yamlfile</span><span class="p">,</span> <span class="n">facetpath</span><span class="p">)</span><span class="o">.</span><span class="n">values</span><span class="p">()):</span>
+                <span class="c1"># If all are True, start by generating TS guesses and run</span>
+                <span class="c1"># the penalty function minimization</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">run_minima_vib_no_depend</span><span class="p">(</span><span class="n">facetpath</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">run_ts_estimate_no_depend</span><span class="p">(</span><span class="n">facetpath</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># If any of sp_check_list is False</span>
+                <span class="c1"># run optimization of surface + reactants; surface + products</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">run_opt_surf_and_adsorbate</span><span class="p">(</span><span class="n">facetpath</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">NameError</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">run_opt_surf_and_adsorbate_no_depend</span><span class="p">(</span><span class="n">facetpath</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">run_minima_vib</span><span class="p">(</span><span class="s1">&#39;01&#39;</span><span class="p">,</span> <span class="n">facetpath</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">run_ts_estimate</span><span class="p">(</span><span class="s1">&#39;01&#39;</span><span class="p">,</span> <span class="n">facetpath</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># this is executed if user provide .xyz with the optimized slab</span>
+            <span class="c1"># and explicitly define oiptimize_slab = False</span>
+            <span class="k">if</span> <span class="n">WorkFlow</span><span class="o">.</span><span class="n">check_if_slab_opt_exists</span><span class="p">(</span><span class="n">facetpath</span><span class="p">)[</span><span class="mi">0</span><span class="p">]:</span>
+                <span class="k">pass</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span>
+                    <span class="s1">&#39;It appears there is no slab_opt.xyz file&#39;</span>
+                <span class="p">)</span>
+            <span class="k">if</span> <span class="n">WorkFlow</span><span class="o">.</span><span class="n">is_big_slab</span><span class="p">(</span><span class="n">facetpath</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">run_big_slab_opt</span><span class="p">(</span><span class="n">facetpath</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">all</span><span class="p">(</span><span class="n">WorkFlow</span><span class="o">.</span><span class="n">check_all_species</span><span class="p">(</span><span class="n">yamlfile</span><span class="p">,</span> <span class="n">facetpath</span><span class="p">)</span><span class="o">.</span><span class="n">values</span><span class="p">()):</span>
+                <span class="c1"># If all minima were calculated some time age pynta</span>
+                <span class="c1"># will use that calculations. Start from 02 step</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">run_minima_vib_no_depend</span><span class="p">(</span><span class="n">facetpath</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">run_ts_estimate_no_depend</span><span class="p">(</span><span class="n">facetpath</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># run optimization of surface + reactants; surface + products</span>
+                <span class="c1"># May need to put a post process on surface adsorbate</span>
+                <span class="c1"># to call the next step</span>
+                <span class="c1"># wait until optimization of surface + reactants; surface</span>
+                <span class="c1"># + products finish and submit calculations to get TS guesses</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">run_opt_surf_and_adsorbate</span><span class="p">(</span><span class="n">facetpath</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">NameError</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">run_opt_surf_and_adsorbate_no_depend</span><span class="p">(</span><span class="n">facetpath</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">run_minima_vib</span><span class="p">(</span><span class="s1">&#39;01&#39;</span><span class="p">,</span> <span class="n">facetpath</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">run_ts_estimate</span><span class="p">(</span><span class="s1">&#39;01&#39;</span><span class="p">,</span> <span class="n">facetpath</span><span class="p">)</span>
+        <span class="c1"># search for the 1st order saddle point</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">run_ts_with_sella</span><span class="p">(</span><span class="s1">&#39;02&#39;</span><span class="p">,</span> <span class="n">facetpath</span><span class="p">)</span>
+        <span class="c1"># run frequencies calculations for all TSs</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">run_ts_vib</span><span class="p">(</span><span class="s1">&#39;03&#39;</span><span class="p">,</span> <span class="n">facetpath</span><span class="p">)</span>
+        <span class="c1"># for each distinct TS, nudge towards imaginary frequency and</span>
+        <span class="c1"># optimize to minima</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">run_opt_after_ts</span><span class="p">(</span><span class="s1">&#39;04&#39;</span><span class="p">,</span> <span class="n">facetpath</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Running!&#39;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="WorkFlow.execute_all"><a class="viewcode-back" href="../../source/pynta.html#pynta.main.WorkFlow.execute_all">[docs]</a>    <span class="k">def</span> <span class="nf">execute_all</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&#39;&#39;&#39; Main execute method for the entire workflow &#39;&#39;&#39;</span>
+        <span class="k">for</span> <span class="n">facetpath</span> <span class="ow">in</span> <span class="n">facetpaths</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">facetpath</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="WorkFlow.restart"><a class="viewcode-back" href="../../source/pynta.html#pynta.main.WorkFlow.restart">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">restart</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">LowLevelRestart</span><span class="p">()</span><span class="o">.</span><span class="n">restart</span><span class="p">()</span>
+        <span class="n">HighLevelRestart</span><span class="p">()</span><span class="o">.</span><span class="n">restart</span><span class="p">()</span></div></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright Copyright 2021 National Technology &amp; Engineering Solutions of Sandia, LLC (NTESS). Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government retains certain rights in this software.
+      <span class="lastupdated">
+        Last updated on Wed, 20 Jan 2021 17:42:16.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

@@ -1,6 +1,3 @@
-# from pynta.balsamcalc import EspressoBalsamSocketIO
-# from pynta.balsamcalc import NWChemBalsamSocketIO
-
 from pathlib import PosixPath
 from typing import Dict, Tuple
 
@@ -182,14 +179,7 @@ class GetSlab:
         # change how k-points are distrubuted among nodes
         # job_kwargs.update([('num_nodes', n_kpts)])
 
-        # slab.calc = EspressoBalsamSocketIO(
-        #     workflow='QE_Socket',
-        #     job_kwargs=job_kwargs,
-        #     pseudopotentials=self.pseudopotentials,
-        #     pseudo_dir=self.pseudo_dir,
-        #     **extra_calc_keywords
-        # )
-        slab.pbc = True
+        slab.pbc = (True, True, False)
 
         if self.socket_calculator == 'EspressoBalsamSocketIO':
             slab.calc = sock_calc(

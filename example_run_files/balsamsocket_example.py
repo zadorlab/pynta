@@ -2,13 +2,13 @@
 from ase.build import molecule
 from ase.optimize import QuasiNewton
 from rmgcat_to_sella.balsamcalc import EspressoBalsamSocketIO
-
+from pathlib import Path
 
 # Set up a small, simple system
 atoms = molecule('CH4')
 atoms.rattle()
 atoms.center(vacuum=3)
-from pathlib import Path
+
 cwd = Path.cwd().as_posix()
 
 # The calculator

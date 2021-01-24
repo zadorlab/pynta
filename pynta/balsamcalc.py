@@ -111,6 +111,7 @@ class BalsamCalculator(FileIOCalculator):
             app = ApplicationDefinition.objects.get(
                 name=cls.__name__
             )
+            app.save()
         except ApplicationDefinition.DoesNotExist:
             app, created = ApplicationDefinition.objects.get_or_create(
                 name=cls.__name__,

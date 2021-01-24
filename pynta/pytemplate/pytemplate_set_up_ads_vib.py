@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import os
 import datetime
-from pynta.balsamcalc import {socket_calculator}
 
 from ase.io import read
 from ase.constraints import FixAtoms
@@ -10,6 +9,7 @@ from ase.vibrations import Vibrations
 geom = '{geom}'
 nimages = {nimages}
 n = {n}
+socket_calculator = '{socket_calculator}'
 balsam_exe_settings = {balsam_exe_settings}
 calc_keywords = {calc_keywords}
 creation_dir = '{creation_dir}'
@@ -40,7 +40,11 @@ extra_calc_keywords = dict(
     label=geom
 )
 
-atoms.calc = {socket_calculator}(
+balsamcalc_module = __import__('pynta.balsamcalc', fromlist=[
+    socket_calculator])
+sock_calc = getattr(balsamcalc_module, socket_calculator)
+
+atoms.calc = sock_calc(
     workflow='QE_Socket',
     job_kwargs=balsam_exe_settings,
     **calc_keywords

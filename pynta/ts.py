@@ -401,11 +401,11 @@ class TS():
             e.g.
             for OH <--> O + H
 
-            >>> species_list = ['O', 'H'] 
+            >>> species_list = ['O', 'H']
 
             for CO3 <--> CO2 + O
 
-            >>> species_list = ['CO2', 'O'] 
+            >>> species_list = ['CO2', 'O']
 
         reacting_atoms : Dict[str, int]
             keys are sybols of atoms that takes part in reaction whereas,
@@ -747,7 +747,7 @@ class TS():
 
     def create_unique_ts_all(
             self,
-            create_unique_ts_all: str,
+            socket_calculator: str,
             ts_estimate_path: str,
             rxn_name: str,
             pytemplate: str,
@@ -792,15 +792,14 @@ class TS():
         # create .xyz and .png files
         TS.create_unique_ts_xyz_and_png(ts_estimate_path)
         # create job files (.py scripts)
-        self.create_ts_unique_py_file(create_unique_ts_all,
+        self.create_ts_unique_py_file(socket_calculator,
                                       pytemplate,
                                       rxn_name,
                                       pseudopotentials,
                                       pseudo_dir,
                                       ts_estimate_path,
                                       balsam_exe_settings,
-                                      calc_keywords
-                                      )
+                                      calc_keywords)
 
     @staticmethod
     def create_unique_ts_xyz_and_png(ts_estimate_path: str) -> None:
@@ -855,6 +854,7 @@ class TS():
 
     def create_ts_unique_py_file(
             self,
+            socket_calculator: str,
             pytemplate: str,
             rxn_name: str,
             pseudopotentials: Dict[str, str],
@@ -913,6 +913,7 @@ class TS():
                     prefix=ts_fname[:2],
                     ts_fname=ts_fname,
                     facetpath=self.facetpath,
+                    socket_calculator=socket_calculator,
                     balsam_exe_settings=balsam_exe_settings,
                     calc_keywords=calc_keywords,
                     pseudopotentials=pseudopotentials,
@@ -986,7 +987,7 @@ class TS():
 
         min_dist_surface_adsorbate = heapq.nsmallest(
             n_same_metal_idxs,
-            all_dist_surface_adsorbate)[n_same_metal_idxs-1]
+            all_dist_surface_adsorbate)[n_same_metal_idxs - 1]
 
         index = np.where(all_dist_surface_adsorbate
                          == min_dist_surface_adsorbate)

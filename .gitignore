@@ -10,9 +10,12 @@ test/
 build/
 dist
 # docs/
-_build*
-_static*
-_templates*
+# /docs/_build/latex*
+docsrc/_build/
+docsrc/_templates/
+# _build*
+# _static*
+# _templates*
 *workspace
 *project
 .vscode/

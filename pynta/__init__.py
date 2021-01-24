@@ -2,7 +2,6 @@
 # from .compare_structures import find_all_unique
 # from .relax_3d import create_relax_jobs
 import os
-from os import path
 
 """Catalysis Generator."""
 
@@ -15,7 +14,7 @@ radicals[[6, 7, 8, 9, 15, 16]] = [4, 3, 2, 1, 3, 2]
 
 
 class Defaults(MutableMapping, dict):
-    """No frills default dictionary class."""
+    '''No frills default dictionary class.'''
 
     def __init__(self):
         self.update({
@@ -41,7 +40,8 @@ class Licence():
         self.path = os.path.dirname(__file__)
         self.licence_info = os.path.join(self.path, 'license', 'banner.txt')
 
-    def show_banner(self):
+    def show_banner(self) -> None:
+        ''' Print a copyright banner everytime Pynta is imported'''
         path_to_excatkit = os.path.join(self.path, 'excatkit')
         with open(self.licence_info, 'r') as infile:
             banner = infile.read()
