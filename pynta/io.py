@@ -706,21 +706,18 @@ class IO():
         reactants = IO.rmgcat_to_gratoms(adjtxt_react)
         reactant_bonded_idx = IO.get_surface_bonded(adjtxt_react)
 
-        # IO.get_bonded(reactants, reactant_bonded_idx)
-        # print(reactant_bonded_idx)
-
         adjtxt_prod = rxn['product'].strip().split('\n')
         products = IO.rmgcat_to_gratoms(adjtxt_prod)
         prod_bonded_idx = IO.get_surface_bonded(adjtxt_prod)
-        # print(prod_bonded_idx)
-
-        surface_bonded = {'react': reactant_bonded_idx,
-                          'prod': prod_bonded_idx}
-
-        IO.get_bonded(reactants, reactant_bonded_idx)
-        # IO.get_bonded(products, prod_bonded_idx)
 
         species += reactants + products
+
+        bonded_dict_reactants = IO.get_bonded(reactants, reactant_bonded_idx)
+        bonded_dict_products = IO.get_bonded(products, prod_bonded_idx)
+
+        # rxn_bonded_dict = bonded_dict_reactants.update(bonded_dict_products)
+        rxn_bonded_dict = {**bonded_dict_reactants, **bonded_dict_products}
+        print(rxn_bonded_dict)
 
         unique_species = []
         images = []
@@ -740,50 +737,13 @@ class IO():
     @staticmethod
     def get_bonded(reactants, reactant_bonded_idx):
         bonded_dict = {}
-        # print(reactant_bonded_idx)
         for r in reactants:
-            # print(r)
-            # print(r.symbols)
             if not reactant_bonded_idx:
                 bonded_dict[str(r.symbols)] = 0
             for atom in r:
-                # print(atom)
-                # bonded_dict[str(r.symbols)] = 0
                 if atom.tag in reactant_bonded_idx:
                     bonded_dict[str(r.symbols)] = atom.index
-        # # if reactant_bonded_idx is False:
-        # #     print('here')
-        # print(reactant_bonded_idx)
-        # bonded_dict[str(r.symbols)] = 0
-        # elif reactant_bonded_idx is None:
-        #     bonded_dict[str(r.symbols)] = 0
-
-        # bonded_dict[str(r.symbols)] = 0
-        # gas phase, I do not have a better idea now
-        # bonded_dict[str(r.symbols)] = 0
-        print(bonded_dict)
-
-        # print(species)
-        # for atom in species:
-        #     print(atom)
-        # print(surface_bonded)
-
-        # @staticmethod
-        # def get_surface_bonded_atoms(adjtxt):
-        #     surface_atom_idxs = []
-        #     s_bonded_idxs = []
-        #     for line in adjtxt:
-        #         if 'X' in line:
-        #             index = line.split()[0]
-        #             surface_atom_idxs.append(index)
-        #     for index in surface_atom_idxs:
-        #         keyphrase = '{' + '{}'.format(index)
-        #         print(keyphrase)
-        #         for line in adjtxt:
-        #             if keyphrase in line:
-        #                 print(line)
-        #                 s_bonded_idxs.append(line.split()[0])
-        # return s_bonded_idxs
+        return bonded_dict
 
     @ staticmethod
     def get_surface_bonded(adjtxt):
