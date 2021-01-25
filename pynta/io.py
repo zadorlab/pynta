@@ -740,20 +740,27 @@ class IO():
     @staticmethod
     def get_bonded(reactants, reactant_bonded_idx):
         bonded_dict = {}
-        print(reactant_bonded_idx)
+        # print(reactant_bonded_idx)
         for r in reactants:
-            print(r)
-            print(r.symbols)
+            # print(r)
+            # print(r.symbols)
+            if not reactant_bonded_idx:
+                bonded_dict[str(r.symbols)] = 0
             for atom in r:
-                print(atom)
+                # print(atom)
+                # bonded_dict[str(r.symbols)] = 0
                 if atom.tag in reactant_bonded_idx:
                     bonded_dict[str(r.symbols)] = atom.index
-                elif reactant_bonded_idx is None:
-                    bonded_dict[str(r.symbols)] = 0
+        # # if reactant_bonded_idx is False:
+        # #     print('here')
+        # print(reactant_bonded_idx)
+        # bonded_dict[str(r.symbols)] = 0
+        # elif reactant_bonded_idx is None:
+        #     bonded_dict[str(r.symbols)] = 0
 
-                # bonded_dict[str(r.symbols)] = 0
-                # gas phase, I do not have a better idea now
-                # bonded_dict[str(r.symbols)] = 0
+        # bonded_dict[str(r.symbols)] = 0
+        # gas phase, I do not have a better idea now
+        # bonded_dict[str(r.symbols)] = 0
         print(bonded_dict)
 
         # print(species)
