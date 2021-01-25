@@ -664,23 +664,30 @@ class IO():
         reactions = IO.open_yaml_file(yamlfile)
 
         all_images_unique = []
-        all_images = []
+        all_images = {}
         for rxn in reactions:
             images = IO.get_images(rxn)
-            all_images.append(images)
-        all_images_flat = [item for sublist in all_images for item in sublist]
+            all_images.update(images)
 
+        list_of_bonds = []
         # check if any species in one reaction is the same as any species
         # in the other reaction
-        for species1 in all_images_flat:
-            for species2 in all_images_unique:
-                if nx.is_isomorphic(
-                        species1.graph, species2.graph, node_test):
-                    break
-            else:
-                # images.append(Molecule().get_3D_positions(species1))
-                all_images_unique.append(species1)
-        return all_images_unique
+        for bonded_dict in all_images.values():
+            for bonded, gratoms in bonded_dict.items():
+                for species2 in all_images_unique:
+                    if nx.is_isomorphic(
+                            gratoms.graph, species2.graph, node_test):
+                        break
+                else:
+                    list_of_bonds.append(bonded)
+                    all_images_unique.append(gratoms)
+
+        unique_images_with_bonds = {}
+        i = 0
+        for uq_image, bond in zip(all_images_unique, list_of_bonds):
+            unique_images_with_bonds[i] = {bond: uq_image}
+            i += 1
+        return unique_images_with_bonds
 
     @staticmethod
     def get_images(rxn: Dict[str, str]) -> List[Gratoms]:
@@ -717,20 +724,20 @@ class IO():
 
         # rxn_bonded_dict = bonded_dict_reactants.update(bonded_dict_products)
         rxn_bonded_dict = {**bonded_dict_reactants, **bonded_dict_products}
-        print(rxn_bonded_dict)
+        # print(rxn_bonded_dict)
 
         unique_species = []
-        images = []
+        images = {}
 
         # check if any products are the same as any reactants
-        for species1 in species:
+        for species1, bond in zip(species, rxn_bonded_dict.values()):
             for species2 in unique_species:
                 if nx.is_isomorphic(
                         species1.graph, species2.graph, node_test):
                     break
             else:
-                # IO.get_bonded(species1, surface_bonded)
-                images.append(Molecule().get_3D_positions(species1))
+                image = Molecule().get_3D_positions(species1)
+                images[str(species1.symbols)] = {bond: image}
                 unique_species.append(species1)
         return images
 
@@ -745,7 +752,7 @@ class IO():
                     bonded_dict[str(r.symbols)] = atom.index
         return bonded_dict
 
-    @ staticmethod
+    @staticmethod
     def get_surface_bonded(adjtxt):
         symbols = []
         edges = []
@@ -798,11 +805,7 @@ class IO():
             idx - n_surf_at_befor_ads for idx in idx_surface_bonded_atoms]
         return idx_surface_bonded_atoms
 
-        # tags_nd_array = np.array(gratoms.get_tags())
-        # print(tags_nd_array)
-        # return gratoms.get_tags()[np.where(tags_nd_array < 0)]
-
-    @ staticmethod
+    @staticmethod
     def rmgcat_to_gratoms(
             adjtxt: List[str]) -> List[Gratoms]:
         ''' Convert a slice of :literal:`*.yaml` file to Catkit's Gratoms object
@@ -908,7 +911,7 @@ class IO():
             gratoms_list.append(new_gratoms)
         return gratoms_list
 
-    @ staticmethod
+    @staticmethod
     def get_calculators(quantum_chemistry):
         if quantum_chemistry == 'espresso':
             calculator = 'EspressoBalsam'
@@ -923,7 +926,7 @@ class IO():
 
         return calculator, socket_calculator
 
-    @ staticmethod
+    @staticmethod
     def set_calculators(executable, calculator, socket_calculator):
 
         balsamcalc_module = __import__('pynta.balsamcalc', fromlist=[
