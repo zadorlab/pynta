@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>pynta.adsorbates &mdash; Pynta January 20, 2021 documentation</title>
+  <title>pynta.adsorbates &mdash; Pynta January 25, 2021 documentation</title>
   
 
   
@@ -252,10 +252,15 @@
             <span class="n">tvecs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">offsets</span><span class="p">,</span> <span class="n">cell</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
 
         <span class="n">edges</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="c1"># initialize pairvecs</span>
-        <span class="n">pairvecs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">find_surface</span><span class="p">:</span>
-            <span class="n">pairvecs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">slab_atom</span><span class="o">.</span><span class="n">positions</span><span class="p">)</span>
+
+        <span class="c1"># pairvecs = np.ndarray(0)</span>
+        <span class="n">pairvecs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">slab_atom</span><span class="o">.</span><span class="n">positions</span><span class="p">)</span>
+
+        <span class="c1"># if find_surface:</span>
+        <span class="c1">#     pairvecs = np.zeros_like(slab_atom.positions)</span>
+        <span class="c1"># else:</span>
+        <span class="c1">#     pairvecs = np.ndarray(0)</span>
+
         <span class="k">for</span> <span class="n">atomi</span> <span class="ow">in</span> <span class="n">slab_atom</span><span class="p">:</span>
             <span class="k">for</span> <span class="n">atomj</span> <span class="ow">in</span> <span class="n">slab_atom</span><span class="p">:</span>
                 <span class="n">i</span> <span class="o">=</span> <span class="n">atomi</span><span class="o">.</span><span class="n">index</span>
@@ -336,7 +341,8 @@
 
 <span class="sd">        &#39;&#39;&#39;</span>
         <span class="n">all_species_symbols</span> <span class="o">=</span> <span class="n">IO</span><span class="o">.</span><span class="n">get_all_unique_species</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">yamlfile</span><span class="p">)</span>
-        <span class="n">images</span> <span class="o">=</span> <span class="n">IO</span><span class="o">.</span><span class="n">get_all_images</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">yamlfile</span><span class="p">)</span>
+        <span class="n">all_images_with_bonds</span> <span class="o">=</span> <span class="n">IO</span><span class="o">.</span><span class="n">get_all_unique_images_with_bonds</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">yamlfile</span><span class="p">)</span>
 
         <span class="c1"># prepare surface for placing adsorbates</span>
         <span class="n">grslab</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_grslab</span><span class="p">()</span>
@@ -344,23 +350,28 @@
 
         <span class="c1"># build adsorbates</span>
         <span class="n">structures</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
-        <span class="k">for</span> <span class="n">sp_symbol</span><span class="p">,</span> <span class="n">sp_gratoms</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">all_species_symbols</span><span class="p">,</span> <span class="n">images</span><span class="p">):</span>
-            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sp_gratoms</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="k">continue</span>
-            <span class="c1"># which atom connects to the surface</span>
-            <span class="n">bonded</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">sp_symbol</span><span class="p">,</span> <span class="n">unique_images_with_bonds</span> <span class="ow">in</span> \
+                <span class="nb">zip</span><span class="p">(</span><span class="n">all_species_symbols</span><span class="p">,</span> <span class="n">all_images_with_bonds</span><span class="o">.</span><span class="n">values</span><span class="p">()):</span>
+            <span class="k">for</span> <span class="n">bond</span><span class="p">,</span> <span class="n">sp_gratoms</span> <span class="ow">in</span> <span class="n">unique_images_with_bonds</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
 
-            <span class="k">if</span> <span class="n">sp_symbol</span> <span class="ow">in</span> <span class="n">edge_cases_bonded_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-                <span class="n">bonded</span> <span class="o">=</span> <span class="p">[</span><span class="n">edge_cases_bonded_dict</span><span class="p">[</span><span class="n">sp_symbol</span><span class="p">]]</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sp_gratoms</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="k">continue</span>
 
-            <span class="k">try</span><span class="p">:</span>
-                <span class="c1"># put adsorbates on the surface</span>
-                <span class="n">structs</span> <span class="o">=</span> <span class="n">ads_builder</span><span class="o">.</span><span class="n">add_adsorbate</span><span class="p">(</span>
-                    <span class="n">sp_gratoms</span><span class="p">,</span> <span class="n">index</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">bonds</span><span class="o">=</span><span class="n">bonded</span><span class="p">)</span>
-                <span class="n">structures</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">sp_symbol</span><span class="p">)]</span> <span class="o">=</span> <span class="n">structs</span>
-            <span class="k">except</span> <span class="ne">IndexError</span><span class="p">:</span>
-                <span class="nb">print</span><span class="p">(</span><span class="n">sp_gratoms</span><span class="p">,</span> <span class="n">sp_gratoms</span><span class="o">.</span><span class="n">edges</span><span class="p">,</span>
-                      <span class="n">sp_gratoms</span><span class="o">.</span><span class="n">get_tags</span><span class="p">())</span>
+                <span class="c1"># which atom connects to the surface</span>
+                <span class="n">bonded</span> <span class="o">=</span> <span class="p">[</span><span class="n">bond</span><span class="p">]</span>
+
+                <span class="k">if</span> <span class="n">sp_symbol</span> <span class="ow">in</span> <span class="n">edge_cases_bonded_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                    <span class="n">bonded</span> <span class="o">=</span> <span class="p">[</span><span class="n">edge_cases_bonded_dict</span><span class="p">[</span><span class="n">sp_symbol</span><span class="p">]]</span>
+
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="c1"># put adsorbates on the surface</span>
+                    <span class="n">structs</span> <span class="o">=</span> <span class="n">ads_builder</span><span class="o">.</span><span class="n">add_adsorbate</span><span class="p">(</span>
+                        <span class="n">sp_gratoms</span><span class="p">,</span> <span class="n">index</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">bonds</span><span class="o">=</span><span class="n">bonded</span><span class="p">)</span>
+                    <span class="n">structures</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">sp_symbol</span><span class="p">)]</span> <span class="o">=</span> <span class="n">structs</span>
+                <span class="k">except</span> <span class="ne">IndexError</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;sp_gratoms, sp_gratoms.edges, sp.gratoms.tags&#39;</span><span class="p">)</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="n">sp_gratoms</span><span class="p">,</span> <span class="n">sp_gratoms</span><span class="o">.</span><span class="n">edges</span><span class="p">,</span>
+                          <span class="n">sp_gratoms</span><span class="o">.</span><span class="n">get_tags</span><span class="p">())</span>
 
         <span class="k">for</span> <span class="n">sp_symbol</span><span class="p">,</span> <span class="n">adsorbate</span> <span class="ow">in</span> <span class="n">structures</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
             <span class="c1"># create directory where all adsorbates are stored</span>
@@ -484,7 +495,7 @@
     <p>
         &copy; Copyright Copyright 2021 National Technology &amp; Engineering Solutions of Sandia, LLC (NTESS). Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government retains certain rights in this software.
       <span class="lastupdated">
-        Last updated on Wed, 20 Jan 2021 17:42:16.
+        Last updated on Mon, 25 Jan 2021 18:06:34.
       </span>
 
     </p>

@@ -647,18 +647,32 @@ class IO():
         return ts_guess_image
 
     @staticmethod
-    def get_all_images(yamlfile: str) -> List[Gratoms]:
+    def get_all_unique_images_with_bonds(
+            yamlfile: str) -> Dict[int, Dict[int, Gratoms]]:
         ''' Return a list with all unique images (Gratoms) for all reactions
 
         Parameters
         ----------
-        yamlfile : str
-            a name of the :literal:`*.yaml` file with a reaction list
+        yamlfile : str a name of the :literal:`*.yaml` file with a reaction
+            list
 
         Returns
         -------
-        all_images_unique : List[Gratoms]
-            a list with all unique Gratoms objects for all reactions
+        all_images_with_bonds : Dict[int, Dict[int, Gratoms]] a Dict with all
+            unique Gratoms objects for all reactions together with information
+            which atoms connects Gratoms object to the surface
+
+
+        >>> all_images_with_bonds =
+            {
+             0: {0: Gratoms(symbols='OH', pbc=False, tags=...)},
+             1: {0: Gratoms(symbols='O', pbc=False, tags=...)},
+             2: {0: Gratoms(symbols='H', pbc=False, tags=...)},
+             3: {0: Gratoms(symbols='OCH2OCH2', pbc=False, tags=...)},
+             4: {0: Gratoms(symbols='OCH3', pbc=False, tags=...)},
+             5: {1: Gratoms(symbols='OCH', pbc=False, tags=...)},
+             6: {0: Gratoms(symbols='OHCH', pbc=False, tags=...)}
+            }
 
         '''
         reactions = IO.open_yaml_file(yamlfile)
@@ -669,30 +683,34 @@ class IO():
             images = IO.get_images(rxn)
             all_images.update(images)
 
-        list_of_bonds = []
         # check if any species in one reaction is the same as any species
         # in the other reaction
+        unique_bonds = []
         for bonded_dict in all_images.values():
-            for bonded, gratoms in bonded_dict.items():
-                for species2 in all_images_unique:
+            for bond, gratoms1 in bonded_dict.items():
+                for gratoms2 in all_images_unique:
                     if nx.is_isomorphic(
-                            gratoms.graph, species2.graph, node_test):
+                            gratoms1.graph, gratoms2.graph, node_test):
                         break
                 else:
-                    list_of_bonds.append(bonded)
-                    all_images_unique.append(gratoms)
+                    unique_bonds.append(bond)
+                    all_images_unique.append(gratoms1)
 
-        unique_images_with_bonds = {}
+        all_images_with_bonds = {}
+
         i = 0
-        for uq_image, bond in zip(all_images_unique, list_of_bonds):
-            unique_images_with_bonds[i] = {bond: uq_image}
+        for uq_image, bond in zip(all_images_unique, unique_bonds):
+            all_images_with_bonds[i] = {bond: uq_image}
             i += 1
-        return unique_images_with_bonds
+        return all_images_with_bonds
 
     @staticmethod
-    def get_images(rxn: Dict[str, str]) -> List[Gratoms]:
+    def get_images(rxn: Dict[str, str]) -> Dict[str, Gratoms]:
         ''' Convert RMGCat representation of species for a given rxn
-        to a list of Gratoms objects - the case of reactants and products
+        to a dict of Gratoms objects - both reactants and products combined.
+
+        .. note:: Reactants or products can be symmetrically identical at this step.
+
 
         Parameters
         ----------
@@ -704,7 +722,7 @@ class IO():
         Returns
         -------
         images : List[Gratoms]
-            a list with all unique Gratoms object representing each species
+            a dict with all unique Gratoms object representing each species
             taking part in reaction rxn
 
         '''
@@ -719,8 +737,9 @@ class IO():
 
         species += reactants + products
 
-        bonded_dict_reactants = IO.get_bonded(reactants, reactant_bonded_idx)
-        bonded_dict_products = IO.get_bonded(products, prod_bonded_idx)
+        bonded_dict_reactants = IO.get_bonded_dict(
+            reactants, reactant_bonded_idx)
+        bonded_dict_products = IO.get_bonded_dict(products, prod_bonded_idx)
 
         # rxn_bonded_dict = bonded_dict_reactants.update(bonded_dict_products)
         rxn_bonded_dict = {**bonded_dict_reactants, **bonded_dict_products}
@@ -742,7 +761,27 @@ class IO():
         return images
 
     @staticmethod
-    def get_bonded(reactants, reactant_bonded_idx):
+    def get_bonded_dict(
+            reactants: List[Gratoms],
+            reactant_bonded_idx: List[int]) -> Dict[str, int]:
+        ''' Create a dict with bonding information for a specifc reaction and
+        specific type of reagents (reactants or products)
+
+        Parameters
+        ----------
+        reactants : List[Gratoms]
+            a list gratoms objects
+        reactant_bonded_idx : List[int]
+            a list with indicies of atoms that are connected to the surface
+
+        Returns
+        -------
+        bonded_dict : Dict[str, int]
+            a dictionary with keys being atomic symbols and values are indicies
+            of atoms that connects to the surface. Indicies are folowing the
+            order of atoms as in Gratoms objec
+
+        '''
         bonded_dict = {}
         for r in reactants:
             if not reactant_bonded_idx:
@@ -753,7 +792,50 @@ class IO():
         return bonded_dict
 
     @staticmethod
-    def get_surface_bonded(adjtxt):
+    def get_surface_bonded(adjtxt) -> List[int]:
+        ''' For each reactant in adjtxt from :literal:`*.yaml` file, get info
+        which atoms are connected to surface
+
+        Parameters
+        ----------
+        adjtxt : List[str]
+            a list with a connectivity info for reactant or product
+            as from the .yaml file
+
+            e.g. for given reaction (reactant or product)
+
+            In :literal:`*.yaml` file we have something like that::
+
+                    multiplicity -187
+                1 *1 C u0 p0 c0 {2,S} {4,S}
+                2    O u0 p0 c0 {1,S}
+                3 *2 H u0 p0 c0 {5,S}
+                4 *3 X u0 p0 c0 {1,S}
+                5 *4 X u0 p0 c0 {3,S}
+
+            but we need here a list like that:
+
+            >>> tmp_list = ['multiplicity -187', '1 *1 C u0 p0 c0 {2,S} {4,S}',
+                            '2    O u0 p0 c0 {1,S}', '3 *2 H u0 p0 c0 {5,S}',
+                            '4 *3 X u0 p0 c0 {1,S}', '5 *4 X u0 p0 c0 {3,S}',
+                            '']
+
+            So it can be simply converted using the following:
+
+            >>> yamlfile = 'reactions.yaml'
+            >>> with open(yamlfile, 'r') as f:
+                    text = f.read()
+            >>> reactions = yaml.safe_load(text)
+            >>> for rxn in reactions:
+                    adjtxt = rxn['reactant'].split('\\n')
+
+        Returns
+        -------
+        idx_surface_bonded_atoms : List[int]
+            a list with indicies of atoms connected to the surface. Each index
+            refers to a position of a atom in :literal:`*.yaml` file
+
+        '''
         symbols = []
         edges = []
         tags = []
@@ -912,7 +994,27 @@ class IO():
         return gratoms_list
 
     @staticmethod
-    def get_calculators(quantum_chemistry):
+    def get_calculators(quantum_chemistry: str) -> Tuple[str, str]:
+        ''' Get a proper names of quantum_chemistry calculators
+        (socket and balsamsocket)
+
+        Parameters
+        ----------
+        quantum_chemistry : str
+            a keyword describing which quantum chemistry package to use
+
+        Returns
+        -------
+        calculator, socket_calculator : Tuple[str, str]
+            well formated calculator and socket_calculator that refers to
+            spefic method in :mod: balsamcalc
+
+        Raises
+        ------
+        Exception
+            If not supported calculator was requested
+
+        '''
         if quantum_chemistry == 'espresso':
             calculator = 'EspressoBalsam'
         elif quantum_chemistry == 'nwchem':
@@ -927,8 +1029,26 @@ class IO():
         return calculator, socket_calculator
 
     @staticmethod
-    def set_calculators(executable, calculator, socket_calculator):
+    def set_calculators(
+            executable: str,
+            calculator: str,
+            socket_calculator: str) -> None:
+        ''' Create balsam socket and quantum chemistry calculator for requested
+        quantum chemistry code
 
+        Parameters
+        ----------
+        executable : str
+            a path to system executable to python3
+
+            >>> executable = '/Users/mgierad/opt/anaconda3/bin/python3'
+
+        calculator : str
+            name of quantum chemistry calculator
+        socket_calculator : str
+            name of quantum chemistry calculator bundle with balsam\
+
+        '''
         balsamcalc_module = __import__('pynta.balsamcalc', fromlist=[
             socket_calculator])
 

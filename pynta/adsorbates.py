@@ -196,7 +196,8 @@ class Adsorbates:
 
         '''
         all_species_symbols = IO.get_all_unique_species(self.yamlfile)
-        all_images = IO.get_all_images(self.yamlfile)
+        all_images_with_bonds = IO.get_all_unique_images_with_bonds(
+            self.yamlfile)
 
         # prepare surface for placing adsorbates
         grslab = self.get_grslab()
@@ -204,14 +205,15 @@ class Adsorbates:
 
         # build adsorbates
         structures = dict()
-        for sp_symbol, unique_images_with_bonds in zip(all_species_symbols, all_images.values()):
+        for sp_symbol, unique_images_with_bonds in \
+                zip(all_species_symbols, all_images_with_bonds.values()):
             for bond, sp_gratoms in unique_images_with_bonds.items():
+
                 if len(sp_gratoms) == 0:
                     continue
+
                 # which atom connects to the surface
                 bonded = [bond]
-                print(bonded)
-                # print(sp_gratoms)
 
                 if sp_symbol in edge_cases_bonded_dict.keys():
                     bonded = [edge_cases_bonded_dict[sp_symbol]]

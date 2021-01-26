@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>pynta.results &mdash; Pynta January 20, 2021 documentation</title>
+  <title>pynta.results &mdash; Pynta January 25, 2021 documentation</title>
   
 
   
@@ -192,7 +192,7 @@
             <span class="k">for</span> <span class="n">rxn</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">reactions</span><span class="p">:</span>
                 <span class="n">r_name_list</span><span class="p">,</span> <span class="n">p_name_list</span> <span class="o">=</span> <span class="n">IO</span><span class="o">.</span><span class="n">get_reactants_and_products</span><span class="p">(</span><span class="n">rxn</span><span class="p">)</span>
                 <span class="n">rxn_name</span> <span class="o">=</span> <span class="n">IO</span><span class="o">.</span><span class="n">get_rxn_name</span><span class="p">(</span><span class="n">rxn</span><span class="p">)</span>
-                <span class="n">key</span> <span class="o">=</span> <span class="n">facetpath</span><span class="o">+</span><span class="s1">&#39;_&#39;</span><span class="o">+</span><span class="n">rxn_name</span>
+                <span class="n">key</span> <span class="o">=</span> <span class="n">facetpath</span> <span class="o">+</span> <span class="s1">&#39;_&#39;</span> <span class="o">+</span> <span class="n">rxn_name</span>
                 <span class="n">reaction_energies</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_reaction_energy</span><span class="p">(</span>
                     <span class="n">minima_path</span><span class="p">,</span> <span class="n">facetpath</span><span class="p">,</span> <span class="n">r_name_list</span><span class="p">,</span> <span class="n">p_name_list</span><span class="p">,</span>
                     <span class="n">slab_path</span><span class="p">))</span>
@@ -289,7 +289,7 @@
                                        <span class="n">facetpath</span><span class="p">,</span>
                                        <span class="n">rxn_name</span><span class="p">,</span>
                                        <span class="s1">&#39;TS_estimate_unique&#39;</span><span class="p">)</span>
-                <span class="n">ts_ener</span><span class="p">[</span><span class="n">facetpath</span><span class="o">+</span><span class="s1">&#39;_&#39;</span><span class="o">+</span><span class="n">rxn_name</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_barrier</span><span class="p">(</span>
+                <span class="n">ts_ener</span><span class="p">[</span><span class="n">facetpath</span> <span class="o">+</span> <span class="s1">&#39;_&#39;</span> <span class="o">+</span> <span class="n">rxn_name</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_barrier</span><span class="p">(</span>
                     <span class="n">minima_path</span><span class="p">,</span> <span class="n">ts_path</span><span class="p">,</span> <span class="n">facetpath</span><span class="p">,</span> <span class="n">r_name_list</span><span class="p">,</span> <span class="n">p_name_list</span><span class="p">,</span>
                     <span class="n">slab_path</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">ts_ener</span></div>
@@ -737,7 +737,7 @@
         <span class="k">for</span> <span class="n">num</span><span class="p">,</span> <span class="n">rxn</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">reactions</span><span class="p">):</span>
             <span class="k">for</span> <span class="n">ax</span><span class="p">,</span> <span class="n">facetpath</span><span class="p">,</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">axes</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">facetpaths</span><span class="p">):</span>
                 <span class="n">rxn_name</span> <span class="o">=</span> <span class="n">IO</span><span class="p">()</span><span class="o">.</span><span class="n">get_rxn_name</span><span class="p">(</span><span class="n">rxn</span><span class="p">)</span>
-                <span class="n">key</span> <span class="o">=</span> <span class="n">facetpath</span><span class="o">+</span><span class="s1">&#39;_&#39;</span><span class="o">+</span><span class="n">rxn_name</span>
+                <span class="n">key</span> <span class="o">=</span> <span class="n">facetpath</span> <span class="o">+</span> <span class="s1">&#39;_&#39;</span> <span class="o">+</span> <span class="n">rxn_name</span>
                 <span class="n">Results</span><span class="o">.</span><span class="n">plot_rxn</span><span class="p">(</span><span class="n">key</span><span class="p">,</span>
                                  <span class="n">reaction_energies</span><span class="p">,</span>
                                  <span class="n">activation_barriers</span><span class="p">,</span>
@@ -867,7 +867,7 @@
     <p>
         &copy; Copyright Copyright 2021 National Technology &amp; Engineering Solutions of Sandia, LLC (NTESS). Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government retains certain rights in this software.
       <span class="lastupdated">
-        Last updated on Wed, 20 Jan 2021 17:42:16.
+        Last updated on Mon, 25 Jan 2021 18:06:34.
       </span>
 
     </p>

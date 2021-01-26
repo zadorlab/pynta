@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Modules &mdash; Pynta January 20, 2021 documentation</title>
+  <title>Modules &mdash; Pynta January 25, 2021 documentation</title>
   
 
   
@@ -1650,23 +1650,6 @@ view as a splitted many reaction .yaml file to a single reaction
 </dd></dl>
 
 <dl class="py method">
-<dt id="pynta.io.IO.get_all_images">
-<code class="sig-name descname">get_all_images</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; List<span class="p">[</span><a class="reference internal" href="#pynta.excatkit.gratoms.Gratoms" title="pynta.excatkit.gratoms.Gratoms">pynta.excatkit.gratoms.Gratoms</a><span class="p">]</span><a class="reference internal" href="../_modules/pynta/io.html#IO.get_all_images"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.io.IO.get_all_images" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return a list with all unique images (Gratoms) for all reactions</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>yamlfile</strong> (<em>str</em>) – a name of the <code class="docutils literal notranslate"><span class="pre">*.yaml</span></code> file with a reaction list</p>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p><strong>all_images_unique</strong> – a list with all unique Gratoms objects for all reactions</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>List[<a class="reference internal" href="#pynta.excatkit.gratoms.Gratoms" title="pynta.excatkit.gratoms.Gratoms">Gratoms</a>]</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
 <dt id="pynta.io.IO.get_all_reacting_atoms">
 <em class="property">static </em><code class="sig-name descname">get_all_reacting_atoms</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">yamlfile</span><span class="p">:</span> <span class="n">str</span></em><span class="sig-paren">)</span> &#x2192; Dict<span class="p">[</span>str<span class="p">, </span>Dict<span class="p">[</span>str<span class="p">, </span>float<span class="p">]</span><span class="p">]</span><a class="reference internal" href="../_modules/pynta/io.html#IO.get_all_reacting_atoms"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.io.IO.get_all_reacting_atoms" title="Permalink to this definition">¶</a></dt>
 <dd><p>Read a <code class="docutils literal notranslate"><span class="pre">*.yaml</span></code> file with all reactions and extract
@@ -1693,6 +1676,36 @@ as they appear in the <code class="docutils literal notranslate"><span class="pr
 </dd></dl>
 
 <dl class="py method">
+<dt id="pynta.io.IO.get_all_unique_images_with_bonds">
+<em class="property">static </em><code class="sig-name descname">get_all_unique_images_with_bonds</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">yamlfile</span><span class="p">:</span> <span class="n">str</span></em><span class="sig-paren">)</span> &#x2192; Dict<span class="p">[</span>int<span class="p">, </span>Dict<span class="p">[</span>int<span class="p">, </span><a class="reference internal" href="#pynta.excatkit.gratoms.Gratoms" title="pynta.excatkit.gratoms.Gratoms">pynta.excatkit.gratoms.Gratoms</a><span class="p">]</span><span class="p">]</span><a class="reference internal" href="../_modules/pynta/io.html#IO.get_all_unique_images_with_bonds"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.io.IO.get_all_unique_images_with_bonds" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a list with all unique images (Gratoms) for all reactions</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>yamlfile</strong> (str a name of the <code class="docutils literal notranslate"><span class="pre">*.yaml</span></code> file with a reaction) – list</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>all_images_with_bonds</strong> – unique Gratoms objects for all reactions together with information
+which atoms connects Gratoms object to the surface</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>Dict[int, Dict[int, <a class="reference internal" href="#pynta.excatkit.gratoms.Gratoms" title="pynta.excatkit.gratoms.Gratoms">Gratoms</a>]] a Dict with all</p>
+</dd>
+</dl>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">all_images_with_bonds</span> <span class="o">=</span>
+<span class="go">    {</span>
+<span class="go">     0: {0: Gratoms(symbols=&#39;OH&#39;, pbc=False, tags=...)},</span>
+<span class="go">     1: {0: Gratoms(symbols=&#39;O&#39;, pbc=False, tags=...)},</span>
+<span class="go">     2: {0: Gratoms(symbols=&#39;H&#39;, pbc=False, tags=...)},</span>
+<span class="go">     3: {0: Gratoms(symbols=&#39;OCH2OCH2&#39;, pbc=False, tags=...)},</span>
+<span class="go">     4: {0: Gratoms(symbols=&#39;OCH3&#39;, pbc=False, tags=...)},</span>
+<span class="go">     5: {1: Gratoms(symbols=&#39;OCH&#39;, pbc=False, tags=...)},</span>
+<span class="go">     6: {0: Gratoms(symbols=&#39;OHCH&#39;, pbc=False, tags=...)}</span>
+<span class="go">    }</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
 <dt id="pynta.io.IO.get_all_unique_species">
 <em class="property">static </em><code class="sig-name descname">get_all_unique_species</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">yamlfile</span><span class="p">:</span> <span class="n">str</span></em><span class="sig-paren">)</span> &#x2192; List<span class="p">[</span>str<span class="p">]</span><a class="reference internal" href="../_modules/pynta/io.html#IO.get_all_unique_species"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.io.IO.get_all_unique_species" title="Permalink to this definition">¶</a></dt>
 <dd><p>Generate a list with all unique species names</p>
@@ -1710,9 +1723,49 @@ as they appear in the <code class="docutils literal notranslate"><span class="pr
 </dd></dl>
 
 <dl class="py method">
+<dt id="pynta.io.IO.get_bonded_dict">
+<em class="property">static </em><code class="sig-name descname">get_bonded_dict</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">reactants</span><span class="p">:</span> <span class="n">List<span class="p">[</span><a class="reference internal" href="#pynta.excatkit.gratoms.Gratoms" title="pynta.excatkit.gratoms.Gratoms">pynta.excatkit.gratoms.Gratoms</a><span class="p">]</span></span></em>, <em class="sig-param"><span class="n">reactant_bonded_idx</span><span class="p">:</span> <span class="n">List<span class="p">[</span>int<span class="p">]</span></span></em><span class="sig-paren">)</span> &#x2192; Dict<span class="p">[</span>str<span class="p">, </span>int<span class="p">]</span><a class="reference internal" href="../_modules/pynta/io.html#IO.get_bonded_dict"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.io.IO.get_bonded_dict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a dict with bonding information for a specifc reaction and
+specific type of reagents (reactants or products)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>reactants</strong> (<em>List</em><em>[</em><a class="reference internal" href="#pynta.excatkit.gratoms.Gratoms" title="pynta.excatkit.gratoms.Gratoms"><em>Gratoms</em></a><em>]</em>) – a list gratoms objects</p></li>
+<li><p><strong>reactant_bonded_idx</strong> (<em>List</em><em>[</em><em>int</em><em>]</em>) – a list with indicies of atoms that are connected to the surface</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>bonded_dict</strong> – a dictionary with keys being atomic symbols and values are indicies
+of atoms that connects to the surface. Indicies are folowing the
+order of atoms as in Gratoms objec</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>Dict[str, int]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt id="pynta.io.IO.get_calculators">
-<em class="property">static </em><code class="sig-name descname">get_calculators</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">quantum_chemistry</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pynta/io.html#IO.get_calculators"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.io.IO.get_calculators" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<em class="property">static </em><code class="sig-name descname">get_calculators</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">quantum_chemistry</span><span class="p">:</span> <span class="n">str</span></em><span class="sig-paren">)</span> &#x2192; Tuple<span class="p">[</span>str<span class="p">, </span>str<span class="p">]</span><a class="reference internal" href="../_modules/pynta/io.html#IO.get_calculators"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.io.IO.get_calculators" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get a proper names of quantum_chemistry calculators
+(socket and balsamsocket)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>quantum_chemistry</strong> (<em>str</em>) – a keyword describing which quantum chemistry package to use</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>calculator, socket_calculator</strong> – well formated calculator and socket_calculator that refers to
+spefic method in :mod: balsamcalc</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>Tuple[str, str]</p>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><p><strong>Exception</strong> – If not supported calculator was requested</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py method">
 <dt id="pynta.io.IO.get_facetpath">
@@ -1772,9 +1825,13 @@ e.g.</p>
 
 <dl class="py method">
 <dt id="pynta.io.IO.get_images">
-<em class="property">static </em><code class="sig-name descname">get_images</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">rxn</span><span class="p">:</span> <span class="n">Dict<span class="p">[</span>str<span class="p">, </span>str<span class="p">]</span></span></em><span class="sig-paren">)</span> &#x2192; List<span class="p">[</span><a class="reference internal" href="#pynta.excatkit.gratoms.Gratoms" title="pynta.excatkit.gratoms.Gratoms">pynta.excatkit.gratoms.Gratoms</a><span class="p">]</span><a class="reference internal" href="../_modules/pynta/io.html#IO.get_images"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.io.IO.get_images" title="Permalink to this definition">¶</a></dt>
+<em class="property">static </em><code class="sig-name descname">get_images</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">rxn</span><span class="p">:</span> <span class="n">Dict<span class="p">[</span>str<span class="p">, </span>str<span class="p">]</span></span></em><span class="sig-paren">)</span> &#x2192; Dict<span class="p">[</span>str<span class="p">, </span><a class="reference internal" href="#pynta.excatkit.gratoms.Gratoms" title="pynta.excatkit.gratoms.Gratoms">pynta.excatkit.gratoms.Gratoms</a><span class="p">]</span><a class="reference internal" href="../_modules/pynta/io.html#IO.get_images"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.io.IO.get_images" title="Permalink to this definition">¶</a></dt>
 <dd><p>Convert RMGCat representation of species for a given rxn
-to a list of Gratoms objects - the case of reactants and products</p>
+to a dict of Gratoms objects - both reactants and products combined.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Reactants or products can be symmetrically identical at this step.</p>
+</div>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>rxn</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>str</em><em>]</em>) – a dictionary with info about the paricular reaction. This can be
@@ -1782,7 +1839,7 @@ view as a splitted many reaction <code class="docutils literal notranslate"><spa
 single reaction <code class="docutils literal notranslate"><span class="pre">*.yaml</span></code> file</p>
 </dd>
 <dt class="field-even">Returns</dt>
-<dd class="field-even"><p><strong>images</strong> – a list with all unique Gratoms object representing each species
+<dd class="field-even"><p><strong>images</strong> – a dict with all unique Gratoms object representing each species
 taking part in reaction rxn</p>
 </dd>
 <dt class="field-odd">Return type</dt>
@@ -1936,6 +1993,53 @@ e.g.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt id="pynta.io.IO.get_surface_bonded">
+<em class="property">static </em><code class="sig-name descname">get_surface_bonded</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">adjtxt</span></em><span class="sig-paren">)</span> &#x2192; List<span class="p">[</span>int<span class="p">]</span><a class="reference internal" href="../_modules/pynta/io.html#IO.get_surface_bonded"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.io.IO.get_surface_bonded" title="Permalink to this definition">¶</a></dt>
+<dd><p>For each reactant in adjtxt from <code class="docutils literal notranslate"><span class="pre">*.yaml</span></code> file, get info
+which atoms are connected to surface</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>adjtxt</strong> (<em>List</em><em>[</em><em>str</em><em>]</em>) – <p>a list with a connectivity info for reactant or product
+as from the .yaml file</p>
+<p>e.g. for given reaction (reactant or product)</p>
+<p>In <code class="docutils literal notranslate"><span class="pre">*.yaml</span></code> file we have something like that:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="n">multiplicity</span> <span class="o">-</span><span class="mi">187</span>
+<span class="mi">1</span> <span class="o">*</span><span class="mi">1</span> <span class="n">C</span> <span class="n">u0</span> <span class="n">p0</span> <span class="n">c0</span> <span class="p">{</span><span class="mi">2</span><span class="p">,</span><span class="n">S</span><span class="p">}</span> <span class="p">{</span><span class="mi">4</span><span class="p">,</span><span class="n">S</span><span class="p">}</span>
+<span class="mi">2</span>    <span class="n">O</span> <span class="n">u0</span> <span class="n">p0</span> <span class="n">c0</span> <span class="p">{</span><span class="mi">1</span><span class="p">,</span><span class="n">S</span><span class="p">}</span>
+<span class="mi">3</span> <span class="o">*</span><span class="mi">2</span> <span class="n">H</span> <span class="n">u0</span> <span class="n">p0</span> <span class="n">c0</span> <span class="p">{</span><span class="mi">5</span><span class="p">,</span><span class="n">S</span><span class="p">}</span>
+<span class="mi">4</span> <span class="o">*</span><span class="mi">3</span> <span class="n">X</span> <span class="n">u0</span> <span class="n">p0</span> <span class="n">c0</span> <span class="p">{</span><span class="mi">1</span><span class="p">,</span><span class="n">S</span><span class="p">}</span>
+<span class="mi">5</span> <span class="o">*</span><span class="mi">4</span> <span class="n">X</span> <span class="n">u0</span> <span class="n">p0</span> <span class="n">c0</span> <span class="p">{</span><span class="mi">3</span><span class="p">,</span><span class="n">S</span><span class="p">}</span>
+</pre></div>
+</div>
+<p>but we need here a list like that:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">tmp_list</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;multiplicity -187&#39;</span><span class="p">,</span> <span class="s1">&#39;1 *1 C u0 p0 c0 {2,S} {4,S}&#39;</span><span class="p">,</span>
+<span class="go">                &#39;2    O u0 p0 c0 {1,S}&#39;, &#39;3 *2 H u0 p0 c0 {5,S}&#39;,</span>
+<span class="go">                &#39;4 *3 X u0 p0 c0 {1,S}&#39;, &#39;5 *4 X u0 p0 c0 {3,S}&#39;,</span>
+<span class="go">                &#39;&#39;]</span>
+</pre></div>
+</div>
+<p>So it can be simply converted using the following:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">yamlfile</span> <span class="o">=</span> <span class="s1">&#39;reactions.yaml&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">yamlfile</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+<span class="go">        text = f.read()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">reactions</span> <span class="o">=</span> <span class="n">yaml</span><span class="o">.</span><span class="n">safe_load</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">rxn</span> <span class="ow">in</span> <span class="n">reactions</span><span class="p">:</span>
+<span class="go">        adjtxt = rxn[&#39;reactant&#39;].split(&#39;\n&#39;)</span>
+</pre></div>
+</div>
+</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>idx_surface_bonded_atoms</strong> – a list with indicies of atoms connected to the surface. Each index
+refers to a position of a atom in <code class="docutils literal notranslate"><span class="pre">*.yaml</span></code> file</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>List[int]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt id="pynta.io.IO.get_unique_adsorbates_prefixes">
 <code class="sig-name descname">get_unique_adsorbates_prefixes</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">facetpath</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">yamlfile</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">creation_dir</span><span class="p">:</span> <span class="n">pathlib.PosixPath</span></em><span class="sig-paren">)</span> &#x2192; Dict<span class="p">[</span>str<span class="p">, </span>List<span class="p">[</span>str<span class="p">]</span><span class="p">]</span><a class="reference internal" href="../_modules/pynta/io.html#IO.get_unique_adsorbates_prefixes"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.io.IO.get_unique_adsorbates_prefixes" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get a dictionary with a list with prefixes of symmetry distinct
@@ -2078,8 +2182,23 @@ as from the .yaml file</p>
 
 <dl class="py method">
 <dt id="pynta.io.IO.set_calculators">
-<em class="property">static </em><code class="sig-name descname">set_calculators</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">executable</span></em>, <em class="sig-param"><span class="n">calculator</span></em>, <em class="sig-param"><span class="n">socket_calculator</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pynta/io.html#IO.set_calculators"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.io.IO.set_calculators" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<em class="property">static </em><code class="sig-name descname">set_calculators</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">executable</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">calculator</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">socket_calculator</span><span class="p">:</span> <span class="n">str</span></em><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="../_modules/pynta/io.html#IO.set_calculators"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.io.IO.set_calculators" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create balsam socket and quantum chemistry calculator for requested
+quantum chemistry code</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>executable</strong> (<em>str</em>) – <p>a path to system executable to python3</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">executable</span> <span class="o">=</span> <span class="s1">&#39;/Users/mgierad/opt/anaconda3/bin/python3&#39;</span>
+</pre></div>
+</div>
+</p></li>
+<li><p><strong>calculator</strong> (<em>str</em>) – name of quantum chemistry calculator</p></li>
+<li><p><strong>socket_calculator</strong> (<em>str</em>) – name of quantum chemistry calculator bundle with balsam</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
 
 </dd></dl>
 
@@ -3143,8 +3262,8 @@ is used as default, e.g.</p>
 <div class="math notranslate nohighlight">
 \[P = min\left[E_{xTB} + \sum_{i = 1}^{N}{\left(r^{ts\_guess}_{X_i M} - \overline{{r^{min}_{X_{i} M}}}\right)^2}\right]\]</div>
 <p>Where:</p>
-<p><span class="math notranslate nohighlight">\(r^{ts\_guess}_{X_i M}\)</span> – distance between reacting atom and the nearest surface atom in a TS guess;</p>
-<p><span class="math notranslate nohighlight">\(\overline{{r^{min}_{X_{i} M}}}\)</span> – target bond distance, i.e. an average distance between reacting atom and the nearest surface atom calculated for all symmetry distinct minima;</p>
+<p><span class="math notranslate nohighlight">\(r^{ts\_guess}_{X_i M}\)</span> – distance between reacting atom and the nearest surface atom ina TS guess;</p>
+<p><span class="math notranslate nohighlight">\(\overline{{r^{min}_{X_{i} M}}}\)</span> – target bond distance, i.e. an average distance betweenreacting atom and the nearest surface atom calculated for all symmetry distinct minima;</p>
 <p><span class="math notranslate nohighlight">\(N\)</span> – number of atoms included in a penalty function definition;</p>
 <p><span class="math notranslate nohighlight">\(E_{xTB}\)</span> – total energy of the system calculated using a robust semi-empirical xTB code</p>
 <dl class="field-list simple">
@@ -4049,7 +4168,7 @@ If False, .xyz files will be compared</p></li>
 
 <dl class="py method">
 <dt>
-<code class="sig-name descname">create_ts_unique_py_file</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">pytemplate</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">rxn_name</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">pseudopotentials</span><span class="p">:</span> <span class="n">Dict<span class="p">[</span>str<span class="p">, </span>str<span class="p">]</span></span></em>, <em class="sig-param"><span class="n">pseudo_dir</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">ts_estimate_path</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">balsam_exe_settings</span><span class="p">:</span> <span class="n">Dict<span class="p">[</span>str<span class="p">, </span>str<span class="p">]</span></span></em>, <em class="sig-param"><span class="n">calc_keywords</span><span class="p">:</span> <span class="n">Dict<span class="p">[</span>str<span class="p">, </span>str<span class="p">]</span></span></em><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="../_modules/pynta/ts.html#TS.create_ts_unique_py_file"><span class="viewcode-link">[source]</span></a></dt>
+<code class="sig-name descname">create_ts_unique_py_file</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">socket_calculator</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">pytemplate</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">rxn_name</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">pseudopotentials</span><span class="p">:</span> <span class="n">Dict<span class="p">[</span>str<span class="p">, </span>str<span class="p">]</span></span></em>, <em class="sig-param"><span class="n">pseudo_dir</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">ts_estimate_path</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">balsam_exe_settings</span><span class="p">:</span> <span class="n">Dict<span class="p">[</span>str<span class="p">, </span>str<span class="p">]</span></span></em>, <em class="sig-param"><span class="n">calc_keywords</span><span class="p">:</span> <span class="n">Dict<span class="p">[</span>str<span class="p">, </span>str<span class="p">]</span></span></em><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="../_modules/pynta/ts.html#TS.create_ts_unique_py_file"><span class="viewcode-link">[source]</span></a></dt>
 <dd><p>Create job submission files for TS calculation with Sella</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -4080,7 +4199,7 @@ e.g. <code class="docutils literal notranslate"><span class="pre">'{creation_dir
 
 <dl class="py method">
 <dt>
-<code class="sig-name descname">create_unique_ts_all</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">create_unique_ts_all</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">ts_estimate_path</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">rxn_name</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">pytemplate</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">pseudopotentials</span><span class="p">:</span> <span class="n">Dict<span class="p">[</span>str<span class="p">, </span>str<span class="p">]</span></span></em>, <em class="sig-param"><span class="n">pseudo_dir</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">balsam_exe_settings</span><span class="p">:</span> <span class="n">Dict<span class="p">[</span>str<span class="p">, </span>str<span class="p">]</span></span></em>, <em class="sig-param"><span class="n">calc_keywords</span><span class="p">:</span> <span class="n">Dict<span class="p">[</span>str<span class="p">, </span>str<span class="p">]</span></span></em><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="../_modules/pynta/ts.html#TS.create_unique_ts_all"><span class="viewcode-link">[source]</span></a></dt>
+<code class="sig-name descname">create_unique_ts_all</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">socket_calculator</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">ts_estimate_path</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">rxn_name</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">pytemplate</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">pseudopotentials</span><span class="p">:</span> <span class="n">Dict<span class="p">[</span>str<span class="p">, </span>str<span class="p">]</span></span></em>, <em class="sig-param"><span class="n">pseudo_dir</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">balsam_exe_settings</span><span class="p">:</span> <span class="n">Dict<span class="p">[</span>str<span class="p">, </span>str<span class="p">]</span></span></em>, <em class="sig-param"><span class="n">calc_keywords</span><span class="p">:</span> <span class="n">Dict<span class="p">[</span>str<span class="p">, </span>str<span class="p">]</span></span></em><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="../_modules/pynta/ts.html#TS.create_unique_ts_all"><span class="viewcode-link">[source]</span></a></dt>
 <dd><p>Create all TS_estimate_unique files</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -5169,7 +5288,7 @@ oscilations, by default 30</p></li>
     <p>
         &copy; Copyright Copyright 2021 National Technology &amp; Engineering Solutions of Sandia, LLC (NTESS). Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government retains certain rights in this software.
       <span class="lastupdated">
-        Last updated on Wed, 20 Jan 2021 17:42:16.
+        Last updated on Mon, 25 Jan 2021 18:06:34.
       </span>
 
     </p>
