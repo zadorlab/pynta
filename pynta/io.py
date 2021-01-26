@@ -185,7 +185,7 @@ class IO():
         return reactions
 
     @staticmethod
-    def get_all_unique_species(
+    def get_all_unique_species_symbols(
             yamlfile: str) -> List[str]:
         ''' Generate a list with all unique species names
 
@@ -727,27 +727,18 @@ class IO():
 
         '''
         species = []
-        adjtxt_react = rxn['reactant'].strip().split('\n')
-        reactants = IO.rmgcat_to_gratoms(adjtxt_react)
-        reactant_bonded_idx = IO.get_surface_bonded(adjtxt_react)
-
-        adjtxt_prod = rxn['product'].strip().split('\n')
-        products = IO.rmgcat_to_gratoms(adjtxt_prod)
-        prod_bonded_idx = IO.get_surface_bonded(adjtxt_prod)
-
-        species += reactants + products
-
-        bonded_dict_reactants = IO.get_bonded_dict(
-            reactants, reactant_bonded_idx)
-        bonded_dict_products = IO.get_bonded_dict(products, prod_bonded_idx)
-
-        # rxn_bonded_dict = bonded_dict_reactants.update(bonded_dict_products)
-        rxn_bonded_dict = {**bonded_dict_reactants, **bonded_dict_products}
-        # print(rxn_bonded_dict)
+        rxn_bonded_dict = {}
+        for reag in ['reactant', 'product']:
+            adjtxt_react = rxn[reag].strip().split('\n')
+            reagent = IO.rmgcat_to_gratoms(adjtxt_react)
+            reactant_bonded_idx = IO.get_surface_bonded(adjtxt_react)
+            species += reagent
+            bonded_dict_reactants = IO.get_bonded_dict(
+                reagent, reactant_bonded_idx)
+            rxn_bonded_dict.update(bonded_dict_reactants)
 
         unique_species = []
         images = {}
-
         # check if any products are the same as any reactants
         for species1, bond in zip(species, rxn_bonded_dict.values()):
             for species2 in unique_species:

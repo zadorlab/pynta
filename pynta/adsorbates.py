@@ -8,7 +8,6 @@ import numpy as np
 from ase.io import read, write
 from ase.data import covalent_radii
 
-from pynta.utils import edge_cases_bonded_dict
 from pynta.excatkit.adsorption import Builder
 from pynta.excatkit.gratoms import Gratoms
 from pynta.io import IO
@@ -195,7 +194,7 @@ class Adsorbates:
         .. todo:: Add support for a bidentate adsorption
 
         '''
-        all_species_symbols = IO.get_all_unique_species(self.yamlfile)
+        all_species_symbols = IO.get_all_unique_species_symbols(self.yamlfile)
         all_images_with_bonds = IO.get_all_unique_images_with_bonds(
             self.yamlfile)
 
@@ -214,9 +213,6 @@ class Adsorbates:
 
                 # which atom connects to the surface
                 bonded = [bond]
-
-                if sp_symbol in edge_cases_bonded_dict.keys():
-                    bonded = [edge_cases_bonded_dict[sp_symbol]]
 
                 try:
                     # put adsorbates on the surface
