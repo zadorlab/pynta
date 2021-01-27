@@ -285,6 +285,7 @@ class HighLevelRestart():
     error_files = ['*/pwscf*', '*/core']
 
     def __init__(self):
+        self.current_dir = os.getcwd()
         # get all python (ASE) jobs
         self.balsamjob = __import__(
             'balsam.launcher.dag', fromlist=['BalsamJob'])
@@ -306,8 +307,22 @@ class HighLevelRestart():
                 job.save()
         self.set_awaiting_status()
         self.remove_error_files()
+        self.remove_empty_pickle_files()
 
-    def set_awaiting_status(self):
+    def remove_empty_pickle_file(self) -> None:
+        ''' Remove all empty pckl files from unfinished vib calculations
+
+        '''
+        print('Removing unfinished/empty *.pckl files')
+        all_pickle_files = Path(self.current_dir).glob('**/*pckl')
+        for pckl in all_pickle_files:
+            if os.stat(pckl).st_size == 0:
+                rxn_name = os.path.dirname(pckl).split('/')[-3]
+                f_name = os.path.basename(pckl)
+                print('    rxn: {} file: {}'.format(rxn_name, f_name))
+                os.remove(pckl)
+
+    def set_awaiting_status(self) -> None:
         ''' Make sure that jobs which not yet started and depends on other jobs
         have an ``'AWAITING_PARENTS'`` status
 
