@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>pynta.excatkit.adsorption &mdash; Pynta January 20, 2021 documentation</title>
+  <title>pynta.excatkit.adsorption &mdash; Pynta January 25, 2021 documentation</title>
   
 
   
@@ -574,7 +574,7 @@
 
 <span class="sd">        &#39;&#39;&#39;</span>
         <span class="n">per</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_periodic_sites</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
-        <span class="n">sym</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_symmetric_sites</span><span class="p">()</span>
+        <span class="c1"># sym = self.get_symmetric_sites()</span>
         <span class="n">edges</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_adsorption_edges</span><span class="p">(</span><span class="n">symmetric</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">periodic</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
         <span class="n">coords</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">coordinates</span><span class="p">[:,</span> <span class="p">:</span><span class="mi">2</span><span class="p">]</span>
 
@@ -589,9 +589,9 @@
                 <span class="n">cutoff</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">d</span><span class="o">.</span><span class="n">max</span><span class="p">(),</span> <span class="n">cutoff</span><span class="p">)</span>
         <span class="n">cutoff</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tol</span>
 
-        <span class="n">diff</span> <span class="o">=</span> <span class="n">coords</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">-</span> <span class="n">coords</span><span class="p">[</span><span class="n">sym</span><span class="p">]</span>
-        <span class="n">norm</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">diff</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
-        <span class="n">neighbors</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">norm</span> <span class="o">&lt;</span> <span class="n">cutoff</span><span class="p">))</span>
+        <span class="c1"># diff = coords[:, None] - coords[sym]</span>
+        <span class="c1"># norm = np.linalg.norm(diff, axis=2)</span>
+        <span class="c1"># neighbors = np.array(np.where(norm &lt; cutoff))</span>
 
         <span class="n">neighbors</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">index</span><span class="p">:</span>
@@ -925,7 +925,7 @@
     <p>
         &copy; Copyright Copyright 2021 National Technology &amp; Engineering Solutions of Sandia, LLC (NTESS). Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government retains certain rights in this software.
       <span class="lastupdated">
-        Last updated on Wed, 20 Jan 2021 17:42:16.
+        Last updated on Mon, 25 Jan 2021 18:06:34.
       </span>
 
     </p>

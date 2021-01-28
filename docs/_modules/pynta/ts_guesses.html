@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>pynta.ts_guesses &mdash; Pynta January 20, 2021 documentation</title>
+  <title>pynta.ts_guesses &mdash; Pynta January 25, 2021 documentation</title>
   
 
   
@@ -145,7 +145,6 @@
   <h1>Source code for pynta.ts_guesses</h1><div class="highlight"><pre>
 <span></span><span class="kn">from</span> <span class="nn">pynta.excatkit.molecule</span> <span class="k">import</span> <span class="n">Molecule</span>
 <span class="kn">from</span> <span class="nn">pynta.excatkit.gratoms</span> <span class="k">import</span> <span class="n">Gratoms</span>
-<span class="kn">from</span> <span class="nn">pynta.utils</span> <span class="k">import</span> <span class="n">edge_cases_bonded_dict</span>
 <span class="kn">from</span> <span class="nn">pynta.io</span> <span class="k">import</span> <span class="n">IO</span>
 <span class="kn">from</span> <span class="nn">typing</span> <span class="k">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Tuple</span>
 
@@ -293,8 +292,6 @@
                 <span class="n">s_bonded_idx</span> <span class="o">=</span> <span class="mi">0</span>
             <span class="c1"># if self.ts_est in edge_cases_bonded_dict.keys():</span>
             <span class="c1">#     s_bonded_idx = [edge_cases_bonded_dict[self.ts_est]]</span>
-                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;here&#39;</span><span class="p">)</span>
-
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">s_bonded_idx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_the_most_connected_atom</span><span class="p">()</span>
         <span class="k">return</span> <span class="n">s_bonded_idx</span></div>
@@ -600,7 +597,7 @@
     <p>
         &copy; Copyright Copyright 2021 National Technology &amp; Engineering Solutions of Sandia, LLC (NTESS). Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government retains certain rights in this software.
       <span class="lastupdated">
-        Last updated on Wed, 20 Jan 2021 17:42:16.
+        Last updated on Mon, 25 Jan 2021 18:06:34.
       </span>
 
     </p>

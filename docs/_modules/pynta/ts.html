@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>pynta.ts &mdash; Pynta January 20, 2021 documentation</title>
+  <title>pynta.ts &mdash; Pynta January 25, 2021 documentation</title>
   
 
   
@@ -546,11 +546,11 @@
 <span class="sd">            e.g.</span>
 <span class="sd">            for OH &lt;--&gt; O + H</span>
 
-<span class="sd">            &gt;&gt;&gt; species_list = [&#39;O&#39;, &#39;H&#39;] </span>
+<span class="sd">            &gt;&gt;&gt; species_list = [&#39;O&#39;, &#39;H&#39;]</span>
 
 <span class="sd">            for CO3 &lt;--&gt; CO2 + O</span>
 
-<span class="sd">            &gt;&gt;&gt; species_list = [&#39;CO2&#39;, &#39;O&#39;] </span>
+<span class="sd">            &gt;&gt;&gt; species_list = [&#39;CO2&#39;, &#39;O&#39;]</span>
 
 <span class="sd">        reacting_atoms : Dict[str, int]</span>
 <span class="sd">            keys are sybols of atoms that takes part in reaction whereas,</span>
@@ -892,7 +892,7 @@
 
 <div class="viewcode-block" id="TS.create_unique_ts_all"><a class="viewcode-back" href="../../source/pynta.html#pynta.ts.TS.create_unique_ts_all">[docs]</a>    <span class="k">def</span> <span class="nf">create_unique_ts_all</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span>
-            <span class="n">create_unique_ts_all</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">socket_calculator</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
             <span class="n">ts_estimate_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
             <span class="n">rxn_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
             <span class="n">pytemplate</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -937,15 +937,14 @@
         <span class="c1"># create .xyz and .png files</span>
         <span class="n">TS</span><span class="o">.</span><span class="n">create_unique_ts_xyz_and_png</span><span class="p">(</span><span class="n">ts_estimate_path</span><span class="p">)</span>
         <span class="c1"># create job files (.py scripts)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">create_ts_unique_py_file</span><span class="p">(</span><span class="n">create_unique_ts_all</span><span class="p">,</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">create_ts_unique_py_file</span><span class="p">(</span><span class="n">socket_calculator</span><span class="p">,</span>
                                       <span class="n">pytemplate</span><span class="p">,</span>
                                       <span class="n">rxn_name</span><span class="p">,</span>
                                       <span class="n">pseudopotentials</span><span class="p">,</span>
                                       <span class="n">pseudo_dir</span><span class="p">,</span>
                                       <span class="n">ts_estimate_path</span><span class="p">,</span>
                                       <span class="n">balsam_exe_settings</span><span class="p">,</span>
-                                      <span class="n">calc_keywords</span>
-                                      <span class="p">)</span></div>
+                                      <span class="n">calc_keywords</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="TS.create_unique_ts_xyz_and_png"><a class="viewcode-back" href="../../source/pynta.html#pynta.ts.TS.create_unique_ts_xyz_and_png">[docs]</a>    <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">create_unique_ts_xyz_and_png</span><span class="p">(</span><span class="n">ts_estimate_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
@@ -1000,6 +999,7 @@
 
 <div class="viewcode-block" id="TS.create_ts_unique_py_file"><a class="viewcode-back" href="../../source/pynta.html#pynta.ts.TS.create_ts_unique_py_file">[docs]</a>    <span class="k">def</span> <span class="nf">create_ts_unique_py_file</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span>
+            <span class="n">socket_calculator</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
             <span class="n">pytemplate</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
             <span class="n">rxn_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
             <span class="n">pseudopotentials</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
@@ -1058,6 +1058,7 @@
                     <span class="n">prefix</span><span class="o">=</span><span class="n">ts_fname</span><span class="p">[:</span><span class="mi">2</span><span class="p">],</span>
                     <span class="n">ts_fname</span><span class="o">=</span><span class="n">ts_fname</span><span class="p">,</span>
                     <span class="n">facetpath</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">facetpath</span><span class="p">,</span>
+                    <span class="n">socket_calculator</span><span class="o">=</span><span class="n">socket_calculator</span><span class="p">,</span>
                     <span class="n">balsam_exe_settings</span><span class="o">=</span><span class="n">balsam_exe_settings</span><span class="p">,</span>
                     <span class="n">calc_keywords</span><span class="o">=</span><span class="n">calc_keywords</span><span class="p">,</span>
                     <span class="n">pseudopotentials</span><span class="o">=</span><span class="n">pseudopotentials</span><span class="p">,</span>
@@ -1131,7 +1132,7 @@
 
         <span class="n">min_dist_surface_adsorbate</span> <span class="o">=</span> <span class="n">heapq</span><span class="o">.</span><span class="n">nsmallest</span><span class="p">(</span>
             <span class="n">n_same_metal_idxs</span><span class="p">,</span>
-            <span class="n">all_dist_surface_adsorbate</span><span class="p">)[</span><span class="n">n_same_metal_idxs</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">all_dist_surface_adsorbate</span><span class="p">)[</span><span class="n">n_same_metal_idxs</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span>
 
         <span class="n">index</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">all_dist_surface_adsorbate</span>
                          <span class="o">==</span> <span class="n">min_dist_surface_adsorbate</span><span class="p">)</span>
@@ -1202,7 +1203,7 @@
     <p>
         &copy; Copyright Copyright 2021 National Technology &amp; Engineering Solutions of Sandia, LLC (NTESS). Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government retains certain rights in this software.
       <span class="lastupdated">
-        Last updated on Wed, 20 Jan 2021 17:42:16.
+        Last updated on Mon, 25 Jan 2021 18:06:34.
       </span>
 
     </p>

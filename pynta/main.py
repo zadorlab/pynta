@@ -56,7 +56,7 @@ else:
     scaled2 = inputR2S.scaled2
     all_reacting_atoms = IO.get_all_reacting_atoms(check_yaml)
     species_dict = IO().get_species_dict(check_yaml)
-    all_species = IO().get_all_unique_species(check_yaml)
+    all_species = IO().get_all_unique_species_symbols(check_yaml)
     executable = inputR2S.executable
     node_packing_count = inputR2S.node_packing_count
     balsam_exe_settings = inputR2S.balsam_exe_settings
@@ -1416,7 +1416,7 @@ class WorkFlow:
 
         '''
         checked_species = {}
-        all_species = IO().get_all_unique_species(yamlfile)
+        all_species = IO().get_all_unique_species_symbols(yamlfile)
         for species in all_species:
             checked_species[species] = WorkFlow.is_minima_out_files(
                 species, facetpath)
