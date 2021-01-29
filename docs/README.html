@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Pynta &mdash; Pynta January 25, 2021 documentation</title>
+  <title>Pynta &mdash; Pynta January 28, 2021 documentation</title>
   
 
   
@@ -247,7 +247,7 @@ $ python3 -m venv pynta
 <h3>Install <a class="reference external" href="https://github.com/mpi4py/mpi4py.git">mpi4py</a>:<a class="headerlink" href="#install-mpi4py" title="Permalink to this headline">¶</a></h3>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$ git clone https://github.com/mpi4py/mpi4py.git
 $ <span class="nb">cd</span> mpi4py
-$ python3 setup.py install --user
+$ python3 setup.py install
 $ <span class="nb">cd</span> ../
 </pre></div>
 </div>
@@ -262,7 +262,7 @@ $ <span class="nb">cd</span> ../
 <h3>Install <a class="reference external" href="https://github.com/balsam-alcf/balsam.git">balsam</a> using <a class="reference external" href="https://github.com/balsam-alcf/balsam/tree/serial-mode-perf">serial-mode-perf</a> branch.<a class="headerlink" href="#install-balsam-using-serial-mode-perf-branch" title="Permalink to this headline">¶</a></h3>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git clone https://github.com/balsam-alcf/balsam.git -b serial-mode-perf
 <span class="nb">cd</span> balsam
-python3 setup.py install --user
+python3 setup.py install
 <span class="nb">cd</span> ../
 </pre></div>
 </div>
@@ -278,7 +278,7 @@ python3 setup.py install --user
 git submodule update --init
 <span class="nv">LDFLAGS</span><span class="o">=</span><span class="s2">&quot;-L/opt/custom/OpenBLAS/0.3.7/lib&quot;</span> meson setup build --prefix<span class="o">=</span><span class="nv">$PWD</span> --libdir<span class="o">=</span>xtb/xtb --buildtype release --optimization <span class="m">2</span> -Dla_backend<span class="o">=</span>openblas
 ninja -C build install
-pip install --user -e .
+pip install -e .
 </pre></div>
 </div>
 <ul class="simple">
@@ -292,7 +292,7 @@ git submodule update --init
 <span class="c1"># module swap PrgEnv-intel PrgEnv-cray; module swap PrgEnv-cray PrgEnv-intel</span>
 <span class="nv">CC</span><span class="o">=</span>icc <span class="nv">CXX</span><span class="o">=</span>icpc <span class="nv">FC</span><span class="o">=</span>ifort meson setup build --prefix<span class="o">=</span><span class="nv">$PWD</span> --libdir<span class="o">=</span>xtb -Dla_backed<span class="o">=</span>mkl -Dpy<span class="o">=</span><span class="m">3</span> --buildtype release --optimization <span class="m">2</span>
 ninja -C build install
-pip install --user -e .
+pip install -e .
 </pre></div>
 </div>
 <p>Make sure it works by running:</p>
@@ -636,7 +636,7 @@ balsam launcher --job-mode<span class="o">=</span>mpi --wf-filter QE_Sock --offs
     <p>
         &copy; Copyright Copyright 2021 National Technology &amp; Engineering Solutions of Sandia, LLC (NTESS). Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government retains certain rights in this software.
       <span class="lastupdated">
-        Last updated on Mon, 25 Jan 2021 15:16:53.
+        Last updated on Thu, 28 Jan 2021 18:45:53.
       </span>
 
     </p>

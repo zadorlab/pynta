@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>pynta.adsorbates &mdash; Pynta January 25, 2021 documentation</title>
+  <title>pynta.adsorbates &mdash; Pynta January 28, 2021 documentation</title>
   
 
   
@@ -153,16 +153,15 @@
 <span class="kn">from</span> <span class="nn">ase.io</span> <span class="k">import</span> <span class="n">read</span><span class="p">,</span> <span class="n">write</span>
 <span class="kn">from</span> <span class="nn">ase.data</span> <span class="k">import</span> <span class="n">covalent_radii</span>
 
-<span class="kn">from</span> <span class="nn">pynta.utils</span> <span class="k">import</span> <span class="n">edge_cases_bonded_dict</span>
 <span class="kn">from</span> <span class="nn">pynta.excatkit.adsorption</span> <span class="k">import</span> <span class="n">Builder</span>
 <span class="kn">from</span> <span class="nn">pynta.excatkit.gratoms</span> <span class="k">import</span> <span class="n">Gratoms</span>
 <span class="kn">from</span> <span class="nn">pynta.io</span> <span class="k">import</span> <span class="n">IO</span>
 
 
-<div class="viewcode-block" id="Adsorbates"><a class="viewcode-back" href="../../source/pynta.html#pynta.adsorbates.Adsorbates">[docs]</a><span class="k">class</span> <span class="nc">Adsorbates</span><span class="p">:</span>
+<div class="viewcode-block" id="Adsorbates"><a class="viewcode-back" href="../../index.html#pynta.adsorbates.Adsorbates">[docs]</a><span class="k">class</span> <span class="nc">Adsorbates</span><span class="p">:</span>
     <span class="sd">&#39;&#39;&#39; This class handles adsorbates and puts them on the surface&#39;&#39;&#39;</span>
 
-<div class="viewcode-block" id="Adsorbates.__init__"><a class="viewcode-back" href="../../source/pynta.html#pynta.adsorbates.Adsorbates.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span>
+<div class="viewcode-block" id="Adsorbates.__init__"><a class="viewcode-back" href="../../index.html#pynta.adsorbates.Adsorbates.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span>
             <span class="n">facetpath</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
             <span class="n">slab</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -200,7 +199,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">big_slab</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">slab_atom</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">repeats</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">nslab</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">slab_atom</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="Adsorbates.get_edges"><a class="viewcode-back" href="../../source/pynta.html#pynta.adsorbates.Adsorbates.get_edges">[docs]</a>    <span class="k">def</span> <span class="nf">get_edges</span><span class="p">(</span>
+<div class="viewcode-block" id="Adsorbates.get_edges"><a class="viewcode-back" href="../../index.html#pynta.adsorbates.Adsorbates.get_edges">[docs]</a>    <span class="k">def</span> <span class="nf">get_edges</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span>
             <span class="n">find_surface</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
         <span class="sd">&#39;&#39;&#39; Get adsorption edges</span>
@@ -313,7 +312,7 @@
                 <span class="n">surface</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sign</span><span class="p">(</span><span class="n">pairvec</span><span class="p">[</span><span class="mi">2</span><span class="p">]))</span>
         <span class="k">return</span> <span class="n">edges</span><span class="p">,</span> <span class="n">surface</span></div>
 
-<div class="viewcode-block" id="Adsorbates.get_grslab"><a class="viewcode-back" href="../../source/pynta.html#pynta.adsorbates.Adsorbates.get_grslab">[docs]</a>    <span class="k">def</span> <span class="nf">get_grslab</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Gratoms</span><span class="p">:</span>
+<div class="viewcode-block" id="Adsorbates.get_grslab"><a class="viewcode-back" href="../../index.html#pynta.adsorbates.Adsorbates.get_grslab">[docs]</a>    <span class="k">def</span> <span class="nf">get_grslab</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Gratoms</span><span class="p">:</span>
         <span class="sd">&#39;&#39;&#39; Convert surface slab Atoms object into Gratoms object</span>
 
 <span class="sd">        Returns</span>
@@ -334,13 +333,13 @@
 
         <span class="k">return</span> <span class="n">grslab</span></div>
 
-<div class="viewcode-block" id="Adsorbates.adjacency_to_3d"><a class="viewcode-back" href="../../source/pynta.html#pynta.adsorbates.Adsorbates.adjacency_to_3d">[docs]</a>    <span class="k">def</span> <span class="nf">adjacency_to_3d</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<div class="viewcode-block" id="Adsorbates.adjacency_to_3d"><a class="viewcode-back" href="../../index.html#pynta.adsorbates.Adsorbates.adjacency_to_3d">[docs]</a>    <span class="k">def</span> <span class="nf">adjacency_to_3d</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="sd">&#39;&#39;&#39; Place adsorbates on the surface</span>
 
 <span class="sd">        .. todo:: Add support for a bidentate adsorption</span>
 
 <span class="sd">        &#39;&#39;&#39;</span>
-        <span class="n">all_species_symbols</span> <span class="o">=</span> <span class="n">IO</span><span class="o">.</span><span class="n">get_all_unique_species</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">yamlfile</span><span class="p">)</span>
+        <span class="n">all_species_symbols</span> <span class="o">=</span> <span class="n">IO</span><span class="o">.</span><span class="n">get_all_unique_species_symbols</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">yamlfile</span><span class="p">)</span>
         <span class="n">all_images_with_bonds</span> <span class="o">=</span> <span class="n">IO</span><span class="o">.</span><span class="n">get_all_unique_images_with_bonds</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">yamlfile</span><span class="p">)</span>
 
@@ -359,9 +358,6 @@
 
                 <span class="c1"># which atom connects to the surface</span>
                 <span class="n">bonded</span> <span class="o">=</span> <span class="p">[</span><span class="n">bond</span><span class="p">]</span>
-
-                <span class="k">if</span> <span class="n">sp_symbol</span> <span class="ow">in</span> <span class="n">edge_cases_bonded_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-                    <span class="n">bonded</span> <span class="o">=</span> <span class="p">[</span><span class="n">edge_cases_bonded_dict</span><span class="p">[</span><span class="n">sp_symbol</span><span class="p">]]</span>
 
                 <span class="k">try</span><span class="p">:</span>
                     <span class="c1"># put adsorbates on the surface</span>
@@ -387,7 +383,7 @@
                 <span class="n">write</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">savedir</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">.png&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
                     <span class="nb">str</span><span class="p">(</span><span class="n">prefix</span><span class="p">)</span><span class="o">.</span><span class="n">zfill</span><span class="p">(</span><span class="mi">2</span><span class="p">))),</span> <span class="n">big_slab_ads</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="Adsorbates.create_relax_jobs"><a class="viewcode-back" href="../../source/pynta.html#pynta.adsorbates.Adsorbates.create_relax_jobs">[docs]</a>    <span class="k">def</span> <span class="nf">create_relax_jobs</span><span class="p">(</span>
+<div class="viewcode-block" id="Adsorbates.create_relax_jobs"><a class="viewcode-back" href="../../index.html#pynta.adsorbates.Adsorbates.create_relax_jobs">[docs]</a>    <span class="k">def</span> <span class="nf">create_relax_jobs</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span>
             <span class="n">socket_calculator</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
             <span class="n">pytemplate</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -495,7 +491,7 @@
     <p>
         &copy; Copyright Copyright 2021 National Technology &amp; Engineering Solutions of Sandia, LLC (NTESS). Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government retains certain rights in this software.
       <span class="lastupdated">
-        Last updated on Mon, 25 Jan 2021 18:06:34.
+        Last updated on Thu, 28 Jan 2021 18:45:53.
       </span>
 
     </p>

@@ -86,7 +86,7 @@ echo 'export PATH=path_to_PostgreSQL/pgsql/bin:$PATH' >> ~/.bashrc
 ```bash
 git clone https://github.com/mpi4py/mpi4py.git
 cd mpi4py
-python3 setup.py install --user
+python3 setup.py install
 cd ../
 ```
 
@@ -103,7 +103,7 @@ Make sure it works by running
 ```bash
 git clone https://github.com/balsam-alcf/balsam.git -b serial-mode-perf
 cd balsam
-python3 setup.py install --user
+python3 setup.py install
 cd ../
 ```
 
@@ -119,7 +119,7 @@ cd xtb-python
 git submodule update --init
 LDFLAGS="-L/opt/custom/OpenBLAS/0.3.7/lib" meson setup build --prefix=$PWD --libdir=xtb/xtb --buildtype release --optimization 2 -Dla_backend=openblas
 ninja -C build install
-pip install --user -e .
+pip install -e .
 ```
 
 - using `MKL` and Intel Compilers:
@@ -133,7 +133,7 @@ git submodule update --init
 # module swap PrgEnv-intel PrgEnv-cray; module swap PrgEnv-cray PrgEnv-intel
 CC=icc CXX=icpc FC=ifort meson setup build --prefix=$PWD --libdir=xtb -Dla_backed=mkl -Dpy=3 --buildtype release --optimization 2
 ninja -C build install
-pip install --user -e .
+pip install -e .
 ```
 
 Make sure it works by running:

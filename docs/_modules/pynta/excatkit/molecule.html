@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>pynta.excatkit.molecule &mdash; Pynta January 25, 2021 documentation</title>
+  <title>pynta.excatkit.molecule &mdash; Pynta January 28, 2021 documentation</title>
   
 
   
@@ -154,8 +154,8 @@
 <span class="kn">import</span> <span class="nn">re</span>
 
 
-<div class="viewcode-block" id="Molecule"><a class="viewcode-back" href="../../../source/pynta.html#pynta.excatkit.molecule.Molecule">[docs]</a><span class="k">class</span> <span class="nc">Molecule</span><span class="p">():</span>
-<div class="viewcode-block" id="Molecule.molecule"><a class="viewcode-back" href="../../../source/pynta.html#pynta.excatkit.molecule.Molecule.molecule">[docs]</a>    <span class="k">def</span> <span class="nf">molecule</span><span class="p">(</span>
+<div class="viewcode-block" id="Molecule"><a class="viewcode-back" href="../../../index.html#pynta.excatkit.molecule.Molecule">[docs]</a><span class="k">class</span> <span class="nc">Molecule</span><span class="p">():</span>
+<div class="viewcode-block" id="Molecule.molecule"><a class="viewcode-back" href="../../../index.html#pynta.excatkit.molecule.Molecule.molecule">[docs]</a>    <span class="k">def</span> <span class="nf">molecule</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span>
             <span class="n">species</span><span class="p">,</span>
             <span class="n">bond_index</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -188,7 +188,7 @@
 
         <span class="k">return</span> <span class="n">images</span></div>
 
-<div class="viewcode-block" id="Molecule.get_atomic_numbers"><a class="viewcode-back" href="../../../source/pynta.html#pynta.excatkit.molecule.Molecule.get_atomic_numbers">[docs]</a>    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="Molecule.get_atomic_numbers"><a class="viewcode-back" href="../../../index.html#pynta.excatkit.molecule.Molecule.get_atomic_numbers">[docs]</a>    <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">get_atomic_numbers</span><span class="p">(</span>
             <span class="n">formula</span><span class="p">,</span>
             <span class="n">return_count</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
@@ -233,7 +233,7 @@
 
         <span class="k">return</span> <span class="n">numbers</span></div>
 
-<div class="viewcode-block" id="Molecule.hydrogenate"><a class="viewcode-back" href="../../../source/pynta.html#pynta.excatkit.molecule.Molecule.hydrogenate">[docs]</a>    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="Molecule.hydrogenate"><a class="viewcode-back" href="../../../index.html#pynta.excatkit.molecule.Molecule.hydrogenate">[docs]</a>    <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">hydrogenate</span><span class="p">(</span>
             <span class="n">atoms</span><span class="p">,</span>
             <span class="n">bins</span><span class="p">,</span>
@@ -256,7 +256,7 @@
 
         <span class="k">return</span> <span class="n">atoms</span></div>
 
-<div class="viewcode-block" id="Molecule.bin_hydrogen"><a class="viewcode-back" href="../../../source/pynta.html#pynta.excatkit.molecule.Molecule.bin_hydrogen">[docs]</a>    <span class="k">def</span> <span class="nf">bin_hydrogen</span><span class="p">(</span>
+<div class="viewcode-block" id="Molecule.bin_hydrogen"><a class="viewcode-back" href="../../../index.html#pynta.excatkit.molecule.Molecule.bin_hydrogen">[docs]</a>    <span class="k">def</span> <span class="nf">bin_hydrogen</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span>
             <span class="n">hydrogens</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
             <span class="n">bins</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
@@ -276,7 +276,7 @@
                     <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">bin_hydrogen</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">bins</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
                         <span class="k">yield</span> <span class="n">j</span> <span class="o">+</span> <span class="n">k</span></div>
 
-<div class="viewcode-block" id="Molecule.get_topologies"><a class="viewcode-back" href="../../../source/pynta.html#pynta.excatkit.molecule.Molecule.get_topologies">[docs]</a>    <span class="k">def</span> <span class="nf">get_topologies</span><span class="p">(</span>
+<div class="viewcode-block" id="Molecule.get_topologies"><a class="viewcode-back" href="../../../index.html#pynta.excatkit.molecule.Molecule.get_topologies">[docs]</a>    <span class="k">def</span> <span class="nf">get_topologies</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span>
             <span class="n">symbols</span><span class="p">,</span>
             <span class="n">saturate</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
@@ -391,7 +391,7 @@
 
         <span class="k">return</span> <span class="n">molecules</span></div>
 
-<div class="viewcode-block" id="Molecule.get_basis_vectors"><a class="viewcode-back" href="../../../source/pynta.html#pynta.excatkit.molecule.Molecule.get_basis_vectors">[docs]</a>    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="Molecule.get_basis_vectors"><a class="viewcode-back" href="../../../index.html#pynta.excatkit.molecule.Molecule.get_basis_vectors">[docs]</a>    <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">get_basis_vectors</span><span class="p">(</span><span class="n">coordinates</span><span class="p">):</span>
         <span class="sd">&#39;&#39;&#39; Return a set of basis vectors for a given array of</span>
 <span class="sd">            3D coordinates.</span>
@@ -426,7 +426,7 @@
 
         <span class="k">return</span> <span class="n">basis_vectors</span></div>
 
-<div class="viewcode-block" id="Molecule.branch_molecule"><a class="viewcode-back" href="../../../source/pynta.html#pynta.excatkit.molecule.Molecule.branch_molecule">[docs]</a>    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="Molecule.branch_molecule"><a class="viewcode-back" href="../../../index.html#pynta.excatkit.molecule.Molecule.branch_molecule">[docs]</a>    <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">branch_molecule</span><span class="p">(</span>
             <span class="n">atoms</span><span class="p">,</span>
             <span class="n">branch</span><span class="p">,</span>
@@ -503,7 +503,7 @@
 
         <span class="k">return</span> <span class="n">positions</span></div>
 
-<div class="viewcode-block" id="Molecule.get_3D_positions"><a class="viewcode-back" href="../../../source/pynta.html#pynta.excatkit.molecule.Molecule.get_3D_positions">[docs]</a>    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="Molecule.get_3D_positions"><a class="viewcode-back" href="../../../index.html#pynta.excatkit.molecule.Molecule.get_3D_positions">[docs]</a>    <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">get_3D_positions</span><span class="p">(</span>
             <span class="n">atoms</span><span class="p">,</span>
             <span class="n">bond_index</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
@@ -570,7 +570,7 @@
     <p>
         &copy; Copyright Copyright 2021 National Technology &amp; Engineering Solutions of Sandia, LLC (NTESS). Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government retains certain rights in this software.
       <span class="lastupdated">
-        Last updated on Mon, 25 Jan 2021 18:06:34.
+        Last updated on Thu, 28 Jan 2021 18:45:53.
       </span>
 
     </p>

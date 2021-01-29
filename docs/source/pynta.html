@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Modules &mdash; Pynta January 25, 2021 documentation</title>
+  <title>Modules &mdash; Pynta January 28, 2021 documentation</title>
   
 
   
@@ -1706,8 +1706,8 @@ which atoms connects Gratoms object to the surface</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="pynta.io.IO.get_all_unique_species">
-<em class="property">static </em><code class="sig-name descname">get_all_unique_species</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">yamlfile</span><span class="p">:</span> <span class="n">str</span></em><span class="sig-paren">)</span> &#x2192; List<span class="p">[</span>str<span class="p">]</span><a class="reference internal" href="../_modules/pynta/io.html#IO.get_all_unique_species"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.io.IO.get_all_unique_species" title="Permalink to this definition">¶</a></dt>
+<dt id="pynta.io.IO.get_all_unique_species_symbols">
+<em class="property">static </em><code class="sig-name descname">get_all_unique_species_symbols</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">yamlfile</span><span class="p">:</span> <span class="n">str</span></em><span class="sig-paren">)</span> &#x2192; List<span class="p">[</span>str<span class="p">]</span><a class="reference internal" href="../_modules/pynta/io.html#IO.get_all_unique_species_symbols"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.io.IO.get_all_unique_species_symbols" title="Permalink to this definition">¶</a></dt>
 <dd><p>Generate a list with all unique species names</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -3380,6 +3380,12 @@ balsam files are, e.g.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt id="pynta.restart.HighLevelRestart.remove_empty_pickle_file">
+<code class="sig-name descname">remove_empty_pickle_file</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="../_modules/pynta/restart.html#HighLevelRestart.remove_empty_pickle_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.restart.HighLevelRestart.remove_empty_pickle_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Remove all empty pckl files from unfinished vib calculations</p>
+</dd></dl>
+
+<dl class="py method">
 <dt id="pynta.restart.HighLevelRestart.remove_error_files">
 <code class="sig-name descname">remove_error_files</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pynta/restart.html#HighLevelRestart.remove_error_files"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.restart.HighLevelRestart.remove_error_files" title="Permalink to this definition">¶</a></dt>
 <dd><p>Remove all error/unfinished files from previous calculations
@@ -3394,7 +3400,7 @@ including <code class="docutils literal notranslate"><span class="pre">pwscf*</s
 
 <dl class="py method">
 <dt id="pynta.restart.HighLevelRestart.set_awaiting_status">
-<code class="sig-name descname">set_awaiting_status</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pynta/restart.html#HighLevelRestart.set_awaiting_status"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.restart.HighLevelRestart.set_awaiting_status" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">set_awaiting_status</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="../_modules/pynta/restart.html#HighLevelRestart.set_awaiting_status"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.restart.HighLevelRestart.set_awaiting_status" title="Permalink to this definition">¶</a></dt>
 <dd><p>Make sure that jobs which not yet started and depends on other jobs
 have an <code class="docutils literal notranslate"><span class="pre">'AWAITING_PARENTS'</span></code> status</p>
 </dd></dl>
@@ -4368,8 +4374,8 @@ the nearest surface metal atoms connected to adsorbates</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>reacting_atoms</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>int</em><em>]</em>) – keys are sybols of atoms that takes part in reaction whereas,
-values are their indicies</p></li>
+<li><p><strong>reacting_atoms</strong> (<em>List</em><em>[</em><em>int</em><em>]</em>) – a list with indicies of atoms taking part in the reaction with
+order as in Gratoms object, not as in :literal:.yaml file</p></li>
 <li><p><strong>surface_atoms_idxs</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>int</em><em>]</em>) – keys are metal atom symbol and index and values are indicies
 e.g.
 {‘Cu_0’: 0, ‘Cu_1’: 1}</p></li>
@@ -5288,7 +5294,7 @@ oscilations, by default 30</p></li>
     <p>
         &copy; Copyright Copyright 2021 National Technology &amp; Engineering Solutions of Sandia, LLC (NTESS). Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government retains certain rights in this software.
       <span class="lastupdated">
-        Last updated on Mon, 25 Jan 2021 18:06:34.
+        Last updated on Thu, 28 Jan 2021 18:43:07.
       </span>
 
     </p>

@@ -88,7 +88,7 @@ Install `mpi4py <https://github.com/mpi4py/mpi4py.git>`_\ :
 
    $ git clone https://github.com/mpi4py/mpi4py.git
    $ cd mpi4py
-   $ python3 setup.py install --user
+   $ python3 setup.py install
    $ cd ../
 
 Make sure it works by running
@@ -106,7 +106,7 @@ Install `balsam <https://github.com/balsam-alcf/balsam.git>`_ using `serial-mode
 
    git clone https://github.com/balsam-alcf/balsam.git -b serial-mode-perf
    cd balsam
-   python3 setup.py install --user
+   python3 setup.py install
    cd ../
 
 Make sure it works by running tests posted on the `balsam <https://github.com/balsam-alcf/balsam.git>`_ GitHub page.
@@ -124,7 +124,7 @@ Install `xTB-python <https://github.com/grimme-lab/xtb-python>`_ following instr
    git submodule update --init
    LDFLAGS="-L/opt/custom/OpenBLAS/0.3.7/lib" meson setup build --prefix=$PWD --libdir=xtb/xtb --buildtype release --optimization 2 -Dla_backend=openblas
    ninja -C build install
-   pip install --user -e .
+   pip install -e .
 
 
 * using ``MKL`` and Intel Compilers:
@@ -139,7 +139,7 @@ Install `xTB-python <https://github.com/grimme-lab/xtb-python>`_ following instr
    # module swap PrgEnv-intel PrgEnv-cray; module swap PrgEnv-cray PrgEnv-intel
    CC=icc CXX=icpc FC=ifort meson setup build --prefix=$PWD --libdir=xtb -Dla_backed=mkl -Dpy=3 --buildtype release --optimization 2
    ninja -C build install
-   pip install --user -e .
+   pip install -e .
 
 Make sure it works by running:
 

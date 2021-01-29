@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>pynta.main &mdash; Pynta January 25, 2021 documentation</title>
+  <title>pynta.main &mdash; Pynta January 28, 2021 documentation</title>
   
 
   
@@ -201,7 +201,7 @@
     <span class="n">scaled2</span> <span class="o">=</span> <span class="n">inputR2S</span><span class="o">.</span><span class="n">scaled2</span>
     <span class="n">all_reacting_atoms</span> <span class="o">=</span> <span class="n">IO</span><span class="o">.</span><span class="n">get_all_reacting_atoms</span><span class="p">(</span><span class="n">check_yaml</span><span class="p">)</span>
     <span class="n">species_dict</span> <span class="o">=</span> <span class="n">IO</span><span class="p">()</span><span class="o">.</span><span class="n">get_species_dict</span><span class="p">(</span><span class="n">check_yaml</span><span class="p">)</span>
-    <span class="n">all_species</span> <span class="o">=</span> <span class="n">IO</span><span class="p">()</span><span class="o">.</span><span class="n">get_all_unique_species</span><span class="p">(</span><span class="n">check_yaml</span><span class="p">)</span>
+    <span class="n">all_species</span> <span class="o">=</span> <span class="n">IO</span><span class="p">()</span><span class="o">.</span><span class="n">get_all_unique_species_symbols</span><span class="p">(</span><span class="n">check_yaml</span><span class="p">)</span>
     <span class="n">executable</span> <span class="o">=</span> <span class="n">inputR2S</span><span class="o">.</span><span class="n">executable</span>
     <span class="n">node_packing_count</span> <span class="o">=</span> <span class="n">inputR2S</span><span class="o">.</span><span class="n">node_packing_count</span>
     <span class="n">balsam_exe_settings</span> <span class="o">=</span> <span class="n">inputR2S</span><span class="o">.</span><span class="n">balsam_exe_settings</span>
@@ -259,9 +259,9 @@
 <span class="c1">####################################################</span>
 
 
-<div class="viewcode-block" id="WorkFlow"><a class="viewcode-back" href="../../source/pynta.html#pynta.main.WorkFlow">[docs]</a><span class="k">class</span> <span class="nc">WorkFlow</span><span class="p">:</span>
+<div class="viewcode-block" id="WorkFlow"><a class="viewcode-back" href="../../index.html#pynta.main.WorkFlow">[docs]</a><span class="k">class</span> <span class="nc">WorkFlow</span><span class="p">:</span>
 
-<div class="viewcode-block" id="WorkFlow.__init__"><a class="viewcode-back" href="../../source/pynta.html#pynta.main.WorkFlow.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="WorkFlow.__init__"><a class="viewcode-back" href="../../index.html#pynta.main.WorkFlow.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&#39;&#39;&#39; Setup the balsam application.</span>
 
 <span class="sd">        Once Quantum Chemistry calculations starts there will be one app for</span>
@@ -286,7 +286,7 @@
             <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Please create Balsam DB and/or activate it&#39;</span><span class="p">)</span>
             <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;---&#39;</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="WorkFlow.get_ts_xtb_py_scripts_list"><a class="viewcode-back" href="../../source/pynta.html#pynta.main.WorkFlow.get_ts_xtb_py_scripts_list">[docs]</a>    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="WorkFlow.get_ts_xtb_py_scripts_list"><a class="viewcode-back" href="../../index.html#pynta.main.WorkFlow.get_ts_xtb_py_scripts_list">[docs]</a>    <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">get_ts_xtb_py_scripts_list</span><span class="p">(</span>
             <span class="n">facetpath</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
         <span class="sd">&#39;&#39;&#39;Get a list with all 02 job scripts</span>
@@ -312,7 +312,7 @@
             <span class="n">ts_with_xtb_py_script_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">fname</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">ts_with_xtb_py_script_list</span></div>
 
-<div class="viewcode-block" id="WorkFlow.get_ts_estimate_unique_list"><a class="viewcode-back" href="../../source/pynta.html#pynta.main.WorkFlow.get_ts_estimate_unique_list">[docs]</a>    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="WorkFlow.get_ts_estimate_unique_list"><a class="viewcode-back" href="../../index.html#pynta.main.WorkFlow.get_ts_estimate_unique_list">[docs]</a>    <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">get_ts_estimate_unique_list</span><span class="p">(</span>
             <span class="n">facetpath</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
         <span class="sd">&#39;&#39;&#39; Get a list with all 03 job scripts</span>
@@ -337,7 +337,7 @@
             <span class="n">ts_sella_py_script_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">fname</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">ts_sella_py_script_list</span></div>
 
-<div class="viewcode-block" id="WorkFlow.get_ts_vib_list"><a class="viewcode-back" href="../../source/pynta.html#pynta.main.WorkFlow.get_ts_vib_list">[docs]</a>    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="WorkFlow.get_ts_vib_list"><a class="viewcode-back" href="../../index.html#pynta.main.WorkFlow.get_ts_vib_list">[docs]</a>    <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">get_ts_vib_list</span><span class="p">(</span>
             <span class="n">facetpath</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
         <span class="sd">&#39;&#39;&#39; Get a list with all 04 job scripts</span>
@@ -362,7 +362,7 @@
             <span class="n">ts_vib_py_scripts_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">fname</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">ts_vib_py_scripts_list</span></div>
 
-<div class="viewcode-block" id="WorkFlow.get_after_ts_py_scripts"><a class="viewcode-back" href="../../source/pynta.html#pynta.main.WorkFlow.get_after_ts_py_scripts">[docs]</a>    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="WorkFlow.get_after_ts_py_scripts"><a class="viewcode-back" href="../../index.html#pynta.main.WorkFlow.get_after_ts_py_scripts">[docs]</a>    <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">get_after_ts_py_scripts</span><span class="p">(</span>
             <span class="n">facetpath</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
         <span class="sd">&#39;&#39;&#39; Get a list with all 05 job scripts</span>
@@ -387,7 +387,7 @@
             <span class="n">after_ts_py_scripts_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">fname</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">after_ts_py_scripts_list</span></div>
 
-<div class="viewcode-block" id="WorkFlow.create_big_slab_pyjob"><a class="viewcode-back" href="../../source/pynta.html#pynta.main.WorkFlow.create_big_slab_pyjob">[docs]</a>    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="WorkFlow.create_big_slab_pyjob"><a class="viewcode-back" href="../../index.html#pynta.main.WorkFlow.create_big_slab_pyjob">[docs]</a>    <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">create_big_slab_pyjob</span><span class="p">(</span>
             <span class="n">socket_calculator</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
             <span class="n">pytemplate</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -442,7 +442,7 @@
                     <span class="n">creation_dir</span><span class="o">=</span><span class="n">creation_dir</span>
                 <span class="p">))</span></div>
 
-<div class="viewcode-block" id="WorkFlow.create_job_files"><a class="viewcode-back" href="../../source/pynta.html#pynta.main.WorkFlow.create_job_files">[docs]</a>    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="WorkFlow.create_job_files"><a class="viewcode-back" href="../../index.html#pynta.main.WorkFlow.create_job_files">[docs]</a>    <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">create_job_files</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="sd">&#39;&#39;&#39; For each surface type and for each reaction generate submit scripts</span>
 <span class="sd">        for 6 stages of the workflow</span>
@@ -554,7 +554,7 @@
 <span class="c1">###########################</span>
 <span class="c1">#   Create submit files   #</span>
 <span class="c1">###########################</span>
-<div class="viewcode-block" id="WorkFlow.set_up_slab"><a class="viewcode-back" href="../../source/pynta.html#pynta.main.WorkFlow.set_up_slab">[docs]</a>    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="WorkFlow.set_up_slab"><a class="viewcode-back" href="../../index.html#pynta.main.WorkFlow.set_up_slab">[docs]</a>    <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">set_up_slab</span><span class="p">(</span>
             <span class="n">socket_calculator</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
             <span class="n">template</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -663,7 +663,7 @@
                     <span class="n">creation_dir</span><span class="o">=</span><span class="n">creation_dir</span>
                 <span class="p">))</span></div>
 
-<div class="viewcode-block" id="WorkFlow.set_up_big_slab"><a class="viewcode-back" href="../../source/pynta.html#pynta.main.WorkFlow.set_up_big_slab">[docs]</a>    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="WorkFlow.set_up_big_slab"><a class="viewcode-back" href="../../index.html#pynta.main.WorkFlow.set_up_big_slab">[docs]</a>    <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">set_up_big_slab</span><span class="p">(</span>
             <span class="n">socket_calculator</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
             <span class="n">template</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -728,7 +728,7 @@
                     <span class="n">node_packing_count</span><span class="o">=</span><span class="n">node_packing_count</span>
                 <span class="p">))</span></div>
 
-<div class="viewcode-block" id="WorkFlow.set_up_ads"><a class="viewcode-back" href="../../source/pynta.html#pynta.main.WorkFlow.set_up_ads">[docs]</a>    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="WorkFlow.set_up_ads"><a class="viewcode-back" href="../../index.html#pynta.main.WorkFlow.set_up_ads">[docs]</a>    <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">set_up_ads</span><span class="p">(</span>
             <span class="n">set_up_ads</span><span class="p">,</span>
             <span class="n">template</span><span class="p">,</span>
@@ -792,7 +792,7 @@
                     <span class="n">creation_dir</span><span class="o">=</span><span class="n">creation_dir</span>
                 <span class="p">))</span></div>
 
-<div class="viewcode-block" id="WorkFlow.set_up_ads_vib"><a class="viewcode-back" href="../../source/pynta.html#pynta.main.WorkFlow.set_up_ads_vib">[docs]</a>    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="WorkFlow.set_up_ads_vib"><a class="viewcode-back" href="../../index.html#pynta.main.WorkFlow.set_up_ads_vib">[docs]</a>    <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">set_up_ads_vib</span><span class="p">(</span>
             <span class="n">socket_calculator</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
             <span class="n">template</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -841,7 +841,7 @@
                     <span class="n">creation_dir</span><span class="o">=</span><span class="n">creation_dir</span>
                 <span class="p">))</span></div>
 
-<div class="viewcode-block" id="WorkFlow.set_up_TS_with_xtb"><a class="viewcode-back" href="../../source/pynta.html#pynta.main.WorkFlow.set_up_TS_with_xtb">[docs]</a>    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="WorkFlow.set_up_TS_with_xtb"><a class="viewcode-back" href="../../index.html#pynta.main.WorkFlow.set_up_TS_with_xtb">[docs]</a>    <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">set_up_TS_with_xtb</span><span class="p">(</span>
             <span class="n">rxn</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
             <span class="n">reacting_atoms</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
@@ -937,7 +937,7 @@
                     <span class="n">balsam_exe_settings</span><span class="o">=</span><span class="n">balsam_exe_settings</span><span class="p">,</span>
                 <span class="p">))</span></div>
 
-<div class="viewcode-block" id="WorkFlow.set_up_run_TS"><a class="viewcode-back" href="../../source/pynta.html#pynta.main.WorkFlow.set_up_run_TS">[docs]</a>    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="WorkFlow.set_up_run_TS"><a class="viewcode-back" href="../../index.html#pynta.main.WorkFlow.set_up_run_TS">[docs]</a>    <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">set_up_run_TS</span><span class="p">(</span>
             <span class="n">socket_calculator</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
             <span class="n">rxn</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
@@ -1010,7 +1010,7 @@
                     <span class="n">rxn_name</span><span class="o">=</span><span class="n">rxn_name</span>
                 <span class="p">))</span></div>
 
-<div class="viewcode-block" id="WorkFlow.set_up_TS_vib"><a class="viewcode-back" href="../../source/pynta.html#pynta.main.WorkFlow.set_up_TS_vib">[docs]</a>    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="WorkFlow.set_up_TS_vib"><a class="viewcode-back" href="../../index.html#pynta.main.WorkFlow.set_up_TS_vib">[docs]</a>    <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">set_up_TS_vib</span><span class="p">(</span>
             <span class="n">socket_calculator</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
             <span class="n">rxn</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
@@ -1082,7 +1082,7 @@
                     <span class="n">rxn_name</span><span class="o">=</span><span class="n">rxn_name</span>
                 <span class="p">))</span></div>
 
-<div class="viewcode-block" id="WorkFlow.set_up_opt_after_TS"><a class="viewcode-back" href="../../source/pynta.html#pynta.main.WorkFlow.set_up_opt_after_TS">[docs]</a>    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="WorkFlow.set_up_opt_after_TS"><a class="viewcode-back" href="../../index.html#pynta.main.WorkFlow.set_up_opt_after_TS">[docs]</a>    <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">set_up_opt_after_TS</span><span class="p">(</span>
             <span class="n">socket_calculator</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
             <span class="n">rxn</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
@@ -1161,7 +1161,7 @@
 <span class="c1"># Submit jobs and execute it #</span>
 <span class="c1">##############################</span>
 
-<div class="viewcode-block" id="WorkFlow.exe"><a class="viewcode-back" href="../../source/pynta.html#pynta.main.WorkFlow.exe">[docs]</a>    <span class="k">def</span> <span class="nf">exe</span><span class="p">(</span>
+<div class="viewcode-block" id="WorkFlow.exe"><a class="viewcode-back" href="../../index.html#pynta.main.WorkFlow.exe">[docs]</a>    <span class="k">def</span> <span class="nf">exe</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span>
             <span class="n">parent_job</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
             <span class="n">job_script</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -1264,7 +1264,7 @@
 
         <span class="k">return</span> <span class="n">job_to_add</span></div>
 
-<div class="viewcode-block" id="WorkFlow.run_slab_optimization"><a class="viewcode-back" href="../../source/pynta.html#pynta.main.WorkFlow.run_slab_optimization">[docs]</a>    <span class="k">def</span> <span class="nf">run_slab_optimization</span><span class="p">(</span>
+<div class="viewcode-block" id="WorkFlow.run_slab_optimization"><a class="viewcode-back" href="../../index.html#pynta.main.WorkFlow.run_slab_optimization">[docs]</a>    <span class="k">def</span> <span class="nf">run_slab_optimization</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span>
             <span class="n">facetpath</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="sd">&#39;&#39;&#39; Submit ``slab_optimization_job``</span>
@@ -1287,7 +1287,7 @@
         <span class="n">slab_opt</span> <span class="o">=</span> <span class="s1">&#39;00_</span><span class="si">{}</span><span class="s1">_set_up_slab_opt.py&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">facetpath</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">slab_opt_job</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">exe</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">slab_opt</span><span class="p">,</span> <span class="n">facetpath</span><span class="p">,</span> <span class="n">cores</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="WorkFlow.run_big_slab_opt"><a class="viewcode-back" href="../../source/pynta.html#pynta.main.WorkFlow.run_big_slab_opt">[docs]</a>    <span class="k">def</span> <span class="nf">run_big_slab_opt</span><span class="p">(</span>
+<div class="viewcode-block" id="WorkFlow.run_big_slab_opt"><a class="viewcode-back" href="../../index.html#pynta.main.WorkFlow.run_big_slab_opt">[docs]</a>    <span class="k">def</span> <span class="nf">run_big_slab_opt</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span>
             <span class="n">facetpath</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="sd">&#39;&#39;&#39; Submit ``big_slab_optimization`` job</span>
@@ -1310,7 +1310,7 @@
         <span class="n">big_slab_opt</span> <span class="o">=</span> <span class="s1">&#39;00_</span><span class="si">{}</span><span class="s1">_set_up_big_slab_opt.py&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">facetpath</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">exe</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">big_slab_opt</span><span class="p">,</span> <span class="n">facetpath</span><span class="p">,</span> <span class="n">cores</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="WorkFlow.run_opt_surf_and_adsorbate"><a class="viewcode-back" href="../../source/pynta.html#pynta.main.WorkFlow.run_opt_surf_and_adsorbate">[docs]</a>    <span class="k">def</span> <span class="nf">run_opt_surf_and_adsorbate</span><span class="p">(</span>
+<div class="viewcode-block" id="WorkFlow.run_opt_surf_and_adsorbate"><a class="viewcode-back" href="../../index.html#pynta.main.WorkFlow.run_opt_surf_and_adsorbate">[docs]</a>    <span class="k">def</span> <span class="nf">run_opt_surf_and_adsorbate</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span>
             <span class="n">facetpath</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="sd">&#39;&#39;&#39; Run optmization of adsorbates on the surface</span>
@@ -1334,7 +1334,7 @@
         <span class="n">slab_opt</span> <span class="o">=</span> <span class="s1">&#39;00_</span><span class="si">{}</span><span class="s1">_set_up_slab_opt.py&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">facetpath</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">exe</span><span class="p">(</span><span class="n">slab_opt</span><span class="p">,</span> <span class="n">ads_surf_opt_script</span><span class="p">,</span> <span class="n">facetpath</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="WorkFlow.run_opt_surf_and_adsorbate_no_depend"><a class="viewcode-back" href="../../source/pynta.html#pynta.main.WorkFlow.run_opt_surf_and_adsorbate_no_depend">[docs]</a>    <span class="k">def</span> <span class="nf">run_opt_surf_and_adsorbate_no_depend</span><span class="p">(</span>
+<div class="viewcode-block" id="WorkFlow.run_opt_surf_and_adsorbate_no_depend"><a class="viewcode-back" href="../../index.html#pynta.main.WorkFlow.run_opt_surf_and_adsorbate_no_depend">[docs]</a>    <span class="k">def</span> <span class="nf">run_opt_surf_and_adsorbate_no_depend</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span>
             <span class="n">facetpath</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="sd">&#39;&#39;&#39; Run optmization of adsorbates on the surface if there is no</span>
@@ -1358,7 +1358,7 @@
         <span class="n">ads_surf_opt_script</span> <span class="o">=</span> <span class="s1">&#39;01_</span><span class="si">{}</span><span class="s1">_set_up_ads_on_slab.py&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">facetpath</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">exe</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">ads_surf_opt_script</span><span class="p">,</span> <span class="n">facetpath</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="WorkFlow.run_minima_vib"><a class="viewcode-back" href="../../source/pynta.html#pynta.main.WorkFlow.run_minima_vib">[docs]</a>    <span class="k">def</span> <span class="nf">run_minima_vib</span><span class="p">(</span>
+<div class="viewcode-block" id="WorkFlow.run_minima_vib"><a class="viewcode-back" href="../../index.html#pynta.main.WorkFlow.run_minima_vib">[docs]</a>    <span class="k">def</span> <span class="nf">run_minima_vib</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span>
             <span class="n">dependent_job</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
             <span class="n">facetpath</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
@@ -1387,7 +1387,7 @@
         <span class="n">ads_vib_script</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">_set_up_ads_vib.py&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">facetpath</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">exe</span><span class="p">(</span><span class="n">dependent_job</span><span class="p">,</span> <span class="n">ads_vib_script</span><span class="p">,</span> <span class="n">facetpath</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="WorkFlow.run_minima_vib_no_depend"><a class="viewcode-back" href="../../source/pynta.html#pynta.main.WorkFlow.run_minima_vib_no_depend">[docs]</a>    <span class="k">def</span> <span class="nf">run_minima_vib_no_depend</span><span class="p">(</span>
+<div class="viewcode-block" id="WorkFlow.run_minima_vib_no_depend"><a class="viewcode-back" href="../../index.html#pynta.main.WorkFlow.run_minima_vib_no_depend">[docs]</a>    <span class="k">def</span> <span class="nf">run_minima_vib_no_depend</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span>
             <span class="n">facetpath</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="sd">&#39;&#39;&#39; Run minima vibrational frequencies job</span>
@@ -1409,7 +1409,7 @@
         <span class="n">ads_vib_script</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">_set_up_ads_vib.py&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">facetpath</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">exe</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">ads_vib_script</span><span class="p">,</span> <span class="n">facetpath</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="WorkFlow.run_ts_estimate"><a class="viewcode-back" href="../../source/pynta.html#pynta.main.WorkFlow.run_ts_estimate">[docs]</a>    <span class="k">def</span> <span class="nf">run_ts_estimate</span><span class="p">(</span>
+<div class="viewcode-block" id="WorkFlow.run_ts_estimate"><a class="viewcode-back" href="../../index.html#pynta.main.WorkFlow.run_ts_estimate">[docs]</a>    <span class="k">def</span> <span class="nf">run_ts_estimate</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span>
             <span class="n">dependent_job</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
             <span class="n">facetpath</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
@@ -1435,7 +1435,7 @@
         <span class="k">for</span> <span class="n">ts_xtb</span> <span class="ow">in</span> <span class="n">ts_xtb_py_script_list</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">exe</span><span class="p">(</span><span class="n">dependent_job</span><span class="p">,</span> <span class="n">ts_xtb</span><span class="p">,</span> <span class="n">facetpath</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="WorkFlow.run_ts_estimate_no_depend"><a class="viewcode-back" href="../../source/pynta.html#pynta.main.WorkFlow.run_ts_estimate_no_depend">[docs]</a>    <span class="k">def</span> <span class="nf">run_ts_estimate_no_depend</span><span class="p">(</span>
+<div class="viewcode-block" id="WorkFlow.run_ts_estimate_no_depend"><a class="viewcode-back" href="../../index.html#pynta.main.WorkFlow.run_ts_estimate_no_depend">[docs]</a>    <span class="k">def</span> <span class="nf">run_ts_estimate_no_depend</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span>
             <span class="n">facetpath</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="sd">&#39;&#39;&#39; Run TS estimate calculations if there is no dependency on the</span>
@@ -1454,7 +1454,7 @@
         <span class="k">for</span> <span class="n">ts_xtb</span> <span class="ow">in</span> <span class="n">ts_xtb_py_script_list</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">exe</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">ts_xtb</span><span class="p">,</span> <span class="n">facetpath</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="WorkFlow.run_ts_with_sella"><a class="viewcode-back" href="../../source/pynta.html#pynta.main.WorkFlow.run_ts_with_sella">[docs]</a>    <span class="k">def</span> <span class="nf">run_ts_with_sella</span><span class="p">(</span>
+<div class="viewcode-block" id="WorkFlow.run_ts_with_sella"><a class="viewcode-back" href="../../index.html#pynta.main.WorkFlow.run_ts_with_sella">[docs]</a>    <span class="k">def</span> <span class="nf">run_ts_with_sella</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span>
             <span class="n">dependant_job</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
             <span class="n">facetpath</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
@@ -1481,7 +1481,7 @@
         <span class="k">for</span> <span class="n">ts_sella</span> <span class="ow">in</span> <span class="n">ts_sella_py_script_list</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">exe</span><span class="p">(</span><span class="n">dependant_job</span><span class="p">,</span> <span class="n">ts_sella</span><span class="p">,</span> <span class="n">facetpath</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="WorkFlow.run_ts_vib"><a class="viewcode-back" href="../../source/pynta.html#pynta.main.WorkFlow.run_ts_vib">[docs]</a>    <span class="k">def</span> <span class="nf">run_ts_vib</span><span class="p">(</span>
+<div class="viewcode-block" id="WorkFlow.run_ts_vib"><a class="viewcode-back" href="../../index.html#pynta.main.WorkFlow.run_ts_vib">[docs]</a>    <span class="k">def</span> <span class="nf">run_ts_vib</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span>
             <span class="n">dependant_job</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
             <span class="n">facetpath</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
@@ -1507,7 +1507,7 @@
         <span class="k">for</span> <span class="n">ts_vib</span> <span class="ow">in</span> <span class="n">ts_vib_py_script_list</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">exe</span><span class="p">(</span><span class="n">dependant_job</span><span class="p">,</span> <span class="n">ts_vib</span><span class="p">,</span> <span class="n">facetpath</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="WorkFlow.run_opt_after_ts"><a class="viewcode-back" href="../../source/pynta.html#pynta.main.WorkFlow.run_opt_after_ts">[docs]</a>    <span class="k">def</span> <span class="nf">run_opt_after_ts</span><span class="p">(</span>
+<div class="viewcode-block" id="WorkFlow.run_opt_after_ts"><a class="viewcode-back" href="../../index.html#pynta.main.WorkFlow.run_opt_after_ts">[docs]</a>    <span class="k">def</span> <span class="nf">run_opt_after_ts</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span>
             <span class="n">dependant_job</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
             <span class="n">facetpath</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
@@ -1534,7 +1534,7 @@
         <span class="k">for</span> <span class="n">after_irc</span> <span class="ow">in</span> <span class="n">after_irc_py_scripts</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">exe</span><span class="p">(</span><span class="n">dependant_job</span><span class="p">,</span> <span class="n">after_irc</span><span class="p">,</span> <span class="n">facetpath</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="WorkFlow.check_all_species"><a class="viewcode-back" href="../../source/pynta.html#pynta.main.WorkFlow.check_all_species">[docs]</a>    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="WorkFlow.check_all_species"><a class="viewcode-back" href="../../index.html#pynta.main.WorkFlow.check_all_species">[docs]</a>    <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">check_all_species</span><span class="p">(</span>
             <span class="n">yamlfile</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
             <span class="n">facetpath</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">bool</span><span class="p">]:</span>
@@ -1561,13 +1561,13 @@
 
 <span class="sd">        &#39;&#39;&#39;</span>
         <span class="n">checked_species</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="n">all_species</span> <span class="o">=</span> <span class="n">IO</span><span class="p">()</span><span class="o">.</span><span class="n">get_all_unique_species</span><span class="p">(</span><span class="n">yamlfile</span><span class="p">)</span>
+        <span class="n">all_species</span> <span class="o">=</span> <span class="n">IO</span><span class="p">()</span><span class="o">.</span><span class="n">get_all_unique_species_symbols</span><span class="p">(</span><span class="n">yamlfile</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">species</span> <span class="ow">in</span> <span class="n">all_species</span><span class="p">:</span>
             <span class="n">checked_species</span><span class="p">[</span><span class="n">species</span><span class="p">]</span> <span class="o">=</span> <span class="n">WorkFlow</span><span class="o">.</span><span class="n">is_minima_out_files</span><span class="p">(</span>
                 <span class="n">species</span><span class="p">,</span> <span class="n">facetpath</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">checked_species</span></div>
 
-<div class="viewcode-block" id="WorkFlow.is_minima_dir"><a class="viewcode-back" href="../../source/pynta.html#pynta.main.WorkFlow.is_minima_dir">[docs]</a>    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="WorkFlow.is_minima_dir"><a class="viewcode-back" href="../../index.html#pynta.main.WorkFlow.is_minima_dir">[docs]</a>    <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">is_minima_dir</span><span class="p">(</span>
             <span class="n">species</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
             <span class="n">facetpath</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
@@ -1596,7 +1596,7 @@
             <span class="k">return</span> <span class="kc">True</span>
         <span class="k">return</span> <span class="kc">False</span></div>
 
-<div class="viewcode-block" id="WorkFlow.is_minima_out_files"><a class="viewcode-back" href="../../source/pynta.html#pynta.main.WorkFlow.is_minima_out_files">[docs]</a>    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="WorkFlow.is_minima_out_files"><a class="viewcode-back" href="../../index.html#pynta.main.WorkFlow.is_minima_out_files">[docs]</a>    <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">is_minima_out_files</span><span class="p">(</span>
             <span class="n">species</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
             <span class="n">facetpath</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
@@ -1632,7 +1632,7 @@
             <span class="k">return</span> <span class="kc">True</span>
         <span class="k">return</span> <span class="kc">False</span></div>
 
-<div class="viewcode-block" id="WorkFlow.is_slab"><a class="viewcode-back" href="../../source/pynta.html#pynta.main.WorkFlow.is_slab">[docs]</a>    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="WorkFlow.is_slab"><a class="viewcode-back" href="../../index.html#pynta.main.WorkFlow.is_slab">[docs]</a>    <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">is_slab</span><span class="p">(</span>
             <span class="n">facetpath</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">bool</span><span class="p">,</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]]:</span>
         <span class="sd">&#39;&#39;&#39; Check whether slab has been already optimized</span>
@@ -1669,7 +1669,7 @@
             <span class="k">return</span> <span class="kc">True</span><span class="p">,</span> <span class="n">slab_opt_path_str</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
         <span class="k">return</span> <span class="p">(</span><span class="kc">False</span><span class="p">,</span> <span class="p">)</span></div>
 
-<div class="viewcode-block" id="WorkFlow.is_big_slab"><a class="viewcode-back" href="../../source/pynta.html#pynta.main.WorkFlow.is_big_slab">[docs]</a>    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="WorkFlow.is_big_slab"><a class="viewcode-back" href="../../index.html#pynta.main.WorkFlow.is_big_slab">[docs]</a>    <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">is_big_slab</span><span class="p">(</span>
             <span class="n">facetpath</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
         <span class="sd">&#39;&#39;&#39; Check for ``big_slab`` calculations.</span>
@@ -1708,7 +1708,7 @@
                   <span class="s1">&#39;Big slab optimization required&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">keyphrase</span><span class="p">))</span>
             <span class="k">return</span> <span class="kc">False</span></div>
 
-<div class="viewcode-block" id="WorkFlow.check_if_slab_opt_exists"><a class="viewcode-back" href="../../source/pynta.html#pynta.main.WorkFlow.check_if_slab_opt_exists">[docs]</a>    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="WorkFlow.check_if_slab_opt_exists"><a class="viewcode-back" href="../../index.html#pynta.main.WorkFlow.check_if_slab_opt_exists">[docs]</a>    <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">check_if_slab_opt_exists</span><span class="p">(</span>
             <span class="n">facetpath</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">bool</span><span class="p">,</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]]:</span>
         <span class="sd">&#39;&#39;&#39; Check whether slab has been already optimized</span>
@@ -1745,7 +1745,7 @@
             <span class="k">return</span> <span class="kc">True</span><span class="p">,</span> <span class="n">slab_opt_path_str</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
         <span class="k">return</span> <span class="p">(</span><span class="kc">False</span><span class="p">,</span> <span class="p">)</span></div>
 
-<div class="viewcode-block" id="WorkFlow.execute"><a class="viewcode-back" href="../../source/pynta.html#pynta.main.WorkFlow.execute">[docs]</a>    <span class="k">def</span> <span class="nf">execute</span><span class="p">(</span>
+<div class="viewcode-block" id="WorkFlow.execute"><a class="viewcode-back" href="../../index.html#pynta.main.WorkFlow.execute">[docs]</a>    <span class="k">def</span> <span class="nf">execute</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span>
             <span class="n">facetpath</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="sd">&#39;&#39;&#39; The main execute method for a given surface</span>
@@ -1821,12 +1821,12 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">run_opt_after_ts</span><span class="p">(</span><span class="s1">&#39;04&#39;</span><span class="p">,</span> <span class="n">facetpath</span><span class="p">)</span>
         <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Running!&#39;</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="WorkFlow.execute_all"><a class="viewcode-back" href="../../source/pynta.html#pynta.main.WorkFlow.execute_all">[docs]</a>    <span class="k">def</span> <span class="nf">execute_all</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<div class="viewcode-block" id="WorkFlow.execute_all"><a class="viewcode-back" href="../../index.html#pynta.main.WorkFlow.execute_all">[docs]</a>    <span class="k">def</span> <span class="nf">execute_all</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="sd">&#39;&#39;&#39; Main execute method for the entire workflow &#39;&#39;&#39;</span>
         <span class="k">for</span> <span class="n">facetpath</span> <span class="ow">in</span> <span class="n">facetpaths</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">facetpath</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="WorkFlow.restart"><a class="viewcode-back" href="../../source/pynta.html#pynta.main.WorkFlow.restart">[docs]</a>    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="WorkFlow.restart"><a class="viewcode-back" href="../../index.html#pynta.main.WorkFlow.restart">[docs]</a>    <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">restart</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">LowLevelRestart</span><span class="p">()</span><span class="o">.</span><span class="n">restart</span><span class="p">()</span>
         <span class="n">HighLevelRestart</span><span class="p">()</span><span class="o">.</span><span class="n">restart</span><span class="p">()</span></div></div>
@@ -1844,7 +1844,7 @@
     <p>
         &copy; Copyright Copyright 2021 National Technology &amp; Engineering Solutions of Sandia, LLC (NTESS). Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government retains certain rights in this software.
       <span class="lastupdated">
-        Last updated on Mon, 25 Jan 2021 18:06:34.
+        Last updated on Thu, 28 Jan 2021 18:45:53.
       </span>
 
     </p>

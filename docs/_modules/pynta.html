@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>pynta &mdash; Pynta January 25, 2021 documentation</title>
+  <title>pynta &mdash; Pynta January 28, 2021 documentation</title>
   
 
   
@@ -152,11 +152,13 @@
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">ase</span>
 
+<span class="n">__version__</span> <span class="o">=</span> <span class="s1">&#39;1.0.2&#39;</span>
+
 <span class="n">radicals</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">92</span><span class="p">)</span>
 <span class="n">radicals</span><span class="p">[[</span><span class="mi">6</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">9</span><span class="p">,</span> <span class="mi">15</span><span class="p">,</span> <span class="mi">16</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[</span><span class="mi">4</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span>
 
 
-<div class="viewcode-block" id="Defaults"><a class="viewcode-back" href="../source/pynta.html#pynta.Defaults">[docs]</a><span class="k">class</span> <span class="nc">Defaults</span><span class="p">(</span><span class="n">MutableMapping</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+<div class="viewcode-block" id="Defaults"><a class="viewcode-back" href="../index.html#pynta.Defaults">[docs]</a><span class="k">class</span> <span class="nc">Defaults</span><span class="p">(</span><span class="n">MutableMapping</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
     <span class="sd">&#39;&#39;&#39;No frills default dictionary class.&#39;&#39;&#39;</span>
 
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -175,15 +177,13 @@
 
 <span class="n">defaults</span> <span class="o">=</span> <span class="n">Defaults</span><span class="p">()</span>
 
-<span class="c1"># __all__ = [&#39;defaults&#39;, &#39;symmetry&#39;, &#39;adsorption&#39;, &#39;surface&#39;, &#39;molecules&#39;]</span>
 
-
-<div class="viewcode-block" id="Licence"><a class="viewcode-back" href="../source/pynta.html#pynta.Licence">[docs]</a><span class="k">class</span> <span class="nc">Licence</span><span class="p">():</span>
+<div class="viewcode-block" id="Licence"><a class="viewcode-back" href="../index.html#pynta.Licence">[docs]</a><span class="k">class</span> <span class="nc">Licence</span><span class="p">():</span>
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">licence_info</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="s1">&#39;license&#39;</span><span class="p">,</span> <span class="s1">&#39;banner.txt&#39;</span><span class="p">)</span>
 
-<div class="viewcode-block" id="Licence.show_banner"><a class="viewcode-back" href="../source/pynta.html#pynta.Licence.show_banner">[docs]</a>    <span class="k">def</span> <span class="nf">show_banner</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<div class="viewcode-block" id="Licence.show_banner"><a class="viewcode-back" href="../index.html#pynta.Licence.show_banner">[docs]</a>    <span class="k">def</span> <span class="nf">show_banner</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="sd">&#39;&#39;&#39; Print a copyright banner everytime Pynta is imported&#39;&#39;&#39;</span>
         <span class="n">path_to_excatkit</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="s1">&#39;excatkit&#39;</span><span class="p">)</span>
         <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">licence_info</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">infile</span><span class="p">:</span>
@@ -211,7 +211,7 @@
     <p>
         &copy; Copyright Copyright 2021 National Technology &amp; Engineering Solutions of Sandia, LLC (NTESS). Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government retains certain rights in this software.
       <span class="lastupdated">
-        Last updated on Mon, 25 Jan 2021 18:06:34.
+        Last updated on Thu, 28 Jan 2021 18:45:53.
       </span>
 
     </p>

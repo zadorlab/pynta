@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>pynta.check_input &mdash; Pynta January 25, 2021 documentation</title>
+  <title>pynta.check_input &mdash; Pynta January 28, 2021 documentation</title>
   
 
   
@@ -147,10 +147,10 @@
 <span class="kn">import</span> <span class="nn">sys</span>
 
 
-<div class="viewcode-block" id="InputChecker"><a class="viewcode-back" href="../../source/pynta.html#pynta.check_input.InputChecker">[docs]</a><span class="k">class</span> <span class="nc">InputChecker</span><span class="p">():</span>
+<div class="viewcode-block" id="InputChecker"><a class="viewcode-back" href="../../index.html#pynta.check_input.InputChecker">[docs]</a><span class="k">class</span> <span class="nc">InputChecker</span><span class="p">():</span>
     <span class="sd">&#39;&#39;&#39; A class to check for input files &#39;&#39;&#39;</span>
 
-<div class="viewcode-block" id="InputChecker.__init__"><a class="viewcode-back" href="../../source/pynta.html#pynta.check_input.InputChecker.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span>
+<div class="viewcode-block" id="InputChecker.__init__"><a class="viewcode-back" href="../../index.html#pynta.check_input.InputChecker.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span>
             <span class="n">yamlfile</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
             <span class="n">inputR2S</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -184,7 +184,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">run_me_sh</span> <span class="o">=</span> <span class="n">run_me_sh</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">working_dir</span> <span class="o">=</span> <span class="n">working_dir</span></div>
 
-<div class="viewcode-block" id="InputChecker.check_all"><a class="viewcode-back" href="../../source/pynta.html#pynta.check_input.InputChecker.check_all">[docs]</a>    <span class="k">def</span> <span class="nf">check_all</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<div class="viewcode-block" id="InputChecker.check_all"><a class="viewcode-back" href="../../index.html#pynta.check_input.InputChecker.check_all">[docs]</a>    <span class="k">def</span> <span class="nf">check_all</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="sd">&#39;&#39;&#39; Print info about checking input files &#39;&#39;&#39;</span>
         <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Checking input...&#39;</span><span class="p">)</span>
         <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;---&#39;</span><span class="p">)</span>
@@ -200,7 +200,7 @@
             <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Passed!&#39;</span><span class="p">)</span>
             <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;---&#39;</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="InputChecker.is_input_file"><a class="viewcode-back" href="../../source/pynta.html#pynta.check_input.InputChecker.is_input_file">[docs]</a>    <span class="k">def</span> <span class="nf">is_input_file</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<div class="viewcode-block" id="InputChecker.is_input_file"><a class="viewcode-back" href="../../index.html#pynta.check_input.InputChecker.is_input_file">[docs]</a>    <span class="k">def</span> <span class="nf">is_input_file</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
         <span class="sd">&#39;&#39;&#39; Check if there are input files in the working directory &#39;&#39;&#39;</span>
         <span class="c1"># create check list</span>
         <span class="n">check_list</span> <span class="o">=</span> <span class="p">[]</span>
@@ -221,7 +221,7 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="kc">False</span></div>
 
-<div class="viewcode-block" id="InputChecker.check_yaml"><a class="viewcode-back" href="../../source/pynta.html#pynta.check_input.InputChecker.check_yaml">[docs]</a>    <span class="k">def</span> <span class="nf">check_yaml</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<div class="viewcode-block" id="InputChecker.check_yaml"><a class="viewcode-back" href="../../index.html#pynta.check_input.InputChecker.check_yaml">[docs]</a>    <span class="k">def</span> <span class="nf">check_yaml</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
         <span class="sd">&#39;&#39;&#39; Check for :literal:`*.yaml` file with list of reactions &#39;&#39;&#39;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">yamlfile</span><span class="p">):</span>
             <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;!    .yaml file (</span><span class="si">{}</span><span class="s1">) is not in your working &#39;</span>
@@ -230,7 +230,7 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="kc">True</span></div>
 
-<div class="viewcode-block" id="InputChecker.check_slab"><a class="viewcode-back" href="../../source/pynta.html#pynta.check_input.InputChecker.check_slab">[docs]</a>    <span class="k">def</span> <span class="nf">check_slab</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<div class="viewcode-block" id="InputChecker.check_slab"><a class="viewcode-back" href="../../index.html#pynta.check_input.InputChecker.check_slab">[docs]</a>    <span class="k">def</span> <span class="nf">check_slab</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
         <span class="sd">&#39;&#39;&#39; Check for slab :literal:`*.xyz` file with slab geometry &#39;&#39;&#39;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">slab</span><span class="p">):</span>
             <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;!    .xyz file (</span><span class="si">{}</span><span class="s1">) with optimized slab is not in your &#39;</span>
@@ -240,7 +240,7 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="kc">True</span></div>
 
-<div class="viewcode-block" id="InputChecker.check_inputR2S"><a class="viewcode-back" href="../../source/pynta.html#pynta.check_input.InputChecker.check_inputR2S">[docs]</a>    <span class="k">def</span> <span class="nf">check_inputR2S</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<div class="viewcode-block" id="InputChecker.check_inputR2S"><a class="viewcode-back" href="../../index.html#pynta.check_input.InputChecker.check_inputR2S">[docs]</a>    <span class="k">def</span> <span class="nf">check_inputR2S</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
         <span class="sd">&#39;&#39;&#39; Check for inputR2S file &#39;&#39;&#39;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">inputR2S</span><span class="p">):</span>
             <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;!    inputR2S.py file (</span><span class="si">{}</span><span class="s1">) is not in your current working &#39;</span>
@@ -249,7 +249,7 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="kc">True</span></div>
 
-<div class="viewcode-block" id="InputChecker.check_run_me_py"><a class="viewcode-back" href="../../source/pynta.html#pynta.check_input.InputChecker.check_run_me_py">[docs]</a>    <span class="k">def</span> <span class="nf">check_run_me_py</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<div class="viewcode-block" id="InputChecker.check_run_me_py"><a class="viewcode-back" href="../../index.html#pynta.check_input.InputChecker.check_run_me_py">[docs]</a>    <span class="k">def</span> <span class="nf">check_run_me_py</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
         <span class="sd">&#39;&#39;&#39; Check for ``&#39;run_me.py&#39;`` file &#39;&#39;&#39;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">run_me_py</span><span class="p">):</span>
             <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;!    run_me.py file (</span><span class="si">{}</span><span class="s1">) is not in your current working &#39;</span>
@@ -258,7 +258,7 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="kc">True</span></div>
 
-<div class="viewcode-block" id="InputChecker.check_run_me_sh"><a class="viewcode-back" href="../../source/pynta.html#pynta.check_input.InputChecker.check_run_me_sh">[docs]</a>    <span class="k">def</span> <span class="nf">check_run_me_sh</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<div class="viewcode-block" id="InputChecker.check_run_me_sh"><a class="viewcode-back" href="../../index.html#pynta.check_input.InputChecker.check_run_me_sh">[docs]</a>    <span class="k">def</span> <span class="nf">check_run_me_sh</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
         <span class="sd">&#39;&#39;&#39; Check for ``&#39;run_me.sh&#39;`` file &#39;&#39;&#39;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">run_me_sh</span><span class="p">):</span>
             <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;!    run_me.sh file (</span><span class="si">{}</span><span class="s1">) is not in your current working &#39;</span>
@@ -280,7 +280,7 @@
     <p>
         &copy; Copyright Copyright 2021 National Technology &amp; Engineering Solutions of Sandia, LLC (NTESS). Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government retains certain rights in this software.
       <span class="lastupdated">
-        Last updated on Mon, 25 Jan 2021 18:06:34.
+        Last updated on Thu, 28 Jan 2021 18:45:53.
       </span>
 
     </p>

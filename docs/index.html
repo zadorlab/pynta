@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Pynta &mdash; Pynta January 25, 2021 documentation</title>
+  <title>Pynta &mdash; Pynta January 28, 2021 documentation</title>
   
 
   
@@ -278,7 +278,7 @@ $ python3 -m venv pynta
 <h3>Install <a class="reference external" href="https://github.com/mpi4py/mpi4py.git">mpi4py</a>:<a class="headerlink" href="#install-mpi4py" title="Permalink to this headline">¶</a></h3>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$ git clone https://github.com/mpi4py/mpi4py.git
 $ <span class="nb">cd</span> mpi4py
-$ python3 setup.py install --user
+$ python3 setup.py install
 $ <span class="nb">cd</span> ../
 </pre></div>
 </div>
@@ -293,7 +293,7 @@ $ <span class="nb">cd</span> ../
 <h3>Install <a class="reference external" href="https://github.com/balsam-alcf/balsam.git">balsam</a> using <a class="reference external" href="https://github.com/balsam-alcf/balsam/tree/serial-mode-perf">serial-mode-perf</a> branch.<a class="headerlink" href="#install-balsam-using-serial-mode-perf-branch" title="Permalink to this headline">¶</a></h3>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git clone https://github.com/balsam-alcf/balsam.git -b serial-mode-perf
 <span class="nb">cd</span> balsam
-python3 setup.py install --user
+python3 setup.py install
 <span class="nb">cd</span> ../
 </pre></div>
 </div>
@@ -309,7 +309,7 @@ python3 setup.py install --user
 git submodule update --init
 <span class="nv">LDFLAGS</span><span class="o">=</span><span class="s2">&quot;-L/opt/custom/OpenBLAS/0.3.7/lib&quot;</span> meson setup build --prefix<span class="o">=</span><span class="nv">$PWD</span> --libdir<span class="o">=</span>xtb/xtb --buildtype release --optimization <span class="m">2</span> -Dla_backend<span class="o">=</span>openblas
 ninja -C build install
-pip install --user -e .
+pip install -e .
 </pre></div>
 </div>
 <ul class="simple">
@@ -323,7 +323,7 @@ git submodule update --init
 <span class="c1"># module swap PrgEnv-intel PrgEnv-cray; module swap PrgEnv-cray PrgEnv-intel</span>
 <span class="nv">CC</span><span class="o">=</span>icc <span class="nv">CXX</span><span class="o">=</span>icpc <span class="nv">FC</span><span class="o">=</span>ifort meson setup build --prefix<span class="o">=</span><span class="nv">$PWD</span> --libdir<span class="o">=</span>xtb -Dla_backed<span class="o">=</span>mkl -Dpy<span class="o">=</span><span class="m">3</span> --buildtype release --optimization <span class="m">2</span>
 ninja -C build install
-pip install --user -e .
+pip install -e .
 </pre></div>
 </div>
 <p>Make sure it works by running:</p>
@@ -772,7 +772,7 @@ Atoms with tags ‘1’ are considered as the possible binding spots</p></li>
 
 <dl class="py method">
 <dt id="pynta.adsorbates.Adsorbates.get_grslab">
-<code class="sig-name descname">get_grslab</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; <a class="reference internal" href="source/pynta.html#pynta.excatkit.gratoms.Gratoms" title="pynta.excatkit.gratoms.Gratoms">pynta.excatkit.gratoms.Gratoms</a><a class="reference internal" href="_modules/pynta/adsorbates.html#Adsorbates.get_grslab"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.adsorbates.Adsorbates.get_grslab" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">get_grslab</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; <a class="reference internal" href="#pynta.excatkit.gratoms.Gratoms" title="pynta.excatkit.gratoms.Gratoms">pynta.excatkit.gratoms.Gratoms</a><a class="reference internal" href="_modules/pynta/adsorbates.html#Adsorbates.get_grslab"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.adsorbates.Adsorbates.get_grslab" title="Permalink to this definition">¶</a></dt>
 <dd><p>Convert surface slab Atoms object into Gratoms object</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns</dt>
@@ -780,7 +780,7 @@ Atoms with tags ‘1’ are considered as the possible binding spots</p></li>
 adsorbates</p>
 </dd>
 <dt class="field-even">Return type</dt>
-<dd class="field-even"><p><a class="reference internal" href="source/pynta.html#pynta.excatkit.gratoms.Gratoms" title="pynta.excatkit.gratoms.Gratoms">Gratoms</a></p>
+<dd class="field-even"><p><a class="reference internal" href="#pynta.excatkit.gratoms.Gratoms" title="pynta.excatkit.gratoms.Gratoms">Gratoms</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -985,7 +985,7 @@ adsorbates</p>
 <dl class="py class">
 <dt id="pynta.balsamcalc.BalsamSocketIOCalculator">
 <em class="property">class </em><code class="sig-prename descclassname">pynta.balsamcalc.</code><code class="sig-name descname">BalsamSocketIOCalculator</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">workflow</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">label</span><span class="p">:</span> <span class="n">str</span> <span class="o">=</span> <span class="default_value">'balsam'</span></em>, <em class="sig-param"><span class="n">atoms</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>ase.atoms.Atoms<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">job_args</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>str<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">job_kwargs</span><span class="p">:</span> <span class="n">Dict<span class="p">[</span>str<span class="p">, </span>Any<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">{}</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pynta/balsamcalc.html#BalsamSocketIOCalculator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.balsamcalc.BalsamSocketIOCalculator" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="source/pynta.html#pynta.balsamcalc.BalsamCalculator" title="pynta.balsamcalc.BalsamCalculator"><code class="xref py py-class docutils literal notranslate"><span class="pre">pynta.balsamcalc.BalsamCalculator</span></code></a>, <code class="xref py py-class docutils literal notranslate"><span class="pre">ase.calculators.socketio.SocketIOCalculator</span></code></p>
+<dd><p>Bases: <a class="reference internal" href="#pynta.balsamcalc.BalsamCalculator" title="pynta.balsamcalc.BalsamCalculator"><code class="xref py py-class docutils literal notranslate"><span class="pre">pynta.balsamcalc.BalsamCalculator</span></code></a>, <code class="xref py py-class docutils literal notranslate"><span class="pre">ase.calculators.socketio.SocketIOCalculator</span></code></p>
 <dl class="py method">
 <dt id="pynta.balsamcalc.BalsamSocketIOCalculator.__init__">
 <code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">workflow</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">label</span><span class="p">:</span> <span class="n">str</span> <span class="o">=</span> <span class="default_value">'balsam'</span></em>, <em class="sig-param"><span class="n">atoms</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>ase.atoms.Atoms<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">job_args</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>str<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">job_kwargs</span><span class="p">:</span> <span class="n">Dict<span class="p">[</span>str<span class="p">, </span>Any<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">{}</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span></em><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="_modules/pynta/balsamcalc.html#BalsamSocketIOCalculator.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.balsamcalc.BalsamSocketIOCalculator.__init__" title="Permalink to this definition">¶</a></dt>
@@ -1044,7 +1044,7 @@ adsorbates</p>
 <dl class="py class">
 <dt id="pynta.balsamcalc.EspressoBalsam">
 <em class="property">class </em><code class="sig-prename descclassname">pynta.balsamcalc.</code><code class="sig-name descname">EspressoBalsam</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">workflow</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">label</span><span class="p">:</span> <span class="n">str</span> <span class="o">=</span> <span class="default_value">'balsam'</span></em>, <em class="sig-param"><span class="n">atoms</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>ase.atoms.Atoms<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">job_args</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>str<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">job_kwargs</span><span class="p">:</span> <span class="n">Dict<span class="p">[</span>str<span class="p">, </span>Any<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">{}</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pynta/balsamcalc.html#EspressoBalsam"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.balsamcalc.EspressoBalsam" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="source/pynta.html#pynta.balsamcalc.BalsamCalculator" title="pynta.balsamcalc.BalsamCalculator"><code class="xref py py-class docutils literal notranslate"><span class="pre">pynta.balsamcalc.BalsamCalculator</span></code></a></p>
+<dd><p>Bases: <a class="reference internal" href="#pynta.balsamcalc.BalsamCalculator" title="pynta.balsamcalc.BalsamCalculator"><code class="xref py py-class docutils literal notranslate"><span class="pre">pynta.balsamcalc.BalsamCalculator</span></code></a></p>
 <dl class="py attribute">
 <dt id="pynta.balsamcalc.EspressoBalsam.args">
 <code class="sig-name descname">args</code><em class="property"> = '-in PREFIX.pwi'</em><a class="headerlink" href="#pynta.balsamcalc.EspressoBalsam.args" title="Permalink to this definition">¶</a></dt>
@@ -1090,7 +1090,7 @@ adsorbates</p>
 <dl class="py class">
 <dt id="pynta.balsamcalc.EspressoBalsamSocketIO">
 <em class="property">class </em><code class="sig-prename descclassname">pynta.balsamcalc.</code><code class="sig-name descname">EspressoBalsamSocketIO</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">workflow</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">label</span><span class="p">:</span> <span class="n">str</span> <span class="o">=</span> <span class="default_value">'balsam'</span></em>, <em class="sig-param"><span class="n">atoms</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>ase.atoms.Atoms<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">job_args</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>str<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">job_kwargs</span><span class="p">:</span> <span class="n">Dict<span class="p">[</span>str<span class="p">, </span>Any<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">{}</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pynta/balsamcalc.html#EspressoBalsamSocketIO"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.balsamcalc.EspressoBalsamSocketIO" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="source/pynta.html#pynta.balsamcalc.BalsamSocketIOCalculator" title="pynta.balsamcalc.BalsamSocketIOCalculator"><code class="xref py py-class docutils literal notranslate"><span class="pre">pynta.balsamcalc.BalsamSocketIOCalculator</span></code></a></p>
+<dd><p>Bases: <a class="reference internal" href="#pynta.balsamcalc.BalsamSocketIOCalculator" title="pynta.balsamcalc.BalsamSocketIOCalculator"><code class="xref py py-class docutils literal notranslate"><span class="pre">pynta.balsamcalc.BalsamSocketIOCalculator</span></code></a></p>
 <dl class="py attribute">
 <dt id="pynta.balsamcalc.EspressoBalsamSocketIO.args">
 <code class="sig-name descname">args</code><em class="property"> = '--ipi HOSTNAME:PORT -in PREFIX.pwi'</em><a class="headerlink" href="#pynta.balsamcalc.EspressoBalsamSocketIO.args" title="Permalink to this definition">¶</a></dt>
@@ -1145,7 +1145,7 @@ adsorbates</p>
 <dl class="py class">
 <dt id="pynta.balsamcalc.NWChemBalsam">
 <em class="property">class </em><code class="sig-prename descclassname">pynta.balsamcalc.</code><code class="sig-name descname">NWChemBalsam</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">workflow</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">label</span><span class="p">:</span> <span class="n">str</span> <span class="o">=</span> <span class="default_value">'balsam'</span></em>, <em class="sig-param"><span class="n">atoms</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>ase.atoms.Atoms<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">job_args</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>str<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">job_kwargs</span><span class="p">:</span> <span class="n">Dict<span class="p">[</span>str<span class="p">, </span>Any<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">{}</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pynta/balsamcalc.html#NWChemBalsam"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.balsamcalc.NWChemBalsam" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="source/pynta.html#pynta.balsamcalc.BalsamCalculator" title="pynta.balsamcalc.BalsamCalculator"><code class="xref py py-class docutils literal notranslate"><span class="pre">pynta.balsamcalc.BalsamCalculator</span></code></a></p>
+<dd><p>Bases: <a class="reference internal" href="#pynta.balsamcalc.BalsamCalculator" title="pynta.balsamcalc.BalsamCalculator"><code class="xref py py-class docutils literal notranslate"><span class="pre">pynta.balsamcalc.BalsamCalculator</span></code></a></p>
 <dl class="py attribute">
 <dt id="pynta.balsamcalc.NWChemBalsam.exe">
 <code class="sig-name descname">exe</code><em class="property"> = 'nwchem'</em><a class="headerlink" href="#pynta.balsamcalc.NWChemBalsam.exe" title="Permalink to this definition">¶</a></dt>
@@ -1181,7 +1181,7 @@ adsorbates</p>
 <dl class="py class">
 <dt id="pynta.balsamcalc.NWChemBalsamSocketIO">
 <em class="property">class </em><code class="sig-prename descclassname">pynta.balsamcalc.</code><code class="sig-name descname">NWChemBalsamSocketIO</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">workflow</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">label</span><span class="p">:</span> <span class="n">str</span> <span class="o">=</span> <span class="default_value">'balsam'</span></em>, <em class="sig-param"><span class="n">atoms</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>ase.atoms.Atoms<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">job_args</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>str<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">job_kwargs</span><span class="p">:</span> <span class="n">Dict<span class="p">[</span>str<span class="p">, </span>Any<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">{}</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pynta/balsamcalc.html#NWChemBalsamSocketIO"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.balsamcalc.NWChemBalsamSocketIO" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="source/pynta.html#pynta.balsamcalc.BalsamSocketIOCalculator" title="pynta.balsamcalc.BalsamSocketIOCalculator"><code class="xref py py-class docutils literal notranslate"><span class="pre">pynta.balsamcalc.BalsamSocketIOCalculator</span></code></a></p>
+<dd><p>Bases: <a class="reference internal" href="#pynta.balsamcalc.BalsamSocketIOCalculator" title="pynta.balsamcalc.BalsamSocketIOCalculator"><code class="xref py py-class docutils literal notranslate"><span class="pre">pynta.balsamcalc.BalsamSocketIOCalculator</span></code></a></p>
 <dl class="py attribute">
 <dt id="pynta.balsamcalc.NWChemBalsamSocketIO.args">
 <code class="sig-name descname">args</code><em class="property"> = 'PREFIX.nwi &gt; PREFIX.out'</em><a class="headerlink" href="#pynta.balsamcalc.NWChemBalsamSocketIO.args" title="Permalink to this definition">¶</a></dt>
@@ -1444,7 +1444,7 @@ periodic boundary conditions.</p>
 <dl class="py class">
 <dt id="pynta.excatkit.adsorption.Builder">
 <em class="property">class </em><code class="sig-prename descclassname">pynta.excatkit.adsorption.</code><code class="sig-name descname">Builder</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">slab</span></em>, <em class="sig-param"><span class="n">surface_atoms</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">tol</span><span class="o">=</span><span class="default_value">1e-05</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pynta/excatkit/adsorption.html#Builder"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.excatkit.adsorption.Builder" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="source/pynta.html#pynta.excatkit.adsorption.AdsorptionSites" title="pynta.excatkit.adsorption.AdsorptionSites"><code class="xref py py-class docutils literal notranslate"><span class="pre">pynta.excatkit.adsorption.AdsorptionSites</span></code></a></p>
+<dd><p>Bases: <a class="reference internal" href="#pynta.excatkit.adsorption.AdsorptionSites" title="pynta.excatkit.adsorption.AdsorptionSites"><code class="xref py py-class docutils literal notranslate"><span class="pre">pynta.excatkit.adsorption.AdsorptionSites</span></code></a></p>
 <p>Initial module for creation of 3D slab structures with
 attached adsorbates.</p>
 <dl class="py method">
@@ -2108,7 +2108,7 @@ e.g.</p>
 
 <dl class="py method">
 <dt id="pynta.io.IO.get_TS_guess_image">
-<em class="property">static </em><code class="sig-name descname">get_TS_guess_image</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">rxn</span><span class="p">:</span> <span class="n">Dict<span class="p">[</span>str<span class="p">, </span>str<span class="p">]</span></span></em>, <em class="sig-param"><span class="n">easier_to_build</span><span class="p">:</span> <span class="n">str</span></em><span class="sig-paren">)</span> &#x2192; <a class="reference internal" href="source/pynta.html#pynta.excatkit.gratoms.Gratoms" title="pynta.excatkit.gratoms.Gratoms">pynta.excatkit.gratoms.Gratoms</a><a class="reference internal" href="_modules/pynta/io.html#IO.get_TS_guess_image"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.io.IO.get_TS_guess_image" title="Permalink to this definition">¶</a></dt>
+<em class="property">static </em><code class="sig-name descname">get_TS_guess_image</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">rxn</span><span class="p">:</span> <span class="n">Dict<span class="p">[</span>str<span class="p">, </span>str<span class="p">]</span></span></em>, <em class="sig-param"><span class="n">easier_to_build</span><span class="p">:</span> <span class="n">str</span></em><span class="sig-paren">)</span> &#x2192; <a class="reference internal" href="#pynta.excatkit.gratoms.Gratoms" title="pynta.excatkit.gratoms.Gratoms">pynta.excatkit.gratoms.Gratoms</a><a class="reference internal" href="_modules/pynta/io.html#IO.get_TS_guess_image"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.io.IO.get_TS_guess_image" title="Permalink to this definition">¶</a></dt>
 <dd><p>Convert RMGCat representation of species to Gratom object
 - the case of TS_guess</p>
 <div class="admonition-todo admonition" id="id7">
@@ -2129,7 +2129,7 @@ view as a splitted many reaction .yaml file to a single reaction
 <code class="xref py py-meth docutils literal notranslate"><span class="pre">pynta.general_ts_guesses.decide()</span></code></p>
 </dd>
 <dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p><a class="reference internal" href="source/pynta.html#pynta.excatkit.gratoms.Gratoms" title="pynta.excatkit.gratoms.Gratoms">Gratoms</a></p>
+<dd class="field-odd"><p><a class="reference internal" href="#pynta.excatkit.gratoms.Gratoms" title="pynta.excatkit.gratoms.Gratoms">Gratoms</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -2162,7 +2162,7 @@ as they appear in the <code class="docutils literal notranslate"><span class="pr
 
 <dl class="py method">
 <dt id="pynta.io.IO.get_all_unique_images_with_bonds">
-<em class="property">static </em><code class="sig-name descname">get_all_unique_images_with_bonds</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">yamlfile</span><span class="p">:</span> <span class="n">str</span></em><span class="sig-paren">)</span> &#x2192; Dict<span class="p">[</span>int<span class="p">, </span>Dict<span class="p">[</span>int<span class="p">, </span><a class="reference internal" href="source/pynta.html#pynta.excatkit.gratoms.Gratoms" title="pynta.excatkit.gratoms.Gratoms">pynta.excatkit.gratoms.Gratoms</a><span class="p">]</span><span class="p">]</span><a class="reference internal" href="_modules/pynta/io.html#IO.get_all_unique_images_with_bonds"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.io.IO.get_all_unique_images_with_bonds" title="Permalink to this definition">¶</a></dt>
+<em class="property">static </em><code class="sig-name descname">get_all_unique_images_with_bonds</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">yamlfile</span><span class="p">:</span> <span class="n">str</span></em><span class="sig-paren">)</span> &#x2192; Dict<span class="p">[</span>int<span class="p">, </span>Dict<span class="p">[</span>int<span class="p">, </span><a class="reference internal" href="#pynta.excatkit.gratoms.Gratoms" title="pynta.excatkit.gratoms.Gratoms">pynta.excatkit.gratoms.Gratoms</a><span class="p">]</span><span class="p">]</span><a class="reference internal" href="_modules/pynta/io.html#IO.get_all_unique_images_with_bonds"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.io.IO.get_all_unique_images_with_bonds" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return a list with all unique images (Gratoms) for all reactions</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -2173,7 +2173,7 @@ as they appear in the <code class="docutils literal notranslate"><span class="pr
 which atoms connects Gratoms object to the surface</p>
 </dd>
 <dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>Dict[int, Dict[int, <a class="reference internal" href="source/pynta.html#pynta.excatkit.gratoms.Gratoms" title="pynta.excatkit.gratoms.Gratoms">Gratoms</a>]] a Dict with all</p>
+<dd class="field-odd"><p>Dict[int, Dict[int, <a class="reference internal" href="#pynta.excatkit.gratoms.Gratoms" title="pynta.excatkit.gratoms.Gratoms">Gratoms</a>]] a Dict with all</p>
 </dd>
 </dl>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">all_images_with_bonds</span> <span class="o">=</span>
@@ -2191,8 +2191,8 @@ which atoms connects Gratoms object to the surface</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="pynta.io.IO.get_all_unique_species">
-<em class="property">static </em><code class="sig-name descname">get_all_unique_species</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">yamlfile</span><span class="p">:</span> <span class="n">str</span></em><span class="sig-paren">)</span> &#x2192; List<span class="p">[</span>str<span class="p">]</span><a class="reference internal" href="_modules/pynta/io.html#IO.get_all_unique_species"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.io.IO.get_all_unique_species" title="Permalink to this definition">¶</a></dt>
+<dt id="pynta.io.IO.get_all_unique_species_symbols">
+<em class="property">static </em><code class="sig-name descname">get_all_unique_species_symbols</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">yamlfile</span><span class="p">:</span> <span class="n">str</span></em><span class="sig-paren">)</span> &#x2192; List<span class="p">[</span>str<span class="p">]</span><a class="reference internal" href="_modules/pynta/io.html#IO.get_all_unique_species_symbols"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.io.IO.get_all_unique_species_symbols" title="Permalink to this definition">¶</a></dt>
 <dd><p>Generate a list with all unique species names</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -2209,13 +2209,13 @@ which atoms connects Gratoms object to the surface</p>
 
 <dl class="py method">
 <dt id="pynta.io.IO.get_bonded_dict">
-<em class="property">static </em><code class="sig-name descname">get_bonded_dict</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">reactants</span><span class="p">:</span> <span class="n">List<span class="p">[</span><a class="reference internal" href="source/pynta.html#pynta.excatkit.gratoms.Gratoms" title="pynta.excatkit.gratoms.Gratoms">pynta.excatkit.gratoms.Gratoms</a><span class="p">]</span></span></em>, <em class="sig-param"><span class="n">reactant_bonded_idx</span><span class="p">:</span> <span class="n">List<span class="p">[</span>int<span class="p">]</span></span></em><span class="sig-paren">)</span> &#x2192; Dict<span class="p">[</span>str<span class="p">, </span>int<span class="p">]</span><a class="reference internal" href="_modules/pynta/io.html#IO.get_bonded_dict"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.io.IO.get_bonded_dict" title="Permalink to this definition">¶</a></dt>
+<em class="property">static </em><code class="sig-name descname">get_bonded_dict</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">reactants</span><span class="p">:</span> <span class="n">List<span class="p">[</span><a class="reference internal" href="#pynta.excatkit.gratoms.Gratoms" title="pynta.excatkit.gratoms.Gratoms">pynta.excatkit.gratoms.Gratoms</a><span class="p">]</span></span></em>, <em class="sig-param"><span class="n">reactant_bonded_idx</span><span class="p">:</span> <span class="n">List<span class="p">[</span>int<span class="p">]</span></span></em><span class="sig-paren">)</span> &#x2192; Dict<span class="p">[</span>str<span class="p">, </span>int<span class="p">]</span><a class="reference internal" href="_modules/pynta/io.html#IO.get_bonded_dict"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.io.IO.get_bonded_dict" title="Permalink to this definition">¶</a></dt>
 <dd><p>Create a dict with bonding information for a specifc reaction and
 specific type of reagents (reactants or products)</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>reactants</strong> (<em>List</em><em>[</em><a class="reference internal" href="source/pynta.html#pynta.excatkit.gratoms.Gratoms" title="pynta.excatkit.gratoms.Gratoms"><em>Gratoms</em></a><em>]</em>) – a list gratoms objects</p></li>
+<li><p><strong>reactants</strong> (<em>List</em><em>[</em><a class="reference internal" href="#pynta.excatkit.gratoms.Gratoms" title="pynta.excatkit.gratoms.Gratoms"><em>Gratoms</em></a><em>]</em>) – a list gratoms objects</p></li>
 <li><p><strong>reactant_bonded_idx</strong> (<em>List</em><em>[</em><em>int</em><em>]</em>) – a list with indicies of atoms that are connected to the surface</p></li>
 </ul>
 </dd>
@@ -2310,7 +2310,7 @@ e.g.</p>
 
 <dl class="py method">
 <dt id="pynta.io.IO.get_images">
-<em class="property">static </em><code class="sig-name descname">get_images</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">rxn</span><span class="p">:</span> <span class="n">Dict<span class="p">[</span>str<span class="p">, </span>str<span class="p">]</span></span></em><span class="sig-paren">)</span> &#x2192; Dict<span class="p">[</span>str<span class="p">, </span><a class="reference internal" href="source/pynta.html#pynta.excatkit.gratoms.Gratoms" title="pynta.excatkit.gratoms.Gratoms">pynta.excatkit.gratoms.Gratoms</a><span class="p">]</span><a class="reference internal" href="_modules/pynta/io.html#IO.get_images"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.io.IO.get_images" title="Permalink to this definition">¶</a></dt>
+<em class="property">static </em><code class="sig-name descname">get_images</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">rxn</span><span class="p">:</span> <span class="n">Dict<span class="p">[</span>str<span class="p">, </span>str<span class="p">]</span></span></em><span class="sig-paren">)</span> &#x2192; Dict<span class="p">[</span>str<span class="p">, </span><a class="reference internal" href="#pynta.excatkit.gratoms.Gratoms" title="pynta.excatkit.gratoms.Gratoms">pynta.excatkit.gratoms.Gratoms</a><span class="p">]</span><a class="reference internal" href="_modules/pynta/io.html#IO.get_images"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.io.IO.get_images" title="Permalink to this definition">¶</a></dt>
 <dd><p>Convert RMGCat representation of species for a given rxn
 to a dict of Gratoms objects - both reactants and products combined.</p>
 <div class="admonition note">
@@ -2328,7 +2328,7 @@ single reaction <code class="docutils literal notranslate"><span class="pre">*.y
 taking part in reaction rxn</p>
 </dd>
 <dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>List[<a class="reference internal" href="source/pynta.html#pynta.excatkit.gratoms.Gratoms" title="pynta.excatkit.gratoms.Gratoms">Gratoms</a>]</p>
+<dd class="field-odd"><p>List[<a class="reference internal" href="#pynta.excatkit.gratoms.Gratoms" title="pynta.excatkit.gratoms.Gratoms">Gratoms</a>]</p>
 </dd>
 </dl>
 </dd></dl>
@@ -2622,7 +2622,7 @@ e.g. <code class="docutils literal notranslate"><span class="pre">'H'</span></co
 
 <dl class="py method">
 <dt id="pynta.io.IO.rmgcat_to_gratoms">
-<em class="property">static </em><code class="sig-name descname">rmgcat_to_gratoms</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">adjtxt</span><span class="p">:</span> <span class="n">List<span class="p">[</span>str<span class="p">]</span></span></em><span class="sig-paren">)</span> &#x2192; List<span class="p">[</span><a class="reference internal" href="source/pynta.html#pynta.excatkit.gratoms.Gratoms" title="pynta.excatkit.gratoms.Gratoms">pynta.excatkit.gratoms.Gratoms</a><span class="p">]</span><a class="reference internal" href="_modules/pynta/io.html#IO.rmgcat_to_gratoms"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.io.IO.rmgcat_to_gratoms" title="Permalink to this definition">¶</a></dt>
+<em class="property">static </em><code class="sig-name descname">rmgcat_to_gratoms</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">adjtxt</span><span class="p">:</span> <span class="n">List<span class="p">[</span>str<span class="p">]</span></span></em><span class="sig-paren">)</span> &#x2192; List<span class="p">[</span><a class="reference internal" href="#pynta.excatkit.gratoms.Gratoms" title="pynta.excatkit.gratoms.Gratoms">pynta.excatkit.gratoms.Gratoms</a><span class="p">]</span><a class="reference internal" href="_modules/pynta/io.html#IO.rmgcat_to_gratoms"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.io.IO.rmgcat_to_gratoms" title="Permalink to this definition">¶</a></dt>
 <dd><p>Convert a slice of <code class="docutils literal notranslate"><span class="pre">*.yaml</span></code> file to Catkit’s Gratoms object</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -2660,7 +2660,7 @@ as from the .yaml file</p>
 <dd class="field-even"><p><strong>gratoms_list</strong> – a list with all Gratoms objects for a give rxn</p>
 </dd>
 <dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>List[<a class="reference internal" href="source/pynta.html#pynta.excatkit.gratoms.Gratoms" title="pynta.excatkit.gratoms.Gratoms">Gratoms</a>]</p>
+<dd class="field-odd"><p>List[<a class="reference internal" href="#pynta.excatkit.gratoms.Gratoms" title="pynta.excatkit.gratoms.Gratoms">Gratoms</a>]</p>
 </dd>
 </dl>
 </dd></dl>
@@ -3865,6 +3865,12 @@ balsam files are, e.g.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt id="pynta.restart.HighLevelRestart.remove_empty_pickle_file">
+<code class="sig-name descname">remove_empty_pickle_file</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="_modules/pynta/restart.html#HighLevelRestart.remove_empty_pickle_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.restart.HighLevelRestart.remove_empty_pickle_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Remove all empty pckl files from unfinished vib calculations</p>
+</dd></dl>
+
+<dl class="py method">
 <dt id="pynta.restart.HighLevelRestart.remove_error_files">
 <code class="sig-name descname">remove_error_files</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pynta/restart.html#HighLevelRestart.remove_error_files"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.restart.HighLevelRestart.remove_error_files" title="Permalink to this definition">¶</a></dt>
 <dd><p>Remove all error/unfinished files from previous calculations
@@ -3879,7 +3885,7 @@ including <code class="docutils literal notranslate"><span class="pre">pwscf*</s
 
 <dl class="py method">
 <dt id="pynta.restart.HighLevelRestart.set_awaiting_status">
-<code class="sig-name descname">set_awaiting_status</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pynta/restart.html#HighLevelRestart.set_awaiting_status"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.restart.HighLevelRestart.set_awaiting_status" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">set_awaiting_status</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="_modules/pynta/restart.html#HighLevelRestart.set_awaiting_status"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.restart.HighLevelRestart.set_awaiting_status" title="Permalink to this definition">¶</a></dt>
 <dd><p>Make sure that jobs which not yet started and depends on other jobs
 have an <code class="docutils literal notranslate"><span class="pre">'AWAITING_PARENTS'</span></code> status</p>
 </dd></dl>
@@ -4007,7 +4013,7 @@ unfinished 1st order saddle point optimizations</p>
 <dd><p>If there is at least one optimization step in a .traj file
 for a given after_ts, this method will create a new <code class="docutils literal notranslate"><span class="pre">*.xyz</span></code>
 file for that job from the last converge opt step.</p>
-<p>So, when <a class="reference internal" href="source/pynta.html#pynta.restart.HighLevelRestart" title="pynta.restart.HighLevelRestart"><code class="xref py py-class docutils literal notranslate"><span class="pre">pynta.restart.HighLevelRestart</span></code></a> is executed,
+<p>So, when <a class="reference internal" href="#pynta.restart.HighLevelRestart" title="pynta.restart.HighLevelRestart"><code class="xref py py-class docutils literal notranslate"><span class="pre">pynta.restart.HighLevelRestart</span></code></a> is executed,
 the optimization can resume from the last converged step, taking
 advantade of previous calculations.</p>
 </dd></dl>
@@ -4018,7 +4024,7 @@ advantade of previous calculations.</p>
 <dd><p>If there is at least one optimization step in a .traj file
 for a given minima, this method will create a new <code class="docutils literal notranslate"><span class="pre">*.xyz</span></code>
 file for that job from the last converged opt step.</p>
-<p>So, when <a class="reference internal" href="source/pynta.html#pynta.restart.HighLevelRestart" title="pynta.restart.HighLevelRestart"><code class="xref py py-class docutils literal notranslate"><span class="pre">pynta.restart.HighLevelRestart</span></code></a> is executed,
+<p>So, when <a class="reference internal" href="#pynta.restart.HighLevelRestart" title="pynta.restart.HighLevelRestart"><code class="xref py py-class docutils literal notranslate"><span class="pre">pynta.restart.HighLevelRestart</span></code></a> is executed,
 the optimization can resume from the last converged step, taking
 advantade of previous calculations.</p>
 </dd></dl>
@@ -4029,7 +4035,7 @@ advantade of previous calculations.</p>
 <dd><p>If there is at least one optimization step in a .traj file
 for a given ts, this method will create a new <code class="docutils literal notranslate"><span class="pre">*.xyz</span></code> file for
 that job from the last converged saddle point opt step.</p>
-<p>So, when <a class="reference internal" href="source/pynta.html#pynta.restart.HighLevelRestart" title="pynta.restart.HighLevelRestart"><code class="xref py py-class docutils literal notranslate"><span class="pre">pynta.restart.HighLevelRestart</span></code></a> is executed,
+<p>So, when <a class="reference internal" href="#pynta.restart.HighLevelRestart" title="pynta.restart.HighLevelRestart"><code class="xref py py-class docutils literal notranslate"><span class="pre">pynta.restart.HighLevelRestart</span></code></a> is executed,
 the optimization can resume from the last converged step, taking
 advantade of previous calculations.</p>
 </dd></dl>
@@ -4038,7 +4044,7 @@ advantade of previous calculations.</p>
 <dt id="pynta.restart.LowLevelRestart.remove_partialy_generated_xtb_run">
 <code class="sig-name descname">remove_partialy_generated_xtb_run</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pynta/restart.html#LowLevelRestart.remove_partialy_generated_xtb_run"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.restart.LowLevelRestart.remove_partialy_generated_xtb_run" title="Permalink to this definition">¶</a></dt>
 <dd><p>Remove all partially generated <code class="docutils literal notranslate"><span class="pre">*.xyz</span></code> files as described
-in <a class="reference internal" href="source/pynta.html#pynta.restart.LowLevelRestart.get_ts_xtb_to_remove" title="pynta.restart.LowLevelRestart.get_ts_xtb_to_remove"><code class="xref py py-meth docutils literal notranslate"><span class="pre">pynta.restart.LowLevelRestart.get_ts_xtb_to_remove()</span></code></a></p>
+in <a class="reference internal" href="#pynta.restart.LowLevelRestart.get_ts_xtb_to_remove" title="pynta.restart.LowLevelRestart.get_ts_xtb_to_remove"><code class="xref py py-meth docutils literal notranslate"><span class="pre">pynta.restart.LowLevelRestart.get_ts_xtb_to_remove()</span></code></a></p>
 </dd></dl>
 
 <dl class="py method">
@@ -4853,8 +4859,8 @@ the nearest surface metal atoms connected to adsorbates</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>reacting_atoms</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>int</em><em>]</em>) – keys are sybols of atoms that takes part in reaction whereas,
-values are their indicies</p></li>
+<li><p><strong>reacting_atoms</strong> (<em>List</em><em>[</em><em>int</em><em>]</em>) – a list with indicies of atoms taking part in the reaction with
+order as in Gratoms object, not as in :literal:.yaml file</p></li>
 <li><p><strong>surface_atoms_idxs</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>int</em><em>]</em>) – keys are metal atom symbol and index and values are indicies
 e.g.
 {‘Cu_0’: 0, ‘Cu_1’: 1}</p></li>
@@ -4960,7 +4966,7 @@ False otherwise</p>
 
 <dl class="py method">
 <dt>
-<code class="sig-name descname">prepare_slab_for_ts_guess</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">slab_atom</span><span class="p">:</span> <span class="n">ase.atoms.Atoms</span></em><span class="sig-paren">)</span> &#x2192; <a class="reference internal" href="source/pynta.html#pynta.excatkit.adsorption.Builder" title="pynta.excatkit.adsorption.Builder">pynta.excatkit.adsorption.Builder</a><a class="reference internal" href="_modules/pynta/ts.html#TS.prepare_slab_for_ts_guess"><span class="viewcode-link">[source]</span></a></dt>
+<code class="sig-name descname">prepare_slab_for_ts_guess</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">slab_atom</span><span class="p">:</span> <span class="n">ase.atoms.Atoms</span></em><span class="sig-paren">)</span> &#x2192; <a class="reference internal" href="#pynta.excatkit.adsorption.Builder" title="pynta.excatkit.adsorption.Builder">pynta.excatkit.adsorption.Builder</a><a class="reference internal" href="_modules/pynta/ts.html#TS.prepare_slab_for_ts_guess"><span class="viewcode-link">[source]</span></a></dt>
 <dd><p>Convert slab_atom to Gratom object and finally to Builder object
 to have a suitable format for ts_guess placement</p>
 <dl class="field-list simple">
@@ -4973,7 +4979,7 @@ ase.io.read(‘Cu_111_slab_opt.xyz’)</p>
 placement</p>
 </dd>
 <dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p><a class="reference internal" href="source/pynta.html#pynta.excatkit.adsorption.Builder" title="pynta.excatkit.adsorption.Builder">Builder</a></p>
+<dd class="field-odd"><p><a class="reference internal" href="#pynta.excatkit.adsorption.Builder" title="pynta.excatkit.adsorption.Builder">Builder</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -5053,15 +5059,15 @@ e.g. 1.0</p></li>
 
 <dl class="py method">
 <dt>
-<code class="sig-name descname">ts_guess_place_and_rotate</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">ts_guess</span><span class="p">:</span> <span class="n"><a class="reference internal" href="source/pynta.html#pynta.excatkit.gratoms.Gratoms" title="pynta.excatkit.gratoms.Gratoms">pynta.excatkit.gratoms.Gratoms</a></span></em>, <em class="sig-param"><span class="n">ads_builder</span><span class="p">:</span> <span class="n"><a class="reference internal" href="source/pynta.html#pynta.excatkit.adsorption.Builder" title="pynta.excatkit.adsorption.Builder">pynta.excatkit.adsorption.Builder</a></span></em>, <em class="sig-param"><span class="n">bonded_idx</span><span class="p">:</span> <span class="n">int</span></em>, <em class="sig-param"><span class="n">slab_atom</span><span class="p">:</span> <span class="n">ase.atoms.Atoms</span></em>, <em class="sig-param"><span class="n">ts_estimate_path</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">rxn_name</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">max_angle</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">360</span></em>, <em class="sig-param"><span class="n">angle</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">0</span></em>, <em class="sig-param"><span class="n">angle_increment</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">5</span></em><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="_modules/pynta/ts.html#TS.ts_guess_place_and_rotate"><span class="viewcode-link">[source]</span></a></dt>
+<code class="sig-name descname">ts_guess_place_and_rotate</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">ts_guess</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pynta.excatkit.gratoms.Gratoms" title="pynta.excatkit.gratoms.Gratoms">pynta.excatkit.gratoms.Gratoms</a></span></em>, <em class="sig-param"><span class="n">ads_builder</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pynta.excatkit.adsorption.Builder" title="pynta.excatkit.adsorption.Builder">pynta.excatkit.adsorption.Builder</a></span></em>, <em class="sig-param"><span class="n">bonded_idx</span><span class="p">:</span> <span class="n">int</span></em>, <em class="sig-param"><span class="n">slab_atom</span><span class="p">:</span> <span class="n">ase.atoms.Atoms</span></em>, <em class="sig-param"><span class="n">ts_estimate_path</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">rxn_name</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">max_angle</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">360</span></em>, <em class="sig-param"><span class="n">angle</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">0</span></em>, <em class="sig-param"><span class="n">angle_increment</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">5</span></em><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="_modules/pynta/ts.html#TS.ts_guess_place_and_rotate"><span class="viewcode-link">[source]</span></a></dt>
 <dd><p>Place ts_est on the surface (ads_builder) in all possible
 locations, rotate and save all obtained structures as a
 seperate .xyz files</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>ts_guess</strong> (<a class="reference internal" href="source/pynta.html#pynta.excatkit.gratoms.Gratoms" title="pynta.excatkit.gratoms.Gratoms"><em>Gratoms</em></a>) – an estimate TS structure that will be placed on the surface</p></li>
-<li><p><strong>ads_builder</strong> (<a class="reference internal" href="source/pynta.html#pynta.excatkit.adsorption.Builder" title="pynta.excatkit.adsorption.Builder"><em>Builder</em></a>) – a slab converted to a Builder object, suitable for ts_guess
+<li><p><strong>ts_guess</strong> (<a class="reference internal" href="#pynta.excatkit.gratoms.Gratoms" title="pynta.excatkit.gratoms.Gratoms"><em>Gratoms</em></a>) – an estimate TS structure that will be placed on the surface</p></li>
+<li><p><strong>ads_builder</strong> (<a class="reference internal" href="#pynta.excatkit.adsorption.Builder" title="pynta.excatkit.adsorption.Builder"><em>Builder</em></a>) – a slab converted to a Builder object, suitable for ts_guess
 placement</p></li>
 <li><p><strong>bonded_idx</strong> (<em>int</em>) – an index of ts_guess atom(s) connected to the surface</p></li>
 <li><p><strong>slab_atom</strong> (<em>Atoms</em>) – an initial slab converted to Atoms object, e.g.
@@ -5085,10 +5091,10 @@ e.g. OH_O+H</p></li>
 <dl class="py class">
 <dt id="pynta.ts_guesses.Diatomic">
 <em class="property">class </em><code class="sig-prename descclassname">pynta.ts_guesses.</code><code class="sig-name descname">Diatomic</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">ts_est</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">rxn</span><span class="p">:</span> <span class="n">Dict<span class="p">[</span>str<span class="p">, </span>str<span class="p">]</span></span></em>, <em class="sig-param"><span class="n">rxn_name</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">easier_to_build</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">scfactor</span><span class="p">:</span> <span class="n">float</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pynta/ts_guesses.html#Diatomic"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.ts_guesses.Diatomic" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="source/pynta.html#pynta.ts_guesses.GeneralTSGuessesGenerator" title="pynta.ts_guesses.GeneralTSGuessesGenerator"><code class="xref py py-class docutils literal notranslate"><span class="pre">pynta.ts_guesses.GeneralTSGuessesGenerator</span></code></a></p>
+<dd><p>Bases: <a class="reference internal" href="#pynta.ts_guesses.GeneralTSGuessesGenerator" title="pynta.ts_guesses.GeneralTSGuessesGenerator"><code class="xref py py-class docutils literal notranslate"><span class="pre">pynta.ts_guesses.GeneralTSGuessesGenerator</span></code></a></p>
 <dl class="py method">
 <dt id="pynta.ts_guesses.Diatomic.get_ts_guess_and_bonded_idx">
-<code class="sig-name descname">get_ts_guess_and_bonded_idx</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">reacting_idxs</span><span class="p">:</span> <span class="n">List<span class="p">[</span>int<span class="p">]</span></span></em><span class="sig-paren">)</span> &#x2192; Tuple<span class="p">[</span><a class="reference internal" href="source/pynta.html#pynta.excatkit.gratoms.Gratoms" title="pynta.excatkit.gratoms.Gratoms">pynta.excatkit.gratoms.Gratoms</a><span class="p">, </span>int<span class="p">]</span><a class="reference internal" href="_modules/pynta/ts_guesses.html#Diatomic.get_ts_guess_and_bonded_idx"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.ts_guesses.Diatomic.get_ts_guess_and_bonded_idx" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">get_ts_guess_and_bonded_idx</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">reacting_idxs</span><span class="p">:</span> <span class="n">List<span class="p">[</span>int<span class="p">]</span></span></em><span class="sig-paren">)</span> &#x2192; Tuple<span class="p">[</span><a class="reference internal" href="#pynta.excatkit.gratoms.Gratoms" title="pynta.excatkit.gratoms.Gratoms">pynta.excatkit.gratoms.Gratoms</a><span class="p">, </span>int<span class="p">]</span><a class="reference internal" href="_modules/pynta/ts_guesses.html#Diatomic.get_ts_guess_and_bonded_idx"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.ts_guesses.Diatomic.get_ts_guess_and_bonded_idx" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get ts_guess (Gratom) and index of atom that connects ts_guess
 to the surface. Currently, only monodentate adsobrtion is supported</p>
 <dl class="field-list simple">
@@ -5101,7 +5107,7 @@ to the surface. Currently, only monodentate adsobrtion is supported</p>
 s_bonded_idx is the index of adsorbate atom that bonds to surface</p>
 </dd>
 <dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>Tuple[<a class="reference internal" href="source/pynta.html#pynta.excatkit.gratoms.Gratoms" title="pynta.excatkit.gratoms.Gratoms">Gratoms</a>, int]</p>
+<dd class="field-odd"><p>Tuple[<a class="reference internal" href="#pynta.excatkit.gratoms.Gratoms" title="pynta.excatkit.gratoms.Gratoms">Gratoms</a>, int]</p>
 </dd>
 </dl>
 </dd></dl>
@@ -5137,7 +5143,7 @@ atoms taking part in the reaction</p></li>
 
 <dl class="py method">
 <dt id="pynta.ts_guesses.GeneralTSGuessesGenerator.build_ts_guess">
-<code class="sig-name descname">build_ts_guess</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; <a class="reference internal" href="source/pynta.html#pynta.excatkit.gratoms.Gratoms" title="pynta.excatkit.gratoms.Gratoms">pynta.excatkit.gratoms.Gratoms</a><a class="reference internal" href="_modules/pynta/ts_guesses.html#GeneralTSGuessesGenerator.build_ts_guess"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.ts_guesses.GeneralTSGuessesGenerator.build_ts_guess" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">build_ts_guess</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; <a class="reference internal" href="#pynta.excatkit.gratoms.Gratoms" title="pynta.excatkit.gratoms.Gratoms">pynta.excatkit.gratoms.Gratoms</a><a class="reference internal" href="_modules/pynta/ts_guesses.html#GeneralTSGuessesGenerator.build_ts_guess"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.ts_guesses.GeneralTSGuessesGenerator.build_ts_guess" title="Permalink to this definition">¶</a></dt>
 <dd><p>Convert <code class="docutils literal notranslate"><span class="pre">'ts_est'</span></code> string into a list of Gratoms objects.</p>
 <p>Numner of elements in the list depends is equal to number of
 distinct topologies available for given <code class="docutils literal notranslate"><span class="pre">'ts_est'</span></code>.</p>
@@ -5154,14 +5160,14 @@ For other types, more than one structure is possible, e.g.</p>
 ts_est</p>
 </dd>
 <dt class="field-even">Return type</dt>
-<dd class="field-even"><p>List[<a class="reference internal" href="source/pynta.html#pynta.excatkit.gratoms.Gratoms" title="pynta.excatkit.gratoms.Gratoms">Gratoms</a>]</p>
+<dd class="field-even"><p>List[<a class="reference internal" href="#pynta.excatkit.gratoms.Gratoms" title="pynta.excatkit.gratoms.Gratoms">Gratoms</a>]</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py method">
 <dt id="pynta.ts_guesses.GeneralTSGuessesGenerator.convert_tag_to_correct_idx">
-<code class="sig-name descname">convert_tag_to_correct_idx</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">ts_guess_image</span><span class="p">:</span> <span class="n"><a class="reference internal" href="source/pynta.html#pynta.excatkit.gratoms.Gratoms" title="pynta.excatkit.gratoms.Gratoms">pynta.excatkit.gratoms.Gratoms</a></span></em>, <em class="sig-param"><span class="n">tag_atom_idx1</span><span class="p">:</span> <span class="n">int</span></em>, <em class="sig-param"><span class="n">tag_atom_idx2</span><span class="p">:</span> <span class="n">int</span></em><span class="sig-paren">)</span> &#x2192; List<span class="p">[</span>int<span class="p">]</span><a class="reference internal" href="_modules/pynta/ts_guesses.html#GeneralTSGuessesGenerator.convert_tag_to_correct_idx"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.ts_guesses.GeneralTSGuessesGenerator.convert_tag_to_correct_idx" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">convert_tag_to_correct_idx</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">ts_guess_image</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pynta.excatkit.gratoms.Gratoms" title="pynta.excatkit.gratoms.Gratoms">pynta.excatkit.gratoms.Gratoms</a></span></em>, <em class="sig-param"><span class="n">tag_atom_idx1</span><span class="p">:</span> <span class="n">int</span></em>, <em class="sig-param"><span class="n">tag_atom_idx2</span><span class="p">:</span> <span class="n">int</span></em><span class="sig-paren">)</span> &#x2192; List<span class="p">[</span>int<span class="p">]</span><a class="reference internal" href="_modules/pynta/ts_guesses.html#GeneralTSGuessesGenerator.convert_tag_to_correct_idx"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.ts_guesses.GeneralTSGuessesGenerator.convert_tag_to_correct_idx" title="Permalink to this definition">¶</a></dt>
 <dd><p>Convert tag indicies (<code class="docutils literal notranslate"><span class="pre">*.yaml</span></code> file is a source) to
 indicies as they appear in the ts_guess_image Gratoms object</p>
 <dl class="field-list simple">
@@ -5189,7 +5195,7 @@ ts_guess_image, Gratom object.</p>
 
 <dl class="py method">
 <dt id="pynta.ts_guesses.GeneralTSGuessesGenerator.decide">
-<code class="sig-name descname">decide</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">reacting_idxs</span><span class="p">:</span> <span class="n">List<span class="p">[</span>int<span class="p">]</span></span></em><span class="sig-paren">)</span> &#x2192; Tuple<span class="p">[</span><a class="reference internal" href="source/pynta.html#pynta.excatkit.gratoms.Gratoms" title="pynta.excatkit.gratoms.Gratoms">pynta.excatkit.gratoms.Gratoms</a><span class="p">, </span>int<span class="p">]</span><a class="reference internal" href="_modules/pynta/ts_guesses.html#GeneralTSGuessesGenerator.decide"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.ts_guesses.GeneralTSGuessesGenerator.decide" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">decide</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">reacting_idxs</span><span class="p">:</span> <span class="n">List<span class="p">[</span>int<span class="p">]</span></span></em><span class="sig-paren">)</span> &#x2192; Tuple<span class="p">[</span><a class="reference internal" href="#pynta.excatkit.gratoms.Gratoms" title="pynta.excatkit.gratoms.Gratoms">pynta.excatkit.gratoms.Gratoms</a><span class="p">, </span>int<span class="p">]</span><a class="reference internal" href="_modules/pynta/ts_guesses.html#GeneralTSGuessesGenerator.decide"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.ts_guesses.GeneralTSGuessesGenerator.decide" title="Permalink to this definition">¶</a></dt>
 <dd><p>Main method to decide to which family of reactions given
 reaction belongs</p>
 <dl class="field-list simple">
@@ -5202,7 +5208,7 @@ reaction belongs</p>
 s_bonded_idx is the index of adsorbate atom that bonds to surface</p>
 </dd>
 <dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>Tuple[<a class="reference internal" href="source/pynta.html#pynta.excatkit.gratoms.Gratoms" title="pynta.excatkit.gratoms.Gratoms">Gratoms</a>, int]</p>
+<dd class="field-odd"><p>Tuple[<a class="reference internal" href="#pynta.excatkit.gratoms.Gratoms" title="pynta.excatkit.gratoms.Gratoms">Gratoms</a>, int]</p>
 </dd>
 </dl>
 </dd></dl>
@@ -5307,7 +5313,7 @@ to the other atoms.</p>
 <dl class="py class">
 <dt id="pynta.ts_guesses.Triatomic">
 <em class="property">class </em><code class="sig-prename descclassname">pynta.ts_guesses.</code><code class="sig-name descname">Triatomic</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">ts_est</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">rxn</span><span class="p">:</span> <span class="n">Dict<span class="p">[</span>str<span class="p">, </span>str<span class="p">]</span></span></em>, <em class="sig-param"><span class="n">rxn_name</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">easier_to_build</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">scfactor</span><span class="p">:</span> <span class="n">float</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pynta/ts_guesses.html#Triatomic"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.ts_guesses.Triatomic" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="source/pynta.html#pynta.ts_guesses.GeneralTSGuessesGenerator" title="pynta.ts_guesses.GeneralTSGuessesGenerator"><code class="xref py py-class docutils literal notranslate"><span class="pre">pynta.ts_guesses.GeneralTSGuessesGenerator</span></code></a></p>
+<dd><p>Bases: <a class="reference internal" href="#pynta.ts_guesses.GeneralTSGuessesGenerator" title="pynta.ts_guesses.GeneralTSGuessesGenerator"><code class="xref py py-class docutils literal notranslate"><span class="pre">pynta.ts_guesses.GeneralTSGuessesGenerator</span></code></a></p>
 <dl class="py method">
 <dt id="pynta.ts_guesses.Triatomic.get_ts_guess_and_bonded_idx">
 <code class="sig-name descname">get_ts_guess_and_bonded_idx</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">reacting_idxs</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pynta/ts_guesses.html#Triatomic.get_ts_guess_and_bonded_idx"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.ts_guesses.Triatomic.get_ts_guess_and_bonded_idx" title="Permalink to this definition">¶</a></dt>
@@ -5757,9 +5763,9 @@ oscilations, by default 30</p></li>
 
 </dd></dl>
 
+</div>
+</div>
 <hr class="docutils" />
-</div>
-</div>
 <div class="section" id="indices-and-tables">
 <h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h1>
 <ul class="simple">
@@ -5818,7 +5824,7 @@ U.S. Government retains certain rights in this software.</p>
     <p>
         &copy; Copyright Copyright 2021 National Technology &amp; Engineering Solutions of Sandia, LLC (NTESS). Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government retains certain rights in this software.
       <span class="lastupdated">
-        Last updated on Mon, 25 Jan 2021 18:06:34.
+        Last updated on Thu, 28 Jan 2021 18:45:53.
       </span>
 
     </p>

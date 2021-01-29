@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>pynta.excatkit.utils &mdash; Pynta January 25, 2021 documentation</title>
+  <title>pynta.excatkit.utils &mdash; Pynta January 28, 2021 documentation</title>
   
 
   
@@ -149,8 +149,8 @@
 <span class="kn">import</span> <span class="nn">scipy</span>
 
 
-<div class="viewcode-block" id="Utils"><a class="viewcode-back" href="../../../source/pynta.html#pynta.excatkit.utils.Utils">[docs]</a><span class="k">class</span> <span class="nc">Utils</span><span class="p">():</span>
-<div class="viewcode-block" id="Utils.expand_cell"><a class="viewcode-back" href="../../../source/pynta.html#pynta.excatkit.utils.Utils.expand_cell">[docs]</a>    <span class="k">def</span> <span class="nf">expand_cell</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">atoms</span><span class="p">,</span> <span class="n">cutoff</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="Utils"><a class="viewcode-back" href="../../../index.html#pynta.excatkit.utils.Utils">[docs]</a><span class="k">class</span> <span class="nc">Utils</span><span class="p">():</span>
+<div class="viewcode-block" id="Utils.expand_cell"><a class="viewcode-back" href="../../../index.html#pynta.excatkit.utils.Utils.expand_cell">[docs]</a>    <span class="k">def</span> <span class="nf">expand_cell</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">atoms</span><span class="p">,</span> <span class="n">cutoff</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Return Cartesian coordinates atoms within a supercell</span>
 <span class="sd">        which contains repetitions of the unit cell which contains</span>
 <span class="sd">        at least one neighboring atom.</span>
@@ -217,7 +217,7 @@
 
         <span class="k">return</span> <span class="n">index</span><span class="p">,</span> <span class="n">coords</span><span class="p">,</span> <span class="n">offsets</span></div>
 
-<div class="viewcode-block" id="Utils.matching_sites"><a class="viewcode-back" href="../../../source/pynta.html#pynta.excatkit.utils.Utils.matching_sites">[docs]</a>    <span class="k">def</span> <span class="nf">matching_sites</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">position</span><span class="p">,</span> <span class="n">comparators</span><span class="p">,</span> <span class="n">tol</span><span class="o">=</span><span class="mf">1e-8</span><span class="p">):</span>
+<div class="viewcode-block" id="Utils.matching_sites"><a class="viewcode-back" href="../../../index.html#pynta.excatkit.utils.Utils.matching_sites">[docs]</a>    <span class="k">def</span> <span class="nf">matching_sites</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">position</span><span class="p">,</span> <span class="n">comparators</span><span class="p">,</span> <span class="n">tol</span><span class="o">=</span><span class="mf">1e-8</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Get the indices of all points in a comparator list that are</span>
 <span class="sd">        equal to a given position (with a tolerance), taking into</span>
 <span class="sd">        account periodic boundary conditions (adaptation from Pymatgen).</span>
@@ -247,7 +247,7 @@
 
         <span class="k">return</span> <span class="n">match</span></div>
 
-<div class="viewcode-block" id="Utils.plane_normal"><a class="viewcode-back" href="../../../source/pynta.html#pynta.excatkit.utils.Utils.plane_normal">[docs]</a>    <span class="k">def</span> <span class="nf">plane_normal</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">xyz</span><span class="p">):</span>
+<div class="viewcode-block" id="Utils.plane_normal"><a class="viewcode-back" href="../../../index.html#pynta.excatkit.utils.Utils.plane_normal">[docs]</a>    <span class="k">def</span> <span class="nf">plane_normal</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">xyz</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Return the surface normal vector to a plane of best fit.</span>
 
 <span class="sd">        Parameters</span>
@@ -268,7 +268,7 @@
 
         <span class="k">return</span> <span class="n">vec</span></div>
 
-<div class="viewcode-block" id="Utils.trilaterate"><a class="viewcode-back" href="../../../source/pynta.html#pynta.excatkit.utils.Utils.trilaterate">[docs]</a>    <span class="k">def</span> <span class="nf">trilaterate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">centers</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">zvector</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="Utils.trilaterate"><a class="viewcode-back" href="../../../index.html#pynta.excatkit.utils.Utils.trilaterate">[docs]</a>    <span class="k">def</span> <span class="nf">trilaterate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">centers</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">zvector</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Find the intersection of two or three spheres. In the case</span>
 <span class="sd">        of two sphere intersection, the z-coordinate is assumed to be</span>
 <span class="sd">        an intersection of a plane whose normal is aligned with the</span>
@@ -347,7 +347,7 @@
     <p>
         &copy; Copyright Copyright 2021 National Technology &amp; Engineering Solutions of Sandia, LLC (NTESS). Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government retains certain rights in this software.
       <span class="lastupdated">
-        Last updated on Mon, 25 Jan 2021 18:06:34.
+        Last updated on Thu, 28 Jan 2021 18:45:53.
       </span>
 
     </p>

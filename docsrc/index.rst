@@ -13,14 +13,6 @@
 .. include:: source/pynta.rst
 =============================
 
-.. Quick links
-.. ===========
-
-.. - :mod:`WorkFlow <pynta.main.WorkFlow>`
-.. - :mod:`IO <pynta.io.IO>`
-.. - :mod:`TS <pynta.ts.TS>`
-.. - :mod:`GeneralTSGuessesGenerator <pynta.ts_guesses.GeneralTSGuessesGenerator>`
-
 Indices and tables
 ==================
 
