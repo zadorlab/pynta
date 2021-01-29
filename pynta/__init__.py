@@ -9,7 +9,8 @@ from collections import MutableMapping
 import numpy as np
 import ase
 
-__version__ = '1.0.2'
+from pynta.__version__ import __version__
+
 
 radicals = np.ones(92)
 radicals[[6, 7, 8, 9, 15, 16]] = [4, 3, 2, 1, 3, 2]
