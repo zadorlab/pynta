@@ -309,7 +309,7 @@ class HighLevelRestart():
         self.remove_error_files()
         self.remove_empty_pickle_files()
 
-    def remove_empty_pickle_file(self) -> None:
+    def remove_empty_pickle_files(self) -> None:
         ''' Remove all empty pckl files from unfinished vib calculations
 
         '''
