@@ -180,6 +180,8 @@ class LowLevelRestart():
                 # continue if *traj file is missing or it is empty
                 # hard HighLevelRestart is required
                 continue
+        if not unfinished_minima:
+            print('    Nothing to restart!')
 
     def remove_partialy_generated_xtb_run(self):
         ''' Remove all partially generated :literal:`*.xyz` files as described
@@ -202,6 +204,8 @@ class LowLevelRestart():
             except FileNotFoundError:
                 print('        \'.xyz\' files not found. Nothing to remove')
                 print('        ## check {} ##'.format(path_to_ts_xtb))
+        if not unfinished_ts_xtb:
+            print('    Nothing to restart!')
 
     def prepare_ts_to_restart(self) -> None:
         ''' If there is at least one optimization step in a .traj file
@@ -237,6 +241,8 @@ class LowLevelRestart():
                 # continue if *traj file is missing or it is empty
                 # hard :meth:HighLevelRestart is required
                 continue
+        if not unfinished_tss:
+            print('    Nothing to restart!')
 
     def prepare_after_ts_to_restart(self) -> None:
         ''' If there is at least one optimization step in a .traj file
@@ -274,6 +280,8 @@ class LowLevelRestart():
                 # continue if *traj file is missing or it is empty
                 # hard HighLevelRestart is required
                 continue
+        if not unfinished_after_tss:
+            print('    Nothing to restart!')
 
 
 class HighLevelRestart():
@@ -313,14 +321,18 @@ class HighLevelRestart():
         ''' Remove all empty pckl files from unfinished vib calculations
 
         '''
-        print('Removing unfinished/empty *.pckl files')
+        print('Removing unfinished/empty *.pckl files:')
         all_pickle_files = Path(self.current_dir).glob('**/*pckl')
+        removed_pckls = []
         for pckl in all_pickle_files:
             if os.stat(pckl).st_size == 0:
                 rxn_name = os.path.dirname(pckl).split('/')[-3]
                 f_name = os.path.basename(pckl)
                 print('    rxn: {} file: {}'.format(rxn_name, f_name))
                 os.remove(pckl)
+                removed_pckls.append(pckl)
+        if not removed_pckls:
+            print('    Nothing to remove!')
 
     def set_awaiting_status(self) -> None:
         ''' Make sure that jobs which not yet started and depends on other jobs
@@ -367,6 +379,7 @@ class HighLevelRestart():
         workflow_path = HighLevelRestart.get_workflow_path()
         path_to_balsam_out = os.path.join(workflow_path, 'data', 'QE_Socket')
 
+        print('Removing unfinished temp files:')
         for err_files_type in self.error_files:
             err_files = Path(path_to_balsam_out).glob(err_files_type)
 
