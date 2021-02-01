@@ -1,33 +1,39 @@
 import sqlite3
+import os
+from pathlib import Path
+from ase.io import read
 
 
 class DataBase():
-    def main(self, db_file):
-        sql_create_projects_table = ''' CREATE TABLE IF NOT EXISTS projects (
+    def main(self, db_file, facetpath):
+        sql_create_minima_table = ''' CREATE TABLE IF NOT EXISTS minima (
                                         id integer PRIMARY KEY,
-                                        name text NOT NULL,
-                                        begin_date text,
-                                        end_date text
+                                        chemical_symbol text NOT NULL,
+                                        file_name text NOT NULL,
+                                        total_energy text
                                     ); '''
         # create a database connection
         conn = self.create_connection(db_file)
 
+        minima_details = PrepareDataToDB(facetpath).prepare_minima()
+
         if conn is not None:
-            self.create_table(conn, sql_create_projects_table)
+            self.create_table(conn, sql_create_minima_table)
         else:
             print('Error: cannot create the database connection')
 
         with conn:
-            project = ('Testing sqlite3 with python',
-                       '2021-01-01', '2021-02-02')
-            project_update = ('It is working', '2021-02-02', '2021-01-01', 9)
-            project_delete = (5,)
-            # project_id = self.create_project(conn, project)
-            # print(project_id)
+            for _, minima in minima_details.items():
+                self.create_minima(conn, minima)
+            # minima = ('Testing sqlite3 with python',
+            #         '2021-01-01', '2021-02-02')
+            # minima_update = ('It is working', '2021-02-02', '2021-01-01', 9)
+            # minima_delete = (5,)
+            # print(minima_id)
 
-            self.update_project(conn, project_update)
-            self.delete_project(conn, project_delete)
-            self.select_all_projects(conn)
+            # self.update_minima(conn, minima_update)
+            # self.delete_minima(conn, minima_delete)
+            self.select_all_minima(conn)
 
     def create_connection(self, db_file):
         conn = None
@@ -44,39 +50,59 @@ class DataBase():
         except sqlite3.Error as e:
             print(e)
 
-    def create_project(self, conn, project):
-        sql = ''' INSERT INTO projects(name,begin_date,end_date)
+    def create_minima(self, conn, minima):
+        sql = ''' INSERT INTO minima(chemical_symbol,file_name,total_energy)
               VALUES(?,?,?) '''
         cursor = conn.cursor()
-        cursor.execute(sql, project)
+        cursor.execute(sql, minima)
         conn.commit()
-        return cursor.lastrowid
+        # return cursor.lastrowid
 
-    def update_project(self, conn, project):
-        sql = ''' UPDATE projects
+    def update_minima(self, conn, minima):
+        sql = ''' UPDATE minima
                 SET name = ?,
                     begin_date = ?,
                     end_date = ?
                 WHERE id = ?
                 '''
         cursor = conn.cursor()
-        cursor.execute(sql, project)
+        cursor.execute(sql, minima)
         conn.commit()
 
-    def select_all_projects(self, conn):
+    def select_all_minima(self, conn):
         cursor = conn.cursor()
-        cursor.execute('SELECT * FROM projects')
+        cursor.execute('SELECT * FROM minima')
 
         rows = cursor.fetchall()
 
         for row in rows:
             print(row)
 
-    def delete_project(self, conn, query):
+    def delete_minima(self, conn, query):
         sql = '''
-                DELETE FROM projects
+                DELETE FROM minima
                 WHERE id = ?
                 '''
         cursor = conn.cursor()
         cursor.execute(sql, query)
         conn.commit()
+
+
+class PrepareDataToDB():
+    def __init__(self, facetpath):
+        self.current_dir = os.getcwd()
+        self.path = os.path.join(self.current_dir, facetpath)
+
+    def prepare_minima(self):
+        details = {}
+        minima_path = os.path.join(self.path, 'minima')
+        keyword = '**/*traj'
+        trajs = Path(minima_path).glob(keyword)
+        for i, traj in enumerate(trajs):
+            species = os.path.basename(os.path.dirname(traj))
+            fname = os.path.basename(traj)
+            atoms = read(traj)
+            pot_ener = atoms.get_potential_energy()
+            entry = (species, fname, str(pot_ener))
+            details[i] = entry
+        return details
