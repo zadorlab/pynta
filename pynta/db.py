@@ -4,6 +4,8 @@ import io
 import numpy as np
 from pathlib import Path
 from ase.io import read
+from ase.vibrations import Vibrations
+from ase.thermochemistry import IdealGasThermo
 
 
 class DataBase():
@@ -13,7 +15,8 @@ class DataBase():
                                         id integer PRIMARY KEY,
                                         chemical_symbol text NOT NULL,
                                         file_name text NOT NULL,
-                                        total_energy real
+                                        total_energy real,
+                                        zpe_energy real
                                     ); '''
         # create a database connection
         conn = self.create_connection(db_file)
@@ -106,8 +109,50 @@ class PrepareDataToDB():
             species = os.path.basename(os.path.dirname(traj))
             fname = os.path.join('./' + self.facetpath, 'mimima',
                                  os.path.basename(traj))
+
             atoms = read(traj)
             potential_energy = atoms.get_potential_energy()
+
             entry = (species, fname, potential_energy)
+
             details[i] = entry
+
         return details
+
+    def add_zpe_energies(self):
+        final_dict = {}
+        path_to_vib_species = os.path.join(
+            self.current_dir, self.facetpath, 'minima_vib')
+        keyword = '**/*traj'
+        trajs = Path(path_to_vib_species).glob(keyword)
+        for traj in trajs:
+            traj = str(traj)
+            if 'vib.' not in traj:
+                zpe_energy = self.get_zpe_energy(traj)
+                final_dict.update(zpe_energy)
+        return final_dict
+
+        # prefix = os.path.basename(traj).split('.')[0]
+        # zpe_energy = self.get_zpe_energy(path_to_vib_species)
+
+    def get_zpe_energy(self, path_to_vib_species):
+        zpe_energy_dict = {}
+        atoms = read(path_to_vib_species)
+        vib_path = os.path.dirname(path_to_vib_species)
+        os.chdir(vib_path)
+
+        prefix, species = os.path.basename(
+            path_to_vib_species).split('.')[0].split('_')
+        indices = [atom.index for atom in atoms if atom.position[2]
+                   > atoms.cell[2, 2]/2.]
+        vib = Vibrations(atoms, indices=indices)
+        vib_energies = vib.get_energies()
+        key = prefix + '_' + species
+        try:
+            thermo = IdealGasThermo(vib_energies, atoms)
+            zpe_energy = thermo.get_ZPE_correction()
+            zpe_energy_dict[key] = zpe_energy
+
+        except ValueError:
+            pass
+        return zpe_energy_dict
