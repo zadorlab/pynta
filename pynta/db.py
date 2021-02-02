@@ -1,16 +1,19 @@
 import sqlite3
 import os
+import io
+import numpy as np
 from pathlib import Path
 from ase.io import read
 
 
 class DataBase():
+
     def main(self, db_file, facetpath):
         sql_create_minima_table = ''' CREATE TABLE IF NOT EXISTS minima (
                                         id integer PRIMARY KEY,
                                         chemical_symbol text NOT NULL,
                                         file_name text NOT NULL,
-                                        total_energy text
+                                        total_energy real
                                     ); '''
         # create a database connection
         conn = self.create_connection(db_file)
@@ -91,7 +94,8 @@ class DataBase():
 class PrepareDataToDB():
     def __init__(self, facetpath):
         self.current_dir = os.getcwd()
-        self.path = os.path.join(self.current_dir, facetpath)
+        self.facetpath = facetpath
+        self.path = os.path.join(self.current_dir, self.facetpath)
 
     def prepare_minima(self):
         details = {}
@@ -100,9 +104,10 @@ class PrepareDataToDB():
         trajs = Path(minima_path).glob(keyword)
         for i, traj in enumerate(trajs):
             species = os.path.basename(os.path.dirname(traj))
-            fname = os.path.basename(traj)
+            fname = os.path.join('./' + self.facetpath, 'mimima',
+                                 os.path.basename(traj))
             atoms = read(traj)
-            pot_ener = atoms.get_potential_energy()
-            entry = (species, fname, str(pot_ener))
+            potential_energy = atoms.get_potential_energy()
+            entry = (species, fname, potential_energy)
             details[i] = entry
         return details
