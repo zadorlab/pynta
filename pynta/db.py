@@ -14,6 +14,7 @@ class DataBase():
         sql_create_minima_table = ''' CREATE TABLE IF NOT EXISTS minima (
                                         id integer PRIMARY KEY,
                                         chemical_symbol text NOT NULL,
+                                        prefix text,
                                         file_name text NOT NULL,
                                         total_energy real,
                                         zpe_energy real
@@ -21,7 +22,10 @@ class DataBase():
         # create a database connection
         conn = self.create_connection(db_file)
 
-        minima_details = PrepareDataToDB(facetpath).prepare_minima()
+        prepare = PrepareDataToDB(facetpath)
+
+        minima_details = prepare.prepare_minima()
+        minima_vib_details = prepare.add_zpe_energies()
 
         if conn is not None:
             self.create_table(conn, sql_create_minima_table)
@@ -31,14 +35,11 @@ class DataBase():
         with conn:
             for _, minima in minima_details.items():
                 self.create_minima(conn, minima)
-            # minima = ('Testing sqlite3 with python',
-            #         '2021-01-01', '2021-02-02')
-            # minima_update = ('It is working', '2021-02-02', '2021-01-01', 9)
-            # minima_delete = (5,)
-            # print(minima_id)
 
-            # self.update_minima(conn, minima_update)
-            # self.delete_minima(conn, minima_delete)
+            for key, value in minima_vib_details.items():
+                prefix, chemical_symbol = key.split('_')
+                vib_entry = (value, prefix, chemical_symbol)
+                self.add_minima_vib(conn, vib_entry)
             self.select_all_minima(conn)
 
     def create_connection(self, db_file):
@@ -57,22 +58,20 @@ class DataBase():
             print(e)
 
     def create_minima(self, conn, minima):
-        sql = ''' INSERT INTO minima(chemical_symbol,file_name,total_energy)
-              VALUES(?,?,?) '''
+        sql = ''' INSERT INTO minima(chemical_symbol,prefix,file_name,total_energy)
+              VALUES(?,?,?,?) '''
         cursor = conn.cursor()
         cursor.execute(sql, minima)
         conn.commit()
         # return cursor.lastrowid
 
-    def update_minima(self, conn, minima):
+    def add_minima_vib(self, conn, minima_vib):
         sql = ''' UPDATE minima
-                SET name = ?,
-                    begin_date = ?,
-                    end_date = ?
-                WHERE id = ?
+                SET zpe_energy = ?
+                WHERE prefix = ? AND chemical_symbol = ?
                 '''
         cursor = conn.cursor()
-        cursor.execute(sql, minima)
+        cursor.execute(sql, minima_vib)
         conn.commit()
 
     def select_all_minima(self, conn):
@@ -111,9 +110,10 @@ class PrepareDataToDB():
                                  os.path.basename(traj))
 
             atoms = read(traj)
+            prefix = os.path.basename(traj).split('.')[0]
             potential_energy = atoms.get_potential_energy()
 
-            entry = (species, fname, potential_energy)
+            entry = (species, prefix, fname, potential_energy)
 
             details[i] = entry
 
@@ -131,9 +131,6 @@ class PrepareDataToDB():
                 zpe_energy = self.get_zpe_energy(traj)
                 final_dict.update(zpe_energy)
         return final_dict
-
-        # prefix = os.path.basename(traj).split('.')[0]
-        # zpe_energy = self.get_zpe_energy(path_to_vib_species)
 
     def get_zpe_energy(self, path_to_vib_species):
         zpe_energy_dict = {}
