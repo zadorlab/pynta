@@ -8,7 +8,7 @@ class InputChecker():
     def __init__(
             self,
             yamlfile: str,
-            inputR2S: str,
+            input_json: str,
             run_me_py: str,
             run_me_sh: str,
             working_dir: str) -> None:
@@ -23,7 +23,7 @@ class InputChecker():
             a :literal:`*.xyz` file name with the optimized slab
             e.g.
             ``'Cu_100_slab_opt.xyz'``
-        inputR2S : python file
+        input_json : json file
             an input file with paramters to the workflow
         run_me : str
             the workflow execution script
@@ -34,7 +34,7 @@ class InputChecker():
 
         '''
         self.yamlfile = yamlfile
-        self.inputR2S = inputR2S
+        self.input_json = input_json
         self.run_me_py = run_me_py
         self.run_me_sh = run_me_sh
         self.working_dir = working_dir
@@ -56,15 +56,15 @@ class InputChecker():
             print('---')
 
     def is_input_file(self) -> bool:
-        ''' Check if there are input files in the working directory '''
+        ''' Check for input files in the working directory '''
         # create check list
         check_list = []
 
         # check inputs
         check_yaml = self.check_yaml()
         check_list.append(check_yaml)
-        check_inputR2S = self.check_inputR2S()
-        check_list.append(check_inputR2S)
+        check_input_json = self.check_input_json()
+        check_list.append(check_input_json)
         check_run_me_py = self.check_run_me_py()
         check_list.append(check_run_me_py)
         check_run_me_sh = self.check_run_me_sh()
@@ -85,21 +85,14 @@ class InputChecker():
         else:
             return True
 
-    def check_slab(self) -> bool:
-        ''' Check for slab :literal:`*.xyz` file with slab geometry '''
-        if not os.path.isfile(self.slab):
-            print('!    .xyz file ({}) with optimized slab is not in your '
-                  'working directory: '
-                  '\n{}'.format(self.slab, self.working_dir))
-            return False
-        else:
-            return True
-
-    def check_inputR2S(self) -> bool:
-        ''' Check for inputR2S file '''
-        if not os.path.isfile(self.inputR2S):
-            print('!    inputR2S.py file ({}) is not in your current working '
-                  'directory: \n{}'.format(self.inputR2S, self.working_dir))
+    def check_input_json(self) -> bool:
+        ''' Check for input_json file '''
+        if not os.path.isfile(self.input_json):
+            print('!    input.json file is missing. \n'
+                  '     {} should be exacly "input.json" \n'
+                  '     Make sure input.json is in your current working'
+                  ' directory: \n {}'.format(
+                      os.path.basename(self.input_json), self.working_dir))
             return False
         else:
             return True
@@ -107,8 +100,11 @@ class InputChecker():
     def check_run_me_py(self) -> bool:
         ''' Check for ``'run_me.py'`` file '''
         if not os.path.isfile(self.run_me_py):
-            print('!    run_me.py file ({}) is not in your current working '
-                  'directory: \n{}'.format(self.run_me_py, self.working_dir))
+            print('!    run_me.py file is missing. \n'
+                  '     {} should be exacly "run_me.py" \n'
+                  '     Make sure run_me.py is in your current working'
+                  'directory: \n{}'.format(
+                      os.path.basename(self.run_me_py), self.working_dir))
             return False
         else:
             return True
@@ -116,8 +112,11 @@ class InputChecker():
     def check_run_me_sh(self) -> bool:
         ''' Check for ``'run_me.sh'`` file '''
         if not os.path.isfile(self.run_me_sh):
-            print('!    run_me.sh file ({}) is not in your current working '
-                  'directory: \n{}'.format(self.run_me_sh, self.working_dir))
+            print('!    run_me.sh file is missing. \n'
+                  '     {} should be exacly "run_me.sh" \n'
+                  '     Make sure run_me.sh is in your current working'
+                  ' directory: \n {}'.format(
+                      os.path.basename(self.run_me_sh), self.working_dir))
             return False
         else:
             return True

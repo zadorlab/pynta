@@ -62,7 +62,7 @@ else:
     node_packing_count = input_json['node_packing_count']
     balsam_exe_settings = input_json['balsam_exe_settings']
     calc_keywords = input_json['calc_keywords']
-    creation_dir = input_json['creation_dir']
+    creation_dir = Path.cwd().as_posix()
     surface_types = surface_types_and_repeats.keys()
     facetpaths = IO().get_facetpaths(metal_atom, surface_types)
     job_file_dir_name = 'job_files'
@@ -72,9 +72,7 @@ else:
 # ###################################################
 
 # These template and pytemplate scripts can be modified by users
-# (np intended, though) to tune them to given calculation setup,
-# i.e. calculator, method, queue system,
-# etc. The current version works for SLURM and Quantum Espresso.
+# (if intended, though) to tune them to given calculation setup
 
 path = os.path.abspath(__file__)
 dir_path = os.path.dirname(path)
