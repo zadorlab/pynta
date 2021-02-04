@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Pynta &mdash; Pynta January 28, 2021 documentation</title>
+  <title>Pynta &mdash; Pynta February 04, 2021 documentation</title>
   
 
   
@@ -110,12 +110,9 @@
 <li><a class="reference internal" href="#an-example-inputr2s-py-file">An example <code class="docutils literal notranslate"><span class="pre">inputR2S.py</span></code> file</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#using-only-slurm">Using only SLURM</a><ul>
-<li><a class="reference internal" href="#an-example-script-using-dev-branch-slurm">An example script (using <code class="docutils literal notranslate"><span class="pre">dev</span></code> branch - SLURM):</a></li>
 </ul>
 </li>
-</ul>
-</li>
+<li><a class="reference internal" href="#keyword-parameters">Keyword parameters</a></li>
 <li><a class="reference internal" href="#modules">Modules</a><ul>
 <li><a class="reference internal" href="#module-pynta.adsorbates">pynta.adsorbates module</a></li>
 <li><a class="reference internal" href="#module-pynta.balsamcalc">pynta.balsamcalc module</a></li>
@@ -128,7 +125,7 @@
 <li><a class="reference internal" href="#module-pynta.get_slab">pynta.get_slab module</a></li>
 <li><a class="reference internal" href="#module-pynta.graph_utils">pynta.graph_utils module</a></li>
 <li><a class="reference internal" href="#module-pynta.io">pynta.io module</a></li>
-<li><a class="reference internal" href="#module-pynta.main">pynta.main module</a></li>
+<li><a class="reference internal" href="#pynta-main-module">pynta.main module</a></li>
 <li><a class="reference internal" href="#module-pynta.penalty_fun">pynta.penalty_fun module</a></li>
 <li><a class="reference internal" href="#module-pynta.restart">pynta.restart module</a></li>
 <li><a class="reference internal" href="#module-pynta.results">pynta.results module</a></li>
@@ -410,7 +407,7 @@ $ <span class="nb">source</span> balsamactivate ~/myWorkflow
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">run_me.py</span></code> a python script that executes the workflow or alternatively, <code class="docutils literal notranslate"><span class="pre">restart_me.py</span></code> to restart unfinished calculations</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">run_me.sh</span></code> a bash script that submits jobs to the <code class="docutils literal notranslate"><span class="pre">balsam</span></code> database</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">inputR2S.py</span></code> a python script holding all user-modifiable parameters of the <code class="docutils literal notranslate"><span class="pre">pynta</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">input.json</span></code> a json file holding all user-modifiable parameters of the <code class="docutils literal notranslate"><span class="pre">pynta</span></code></p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">reactions.yaml</span></code> a yaml file with all reactions to be studied</p></li>
 </ul>
 <div class="section" id="an-example-run-me-py-file">
@@ -527,131 +524,164 @@ balsam launcher --job-mode<span class="o">=</span>mpi --wf-filter QE_Sock --offs
 </div>
 <div class="section" id="an-example-inputr2s-py-file">
 <h3>An example <code class="docutils literal notranslate"><span class="pre">inputR2S.py</span></code> file<a class="headerlink" href="#an-example-inputr2s-py-file" title="Permalink to this headline">¶</a></h3>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1">####################################################</span>
-                  <span class="n">Basic</span> <span class="n">Input</span>
-<span class="c1">####################################################</span>
-<span class="s1">&#39;&#39;&#39;</span>
-<span class="s1">####################################################</span>
-<span class="s1"># Define which QE package to use</span>
-<span class="s1"># &#39;espresso&#39; or &#39;nwchem&#39; are currently supported</span>
-<span class="s1">quantum_chemistry = &#39;espresso&#39;</span>
-<span class="s1">####################################################</span>
-<span class="s1"># do you want to run surface optimization</span>
-<span class="s1">optimize_slab = True</span>
-<span class="s1">####################################################</span>
-<span class="s1"># specify facet orientation, repeats of the slab+ads</span>
-<span class="s1"># and repeats of the slab_opt unit cell</span>
-<span class="s1">surface_types_and_repeats = {&#39;fcc111&#39;: [(3, 3, 1), (1, 1, 4)]}</span>
-<span class="s1">####################################################</span>
-<span class="s1"># surface atoms</span>
-<span class="s1">metal_atom = &#39;Cu&#39;</span>
-<span class="s1">####################################################</span>
-<span class="s1"># lattice constant</span>
-<span class="s1">a = 3.6</span>
-<span class="s1">####################################################</span>
-<span class="s1"># vacuum in the z direction (Angstrem)</span>
-<span class="s1">vacuum = 8.0</span>
-<span class="s1">####################################################</span>
-<span class="s1"># Quantum Espresso pseudopotantials and exe settings</span>
-<span class="s1"># for DFT calculations</span>
-<span class="s1">pseudo_dir = &#39;/home/mgierad/espresso/pseudo&#39;</span>
-
-<span class="s1">pseudopotentials = &quot;dict(Cu=&#39;Cu.pbe-spn-kjpaw_psl.1.0.0.UPF&#39;,&quot;</span><span class="se">\</span>
-<span class="s1">   + &quot;H=&#39;H.pbe-kjpaw_psl.1.0.0.UPF&#39;,&quot; </span><span class="se">\</span>
-<span class="s1">   + &quot;O=&#39;O.pbe-n-kjpaw_psl.1.0.0.UPF&#39;,&quot; </span><span class="se">\</span>
-<span class="s1">   + &quot;C=&#39;C.pbe-n-kjpaw_psl.1.0.0.UPF&#39;,&quot; </span><span class="se">\</span>
-<span class="s1">   + &quot;N=&#39;N.pbe-n-kjpaw_psl.1.0.0.UPF&#39;)&quot; </span><span class="se">\</span>
-
-<span class="s1">executable = &#39;/home/mgierad/00_codes/build/q-e-qe-6.4.1/build/bin/pw.x&#39;</span>
-<span class="s1">####################################################</span>
-<span class="s1"># Baslam settings</span>
-<span class="s1">node_packing_count = 48</span>
-<span class="s1">balsam_exe_settings = {&#39;num_nodes&#39;: 1,  # nodes per each balsam job</span>
-<span class="s1">                     &#39;ranks_per_node&#39;: node_packing_count,  # cores per node</span>
-<span class="s1">                     &#39;threads_per_rank&#39;: 1,</span>
-<span class="s1">                     }</span>
-<span class="s1">calc_keywords = {&#39;kpts&#39;: (3, 3, 1),</span>
-<span class="s1">               &#39;occupations&#39;: &#39;smearing&#39;,</span>
-<span class="s1">               &#39;smearing&#39;: &#39;marzari-vanderbilt&#39;,</span>
-<span class="s1">               &#39;degauss&#39;: 0.01,  # Rydberg</span>
-<span class="s1">               &#39;ecutwfc&#39;: 40,  # Rydberg</span>
-<span class="s1">               &#39;nosym&#39;: True,  # Allow symmetry breaking during optimization</span>
-<span class="s1">               &#39;conv_thr&#39;: 1e-11,</span>
-<span class="s1">               &#39;mixing_mode&#39;: &#39;local-TF&#39;,</span>
-<span class="s1">               }</span>
-<span class="s1">####################################################</span>
-<span class="s1"># Set up a working directory (this is default)</span>
-<span class="s1">creation_dir = Path.cwd().as_posix()</span>
-<span class="s1">####################################################</span>
-<span class="s1"># filename of the .yaml file with reactions</span>
-<span class="s1">yamlfile = &#39;reactions.yaml&#39;</span>
-<span class="s1">####################################################</span>
-<span class="s1"># specify the scaling factor to scale the bond distance</span>
-<span class="s1"># between two atoms taking part in the reaction</span>
-<span class="s1">scfactor = 1.4</span>
-<span class="s1">####################################################</span>
-<span class="s1"># specify the scaling factor to scale the target distance</span>
-<span class="s1"># i.e. the average bond distance between adsorbate and</span>
-<span class="s1"># the nearest surface metal atom</span>
-<span class="s1">scfactor_surface = 1.0</span>
-<span class="s1">####################################################</span>
-<span class="s1"># do you want to apply the scfactor_surface to the species 1?</span>
-<span class="s1">scaled1 = False</span>
-<span class="s1">####################################################</span>
-<span class="s1"># do you want to apply scfactor_surface to the species 2?</span>
-<span class="s1">scaled2 = False</span>
-<span class="s1">####################################################</span>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+ <span class="nt">&quot;quantum_chemistry&quot;</span><span class="p">:</span> <span class="s2">&quot;espresso&quot;</span><span class="p">,</span>
+ <span class="nt">&quot;optimize_slab&quot;</span><span class="p">:</span> <span class="kc">true</span><span class="p">,</span>
+ <span class="nt">&quot;surface_types_and_repeats&quot;</span><span class="p">:</span> <span class="p">{</span>
+     <span class="nt">&quot;fcc111&quot;</span><span class="p">:</span> <span class="p">[</span>
+         <span class="p">[</span>
+             <span class="mi">3</span><span class="p">,</span>
+             <span class="mi">3</span><span class="p">,</span>
+             <span class="mi">1</span>
+         <span class="p">],</span>
+         <span class="p">[</span>
+             <span class="mi">1</span><span class="p">,</span>
+             <span class="mi">1</span><span class="p">,</span>
+             <span class="mi">4</span>
+         <span class="p">]</span>
+     <span class="p">]</span>
+ <span class="p">},</span>
+ <span class="nt">&quot;metal_atom&quot;</span><span class="p">:</span> <span class="s2">&quot;Cu&quot;</span><span class="p">,</span>
+ <span class="nt">&quot;a&quot;</span><span class="p">:</span> <span class="mf">3.6</span><span class="p">,</span>
+ <span class="nt">&quot;vacuum&quot;</span><span class="p">:</span> <span class="mf">8.0</span><span class="p">,</span>
+ <span class="nt">&quot;pseudo_dir&quot;</span><span class="p">:</span> <span class="s2">&quot;/home/mgierad/espresso/pseudo&quot;</span><span class="p">,</span>
+ <span class="nt">&quot;pseudopotentials&quot;</span><span class="p">:</span> <span class="s2">&quot;dict(Cu=&#39;Cu.pbe-spn-kjpaw_psl.1.0.0.UPF&#39;,H=&#39;H.pbe-kjpaw_psl.1.0.0.UPF&#39;,O=&#39;O.pbe-n-kjpaw_psl.1.0.0.UPF&#39;,C=&#39;C.pbe-n-kjpaw_psl.1.0.0.UPF&#39;,N=&#39;N.pbe-n-kjpaw_psl.1.0.0.UPF&#39;)&quot;</span><span class="p">,</span>
+ <span class="nt">&quot;executable&quot;</span><span class="p">:</span> <span class="s2">&quot;/home/mgierad/00_codes/build/q-e-qe-6.4.1/build/bin/pw.x&quot;</span><span class="p">,</span>
+ <span class="nt">&quot;node_packing_count&quot;</span><span class="p">:</span> <span class="mi">48</span><span class="p">,</span>
+ <span class="nt">&quot;balsam_exe_settings&quot;</span><span class="p">:</span> <span class="p">{</span>
+     <span class="nt">&quot;num_nodes&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+     <span class="nt">&quot;ranks_per_node&quot;</span><span class="p">:</span> <span class="mi">48</span><span class="p">,</span>
+     <span class="nt">&quot;threads_per_rank&quot;</span><span class="p">:</span> <span class="mi">1</span>
+ <span class="p">},</span>
+ <span class="nt">&quot;calc_keywords&quot;</span><span class="p">:</span> <span class="p">{</span>
+     <span class="nt">&quot;kpts&quot;</span><span class="p">:</span> <span class="p">[</span>
+         <span class="mi">3</span><span class="p">,</span>
+         <span class="mi">3</span><span class="p">,</span>
+         <span class="mi">1</span>
+     <span class="p">],</span>
+     <span class="nt">&quot;occupations&quot;</span><span class="p">:</span> <span class="s2">&quot;smearing&quot;</span><span class="p">,</span>
+     <span class="nt">&quot;smearing&quot;</span><span class="p">:</span> <span class="s2">&quot;marzari-vanderbilt&quot;</span><span class="p">,</span>
+     <span class="nt">&quot;degauss&quot;</span><span class="p">:</span> <span class="mf">0.01</span><span class="p">,</span>
+     <span class="nt">&quot;ecutwfc&quot;</span><span class="p">:</span> <span class="mi">40</span><span class="p">,</span>
+     <span class="nt">&quot;nosym&quot;</span><span class="p">:</span> <span class="kc">true</span><span class="p">,</span>
+     <span class="nt">&quot;conv_thr&quot;</span><span class="p">:</span> <span class="mf">1e-11</span><span class="p">,</span>
+     <span class="nt">&quot;mixing_mode&quot;</span><span class="p">:</span> <span class="s2">&quot;local-TF&quot;</span>
+ <span class="p">},</span>
+ <span class="nt">&quot;yamlfile&quot;</span><span class="p">:</span> <span class="s2">&quot;reactions.yaml&quot;</span><span class="p">,</span>
+ <span class="nt">&quot;scfactor&quot;</span><span class="p">:</span> <span class="mf">1.4</span><span class="p">,</span>
+ <span class="nt">&quot;scfactor_surface&quot;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span>
+ <span class="nt">&quot;scaled1&quot;</span><span class="p">:</span> <span class="kc">false</span><span class="p">,</span>
+ <span class="nt">&quot;scaled2&quot;</span><span class="p">:</span> <span class="kc">false</span><span class="p">}</span>
 </pre></div>
 </div>
 <p>An example input files are also located at <code class="docutils literal notranslate"><span class="pre">./pynta/example_run_files/</span></code>.</p>
 </div>
 </div>
-<div class="section" id="using-only-slurm">
-<h2>Using only SLURM<a class="headerlink" href="#using-only-slurm" title="Permalink to this headline">¶</a></h2>
-<div class="admonition warning">
-<p class="admonition-title">Warning</p>
-<p><code class="docutils literal notranslate"><span class="pre">dev</span></code> branch uses SLURM scheduler to deal with the job dependencies. Be aware that it might be a bit buggy and do not fully support all the features implemented in the <code class="docutils literal notranslate"><span class="pre">master</span></code> branch.</p>
 </div>
-<div class="section" id="an-example-script-using-dev-branch-slurm">
-<h3>An example script (using <code class="docutils literal notranslate"><span class="pre">dev</span></code> branch - SLURM):<a class="headerlink" href="#an-example-script-using-dev-branch-slurm" title="Permalink to this headline">¶</a></h3>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="ch">#!/usr/bin/env python3</span>
-<span class="c1">#SBATCH -J job_name        # name of the job e.g job_name = pynta_workflow</span>
-<span class="c1">#SBATCH --partition=queue  # queue name e.g. queue = day-long-cpu</span>
-<span class="c1">#SBATCH --nodes=x          # number of nodes e.g. x = 2</span>
-<span class="c1">#SBATCH --ntasks=y         # number of CPUs e.g. 2 x 48 = y = 96</span>
-<span class="c1">#SBATCH -e %x.err          # error file name</span>
-<span class="c1">#SBATCH -o %x.out          # out file name</span>
-
-<span class="kn">import</span> <span class="nn">os</span>
-<span class="kn">import</span> <span class="nn">sys</span>
-
-<span class="c1"># get environmental variable</span>
-<span class="n">submitDir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;SLURM_SUBMIT_DIR&#39;</span><span class="p">]</span>
-
-<span class="c1"># change directory to $SLURM_SUBMIT_DIR</span>
-<span class="n">os</span><span class="o">.</span><span class="n">chdir</span><span class="p">(</span><span class="n">submitDir</span><span class="p">)</span>
-
-<span class="c1"># add current working directory to the path</span>
-<span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">())</span>
-
-<span class="c1"># import input file with - can be done only after sys.path.append(os.getcwd())</span>
-<span class="kn">import</span> <span class="nn">inputR2S</span>
-
-<span class="c1"># import executable class of pynta</span>
-<span class="kn">from</span> <span class="nn">pynta.main</span> <span class="kn">import</span> <span class="n">WorkFlow</span>
-
-<span class="c1"># instantiate the WorkFlow class</span>
-<span class="n">workflow</span> <span class="o">=</span> <span class="n">WorkFlow</span><span class="p">()</span>
-
-<span class="c1"># generate input files</span>
-<span class="n">workflow</span><span class="o">.</span><span class="n">gen_job_files</span><span class="p">()</span>
-
-<span class="c1"># execute the work-flow</span>
-<span class="n">workflow</span><span class="o">.</span><span class="n">execute</span><span class="p">()</span>
-</pre></div>
-</div>
-</div>
-</div>
+<div class="section" id="keyword-parameters">
+<h1>Keyword parameters<a class="headerlink" href="#keyword-parameters" title="Permalink to this headline">¶</a></h1>
+<table class="colwidths-given docutils align-default">
+<colgroup>
+<col style="width: 31%" />
+<col style="width: 6%" />
+<col style="width: 31%" />
+<col style="width: 31%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Parameter</p></th>
+<th class="head"><p>Description</p></th>
+<th class="head"><p>Type</p></th>
+<th class="head"><p>Avaiable options/examples</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><cite>quantum_chemistry</cite></p></td>
+<td><p>specify which quantum chemistry calculator to use</p></td>
+<td><p>str</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">'espresso'</span></code> , <code class="docutils literal notranslate"><span class="pre">'nwchem'</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><cite>yamlfile</cite></p></td>
+<td><p>a name of the  yml file with reactions</p></td>
+<td><p>str</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">reactions.yaml</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><cite>optimize_slab</cite></p></td>
+<td><p>do you want to run surface optimization</p></td>
+<td><p>bool</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">True</span></code>, <code class="docutils literal notranslate"><span class="pre">False</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><cite>surface_types_and_repeats</cite></p></td>
+<td><p>specify facet orientation, repeats of the slab+ads and repeats of the slab_opt unit cell</p></td>
+<td><p>Dict[str:List[Tuple[int]]]</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">{'fcc111':</span> <span class="pre">[(3,</span> <span class="pre">3,</span> <span class="pre">1),</span> <span class="pre">(1,</span> <span class="pre">1,</span> <span class="pre">4)]}</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><cite>metal_atom</cite></p></td>
+<td><p>surface atoms</p></td>
+<td><p>str</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">'Cu'</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><cite>a</cite></p></td>
+<td><p>lattice constant</p></td>
+<td><p>float</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">3.6</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><cite>vacuum</cite></p></td>
+<td><p>vacuum in the z direction (Angstrem)</p></td>
+<td><p>float</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">8.0</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><cite>pseudo_dir</cite></p></td>
+<td><p>for Quantum Espresso only - path to pseudopotetions directory</p></td>
+<td><p>str</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">'/home/user/espresso/pseudo'</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><cite>pseudopotentials</cite></p></td>
+<td><p>for Quantum Espresso only - which pseudopotentials to use (str preferable)</p></td>
+<td><p>str -&gt; Dict[str, str]</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">&quot;dict(Cu='Cu.pbe-spn-kjpaw_psl.1.0.0.UPF',</span> <span class="pre">H='H.pbe-kjpaw_psl.1.0.0.UPF')&quot;</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><cite>executable</cite></p></td>
+<td><p>a path to executable of quantum chemistry package</p></td>
+<td><p>str</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">'/home/user/build/qe/bin/pw.x'</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><cite>node_packing_count</cite></p></td>
+<td><p>number of cores per node - balsam specific keyword</p></td>
+<td><p>int</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">48</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><cite>balsam_exe_settings</cite></p></td>
+<td><p>how to use avaiable computational resources</p></td>
+<td><p>Dict[str, any]</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">balsam_exe_settings</span> <span class="pre">=</span> <span class="pre">{'num_nodes':</span> <span class="pre">1,</span> <span class="pre">'ranks_per_node':</span> <span class="pre">node_packing_count,</span> <span class="pre">'threads_per_rank':</span> <span class="pre">1</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><cite>calc_keywords</cite></p></td>
+<td><p>quantum chemistry packages options - see manual of your chosen package to put a correct keywords here</p></td>
+<td><p>Dict[str, any]</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">{'kpts':</span> <span class="pre">(3,</span> <span class="pre">3,</span> <span class="pre">1),</span> <span class="pre">'occupations':</span> <span class="pre">'smearing',</span> <span class="pre">'smearing':</span> <span class="pre">'marzari-vanderbilt',</span> <span class="pre">'degauss':</span> <span class="pre">0.01,</span> <span class="pre">'ecutwfc':</span> <span class="pre">40,</span> <span class="pre">'nosym':</span> <span class="pre">True,</span> <span class="pre">'conv_thr':</span> <span class="pre">1e-11,</span> <span class="pre">'mixing_mode':</span> <span class="pre">'local-TF'}</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><cite>scfactor</cite></p></td>
+<td><p>specify a scaling factor to scale the bond distance between two atoms taking part in the reaction</p></td>
+<td><p>float</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">1.4</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><cite>scfactor_surface</cite></p></td>
+<td><p>specify the scaling factor to scale the target distance i.e. the average bond distance between adsorbate and the nearest surface metal atom</p></td>
+<td><p>float</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">1.0</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><cite>scaled1</cite></p></td>
+<td><p>apply the <cite>scfactor_surface</cite> to the species 1?</p></td>
+<td><p>bool</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">True</span></code> or <code class="docutils literal notranslate"><span class="pre">False</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><cite>scaled2</cite></p></td>
+<td><p>apply the <cite>scfactor_surface</cite> to the species 2?</p></td>
+<td><p>bool</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">True</span></code> or <code class="docutils literal notranslate"><span class="pre">False</span></code></p></td>
+</tr>
+</tbody>
+</table>
 </div>
 <hr class="docutils" />
 <div class="section" id="modules">
@@ -772,7 +802,7 @@ Atoms with tags ‘1’ are considered as the possible binding spots</p></li>
 
 <dl class="py method">
 <dt id="pynta.adsorbates.Adsorbates.get_grslab">
-<code class="sig-name descname">get_grslab</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; <a class="reference internal" href="#pynta.excatkit.gratoms.Gratoms" title="pynta.excatkit.gratoms.Gratoms">pynta.excatkit.gratoms.Gratoms</a><a class="reference internal" href="_modules/pynta/adsorbates.html#Adsorbates.get_grslab"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.adsorbates.Adsorbates.get_grslab" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">get_grslab</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; <a class="reference internal" href="source/pynta.html#pynta.excatkit.gratoms.Gratoms" title="pynta.excatkit.gratoms.Gratoms">pynta.excatkit.gratoms.Gratoms</a><a class="reference internal" href="_modules/pynta/adsorbates.html#Adsorbates.get_grslab"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.adsorbates.Adsorbates.get_grslab" title="Permalink to this definition">¶</a></dt>
 <dd><p>Convert surface slab Atoms object into Gratoms object</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns</dt>
@@ -780,7 +810,7 @@ Atoms with tags ‘1’ are considered as the possible binding spots</p></li>
 adsorbates</p>
 </dd>
 <dt class="field-even">Return type</dt>
-<dd class="field-even"><p><a class="reference internal" href="#pynta.excatkit.gratoms.Gratoms" title="pynta.excatkit.gratoms.Gratoms">Gratoms</a></p>
+<dd class="field-even"><p><a class="reference internal" href="source/pynta.html#pynta.excatkit.gratoms.Gratoms" title="pynta.excatkit.gratoms.Gratoms">Gratoms</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -985,7 +1015,7 @@ adsorbates</p>
 <dl class="py class">
 <dt id="pynta.balsamcalc.BalsamSocketIOCalculator">
 <em class="property">class </em><code class="sig-prename descclassname">pynta.balsamcalc.</code><code class="sig-name descname">BalsamSocketIOCalculator</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">workflow</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">label</span><span class="p">:</span> <span class="n">str</span> <span class="o">=</span> <span class="default_value">'balsam'</span></em>, <em class="sig-param"><span class="n">atoms</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>ase.atoms.Atoms<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">job_args</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>str<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">job_kwargs</span><span class="p">:</span> <span class="n">Dict<span class="p">[</span>str<span class="p">, </span>Any<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">{}</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pynta/balsamcalc.html#BalsamSocketIOCalculator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.balsamcalc.BalsamSocketIOCalculator" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#pynta.balsamcalc.BalsamCalculator" title="pynta.balsamcalc.BalsamCalculator"><code class="xref py py-class docutils literal notranslate"><span class="pre">pynta.balsamcalc.BalsamCalculator</span></code></a>, <code class="xref py py-class docutils literal notranslate"><span class="pre">ase.calculators.socketio.SocketIOCalculator</span></code></p>
+<dd><p>Bases: <a class="reference internal" href="source/pynta.html#pynta.balsamcalc.BalsamCalculator" title="pynta.balsamcalc.BalsamCalculator"><code class="xref py py-class docutils literal notranslate"><span class="pre">pynta.balsamcalc.BalsamCalculator</span></code></a>, <code class="xref py py-class docutils literal notranslate"><span class="pre">ase.calculators.socketio.SocketIOCalculator</span></code></p>
 <dl class="py method">
 <dt id="pynta.balsamcalc.BalsamSocketIOCalculator.__init__">
 <code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">workflow</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">label</span><span class="p">:</span> <span class="n">str</span> <span class="o">=</span> <span class="default_value">'balsam'</span></em>, <em class="sig-param"><span class="n">atoms</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>ase.atoms.Atoms<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">job_args</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>str<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">job_kwargs</span><span class="p">:</span> <span class="n">Dict<span class="p">[</span>str<span class="p">, </span>Any<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">{}</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span></em><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="_modules/pynta/balsamcalc.html#BalsamSocketIOCalculator.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.balsamcalc.BalsamSocketIOCalculator.__init__" title="Permalink to this definition">¶</a></dt>
@@ -1044,7 +1074,7 @@ adsorbates</p>
 <dl class="py class">
 <dt id="pynta.balsamcalc.EspressoBalsam">
 <em class="property">class </em><code class="sig-prename descclassname">pynta.balsamcalc.</code><code class="sig-name descname">EspressoBalsam</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">workflow</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">label</span><span class="p">:</span> <span class="n">str</span> <span class="o">=</span> <span class="default_value">'balsam'</span></em>, <em class="sig-param"><span class="n">atoms</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>ase.atoms.Atoms<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">job_args</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>str<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">job_kwargs</span><span class="p">:</span> <span class="n">Dict<span class="p">[</span>str<span class="p">, </span>Any<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">{}</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pynta/balsamcalc.html#EspressoBalsam"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.balsamcalc.EspressoBalsam" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#pynta.balsamcalc.BalsamCalculator" title="pynta.balsamcalc.BalsamCalculator"><code class="xref py py-class docutils literal notranslate"><span class="pre">pynta.balsamcalc.BalsamCalculator</span></code></a></p>
+<dd><p>Bases: <a class="reference internal" href="source/pynta.html#pynta.balsamcalc.BalsamCalculator" title="pynta.balsamcalc.BalsamCalculator"><code class="xref py py-class docutils literal notranslate"><span class="pre">pynta.balsamcalc.BalsamCalculator</span></code></a></p>
 <dl class="py attribute">
 <dt id="pynta.balsamcalc.EspressoBalsam.args">
 <code class="sig-name descname">args</code><em class="property"> = '-in PREFIX.pwi'</em><a class="headerlink" href="#pynta.balsamcalc.EspressoBalsam.args" title="Permalink to this definition">¶</a></dt>
@@ -1090,7 +1120,7 @@ adsorbates</p>
 <dl class="py class">
 <dt id="pynta.balsamcalc.EspressoBalsamSocketIO">
 <em class="property">class </em><code class="sig-prename descclassname">pynta.balsamcalc.</code><code class="sig-name descname">EspressoBalsamSocketIO</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">workflow</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">label</span><span class="p">:</span> <span class="n">str</span> <span class="o">=</span> <span class="default_value">'balsam'</span></em>, <em class="sig-param"><span class="n">atoms</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>ase.atoms.Atoms<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">job_args</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>str<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">job_kwargs</span><span class="p">:</span> <span class="n">Dict<span class="p">[</span>str<span class="p">, </span>Any<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">{}</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pynta/balsamcalc.html#EspressoBalsamSocketIO"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.balsamcalc.EspressoBalsamSocketIO" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#pynta.balsamcalc.BalsamSocketIOCalculator" title="pynta.balsamcalc.BalsamSocketIOCalculator"><code class="xref py py-class docutils literal notranslate"><span class="pre">pynta.balsamcalc.BalsamSocketIOCalculator</span></code></a></p>
+<dd><p>Bases: <a class="reference internal" href="source/pynta.html#pynta.balsamcalc.BalsamSocketIOCalculator" title="pynta.balsamcalc.BalsamSocketIOCalculator"><code class="xref py py-class docutils literal notranslate"><span class="pre">pynta.balsamcalc.BalsamSocketIOCalculator</span></code></a></p>
 <dl class="py attribute">
 <dt id="pynta.balsamcalc.EspressoBalsamSocketIO.args">
 <code class="sig-name descname">args</code><em class="property"> = '--ipi HOSTNAME:PORT -in PREFIX.pwi'</em><a class="headerlink" href="#pynta.balsamcalc.EspressoBalsamSocketIO.args" title="Permalink to this definition">¶</a></dt>
@@ -1145,7 +1175,7 @@ adsorbates</p>
 <dl class="py class">
 <dt id="pynta.balsamcalc.NWChemBalsam">
 <em class="property">class </em><code class="sig-prename descclassname">pynta.balsamcalc.</code><code class="sig-name descname">NWChemBalsam</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">workflow</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">label</span><span class="p">:</span> <span class="n">str</span> <span class="o">=</span> <span class="default_value">'balsam'</span></em>, <em class="sig-param"><span class="n">atoms</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>ase.atoms.Atoms<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">job_args</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>str<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">job_kwargs</span><span class="p">:</span> <span class="n">Dict<span class="p">[</span>str<span class="p">, </span>Any<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">{}</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pynta/balsamcalc.html#NWChemBalsam"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.balsamcalc.NWChemBalsam" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#pynta.balsamcalc.BalsamCalculator" title="pynta.balsamcalc.BalsamCalculator"><code class="xref py py-class docutils literal notranslate"><span class="pre">pynta.balsamcalc.BalsamCalculator</span></code></a></p>
+<dd><p>Bases: <a class="reference internal" href="source/pynta.html#pynta.balsamcalc.BalsamCalculator" title="pynta.balsamcalc.BalsamCalculator"><code class="xref py py-class docutils literal notranslate"><span class="pre">pynta.balsamcalc.BalsamCalculator</span></code></a></p>
 <dl class="py attribute">
 <dt id="pynta.balsamcalc.NWChemBalsam.exe">
 <code class="sig-name descname">exe</code><em class="property"> = 'nwchem'</em><a class="headerlink" href="#pynta.balsamcalc.NWChemBalsam.exe" title="Permalink to this definition">¶</a></dt>
@@ -1181,7 +1211,7 @@ adsorbates</p>
 <dl class="py class">
 <dt id="pynta.balsamcalc.NWChemBalsamSocketIO">
 <em class="property">class </em><code class="sig-prename descclassname">pynta.balsamcalc.</code><code class="sig-name descname">NWChemBalsamSocketIO</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">workflow</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">label</span><span class="p">:</span> <span class="n">str</span> <span class="o">=</span> <span class="default_value">'balsam'</span></em>, <em class="sig-param"><span class="n">atoms</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>ase.atoms.Atoms<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">job_args</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>str<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">job_kwargs</span><span class="p">:</span> <span class="n">Dict<span class="p">[</span>str<span class="p">, </span>Any<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">{}</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pynta/balsamcalc.html#NWChemBalsamSocketIO"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.balsamcalc.NWChemBalsamSocketIO" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#pynta.balsamcalc.BalsamSocketIOCalculator" title="pynta.balsamcalc.BalsamSocketIOCalculator"><code class="xref py py-class docutils literal notranslate"><span class="pre">pynta.balsamcalc.BalsamSocketIOCalculator</span></code></a></p>
+<dd><p>Bases: <a class="reference internal" href="source/pynta.html#pynta.balsamcalc.BalsamSocketIOCalculator" title="pynta.balsamcalc.BalsamSocketIOCalculator"><code class="xref py py-class docutils literal notranslate"><span class="pre">pynta.balsamcalc.BalsamSocketIOCalculator</span></code></a></p>
 <dl class="py attribute">
 <dt id="pynta.balsamcalc.NWChemBalsamSocketIO.args">
 <code class="sig-name descname">args</code><em class="property"> = 'PREFIX.nwi &gt; PREFIX.out'</em><a class="headerlink" href="#pynta.balsamcalc.NWChemBalsamSocketIO.args" title="Permalink to this definition">¶</a></dt>
@@ -1230,12 +1260,12 @@ adsorbates</p>
 <span id="pynta-check-input-module"></span><h2>pynta.check_input module<a class="headerlink" href="#module-pynta.check_input" title="Permalink to this headline">¶</a></h2>
 <dl class="py class">
 <dt id="pynta.check_input.InputChecker">
-<em class="property">class </em><code class="sig-prename descclassname">pynta.check_input.</code><code class="sig-name descname">InputChecker</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">yamlfile</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">inputR2S</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">run_me_py</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">run_me_sh</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">working_dir</span><span class="p">:</span> <span class="n">str</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pynta/check_input.html#InputChecker"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.check_input.InputChecker" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">pynta.check_input.</code><code class="sig-name descname">InputChecker</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">yamlfile</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">input_json</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">run_me_py</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">run_me_sh</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">working_dir</span><span class="p">:</span> <span class="n">str</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pynta/check_input.html#InputChecker"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.check_input.InputChecker" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>A class to check for input files</p>
 <dl class="py method">
 <dt id="pynta.check_input.InputChecker.__init__">
-<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">yamlfile</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">inputR2S</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">run_me_py</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">run_me_sh</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">working_dir</span><span class="p">:</span> <span class="n">str</span></em><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="_modules/pynta/check_input.html#InputChecker.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.check_input.InputChecker.__init__" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">yamlfile</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">input_json</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">run_me_py</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">run_me_sh</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">working_dir</span><span class="p">:</span> <span class="n">str</span></em><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="_modules/pynta/check_input.html#InputChecker.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.check_input.InputChecker.__init__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Initialize</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -1244,7 +1274,7 @@ adsorbates</p>
 <li><p><strong>slab</strong> (<em>str</em>) – a <code class="docutils literal notranslate"><span class="pre">*.xyz</span></code> file name with the optimized slab
 e.g.
 <code class="docutils literal notranslate"><span class="pre">'Cu_100_slab_opt.xyz'</span></code></p></li>
-<li><p><strong>inputR2S</strong> (<em>python file</em>) – an input file with paramters to the workflow</p></li>
+<li><p><strong>input_json</strong> (<em>json file</em>) – an input file with paramters to the workflow</p></li>
 <li><p><strong>run_me</strong> (<em>str</em>) – the workflow execution script
 e.g.
 <code class="docutils literal notranslate"><span class="pre">'run_me.py'</span></code></p></li>
@@ -1261,9 +1291,9 @@ e.g.
 </dd></dl>
 
 <dl class="py method">
-<dt id="pynta.check_input.InputChecker.check_inputR2S">
-<code class="sig-name descname">check_inputR2S</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; bool<a class="reference internal" href="_modules/pynta/check_input.html#InputChecker.check_inputR2S"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.check_input.InputChecker.check_inputR2S" title="Permalink to this definition">¶</a></dt>
-<dd><p>Check for inputR2S file</p>
+<dt id="pynta.check_input.InputChecker.check_input_json">
+<code class="sig-name descname">check_input_json</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; bool<a class="reference internal" href="_modules/pynta/check_input.html#InputChecker.check_input_json"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.check_input.InputChecker.check_input_json" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check for input_json file</p>
 </dd></dl>
 
 <dl class="py method">
@@ -1279,12 +1309,6 @@ e.g.
 </dd></dl>
 
 <dl class="py method">
-<dt id="pynta.check_input.InputChecker.check_slab">
-<code class="sig-name descname">check_slab</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; bool<a class="reference internal" href="_modules/pynta/check_input.html#InputChecker.check_slab"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.check_input.InputChecker.check_slab" title="Permalink to this definition">¶</a></dt>
-<dd><p>Check for slab <code class="docutils literal notranslate"><span class="pre">*.xyz</span></code> file with slab geometry</p>
-</dd></dl>
-
-<dl class="py method">
 <dt id="pynta.check_input.InputChecker.check_yaml">
 <code class="sig-name descname">check_yaml</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; bool<a class="reference internal" href="_modules/pynta/check_input.html#InputChecker.check_yaml"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.check_input.InputChecker.check_yaml" title="Permalink to this definition">¶</a></dt>
 <dd><p>Check for <code class="docutils literal notranslate"><span class="pre">*.yaml</span></code> file with list of reactions</p>
@@ -1293,7 +1317,7 @@ e.g.
 <dl class="py method">
 <dt id="pynta.check_input.InputChecker.is_input_file">
 <code class="sig-name descname">is_input_file</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; bool<a class="reference internal" href="_modules/pynta/check_input.html#InputChecker.is_input_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.check_input.InputChecker.is_input_file" title="Permalink to this definition">¶</a></dt>
-<dd><p>Check if there are input files in the working directory</p>
+<dd><p>Check for input files in the working directory</p>
 </dd></dl>
 
 </dd></dl>
@@ -1444,7 +1468,7 @@ periodic boundary conditions.</p>
 <dl class="py class">
 <dt id="pynta.excatkit.adsorption.Builder">
 <em class="property">class </em><code class="sig-prename descclassname">pynta.excatkit.adsorption.</code><code class="sig-name descname">Builder</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">slab</span></em>, <em class="sig-param"><span class="n">surface_atoms</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">tol</span><span class="o">=</span><span class="default_value">1e-05</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pynta/excatkit/adsorption.html#Builder"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.excatkit.adsorption.Builder" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#pynta.excatkit.adsorption.AdsorptionSites" title="pynta.excatkit.adsorption.AdsorptionSites"><code class="xref py py-class docutils literal notranslate"><span class="pre">pynta.excatkit.adsorption.AdsorptionSites</span></code></a></p>
+<dd><p>Bases: <a class="reference internal" href="source/pynta.html#pynta.excatkit.adsorption.AdsorptionSites" title="pynta.excatkit.adsorption.AdsorptionSites"><code class="xref py py-class docutils literal notranslate"><span class="pre">pynta.excatkit.adsorption.AdsorptionSites</span></code></a></p>
 <p>Initial module for creation of 3D slab structures with
 attached adsorbates.</p>
 <dl class="py method">
@@ -2108,7 +2132,7 @@ e.g.</p>
 
 <dl class="py method">
 <dt id="pynta.io.IO.get_TS_guess_image">
-<em class="property">static </em><code class="sig-name descname">get_TS_guess_image</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">rxn</span><span class="p">:</span> <span class="n">Dict<span class="p">[</span>str<span class="p">, </span>str<span class="p">]</span></span></em>, <em class="sig-param"><span class="n">easier_to_build</span><span class="p">:</span> <span class="n">str</span></em><span class="sig-paren">)</span> &#x2192; <a class="reference internal" href="#pynta.excatkit.gratoms.Gratoms" title="pynta.excatkit.gratoms.Gratoms">pynta.excatkit.gratoms.Gratoms</a><a class="reference internal" href="_modules/pynta/io.html#IO.get_TS_guess_image"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.io.IO.get_TS_guess_image" title="Permalink to this definition">¶</a></dt>
+<em class="property">static </em><code class="sig-name descname">get_TS_guess_image</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">rxn</span><span class="p">:</span> <span class="n">Dict<span class="p">[</span>str<span class="p">, </span>str<span class="p">]</span></span></em>, <em class="sig-param"><span class="n">easier_to_build</span><span class="p">:</span> <span class="n">str</span></em><span class="sig-paren">)</span> &#x2192; <a class="reference internal" href="source/pynta.html#pynta.excatkit.gratoms.Gratoms" title="pynta.excatkit.gratoms.Gratoms">pynta.excatkit.gratoms.Gratoms</a><a class="reference internal" href="_modules/pynta/io.html#IO.get_TS_guess_image"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.io.IO.get_TS_guess_image" title="Permalink to this definition">¶</a></dt>
 <dd><p>Convert RMGCat representation of species to Gratom object
 - the case of TS_guess</p>
 <div class="admonition-todo admonition" id="id7">
@@ -2129,7 +2153,7 @@ view as a splitted many reaction .yaml file to a single reaction
 <code class="xref py py-meth docutils literal notranslate"><span class="pre">pynta.general_ts_guesses.decide()</span></code></p>
 </dd>
 <dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p><a class="reference internal" href="#pynta.excatkit.gratoms.Gratoms" title="pynta.excatkit.gratoms.Gratoms">Gratoms</a></p>
+<dd class="field-odd"><p><a class="reference internal" href="source/pynta.html#pynta.excatkit.gratoms.Gratoms" title="pynta.excatkit.gratoms.Gratoms">Gratoms</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -2162,7 +2186,7 @@ as they appear in the <code class="docutils literal notranslate"><span class="pr
 
 <dl class="py method">
 <dt id="pynta.io.IO.get_all_unique_images_with_bonds">
-<em class="property">static </em><code class="sig-name descname">get_all_unique_images_with_bonds</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">yamlfile</span><span class="p">:</span> <span class="n">str</span></em><span class="sig-paren">)</span> &#x2192; Dict<span class="p">[</span>int<span class="p">, </span>Dict<span class="p">[</span>int<span class="p">, </span><a class="reference internal" href="#pynta.excatkit.gratoms.Gratoms" title="pynta.excatkit.gratoms.Gratoms">pynta.excatkit.gratoms.Gratoms</a><span class="p">]</span><span class="p">]</span><a class="reference internal" href="_modules/pynta/io.html#IO.get_all_unique_images_with_bonds"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.io.IO.get_all_unique_images_with_bonds" title="Permalink to this definition">¶</a></dt>
+<em class="property">static </em><code class="sig-name descname">get_all_unique_images_with_bonds</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">yamlfile</span><span class="p">:</span> <span class="n">str</span></em><span class="sig-paren">)</span> &#x2192; Dict<span class="p">[</span>int<span class="p">, </span>Dict<span class="p">[</span>int<span class="p">, </span><a class="reference internal" href="source/pynta.html#pynta.excatkit.gratoms.Gratoms" title="pynta.excatkit.gratoms.Gratoms">pynta.excatkit.gratoms.Gratoms</a><span class="p">]</span><span class="p">]</span><a class="reference internal" href="_modules/pynta/io.html#IO.get_all_unique_images_with_bonds"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.io.IO.get_all_unique_images_with_bonds" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return a list with all unique images (Gratoms) for all reactions</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -2173,7 +2197,7 @@ as they appear in the <code class="docutils literal notranslate"><span class="pr
 which atoms connects Gratoms object to the surface</p>
 </dd>
 <dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>Dict[int, Dict[int, <a class="reference internal" href="#pynta.excatkit.gratoms.Gratoms" title="pynta.excatkit.gratoms.Gratoms">Gratoms</a>]] a Dict with all</p>
+<dd class="field-odd"><p>Dict[int, Dict[int, <a class="reference internal" href="source/pynta.html#pynta.excatkit.gratoms.Gratoms" title="pynta.excatkit.gratoms.Gratoms">Gratoms</a>]] a Dict with all</p>
 </dd>
 </dl>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">all_images_with_bonds</span> <span class="o">=</span>
@@ -2209,13 +2233,13 @@ which atoms connects Gratoms object to the surface</p>
 
 <dl class="py method">
 <dt id="pynta.io.IO.get_bonded_dict">
-<em class="property">static </em><code class="sig-name descname">get_bonded_dict</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">reactants</span><span class="p">:</span> <span class="n">List<span class="p">[</span><a class="reference internal" href="#pynta.excatkit.gratoms.Gratoms" title="pynta.excatkit.gratoms.Gratoms">pynta.excatkit.gratoms.Gratoms</a><span class="p">]</span></span></em>, <em class="sig-param"><span class="n">reactant_bonded_idx</span><span class="p">:</span> <span class="n">List<span class="p">[</span>int<span class="p">]</span></span></em><span class="sig-paren">)</span> &#x2192; Dict<span class="p">[</span>str<span class="p">, </span>int<span class="p">]</span><a class="reference internal" href="_modules/pynta/io.html#IO.get_bonded_dict"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.io.IO.get_bonded_dict" title="Permalink to this definition">¶</a></dt>
+<em class="property">static </em><code class="sig-name descname">get_bonded_dict</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">reactants</span><span class="p">:</span> <span class="n">List<span class="p">[</span><a class="reference internal" href="source/pynta.html#pynta.excatkit.gratoms.Gratoms" title="pynta.excatkit.gratoms.Gratoms">pynta.excatkit.gratoms.Gratoms</a><span class="p">]</span></span></em>, <em class="sig-param"><span class="n">reactant_bonded_idx</span><span class="p">:</span> <span class="n">List<span class="p">[</span>int<span class="p">]</span></span></em><span class="sig-paren">)</span> &#x2192; Dict<span class="p">[</span>str<span class="p">, </span>int<span class="p">]</span><a class="reference internal" href="_modules/pynta/io.html#IO.get_bonded_dict"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.io.IO.get_bonded_dict" title="Permalink to this definition">¶</a></dt>
 <dd><p>Create a dict with bonding information for a specifc reaction and
 specific type of reagents (reactants or products)</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>reactants</strong> (<em>List</em><em>[</em><a class="reference internal" href="#pynta.excatkit.gratoms.Gratoms" title="pynta.excatkit.gratoms.Gratoms"><em>Gratoms</em></a><em>]</em>) – a list gratoms objects</p></li>
+<li><p><strong>reactants</strong> (<em>List</em><em>[</em><a class="reference internal" href="source/pynta.html#pynta.excatkit.gratoms.Gratoms" title="pynta.excatkit.gratoms.Gratoms"><em>Gratoms</em></a><em>]</em>) – a list gratoms objects</p></li>
 <li><p><strong>reactant_bonded_idx</strong> (<em>List</em><em>[</em><em>int</em><em>]</em>) – a list with indicies of atoms that are connected to the surface</p></li>
 </ul>
 </dd>
@@ -2310,7 +2334,7 @@ e.g.</p>
 
 <dl class="py method">
 <dt id="pynta.io.IO.get_images">
-<em class="property">static </em><code class="sig-name descname">get_images</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">rxn</span><span class="p">:</span> <span class="n">Dict<span class="p">[</span>str<span class="p">, </span>str<span class="p">]</span></span></em><span class="sig-paren">)</span> &#x2192; Dict<span class="p">[</span>str<span class="p">, </span><a class="reference internal" href="#pynta.excatkit.gratoms.Gratoms" title="pynta.excatkit.gratoms.Gratoms">pynta.excatkit.gratoms.Gratoms</a><span class="p">]</span><a class="reference internal" href="_modules/pynta/io.html#IO.get_images"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.io.IO.get_images" title="Permalink to this definition">¶</a></dt>
+<em class="property">static </em><code class="sig-name descname">get_images</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">rxn</span><span class="p">:</span> <span class="n">Dict<span class="p">[</span>str<span class="p">, </span>str<span class="p">]</span></span></em><span class="sig-paren">)</span> &#x2192; Dict<span class="p">[</span>str<span class="p">, </span><a class="reference internal" href="source/pynta.html#pynta.excatkit.gratoms.Gratoms" title="pynta.excatkit.gratoms.Gratoms">pynta.excatkit.gratoms.Gratoms</a><span class="p">]</span><a class="reference internal" href="_modules/pynta/io.html#IO.get_images"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.io.IO.get_images" title="Permalink to this definition">¶</a></dt>
 <dd><p>Convert RMGCat representation of species for a given rxn
 to a dict of Gratoms objects - both reactants and products combined.</p>
 <div class="admonition note">
@@ -2328,7 +2352,7 @@ single reaction <code class="docutils literal notranslate"><span class="pre">*.y
 taking part in reaction rxn</p>
 </dd>
 <dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>List[<a class="reference internal" href="#pynta.excatkit.gratoms.Gratoms" title="pynta.excatkit.gratoms.Gratoms">Gratoms</a>]</p>
+<dd class="field-odd"><p>List[<a class="reference internal" href="source/pynta.html#pynta.excatkit.gratoms.Gratoms" title="pynta.excatkit.gratoms.Gratoms">Gratoms</a>]</p>
 </dd>
 </dl>
 </dd></dl>
@@ -2622,7 +2646,7 @@ e.g. <code class="docutils literal notranslate"><span class="pre">'H'</span></co
 
 <dl class="py method">
 <dt id="pynta.io.IO.rmgcat_to_gratoms">
-<em class="property">static </em><code class="sig-name descname">rmgcat_to_gratoms</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">adjtxt</span><span class="p">:</span> <span class="n">List<span class="p">[</span>str<span class="p">]</span></span></em><span class="sig-paren">)</span> &#x2192; List<span class="p">[</span><a class="reference internal" href="#pynta.excatkit.gratoms.Gratoms" title="pynta.excatkit.gratoms.Gratoms">pynta.excatkit.gratoms.Gratoms</a><span class="p">]</span><a class="reference internal" href="_modules/pynta/io.html#IO.rmgcat_to_gratoms"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.io.IO.rmgcat_to_gratoms" title="Permalink to this definition">¶</a></dt>
+<em class="property">static </em><code class="sig-name descname">rmgcat_to_gratoms</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">adjtxt</span><span class="p">:</span> <span class="n">List<span class="p">[</span>str<span class="p">]</span></span></em><span class="sig-paren">)</span> &#x2192; List<span class="p">[</span><a class="reference internal" href="source/pynta.html#pynta.excatkit.gratoms.Gratoms" title="pynta.excatkit.gratoms.Gratoms">pynta.excatkit.gratoms.Gratoms</a><span class="p">]</span><a class="reference internal" href="_modules/pynta/io.html#IO.rmgcat_to_gratoms"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.io.IO.rmgcat_to_gratoms" title="Permalink to this definition">¶</a></dt>
 <dd><p>Convert a slice of <code class="docutils literal notranslate"><span class="pre">*.yaml</span></code> file to Catkit’s Gratoms object</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -2660,7 +2684,7 @@ as from the .yaml file</p>
 <dd class="field-even"><p><strong>gratoms_list</strong> – a list with all Gratoms objects for a give rxn</p>
 </dd>
 <dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>List[<a class="reference internal" href="#pynta.excatkit.gratoms.Gratoms" title="pynta.excatkit.gratoms.Gratoms">Gratoms</a>]</p>
+<dd class="field-odd"><p>List[<a class="reference internal" href="source/pynta.html#pynta.excatkit.gratoms.Gratoms" title="pynta.excatkit.gratoms.Gratoms">Gratoms</a>]</p>
 </dd>
 </dl>
 </dd></dl>
@@ -2688,941 +2712,8 @@ quantum chemistry code</p>
 </dd></dl>
 
 </div>
-<div class="section" id="module-pynta.main">
-<span id="pynta-main-module"></span><h2>pynta.main module<a class="headerlink" href="#module-pynta.main" title="Permalink to this headline">¶</a></h2>
-<dl class="py class">
-<dt id="pynta.main.WorkFlow">
-<em class="property">class </em><code class="sig-prename descclassname">pynta.main.</code><code class="sig-name descname">WorkFlow</code><a class="reference internal" href="_modules/pynta/main.html#WorkFlow"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.main.WorkFlow" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
-<dl class="py method">
-<dt id="pynta.main.WorkFlow.__init__">
-<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pynta/main.html#WorkFlow.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.main.WorkFlow.__init__" title="Permalink to this definition">¶</a></dt>
-<dd><p>Setup the balsam application.</p>
-<p>Once Quantum Chemistry calculations starts there will be one app for
-desired QE (e.g. <cite>Quantum Espresso</cite>) package and one for <code class="docutils literal notranslate"><span class="pre">xTB</span></code>.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt id="pynta.main.WorkFlow.check_all_species">
-<em class="property">static </em><code class="sig-name descname">check_all_species</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">yamlfile</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">facetpath</span><span class="p">:</span> <span class="n">str</span></em><span class="sig-paren">)</span> &#x2192; Dict<span class="p">[</span>str<span class="p">, </span>bool<span class="p">]</span><a class="reference internal" href="_modules/pynta/main.html#WorkFlow.check_all_species"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.main.WorkFlow.check_all_species" title="Permalink to this definition">¶</a></dt>
-<dd><p>Check all species(all reactions) to find whether there are
-previous calculation the code can use</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>yamlfile</strong> (<em>str</em>) – a name of the <code class="docutils literal notranslate"><span class="pre">*.yaml</span></code> file with a reaction list</p></li>
-<li><p><strong>facetpath</strong> (<em>str</em>) – <p>a path to the workflow’s main dir</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">facetpath</span> <span class="o">=</span> <span class="s1">&#39;Cu_111&#39;</span>
-</pre></div>
-</div>
-</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p><strong>checked_species</strong> – a dictionary with True/False values for every species(keys)
-True if there are previous calculation, otherwise False
-e.g. {‘C’: True, ‘H’: True, ‘O’: False, ‘OH’: True, ‘CH’: True}</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>dict(str: bool)</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt id="pynta.main.WorkFlow.check_if_slab_opt_exists">
-<em class="property">static </em><code class="sig-name descname">check_if_slab_opt_exists</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">facetpath</span><span class="p">:</span> <span class="n">str</span></em><span class="sig-paren">)</span> &#x2192; Tuple<span class="p">[</span>bool<span class="p">, </span>Optional<span class="p">[</span>str<span class="p">]</span><span class="p">]</span><a class="reference internal" href="_modules/pynta/main.html#WorkFlow.check_if_slab_opt_exists"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.main.WorkFlow.check_if_slab_opt_exists" title="Permalink to this definition">¶</a></dt>
-<dd><p>Check whether slab has been already optimized</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>facetpath</strong> (<em>str</em>) – <p>a path to the workflow’s main dir</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">facetpath</span> <span class="o">=</span> <span class="s1">&#39;Cu_111&#39;</span>
-</pre></div>
-</div>
-</p>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p><p><code class="docutils literal notranslate"><span class="pre">True</span></code> if there are previous calculations</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="n">path_to_prev_calc</span><span class="p">)</span>
-</pre></div>
-</div>
-<p><cite>False</cite> otherwise</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="p">(</span><span class="kc">False</span><span class="p">,</span> <span class="p">)</span>
-</pre></div>
-</div>
-</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>Tuple[bool, str=None]</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt id="pynta.main.WorkFlow.create_big_slab_pyjob">
-<em class="property">static </em><code class="sig-name descname">create_big_slab_pyjob</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">socket_calculator</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">pytemplate</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">facetpath</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">slab_name</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">repeats</span><span class="p">:</span> <span class="n">Tuple<span class="p">[</span>int<span class="p">, </span>int<span class="p">, </span>int<span class="p">]</span></span></em>, <em class="sig-param"><span class="n">creation_dir</span><span class="p">:</span> <span class="n">pathlib.PosixPath</span></em><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="_modules/pynta/main.html#WorkFlow.create_big_slab_pyjob"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.main.WorkFlow.create_big_slab_pyjob" title="Permalink to this definition">¶</a></dt>
-<dd><p>Create a python ASE job file for a big slab optimization</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>pytemplate</strong> (<em>str</em>) – a name of a template to prepare submission scripts
-for big_slab minimization</p></li>
-<li><p><strong>facetpath</strong> (<em>str</em>) – <p>a path to the workflow’s main dir
-e.g.</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">facetpath</span> <span class="o">=</span> <span class="s1">&#39;Cu_111&#39;</span>
-</pre></div>
-</div>
-</p></li>
-<li><p><strong>slab_name</strong> (<em>str</em>) – <p>name of the slab file (no extintion) that is about to be created
-e.g.</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">slab_name</span> <span class="o">=</span> <span class="s1">&#39;Cu_111_slab_opt&#39;</span>
-</pre></div>
-</div>
-</p></li>
-<li><p><strong>repeats</strong> (<em>Tuple</em><em>[</em><em>int</em><em>, </em><em>int</em><em>, </em><em>int</em><em>]</em>) – <p>how to replicate unit cell in (x, y, z) direction,
-e.g.</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">repeats</span> <span class="o">=</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
-</pre></div>
-</div>
-</p></li>
-<li><p><strong>creation_dir</strong> (<em>posix</em>) – a posix path to the working directory</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt id="pynta.main.WorkFlow.create_job_files">
-<em class="property">static </em><code class="sig-name descname">create_job_files</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="_modules/pynta/main.html#WorkFlow.create_job_files"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.main.WorkFlow.create_job_files" title="Permalink to this definition">¶</a></dt>
-<dd><p>For each surface type and for each reaction generate submit scripts
-for 6 stages of the workflow</p>
-</dd></dl>
-
-<dl class="py method">
-<dt id="pynta.main.WorkFlow.exe">
-<code class="sig-name descname">exe</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">parent_job</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">job_script</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">facetpath</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">cores</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">1</span></em><span class="sig-paren">)</span> &#x2192; Any<a class="reference internal" href="_modules/pynta/main.html#WorkFlow.exe"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.main.WorkFlow.exe" title="Permalink to this definition">¶</a></dt>
-<dd><p>Add python job file to balsam DB</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>parent_job</strong> (<em>str</em>) – a parent job on which subbmited jobs depends on. Formatted as:
-<code class="docutils literal notranslate"><span class="pre">00</span></code> or <code class="docutils literal notranslate"><span class="pre">01</span></code> or <code class="docutils literal notranslate"><span class="pre">02</span></code> or <code class="docutils literal notranslate"><span class="pre">03</span></code> or <code class="docutils literal notranslate"><span class="pre">04</span></code> or <code class="docutils literal notranslate"><span class="pre">05</span></code>,
-depending on the job</p></li>
-<li><p><strong>job_script</strong> (<em>str</em>) – a script that is about to be submitted</p></li>
-<li><p><strong>cores</strong> (<em>int</em>) – number of cores for exe job</p></li>
-<li><p><strong>facetpath</strong> (<em>str</em>) – <p>a path to the workflow’s main dir</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">facetpath</span> <span class="o">=</span> <span class="s1">&#39;Cu_111&#39;</span>
-</pre></div>
-</div>
-</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p><strong>job_to_add</strong> – job that will be submitted to balsam database</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>BalsamJob</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt id="pynta.main.WorkFlow.execute">
-<code class="sig-name descname">execute</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">facetpath</span><span class="p">:</span> <span class="n">str</span></em><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="_modules/pynta/main.html#WorkFlow.execute"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.main.WorkFlow.execute" title="Permalink to this definition">¶</a></dt>
-<dd><p>The main execute method for a given surface</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>facetpath</strong> (<em>str</em>) – <p>a path to the workflow’s main dir</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">facetpath</span> <span class="o">=</span> <span class="s1">&#39;Cu_111&#39;</span>
-</pre></div>
-</div>
-</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt id="pynta.main.WorkFlow.execute_all">
-<code class="sig-name descname">execute_all</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="_modules/pynta/main.html#WorkFlow.execute_all"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.main.WorkFlow.execute_all" title="Permalink to this definition">¶</a></dt>
-<dd><p>Main execute method for the entire workflow</p>
-</dd></dl>
-
-<dl class="py method">
-<dt id="pynta.main.WorkFlow.get_after_ts_py_scripts">
-<em class="property">static </em><code class="sig-name descname">get_after_ts_py_scripts</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">facetpath</span><span class="p">:</span> <span class="n">str</span></em><span class="sig-paren">)</span> &#x2192; List<span class="p">[</span>str<span class="p">]</span><a class="reference internal" href="_modules/pynta/main.html#WorkFlow.get_after_ts_py_scripts"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.main.WorkFlow.get_after_ts_py_scripts" title="Permalink to this definition">¶</a></dt>
-<dd><p>Get a list with all 05 job scripts</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>facetpath</strong> (<em>str</em>) – a path to the workflow’s main dir
-e.g. <code class="docutils literal notranslate"><span class="pre">'Cu_111'</span></code></p></li>
-<li><p><strong>Returns</strong> – </p></li>
-<li><p><strong>-------</strong> – </p></li>
-<li><p><strong>after_ts_py_scripts_list</strong> (<em>List</em><em>[</em><em>str</em><em>]</em>) – a list with all after_ts_py jobs for a given facetpath</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt id="pynta.main.WorkFlow.get_ts_estimate_unique_list">
-<em class="property">static </em><code class="sig-name descname">get_ts_estimate_unique_list</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">facetpath</span><span class="p">:</span> <span class="n">str</span></em><span class="sig-paren">)</span> &#x2192; List<span class="p">[</span>str<span class="p">]</span><a class="reference internal" href="_modules/pynta/main.html#WorkFlow.get_ts_estimate_unique_list"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.main.WorkFlow.get_ts_estimate_unique_list" title="Permalink to this definition">¶</a></dt>
-<dd><p>Get a list with all 03 job scripts</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>facetpath</strong> (<em>str</em>) – a path to the workflow’s main dir
-e.g. <code class="docutils literal notranslate"><span class="pre">'Cu_111'</span></code></p>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p><strong>ts_sella_py_script_list</strong> – a list with all <code class="docutils literal notranslate"><span class="pre">ts_sella_py</span></code> jobs for a given facetpath</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>List[str]</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt id="pynta.main.WorkFlow.get_ts_vib_list">
-<em class="property">static </em><code class="sig-name descname">get_ts_vib_list</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">facetpath</span><span class="p">:</span> <span class="n">str</span></em><span class="sig-paren">)</span> &#x2192; List<span class="p">[</span>str<span class="p">]</span><a class="reference internal" href="_modules/pynta/main.html#WorkFlow.get_ts_vib_list"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.main.WorkFlow.get_ts_vib_list" title="Permalink to this definition">¶</a></dt>
-<dd><p>Get a list with all 04 job scripts</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>facetpath</strong> (<em>str</em>) – a path to the workflow’s main dir
-e.g. <code class="docutils literal notranslate"><span class="pre">'Cu_111'</span></code></p>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p><strong>ts_vib_py_scripts_list</strong> – a list with all ts_vib_py jobs for a given facetpath</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>List[str]</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt id="pynta.main.WorkFlow.get_ts_xtb_py_scripts_list">
-<em class="property">static </em><code class="sig-name descname">get_ts_xtb_py_scripts_list</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">facetpath</span><span class="p">:</span> <span class="n">str</span></em><span class="sig-paren">)</span> &#x2192; List<span class="p">[</span>str<span class="p">]</span><a class="reference internal" href="_modules/pynta/main.html#WorkFlow.get_ts_xtb_py_scripts_list"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.main.WorkFlow.get_ts_xtb_py_scripts_list" title="Permalink to this definition">¶</a></dt>
-<dd><p>Get a list with all 02 job scripts</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>facetpath</strong> (<em>str</em>) – a path to the workflow’s main dir
-e.g. <code class="docutils literal notranslate"><span class="pre">'Cu_111'</span></code></p>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p><strong>ts_with_xtb_py_script_list</strong> – a list with all <code class="docutils literal notranslate"><span class="pre">xTB</span></code> jobs for a given facetpath</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>List[str]</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt id="pynta.main.WorkFlow.is_big_slab">
-<em class="property">static </em><code class="sig-name descname">is_big_slab</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">facetpath</span><span class="p">:</span> <span class="n">str</span></em><span class="sig-paren">)</span> &#x2192; bool<a class="reference internal" href="_modules/pynta/main.html#WorkFlow.is_big_slab"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.main.WorkFlow.is_big_slab" title="Permalink to this definition">¶</a></dt>
-<dd><p>Check for <code class="docutils literal notranslate"><span class="pre">big_slab</span></code> calculations.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>facetpath</strong> (<em>str</em>) – <p>a path to the workflow’s main dir</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">facetpath</span> <span class="o">=</span> <span class="s1">&#39;Cu_111&#39;</span>
-</pre></div>
-</div>
-</p>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">True</span></code> if there is a big_slab file, <code class="docutils literal notranslate"><span class="pre">False</span></code> otherwise.
-If multiple matches found, print all and raise error.</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>bool</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt id="pynta.main.WorkFlow.is_minima_dir">
-<em class="property">static </em><code class="sig-name descname">is_minima_dir</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">species</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">facetpath</span><span class="p">:</span> <span class="n">str</span></em><span class="sig-paren">)</span> &#x2192; bool<a class="reference internal" href="_modules/pynta/main.html#WorkFlow.is_minima_dir"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.main.WorkFlow.is_minima_dir" title="Permalink to this definition">¶</a></dt>
-<dd><p>Check if directory with all minima calculations exists</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>species</strong> (<em>str</em>) – a species metal_atom
-e.g. <code class="docutils literal notranslate"><span class="pre">'H'</span></code> or <code class="docutils literal notranslate"><span class="pre">'CO'</span></code></p></li>
-<li><p><strong>facetpath</strong> (<em>str</em>) – <p>a path to the workflow’s main dir</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">facetpath</span> <span class="o">=</span> <span class="s1">&#39;Cu_111&#39;</span>
-</pre></div>
-</div>
-</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p><ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">True</span></code> if directory for a given species exists in</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">{facepath}/minima</span></code>. Otherwise, <code class="docutils literal notranslate"><span class="pre">False</span></code></p></li>
-</ul>
-</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt id="pynta.main.WorkFlow.is_minima_out_files">
-<em class="property">static </em><code class="sig-name descname">is_minima_out_files</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">species</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">facetpath</span><span class="p">:</span> <span class="n">str</span></em><span class="sig-paren">)</span> &#x2192; bool<a class="reference internal" href="_modules/pynta/main.html#WorkFlow.is_minima_out_files"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.main.WorkFlow.is_minima_out_files" title="Permalink to this definition">¶</a></dt>
-<dd><p>Check for the previously calculated <code class="docutils literal notranslate"><span class="pre">*.relax.out</span></code> files
-for a given species.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>species</strong> (<em>str</em>) – a species metal_atom
-e.g. <code class="docutils literal notranslate"><span class="pre">'H'</span></code> or <code class="docutils literal notranslate"><span class="pre">'CO'</span></code></p></li>
-<li><p><strong>facetpath</strong> (<em>str</em>) – <p>a path to the workflow’s main dir</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">facetpath</span> <span class="o">=</span> <span class="s1">&#39;Cu_111&#39;</span>
-</pre></div>
-</div>
-</p></li>
-<li><p><strong>Return</strong> – <code class="docutils literal notranslate"><span class="pre">True</span></code> if there are previous calculations. Otherwise, <code class="docutils literal notranslate"><span class="pre">False</span></code>.</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt id="pynta.main.WorkFlow.is_slab">
-<em class="property">static </em><code class="sig-name descname">is_slab</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">facetpath</span><span class="p">:</span> <span class="n">str</span></em><span class="sig-paren">)</span> &#x2192; Tuple<span class="p">[</span>bool<span class="p">, </span>Optional<span class="p">[</span>str<span class="p">]</span><span class="p">]</span><a class="reference internal" href="_modules/pynta/main.html#WorkFlow.is_slab"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.main.WorkFlow.is_slab" title="Permalink to this definition">¶</a></dt>
-<dd><p>Check whether slab has been already optimized</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>facetpath</strong> (<em>str</em>) – <p>a path to the workflow’s main dir</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">facetpath</span> <span class="o">=</span> <span class="s1">&#39;Cu_111&#39;</span>
-</pre></div>
-</div>
-</p>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p><p><code class="docutils literal notranslate"><span class="pre">True</span></code> if there are previous calculations</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="n">path_to_prev_calc</span><span class="p">)</span>
-</pre></div>
-</div>
-<p><cite>False</cite> otherwise</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="p">(</span><span class="kc">False</span><span class="p">,</span> <span class="p">)</span>
-</pre></div>
-</div>
-</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>Tuple[bool, str=None]</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt id="pynta.main.WorkFlow.restart">
-<em class="property">static </em><code class="sig-name descname">restart</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="_modules/pynta/main.html#WorkFlow.restart"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.main.WorkFlow.restart" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt id="pynta.main.WorkFlow.run_big_slab_opt">
-<code class="sig-name descname">run_big_slab_opt</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">facetpath</span><span class="p">:</span> <span class="n">str</span></em><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="_modules/pynta/main.html#WorkFlow.run_big_slab_opt"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.main.WorkFlow.run_big_slab_opt" title="Permalink to this definition">¶</a></dt>
-<dd><p>Submit <code class="docutils literal notranslate"><span class="pre">big_slab_optimization</span></code> job</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>facetpath</strong> (<em>str</em>) – <p>a path to the workflow’s main dir</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">facetpath</span> <span class="o">=</span> <span class="s1">&#39;Cu_111&#39;</span>
-</pre></div>
-</div>
-</p>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p><strong>job_to_add</strong> – job that will be submitted to balsam database</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>BalsamJob</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt id="pynta.main.WorkFlow.run_minima_vib">
-<code class="sig-name descname">run_minima_vib</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dependent_job</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">facetpath</span><span class="p">:</span> <span class="n">str</span></em><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="_modules/pynta/main.html#WorkFlow.run_minima_vib"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.main.WorkFlow.run_minima_vib" title="Permalink to this definition">¶</a></dt>
-<dd><p>Run vibrational frequnecies calculations for the lowest energy
-conformer of a given adsorbate</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>dependant_job</strong> (<em>str</em>) – a prefix of the the job (minimum: two integers,
-max: whole job script name) that the current run depends on,
-e.g.
-&gt;&gt;&gt; dependant_job = ‘01’</p></li>
-<li><p><strong>facetpath</strong> (<em>str</em>) – <p>a path to the workflow’s main dir</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">facetpath</span> <span class="o">=</span> <span class="s1">&#39;Cu_111&#39;</span>
-</pre></div>
-</div>
-</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p><strong>job_to_add</strong> – job that will be submitted to balsam database</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>BalsamJob</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt id="pynta.main.WorkFlow.run_minima_vib_no_depend">
-<code class="sig-name descname">run_minima_vib_no_depend</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">facetpath</span><span class="p">:</span> <span class="n">str</span></em><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="_modules/pynta/main.html#WorkFlow.run_minima_vib_no_depend"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.main.WorkFlow.run_minima_vib_no_depend" title="Permalink to this definition">¶</a></dt>
-<dd><p>Run minima vibrational frequencies job</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>facetpath</strong> (<em>str</em>) – <p>a path to the workflow’s main dir</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">facetpath</span> <span class="o">=</span> <span class="s1">&#39;Cu_111&#39;</span>
-</pre></div>
-</div>
-</p>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p><strong>job_to_add</strong> – job that will be submitted to balsam database</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>BalsamJob</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt id="pynta.main.WorkFlow.run_opt_after_ts">
-<code class="sig-name descname">run_opt_after_ts</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dependant_job</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">facetpath</span><span class="p">:</span> <span class="n">str</span></em><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="_modules/pynta/main.html#WorkFlow.run_opt_after_ts"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.main.WorkFlow.run_opt_after_ts" title="Permalink to this definition">¶</a></dt>
-<dd><p>Run minimization of minima obtained as nudging TS structure
-towards imaginary mode of oscilation</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>dependant_job</strong> (<em>str</em>) – <p>a prefix of the the job (minimum: two integers,
-max: whole job script name) that the current depends on,
-e.g.</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">dependant_job</span> <span class="o">=</span> <span class="s1">&#39;04&#39;</span>
-</pre></div>
-</div>
-</p></li>
-<li><p><strong>facetpath</strong> (<em>str</em>) – <p>a path to the workflow’s main dir</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">facetpath</span> <span class="o">=</span> <span class="s1">&#39;Cu_111&#39;</span>
-</pre></div>
-</div>
-</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt id="pynta.main.WorkFlow.run_opt_surf_and_adsorbate">
-<code class="sig-name descname">run_opt_surf_and_adsorbate</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">facetpath</span><span class="p">:</span> <span class="n">str</span></em><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="_modules/pynta/main.html#WorkFlow.run_opt_surf_and_adsorbate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.main.WorkFlow.run_opt_surf_and_adsorbate" title="Permalink to this definition">¶</a></dt>
-<dd><p>Run optmization of adsorbates on the surface</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>facetpath</strong> (<em>str</em>) – <p>a path to the workflow’s main dir</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">facetpath</span> <span class="o">=</span> <span class="s1">&#39;Cu_111&#39;</span>
-</pre></div>
-</div>
-</p>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p><strong>job_to_add</strong> – job that will be submitted to balsam database</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>BalsamJob</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt id="pynta.main.WorkFlow.run_opt_surf_and_adsorbate_no_depend">
-<code class="sig-name descname">run_opt_surf_and_adsorbate_no_depend</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">facetpath</span><span class="p">:</span> <span class="n">str</span></em><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="_modules/pynta/main.html#WorkFlow.run_opt_surf_and_adsorbate_no_depend"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.main.WorkFlow.run_opt_surf_and_adsorbate_no_depend" title="Permalink to this definition">¶</a></dt>
-<dd><p>Run optmization of adsorbates on the surface if there is no
-dependency on other jobs</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>facetpath</strong> (<em>str</em>) – <p>a path to the workflow’s main dir</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">facetpath</span> <span class="o">=</span> <span class="s1">&#39;Cu_111&#39;</span>
-</pre></div>
-</div>
-</p>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p><strong>job_to_add</strong> – job that will be submitted to balsam database</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>BalsamJob</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt id="pynta.main.WorkFlow.run_slab_optimization">
-<code class="sig-name descname">run_slab_optimization</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">facetpath</span><span class="p">:</span> <span class="n">str</span></em><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="_modules/pynta/main.html#WorkFlow.run_slab_optimization"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.main.WorkFlow.run_slab_optimization" title="Permalink to this definition">¶</a></dt>
-<dd><p>Submit <code class="docutils literal notranslate"><span class="pre">slab_optimization_job</span></code></p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>facetpath</strong> (<em>str</em>) – <p>a path to the workflow’s main dir</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">facetpath</span> <span class="o">=</span> <span class="s1">&#39;Cu_111&#39;</span>
-</pre></div>
-</div>
-</p>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p><strong>job_to_add</strong> – job that will be submitted to balsam database</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>BalsamJob</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt id="pynta.main.WorkFlow.run_ts_estimate">
-<code class="sig-name descname">run_ts_estimate</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dependent_job</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">facetpath</span><span class="p">:</span> <span class="n">str</span></em><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="_modules/pynta/main.html#WorkFlow.run_ts_estimate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.main.WorkFlow.run_ts_estimate" title="Permalink to this definition">¶</a></dt>
-<dd><p>Run TS estimation calculations</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>dependant_job</strong> (<em>str</em>) – <p>a prefix of the the job (minimum: two integers,
-max: whole job script name) that the current run depends on,
-e.g.</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">dependant_job</span> <span class="o">=</span> <span class="s1">&#39;01&#39;</span>
-</pre></div>
-</div>
-</p></li>
-<li><p><strong>facetpath</strong> (<em>str</em>) – <p>a path to the workflow’s main dir</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">facetpath</span> <span class="o">=</span> <span class="s1">&#39;Cu_111&#39;</span>
-</pre></div>
-</div>
-</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt id="pynta.main.WorkFlow.run_ts_estimate_no_depend">
-<code class="sig-name descname">run_ts_estimate_no_depend</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">facetpath</span><span class="p">:</span> <span class="n">str</span></em><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="_modules/pynta/main.html#WorkFlow.run_ts_estimate_no_depend"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.main.WorkFlow.run_ts_estimate_no_depend" title="Permalink to this definition">¶</a></dt>
-<dd><p>Run TS estimate calculations if there is no dependency on the
-other jobs</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>facetpath</strong> (<em>str</em>) – <p>a path to the workflow’s main dir</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">facetpath</span> <span class="o">=</span> <span class="s1">&#39;Cu_111&#39;</span>
-</pre></div>
-</div>
-</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt id="pynta.main.WorkFlow.run_ts_vib">
-<code class="sig-name descname">run_ts_vib</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dependant_job</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">facetpath</span><span class="p">:</span> <span class="n">str</span></em><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="_modules/pynta/main.html#WorkFlow.run_ts_vib"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.main.WorkFlow.run_ts_vib" title="Permalink to this definition">¶</a></dt>
-<dd><p>Run frequency calculations for TS</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>dependant_job</strong> (<em>str</em>) – <p>a prefix of the the job (minimum: two integers,
-max: whole job script name) that the current depends on,
-e.g.</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">dependant_job</span> <span class="o">=</span> <span class="s1">&#39;03&#39;</span>
-</pre></div>
-</div>
-</p></li>
-<li><p><strong>facetpath</strong> (<em>str</em>) – <p>a path to the workflow’s main dir</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">facetpath</span> <span class="o">=</span> <span class="s1">&#39;Cu_111&#39;</span>
-</pre></div>
-</div>
-</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt id="pynta.main.WorkFlow.run_ts_with_sella">
-<code class="sig-name descname">run_ts_with_sella</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dependant_job</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">facetpath</span><span class="p">:</span> <span class="n">str</span></em><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="_modules/pynta/main.html#WorkFlow.run_ts_with_sella"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.main.WorkFlow.run_ts_with_sella" title="Permalink to this definition">¶</a></dt>
-<dd><p>Run TS minimization with Sella</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>dependant_job</strong> (<em>str</em>) – <p>a prefix of the the job (minimum: two integers,
-max: whole job script name) that the current depends on,
-e.g.</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">dependant_job</span> <span class="o">=</span> <span class="s1">&#39;02&#39;</span>
-</pre></div>
-</div>
-</p></li>
-<li><p><strong>facetpath</strong> (<em>str</em>) – <p>a path to the workflow’s main dir</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">facetpath</span> <span class="o">=</span> <span class="s1">&#39;Cu_111&#39;</span>
-</pre></div>
-</div>
-</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt id="pynta.main.WorkFlow.set_up_TS_vib">
-<em class="property">static </em><code class="sig-name descname">set_up_TS_vib</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">socket_calculator</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">rxn</span><span class="p">:</span> <span class="n">Dict<span class="p">[</span>str<span class="p">, </span>str<span class="p">]</span></span></em>, <em class="sig-param"><span class="n">template</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">py_job_dir</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">facetpath</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">slab</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">repeats</span><span class="p">:</span> <span class="n">Tuple<span class="p">[</span>int<span class="p">, </span>int<span class="p">, </span>int<span class="p">]</span></span></em>, <em class="sig-param"><span class="n">pytemplate</span><span class="p">:</span> <span class="n">str</span></em><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="_modules/pynta/main.html#WorkFlow.set_up_TS_vib"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.main.WorkFlow.set_up_TS_vib" title="Permalink to this definition">¶</a></dt>
-<dd><p>Create <code class="docutils literal notranslate"><span class="pre">''04_{facetpath}_set_up_TS_vib_{rxn_name}.py'</span></code> file</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>rxn</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>str</em><em>]</em>) – a dictionary with info about the paricular reaction. This can be
-view as a splitted many reaction <code class="docutils literal notranslate"><span class="pre">*.yaml</span></code> file to a
-single reaction <code class="docutils literal notranslate"><span class="pre">*.yaml</span></code> file</p></li>
-<li><p><strong>template</strong> (<em>str</em>) – a template to set up <cite>04</cite> job for a particular reaction</p></li>
-<li><p><strong>py_job_dir</strong> (<em>str</em>) – <p>a path to where all job files <code class="docutils literal notranslate"><span class="pre">00</span></code>-<code class="docutils literal notranslate"><span class="pre">05</span></code> are about to be
-created, e.g.</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">py_job_dir</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;current_dir&#39;</span><span class="p">}</span><span class="o">/</span><span class="n">job_files</span><span class="o">/</span><span class="n">Cu_111</span>
-</pre></div>
-</div>
-</p></li>
-<li><p><strong>facetpath</strong> (<em>str</em>) – <p>a path to the workflow’s main dir</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">facetpath</span> <span class="o">=</span> <span class="s1">&#39;Cu_111&#39;</span>
-</pre></div>
-</div>
-</p></li>
-<li><p><strong>slab</strong> (<em>str</em>) – a <code class="docutils literal notranslate"><span class="pre">*.xyz</span></code> file name with the optimized slab
-e.g.
-&gt;&gt;&gt; slab = ‘Cu_111_slab_opt.xyz’</p></li>
-<li><p><strong>repeats</strong> (<em>Tuple</em><em>[</em><em>int</em><em>, </em><em>int</em><em>, </em><em>int</em><em>]</em>) – <p>how to replicate unit cell in (x, y, z) direction,
-e.g.</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">repeats</span> <span class="o">=</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
-</pre></div>
-</div>
-</p></li>
-<li><p><strong>pytemplate</strong> (<em>str</em>) – a name of a template file for setting up frequencies calculations</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt id="pynta.main.WorkFlow.set_up_TS_with_xtb">
-<em class="property">static </em><code class="sig-name descname">set_up_TS_with_xtb</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">rxn</span><span class="p">:</span> <span class="n">Dict<span class="p">[</span>str<span class="p">, </span>str<span class="p">]</span></span></em>, <em class="sig-param"><span class="n">reacting_atoms</span><span class="p">:</span> <span class="n">List<span class="p">[</span>str<span class="p">]</span></span></em>, <em class="sig-param"><span class="n">template</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">py_job_dir</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">slab</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">repeats</span><span class="p">:</span> <span class="n">Tuple<span class="p">[</span>int<span class="p">, </span>int<span class="p">, </span>int<span class="p">]</span></span></em>, <em class="sig-param"><span class="n">facetpath</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">scfactor</span><span class="p">:</span> <span class="n">float</span></em>, <em class="sig-param"><span class="n">scfactor_surface</span><span class="p">:</span> <span class="n">float</span></em>, <em class="sig-param"><span class="n">pytemplate_xtb</span><span class="p">:</span> <span class="n">str</span></em><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="_modules/pynta/main.html#WorkFlow.set_up_TS_with_xtb"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.main.WorkFlow.set_up_TS_with_xtb" title="Permalink to this definition">¶</a></dt>
-<dd><p>Create <code class="docutils literal notranslate"><span class="pre">'02_{facetpath}_set_up_TS_with_xtb_{rxn_name}.py'</span></code> files</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>rxn</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>str</em><em>]</em>) – a dictionary with info about the paricular reaction. This can be
-view as a splitted many reaction <code class="docutils literal notranslate"><span class="pre">*.yaml</span></code> file to a
-single reaction <code class="docutils literal notranslate"><span class="pre">*.yaml</span></code> file</p></li>
-<li><p><strong>template</strong> (<em>str</em>) – a template to set up <code class="docutils literal notranslate"><span class="pre">02</span></code> job for a particular reaction</p></li>
-<li><p><strong>py_job_dir</strong> (<em>str</em>) – <p>a path to where all job files <code class="docutils literal notranslate"><span class="pre">00</span></code>-<code class="docutils literal notranslate"><span class="pre">05</span></code> are about to be
-created, e.g.</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">py_job_dir</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;current_dir&#39;</span><span class="p">}</span><span class="o">/</span><span class="n">job_files</span><span class="o">/</span><span class="n">Cu_111</span>
-</pre></div>
-</div>
-</p></li>
-<li><p><strong>slab</strong> (<em>str</em>) – <p>a <code class="docutils literal notranslate"><span class="pre">*.xyz</span></code> file name with the optimized slab
-e.g.</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">slab</span> <span class="o">=</span> <span class="s1">&#39;Cu_111_slab_opt.xyz&#39;</span>
-</pre></div>
-</div>
-</p></li>
-<li><p><strong>repeats</strong> (<em>Tuple</em><em>[</em><em>int</em><em>, </em><em>int</em><em>, </em><em>int</em><em>]</em>) – <p>how to replicate unit cell in (x, y, z) direction,
-e.g.</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">repeats</span> <span class="o">=</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
-</pre></div>
-</div>
-</p></li>
-<li><p><strong>facetpath</strong> (<em>str</em>) – <p>a path to the workflow’s main dir</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">facetpath</span> <span class="o">=</span> <span class="s1">&#39;Cu_111&#39;</span>
-</pre></div>
-</div>
-</p></li>
-<li><p><strong>scfator</strong> (<em>float</em>) – <p>a scaling factor to scale a bond distance between atoms taking
-part in the reaction
-e.g.</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">scfator</span> <span class="o">=</span> <span class="mf">1.4</span>
-</pre></div>
-</div>
-</p></li>
-<li><p><strong>scfactor_surface</strong> (<em>float</em>) – <p>a scaling factor to scale the target bond distance, i.e.
-the average distance between adsorbed atom and the nearest
-surface atom. Helpful e.g. when H is far away form the surface
-in TS, whereas for minima it is close to the surface
-e.g.</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">scfactor_surface</span> <span class="o">=</span> <span class="mf">1.0</span>
-</pre></div>
-</div>
-</p></li>
-<li><p><strong>pytemplate_xtb</strong> (<em>str</em>) – a name of a template file for penalty function minimization job</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt id="pynta.main.WorkFlow.set_up_ads">
-<em class="property">static </em><code class="sig-name descname">set_up_ads</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">set_up_ads</span></em>, <em class="sig-param"><span class="n">template</span></em>, <em class="sig-param"><span class="n">py_job_dir</span></em>, <em class="sig-param"><span class="n">facetpath</span></em>, <em class="sig-param"><span class="n">slab</span></em>, <em class="sig-param"><span class="n">repeats</span></em>, <em class="sig-param"><span class="n">yamlfile</span></em>, <em class="sig-param"><span class="n">pytemplate</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pynta/main.html#WorkFlow.set_up_ads"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.main.WorkFlow.set_up_ads" title="Permalink to this definition">¶</a></dt>
-<dd><p>Create <code class="docutils literal notranslate"><span class="pre">'01_{facetpath}_set_up_ads_on_slab_{rxn_name}.py'</span></code> file</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>template</strong> (<em>str</em>) – a name of a template to set up <cite>01</cite> job</p></li>
-<li><p><strong>py_job_dir</strong> (<em>str</em>) – <p>a path to where all job files <code class="docutils literal notranslate"><span class="pre">00</span></code>-<code class="docutils literal notranslate"><span class="pre">05</span></code> are about to be
-created, e.g.</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">py_job_dir</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;current_dir&#39;</span><span class="p">}</span><span class="o">/</span><span class="n">job_files</span><span class="o">/</span><span class="n">Cu_111</span>
-</pre></div>
-</div>
-</p></li>
-<li><p><strong>facetpath</strong> (<em>str</em>) – <p>a path to the workflow’s main dir</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">facetpath</span> <span class="o">=</span> <span class="s1">&#39;Cu_111&#39;</span>
-</pre></div>
-</div>
-</p></li>
-<li><p><strong>slab</strong> (<em>str</em>) – a path to <code class="docutils literal notranslate"><span class="pre">*.xyz</span></code> file with optimized slab</p></li>
-<li><p><strong>repeats</strong> (<em>Tuple</em><em>[</em><em>int</em><em>, </em><em>int</em><em>, </em><em>int</em><em>]</em>) – <p>how to replicate unit cell in (x, y, z) direction,
-e.g.</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">repeats</span> <span class="o">=</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
-</pre></div>
-</div>
-</p></li>
-<li><p><strong>yamlfile</strong> (<em>str</em>) – a name of the <code class="docutils literal notranslate"><span class="pre">*.yaml</span></code> file with a reaction list</p></li>
-<li><p><strong>pytemplate</strong> (<em>str</em>) – a name of a template to prepare submission scripts for
-adsorbate+surface minimization</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt id="pynta.main.WorkFlow.set_up_ads_vib">
-<em class="property">static </em><code class="sig-name descname">set_up_ads_vib</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">socket_calculator</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">template</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">py_job_dir</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">facetpath</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">pytemplate</span><span class="p">:</span> <span class="n">str</span></em><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="_modules/pynta/main.html#WorkFlow.set_up_ads_vib"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.main.WorkFlow.set_up_ads_vib" title="Permalink to this definition">¶</a></dt>
-<dd><p>Create <code class="docutils literal notranslate"><span class="pre">'{facetpath}_set_up_ads_vib.py'</span></code> file</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>template</strong> (<em>str</em>) – a template file for ads_vib job</p></li>
-<li><p><strong>py_job_dir</strong> (<em>str</em>) – <p>a path to where all job files <code class="docutils literal notranslate"><span class="pre">00</span></code>-<code class="docutils literal notranslate"><span class="pre">05</span></code> are about to be
-created, e.g.</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">py_job_dir</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;current_dir&#39;</span><span class="p">}</span><span class="o">/</span><span class="n">job_files</span><span class="o">/</span><span class="n">Cu_111</span>
-</pre></div>
-</div>
-</p></li>
-<li><p><strong>facetpath</strong> (<em>str</em>) – <p>a path to the workflow’s main dir</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">facetpath</span> <span class="o">=</span> <span class="s1">&#39;Cu_111&#39;</span>
-</pre></div>
-</div>
-</p></li>
-<li><p><strong>pytemplate</strong> (<em>str</em>) – a name of a template to prepare submission scripts for vibfrational
-frequencies calculations of symmetry distinct minima</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt id="pynta.main.WorkFlow.set_up_big_slab">
-<em class="property">static </em><code class="sig-name descname">set_up_big_slab</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">socket_calculator</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">template</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">py_job_dir</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">facetpath</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">slab_name</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">repeats</span><span class="p">:</span> <span class="n">Tuple<span class="p">[</span>int<span class="p">, </span>int<span class="p">, </span>int<span class="p">]</span></span></em>, <em class="sig-param"><span class="n">pytemplate</span><span class="p">:</span> <span class="n">str</span></em><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="_modules/pynta/main.html#WorkFlow.set_up_big_slab"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.main.WorkFlow.set_up_big_slab" title="Permalink to this definition">¶</a></dt>
-<dd><p>Set up a big_slab_opt ase py job generator</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>template</strong> (<em>str</em>) – a name of a template to set up <code class="docutils literal notranslate"><span class="pre">01</span></code> job</p></li>
-<li><p><strong>py_job_dir</strong> (<em>str</em>) – <p>a path to where all job files <code class="docutils literal notranslate"><span class="pre">00</span></code>-<code class="docutils literal notranslate"><span class="pre">05</span></code> are about to be
-created, e.g.</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">py_job_dir</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;current_dir&#39;</span><span class="p">}</span><span class="o">/</span><span class="n">job_files</span><span class="o">/</span><span class="n">Cu_111</span>
-</pre></div>
-</div>
-</p></li>
-<li><p><strong>facetpath</strong> (<em>str</em>) – <p>a path to the workflow’s main dir
-e.g.</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">facetpath</span> <span class="o">=</span> <span class="s1">&#39;Cu_111&#39;</span>
-</pre></div>
-</div>
-</p></li>
-<li><p><strong>slab_name</strong> (<em>str</em>) – <p>name of the slab file (no extintion) that is about to be created
-e.g.</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">slab_name</span> <span class="o">=</span> <span class="s1">&#39;Cu_111_slab_opt&#39;</span>
-</pre></div>
-</div>
-</p></li>
-<li><p><strong>repeats</strong> (<em>Tuple</em><em>[</em><em>int</em><em>, </em><em>int</em><em>, </em><em>int</em><em>]</em>) – <p>how to replicate unit cell in (x, y, z) direction,
-e.g.</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">repeats</span> <span class="o">=</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
-</pre></div>
-</div>
-</p></li>
-<li><p><strong>pytemplate</strong> (<em>str</em>) – a template to prepare submission scripts for big_slab minimization</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt id="pynta.main.WorkFlow.set_up_opt_after_TS">
-<em class="property">static </em><code class="sig-name descname">set_up_opt_after_TS</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">socket_calculator</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">rxn</span><span class="p">:</span> <span class="n">Dict<span class="p">[</span>str<span class="p">, </span>str<span class="p">]</span></span></em>, <em class="sig-param"><span class="n">template</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">py_job_dir</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">facetpath</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">slab</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">repeats</span><span class="p">:</span> <span class="n">Tuple<span class="p">[</span>int<span class="p">, </span>int<span class="p">, </span>int<span class="p">]</span></span></em>, <em class="sig-param"><span class="n">pytemplate</span><span class="p">:</span> <span class="n">str</span></em><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="_modules/pynta/main.html#WorkFlow.set_up_opt_after_TS"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.main.WorkFlow.set_up_opt_after_TS" title="Permalink to this definition">¶</a></dt>
-<dd><p>Create <code class="docutils literal notranslate"><span class="pre">'05_{facetpath}_set_up_after_TS_{rxn_name}.py'</span></code> file</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>rxn</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>str</em><em>]</em>) – a dictionary with info about the paricular reaction. This can be
-view as a splitted many reaction <code class="docutils literal notranslate"><span class="pre">*.yaml</span></code> file to a
-single reaction <code class="docutils literal notranslate"><span class="pre">*.yaml</span></code> file</p></li>
-<li><p><strong>template</strong> (<em>str</em>) – a template to set up <cite>05</cite> job for a particular reaction</p></li>
-<li><p><strong>py_job_dir</strong> (<em>str</em>) – <p>a path to where all job files <code class="docutils literal notranslate"><span class="pre">00</span></code>-<code class="docutils literal notranslate"><span class="pre">05</span></code> are about to be
-created, e.g.</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">py_job_dir</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;current_dir&#39;</span><span class="p">}</span><span class="o">/</span><span class="n">job_files</span><span class="o">/</span><span class="n">Cu_111</span>
-</pre></div>
-</div>
-</p></li>
-<li><p><strong>facetpath</strong> (<em>str</em>) – <p>a path to the workflow’s main dir</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">facetpath</span> <span class="o">=</span> <span class="s1">&#39;Cu_111&#39;</span>
-</pre></div>
-</div>
-</p></li>
-<li><p><strong>slab</strong> (<em>str</em>) – <p>a <code class="docutils literal notranslate"><span class="pre">*.xyz</span></code> file name with the optimized slab
-e.g.</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">slab</span> <span class="o">=</span> <span class="s1">&#39;Cu_111_slab_opt.xyz&#39;</span>
-</pre></div>
-</div>
-</p></li>
-<li><p><strong>repeats</strong> (<em>Tuple</em><em>[</em><em>int</em><em>, </em><em>int</em><em>, </em><em>int</em><em>]</em>) – <p>how to replicate unit cell in (x, y, z) direction,
-e.g.</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">repeats</span> <span class="o">=</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
-</pre></div>
-</div>
-</p></li>
-<li><p><strong>pytemplate</strong> (<em>str</em>) – a name of a template file for setting up an alternative to IRC
-(minimization of displaced structures following the imaginary mode
-of oscillation)</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt id="pynta.main.WorkFlow.set_up_run_TS">
-<em class="property">static </em><code class="sig-name descname">set_up_run_TS</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">socket_calculator</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">rxn</span><span class="p">:</span> <span class="n">Dict<span class="p">[</span>str<span class="p">, </span>str<span class="p">]</span></span></em>, <em class="sig-param"><span class="n">template</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">py_job_dir</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">facetpath</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">slab</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">repeats</span><span class="p">:</span> <span class="n">Tuple<span class="p">[</span>int<span class="p">, </span>int<span class="p">, </span>int<span class="p">]</span></span></em>, <em class="sig-param"><span class="n">pytemplate</span><span class="p">:</span> <span class="n">str</span></em><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="_modules/pynta/main.html#WorkFlow.set_up_run_TS"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.main.WorkFlow.set_up_run_TS" title="Permalink to this definition">¶</a></dt>
-<dd><p>Create <code class="docutils literal notranslate"><span class="pre">'03_{facetpath}_set_up_run_TS_{rxn_name}.py'</span></code> file</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>rxn</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>str</em><em>]</em>) – a dictionary with info about the paricular reaction. This can be
-view as a splitted many reaction <code class="docutils literal notranslate"><span class="pre">*.yaml</span></code> file to a
-single reaction <code class="docutils literal notranslate"><span class="pre">*.yaml</span></code> file</p></li>
-<li><p><strong>template</strong> (<em>str</em>) – a template to set up 03 job for a particular reaction</p></li>
-<li><p><strong>py_job_dir</strong> (<em>str</em>) – <p>a path to where all job files <code class="docutils literal notranslate"><span class="pre">00</span></code>-<code class="docutils literal notranslate"><span class="pre">05</span></code> are about to be
-created, e.g.</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">py_job_dir</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;current_dir&#39;</span><span class="p">}</span><span class="o">/</span><span class="n">job_files</span><span class="o">/</span><span class="n">Cu_111</span>
-</pre></div>
-</div>
-</p></li>
-<li><p><strong>facetpath</strong> (<em>str</em>) – <p>a path to the workflow’s main dir</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">facetpath</span> <span class="o">=</span> <span class="s1">&#39;Cu_111&#39;</span>
-</pre></div>
-</div>
-</p></li>
-<li><p><strong>slab</strong> (<em>str</em>) – <p>a <code class="docutils literal notranslate"><span class="pre">*.xyz</span></code> file name with the optimized slab
-e.g.</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">slab</span> <span class="o">=</span> <span class="s1">&#39;Cu_111_slab_opt.xyz&#39;</span>
-</pre></div>
-</div>
-</p></li>
-<li><p><strong>repeats</strong> (<em>Tuple</em><em>[</em><em>int</em><em>, </em><em>int</em><em>, </em><em>int</em><em>]</em>) – <p>how to replicate unit cell in (x, y, z) direction,
-e.g.</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">repeats</span> <span class="o">=</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
-</pre></div>
-</div>
-</p></li>
-<li><p><strong>pytemplate</strong> (<em>str</em>) – a name of a template file for ts optimization with sella</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt id="pynta.main.WorkFlow.set_up_slab">
-<em class="property">static </em><code class="sig-name descname">set_up_slab</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">socket_calculator</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">template</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">py_job_dir</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">facetpath</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">surface_type</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">repeats_surface</span><span class="p">:</span> <span class="n">Tuple<span class="p">[</span>int<span class="p">, </span>int<span class="p">, </span>int<span class="p">]</span></span></em>, <em class="sig-param"><span class="n">slab_name</span><span class="p">:</span> <span class="n">str</span></em><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="_modules/pynta/main.html#WorkFlow.set_up_slab"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.main.WorkFlow.set_up_slab" title="Permalink to this definition">¶</a></dt>
-<dd><p>Create <code class="docutils literal notranslate"><span class="pre">'00_{facetpath}_set_up_slab_opt.py'</span></code> file</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>template</strong> (<em>str</em>) – a name of a template for <code class="docutils literal notranslate"><span class="pre">00</span></code> job (slab optimization)</p></li>
-<li><p><strong>py_job_dir</strong> (<em>str</em>) – <p>a path to where all job files <code class="docutils literal notranslate"><span class="pre">00</span></code>-<code class="docutils literal notranslate"><span class="pre">05</span></code> are about to be
-created, e.g.</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">py_job_dir</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;current_dir&#39;</span><span class="p">}</span><span class="o">/</span><span class="n">job_files</span><span class="o">/</span><span class="n">Cu_111</span>
-</pre></div>
-</div>
-</p></li>
-<li><p><strong>facetpath</strong> (<em>str</em>) – <p>a path to the workflow’s main dir</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">facetpath</span> <span class="o">=</span> <span class="s1">&#39;Cu_111&#39;</span>
-</pre></div>
-</div>
-</p></li>
-<li><p><strong>surface_type</strong> (<em>str</em>) – type of the surface. Available options are:
-fcc111, fcc211, fcc100, bcc111, bcc110, hcp0001, diamond111,
-diamond100</p></li>
-<li><p><strong>metal_atom</strong> (<em>str</em>) – atomic metal_atom of the studied metal surface
-e.g. <code class="docutils literal notranslate"><span class="pre">'Cu'</span></code></p></li>
-<li><p><strong>a</strong> (<em>float</em>) – a lattice constant</p></li>
-<li><p><strong>repeats_surface</strong> (<em>Tuple</em><em>[</em><em>int</em><em>, </em><em>int</em><em>, </em><em>int</em><em>]</em>) – <p>surface multiplication in (x, y, z) direction
-eg.</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">repeats_surface</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
-</pre></div>
-</div>
-</p></li>
-<li><p><strong>vacuum</strong> (<em>float</em>) – amout of empty space in <code class="docutils literal notranslate"><span class="pre">z</span></code> direction (Angstrem)</p></li>
-<li><p><strong>slab_name</strong> (<em>str</em>) – <p>name of the slab file (no extintion) that is about to be created
-e.g.</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">slab_name</span> <span class="o">=</span> <span class="s1">&#39;Cu_111_slab_opt&#39;</span>
-</pre></div>
-</div>
-</p></li>
-<li><p><strong>pseudopotentials</strong> (<em>Dict</em><em>[</em><em>str</em><em>,</em><em>str</em><em>]</em>) – <p>a dictionary with QE pseudopotentials for all species.
-e.g.</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">pseudopotentials</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">Cu</span><span class="o">=</span><span class="s1">&#39;Cu.pbe-spn-kjpaw_psl.1.0.0.UPF&#39;</span><span class="p">,</span>
-<span class="go">                    H=&#39;H.pbe-kjpaw_psl.1.0.0.UPF&#39;,</span>
-<span class="go">                    O=&#39;O.pbe-n-kjpaw_psl.1.0.0.UPF&#39;,</span>
-<span class="go">                    C=&#39;C.pbe-n-kjpaw_psl.1.0.0.UPF&#39;)</span>
-</pre></div>
-</div>
-</p></li>
-<li><p><strong>pseudo_dir</strong> (<em>str</em>) – <p>a path to the QE’s pseudopotentials main directory
-e.g.</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">pseudo_dir</span> <span class="o">=</span> <span class="s1">&#39;/home/mgierad/espresso/pseudo&#39;</span>
-</pre></div>
-</div>
-</p></li>
-<li><p><strong>balsam_exe_settings</strong> (<em>Dict</em><em>[</em><em>str</em><em>,</em><em>int</em><em>]</em>) – <p>a dictionary with balsam execute parameters (cores, nodes, etc.),
-e.g.</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">balsam_exe_settings</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;num_nodes&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
-<span class="go">                        &#39;ranks_per_node&#39;: 48,</span>
-<span class="go">                        &#39;threads_per_rank&#39;: 1}</span>
-</pre></div>
-</div>
-</p></li>
-<li><p><strong>calc_keywords</strong> (<em>Dict</em><em>[</em><em>str</em><em>,</em><em>str</em><em>]</em>) – <p>a dictionary with parameters to run DFT package. Quantum Espresso
-is used as default, e.g.</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">calc_keywords</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;kpts&#39;</span><span class="p">:</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
-<span class="go">                    &#39;occupations&#39;: &#39;smearing&#39;,</span>
-<span class="go">                    &#39;smearing&#39;:  &#39;marzari-vanderbilt&#39;,</span>
-<span class="go">                    &#39;degauss&#39;: 0.01,</span>
-<span class="go">                    &#39;ecutwfc&#39;: 40,</span>
-<span class="go">                    &#39;nosym&#39;: True,</span>
-<span class="go">                    &#39;conv_thr&#39;: 1e-11,</span>
-<span class="go">                    &#39;mixing_mode&#39;: &#39;local-TF&#39;}</span>
-</pre></div>
-</div>
-</p></li>
-<li><p><strong>creation_dir</strong> (<em>posix</em>) – a posix path to the working directory</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-</dd></dl>
-
+<div class="section" id="pynta-main-module">
+<h2>pynta.main module<a class="headerlink" href="#pynta-main-module" title="Permalink to this headline">¶</a></h2>
 </div>
 <div class="section" id="module-pynta.penalty_fun">
 <span id="pynta-penalty-fun-module"></span><h2>pynta.penalty_fun module<a class="headerlink" href="#module-pynta.penalty_fun" title="Permalink to this headline">¶</a></h2>
@@ -3865,8 +2956,8 @@ balsam files are, e.g.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="pynta.restart.HighLevelRestart.remove_empty_pickle_file">
-<code class="sig-name descname">remove_empty_pickle_file</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="_modules/pynta/restart.html#HighLevelRestart.remove_empty_pickle_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.restart.HighLevelRestart.remove_empty_pickle_file" title="Permalink to this definition">¶</a></dt>
+<dt id="pynta.restart.HighLevelRestart.remove_empty_pickle_files">
+<code class="sig-name descname">remove_empty_pickle_files</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="_modules/pynta/restart.html#HighLevelRestart.remove_empty_pickle_files"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.restart.HighLevelRestart.remove_empty_pickle_files" title="Permalink to this definition">¶</a></dt>
 <dd><p>Remove all empty pckl files from unfinished vib calculations</p>
 </dd></dl>
 
@@ -4013,7 +3104,7 @@ unfinished 1st order saddle point optimizations</p>
 <dd><p>If there is at least one optimization step in a .traj file
 for a given after_ts, this method will create a new <code class="docutils literal notranslate"><span class="pre">*.xyz</span></code>
 file for that job from the last converge opt step.</p>
-<p>So, when <a class="reference internal" href="#pynta.restart.HighLevelRestart" title="pynta.restart.HighLevelRestart"><code class="xref py py-class docutils literal notranslate"><span class="pre">pynta.restart.HighLevelRestart</span></code></a> is executed,
+<p>So, when <a class="reference internal" href="source/pynta.html#pynta.restart.HighLevelRestart" title="pynta.restart.HighLevelRestart"><code class="xref py py-class docutils literal notranslate"><span class="pre">pynta.restart.HighLevelRestart</span></code></a> is executed,
 the optimization can resume from the last converged step, taking
 advantade of previous calculations.</p>
 </dd></dl>
@@ -4024,7 +3115,7 @@ advantade of previous calculations.</p>
 <dd><p>If there is at least one optimization step in a .traj file
 for a given minima, this method will create a new <code class="docutils literal notranslate"><span class="pre">*.xyz</span></code>
 file for that job from the last converged opt step.</p>
-<p>So, when <a class="reference internal" href="#pynta.restart.HighLevelRestart" title="pynta.restart.HighLevelRestart"><code class="xref py py-class docutils literal notranslate"><span class="pre">pynta.restart.HighLevelRestart</span></code></a> is executed,
+<p>So, when <a class="reference internal" href="source/pynta.html#pynta.restart.HighLevelRestart" title="pynta.restart.HighLevelRestart"><code class="xref py py-class docutils literal notranslate"><span class="pre">pynta.restart.HighLevelRestart</span></code></a> is executed,
 the optimization can resume from the last converged step, taking
 advantade of previous calculations.</p>
 </dd></dl>
@@ -4035,7 +3126,7 @@ advantade of previous calculations.</p>
 <dd><p>If there is at least one optimization step in a .traj file
 for a given ts, this method will create a new <code class="docutils literal notranslate"><span class="pre">*.xyz</span></code> file for
 that job from the last converged saddle point opt step.</p>
-<p>So, when <a class="reference internal" href="#pynta.restart.HighLevelRestart" title="pynta.restart.HighLevelRestart"><code class="xref py py-class docutils literal notranslate"><span class="pre">pynta.restart.HighLevelRestart</span></code></a> is executed,
+<p>So, when <a class="reference internal" href="source/pynta.html#pynta.restart.HighLevelRestart" title="pynta.restart.HighLevelRestart"><code class="xref py py-class docutils literal notranslate"><span class="pre">pynta.restart.HighLevelRestart</span></code></a> is executed,
 the optimization can resume from the last converged step, taking
 advantade of previous calculations.</p>
 </dd></dl>
@@ -4044,7 +3135,7 @@ advantade of previous calculations.</p>
 <dt id="pynta.restart.LowLevelRestart.remove_partialy_generated_xtb_run">
 <code class="sig-name descname">remove_partialy_generated_xtb_run</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pynta/restart.html#LowLevelRestart.remove_partialy_generated_xtb_run"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.restart.LowLevelRestart.remove_partialy_generated_xtb_run" title="Permalink to this definition">¶</a></dt>
 <dd><p>Remove all partially generated <code class="docutils literal notranslate"><span class="pre">*.xyz</span></code> files as described
-in <a class="reference internal" href="#pynta.restart.LowLevelRestart.get_ts_xtb_to_remove" title="pynta.restart.LowLevelRestart.get_ts_xtb_to_remove"><code class="xref py py-meth docutils literal notranslate"><span class="pre">pynta.restart.LowLevelRestart.get_ts_xtb_to_remove()</span></code></a></p>
+in <a class="reference internal" href="source/pynta.html#pynta.restart.LowLevelRestart.get_ts_xtb_to_remove" title="pynta.restart.LowLevelRestart.get_ts_xtb_to_remove"><code class="xref py py-meth docutils literal notranslate"><span class="pre">pynta.restart.LowLevelRestart.get_ts_xtb_to_remove()</span></code></a></p>
 </dd></dl>
 
 <dl class="py method">
@@ -4966,7 +4057,7 @@ False otherwise</p>
 
 <dl class="py method">
 <dt>
-<code class="sig-name descname">prepare_slab_for_ts_guess</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">slab_atom</span><span class="p">:</span> <span class="n">ase.atoms.Atoms</span></em><span class="sig-paren">)</span> &#x2192; <a class="reference internal" href="#pynta.excatkit.adsorption.Builder" title="pynta.excatkit.adsorption.Builder">pynta.excatkit.adsorption.Builder</a><a class="reference internal" href="_modules/pynta/ts.html#TS.prepare_slab_for_ts_guess"><span class="viewcode-link">[source]</span></a></dt>
+<code class="sig-name descname">prepare_slab_for_ts_guess</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">slab_atom</span><span class="p">:</span> <span class="n">ase.atoms.Atoms</span></em><span class="sig-paren">)</span> &#x2192; <a class="reference internal" href="source/pynta.html#pynta.excatkit.adsorption.Builder" title="pynta.excatkit.adsorption.Builder">pynta.excatkit.adsorption.Builder</a><a class="reference internal" href="_modules/pynta/ts.html#TS.prepare_slab_for_ts_guess"><span class="viewcode-link">[source]</span></a></dt>
 <dd><p>Convert slab_atom to Gratom object and finally to Builder object
 to have a suitable format for ts_guess placement</p>
 <dl class="field-list simple">
@@ -4979,7 +4070,7 @@ ase.io.read(‘Cu_111_slab_opt.xyz’)</p>
 placement</p>
 </dd>
 <dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p><a class="reference internal" href="#pynta.excatkit.adsorption.Builder" title="pynta.excatkit.adsorption.Builder">Builder</a></p>
+<dd class="field-odd"><p><a class="reference internal" href="source/pynta.html#pynta.excatkit.adsorption.Builder" title="pynta.excatkit.adsorption.Builder">Builder</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -5059,15 +4150,15 @@ e.g. 1.0</p></li>
 
 <dl class="py method">
 <dt>
-<code class="sig-name descname">ts_guess_place_and_rotate</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">ts_guess</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pynta.excatkit.gratoms.Gratoms" title="pynta.excatkit.gratoms.Gratoms">pynta.excatkit.gratoms.Gratoms</a></span></em>, <em class="sig-param"><span class="n">ads_builder</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pynta.excatkit.adsorption.Builder" title="pynta.excatkit.adsorption.Builder">pynta.excatkit.adsorption.Builder</a></span></em>, <em class="sig-param"><span class="n">bonded_idx</span><span class="p">:</span> <span class="n">int</span></em>, <em class="sig-param"><span class="n">slab_atom</span><span class="p">:</span> <span class="n">ase.atoms.Atoms</span></em>, <em class="sig-param"><span class="n">ts_estimate_path</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">rxn_name</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">max_angle</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">360</span></em>, <em class="sig-param"><span class="n">angle</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">0</span></em>, <em class="sig-param"><span class="n">angle_increment</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">5</span></em><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="_modules/pynta/ts.html#TS.ts_guess_place_and_rotate"><span class="viewcode-link">[source]</span></a></dt>
+<code class="sig-name descname">ts_guess_place_and_rotate</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">ts_guess</span><span class="p">:</span> <span class="n"><a class="reference internal" href="source/pynta.html#pynta.excatkit.gratoms.Gratoms" title="pynta.excatkit.gratoms.Gratoms">pynta.excatkit.gratoms.Gratoms</a></span></em>, <em class="sig-param"><span class="n">ads_builder</span><span class="p">:</span> <span class="n"><a class="reference internal" href="source/pynta.html#pynta.excatkit.adsorption.Builder" title="pynta.excatkit.adsorption.Builder">pynta.excatkit.adsorption.Builder</a></span></em>, <em class="sig-param"><span class="n">bonded_idx</span><span class="p">:</span> <span class="n">int</span></em>, <em class="sig-param"><span class="n">slab_atom</span><span class="p">:</span> <span class="n">ase.atoms.Atoms</span></em>, <em class="sig-param"><span class="n">ts_estimate_path</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">rxn_name</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">max_angle</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">360</span></em>, <em class="sig-param"><span class="n">angle</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">0</span></em>, <em class="sig-param"><span class="n">angle_increment</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">5</span></em><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="_modules/pynta/ts.html#TS.ts_guess_place_and_rotate"><span class="viewcode-link">[source]</span></a></dt>
 <dd><p>Place ts_est on the surface (ads_builder) in all possible
 locations, rotate and save all obtained structures as a
 seperate .xyz files</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>ts_guess</strong> (<a class="reference internal" href="#pynta.excatkit.gratoms.Gratoms" title="pynta.excatkit.gratoms.Gratoms"><em>Gratoms</em></a>) – an estimate TS structure that will be placed on the surface</p></li>
-<li><p><strong>ads_builder</strong> (<a class="reference internal" href="#pynta.excatkit.adsorption.Builder" title="pynta.excatkit.adsorption.Builder"><em>Builder</em></a>) – a slab converted to a Builder object, suitable for ts_guess
+<li><p><strong>ts_guess</strong> (<a class="reference internal" href="source/pynta.html#pynta.excatkit.gratoms.Gratoms" title="pynta.excatkit.gratoms.Gratoms"><em>Gratoms</em></a>) – an estimate TS structure that will be placed on the surface</p></li>
+<li><p><strong>ads_builder</strong> (<a class="reference internal" href="source/pynta.html#pynta.excatkit.adsorption.Builder" title="pynta.excatkit.adsorption.Builder"><em>Builder</em></a>) – a slab converted to a Builder object, suitable for ts_guess
 placement</p></li>
 <li><p><strong>bonded_idx</strong> (<em>int</em>) – an index of ts_guess atom(s) connected to the surface</p></li>
 <li><p><strong>slab_atom</strong> (<em>Atoms</em>) – an initial slab converted to Atoms object, e.g.
@@ -5091,10 +4182,10 @@ e.g. OH_O+H</p></li>
 <dl class="py class">
 <dt id="pynta.ts_guesses.Diatomic">
 <em class="property">class </em><code class="sig-prename descclassname">pynta.ts_guesses.</code><code class="sig-name descname">Diatomic</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">ts_est</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">rxn</span><span class="p">:</span> <span class="n">Dict<span class="p">[</span>str<span class="p">, </span>str<span class="p">]</span></span></em>, <em class="sig-param"><span class="n">rxn_name</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">easier_to_build</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">scfactor</span><span class="p">:</span> <span class="n">float</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pynta/ts_guesses.html#Diatomic"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.ts_guesses.Diatomic" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#pynta.ts_guesses.GeneralTSGuessesGenerator" title="pynta.ts_guesses.GeneralTSGuessesGenerator"><code class="xref py py-class docutils literal notranslate"><span class="pre">pynta.ts_guesses.GeneralTSGuessesGenerator</span></code></a></p>
+<dd><p>Bases: <a class="reference internal" href="source/pynta.html#pynta.ts_guesses.GeneralTSGuessesGenerator" title="pynta.ts_guesses.GeneralTSGuessesGenerator"><code class="xref py py-class docutils literal notranslate"><span class="pre">pynta.ts_guesses.GeneralTSGuessesGenerator</span></code></a></p>
 <dl class="py method">
 <dt id="pynta.ts_guesses.Diatomic.get_ts_guess_and_bonded_idx">
-<code class="sig-name descname">get_ts_guess_and_bonded_idx</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">reacting_idxs</span><span class="p">:</span> <span class="n">List<span class="p">[</span>int<span class="p">]</span></span></em><span class="sig-paren">)</span> &#x2192; Tuple<span class="p">[</span><a class="reference internal" href="#pynta.excatkit.gratoms.Gratoms" title="pynta.excatkit.gratoms.Gratoms">pynta.excatkit.gratoms.Gratoms</a><span class="p">, </span>int<span class="p">]</span><a class="reference internal" href="_modules/pynta/ts_guesses.html#Diatomic.get_ts_guess_and_bonded_idx"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.ts_guesses.Diatomic.get_ts_guess_and_bonded_idx" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">get_ts_guess_and_bonded_idx</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">reacting_idxs</span><span class="p">:</span> <span class="n">List<span class="p">[</span>int<span class="p">]</span></span></em><span class="sig-paren">)</span> &#x2192; Tuple<span class="p">[</span><a class="reference internal" href="source/pynta.html#pynta.excatkit.gratoms.Gratoms" title="pynta.excatkit.gratoms.Gratoms">pynta.excatkit.gratoms.Gratoms</a><span class="p">, </span>int<span class="p">]</span><a class="reference internal" href="_modules/pynta/ts_guesses.html#Diatomic.get_ts_guess_and_bonded_idx"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.ts_guesses.Diatomic.get_ts_guess_and_bonded_idx" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get ts_guess (Gratom) and index of atom that connects ts_guess
 to the surface. Currently, only monodentate adsobrtion is supported</p>
 <dl class="field-list simple">
@@ -5107,7 +4198,7 @@ to the surface. Currently, only monodentate adsobrtion is supported</p>
 s_bonded_idx is the index of adsorbate atom that bonds to surface</p>
 </dd>
 <dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>Tuple[<a class="reference internal" href="#pynta.excatkit.gratoms.Gratoms" title="pynta.excatkit.gratoms.Gratoms">Gratoms</a>, int]</p>
+<dd class="field-odd"><p>Tuple[<a class="reference internal" href="source/pynta.html#pynta.excatkit.gratoms.Gratoms" title="pynta.excatkit.gratoms.Gratoms">Gratoms</a>, int]</p>
 </dd>
 </dl>
 </dd></dl>
@@ -5143,7 +4234,7 @@ atoms taking part in the reaction</p></li>
 
 <dl class="py method">
 <dt id="pynta.ts_guesses.GeneralTSGuessesGenerator.build_ts_guess">
-<code class="sig-name descname">build_ts_guess</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; <a class="reference internal" href="#pynta.excatkit.gratoms.Gratoms" title="pynta.excatkit.gratoms.Gratoms">pynta.excatkit.gratoms.Gratoms</a><a class="reference internal" href="_modules/pynta/ts_guesses.html#GeneralTSGuessesGenerator.build_ts_guess"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.ts_guesses.GeneralTSGuessesGenerator.build_ts_guess" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">build_ts_guess</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; <a class="reference internal" href="source/pynta.html#pynta.excatkit.gratoms.Gratoms" title="pynta.excatkit.gratoms.Gratoms">pynta.excatkit.gratoms.Gratoms</a><a class="reference internal" href="_modules/pynta/ts_guesses.html#GeneralTSGuessesGenerator.build_ts_guess"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.ts_guesses.GeneralTSGuessesGenerator.build_ts_guess" title="Permalink to this definition">¶</a></dt>
 <dd><p>Convert <code class="docutils literal notranslate"><span class="pre">'ts_est'</span></code> string into a list of Gratoms objects.</p>
 <p>Numner of elements in the list depends is equal to number of
 distinct topologies available for given <code class="docutils literal notranslate"><span class="pre">'ts_est'</span></code>.</p>
@@ -5160,14 +4251,14 @@ For other types, more than one structure is possible, e.g.</p>
 ts_est</p>
 </dd>
 <dt class="field-even">Return type</dt>
-<dd class="field-even"><p>List[<a class="reference internal" href="#pynta.excatkit.gratoms.Gratoms" title="pynta.excatkit.gratoms.Gratoms">Gratoms</a>]</p>
+<dd class="field-even"><p>List[<a class="reference internal" href="source/pynta.html#pynta.excatkit.gratoms.Gratoms" title="pynta.excatkit.gratoms.Gratoms">Gratoms</a>]</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py method">
 <dt id="pynta.ts_guesses.GeneralTSGuessesGenerator.convert_tag_to_correct_idx">
-<code class="sig-name descname">convert_tag_to_correct_idx</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">ts_guess_image</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pynta.excatkit.gratoms.Gratoms" title="pynta.excatkit.gratoms.Gratoms">pynta.excatkit.gratoms.Gratoms</a></span></em>, <em class="sig-param"><span class="n">tag_atom_idx1</span><span class="p">:</span> <span class="n">int</span></em>, <em class="sig-param"><span class="n">tag_atom_idx2</span><span class="p">:</span> <span class="n">int</span></em><span class="sig-paren">)</span> &#x2192; List<span class="p">[</span>int<span class="p">]</span><a class="reference internal" href="_modules/pynta/ts_guesses.html#GeneralTSGuessesGenerator.convert_tag_to_correct_idx"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.ts_guesses.GeneralTSGuessesGenerator.convert_tag_to_correct_idx" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">convert_tag_to_correct_idx</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">ts_guess_image</span><span class="p">:</span> <span class="n"><a class="reference internal" href="source/pynta.html#pynta.excatkit.gratoms.Gratoms" title="pynta.excatkit.gratoms.Gratoms">pynta.excatkit.gratoms.Gratoms</a></span></em>, <em class="sig-param"><span class="n">tag_atom_idx1</span><span class="p">:</span> <span class="n">int</span></em>, <em class="sig-param"><span class="n">tag_atom_idx2</span><span class="p">:</span> <span class="n">int</span></em><span class="sig-paren">)</span> &#x2192; List<span class="p">[</span>int<span class="p">]</span><a class="reference internal" href="_modules/pynta/ts_guesses.html#GeneralTSGuessesGenerator.convert_tag_to_correct_idx"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.ts_guesses.GeneralTSGuessesGenerator.convert_tag_to_correct_idx" title="Permalink to this definition">¶</a></dt>
 <dd><p>Convert tag indicies (<code class="docutils literal notranslate"><span class="pre">*.yaml</span></code> file is a source) to
 indicies as they appear in the ts_guess_image Gratoms object</p>
 <dl class="field-list simple">
@@ -5195,7 +4286,7 @@ ts_guess_image, Gratom object.</p>
 
 <dl class="py method">
 <dt id="pynta.ts_guesses.GeneralTSGuessesGenerator.decide">
-<code class="sig-name descname">decide</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">reacting_idxs</span><span class="p">:</span> <span class="n">List<span class="p">[</span>int<span class="p">]</span></span></em><span class="sig-paren">)</span> &#x2192; Tuple<span class="p">[</span><a class="reference internal" href="#pynta.excatkit.gratoms.Gratoms" title="pynta.excatkit.gratoms.Gratoms">pynta.excatkit.gratoms.Gratoms</a><span class="p">, </span>int<span class="p">]</span><a class="reference internal" href="_modules/pynta/ts_guesses.html#GeneralTSGuessesGenerator.decide"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.ts_guesses.GeneralTSGuessesGenerator.decide" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">decide</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">reacting_idxs</span><span class="p">:</span> <span class="n">List<span class="p">[</span>int<span class="p">]</span></span></em><span class="sig-paren">)</span> &#x2192; Tuple<span class="p">[</span><a class="reference internal" href="source/pynta.html#pynta.excatkit.gratoms.Gratoms" title="pynta.excatkit.gratoms.Gratoms">pynta.excatkit.gratoms.Gratoms</a><span class="p">, </span>int<span class="p">]</span><a class="reference internal" href="_modules/pynta/ts_guesses.html#GeneralTSGuessesGenerator.decide"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.ts_guesses.GeneralTSGuessesGenerator.decide" title="Permalink to this definition">¶</a></dt>
 <dd><p>Main method to decide to which family of reactions given
 reaction belongs</p>
 <dl class="field-list simple">
@@ -5208,7 +4299,7 @@ reaction belongs</p>
 s_bonded_idx is the index of adsorbate atom that bonds to surface</p>
 </dd>
 <dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>Tuple[<a class="reference internal" href="#pynta.excatkit.gratoms.Gratoms" title="pynta.excatkit.gratoms.Gratoms">Gratoms</a>, int]</p>
+<dd class="field-odd"><p>Tuple[<a class="reference internal" href="source/pynta.html#pynta.excatkit.gratoms.Gratoms" title="pynta.excatkit.gratoms.Gratoms">Gratoms</a>, int]</p>
 </dd>
 </dl>
 </dd></dl>
@@ -5313,7 +4404,7 @@ to the other atoms.</p>
 <dl class="py class">
 <dt id="pynta.ts_guesses.Triatomic">
 <em class="property">class </em><code class="sig-prename descclassname">pynta.ts_guesses.</code><code class="sig-name descname">Triatomic</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">ts_est</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">rxn</span><span class="p">:</span> <span class="n">Dict<span class="p">[</span>str<span class="p">, </span>str<span class="p">]</span></span></em>, <em class="sig-param"><span class="n">rxn_name</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">easier_to_build</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">scfactor</span><span class="p">:</span> <span class="n">float</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pynta/ts_guesses.html#Triatomic"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.ts_guesses.Triatomic" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#pynta.ts_guesses.GeneralTSGuessesGenerator" title="pynta.ts_guesses.GeneralTSGuessesGenerator"><code class="xref py py-class docutils literal notranslate"><span class="pre">pynta.ts_guesses.GeneralTSGuessesGenerator</span></code></a></p>
+<dd><p>Bases: <a class="reference internal" href="source/pynta.html#pynta.ts_guesses.GeneralTSGuessesGenerator" title="pynta.ts_guesses.GeneralTSGuessesGenerator"><code class="xref py py-class docutils literal notranslate"><span class="pre">pynta.ts_guesses.GeneralTSGuessesGenerator</span></code></a></p>
 <dl class="py method">
 <dt id="pynta.ts_guesses.Triatomic.get_ts_guess_and_bonded_idx">
 <code class="sig-name descname">get_ts_guess_and_bonded_idx</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">reacting_idxs</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pynta/ts_guesses.html#Triatomic.get_ts_guess_and_bonded_idx"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pynta.ts_guesses.Triatomic.get_ts_guess_and_bonded_idx" title="Permalink to this definition">¶</a></dt>
@@ -5824,7 +4915,7 @@ U.S. Government retains certain rights in this software.</p>
     <p>
         &copy; Copyright Copyright 2021 National Technology &amp; Engineering Solutions of Sandia, LLC (NTESS). Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government retains certain rights in this software.
       <span class="lastupdated">
-        Last updated on Thu, 28 Jan 2021 18:45:53.
+        Last updated on Thu, 04 Feb 2021 12:04:09.
       </span>
 
     </p>

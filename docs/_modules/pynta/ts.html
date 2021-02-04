@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>pynta.ts &mdash; Pynta January 28, 2021 documentation</title>
+  <title>pynta.ts &mdash; Pynta February 04, 2021 documentation</title>
   
 
   
@@ -143,30 +143,30 @@
            <div itemprop="articleBody">
             
   <h1>Source code for pynta.ts</h1><div class="highlight"><pre>
-<span></span><span class="kn">from</span> <span class="nn">typing</span> <span class="k">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Dict</span>
-<span class="kn">from</span> <span class="nn">pynta.excatkit.gratoms</span> <span class="k">import</span> <span class="n">Gratoms</span>
-<span class="kn">from</span> <span class="nn">pynta.excatkit.adsorption</span> <span class="k">import</span> <span class="n">Builder</span>
-<span class="kn">from</span> <span class="nn">pynta.ts_guesses</span> <span class="k">import</span> <span class="n">GeneralTSGuessesGenerator</span>
-<span class="kn">from</span> <span class="nn">pynta.adsorbates</span> <span class="k">import</span> <span class="n">Adsorbates</span>
-<span class="kn">from</span> <span class="nn">pynta.io</span> <span class="k">import</span> <span class="n">IO</span>
+<span></span><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Dict</span>
+<span class="kn">from</span> <span class="nn">pynta.excatkit.gratoms</span> <span class="kn">import</span> <span class="n">Gratoms</span>
+<span class="kn">from</span> <span class="nn">pynta.excatkit.adsorption</span> <span class="kn">import</span> <span class="n">Builder</span>
+<span class="kn">from</span> <span class="nn">pynta.ts_guesses</span> <span class="kn">import</span> <span class="n">GeneralTSGuessesGenerator</span>
+<span class="kn">from</span> <span class="nn">pynta.adsorbates</span> <span class="kn">import</span> <span class="n">Adsorbates</span>
+<span class="kn">from</span> <span class="nn">pynta.io</span> <span class="kn">import</span> <span class="n">IO</span>
 
-<span class="kn">from</span> <span class="nn">ase.io</span> <span class="k">import</span> <span class="n">read</span><span class="p">,</span> <span class="n">write</span>
-<span class="kn">from</span> <span class="nn">ase.utils.structure_comparator</span> <span class="k">import</span> <span class="n">SymmetryEquivalenceCheck</span>
-<span class="kn">from</span> <span class="nn">ase</span> <span class="k">import</span> <span class="n">Atoms</span>
+<span class="kn">from</span> <span class="nn">ase.io</span> <span class="kn">import</span> <span class="n">read</span><span class="p">,</span> <span class="n">write</span>
+<span class="kn">from</span> <span class="nn">ase.utils.structure_comparator</span> <span class="kn">import</span> <span class="n">SymmetryEquivalenceCheck</span>
+<span class="kn">from</span> <span class="nn">ase</span> <span class="kn">import</span> <span class="n">Atoms</span>
 
-<span class="kn">from</span> <span class="nn">collections</span> <span class="k">import</span> <span class="n">Counter</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">Counter</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">import</span> <span class="nn">shutil</span>
-<span class="kn">from</span> <span class="nn">statistics</span> <span class="k">import</span> <span class="n">mean</span>
-<span class="kn">from</span> <span class="nn">pathlib</span> <span class="k">import</span> <span class="n">Path</span><span class="p">,</span> <span class="n">PosixPath</span>
-<span class="kn">from</span> <span class="nn">spglib</span> <span class="k">import</span> <span class="n">get_symmetry</span>
+<span class="kn">from</span> <span class="nn">statistics</span> <span class="kn">import</span> <span class="n">mean</span>
+<span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span><span class="p">,</span> <span class="n">PosixPath</span>
+<span class="kn">from</span> <span class="nn">spglib</span> <span class="kn">import</span> <span class="n">get_symmetry</span>
 <span class="kn">import</span> <span class="nn">heapq</span>
 
 
-<div class="viewcode-block" id="TS"><a class="viewcode-back" href="../../index.html#pynta.ts.TS">[docs]</a><span class="k">class</span> <span class="nc">TS</span><span class="p">():</span>
-<div class="viewcode-block" id="TS.__init__"><a class="viewcode-back" href="../../index.html#pynta.ts.TS.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span>
+<div class="viewcode-block" id="TS"><a class="viewcode-back" href="../../source/pynta.html#pynta.ts.TS">[docs]</a><span class="k">class</span> <span class="nc">TS</span><span class="p">():</span>
+<div class="viewcode-block" id="TS.__init__"><a class="viewcode-back" href="../../source/pynta.html#pynta.ts.TS.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span>
             <span class="n">facetpath</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
             <span class="n">slab</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -208,7 +208,7 @@
         <span class="n">big_slab</span> <span class="o">=</span> <span class="n">read</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path_to_slab</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">repeats</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">nslab</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">big_slab</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="TS.prepare_ts_estimate"><a class="viewcode-back" href="../../index.html#pynta.ts.TS.prepare_ts_estimate">[docs]</a>    <span class="k">def</span> <span class="nf">prepare_ts_estimate</span><span class="p">(</span>
+<div class="viewcode-block" id="TS.prepare_ts_estimate"><a class="viewcode-back" href="../../source/pynta.html#pynta.ts.TS.prepare_ts_estimate">[docs]</a>    <span class="k">def</span> <span class="nf">prepare_ts_estimate</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span>
             <span class="n">rxn</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
             <span class="n">scfactor</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
@@ -289,7 +289,7 @@
             <span class="n">scaled1</span><span class="p">,</span>
             <span class="n">scfactor_surface</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="TS.get_max_rot_angle"><a class="viewcode-back" href="../../index.html#pynta.ts.TS.get_max_rot_angle">[docs]</a>    <span class="k">def</span> <span class="nf">get_max_rot_angle</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<div class="viewcode-block" id="TS.get_max_rot_angle"><a class="viewcode-back" href="../../source/pynta.html#pynta.ts.TS.get_max_rot_angle">[docs]</a>    <span class="k">def</span> <span class="nf">get_max_rot_angle</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="sd">&#39;&#39;&#39; Get the maximum angle of rotation for a given slab that will</span>
 <span class="sd">        generate all symmetrically distinct TS estimates.</span>
 
@@ -316,7 +316,7 @@
         <span class="c1"># max_rot_angle = 360/(nrot/4) # lets try 120 angle</span>
         <span class="k">return</span> <span class="n">max_rot_angle</span></div>
 
-<div class="viewcode-block" id="TS.TS_placer"><a class="viewcode-back" href="../../index.html#pynta.ts.TS.TS_placer">[docs]</a>    <span class="k">def</span> <span class="nf">TS_placer</span><span class="p">(</span>
+<div class="viewcode-block" id="TS.TS_placer"><a class="viewcode-back" href="../../source/pynta.html#pynta.ts.TS.TS_placer">[docs]</a>    <span class="k">def</span> <span class="nf">TS_placer</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span>
             <span class="n">ts_estimate_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
             <span class="n">scfactor</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
@@ -385,7 +385,7 @@
                                            <span class="n">bonded_idx</span><span class="p">,</span> <span class="n">slab_atom</span><span class="p">,</span>
                                            <span class="n">ts_estimate_path</span><span class="p">,</span> <span class="n">rxn_name</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="TS.prepare_slab_for_ts_guess"><a class="viewcode-back" href="../../index.html#pynta.ts.TS.prepare_slab_for_ts_guess">[docs]</a>    <span class="k">def</span> <span class="nf">prepare_slab_for_ts_guess</span><span class="p">(</span>
+<div class="viewcode-block" id="TS.prepare_slab_for_ts_guess"><a class="viewcode-back" href="../../source/pynta.html#pynta.ts.TS.prepare_slab_for_ts_guess">[docs]</a>    <span class="k">def</span> <span class="nf">prepare_slab_for_ts_guess</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span>
             <span class="n">slab_atom</span><span class="p">:</span> <span class="n">Atoms</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Builder</span><span class="p">:</span>
         <span class="sd">&#39;&#39;&#39; Convert slab_atom to Gratom object and finally to Builder object</span>
@@ -417,7 +417,7 @@
         <span class="n">ads_builder</span> <span class="o">=</span> <span class="n">Builder</span><span class="p">(</span><span class="n">grslab</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">ads_builder</span></div>
 
-<div class="viewcode-block" id="TS.ts_guess_place_and_rotate"><a class="viewcode-back" href="../../index.html#pynta.ts.TS.ts_guess_place_and_rotate">[docs]</a>    <span class="k">def</span> <span class="nf">ts_guess_place_and_rotate</span><span class="p">(</span>
+<div class="viewcode-block" id="TS.ts_guess_place_and_rotate"><a class="viewcode-back" href="../../source/pynta.html#pynta.ts.TS.ts_guess_place_and_rotate">[docs]</a>    <span class="k">def</span> <span class="nf">ts_guess_place_and_rotate</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span>
             <span class="n">ts_guess</span><span class="p">:</span> <span class="n">Gratoms</span><span class="p">,</span>
             <span class="n">ads_builder</span><span class="p">:</span> <span class="n">Builder</span><span class="p">,</span>
@@ -479,7 +479,7 @@
             <span class="n">angle</span> <span class="o">+=</span> <span class="n">angle_increment</span>
             <span class="n">count</span> <span class="o">+=</span> <span class="mi">1</span></div>
 
-<div class="viewcode-block" id="TS.filtered_out_equiv_ts_estimates"><a class="viewcode-back" href="../../index.html#pynta.ts.TS.filtered_out_equiv_ts_estimates">[docs]</a>    <span class="k">def</span> <span class="nf">filtered_out_equiv_ts_estimates</span><span class="p">(</span>
+<div class="viewcode-block" id="TS.filtered_out_equiv_ts_estimates"><a class="viewcode-back" href="../../source/pynta.html#pynta.ts.TS.filtered_out_equiv_ts_estimates">[docs]</a>    <span class="k">def</span> <span class="nf">filtered_out_equiv_ts_estimates</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span>
             <span class="n">ts_estimate_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
             <span class="n">rxn_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
@@ -521,7 +521,7 @@
                 <span class="n">ts_estimate_path</span><span class="p">,</span> <span class="n">prefix</span> <span class="o">+</span> <span class="n">noneqsites</span><span class="p">[</span><span class="mi">3</span><span class="p">:])</span>
             <span class="n">os</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">old_fname</span><span class="p">,</span> <span class="n">new_fname</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="TS.set_up_penalty_xtb"><a class="viewcode-back" href="../../index.html#pynta.ts.TS.set_up_penalty_xtb">[docs]</a>    <span class="k">def</span> <span class="nf">set_up_penalty_xtb</span><span class="p">(</span>
+<div class="viewcode-block" id="TS.set_up_penalty_xtb"><a class="viewcode-back" href="../../source/pynta.html#pynta.ts.TS.set_up_penalty_xtb">[docs]</a>    <span class="k">def</span> <span class="nf">set_up_penalty_xtb</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span>
             <span class="n">ts_estimate_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
             <span class="n">pytemplate</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -646,7 +646,7 @@
                 <span class="c1"># move .xyz file</span>
                 <span class="n">shutil</span><span class="o">.</span><span class="n">move</span><span class="p">(</span><span class="n">xyz_file</span><span class="p">,</span> <span class="n">calc_dir</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="TS.get_bonds_penalty"><a class="viewcode-back" href="../../index.html#pynta.ts.TS.get_bonds_penalty">[docs]</a>    <span class="k">def</span> <span class="nf">get_bonds_penalty</span><span class="p">(</span>
+<div class="viewcode-block" id="TS.get_bonds_penalty"><a class="viewcode-back" href="../../source/pynta.html#pynta.ts.TS.get_bonds_penalty">[docs]</a>    <span class="k">def</span> <span class="nf">get_bonds_penalty</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span>
             <span class="n">reacting_atoms</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span>
             <span class="n">surface_atoms_idxs</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span>
@@ -693,7 +693,7 @@
             <span class="n">bonds</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">adsorbed_atom_idx</span><span class="p">,</span> <span class="n">metal_idx</span><span class="p">))</span>
         <span class="k">return</span> <span class="n">bonds</span></div>
 
-<div class="viewcode-block" id="TS.is_valid_sp_index"><a class="viewcode-back" href="../../index.html#pynta.ts.TS.is_valid_sp_index">[docs]</a>    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="TS.is_valid_sp_index"><a class="viewcode-back" href="../../source/pynta.html#pynta.ts.TS.is_valid_sp_index">[docs]</a>    <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">is_valid_sp_index</span><span class="p">(</span>
             <span class="n">species</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
             <span class="n">sp_index</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
@@ -725,7 +725,7 @@
         <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
             <span class="k">return</span> <span class="kc">False</span></div>
 
-<div class="viewcode-block" id="TS.get_av_dists_tuple"><a class="viewcode-back" href="../../index.html#pynta.ts.TS.get_av_dists_tuple">[docs]</a>    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="TS.get_av_dists_tuple"><a class="viewcode-back" href="../../source/pynta.html#pynta.ts.TS.get_av_dists_tuple">[docs]</a>    <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">get_av_dists_tuple</span><span class="p">(</span>
             <span class="n">reacting_atoms</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
             <span class="n">sp_surf_av_dists</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]):</span>
@@ -768,7 +768,7 @@
         <span class="n">av_dist_tuple</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">av_dists_dict</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
         <span class="k">return</span> <span class="n">av_dist_tuple</span></div>
 
-<div class="viewcode-block" id="TS.get_av_dist_dict"><a class="viewcode-back" href="../../index.html#pynta.ts.TS.get_av_dist_dict">[docs]</a>    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="TS.get_av_dist_dict"><a class="viewcode-back" href="../../source/pynta.html#pynta.ts.TS.get_av_dist_dict">[docs]</a>    <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">get_av_dist_dict</span><span class="p">(</span>
             <span class="n">species_list</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
             <span class="n">metal_atom</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -815,7 +815,7 @@
             <span class="n">sp_surf_av_dists</span><span class="p">[</span><span class="n">species</span><span class="p">]</span> <span class="o">=</span> <span class="n">av_dist</span>
         <span class="k">return</span> <span class="n">sp_surf_av_dists</span></div>
 
-<div class="viewcode-block" id="TS.get_av_dist"><a class="viewcode-back" href="../../index.html#pynta.ts.TS.get_av_dist">[docs]</a>    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="TS.get_av_dist"><a class="viewcode-back" href="../../source/pynta.html#pynta.ts.TS.get_av_dist">[docs]</a>    <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">get_av_dist</span><span class="p">(</span>
             <span class="n">path_to_minima</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
             <span class="n">species</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -897,7 +897,7 @@
             <span class="n">av_dist</span> <span class="o">=</span> <span class="n">mean</span><span class="p">(</span><span class="n">all_dists_bonded</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">av_dist</span></div>
 
-<div class="viewcode-block" id="TS.create_unique_ts_all"><a class="viewcode-back" href="../../index.html#pynta.ts.TS.create_unique_ts_all">[docs]</a>    <span class="k">def</span> <span class="nf">create_unique_ts_all</span><span class="p">(</span>
+<div class="viewcode-block" id="TS.create_unique_ts_all"><a class="viewcode-back" href="../../source/pynta.html#pynta.ts.TS.create_unique_ts_all">[docs]</a>    <span class="k">def</span> <span class="nf">create_unique_ts_all</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span>
             <span class="n">socket_calculator</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
             <span class="n">ts_estimate_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -953,7 +953,7 @@
                                       <span class="n">balsam_exe_settings</span><span class="p">,</span>
                                       <span class="n">calc_keywords</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="TS.create_unique_ts_xyz_and_png"><a class="viewcode-back" href="../../index.html#pynta.ts.TS.create_unique_ts_xyz_and_png">[docs]</a>    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="TS.create_unique_ts_xyz_and_png"><a class="viewcode-back" href="../../source/pynta.html#pynta.ts.TS.create_unique_ts_xyz_and_png">[docs]</a>    <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">create_unique_ts_xyz_and_png</span><span class="p">(</span><span class="n">ts_estimate_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="sd">&#39;&#39;&#39; Create unique TS files for saddle point calculations</span>
 <span class="sd">        for a given scfactor</span>
@@ -1004,7 +1004,7 @@
                     <span class="n">ts_estimate_unique_path</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)</span><span class="o">.</span><span class="n">zfill</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span> <span class="o">+</span> <span class="n">ts</span><span class="p">[</span><span class="mi">3</span><span class="p">:])</span>
                 <span class="n">os</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">old_ts_name</span><span class="p">,</span> <span class="n">new_ts_name</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="TS.create_ts_unique_py_file"><a class="viewcode-back" href="../../index.html#pynta.ts.TS.create_ts_unique_py_file">[docs]</a>    <span class="k">def</span> <span class="nf">create_ts_unique_py_file</span><span class="p">(</span>
+<div class="viewcode-block" id="TS.create_ts_unique_py_file"><a class="viewcode-back" href="../../source/pynta.html#pynta.ts.TS.create_ts_unique_py_file">[docs]</a>    <span class="k">def</span> <span class="nf">create_ts_unique_py_file</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span>
             <span class="n">socket_calculator</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
             <span class="n">pytemplate</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -1075,7 +1075,7 @@
                     <span class="n">repeats</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">repeats</span>
                 <span class="p">))</span></div>
 
-<div class="viewcode-block" id="TS.get_index_adatom"><a class="viewcode-back" href="../../index.html#pynta.ts.TS.get_index_adatom">[docs]</a>    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="TS.get_index_adatom"><a class="viewcode-back" href="../../source/pynta.html#pynta.ts.TS.get_index_adatom">[docs]</a>    <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">get_index_adatom</span><span class="p">(</span>
             <span class="n">ads_atom</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
             <span class="n">adsorbate_atoms_idxs</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
@@ -1105,7 +1105,7 @@
             <span class="n">ads_index</span> <span class="o">=</span> <span class="n">vals</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
         <span class="k">return</span> <span class="n">ads_index</span></div>
 
-<div class="viewcode-block" id="TS.get_index_surface_atom"><a class="viewcode-back" href="../../index.html#pynta.ts.TS.get_index_surface_atom">[docs]</a>    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="TS.get_index_surface_atom"><a class="viewcode-back" href="../../source/pynta.html#pynta.ts.TS.get_index_surface_atom">[docs]</a>    <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">get_index_surface_atom</span><span class="p">(</span>
             <span class="n">sp_index</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
             <span class="n">surface_atoms_idxs</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span>
@@ -1145,7 +1145,7 @@
                          <span class="o">==</span> <span class="n">min_dist_surface_adsorbate</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">surface_atoms_idxs_list</span><span class="p">[</span><span class="n">index</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]]</span></div>
 
-<div class="viewcode-block" id="TS.check_symm"><a class="viewcode-back" href="../../index.html#pynta.ts.TS.check_symm">[docs]</a>    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="TS.check_symm"><a class="viewcode-back" href="../../source/pynta.html#pynta.ts.TS.check_symm">[docs]</a>    <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">check_symm</span><span class="p">(</span>
             <span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
             <span class="n">return_unique</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
@@ -1210,7 +1210,7 @@
     <p>
         &copy; Copyright Copyright 2021 National Technology &amp; Engineering Solutions of Sandia, LLC (NTESS). Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government retains certain rights in this software.
       <span class="lastupdated">
-        Last updated on Thu, 28 Jan 2021 18:45:53.
+        Last updated on Thu, 04 Feb 2021 12:04:09.
       </span>
 
     </p>

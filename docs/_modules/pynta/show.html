@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>pynta.show &mdash; Pynta January 28, 2021 documentation</title>
+  <title>pynta.show &mdash; Pynta February 04, 2021 documentation</title>
   
 
   
@@ -144,17 +144,17 @@
             
   <h1>Source code for pynta.show</h1><div class="highlight"><pre>
 <span></span><span class="ch">#!/usr/bin/env python3</span>
-<span class="kn">from</span> <span class="nn">collections</span> <span class="k">import</span> <span class="n">Counter</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">Counter</span>
 
 
-<div class="viewcode-block" id="Show"><a class="viewcode-back" href="../../index.html#pynta.show.Show">[docs]</a><span class="k">class</span> <span class="nc">Show</span><span class="p">():</span>
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="kn">from</span> <span class="nn">balsam.launcher.dag</span> <span class="k">import</span> <span class="n">BalsamJob</span>
+<div class="viewcode-block" id="Show"><a class="viewcode-back" href="../../source/pynta.html#pynta.show.Show">[docs]</a><span class="k">class</span> <span class="nc">Show</span><span class="p">():</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="kn">from</span> <span class="nn">balsam.launcher.dag</span> <span class="kn">import</span> <span class="n">BalsamJob</span>
         <span class="c1"># get all python (ASE) jobs</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ase_jobs</span> <span class="o">=</span> <span class="n">BalsamJob</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span>
             <span class="n">application__contains</span><span class="o">=</span><span class="s1">&#39;python&#39;</span><span class="p">)</span>
 
-<div class="viewcode-block" id="Show.how_many_still_running"><a class="viewcode-back" href="../../index.html#pynta.show.Show.how_many_still_running">[docs]</a>    <span class="k">def</span> <span class="nf">how_many_still_running</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="Show.how_many_still_running"><a class="viewcode-back" href="../../source/pynta.html#pynta.show.Show.how_many_still_running">[docs]</a>    <span class="k">def</span> <span class="nf">how_many_still_running</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&#39;&#39;&#39; Show how many jobs required restart</span>
 
 <span class="sd">        Returns</span>
@@ -169,7 +169,7 @@
                 <span class="n">running_jobs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">job</span><span class="p">)</span>
         <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="n">running_jobs</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="Show.status"><a class="viewcode-back" href="../../index.html#pynta.show.Show.status">[docs]</a>    <span class="k">def</span> <span class="nf">status</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<div class="viewcode-block" id="Show.status"><a class="viewcode-back" href="../../source/pynta.html#pynta.show.Show.status">[docs]</a>    <span class="k">def</span> <span class="nf">status</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="sd">&#39;&#39;&#39; Show info about the current status of the Balsam DB, i.e.</span>
 <span class="sd">        How many jobs are running? How many already finished? etc...</span>
 
@@ -181,7 +181,7 @@
         <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">current_state</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
             <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{:&gt;17}</span><span class="s1"> : </span><span class="si">{:&gt;4}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">val</span><span class="p">))</span></div>
 
-<div class="viewcode-block" id="Show.not_finished"><a class="viewcode-back" href="../../index.html#pynta.show.Show.not_finished">[docs]</a>    <span class="k">def</span> <span class="nf">not_finished</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<div class="viewcode-block" id="Show.not_finished"><a class="viewcode-back" href="../../source/pynta.html#pynta.show.Show.not_finished">[docs]</a>    <span class="k">def</span> <span class="nf">not_finished</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="sd">&#39;&#39;&#39; Show info about all jobs that did not finish:</span>
 <span class="sd">        State, workflow name jobname</span>
 
@@ -210,7 +210,7 @@
     <p>
         &copy; Copyright Copyright 2021 National Technology &amp; Engineering Solutions of Sandia, LLC (NTESS). Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government retains certain rights in this software.
       <span class="lastupdated">
-        Last updated on Thu, 28 Jan 2021 18:45:53.
+        Last updated on Thu, 04 Feb 2021 12:04:09.
       </span>
 
     </p>

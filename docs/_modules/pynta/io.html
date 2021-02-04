@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>pynta.io &mdash; Pynta January 28, 2021 documentation</title>
+  <title>pynta.io &mdash; Pynta February 04, 2021 documentation</title>
   
 
   
@@ -146,27 +146,27 @@
 <span></span><span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">import</span> <span class="nn">shutil</span>
 <span class="kn">import</span> <span class="nn">yaml</span>
-<span class="kn">from</span> <span class="nn">pathlib</span> <span class="k">import</span> <span class="n">Path</span><span class="p">,</span> <span class="n">PosixPath</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="k">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Dict</span>
+<span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span><span class="p">,</span> <span class="n">PosixPath</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Dict</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">networkx</span> <span class="k">as</span> <span class="nn">nx</span>
 
-<span class="kn">from</span> <span class="nn">pynta.excatkit.molecule</span> <span class="k">import</span> <span class="n">Molecule</span>
-<span class="kn">from</span> <span class="nn">pynta.excatkit.gratoms</span> <span class="k">import</span> <span class="n">Gratoms</span>
-<span class="kn">from</span> <span class="nn">pynta.graph_utils</span> <span class="k">import</span> <span class="n">node_test</span>
+<span class="kn">from</span> <span class="nn">pynta.excatkit.molecule</span> <span class="kn">import</span> <span class="n">Molecule</span>
+<span class="kn">from</span> <span class="nn">pynta.excatkit.gratoms</span> <span class="kn">import</span> <span class="n">Gratoms</span>
+<span class="kn">from</span> <span class="nn">pynta.graph_utils</span> <span class="kn">import</span> <span class="n">node_test</span>
 
-<span class="kn">from</span> <span class="nn">ase.io</span> <span class="k">import</span> <span class="n">read</span><span class="p">,</span> <span class="n">write</span>
-<span class="kn">from</span> <span class="nn">ase.dft.kpoints</span> <span class="k">import</span> <span class="n">monkhorst_pack</span>
-<span class="kn">from</span> <span class="nn">ase.utils.structure_comparator</span> <span class="k">import</span> <span class="n">SymmetryEquivalenceCheck</span>
-<span class="kn">from</span> <span class="nn">ase.io.formats</span> <span class="k">import</span> <span class="n">UnknownFileTypeError</span>
+<span class="kn">from</span> <span class="nn">ase.io</span> <span class="kn">import</span> <span class="n">read</span><span class="p">,</span> <span class="n">write</span>
+<span class="kn">from</span> <span class="nn">ase.dft.kpoints</span> <span class="kn">import</span> <span class="n">monkhorst_pack</span>
+<span class="kn">from</span> <span class="nn">ase.utils.structure_comparator</span> <span class="kn">import</span> <span class="n">SymmetryEquivalenceCheck</span>
+<span class="kn">from</span> <span class="nn">ase.io.formats</span> <span class="kn">import</span> <span class="n">UnknownFileTypeError</span>
 
 
-<div class="viewcode-block" id="IO"><a class="viewcode-back" href="../../index.html#pynta.io.IO">[docs]</a><span class="k">class</span> <span class="nc">IO</span><span class="p">():</span>
+<div class="viewcode-block" id="IO"><a class="viewcode-back" href="../../source/pynta.html#pynta.io.IO">[docs]</a><span class="k">class</span> <span class="nc">IO</span><span class="p">():</span>
     <span class="sd">&#39;&#39;&#39; Class for handling Input/Output and transforming it to more usefull</span>
 <span class="sd">    format for the pynta &#39;&#39;&#39;</span>
 
-<div class="viewcode-block" id="IO.get_facetpath"><a class="viewcode-back" href="../../index.html#pynta.io.IO.get_facetpath">[docs]</a>    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="IO.get_facetpath"><a class="viewcode-back" href="../../source/pynta.html#pynta.io.IO.get_facetpath">[docs]</a>    <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">get_facetpath</span><span class="p">(</span>
             <span class="n">symbol</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
             <span class="n">surface_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
@@ -200,7 +200,7 @@
         <span class="n">facetpath</span> <span class="o">=</span> <span class="n">symbol</span> <span class="o">+</span> <span class="s1">&#39;_&#39;</span> <span class="o">+</span> <span class="n">facet</span>
         <span class="k">return</span> <span class="n">facetpath</span></div>
 
-<div class="viewcode-block" id="IO.get_facetpaths"><a class="viewcode-back" href="../../index.html#pynta.io.IO.get_facetpaths">[docs]</a>    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="IO.get_facetpaths"><a class="viewcode-back" href="../../source/pynta.html#pynta.io.IO.get_facetpaths">[docs]</a>    <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">get_facetpaths</span><span class="p">(</span>
             <span class="n">symbol</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
             <span class="n">surface_types</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
@@ -241,7 +241,7 @@
             <span class="n">facetpaths</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">facetpath</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">facetpaths</span></div>
 
-<div class="viewcode-block" id="IO.get_kpoints"><a class="viewcode-back" href="../../index.html#pynta.io.IO.get_kpoints">[docs]</a>    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="IO.get_kpoints"><a class="viewcode-back" href="../../source/pynta.html#pynta.io.IO.get_kpoints">[docs]</a>    <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">get_kpoints</span><span class="p">(</span>
             <span class="n">size</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span>
             <span class="n">get_uniq_kpts</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Optional</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]]:</span>
@@ -273,7 +273,7 @@
         <span class="n">m_uniq_kpts</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">uniq</span><span class="p">)</span>
         <span class="k">return</span> <span class="p">(</span><span class="n">m_uniq_kpts</span><span class="p">,</span> <span class="n">uniq</span><span class="p">)</span> <span class="k">if</span> <span class="n">get_uniq_kpts</span> <span class="k">else</span> <span class="n">m_uniq_kpts</span></div>
 
-<div class="viewcode-block" id="IO.get_species_dict"><a class="viewcode-back" href="../../index.html#pynta.io.IO.get_species_dict">[docs]</a>    <span class="k">def</span> <span class="nf">get_species_dict</span><span class="p">(</span>
+<div class="viewcode-block" id="IO.get_species_dict"><a class="viewcode-back" href="../../source/pynta.html#pynta.io.IO.get_species_dict">[docs]</a>    <span class="k">def</span> <span class="nf">get_species_dict</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span>
             <span class="n">yamlfile</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]:</span>
         <span class="sd">&#39;&#39;&#39; For a given reaction get a dictionary with all species that takes</span>
@@ -308,7 +308,7 @@
                 <span class="n">species_dict</span><span class="p">[</span><span class="s1">&#39;rxn</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">num</span><span class="p">)]</span> <span class="o">=</span> <span class="n">p_name_list</span>
         <span class="k">return</span> <span class="n">species_dict</span></div>
 
-<div class="viewcode-block" id="IO.open_yaml_file"><a class="viewcode-back" href="../../index.html#pynta.io.IO.open_yaml_file">[docs]</a>    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="IO.open_yaml_file"><a class="viewcode-back" href="../../source/pynta.html#pynta.io.IO.open_yaml_file">[docs]</a>    <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">open_yaml_file</span><span class="p">(</span>
             <span class="n">yamlfile</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]:</span>
         <span class="sd">&#39;&#39;&#39; Open yaml file with list of reactions</span>
@@ -329,7 +329,7 @@
         <span class="n">reactions</span> <span class="o">=</span> <span class="n">yaml</span><span class="o">.</span><span class="n">safe_load</span><span class="p">(</span><span class="n">yamltxt</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">reactions</span></div>
 
-<div class="viewcode-block" id="IO.get_all_unique_species_symbols"><a class="viewcode-back" href="../../index.html#pynta.io.IO.get_all_unique_species_symbols">[docs]</a>    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="IO.get_all_unique_species_symbols"><a class="viewcode-back" href="../../source/pynta.html#pynta.io.IO.get_all_unique_species_symbols">[docs]</a>    <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">get_all_unique_species_symbols</span><span class="p">(</span>
             <span class="n">yamlfile</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
         <span class="sd">&#39;&#39;&#39; Generate a list with all unique species names</span>
@@ -365,7 +365,7 @@
 
         <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">all_unique_species</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span></div>
 
-<div class="viewcode-block" id="IO.get_reactants_and_products"><a class="viewcode-back" href="../../index.html#pynta.io.IO.get_reactants_and_products">[docs]</a>    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="IO.get_reactants_and_products"><a class="viewcode-back" href="../../source/pynta.html#pynta.io.IO.get_reactants_and_products">[docs]</a>    <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">get_reactants_and_products</span><span class="p">(</span>
             <span class="n">rxn</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]:</span>
         <span class="sd">&#39;&#39;&#39; For a given rxn, get lists with all reactants and products</span>
@@ -405,7 +405,7 @@
         <span class="n">products</span> <span class="o">=</span> <span class="p">[</span><span class="n">prod</span> <span class="k">for</span> <span class="n">prod</span> <span class="ow">in</span> <span class="n">r_x_removed</span> <span class="k">if</span> <span class="n">prod</span><span class="p">]</span>
         <span class="k">return</span> <span class="n">reactants</span><span class="p">,</span> <span class="n">products</span></div>
 
-<div class="viewcode-block" id="IO.get_rxn_name"><a class="viewcode-back" href="../../index.html#pynta.io.IO.get_rxn_name">[docs]</a>    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="IO.get_rxn_name"><a class="viewcode-back" href="../../source/pynta.html#pynta.io.IO.get_rxn_name">[docs]</a>    <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">get_rxn_name</span><span class="p">(</span>
             <span class="n">rxn</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
         <span class="sd">&#39;&#39;&#39; Get a reaction name for a given rxn</span>
@@ -428,7 +428,7 @@
         <span class="n">rxn_name</span> <span class="o">=</span> <span class="s1">&#39;+&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">reactants</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;_&#39;</span> <span class="o">+</span> <span class="s1">&#39;+&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">products</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">rxn_name</span></div>
 
-<div class="viewcode-block" id="IO.get_xyz_from_traj"><a class="viewcode-back" href="../../index.html#pynta.io.IO.get_xyz_from_traj">[docs]</a>    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="IO.get_xyz_from_traj"><a class="viewcode-back" href="../../source/pynta.html#pynta.io.IO.get_xyz_from_traj">[docs]</a>    <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">get_xyz_from_traj</span><span class="p">(</span>
             <span class="n">path_to_species</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="sd">&#39;&#39;&#39; Convert all ASE&#39;s traj files to .xyz files for a given species</span>
@@ -450,7 +450,7 @@
                     <span class="n">path_to_species</span><span class="p">,</span> <span class="n">traj</span><span class="p">[:</span><span class="o">-</span><span class="mi">5</span><span class="p">]</span> <span class="o">+</span> <span class="s1">&#39;_final.xyz&#39;</span><span class="p">)</span>
                 <span class="n">write</span><span class="p">(</span><span class="n">des_traj_path</span><span class="p">,</span> <span class="n">read</span><span class="p">(</span><span class="n">src_traj_path</span><span class="p">))</span></div>
 
-<div class="viewcode-block" id="IO.depends_on"><a class="viewcode-back" href="../../index.html#pynta.io.IO.depends_on">[docs]</a>    <span class="k">def</span> <span class="nf">depends_on</span><span class="p">(</span>
+<div class="viewcode-block" id="IO.depends_on"><a class="viewcode-back" href="../../source/pynta.html#pynta.io.IO.depends_on">[docs]</a>    <span class="k">def</span> <span class="nf">depends_on</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span>
             <span class="n">facetpath</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
             <span class="n">yamlfile</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -520,7 +520,7 @@
             <span class="n">dependancy_dict</span><span class="p">[</span><span class="n">rxn_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">minima_py_list</span>
         <span class="k">return</span> <span class="n">dependancy_dict</span></div>
 
-<div class="viewcode-block" id="IO.clean_finished_subjobs"><a class="viewcode-back" href="../../index.html#pynta.io.IO.clean_finished_subjobs">[docs]</a>    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="IO.clean_finished_subjobs"><a class="viewcode-back" href="../../source/pynta.html#pynta.io.IO.clean_finished_subjobs">[docs]</a>    <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">clean_finished_subjobs</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="sd">&#39;&#39;&#39; Move finished subjob files to finished_tmp_scripts directory &#39;&#39;&#39;</span>
         <span class="n">dir_name</span> <span class="o">=</span> <span class="s1">&#39;finished_tmp_scripts&#39;</span>
@@ -537,7 +537,7 @@
                     <span class="c1"># and corresponding .py.out files</span>
                     <span class="n">shutil</span><span class="o">.</span><span class="n">move</span><span class="p">(</span><span class="n">file</span><span class="p">[:</span><span class="o">-</span><span class="mi">4</span><span class="p">],</span> <span class="n">dir_name</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="IO.get_unique_adsorbates_prefixes"><a class="viewcode-back" href="../../index.html#pynta.io.IO.get_unique_adsorbates_prefixes">[docs]</a>    <span class="k">def</span> <span class="nf">get_unique_adsorbates_prefixes</span><span class="p">(</span>
+<div class="viewcode-block" id="IO.get_unique_adsorbates_prefixes"><a class="viewcode-back" href="../../source/pynta.html#pynta.io.IO.get_unique_adsorbates_prefixes">[docs]</a>    <span class="k">def</span> <span class="nf">get_unique_adsorbates_prefixes</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span>
             <span class="n">facetpath</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
             <span class="n">yamlfile</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -570,7 +570,7 @@
             <span class="n">unique_adsorbates_prefixes</span><span class="p">[</span><span class="n">species</span><span class="p">]</span> <span class="o">=</span> <span class="n">uq_prefixes</span>
         <span class="k">return</span> <span class="n">unique_adsorbates_prefixes</span></div>
 
-<div class="viewcode-block" id="IO.get_unique_prefixes"><a class="viewcode-back" href="../../index.html#pynta.io.IO.get_unique_prefixes">[docs]</a>    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="IO.get_unique_prefixes"><a class="viewcode-back" href="../../source/pynta.html#pynta.io.IO.get_unique_prefixes">[docs]</a>    <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">get_unique_prefixes</span><span class="p">(</span>
             <span class="n">path_to_species</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
         <span class="sd">&#39;&#39;&#39; Compare each conformers for a given adsorbate and returns a list</span>
@@ -605,7 +605,7 @@
                 <span class="n">unique_minima_prefixes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">prefix</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">unique_minima_prefixes</span></div>
 
-<div class="viewcode-block" id="IO.get_unique_final_ts_prefixes"><a class="viewcode-back" href="../../index.html#pynta.io.IO.get_unique_final_ts_prefixes">[docs]</a>    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="IO.get_unique_final_ts_prefixes"><a class="viewcode-back" href="../../source/pynta.html#pynta.io.IO.get_unique_final_ts_prefixes">[docs]</a>    <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">get_unique_final_ts_prefixes</span><span class="p">(</span>
             <span class="n">path_to_ts</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
         <span class="sd">&#39;&#39;&#39; Compare each conformers for a given adsorbate and returns a list</span>
@@ -644,7 +644,7 @@
                 <span class="n">unique_ts_prefixes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">prefix</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">unique_ts_prefixes</span></div>
 
-<div class="viewcode-block" id="IO.get_list_all_rxns_names"><a class="viewcode-back" href="../../index.html#pynta.io.IO.get_list_all_rxns_names">[docs]</a>    <span class="k">def</span> <span class="nf">get_list_all_rxns_names</span><span class="p">(</span>
+<div class="viewcode-block" id="IO.get_list_all_rxns_names"><a class="viewcode-back" href="../../source/pynta.html#pynta.io.IO.get_list_all_rxns_names">[docs]</a>    <span class="k">def</span> <span class="nf">get_list_all_rxns_names</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span>
             <span class="n">yamlfile</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
         <span class="sd">&#39;&#39;&#39; Get a list with all reactions names</span>
@@ -669,7 +669,7 @@
             <span class="n">all_rxns</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">rxn_name</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">all_rxns</span></div>
 
-<div class="viewcode-block" id="IO.get_all_reacting_atoms"><a class="viewcode-back" href="../../index.html#pynta.io.IO.get_all_reacting_atoms">[docs]</a>    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="IO.get_all_reacting_atoms"><a class="viewcode-back" href="../../source/pynta.html#pynta.io.IO.get_all_reacting_atoms">[docs]</a>    <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">get_all_reacting_atoms</span><span class="p">(</span><span class="n">yamlfile</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]]:</span>
         <span class="sd">&#39;&#39;&#39; Read a :literal:`*.yaml` file with all reactions and extract</span>
 <span class="sd">        reacting atoms symbols and indicies - the one with asterisk in the</span>
@@ -710,7 +710,7 @@
             <span class="n">all_reacting_atoms</span><span class="p">[</span><span class="s1">&#39;rxn_</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">num</span><span class="p">)]</span> <span class="o">=</span> <span class="n">reacting_atoms_and_idxs</span>
         <span class="k">return</span> <span class="n">all_reacting_atoms</span></div>
 
-<div class="viewcode-block" id="IO.get_reacting_atoms_idx_dict"><a class="viewcode-back" href="../../index.html#pynta.io.IO.get_reacting_atoms_idx_dict">[docs]</a>    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="IO.get_reacting_atoms_idx_dict"><a class="viewcode-back" href="../../source/pynta.html#pynta.io.IO.get_reacting_atoms_idx_dict">[docs]</a>    <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">get_reacting_atoms_idx_dict</span><span class="p">(</span>
             <span class="n">reacting_species_connectivity</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
         <span class="sd">&#39;&#39;&#39; Get a dict with atomic symbols and indicies of reacting atoms -</span>
@@ -760,7 +760,7 @@
                     <span class="n">num</span> <span class="o">-</span> <span class="n">n_surf_at_befor_ads</span> <span class="o">-</span> <span class="n">remove_one_more</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">reacting_idxs</span></div>
 
-<div class="viewcode-block" id="IO.get_TS_guess_image"><a class="viewcode-back" href="../../index.html#pynta.io.IO.get_TS_guess_image">[docs]</a>    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="IO.get_TS_guess_image"><a class="viewcode-back" href="../../source/pynta.html#pynta.io.IO.get_TS_guess_image">[docs]</a>    <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">get_TS_guess_image</span><span class="p">(</span>
             <span class="n">rxn</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
             <span class="n">easier_to_build</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Gratoms</span><span class="p">:</span>
@@ -791,7 +791,7 @@
         <span class="n">ts_guess_image</span> <span class="o">=</span> <span class="n">Molecule</span><span class="p">()</span><span class="o">.</span><span class="n">get_3D_positions</span><span class="p">(</span><span class="n">ts_guess</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
         <span class="k">return</span> <span class="n">ts_guess_image</span></div>
 
-<div class="viewcode-block" id="IO.get_all_unique_images_with_bonds"><a class="viewcode-back" href="../../index.html#pynta.io.IO.get_all_unique_images_with_bonds">[docs]</a>    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="IO.get_all_unique_images_with_bonds"><a class="viewcode-back" href="../../source/pynta.html#pynta.io.IO.get_all_unique_images_with_bonds">[docs]</a>    <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">get_all_unique_images_with_bonds</span><span class="p">(</span>
             <span class="n">yamlfile</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Gratoms</span><span class="p">]]:</span>
         <span class="sd">&#39;&#39;&#39; Return a list with all unique images (Gratoms) for all reactions</span>
@@ -849,7 +849,7 @@
             <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
         <span class="k">return</span> <span class="n">all_images_with_bonds</span></div>
 
-<div class="viewcode-block" id="IO.get_images"><a class="viewcode-back" href="../../index.html#pynta.io.IO.get_images">[docs]</a>    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="IO.get_images"><a class="viewcode-back" href="../../source/pynta.html#pynta.io.IO.get_images">[docs]</a>    <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">get_images</span><span class="p">(</span><span class="n">rxn</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Gratoms</span><span class="p">]:</span>
         <span class="sd">&#39;&#39;&#39; Convert RMGCat representation of species for a given rxn</span>
 <span class="sd">        to a dict of Gratoms objects - both reactants and products combined.</span>
@@ -896,7 +896,7 @@
                 <span class="n">unique_species</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">species1</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">images</span></div>
 
-<div class="viewcode-block" id="IO.get_bonded_dict"><a class="viewcode-back" href="../../index.html#pynta.io.IO.get_bonded_dict">[docs]</a>    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="IO.get_bonded_dict"><a class="viewcode-back" href="../../source/pynta.html#pynta.io.IO.get_bonded_dict">[docs]</a>    <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">get_bonded_dict</span><span class="p">(</span>
             <span class="n">reactants</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Gratoms</span><span class="p">],</span>
             <span class="n">reactant_bonded_idx</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
@@ -927,7 +927,7 @@
                     <span class="n">bonded_dict</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">symbols</span><span class="p">)]</span> <span class="o">=</span> <span class="n">atom</span><span class="o">.</span><span class="n">index</span>
         <span class="k">return</span> <span class="n">bonded_dict</span></div>
 
-<div class="viewcode-block" id="IO.get_surface_bonded"><a class="viewcode-back" href="../../index.html#pynta.io.IO.get_surface_bonded">[docs]</a>    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="IO.get_surface_bonded"><a class="viewcode-back" href="../../source/pynta.html#pynta.io.IO.get_surface_bonded">[docs]</a>    <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">get_surface_bonded</span><span class="p">(</span><span class="n">adjtxt</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]:</span>
         <span class="sd">&#39;&#39;&#39; For each reactant in adjtxt from :literal:`*.yaml` file, get info</span>
 <span class="sd">        which atoms are connected to surface</span>
@@ -1023,7 +1023,7 @@
             <span class="n">idx</span> <span class="o">-</span> <span class="n">n_surf_at_befor_ads</span> <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="n">idx_surface_bonded_atoms</span><span class="p">]</span>
         <span class="k">return</span> <span class="n">idx_surface_bonded_atoms</span></div>
 
-<div class="viewcode-block" id="IO.rmgcat_to_gratoms"><a class="viewcode-back" href="../../index.html#pynta.io.IO.rmgcat_to_gratoms">[docs]</a>    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="IO.rmgcat_to_gratoms"><a class="viewcode-back" href="../../source/pynta.html#pynta.io.IO.rmgcat_to_gratoms">[docs]</a>    <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">rmgcat_to_gratoms</span><span class="p">(</span>
             <span class="n">adjtxt</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Gratoms</span><span class="p">]:</span>
         <span class="sd">&#39;&#39;&#39; Convert a slice of :literal:`*.yaml` file to Catkit&#39;s Gratoms object</span>
@@ -1129,7 +1129,7 @@
             <span class="n">gratoms_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">new_gratoms</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">gratoms_list</span></div>
 
-<div class="viewcode-block" id="IO.get_calculators"><a class="viewcode-back" href="../../index.html#pynta.io.IO.get_calculators">[docs]</a>    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="IO.get_calculators"><a class="viewcode-back" href="../../source/pynta.html#pynta.io.IO.get_calculators">[docs]</a>    <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">get_calculators</span><span class="p">(</span><span class="n">quantum_chemistry</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
         <span class="sd">&#39;&#39;&#39; Get a proper names of quantum_chemistry calculators</span>
 <span class="sd">        (socket and balsamsocket)</span>
@@ -1164,7 +1164,7 @@
 
         <span class="k">return</span> <span class="n">calculator</span><span class="p">,</span> <span class="n">socket_calculator</span></div>
 
-<div class="viewcode-block" id="IO.set_calculators"><a class="viewcode-back" href="../../index.html#pynta.io.IO.set_calculators">[docs]</a>    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="IO.set_calculators"><a class="viewcode-back" href="../../source/pynta.html#pynta.io.IO.set_calculators">[docs]</a>    <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">set_calculators</span><span class="p">(</span>
             <span class="n">executable</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
             <span class="n">calculator</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -1209,7 +1209,7 @@
     <p>
         &copy; Copyright Copyright 2021 National Technology &amp; Engineering Solutions of Sandia, LLC (NTESS). Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government retains certain rights in this software.
       <span class="lastupdated">
-        Last updated on Thu, 28 Jan 2021 18:45:53.
+        Last updated on Thu, 04 Feb 2021 12:04:09.
       </span>
 
     </p>

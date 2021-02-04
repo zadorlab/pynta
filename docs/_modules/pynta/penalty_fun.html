@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>pynta.penalty_fun &mdash; Pynta January 28, 2021 documentation</title>
+  <title>pynta.penalty_fun &mdash; Pynta February 04, 2021 documentation</title>
   
 
   
@@ -143,14 +143,14 @@
            <div itemprop="articleBody">
             
   <h1>Source code for pynta.penalty_fun</h1><div class="highlight"><pre>
-<span></span><span class="kn">from</span> <span class="nn">typing</span> <span class="k">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Tuple</span>
-<span class="kn">from</span> <span class="nn">ase</span> <span class="k">import</span> <span class="n">Atoms</span>
-<span class="kn">from</span> <span class="nn">ase.io.trajectory</span> <span class="k">import</span> <span class="n">Trajectory</span>
+<span></span><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Tuple</span>
+<span class="kn">from</span> <span class="nn">ase</span> <span class="kn">import</span> <span class="n">Atoms</span>
+<span class="kn">from</span> <span class="nn">ase.io.trajectory</span> <span class="kn">import</span> <span class="n">Trajectory</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">from</span> <span class="nn">scipy.optimize</span> <span class="k">import</span> <span class="n">minimize</span>
+<span class="kn">from</span> <span class="nn">scipy.optimize</span> <span class="kn">import</span> <span class="n">minimize</span>
 
 
-<div class="viewcode-block" id="skew"><a class="viewcode-back" href="../../index.html#pynta.penalty_fun.skew">[docs]</a><span class="k">def</span> <span class="nf">skew</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<div class="viewcode-block" id="skew"><a class="viewcode-back" href="../../source/pynta.html#pynta.penalty_fun.skew">[docs]</a><span class="k">def</span> <span class="nf">skew</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
     <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span>
     <span class="n">X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
     <span class="n">X</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="n">x</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
@@ -160,8 +160,8 @@
     <span class="k">return</span> <span class="n">X</span></div>
 
 
-<div class="viewcode-block" id="AdsorbatePlacer"><a class="viewcode-back" href="../../index.html#pynta.penalty_fun.AdsorbatePlacer">[docs]</a><span class="k">class</span> <span class="nc">AdsorbatePlacer</span><span class="p">:</span>
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+<div class="viewcode-block" id="AdsorbatePlacer"><a class="viewcode-back" href="../../source/pynta.html#pynta.penalty_fun.AdsorbatePlacer">[docs]</a><span class="k">class</span> <span class="nc">AdsorbatePlacer</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
                  <span class="n">slab</span><span class="p">:</span> <span class="n">Atoms</span><span class="p">,</span>
                  <span class="n">adsorbate</span><span class="p">:</span> <span class="n">Atoms</span><span class="p">,</span>
                  <span class="n">bonds</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]],</span>
@@ -223,7 +223,7 @@
 <span class="sd">        &#39;&#39;&#39;</span>
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">adsorbate</span><span class="o">.</span><span class="n">positions</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
 
-<div class="viewcode-block" id="AdsorbatePlacer.set_y"><a class="viewcode-back" href="../../index.html#pynta.penalty_fun.AdsorbatePlacer.set_y">[docs]</a>    <span class="k">def</span> <span class="nf">set_y</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">yin</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<div class="viewcode-block" id="AdsorbatePlacer.set_y"><a class="viewcode-back" href="../../source/pynta.html#pynta.penalty_fun.AdsorbatePlacer.set_y">[docs]</a>    <span class="k">def</span> <span class="nf">set_y</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">yin</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="sd">&#39;&#39;&#39; Set y axis</span>
 
 <span class="sd">        Parameters</span>
@@ -240,7 +240,7 @@
         <span class="n">ads</span><span class="o">.</span><span class="n">rotate</span><span class="p">(</span><span class="n">angle</span><span class="p">,</span> <span class="n">v</span><span class="o">=</span><span class="n">axis</span><span class="p">,</span> <span class="n">center</span><span class="o">=</span><span class="n">center</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ads_ref</span><span class="o">.</span><span class="n">positions</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">nslab</span><span class="p">:]</span> <span class="o">=</span> <span class="n">ads</span><span class="o">.</span><span class="n">positions</span></div>
 
-<div class="viewcode-block" id="AdsorbatePlacer.penalty"><a class="viewcode-back" href="../../index.html#pynta.penalty_fun.AdsorbatePlacer.penalty">[docs]</a>    <span class="k">def</span> <span class="nf">penalty</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<div class="viewcode-block" id="AdsorbatePlacer.penalty"><a class="viewcode-back" href="../../source/pynta.html#pynta.penalty_fun.AdsorbatePlacer.penalty">[docs]</a>    <span class="k">def</span> <span class="nf">penalty</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
         <span class="sd">&#39;&#39;&#39; Define a penalty function</span>
 
 <span class="sd">        Parameters</span>
@@ -260,7 +260,7 @@
             <span class="n">pen</span> <span class="o">+=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ads_ref</span><span class="o">.</span><span class="n">get_distance</span><span class="p">(</span><span class="o">*</span><span class="n">bond</span><span class="p">)</span> <span class="o">-</span> <span class="n">dist</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span>
         <span class="k">return</span> <span class="n">pen</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">weight</span></div>
 
-<div class="viewcode-block" id="AdsorbatePlacer.dpdx"><a class="viewcode-back" href="../../index.html#pynta.penalty_fun.AdsorbatePlacer.dpdx">[docs]</a>    <span class="k">def</span> <span class="nf">dpdx</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<div class="viewcode-block" id="AdsorbatePlacer.dpdx"><a class="viewcode-back" href="../../source/pynta.html#pynta.penalty_fun.AdsorbatePlacer.dpdx">[docs]</a>    <span class="k">def</span> <span class="nf">dpdx</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
         <span class="sd">&#39;&#39;&#39; Return a flaten dpdx array</span>
 
 <span class="sd">        Parameters</span>
@@ -286,7 +286,7 @@
                 <span class="n">dpdx</span><span class="p">[</span><span class="n">bond</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">nslab</span><span class="p">]</span> <span class="o">+=</span> <span class="n">deriv</span>
         <span class="k">return</span> <span class="n">dpdx</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span></div>
 
-<div class="viewcode-block" id="AdsorbatePlacer.penalty_jac"><a class="viewcode-back" href="../../index.html#pynta.penalty_fun.AdsorbatePlacer.penalty_jac">[docs]</a>    <span class="k">def</span> <span class="nf">penalty_jac</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<div class="viewcode-block" id="AdsorbatePlacer.penalty_jac"><a class="viewcode-back" href="../../source/pynta.html#pynta.penalty_fun.AdsorbatePlacer.penalty_jac">[docs]</a>    <span class="k">def</span> <span class="nf">penalty_jac</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
         <span class="sd">&#39;&#39;&#39; Deal with jacobians</span>
 
 <span class="sd">        Parameters</span>
@@ -302,7 +302,7 @@
 <span class="sd">        &#39;&#39;&#39;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">dpdx</span><span class="p">(</span><span class="n">y</span><span class="p">)</span> <span class="o">@</span> <span class="bp">self</span><span class="o">.</span><span class="n">dxdy</span><span class="p">(</span><span class="n">y</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="AdsorbatePlacer.x"><a class="viewcode-back" href="../../index.html#pynta.penalty_fun.AdsorbatePlacer.x">[docs]</a>    <span class="k">def</span> <span class="nf">x</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<div class="viewcode-block" id="AdsorbatePlacer.x"><a class="viewcode-back" href="../../source/pynta.html#pynta.penalty_fun.AdsorbatePlacer.x">[docs]</a>    <span class="k">def</span> <span class="nf">x</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
         <span class="sd">&#39;&#39;&#39; Return a flaten array of adsorbate positions</span>
 
 <span class="sd">        Parameters</span>
@@ -319,7 +319,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">set_y</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">ads_ref</span><span class="o">.</span><span class="n">positions</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">nslab</span><span class="p">:]</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span></div>
 
-<div class="viewcode-block" id="AdsorbatePlacer.dxdy"><a class="viewcode-back" href="../../index.html#pynta.penalty_fun.AdsorbatePlacer.dxdy">[docs]</a>    <span class="k">def</span> <span class="nf">dxdy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<div class="viewcode-block" id="AdsorbatePlacer.dxdy"><a class="viewcode-back" href="../../source/pynta.html#pynta.penalty_fun.AdsorbatePlacer.dxdy">[docs]</a>    <span class="k">def</span> <span class="nf">dxdy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
         <span class="sd">&#39;&#39;&#39; Get a dxdy array</span>
 
 <span class="sd">        Parameters</span>
@@ -357,7 +357,7 @@
             <span class="p">)</span>
         <span class="k">return</span> <span class="n">dxdy</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span></div>
 
-<div class="viewcode-block" id="AdsorbatePlacer.energy"><a class="viewcode-back" href="../../index.html#pynta.penalty_fun.AdsorbatePlacer.energy">[docs]</a>    <span class="k">def</span> <span class="nf">energy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<div class="viewcode-block" id="AdsorbatePlacer.energy"><a class="viewcode-back" href="../../source/pynta.html#pynta.penalty_fun.AdsorbatePlacer.energy">[docs]</a>    <span class="k">def</span> <span class="nf">energy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
         <span class="sd">&#39;&#39;&#39; Return a sum of penalty function and total energy</span>
 
 <span class="sd">        Parameters</span>
@@ -373,7 +373,7 @@
 <span class="sd">        &#39;&#39;&#39;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">penalty</span><span class="p">(</span><span class="n">y</span><span class="p">)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">ads_ref</span><span class="o">.</span><span class="n">get_potential_energy</span><span class="p">()</span></div>
 
-<div class="viewcode-block" id="AdsorbatePlacer.gradient"><a class="viewcode-back" href="../../index.html#pynta.penalty_fun.AdsorbatePlacer.gradient">[docs]</a>    <span class="k">def</span> <span class="nf">gradient</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<div class="viewcode-block" id="AdsorbatePlacer.gradient"><a class="viewcode-back" href="../../source/pynta.html#pynta.penalty_fun.AdsorbatePlacer.gradient">[docs]</a>    <span class="k">def</span> <span class="nf">gradient</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
         <span class="sd">&#39;&#39;&#39; Return a scaled gradient</span>
 
 <span class="sd">        Parameters</span>
@@ -394,7 +394,7 @@
         <span class="n">jac</span> <span class="o">-=</span> <span class="n">forces</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">nslab</span><span class="p">:]</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span> <span class="o">@</span> <span class="bp">self</span><span class="o">.</span><span class="n">dxdy</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">jac</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">scale</span></div>
 
-<div class="viewcode-block" id="AdsorbatePlacer.optimize"><a class="viewcode-back" href="../../index.html#pynta.penalty_fun.AdsorbatePlacer.optimize">[docs]</a>    <span class="k">def</span> <span class="nf">optimize</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Atoms</span><span class="p">:</span>
+<div class="viewcode-block" id="AdsorbatePlacer.optimize"><a class="viewcode-back" href="../../source/pynta.html#pynta.penalty_fun.AdsorbatePlacer.optimize">[docs]</a>    <span class="k">def</span> <span class="nf">optimize</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Atoms</span><span class="p">:</span>
         <span class="sd">&#39;&#39;&#39; Minimize penalty function defined as:</span>
 
 <span class="sd">        .. math::</span>
@@ -452,7 +452,7 @@
     <p>
         &copy; Copyright Copyright 2021 National Technology &amp; Engineering Solutions of Sandia, LLC (NTESS). Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government retains certain rights in this software.
       <span class="lastupdated">
-        Last updated on Thu, 28 Jan 2021 18:45:53.
+        Last updated on Thu, 04 Feb 2021 12:04:09.
       </span>
 
     </p>

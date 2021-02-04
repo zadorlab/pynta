@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>pynta.excatkit.symmetry &mdash; Pynta January 28, 2021 documentation</title>
+  <title>pynta.excatkit.symmetry &mdash; Pynta February 04, 2021 documentation</title>
   
 
   
@@ -148,10 +148,10 @@
 <span class="kn">import</span> <span class="nn">spglib</span>
 
 
-<div class="viewcode-block" id="Symmetry"><a class="viewcode-back" href="../../../index.html#pynta.excatkit.symmetry.Symmetry">[docs]</a><span class="k">class</span> <span class="nc">Symmetry</span><span class="p">():</span>
+<div class="viewcode-block" id="Symmetry"><a class="viewcode-back" href="../../../source/pynta.html#pynta.excatkit.symmetry.Symmetry">[docs]</a><span class="k">class</span> <span class="nc">Symmetry</span><span class="p">():</span>
     <span class="sd">&#39;&#39;&#39; Wrapper for the ``spglib`` package. &#39;&#39;&#39;</span>
 
-<div class="viewcode-block" id="Symmetry.__init__"><a class="viewcode-back" href="../../../index.html#pynta.excatkit.symmetry.Symmetry.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">atoms</span><span class="p">,</span> <span class="n">tol</span><span class="o">=</span><span class="mf">1e-5</span><span class="p">,</span> <span class="n">ang_tol</span><span class="o">=-</span><span class="mi">1</span><span class="p">):</span>
+<div class="viewcode-block" id="Symmetry.__init__"><a class="viewcode-back" href="../../../source/pynta.html#pynta.excatkit.symmetry.Symmetry.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">atoms</span><span class="p">,</span> <span class="n">tol</span><span class="o">=</span><span class="mf">1e-5</span><span class="p">,</span> <span class="n">ang_tol</span><span class="o">=-</span><span class="mi">1</span><span class="p">):</span>
         <span class="sd">&#39;&#39;&#39; Atoms object interface with spglib `symmetry finder</span>
 <span class="sd">            &lt;https://atztogo.github.io/spglib/python-spglib.html#python-spglib&gt;`:</span>
 
@@ -175,7 +175,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">spglib</span><span class="o">.</span><span class="n">get_symmetry_dataset</span><span class="p">(</span>
             <span class="n">cell</span><span class="p">,</span> <span class="n">symprec</span><span class="o">=</span><span class="n">tol</span><span class="p">,</span> <span class="n">angle_tolerance</span><span class="o">=</span><span class="n">ang_tol</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="Symmetry.get_symmetry_operations"><a class="viewcode-back" href="../../../index.html#pynta.excatkit.symmetry.Symmetry.get_symmetry_operations">[docs]</a>    <span class="k">def</span> <span class="nf">get_symmetry_operations</span><span class="p">(</span>
+<div class="viewcode-block" id="Symmetry.get_symmetry_operations"><a class="viewcode-back" href="../../../source/pynta.html#pynta.excatkit.symmetry.Symmetry.get_symmetry_operations">[docs]</a>    <span class="k">def</span> <span class="nf">get_symmetry_operations</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span>
             <span class="n">affine</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
         <span class="sd">&#39;&#39;&#39; Return the symmetry operations for a given atomic structure.</span>
@@ -207,7 +207,7 @@
 
         <span class="k">return</span> <span class="n">rotations</span><span class="p">,</span> <span class="n">translations</span></div>
 
-<div class="viewcode-block" id="Symmetry.get_pointgroup"><a class="viewcode-back" href="../../../index.html#pynta.excatkit.symmetry.Symmetry.get_pointgroup">[docs]</a>    <span class="k">def</span> <span class="nf">get_pointgroup</span><span class="p">(</span>
+<div class="viewcode-block" id="Symmetry.get_pointgroup"><a class="viewcode-back" href="../../../source/pynta.html#pynta.excatkit.symmetry.Symmetry.get_pointgroup">[docs]</a>    <span class="k">def</span> <span class="nf">get_pointgroup</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span>
             <span class="n">check_laue</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
         <span class="sd">&#39;&#39;&#39; Return the point group operations of a systems.</span>
@@ -236,7 +236,7 @@
 
         <span class="k">return</span> <span class="n">pointgroup</span></div>
 
-<div class="viewcode-block" id="Symmetry.get_lattice_name"><a class="viewcode-back" href="../../../index.html#pynta.excatkit.symmetry.Symmetry.get_lattice_name">[docs]</a>    <span class="k">def</span> <span class="nf">get_lattice_name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="Symmetry.get_lattice_name"><a class="viewcode-back" href="../../../source/pynta.html#pynta.excatkit.symmetry.Symmetry.get_lattice_name">[docs]</a>    <span class="k">def</span> <span class="nf">get_lattice_name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&#39;&#39;&#39; Return the lattice name of an atoms object based</span>
 <span class="sd">        on its `spacegroup number &lt;https://en.wikipedia.org/wiki/List_of_space_groups/&gt;`:</span>
 
@@ -264,7 +264,7 @@
                 <span class="k">return</span> <span class="n">lattice</span></div></div>
 
 
-<div class="viewcode-block" id="get_modified_spin_symbols"><a class="viewcode-back" href="../../../index.html#pynta.excatkit.symmetry.get_modified_spin_symbols">[docs]</a><span class="k">def</span> <span class="nf">get_modified_spin_symbols</span><span class="p">(</span><span class="n">numbers</span><span class="p">,</span> <span class="n">magmoms</span><span class="p">):</span>
+<div class="viewcode-block" id="get_modified_spin_symbols"><a class="viewcode-back" href="../../../source/pynta.html#pynta.excatkit.symmetry.get_modified_spin_symbols">[docs]</a><span class="k">def</span> <span class="nf">get_modified_spin_symbols</span><span class="p">(</span><span class="n">numbers</span><span class="p">,</span> <span class="n">magmoms</span><span class="p">):</span>
     <span class="sd">&#39;&#39;&#39;Return a representation of atomic symbols which is</span>
 <span class="sd">    unique to the magnetic moment as well.</span>
 
@@ -309,7 +309,7 @@
     <p>
         &copy; Copyright Copyright 2021 National Technology &amp; Engineering Solutions of Sandia, LLC (NTESS). Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government retains certain rights in this software.
       <span class="lastupdated">
-        Last updated on Thu, 28 Jan 2021 18:45:53.
+        Last updated on Thu, 04 Feb 2021 12:04:09.
       </span>
 
     </p>

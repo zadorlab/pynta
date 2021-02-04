@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>pynta.main &mdash; Pynta January 28, 2021 documentation</title>
+  <title>pynta.main &mdash; Pynta February 04, 2021 documentation</title>
   
 
   
@@ -144,16 +144,16 @@
             
   <h1>Source code for pynta.main</h1><div class="highlight"><pre>
 <span></span><span class="ch">#!/usr/bin/env python</span>
-<span class="kn">from</span> <span class="nn">pynta.check_input</span> <span class="k">import</span> <span class="n">InputChecker</span>
-<span class="kn">from</span> <span class="nn">pynta.restart</span> <span class="k">import</span> <span class="n">LowLevelRestart</span><span class="p">,</span> <span class="n">HighLevelRestart</span>
-<span class="kn">from</span> <span class="nn">pynta.io</span> <span class="k">import</span> <span class="n">IO</span>
+<span class="kn">from</span> <span class="nn">pynta.check_input</span> <span class="kn">import</span> <span class="n">InputChecker</span>
+<span class="kn">from</span> <span class="nn">pynta.restart</span> <span class="kn">import</span> <span class="n">LowLevelRestart</span><span class="p">,</span> <span class="n">HighLevelRestart</span>
+<span class="kn">from</span> <span class="nn">pynta.io</span> <span class="kn">import</span> <span class="n">IO</span>
 
-<span class="kn">from</span> <span class="nn">typing</span> <span class="k">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Optional</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Optional</span>
 <span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">import</span> <span class="nn">sys</span>
 <span class="kn">import</span> <span class="nn">__main__</span>
-<span class="kn">from</span> <span class="nn">pathlib</span> <span class="k">import</span> <span class="n">Path</span><span class="p">,</span> <span class="n">PosixPath</span>
-<span class="kn">from</span> <span class="nn">warnings</span> <span class="k">import</span> <span class="n">warn</span>
+<span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span><span class="p">,</span> <span class="n">PosixPath</span>
+<span class="kn">from</span> <span class="nn">warnings</span> <span class="kn">import</span> <span class="n">warn</span>
 
 
 <span class="c1"># check which file calls this module and adjust working_dir path accordingly</span>
@@ -261,7 +261,7 @@
 
 <div class="viewcode-block" id="WorkFlow"><a class="viewcode-back" href="../../index.html#pynta.main.WorkFlow">[docs]</a><span class="k">class</span> <span class="nc">WorkFlow</span><span class="p">:</span>
 
-<div class="viewcode-block" id="WorkFlow.__init__"><a class="viewcode-back" href="../../index.html#pynta.main.WorkFlow.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="WorkFlow.__init__"><a class="viewcode-back" href="../../index.html#pynta.main.WorkFlow.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&#39;&#39;&#39; Setup the balsam application.</span>
 
 <span class="sd">        Once Quantum Chemistry calculations starts there will be one app for</span>
@@ -270,7 +270,7 @@
 <span class="sd">        &#39;&#39;&#39;</span>
         <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Checking Balsam DB...&#39;</span><span class="p">)</span>
         <span class="k">try</span><span class="p">:</span>
-            <span class="kn">from</span> <span class="nn">balsam.core.models</span> <span class="k">import</span> <span class="n">ApplicationDefinition</span>
+            <span class="kn">from</span> <span class="nn">balsam.core.models</span> <span class="kn">import</span> <span class="n">ApplicationDefinition</span>
 
             <span class="bp">self</span><span class="o">.</span><span class="n">myPython</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">ApplicationDefinition</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get_or_create</span><span class="p">(</span>
                 <span class="n">name</span><span class="o">=</span><span class="s2">&quot;python&quot;</span><span class="p">,</span>
@@ -1192,7 +1192,7 @@
 <span class="sd">            job that will be submitted to balsam database</span>
 
 <span class="sd">        &#39;&#39;&#39;</span>
-        <span class="kn">from</span> <span class="nn">balsam.launcher.dag</span> <span class="k">import</span> <span class="n">BalsamJob</span>
+        <span class="kn">from</span> <span class="nn">balsam.launcher.dag</span> <span class="kn">import</span> <span class="n">BalsamJob</span>
 
         <span class="n">job_files_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
             <span class="n">creation_dir</span><span class="p">,</span> <span class="n">job_file_dir_name</span><span class="p">,</span> <span class="n">facetpath</span><span class="p">)</span>
@@ -1240,7 +1240,7 @@
 
         <span class="c1"># if there is a parent job, specify dependency</span>
         <span class="k">if</span> <span class="n">parent_job</span> <span class="o">!=</span> <span class="s1">&#39;&#39;</span><span class="p">:</span>
-            <span class="kn">from</span> <span class="nn">balsam.launcher.dag</span> <span class="k">import</span> <span class="n">add_dependency</span>
+            <span class="kn">from</span> <span class="nn">balsam.launcher.dag</span> <span class="kn">import</span> <span class="n">add_dependency</span>
             <span class="k">try</span><span class="p">:</span>
                 <span class="n">add_dependency</span><span class="p">(</span><span class="n">parent_job</span><span class="p">,</span> <span class="n">job_to_add</span><span class="p">)</span>  <span class="c1"># parent, child</span>
             <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
@@ -1844,7 +1844,7 @@
     <p>
         &copy; Copyright Copyright 2021 National Technology &amp; Engineering Solutions of Sandia, LLC (NTESS). Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government retains certain rights in this software.
       <span class="lastupdated">
-        Last updated on Thu, 28 Jan 2021 18:45:53.
+        Last updated on Thu, 04 Feb 2021 12:04:09.
       </span>
 
     </p>

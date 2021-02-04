@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>pynta.vib &mdash; Pynta January 28, 2021 documentation</title>
+  <title>pynta.vib &mdash; Pynta February 04, 2021 documentation</title>
   
 
   
@@ -143,17 +143,17 @@
            <div itemprop="articleBody">
             
   <h1>Source code for pynta.vib</h1><div class="highlight"><pre>
-<span></span><span class="kn">from</span> <span class="nn">pynta.io</span> <span class="k">import</span> <span class="n">IO</span>
-<span class="kn">from</span> <span class="nn">ase.io</span> <span class="k">import</span> <span class="n">read</span><span class="p">,</span> <span class="n">write</span>
-<span class="kn">from</span> <span class="nn">pathlib</span> <span class="k">import</span> <span class="n">Path</span><span class="p">,</span> <span class="n">PosixPath</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="k">import</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Dict</span>
-<span class="kn">from</span> <span class="nn">numpy</span> <span class="k">import</span> <span class="n">floor</span>
+<span></span><span class="kn">from</span> <span class="nn">pynta.io</span> <span class="kn">import</span> <span class="n">IO</span>
+<span class="kn">from</span> <span class="nn">ase.io</span> <span class="kn">import</span> <span class="n">read</span><span class="p">,</span> <span class="n">write</span>
+<span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span><span class="p">,</span> <span class="n">PosixPath</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Dict</span>
+<span class="kn">from</span> <span class="nn">numpy</span> <span class="kn">import</span> <span class="n">floor</span>
 <span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">import</span> <span class="nn">shutil</span>
 
 
-<div class="viewcode-block" id="AfterTS"><a class="viewcode-back" href="../../index.html#pynta.vib.AfterTS">[docs]</a><span class="k">class</span> <span class="nc">AfterTS</span><span class="p">():</span>
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span>
+<div class="viewcode-block" id="AfterTS"><a class="viewcode-back" href="../../source/pynta.html#pynta.vib.AfterTS">[docs]</a><span class="k">class</span> <span class="nc">AfterTS</span><span class="p">():</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span>
             <span class="n">facetpath</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
             <span class="n">yamlfile</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -169,7 +169,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">nslab</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">read</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">slab_atom_path</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">repeats</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">n_kpts</span> <span class="o">=</span> <span class="n">IO</span><span class="p">()</span><span class="o">.</span><span class="n">get_kpoints</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">repeats</span><span class="p">)</span>
 
-<div class="viewcode-block" id="AfterTS.set_up_ts_vib"><a class="viewcode-back" href="../../index.html#pynta.vib.AfterTS.set_up_ts_vib">[docs]</a>    <span class="k">def</span> <span class="nf">set_up_ts_vib</span><span class="p">(</span>
+<div class="viewcode-block" id="AfterTS.set_up_ts_vib"><a class="viewcode-back" href="../../source/pynta.html#pynta.vib.AfterTS.set_up_ts_vib">[docs]</a>    <span class="k">def</span> <span class="nf">set_up_ts_vib</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span>
             <span class="n">socket_calculator</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
             <span class="n">rxn</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
@@ -258,7 +258,7 @@
                 <span class="n">pseudopotentials</span><span class="p">,</span>
                 <span class="n">pseudo_dir</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="AfterTS.create_ts_vib_py_files"><a class="viewcode-back" href="../../index.html#pynta.vib.AfterTS.create_ts_vib_py_files">[docs]</a>    <span class="k">def</span> <span class="nf">create_ts_vib_py_files</span><span class="p">(</span>
+<div class="viewcode-block" id="AfterTS.create_ts_vib_py_files"><a class="viewcode-back" href="../../source/pynta.html#pynta.vib.AfterTS.create_ts_vib_py_files">[docs]</a>    <span class="k">def</span> <span class="nf">create_ts_vib_py_files</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span>
             <span class="n">socket_calculator</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
             <span class="n">pytemplate</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -334,7 +334,7 @@
                 <span class="n">n_kpts</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">n_kpts</span>
             <span class="p">))</span></div>
 
-<div class="viewcode-block" id="AfterTS.prepare_opt_after_ts"><a class="viewcode-back" href="../../index.html#pynta.vib.AfterTS.prepare_opt_after_ts">[docs]</a>    <span class="k">def</span> <span class="nf">prepare_opt_after_ts</span><span class="p">(</span>
+<div class="viewcode-block" id="AfterTS.prepare_opt_after_ts"><a class="viewcode-back" href="../../source/pynta.html#pynta.vib.AfterTS.prepare_opt_after_ts">[docs]</a>    <span class="k">def</span> <span class="nf">prepare_opt_after_ts</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span>
             <span class="n">socket_calculator</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
             <span class="n">rxn</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
@@ -425,7 +425,7 @@
                 <span class="n">pseudopotentials</span><span class="p">,</span>
                 <span class="n">pseudo_dir</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="AfterTS.get_forward_and_reverse"><a class="viewcode-back" href="../../index.html#pynta.vib.AfterTS.get_forward_and_reverse">[docs]</a>    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="AfterTS.get_forward_and_reverse"><a class="viewcode-back" href="../../source/pynta.html#pynta.vib.AfterTS.get_forward_and_reverse">[docs]</a>    <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">get_forward_and_reverse</span><span class="p">(</span>
             <span class="n">vib_traj</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
             <span class="n">fname_forward</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -472,7 +472,7 @@
             <span class="k">for</span> <span class="n">ext</span> <span class="ow">in</span> <span class="n">extensions</span><span class="p">:</span>
                 <span class="n">write</span><span class="p">(</span><span class="n">fn</span> <span class="o">+</span> <span class="n">ext</span><span class="p">,</span> <span class="n">read</span><span class="p">(</span><span class="n">vib_traj</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">ind</span><span class="p">))</span></div>
 
-<div class="viewcode-block" id="AfterTS.create_after_ts_py_files"><a class="viewcode-back" href="../../index.html#pynta.vib.AfterTS.create_after_ts_py_files">[docs]</a>    <span class="k">def</span> <span class="nf">create_after_ts_py_files</span><span class="p">(</span>
+<div class="viewcode-block" id="AfterTS.create_after_ts_py_files"><a class="viewcode-back" href="../../source/pynta.html#pynta.vib.AfterTS.create_after_ts_py_files">[docs]</a>    <span class="k">def</span> <span class="nf">create_after_ts_py_files</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span>
             <span class="n">socket_calculator</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
             <span class="n">pytemplate</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -544,7 +544,7 @@
                     <span class="n">n_kpts</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">n_kpts</span>
                 <span class="p">))</span></div>
 
-<div class="viewcode-block" id="AfterTS.get_all_distances"><a class="viewcode-back" href="../../index.html#pynta.vib.AfterTS.get_all_distances">[docs]</a>    <span class="k">def</span> <span class="nf">get_all_distances</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<div class="viewcode-block" id="AfterTS.get_all_distances"><a class="viewcode-back" href="../../source/pynta.html#pynta.vib.AfterTS.get_all_distances">[docs]</a>    <span class="k">def</span> <span class="nf">get_all_distances</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="sd">&#39;&#39;&#39; Get distances between reacting species for ts, forward and</span>
 <span class="sd">        reverse structure.</span>
 
@@ -556,7 +556,7 @@
                 <span class="n">rxn_name</span><span class="p">)</span>
             <span class="n">AfterTS</span><span class="o">.</span><span class="n">print_table</span><span class="p">(</span><span class="n">ts_dist_dict</span><span class="p">,</span> <span class="n">f_dist_dict</span><span class="p">,</span> <span class="n">r_dist_dict</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="AfterTS.print_table"><a class="viewcode-back" href="../../index.html#pynta.vib.AfterTS.print_table">[docs]</a>    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="AfterTS.print_table"><a class="viewcode-back" href="../../source/pynta.html#pynta.vib.AfterTS.print_table">[docs]</a>    <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">print_table</span><span class="p">(</span>
             <span class="n">ts_dist_dict</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">],</span>
             <span class="n">forward_dist_dict</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">],</span>
@@ -586,7 +586,7 @@
         <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">ts</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">r</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">keys</span><span class="p">,</span> <span class="n">ts_val</span><span class="p">,</span> <span class="n">f_val</span><span class="p">,</span> <span class="n">r_val</span><span class="p">):</span>
             <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{}</span><span class="s1"> </span><span class="se">\t</span><span class="s1"> </span><span class="si">{:2f}</span><span class="s1"> </span><span class="se">\t</span><span class="s1"> </span><span class="si">{:2f}</span><span class="s1"> </span><span class="se">\t</span><span class="s1"> </span><span class="si">{:2f}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">ts</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">r</span><span class="p">))</span></div>
 
-<div class="viewcode-block" id="AfterTS.get_ts_dist"><a class="viewcode-back" href="../../index.html#pynta.vib.AfterTS.get_ts_dist">[docs]</a>    <span class="k">def</span> <span class="nf">get_ts_dist</span><span class="p">(</span>
+<div class="viewcode-block" id="AfterTS.get_ts_dist"><a class="viewcode-back" href="../../source/pynta.html#pynta.vib.AfterTS.get_ts_dist">[docs]</a>    <span class="k">def</span> <span class="nf">get_ts_dist</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span>
             <span class="n">rxn_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
         <span class="sd">&#39;&#39;&#39; For given rxn_name get distances between reacting species</span>
@@ -621,7 +621,7 @@
             <span class="n">ts_dist_dict</span><span class="p">[</span><span class="n">traj_fname</span><span class="p">]</span> <span class="o">=</span> <span class="n">dist</span>
         <span class="k">return</span> <span class="n">ts_dist_dict</span></div>
 
-<div class="viewcode-block" id="AfterTS.get_forward_and_reverse_dist"><a class="viewcode-back" href="../../index.html#pynta.vib.AfterTS.get_forward_and_reverse_dist">[docs]</a>    <span class="k">def</span> <span class="nf">get_forward_and_reverse_dist</span><span class="p">(</span>
+<div class="viewcode-block" id="AfterTS.get_forward_and_reverse_dist"><a class="viewcode-back" href="../../source/pynta.html#pynta.vib.AfterTS.get_forward_and_reverse_dist">[docs]</a>    <span class="k">def</span> <span class="nf">get_forward_and_reverse_dist</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span>
             <span class="n">rxn_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">],</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]]:</span>
         <span class="sd">&#39;&#39;&#39; For given rxn_name get distances between reacting species in</span>
@@ -664,8 +664,8 @@
         <span class="k">return</span> <span class="n">f_dist_dict</span><span class="p">,</span> <span class="n">r_dist_dict</span></div></div>
 
 
-<div class="viewcode-block" id="minimaVib"><a class="viewcode-back" href="../../index.html#pynta.vib.minimaVib">[docs]</a><span class="k">class</span> <span class="nc">minimaVib</span><span class="p">():</span>
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span>
+<div class="viewcode-block" id="minimaVib"><a class="viewcode-back" href="../../source/pynta.html#pynta.vib.minimaVib">[docs]</a><span class="k">class</span> <span class="nc">minimaVib</span><span class="p">():</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span>
             <span class="n">facetpath</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
             <span class="n">creation_dir</span><span class="p">:</span> <span class="n">PosixPath</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
@@ -675,7 +675,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">minima_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">creation_dir</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">facetpath</span><span class="p">,</span> <span class="s1">&#39;minima&#39;</span><span class="p">)</span>
 
-<div class="viewcode-block" id="minimaVib.create_minima_vib_all"><a class="viewcode-back" href="../../index.html#pynta.vib.minimaVib.create_minima_vib_all">[docs]</a>    <span class="k">def</span> <span class="nf">create_minima_vib_all</span><span class="p">(</span>
+<div class="viewcode-block" id="minimaVib.create_minima_vib_all"><a class="viewcode-back" href="../../source/pynta.html#pynta.vib.minimaVib.create_minima_vib_all">[docs]</a>    <span class="k">def</span> <span class="nf">create_minima_vib_all</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span>
             <span class="n">socket_calculator</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
             <span class="n">facetpath</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -771,7 +771,7 @@
                     <span class="n">minima_vib_path</span><span class="p">,</span> <span class="n">pytemplate</span><span class="p">,</span> <span class="n">balsam_exe_settings</span><span class="p">,</span>
                     <span class="n">pseudo_dir</span><span class="p">,</span> <span class="n">pseudopotentials</span><span class="p">,</span> <span class="n">calc_keywords</span><span class="p">,</span> <span class="n">creation_dir</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="minimaVib.create_minima_vib_py_files"><a class="viewcode-back" href="../../index.html#pynta.vib.minimaVib.create_minima_vib_py_files">[docs]</a>    <span class="k">def</span> <span class="nf">create_minima_vib_py_files</span><span class="p">(</span>
+<div class="viewcode-block" id="minimaVib.create_minima_vib_py_files"><a class="viewcode-back" href="../../source/pynta.html#pynta.vib.minimaVib.create_minima_vib_py_files">[docs]</a>    <span class="k">def</span> <span class="nf">create_minima_vib_py_files</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span>
             <span class="n">socket_calculator</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
             <span class="n">adsorbate</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -888,7 +888,7 @@
     <p>
         &copy; Copyright Copyright 2021 National Technology &amp; Engineering Solutions of Sandia, LLC (NTESS). Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government retains certain rights in this software.
       <span class="lastupdated">
-        Last updated on Thu, 28 Jan 2021 18:45:53.
+        Last updated on Thu, 04 Feb 2021 12:04:09.
       </span>
 
     </p>

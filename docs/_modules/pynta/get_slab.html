@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>pynta.get_slab &mdash; Pynta January 28, 2021 documentation</title>
+  <title>pynta.get_slab &mdash; Pynta February 04, 2021 documentation</title>
   
 
   
@@ -143,21 +143,21 @@
            <div itemprop="articleBody">
             
   <h1>Source code for pynta.get_slab</h1><div class="highlight"><pre>
-<span></span><span class="kn">from</span> <span class="nn">pathlib</span> <span class="k">import</span> <span class="n">PosixPath</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="k">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Tuple</span>
+<span></span><span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">PosixPath</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Tuple</span>
 
-<span class="kn">from</span> <span class="nn">ase.build</span> <span class="k">import</span> <span class="n">fcc111</span><span class="p">,</span> <span class="n">fcc211</span><span class="p">,</span> <span class="n">fcc100</span>
-<span class="kn">from</span> <span class="nn">ase.build</span> <span class="k">import</span> <span class="n">bcc111</span><span class="p">,</span> <span class="n">bcc110</span><span class="p">,</span> <span class="n">hcp0001</span>
-<span class="kn">from</span> <span class="nn">ase.build</span> <span class="k">import</span> <span class="n">diamond111</span><span class="p">,</span> <span class="n">diamond100</span>
-<span class="kn">from</span> <span class="nn">ase.optimize</span> <span class="k">import</span> <span class="n">BFGSLineSearch</span>
-<span class="kn">from</span> <span class="nn">ase.io</span> <span class="k">import</span> <span class="n">write</span>
-<span class="kn">from</span> <span class="nn">ase</span> <span class="k">import</span> <span class="n">Atoms</span>
+<span class="kn">from</span> <span class="nn">ase.build</span> <span class="kn">import</span> <span class="n">fcc111</span><span class="p">,</span> <span class="n">fcc211</span><span class="p">,</span> <span class="n">fcc100</span>
+<span class="kn">from</span> <span class="nn">ase.build</span> <span class="kn">import</span> <span class="n">bcc111</span><span class="p">,</span> <span class="n">bcc110</span><span class="p">,</span> <span class="n">hcp0001</span>
+<span class="kn">from</span> <span class="nn">ase.build</span> <span class="kn">import</span> <span class="n">diamond111</span><span class="p">,</span> <span class="n">diamond100</span>
+<span class="kn">from</span> <span class="nn">ase.optimize</span> <span class="kn">import</span> <span class="n">BFGSLineSearch</span>
+<span class="kn">from</span> <span class="nn">ase.io</span> <span class="kn">import</span> <span class="n">write</span>
+<span class="kn">from</span> <span class="nn">ase</span> <span class="kn">import</span> <span class="n">Atoms</span>
 
 <span class="kn">import</span> <span class="nn">os</span>
 
 
-<div class="viewcode-block" id="GetSlab"><a class="viewcode-back" href="../../index.html#pynta.get_slab.GetSlab">[docs]</a><span class="k">class</span> <span class="nc">GetSlab</span><span class="p">:</span>
-<div class="viewcode-block" id="GetSlab.__init__"><a class="viewcode-back" href="../../index.html#pynta.get_slab.GetSlab.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span>
+<div class="viewcode-block" id="GetSlab"><a class="viewcode-back" href="../../source/pynta.html#pynta.get_slab.GetSlab">[docs]</a><span class="k">class</span> <span class="nc">GetSlab</span><span class="p">:</span>
+<div class="viewcode-block" id="GetSlab.__init__"><a class="viewcode-back" href="../../source/pynta.html#pynta.get_slab.GetSlab.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span>
             <span class="n">socket_calculator</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
             <span class="n">surface_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -235,7 +235,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">calc_keywords</span> <span class="o">=</span> <span class="n">calc_keywords</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">creation_dir</span> <span class="o">=</span> <span class="n">creation_dir</span></div>
 
-<div class="viewcode-block" id="GetSlab.run_slab_opt"><a class="viewcode-back" href="../../index.html#pynta.get_slab.GetSlab.run_slab_opt">[docs]</a>    <span class="k">def</span> <span class="nf">run_slab_opt</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<div class="viewcode-block" id="GetSlab.run_slab_opt"><a class="viewcode-back" href="../../source/pynta.html#pynta.get_slab.GetSlab.run_slab_opt">[docs]</a>    <span class="k">def</span> <span class="nf">run_slab_opt</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="sd">&#39;&#39;&#39; Run slab optimization &#39;&#39;&#39;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">surface_type</span> <span class="o">==</span> <span class="s1">&#39;fcc111&#39;</span><span class="p">:</span>
             <span class="n">GetSlab</span><span class="o">.</span><span class="n">opt_fcc111</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
@@ -259,32 +259,32 @@
             <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;fcc111, fcc211, fcc100, bcc111, bcc110, hcp0001, &#39;</span>
                   <span class="s1">&#39;diamond111, diamond100&#39;</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="GetSlab.opt_fcc111"><a class="viewcode-back" href="../../index.html#pynta.get_slab.GetSlab.opt_fcc111">[docs]</a>    <span class="k">def</span> <span class="nf">opt_fcc111</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<div class="viewcode-block" id="GetSlab.opt_fcc111"><a class="viewcode-back" href="../../source/pynta.html#pynta.get_slab.GetSlab.opt_fcc111">[docs]</a>    <span class="k">def</span> <span class="nf">opt_fcc111</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="sd">&#39;&#39;&#39; Optimize fcc111 slab &#39;&#39;&#39;</span>
         <span class="n">slab</span> <span class="o">=</span> <span class="n">fcc111</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">symbol</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">repeats_surface</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">a</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">vacuum</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">prepare_slab_opt</span><span class="p">(</span><span class="n">slab</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="GetSlab.opt_fcc211"><a class="viewcode-back" href="../../index.html#pynta.get_slab.GetSlab.opt_fcc211">[docs]</a>    <span class="k">def</span> <span class="nf">opt_fcc211</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<div class="viewcode-block" id="GetSlab.opt_fcc211"><a class="viewcode-back" href="../../source/pynta.html#pynta.get_slab.GetSlab.opt_fcc211">[docs]</a>    <span class="k">def</span> <span class="nf">opt_fcc211</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="sd">&#39;&#39;&#39; Optimize fcc211 slab &#39;&#39;&#39;</span>
         <span class="n">slab</span> <span class="o">=</span> <span class="n">fcc211</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">symbol</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">repeats_surface</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">a</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">vacuum</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">prepare_slab_opt</span><span class="p">(</span><span class="n">slab</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="GetSlab.opt_fcc100"><a class="viewcode-back" href="../../index.html#pynta.get_slab.GetSlab.opt_fcc100">[docs]</a>    <span class="k">def</span> <span class="nf">opt_fcc100</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<div class="viewcode-block" id="GetSlab.opt_fcc100"><a class="viewcode-back" href="../../source/pynta.html#pynta.get_slab.GetSlab.opt_fcc100">[docs]</a>    <span class="k">def</span> <span class="nf">opt_fcc100</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="sd">&#39;&#39;&#39; Optimize fcc100 slab &#39;&#39;&#39;</span>
         <span class="n">slab</span> <span class="o">=</span> <span class="n">fcc100</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">symbol</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">repeats_surface</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">a</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">vacuum</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">prepare_slab_opt</span><span class="p">(</span><span class="n">slab</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="GetSlab.opt_bcc111"><a class="viewcode-back" href="../../index.html#pynta.get_slab.GetSlab.opt_bcc111">[docs]</a>    <span class="k">def</span> <span class="nf">opt_bcc111</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<div class="viewcode-block" id="GetSlab.opt_bcc111"><a class="viewcode-back" href="../../source/pynta.html#pynta.get_slab.GetSlab.opt_bcc111">[docs]</a>    <span class="k">def</span> <span class="nf">opt_bcc111</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="sd">&#39;&#39;&#39; Optimize bcc111 slab &#39;&#39;&#39;</span>
         <span class="n">slab</span> <span class="o">=</span> <span class="n">bcc111</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">symbol</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">repeats_surface</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">a</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">vacuum</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">prepare_slab_opt</span><span class="p">(</span><span class="n">slab</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="GetSlab.opt_bcc110"><a class="viewcode-back" href="../../index.html#pynta.get_slab.GetSlab.opt_bcc110">[docs]</a>    <span class="k">def</span> <span class="nf">opt_bcc110</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<div class="viewcode-block" id="GetSlab.opt_bcc110"><a class="viewcode-back" href="../../source/pynta.html#pynta.get_slab.GetSlab.opt_bcc110">[docs]</a>    <span class="k">def</span> <span class="nf">opt_bcc110</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="sd">&#39;&#39;&#39; Optimize bcc110 slab &#39;&#39;&#39;</span>
         <span class="n">slab</span> <span class="o">=</span> <span class="n">bcc110</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">symbol</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">repeats_surface</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">a</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">vacuum</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">prepare_slab_opt</span><span class="p">(</span><span class="n">slab</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="GetSlab.opt_hcp0001"><a class="viewcode-back" href="../../index.html#pynta.get_slab.GetSlab.opt_hcp0001">[docs]</a>    <span class="k">def</span> <span class="nf">opt_hcp0001</span><span class="p">(</span>
+<div class="viewcode-block" id="GetSlab.opt_hcp0001"><a class="viewcode-back" href="../../source/pynta.html#pynta.get_slab.GetSlab.opt_hcp0001">[docs]</a>    <span class="k">def</span> <span class="nf">opt_hcp0001</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span>
             <span class="n">c</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="sd">&#39;&#39;&#39; Optimize hcp0001 slab &#39;&#39;&#39;</span>
@@ -292,19 +292,19 @@
                        <span class="bp">self</span><span class="o">.</span><span class="n">vacuum</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">prepare_slab_opt</span><span class="p">(</span><span class="n">slab</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="GetSlab.opt_diamond111"><a class="viewcode-back" href="../../index.html#pynta.get_slab.GetSlab.opt_diamond111">[docs]</a>    <span class="k">def</span> <span class="nf">opt_diamond111</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<div class="viewcode-block" id="GetSlab.opt_diamond111"><a class="viewcode-back" href="../../source/pynta.html#pynta.get_slab.GetSlab.opt_diamond111">[docs]</a>    <span class="k">def</span> <span class="nf">opt_diamond111</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="sd">&#39;&#39;&#39; Optimize diamond111 slab &#39;&#39;&#39;</span>
         <span class="n">slab</span> <span class="o">=</span> <span class="n">diamond111</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">symbol</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">repeats_surface</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">a</span><span class="p">,</span>
                           <span class="bp">self</span><span class="o">.</span><span class="n">vacuum</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">prepare_slab_opt</span><span class="p">(</span><span class="n">slab</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="GetSlab.opt_diamond100"><a class="viewcode-back" href="../../index.html#pynta.get_slab.GetSlab.opt_diamond100">[docs]</a>    <span class="k">def</span> <span class="nf">opt_diamond100</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<div class="viewcode-block" id="GetSlab.opt_diamond100"><a class="viewcode-back" href="../../source/pynta.html#pynta.get_slab.GetSlab.opt_diamond100">[docs]</a>    <span class="k">def</span> <span class="nf">opt_diamond100</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="sd">&#39;&#39;&#39; Optimize diamond100 slab &#39;&#39;&#39;</span>
         <span class="n">slab</span> <span class="o">=</span> <span class="n">diamond100</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">symbol</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">repeats_surface</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">a</span><span class="p">,</span>
                           <span class="bp">self</span><span class="o">.</span><span class="n">vacuum</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">prepare_slab_opt</span><span class="p">(</span><span class="n">slab</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="GetSlab.prepare_slab_opt"><a class="viewcode-back" href="../../index.html#pynta.get_slab.GetSlab.prepare_slab_opt">[docs]</a>    <span class="k">def</span> <span class="nf">prepare_slab_opt</span><span class="p">(</span>
+<div class="viewcode-block" id="GetSlab.prepare_slab_opt"><a class="viewcode-back" href="../../source/pynta.html#pynta.get_slab.GetSlab.prepare_slab_opt">[docs]</a>    <span class="k">def</span> <span class="nf">prepare_slab_opt</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span>
             <span class="n">slab</span><span class="p">:</span> <span class="n">Atoms</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="sd">&#39;&#39;&#39; Prepare slab optimization with Quantum Espresso &#39;&#39;&#39;</span>
@@ -363,7 +363,7 @@
     <p>
         &copy; Copyright Copyright 2021 National Technology &amp; Engineering Solutions of Sandia, LLC (NTESS). Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government retains certain rights in this software.
       <span class="lastupdated">
-        Last updated on Thu, 28 Jan 2021 18:45:53.
+        Last updated on Thu, 04 Feb 2021 12:04:09.
       </span>
 
     </p>

@@ -238,7 +238,7 @@ You will need **4** files to run the workflow:
 
 * ``run_me.py`` a python script that executes the workflow or alternatively, ``restart_me.py`` to restart unfinished calculations
 * ``run_me.sh`` a bash script that submits jobs to the ``balsam`` database
-* ``inputR2S.py`` a python script holding all user-modifiable parameters of the ``pynta``
+* ``input.json`` a json file holding all user-modifiable parameters of the ``pynta``
 * ``reactions.yaml`` a yaml file with all reactions to be studied
 
 An example ``run_me.py`` file
@@ -362,128 +362,135 @@ An example ``reactions.yaml`` file
 An example ``inputR2S.py`` file
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. code-block:: python
+.. code-block:: json
 
-   ####################################################
-                     Basic Input
-   ####################################################
-   '''
-   ####################################################
-   # Define which QE package to use
-   # 'espresso' or 'nwchem' are currently supported
-   quantum_chemistry = 'espresso'
-   ####################################################
-   # do you want to run surface optimization
-   optimize_slab = True
-   ####################################################
-   # specify facet orientation, repeats of the slab+ads
-   # and repeats of the slab_opt unit cell
-   surface_types_and_repeats = {'fcc111': [(3, 3, 1), (1, 1, 4)]}
-   ####################################################
-   # surface atoms
-   metal_atom = 'Cu'
-   ####################################################
-   # lattice constant
-   a = 3.6
-   ####################################################
-   # vacuum in the z direction (Angstrem)
-   vacuum = 8.0
-   ####################################################
-   # Quantum Espresso pseudopotantials and exe settings
-   # for DFT calculations
-   pseudo_dir = '/home/mgierad/espresso/pseudo'
-
-   pseudopotentials = "dict(Cu='Cu.pbe-spn-kjpaw_psl.1.0.0.UPF',"\
-      + "H='H.pbe-kjpaw_psl.1.0.0.UPF'," \
-      + "O='O.pbe-n-kjpaw_psl.1.0.0.UPF'," \
-      + "C='C.pbe-n-kjpaw_psl.1.0.0.UPF'," \
-      + "N='N.pbe-n-kjpaw_psl.1.0.0.UPF')" \
-
-   executable = '/home/mgierad/00_codes/build/q-e-qe-6.4.1/build/bin/pw.x'
-   ####################################################
-   # Baslam settings
-   node_packing_count = 48
-   balsam_exe_settings = {'num_nodes': 1,  # nodes per each balsam job
-                        'ranks_per_node': node_packing_count,  # cores per node
-                        'threads_per_rank': 1,
-                        }
-   calc_keywords = {'kpts': (3, 3, 1),
-                  'occupations': 'smearing',
-                  'smearing': 'marzari-vanderbilt',
-                  'degauss': 0.01,  # Rydberg
-                  'ecutwfc': 40,  # Rydberg
-                  'nosym': True,  # Allow symmetry breaking during optimization
-                  'conv_thr': 1e-11,
-                  'mixing_mode': 'local-TF',
-                  }
-   ####################################################
-   # Set up a working directory (this is default)
-   creation_dir = Path.cwd().as_posix()
-   ####################################################
-   # filename of the .yaml file with reactions
-   yamlfile = 'reactions.yaml'
-   ####################################################
-   # specify the scaling factor to scale the bond distance
-   # between two atoms taking part in the reaction
-   scfactor = 1.4
-   ####################################################
-   # specify the scaling factor to scale the target distance
-   # i.e. the average bond distance between adsorbate and
-   # the nearest surface metal atom
-   scfactor_surface = 1.0
-   ####################################################
-   # do you want to apply the scfactor_surface to the species 1?
-   scaled1 = False
-   ####################################################
-   # do you want to apply scfactor_surface to the species 2?
-   scaled2 = False
-   ####################################################
+   {
+    "quantum_chemistry": "espresso",
+    "optimize_slab": true,
+    "surface_types_and_repeats": {
+        "fcc111": [
+            [
+                3,
+                3,
+                1
+            ],
+            [
+                1,
+                1,
+                4
+            ]
+        ]
+    },
+    "metal_atom": "Cu",
+    "a": 3.6,
+    "vacuum": 8.0,
+    "pseudo_dir": "/home/mgierad/espresso/pseudo",
+    "pseudopotentials": "dict(Cu='Cu.pbe-spn-kjpaw_psl.1.0.0.UPF',H='H.pbe-kjpaw_psl.1.0.0.UPF',O='O.pbe-n-kjpaw_psl.1.0.0.UPF',C='C.pbe-n-kjpaw_psl.1.0.0.UPF',N='N.pbe-n-kjpaw_psl.1.0.0.UPF')",
+    "executable": "/home/mgierad/00_codes/build/q-e-qe-6.4.1/build/bin/pw.x",
+    "node_packing_count": 48,
+    "balsam_exe_settings": {
+        "num_nodes": 1,
+        "ranks_per_node": 48,
+        "threads_per_rank": 1
+    },
+    "calc_keywords": {
+        "kpts": [
+            3,
+            3,
+            1
+        ],
+        "occupations": "smearing",
+        "smearing": "marzari-vanderbilt",
+        "degauss": 0.01,
+        "ecutwfc": 40,
+        "nosym": true,
+        "conv_thr": 1e-11,
+        "mixing_mode": "local-TF"
+    },
+    "yamlfile": "reactions.yaml",
+    "scfactor": 1.4,
+    "scfactor_surface": 1.0,
+    "scaled1": false,
+    "scaled2": false}
 
 An example input files are also located at ``./pynta/example_run_files/``.
 
+Keyword parameters
+==================
 
-Using only SLURM
------------------
+.. list-table::
+   :widths: 25, 5, 25, 25
+   :header-rows: 1
 
-.. warning:: ``dev`` branch uses SLURM scheduler to deal with the job dependencies. Be aware that it might be a bit buggy and do not fully support all the features implemented in the ``master`` branch.
-
-
-An example script (using ``dev`` branch - SLURM):
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-.. code-block:: python
-
-   #!/usr/bin/env python3
-   #SBATCH -J job_name        # name of the job e.g job_name = pynta_workflow
-   #SBATCH --partition=queue  # queue name e.g. queue = day-long-cpu
-   #SBATCH --nodes=x          # number of nodes e.g. x = 2
-   #SBATCH --ntasks=y         # number of CPUs e.g. 2 x 48 = y = 96
-   #SBATCH -e %x.err          # error file name
-   #SBATCH -o %x.out          # out file name
-
-   import os
-   import sys
-
-   # get environmental variable
-   submitDir = os.environ['SLURM_SUBMIT_DIR']
-
-   # change directory to $SLURM_SUBMIT_DIR
-   os.chdir(submitDir)
-
-   # add current working directory to the path
-   sys.path.append(os.getcwd())
-
-   # import input file with - can be done only after sys.path.append(os.getcwd())
-   import inputR2S
-
-   # import executable class of pynta
-   from pynta.main import WorkFlow
-
-   # instantiate the WorkFlow class
-   workflow = WorkFlow()
-
-   # generate input files
-   workflow.gen_job_files()
-
-   # execute the work-flow
-   workflow.execute()
+   * - Parameter
+     - Description
+     - Type
+     - Avaiable options/examples
+   * - `quantum_chemistry`
+     - specify which quantum chemistry calculator to use
+     - str
+     - ``'espresso'`` , ``'nwchem'`` 
+   * - `yamlfile`
+     - a name of the  yml file with reactions
+     - str
+     - ``reactions.yaml``
+   * - `optimize_slab`
+     - do you want to run surface optimization
+     - bool
+     - ``True``, ``False``
+   * - `surface_types_and_repeats`
+     - specify facet orientation, repeats of the slab+ads and repeats of the slab_opt unit cell
+     - Dict[str:List[Tuple[int]]]
+     - ``{'fcc111': [(3, 3, 1), (1, 1, 4)]}``
+   * - `metal_atom`
+     - surface atoms
+     - str
+     - ``'Cu'``
+   * - `a`
+     - lattice constant
+     - float
+     - ``3.6``
+   * - `vacuum`
+     - vacuum in the z direction (Angstrem)
+     - float
+     - ``8.0``
+   * - `pseudo_dir`
+     - for Quantum Espresso only - path to pseudopotetions directory
+     - str
+     - ``'/home/user/espresso/pseudo'``
+   * - `pseudopotentials`
+     - for Quantum Espresso only - which pseudopotentials to use (str preferable)
+     - str -> Dict[str, str]
+     - ``"dict(Cu='Cu.pbe-spn-kjpaw_psl.1.0.0.UPF', H='H.pbe-kjpaw_psl.1.0.0.UPF')"``
+   * - `executable`
+     - a path to executable of quantum chemistry package
+     - str
+     - ``'/home/user/build/qe/bin/pw.x'``
+   * - `node_packing_count`
+     - number of cores per node - balsam specific keyword
+     - int
+     - ``48``
+   * - `balsam_exe_settings`
+     - how to use avaiable computational resources
+     - Dict[str, any]
+     - ``balsam_exe_settings = {'num_nodes': 1, 'ranks_per_node': node_packing_count, 'threads_per_rank': 1``
+   * - `calc_keywords`
+     - quantum chemistry packages options - see manual of your chosen package to put a correct keywords here
+     - Dict[str, any]
+     - ``{'kpts': (3, 3, 1), 'occupations': 'smearing', 'smearing': 'marzari-vanderbilt', 'degauss': 0.01, 'ecutwfc': 40, 'nosym': True, 'conv_thr': 1e-11, 'mixing_mode': 'local-TF'}``
+   * - `scfactor`
+     - specify a scaling factor to scale the bond distance between two atoms taking part in the reaction
+     - float
+     - ``1.4``
+   * - `scfactor_surface`
+     - specify the scaling factor to scale the target distance i.e. the average bond distance between adsorbate and the nearest surface metal atom
+     - float
+     - ``1.0``
+   * - `scaled1`
+     - apply the `scfactor_surface` to the species 1?
+     - bool
+     - ``True`` or ``False``
+   * - `scaled2`
+     - apply the `scfactor_surface` to the species 2?
+     - bool
+     - ``True`` or ``False``

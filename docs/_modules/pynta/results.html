@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>pynta.results &mdash; Pynta January 28, 2021 documentation</title>
+  <title>pynta.results &mdash; Pynta February 04, 2021 documentation</title>
   
 
   
@@ -143,38 +143,52 @@
            <div itemprop="articleBody">
             
   <h1>Source code for pynta.results</h1><div class="highlight"><pre>
-<span></span><span class="kn">from</span> <span class="nn">pynta.io</span> <span class="k">import</span> <span class="n">IO</span>
+<span></span><span class="kn">from</span> <span class="nn">pynta.io</span> <span class="kn">import</span> <span class="n">IO</span>
 
 <span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">from</span> <span class="nn">ase.io</span> <span class="k">import</span> <span class="n">read</span>
-<span class="kn">from</span> <span class="nn">pathlib</span> <span class="k">import</span> <span class="n">Path</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="k">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Tuple</span>
+<span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">from</span> <span class="nn">ase.io</span> <span class="kn">import</span> <span class="n">read</span>
+<span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Tuple</span>
 <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
-<span class="kn">from</span> <span class="nn">matplotlib.ticker</span> <span class="k">import</span> <span class="n">AutoMinorLocator</span>
+<span class="kn">from</span> <span class="nn">matplotlib.ticker</span> <span class="kn">import</span> <span class="n">AutoMinorLocator</span>
 
 
-<div class="viewcode-block" id="Results"><a class="viewcode-back" href="../../index.html#pynta.results.Results">[docs]</a><span class="k">class</span> <span class="nc">Results</span><span class="p">():</span>
-<div class="viewcode-block" id="Results.__init__"><a class="viewcode-back" href="../../index.html#pynta.results.Results.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<div class="viewcode-block" id="Results"><a class="viewcode-back" href="../../source/pynta.html#pynta.results.Results">[docs]</a><span class="k">class</span> <span class="nc">Results</span><span class="p">():</span>
+<div class="viewcode-block" id="Results.__init__"><a class="viewcode-back" href="../../source/pynta.html#pynta.results.Results.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="sd">&#39;&#39;&#39; A class to analyze the results of calculations &#39;&#39;&#39;</span>
 
+        <span class="n">input_file</span> <span class="o">=</span> <span class="s1">&#39;input.json&#39;</span>
         <span class="k">try</span><span class="p">:</span>
-            <span class="kn">import</span> <span class="nn">inputR2S</span>
-        <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
-            <span class="k">pass</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">input_file</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                <span class="n">input_json</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
 
-        <span class="n">surface_types_and_repeats</span> <span class="o">=</span> <span class="n">inputR2S</span><span class="o">.</span><span class="n">surface_types_and_repeats</span>
-        <span class="n">metal_atom</span> <span class="o">=</span> <span class="n">inputR2S</span><span class="o">.</span><span class="n">metal_atom</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">yamlfile</span> <span class="o">=</span> <span class="n">inputR2S</span><span class="o">.</span><span class="n">yamlfile</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">facetpaths</span> <span class="o">=</span> <span class="n">IO</span><span class="p">()</span><span class="o">.</span><span class="n">get_facetpaths</span><span class="p">(</span>
-            <span class="n">metal_atom</span><span class="p">,</span> <span class="n">surface_types_and_repeats</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">reactions</span> <span class="o">=</span> <span class="n">IO</span><span class="p">()</span><span class="o">.</span><span class="n">open_yaml_file</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">yamlfile</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">ev_to_kjmol</span> <span class="o">=</span> <span class="mf">23.06035</span> <span class="o">*</span> <span class="mf">4.184</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">slab_paths</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;</span><span class="si">{}</span><span class="s1">_big_slab_opt.xyz&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
-            <span class="n">facetpath</span><span class="p">)</span> <span class="k">for</span> <span class="n">facetpath</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">facetpaths</span><span class="p">]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">current_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">()</span></div>
+            <span class="n">surface_types_and_repeats</span> <span class="o">=</span> <span class="n">input_json</span><span class="p">[</span><span class="s1">&#39;surface_types_and_repeats&#39;</span><span class="p">]</span>
+            <span class="n">metal_atom</span> <span class="o">=</span> <span class="n">input_json</span><span class="p">[</span><span class="s1">&#39;metal_atom&#39;</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">yamlfile</span> <span class="o">=</span> <span class="n">input_json</span><span class="p">[</span><span class="s1">&#39;yamlfile&#39;</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">facetpaths</span> <span class="o">=</span> <span class="n">IO</span><span class="p">()</span><span class="o">.</span><span class="n">get_facetpaths</span><span class="p">(</span>
+                <span class="n">metal_atom</span><span class="p">,</span> <span class="n">surface_types_and_repeats</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">reactions</span> <span class="o">=</span> <span class="n">IO</span><span class="p">()</span><span class="o">.</span><span class="n">open_yaml_file</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">yamlfile</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ev_to_kjmol</span> <span class="o">=</span> <span class="mf">23.06035</span> <span class="o">*</span> <span class="mf">4.184</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">slab_paths</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;</span><span class="si">{}</span><span class="s1">_big_slab_opt.xyz&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="n">facetpath</span><span class="p">)</span> <span class="k">for</span> <span class="n">facetpath</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">facetpaths</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">current_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">()</span>
 
-<div class="viewcode-block" id="Results.get_reaction_energies_all"><a class="viewcode-back" href="../../index.html#pynta.results.Results.get_reaction_energies_all">[docs]</a>    <span class="k">def</span> <span class="nf">get_reaction_energies_all</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">except</span> <span class="ne">FileNotFoundError</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;!    input.json not found. </span><span class="se">\n</span><span class="s1">&#39;</span>
+                  <span class="s1">&#39;     Make sure </span><span class="si">{}</span><span class="s1"> matches exactly &quot;input.json&quot;</span><span class="se">\n</span><span class="s1">&#39;</span>
+                  <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span>
+                  <span class="s1">&#39;     You can use this module only from your main working </span><span class="se">\n</span><span class="s1">&#39;</span>
+                  <span class="s1">&#39;     directory - the one with all your input files and </span><span class="se">\n</span><span class="s1">&#39;</span>
+                  <span class="s1">&#39;     &quot;facetpath&quot; dir and job_files dir.</span><span class="se">\n</span><span class="s1">&#39;</span>
+                  <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span>
+                  <span class="s1">&#39;     Your current directory is:</span><span class="se">\n</span><span class="s1">&#39;</span>
+                  <span class="s1">&#39;     </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">input_file</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">()))</span>
+            <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="Results.get_reaction_energies_all"><a class="viewcode-back" href="../../source/pynta.html#pynta.results.Results.get_reaction_energies_all">[docs]</a>    <span class="k">def</span> <span class="nf">get_reaction_energies_all</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="sd">&#39;&#39;&#39; Get reactiom energy (kj/mol) for all facetpaths and reactions</span>
 
 <span class="sd">        Returns</span>
@@ -198,7 +212,7 @@
                     <span class="n">slab_path</span><span class="p">))</span>
         <span class="k">return</span> <span class="n">reaction_energies</span></div>
 
-<div class="viewcode-block" id="Results.get_reaction_energy"><a class="viewcode-back" href="../../index.html#pynta.results.Results.get_reaction_energy">[docs]</a>    <span class="k">def</span> <span class="nf">get_reaction_energy</span><span class="p">(</span>
+<div class="viewcode-block" id="Results.get_reaction_energy"><a class="viewcode-back" href="../../source/pynta.html#pynta.results.Results.get_reaction_energy">[docs]</a>    <span class="k">def</span> <span class="nf">get_reaction_energy</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span>
             <span class="n">minima_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
             <span class="n">facetpath</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -265,7 +279,7 @@
         <span class="n">reaction_energy</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{:.2f}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">reaction_energy</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">3</span><span class="p">))</span>
         <span class="k">return</span> <span class="n">reaction_energy</span></div>
 
-<div class="viewcode-block" id="Results.get_barrier_all"><a class="viewcode-back" href="../../index.html#pynta.results.Results.get_barrier_all">[docs]</a>    <span class="k">def</span> <span class="nf">get_barrier_all</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]:</span>
+<div class="viewcode-block" id="Results.get_barrier_all"><a class="viewcode-back" href="../../source/pynta.html#pynta.results.Results.get_barrier_all">[docs]</a>    <span class="k">def</span> <span class="nf">get_barrier_all</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]:</span>
         <span class="sd">&#39;&#39;&#39; Get barrier heights for all rxn_names and facetpaths</span>
 
 <span class="sd">        Returns</span>
@@ -294,7 +308,7 @@
                     <span class="n">slab_path</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">ts_ener</span></div>
 
-<div class="viewcode-block" id="Results.get_barrier"><a class="viewcode-back" href="../../index.html#pynta.results.Results.get_barrier">[docs]</a>    <span class="k">def</span> <span class="nf">get_barrier</span><span class="p">(</span>
+<div class="viewcode-block" id="Results.get_barrier"><a class="viewcode-back" href="../../source/pynta.html#pynta.results.Results.get_barrier">[docs]</a>    <span class="k">def</span> <span class="nf">get_barrier</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span>
             <span class="n">minima_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
             <span class="n">ts_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -364,7 +378,7 @@
                                 <span class="n">ts_name</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{:.2f}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">barrier</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">activation_barriers</span></div>
 
-<div class="viewcode-block" id="Results.get_data"><a class="viewcode-back" href="../../index.html#pynta.results.Results.get_data">[docs]</a>    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="Results.get_data"><a class="viewcode-back" href="../../source/pynta.html#pynta.results.Results.get_data">[docs]</a>    <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">get_data</span><span class="p">(</span>
             <span class="n">minima_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
             <span class="n">facetpath</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -467,7 +481,7 @@
 
         <span class="k">return</span> <span class="n">r_ener_list</span><span class="p">,</span> <span class="n">p_ener_list</span><span class="p">,</span> <span class="n">slab_ener</span><span class="p">,</span> <span class="n">nslabs</span></div>
 
-<div class="viewcode-block" id="Results.get_slab_ener"><a class="viewcode-back" href="../../index.html#pynta.results.Results.get_slab_ener">[docs]</a>    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="Results.get_slab_ener"><a class="viewcode-back" href="../../source/pynta.html#pynta.results.Results.get_slab_ener">[docs]</a>    <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">get_slab_ener</span><span class="p">(</span>
             <span class="n">slab_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
         <span class="sd">&#39;&#39;&#39; Get energy of the slab</span>
@@ -489,7 +503,7 @@
         <span class="n">slab_ener</span> <span class="o">=</span> <span class="n">slab</span><span class="o">.</span><span class="n">get_potential_energy</span><span class="p">()</span>
         <span class="k">return</span> <span class="n">slab_ener</span></div>
 
-<div class="viewcode-block" id="Results.get_ts_ener"><a class="viewcode-back" href="../../index.html#pynta.results.Results.get_ts_ener">[docs]</a>    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="Results.get_ts_ener"><a class="viewcode-back" href="../../source/pynta.html#pynta.results.Results.get_ts_ener">[docs]</a>    <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">get_ts_ener</span><span class="p">(</span>
             <span class="n">ts_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]:</span>
         <span class="sd">&#39;&#39;&#39; Get energy of all TSs</span>
@@ -523,7 +537,7 @@
         <span class="n">ts_ener_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">ts_ener_dict</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
         <span class="k">return</span> <span class="n">ts_ener_list</span></div>
 
-<div class="viewcode-block" id="Results.get_lowest_species_ener"><a class="viewcode-back" href="../../index.html#pynta.results.Results.get_lowest_species_ener">[docs]</a>    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="Results.get_lowest_species_ener"><a class="viewcode-back" href="../../source/pynta.html#pynta.results.Results.get_lowest_species_ener">[docs]</a>    <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">get_lowest_species_ener</span><span class="p">(</span>
             <span class="n">minima_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
             <span class="n">species</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -574,7 +588,7 @@
             <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Minima .out files probably not copied successfully.&#39;</span><span class="p">)</span>
             <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Check minima .out files. If missing, copy it.&#39;</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="Results.get_ts_out_files"><a class="viewcode-back" href="../../index.html#pynta.results.Results.get_ts_out_files">[docs]</a>    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="Results.get_ts_out_files"><a class="viewcode-back" href="../../source/pynta.html#pynta.results.Results.get_ts_out_files">[docs]</a>    <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">get_ts_out_files</span><span class="p">(</span>
             <span class="n">ts_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
         <span class="sd">&#39;&#39;&#39; Get TS :literal:`*.out` files</span>
@@ -606,7 +620,7 @@
 
         <span class="k">return</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">ts_out_file_list</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="Results.get_species_out_files"><a class="viewcode-back" href="../../index.html#pynta.results.Results.get_species_out_files">[docs]</a>    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="Results.get_species_out_files"><a class="viewcode-back" href="../../source/pynta.html#pynta.results.Results.get_species_out_files">[docs]</a>    <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">get_species_out_files</span><span class="p">(</span>
             <span class="n">minima_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
             <span class="n">species</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -654,7 +668,7 @@
             <span class="n">species_out_file_path_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">reactant_out_file</span><span class="p">))</span>
         <span class="k">return</span> <span class="n">species_out_file_path_list</span></div>
 
-<div class="viewcode-block" id="Results.format_TS_name"><a class="viewcode-back" href="../../index.html#pynta.results.Results.format_TS_name">[docs]</a>    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="Results.format_TS_name"><a class="viewcode-back" href="../../source/pynta.html#pynta.results.Results.format_TS_name">[docs]</a>    <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">format_TS_name</span><span class="p">(</span>
             <span class="n">ts_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
         <span class="sd">&#39;&#39;&#39; Function to get prefixes of TSs</span>
@@ -679,7 +693,7 @@
             <span class="n">prefix_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">prefix</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">prefix_list</span></div>
 
-<div class="viewcode-block" id="Results.rxn_title"><a class="viewcode-back" href="../../index.html#pynta.results.Results.rxn_title">[docs]</a>    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="Results.rxn_title"><a class="viewcode-back" href="../../source/pynta.html#pynta.results.Results.rxn_title">[docs]</a>    <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">rxn_title</span><span class="p">(</span>
             <span class="n">rxn_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
         <span class="sd">&#39;&#39;&#39; Return rxn name with arrow between reactants and products</span>
@@ -703,7 +717,7 @@
         <span class="n">rxn_name_title</span> <span class="o">=</span> <span class="n">reactants</span> <span class="o">+</span> <span class="s1">&#39; --&gt; &#39;</span> <span class="o">+</span> <span class="n">products</span>
         <span class="k">return</span> <span class="n">rxn_name_title</span></div>
 
-<div class="viewcode-block" id="Results.plot"><a class="viewcode-back" href="../../index.html#pynta.results.Results.plot">[docs]</a>    <span class="k">def</span> <span class="nf">plot</span><span class="p">(</span>
+<div class="viewcode-block" id="Results.plot"><a class="viewcode-back" href="../../source/pynta.html#pynta.results.Results.plot">[docs]</a>    <span class="k">def</span> <span class="nf">plot</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span>
             <span class="n">plot_filename</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
             <span class="n">max_barrier</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -749,7 +763,7 @@
                                  <span class="n">x_size_in</span><span class="p">,</span>
                                  <span class="n">y_size_in</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="Results.plot_rxn"><a class="viewcode-back" href="../../index.html#pynta.results.Results.plot_rxn">[docs]</a>    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="Results.plot_rxn"><a class="viewcode-back" href="../../source/pynta.html#pynta.results.Results.plot_rxn">[docs]</a>    <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">plot_rxn</span><span class="p">(</span>
             <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
             <span class="n">reaction_energies</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">],</span>
@@ -867,7 +881,7 @@
     <p>
         &copy; Copyright Copyright 2021 National Technology &amp; Engineering Solutions of Sandia, LLC (NTESS). Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government retains certain rights in this software.
       <span class="lastupdated">
-        Last updated on Thu, 28 Jan 2021 18:45:53.
+        Last updated on Thu, 04 Feb 2021 12:04:09.
       </span>
 
     </p>
