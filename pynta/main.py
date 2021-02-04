@@ -2,6 +2,7 @@
 from pynta.check_input import InputChecker
 from pynta.restart import LowLevelRestart, HighLevelRestart
 from pynta.io import IO
+import json
 
 from typing import List, Dict, Tuple, Any, Optional
 import os
@@ -20,7 +21,7 @@ else:
 
 # check if all necessary input files are in your working directory
 check_yaml = os.path.join(working_dir, 'reactions.yaml')
-check_inputR2S = os.path.join(working_dir, 'inputR2S.py')
+check_inputR2S = os.path.join(working_dir, 'input.json')
 check_run_me_py = os.path.join(working_dir, 'run_me.py')
 check_run_me_sh = os.path.join(working_dir, 'run_me.sh')
 
@@ -28,11 +29,8 @@ check_run_me_sh = os.path.join(working_dir, 'run_me.sh')
 # add working dir to system path
 sys.path.insert(1, working_dir)
 try:
-    import inputR2S
     InputChecker(check_yaml, check_inputR2S, check_run_me_py,
                  check_run_me_sh, working_dir).check_all()
-    # User defined parameters. Here pynta willonly read them. They are set up
-    # in inputR2S.py (submit directory)
 except ImportError:
     warn(
         'Missing input file. You cannot run calculations '
@@ -40,28 +38,31 @@ except ImportError:
     )
 
 else:
-    quantum_chemistry = inputR2S.quantum_chemistry
+    input_file = 'input.json'
+    with open(input_file, 'r') as f:
+        input_json = json.load(f)
+    quantum_chemistry = input_json['quantum_chemistry']
     calculator, socket_calculator = IO.get_calculators(quantum_chemistry)
-    optimize_slab = inputR2S.optimize_slab
-    surface_types_and_repeats = inputR2S.surface_types_and_repeats
-    metal_atom = inputR2S.metal_atom
-    a = inputR2S.a
-    vacuum = inputR2S.vacuum
-    pseudo_dir = inputR2S.pseudo_dir
-    pseudopotentials = inputR2S.pseudopotentials
-    yamlfile = inputR2S.yamlfile
-    scfactor = inputR2S.scfactor
-    scfactor_surface = inputR2S.scfactor_surface
-    scaled1 = inputR2S.scaled1
-    scaled2 = inputR2S.scaled2
+    optimize_slab = input_json['optimize_slab']
+    surface_types_and_repeats = input_json['surface_types_and_repeats']
+    metal_atom = input_json['metal_atom']
+    a = input_json['a']
+    vacuum = input_json['vacuum']
+    pseudo_dir = input_json['pseudo_dir']
+    pseudopotentials = input_json['pseudopotentials']
+    yamlfile = input_json['yamlfile']
+    scfactor = input_json['scfactor']
+    scfactor_surface = input_json['scfactor_surface']
+    scaled1 = input_json['scaled1']
+    scaled2 = input_json['scaled2']
     all_reacting_atoms = IO.get_all_reacting_atoms(check_yaml)
     species_dict = IO().get_species_dict(check_yaml)
     all_species = IO().get_all_unique_species_symbols(check_yaml)
-    executable = inputR2S.executable
-    node_packing_count = inputR2S.node_packing_count
-    balsam_exe_settings = inputR2S.balsam_exe_settings
-    calc_keywords = inputR2S.calc_keywords
-    creation_dir = inputR2S.creation_dir
+    executable = input_json['executable']
+    node_packing_count = input_json['node_packing_count']
+    balsam_exe_settings = input_json['balsam_exe_settings']
+    calc_keywords = input_json['calc_keywords']
+    creation_dir = input_json['creation_dir']
     surface_types = surface_types_and_repeats.keys()
     facetpaths = IO().get_facetpaths(metal_atom, surface_types)
     job_file_dir_name = 'job_files'
