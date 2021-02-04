@@ -2,6 +2,8 @@ from pynta.io import IO
 
 import os
 import numpy as np
+import json
+import sys
 from ase.io import read
 from pathlib import Path
 from typing import List, Dict, Tuple
@@ -13,21 +15,33 @@ class Results():
     def __init__(self) -> None:
         ''' A class to analyze the results of calculations '''
 
+        input_file = 'input.json'
         try:
-            import inputR2S
-        except ImportError:
-            pass
+            with open(input_file, 'r') as f:
+                input_json = json.load(f)
 
-        surface_types_and_repeats = inputR2S.surface_types_and_repeats
-        metal_atom = inputR2S.metal_atom
-        self.yamlfile = inputR2S.yamlfile
-        self.facetpaths = IO().get_facetpaths(
-            metal_atom, surface_types_and_repeats.keys())
-        self.reactions = IO().open_yaml_file(self.yamlfile)
-        self.ev_to_kjmol = 23.06035 * 4.184
-        self.slab_paths = ['{}_big_slab_opt.xyz'.format(
-            facetpath) for facetpath in self.facetpaths]
-        self.current_dir = os.getcwd()
+            surface_types_and_repeats = input_json['surface_types_and_repeats']
+            metal_atom = input_json['metal_atom']
+            self.yamlfile = input_json['yamlfile']
+            self.facetpaths = IO().get_facetpaths(
+                metal_atom, surface_types_and_repeats.keys())
+            self.reactions = IO().open_yaml_file(self.yamlfile)
+            self.ev_to_kjmol = 23.06035 * 4.184
+            self.slab_paths = ['{}_big_slab_opt.xyz'.format(
+                facetpath) for facetpath in self.facetpaths]
+            self.current_dir = os.getcwd()
+
+        except FileNotFoundError:
+            print('!    input.json not found. \n'
+                  '     Make sure {} matches exactly "input.json"\n'
+                  '\n'
+                  '     You can use this module only from your main working \n'
+                  '     directory - the one with all your input files and \n'
+                  '     "facetpath" dir and job_files dir.\n'
+                  '\n'
+                  '     Your current directory is:\n'
+                  '     {}'.format(input_file, os.getcwd()))
+            sys.exit()
 
     def get_reaction_energies_all(self) -> None:
         ''' Get reactiom energy (kj/mol) for all facetpaths and reactions

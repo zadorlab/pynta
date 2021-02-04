@@ -21,7 +21,7 @@ else:
 
 # check if all necessary input files are in your working directory
 check_yaml = os.path.join(working_dir, 'reactions.yaml')
-check_inputR2S = os.path.join(working_dir, 'input.json')
+check_input = os.path.join(working_dir, 'input.json')
 check_run_me_py = os.path.join(working_dir, 'run_me.py')
 check_run_me_sh = os.path.join(working_dir, 'run_me.sh')
 
@@ -29,7 +29,7 @@ check_run_me_sh = os.path.join(working_dir, 'run_me.sh')
 # add working dir to system path
 sys.path.insert(1, working_dir)
 try:
-    InputChecker(check_yaml, check_inputR2S, check_run_me_py,
+    InputChecker(check_yaml, check_input, check_run_me_py,
                  check_run_me_sh, working_dir).check_all()
 except ImportError:
     warn(
