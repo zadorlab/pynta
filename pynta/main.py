@@ -38,9 +38,10 @@ except ImportError:
     )
 
 else:
-    input_file = 'input.json'
+    input_file = os.path.join(working_dir, 'input.json')
     with open(input_file, 'r') as f:
         input_json = json.load(f)
+
     quantum_chemistry = input_json['quantum_chemistry']
     calculator, socket_calculator = IO.get_calculators(quantum_chemistry)
     optimize_slab = input_json['optimize_slab']
