@@ -965,7 +965,9 @@ class IO():
         del gratoms[del_indices]
 
         gratoms_list = []
-        graphs = nx.connected_component_subgraphs(gratoms.graph)
+        # graphs = nx.connected_component_subgraphs(gratoms.graph)
+        graphs = [gratoms.graph.subgraph(
+            c) for c in nx.connected_components(gratoms.graph)]
         for i, subgraph in enumerate(graphs):
             indices = list(subgraph.nodes)
             symbols = gratoms[indices].symbols

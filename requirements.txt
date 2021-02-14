@@ -1,10 +1,10 @@
 balsam_flow==0.3.8
 matplotlib<3.2
 spglib==1.14.1.post0
-networkx<2.4
+networkx
 ase==3.19.0
 scipy>=1.3.1,<=1.6
-numpy==1.18.1
+numpy>1.18.1
 PyYAML==5.3.1
 Sella>=1.0.3
 # xtb-python==20.1
