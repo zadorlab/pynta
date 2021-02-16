@@ -1,7 +1,5 @@
 import sqlite3
 import os
-import io
-import numpy as np
 from pathlib import Path
 from ase.io import read
 from ase.vibrations import Vibrations
@@ -133,6 +131,7 @@ class PrepareDataToDB():
         return final_dict
 
     def get_zpe_energy(self, path_to_vib_species):
+        print(path_to_vib_species)
         zpe_energy_dict = {}
         atoms = read(path_to_vib_species)
         vib_path = os.path.dirname(path_to_vib_species)
