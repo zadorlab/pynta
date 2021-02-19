@@ -1,7 +1,5 @@
 import sqlite3
 import os
-import io
-import numpy as np
 from pathlib import Path
 from ase.io import read
 from ase.vibrations import Vibrations
