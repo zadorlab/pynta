@@ -133,7 +133,8 @@ git submodule update --init
 # module swap PrgEnv-intel PrgEnv-cray; module swap PrgEnv-cray PrgEnv-intel
 CC=icc CXX=icpc FC=ifort meson setup build --prefix=$PWD --libdir=xtb -Dla_backed=mkl -Dpy=3 --buildtype release --optimization 2
 ninja -C build install
-pip install -e .
+python3 setup.py install
+ln -s ./xtb/xtb/_libxtb*.so ./xtb
 ```
 
 Make sure it works by running:
