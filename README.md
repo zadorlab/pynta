@@ -93,7 +93,7 @@ cd ../
 Make sure it works by running
 
 ```python
->>> srun -n 2 python3 -c 'from mpi4py import MPI; print(MPI.COMM_WORLD.Get_rank())'
+>>> mpirun -n 2 python3 -c 'from mpi4py import MPI; print(MPI.COMM_WORLD.Get_rank())'
 0
 1
 ```
