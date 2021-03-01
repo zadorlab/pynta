@@ -140,13 +140,14 @@ ln -s ./xtb/xtb/_libxtb*.so ./xtb
 Make sure it works by running:
 
 ```python
->>> from ase.build import molecule
 >>> from xtb.ase.calculator import XTB
+>>> from ase.build import molecule
+>>> import math
 >>> atoms = molecule('H2O')
 >>> atoms.calc = XTB(method="GFN2-xTB")
 >>> total_ener = atoms.get_potential_energy()
->>> total_ener
--137.9677758730299
+>>> is_close = math.isclose(total_ener,-137.9677758730299)
+>>> print (total_ener)  # True -> that's good; False -> something is wrong
 ```
 
 **Warning - You might be getting SEGFAULT error -**
