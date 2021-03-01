@@ -142,11 +142,11 @@ Make sure it works by running:
 ```python
 >>> from xtb.ase.calculator import XTB
 >>> from ase.build import molecule
->>> import math
+>>> from math import isclose
 >>> atoms = molecule('H2O')
 >>> atoms.calc = XTB(method="GFN2-xTB")
 >>> total_ener = atoms.get_potential_energy()
->>> is_close = math.isclose(total_ener,-137.9677758730299)
+>>> is_close = isclose(total_ener,-137.9677758730299)
 >>> print (total_ener)  # True -> that's good; False -> something is wrong
 ```
 
@@ -182,7 +182,7 @@ Then, rebuild `xTB-python` on your system ignoring `git submodule update --init`
 ### 1.2.1 Clone the project in your preferable location.
 
 ```
-git clone https://gitlab-ex.sandia.gov/mgierad/pynta.git
+git clone https://github.com/zadorlab/pynta.git
 ```
 
 Usually, `master` branch should be fine. If somehow it is not working, make sure to switch to the latest stable release version by checking the tags.

@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   
-  <title>Pynta &mdash; Pynta February 19, 2021 documentation</title>
+  <title>Pynta &mdash; Pynta March 01, 2021 documentation</title>
   
 
   
@@ -332,13 +332,13 @@ pip install -e .
 </pre></div>
 </div>
 <p>Make sure it works by running:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">ase.build</span> <span class="kn">import</span> <span class="n">molecule</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">xtb.ase.calculator</span> <span class="kn">import</span> <span class="n">XTB</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">xtb.ase.calculator</span> <span class="kn">import</span> <span class="n">XTB</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">ase.build</span> <span class="kn">import</span> <span class="n">molecule</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">math</span> <span class="kn">import</span> <span class="n">isclose</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">atoms</span> <span class="o">=</span> <span class="n">molecule</span><span class="p">(</span><span class="s1">&#39;H2O&#39;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">atoms</span><span class="o">.</span><span class="n">calc</span> <span class="o">=</span> <span class="n">XTB</span><span class="p">(</span><span class="n">method</span><span class="o">=</span><span class="s2">&quot;GFN2-xTB&quot;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">total_ener</span> <span class="o">=</span> <span class="n">atoms</span><span class="o">.</span><span class="n">get_potential_energy</span><span class="p">()</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">total_ener</span>
-<span class="go">-137.9677758730299</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">is_close</span> <span class="o">=</span> <span class="n">isclose</span><span class="p">(</span><span class="n">total_ener</span><span class="p">,</span><span class="o">-</span><span class="mf">137.9677758730299</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span> <span class="p">(</span><span class="n">total_ener</span><span class="p">)</span>  <span class="c1"># True -&gt; that&#39;s good; False -&gt; something is wrong</span>
 </pre></div>
 </div>
 <div class="admonition warning">
@@ -368,7 +368,7 @@ ctest
 <h2>Install <code class="docutils literal notranslate"><span class="pre">pynta</span></code><a class="headerlink" href="#install-pynta" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="clone-the-project-in-your-preferable-location">
 <h3>Clone the project in your preferable location.<a class="headerlink" href="#clone-the-project-in-your-preferable-location" title="Permalink to this headline">¶</a></h3>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">git</span> <span class="n">clone</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">gitlab</span><span class="o">-</span><span class="n">ex</span><span class="o">.</span><span class="n">sandia</span><span class="o">.</span><span class="n">gov</span><span class="o">/</span><span class="n">mgierad</span><span class="o">/</span><span class="n">pynta</span><span class="o">.</span><span class="n">git</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">git</span> <span class="n">clone</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">zadorlab</span><span class="o">/</span><span class="n">pynta</span><span class="o">.</span><span class="n">git</span>
 </pre></div>
 </div>
 <p>Usually, <code class="docutils literal notranslate"><span class="pre">master</span></code> branch should be fine. If somehow it is not working, make sure to switch to the latest stable version by checking the tags.</p>
@@ -4922,7 +4922,7 @@ U.S. Government retains certain rights in this software.</p>
     <p>
         &#169; Copyright Copyright 2021 National Technology &amp; Engineering Solutions of Sandia, LLC (NTESS). Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government retains certain rights in this software..
       <span class="lastupdated">
-        Last updated on Fri, 19 Feb 2021 11:33:53.
+        Last updated on Mon, 01 Mar 2021 16:48:37.
       </span>
 
     </p>
