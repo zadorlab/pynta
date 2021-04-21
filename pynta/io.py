@@ -417,7 +417,7 @@ class IO():
         '''
         unique_adsorbates_prefixes = {}
         path_to_minima = os.path.join(creation_dir, facetpath, 'minima')
-        all_species = self.get_all_unique_species(yamlfile)
+        all_species = IO.get_all_unique_species_symbols(yamlfile)
         for species in all_species:
             path_to_species = os.path.join(path_to_minima, species)
             uq_prefixes = IO.get_unique_prefixes(
