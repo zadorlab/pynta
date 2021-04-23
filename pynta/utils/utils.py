@@ -30,5 +30,5 @@ def convert_traj_to_xyz(path_to_traj):
 
 def traj_to_xyz(path_to_traj):
     dir_name = os.path.dirname(path_to_traj)
-    f_name = os.paht.join(dir_name, 'last_geom.xyz')
+    f_name = os.path.join(dir_name, 'last_geom.xyz')
     write(f_name, read(path_to_traj))
