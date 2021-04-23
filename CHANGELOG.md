@@ -51,3 +51,11 @@
 - setup.cfg added and setup.py refactored - getting ready for PyPI released
 - fixed requirements.txt
 - other bug fixes and improvements
+
+## 1.1.1
+
+- minor bug fixes
+- added utils methods to convert traj files into xyz files
+- fixed formating output of Show().not_finieshed()
+- fixed requirements
+- fixed typos causing minima_vib step to fail
