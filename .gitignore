@@ -9,6 +9,7 @@ test/
 00_sent_DB/
 build/
 dist
+pynta_env
 # docs/
 # /docs/_build/latex*
 docsrc/_build/
