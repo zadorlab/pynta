@@ -45,7 +45,7 @@ class Show():
         for job in self.ase_jobs:
             if job.state != 'JOB_FINISHED':
                 # TODO improve because keys are overwritten
-                key = 'Workflow : {:>20} Jobname : {:>40}'.format(
+                key = 'Workflow : {:>30} Jobname : {:>50}'.format(
                     job.workflow, job.name)
                 not_finished[key] = job.state
         # return not_finished
