@@ -1,9 +1,10 @@
 #!/usr/bin/env python
+import os
+from ase.io import (Trajectory, write, read)
+
 
 # by default, each atom is bonded to the surface through the atom
 # at index 0. This can be overwrite by using this dict
-import os
-from ase.io import Trajectory, write
 edge_cases_bonded_dict = dict(CO3=1, CH3OH=1, CH3O2=2, HCO=1)
 
 # by default, the first topology structure is used to generate
@@ -25,3 +26,9 @@ def convert_traj_to_xyz(path_to_traj):
                 inner_file = inner.read()
             main.write(inner_file)
             os.remove(f_name)
+
+
+def traj_to_xyz(path_to_traj):
+    dir_name = os.path.dirname(path_to_traj)
+    f_name = os.paht.join(dir_name, 'last_geom.xyz')
+    write(f_name, read(path_to_traj))
