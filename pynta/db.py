@@ -92,8 +92,8 @@ class DataBase():
 
 
 class PrepareDataToDB():
-    def __init__(self, facetpath):
-        self.current_dir = os.getcwd()
+    def __init__(self, facetpath, working_dir):
+        self.current_dir = working_dir
         self.facetpath = facetpath
         self.path = os.path.join(self.current_dir, self.facetpath)
 
