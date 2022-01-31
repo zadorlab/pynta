@@ -6,7 +6,7 @@ def run():
     # instantiate a WorkFlow() class
     workflow = WorkFlow()
     # create all input files
-    workflow.gen_job_files()
+    workflow.create_job_files()
     # execute the workflow
     workflow.execute_all()
 
