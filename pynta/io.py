@@ -732,9 +732,9 @@ class IO():
             adjtxt_react = rxn[reag].strip().split('\n')
             reagent = IO.rmgcat_to_gratoms(adjtxt_react)
             reactant_bonded_idx = IO.get_surface_bonded(adjtxt_react)
-            species += reagent
             bonded_dict_reactants = IO.get_bonded_dict(
-                reagent, reactant_bonded_idx)
+                    reagent, reactant_bonded_idx)
+            species += reagent
             rxn_bonded_dict.update(bonded_dict_reactants)
 
         unique_species = []
@@ -871,12 +871,20 @@ class IO():
                 del_indices.append(i)
 
         gratoms.set_tags(tags)
+
+        # Shift tag indexes to exclude surface atoms
+        tagshift=0
+        index_shift=[]
+        for a in gratoms:
+            if a.symbol=='X':
+                tagshift-=1
+            index_shift.append(tagshift)
         idx_surface_bonded_atoms = np.argwhere(
             gratoms.get_tags() < 0).flatten().tolist()
-
-        idx_surface_bonded_atoms = [
-            idx - n_surf_at_befor_ads for idx in idx_surface_bonded_atoms]
-        return idx_surface_bonded_atoms
+        idx_surface_bonded_atoms_remove_X=[]
+        for bonded in idx_surface_bonded_atoms:
+            idx_surface_bonded_atoms_remove_X.append(index_shift[bonded]+bonded)
+        return idx_surface_bonded_atoms_remove_X
 
     @staticmethod
     def rmgcat_to_gratoms(

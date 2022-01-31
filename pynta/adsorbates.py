@@ -197,6 +197,26 @@ class Adsorbates:
         all_species_symbols = IO.get_all_unique_species_symbols(self.yamlfile)
         all_images_with_bonds = IO.get_all_unique_images_with_bonds(
             self.yamlfile)
+        # Check atoms in molecular graph and compare to symbol to ensure consistency
+        reorder=[-1]*len(all_species_symbols)
+        for i in range(len(all_species_symbols)):
+            enumerated_string=list(all_species_symbols[i])
+            for j in range(len(enumerated_string)):
+                if enumerated_string[j].isdigit():
+                    for k in range(int(enumerated_string[j])-1):
+                        enumerated_string.append(enumerated_string[j-1])
+            for j in range(len(enumerated_string)-1,-1,-1):
+                if enumerated_string[j].isdigit():
+                    del(enumerated_string[j])
+            for j,k in enumerate(all_images_with_bonds.values()):
+                for l,m in enumerate(k.values()):
+                    if sorted(m.symbols) == sorted(enumerated_string):
+                        reorder[j]=i
+        all_species_copy=all_species_symbols
+        all_species_symbols=[]
+        for i in range(len(reorder)):
+            if reorder[i]!=-1:
+                all_species_symbols.append(all_species_copy[reorder[i]])
 
         # prepare surface for placing adsorbates
         grslab = self.get_grslab()
