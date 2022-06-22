@@ -1,0 +1,17 @@
+name: pynta_env
+channels:
+  - defaults
+  - conda-forge
+dependencies:
+  - matplotlib
+  - spglib
+  - networkx
+  - ase
+  - scipy
+  - numpy
+  - pyyaml
+  - sella
+  - sphinx
+  - glpk==5.0
+  - fireworks
+  - jax <=0.2.28
