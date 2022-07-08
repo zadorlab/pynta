@@ -68,12 +68,12 @@ class Pynta:
 
 
     def setup_transition_states(self):
-        opt_obj_dict = {"software":self.software,"label":"prefix","socket"=self.socket,"software_kwargs":self.software_kwargs,
-                run_kwargs={"fmax" : 0.01, "steps" : 70},constraints=["freeze slab"],"sella":True,"order":1}
+        opt_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":self.software_kwargs,
+                "run_kwargs": {"fmax" : 0.01, "steps" : 70},"constraints": ["freeze slab"],"sella":True,"order":1}
         vib_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":self.software_kwargs,
                 "constraints": constraints}
-        TSnudge_obj_dict = {"software":self.software,"label":"prefix","socket"=self.socket,"software_kwargs":self.software_kwargs,
-                run_kwargs={"fmax" : 0.01, "steps" : 70},constraints=["freeze slab"],"opt_method":"QuasiNewton"}
+        TSnudge_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":self.software_kwargs,
+                "run_kwargs":{"fmax" : 0.01, "steps" : 70},"constraints":["freeze slab"],"opt_method":"QuasiNewton"}
         for i,rxn in enumerate(self.rxns):
             ts_path = os.path.join(self.path,"TS"+str(i))
             os.makedirs(ts_path)
