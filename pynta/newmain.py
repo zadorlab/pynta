@@ -19,7 +19,7 @@ class Pynta:
         launchpad.reset('', require_password=False)
         self.launchpad = launchpad
         self.slab_path = slab_path
-        self.path = os.getcwd() if path is None else self.path = path
+        self.path = os.getcwd() if path is None else path
         self.facet = metal + surface_type
         self.fws = []
         self.rxns = IO.open_yaml_file(rxns_file)
