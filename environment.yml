@@ -6,7 +6,7 @@ dependencies:
   - matplotlib
   - spglib
   - networkx
-  - ase
+  - ase >=3.22.1
   - scipy
   - numpy
   - pyyaml
