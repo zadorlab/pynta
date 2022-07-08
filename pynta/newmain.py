@@ -1,6 +1,6 @@
 from pynta.tasks import *
 from fireworks import LaunchPad
-from ase.build import *
+import ase.build
 from ase.io import read, write
 import os
 import time
