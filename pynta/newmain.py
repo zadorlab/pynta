@@ -59,7 +59,7 @@ class Pynta:
                 optfws.append(fwopt)
 
             vib_obj_dict = {"software": self.software, "label": prefix, "software_kwargs": self.software_kwargs,
-                constraints=["freeze slab"]}
+                "constraints": ["freeze slab"]}
             ctask = MolecularCollect(xyzs,False,[vibrations_firework], [vib_obj_dict],
                     ["vib.json"],[False])
             cfw = Firework([ctask],parents=optfws)
