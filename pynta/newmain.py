@@ -12,7 +12,7 @@ class Pynta:
                             'smearing':  'marzari-vanderbilt',
                             'degauss': 0.01, 'ecutwfc': 40, 'nosym': True,
                             'conv_thr': 1e-11, 'mixing_mode': 'local-TF',
-                            "pseudopotentials": {"Cu"='Cu.pbe-spn-kjpaw_psl.1.0.0.UPF',"H"='H.pbe-kjpaw_psl.1.0.0.UPF',"O"='O.pbe-n-kjpaw_psl.1.0.0.UPF',"C"='C.pbe-n-kjpaw_psl.1.0.0.UPF',"N"='N.pbe-n-kjpaw_psl.1.0.0.UPF',
+                            "pseudopotentials": {"Cu": 'Cu.pbe-spn-kjpaw_psl.1.0.0.UPF',"H": 'H.pbe-kjpaw_psl.1.0.0.UPF',"O": 'O.pbe-n-kjpaw_psl.1.0.0.UPF',"C": 'C.pbe-n-kjpaw_psl.1.0.0.UPF',"N": 'N.pbe-n-kjpaw_psl.1.0.0.UPF',
                             }):
         self.surface_type = surface_type
         launchpad = LaunchPad()
