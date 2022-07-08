@@ -188,7 +188,7 @@ class Adsorbates:
 
         return grslab
 
-    def adjacency_to_3d(self) -> None:
+    def adjacency_to_3d(self):
         ''' Place adsorbates on the surface
 
         .. todo:: Add support for a bidentate adsorption
@@ -244,19 +244,26 @@ class Adsorbates:
                     print(sp_gratoms, sp_gratoms.edges,
                           sp_gratoms.get_tags())
 
+        out_dict = dict()
         for sp_symbol, adsorbate in structures.items():
-            # create directory where all adsorbates are stored
-            savedir = os.path.join(
-                self.creation_dir, self.facetpath, 'minima', sp_symbol)
-            os.makedirs(savedir, exist_ok=True)
-
+            out_dict[sp_symbol] = dict()
             for prefix, structure in enumerate(adsorbate):
-                big_slab_ads = self.big_slab + structure[self.nslab:]
-                # save adsorbates as .xyz and .png
-                write(os.path.join(savedir, '{}.xyz'.format(
-                    str(prefix).zfill(2))), big_slab_ads)
-                write(os.path.join(savedir, '{}.png'.format(
-                    str(prefix).zfill(2))), big_slab_ads)
+                out_dict[sp_symbol][prefix] = structure
+
+        return out_dict
+        # for sp_symbol, adsorbate in structures.items():
+        #     # create directory where all adsorbates are stored
+        #     savedir = os.path.join(
+        #         self.creation_dir, self.facetpath, 'minima', sp_symbol)
+        #     os.makedirs(savedir, exist_ok=True)
+        #
+        #     for prefix, structure in enumerate(adsorbate):
+        #         big_slab_ads = self.big_slab + structure[self.nslab:]
+        #         # save adsorbates as .xyz and .png
+        #         write(os.path.join(savedir, '{}.xyz'.format(
+        #             str(prefix).zfill(2))), big_slab_ads)
+        #         write(os.path.join(savedir, '{}.png'.format(
+        #             str(prefix).zfill(2))), big_slab_ads)
 
     def create_relax_jobs(
             self,
