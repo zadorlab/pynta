@@ -31,7 +31,7 @@ class Pynta:
         slab_type = getattr(ase.build,self.surface_type)
         slab = slab_type(self.metal,self.repeats,self.a,self.vaccum)
         slab.pbc = (True, True, False)
-        write(os.path.join(self.path,"slab_init.xyz"),slab))
+        write(os.path.join(self.path,"slab_init.xyz"),slab)
         self.slab_path = os.path.join(self.path,"slab.xyz")
         fwslab = optimize_firework(os.path.join(self.path,"slab_init.xyz"),self.software,"slab",
             opt_method="BFGSLineSearch",socket=self.socket,software_kwargs=self.software_kwargs,
