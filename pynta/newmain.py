@@ -4,6 +4,7 @@ import ase.build
 from ase.io import read, write
 import os
 import time
+import pynta.IO as IO
 
 class Pynta:
     def __init__(self,path,rxns_file,surface_type,metal,a=3.6,vaccum=8.0,
