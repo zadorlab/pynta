@@ -8,7 +8,7 @@ from pynta.io import IO
 
 class Pynta:
     def __init__(self,path,rxns_file,surface_type,metal,a=3.6,vaccum=8.0,
-    repeats=(3,3,1),slab_path=None,software="espresso",socket=False,
+    repeats=(3,3,1),slab_path=None,software="Espresso",socket=False,
     software_kwargs={'kpts': (3, 3, 1), 'occupations': 'smearing',
                             'smearing':  'marzari-vanderbilt',
                             'degauss': 0.01, 'ecutwfc': 40, 'nosym': True,
