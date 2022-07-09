@@ -100,7 +100,7 @@ class Pynta:
             fwslab = self.generate_slab()
             wfslab = Workflow([fwslab], name="slab")
             self.launchpad.add_wf(wfslab)
-            rapidfire(lpad)
+            rapidfire(self.launchpad)
             while not os.path.exists(self.slab_path): #wait until slab optimizes, this is required anyway and makes the rest of the code simpler
                 time.sleep(1)
 
