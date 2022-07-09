@@ -23,6 +23,7 @@ class Pynta:
         self.vaccum = vaccum
         self.a = a
         self.software = software
+        self.socket = socket
         self.repeats = repeats
         self.path = os.getcwd() if path is None else path
         self.facet = metal + surface_type
