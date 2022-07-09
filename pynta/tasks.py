@@ -109,6 +109,9 @@ class MolecularOptimizationTask(OptimizationTask):
                     ]))
 
             opt_kwargs["trajectory"] = label+".traj"
+            print(opt_method)
+            print(opt_kwargs)
+            print(sp)
             opt = opt_method(sp,**opt_kwargs)
             try:
                 opt.run(**run_kwargs)
