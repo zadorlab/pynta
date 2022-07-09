@@ -22,6 +22,7 @@ class Pynta:
         self.slab_path = slab_path
         self.vaccum = vaccum
         self.a = a
+        self.software = software
         self.repeats = repeats
         self.path = os.getcwd() if path is None else path
         self.facet = metal + surface_type
