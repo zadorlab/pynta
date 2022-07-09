@@ -20,6 +20,9 @@ class Pynta:
         launchpad.reset('', require_password=False)
         self.launchpad = launchpad
         self.slab_path = slab_path
+        self.vaccum = vaccum
+        self.a = a
+        self.repeats = repeats
         self.path = os.getcwd() if path is None else path
         self.facet = metal + surface_type
         self.fws = []
