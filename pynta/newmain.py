@@ -106,12 +106,18 @@ class Pynta:
             fw = Firework([ts_task],parents=parents)
             self.fws.append(fw)
 
+    def rapidfire(self):
+        if self.queue:
+            rapidfirequeue(lpad,self.fworker,self.qadapter)
+        else:
+            rapidfire(lpad)
+
     def execute(self):
         if self.slab_path is None: #handle slab
             fwslab = self.generate_slab()
             wfslab = Workflow([fwslab], name="slab")
             self.launchpad.add_wf(wfslab)
-            rapidfire(self.launchpad)
+            self.rapidfire()
             while not os.path.exists(self.slab_path): #wait until slab optimizes, this is required anyway and makes the rest of the code simpler
                 time.sleep(1)
 
@@ -126,7 +132,4 @@ class Pynta:
         wf = Workflow(self.fws, name="pynta")
         self.launchpad.add_wf(wf)
 
-        if self.queue:
-            rapidfirequeue(lpad,self.fworker,self.qadapter)
-        else:
-            rapidfire(lpad)
+        self.rapidfire()
