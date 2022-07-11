@@ -108,9 +108,9 @@ class Pynta:
 
     def rapidfire(self):
         if self.queue:
-            rapidfirequeue(lpad,self.fworker,self.qadapter)
+            rapidfirequeue(self.launchpad,self.fworker,self.qadapter)
         else:
-            rapidfire(lpad)
+            rapidfire(self.launchpad)
 
     def execute(self):
         if self.slab_path is None: #handle slab
