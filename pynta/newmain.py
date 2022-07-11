@@ -1,14 +1,19 @@
 from pynta.tasks import *
-from fireworks import LaunchPad
+from pynta.io import IO
 import ase.build
 from ase.io import read, write
 import os
 import time
-from pynta.io import IO
+from fireworks import LaunchPad
+from fireworks.queue.queue_launcher import rapidfire as rapidfirequeue
+from fireworks.utilities.fw_serializers import load_object_from_file
+from fireworks.core.rocket_launcher import rapidfire
+from fireworks.core.fworker import FWorker
+import fireworks.fw_config
 
 class Pynta:
     def __init__(self,path,rxns_file,surface_type,metal,a=3.6,vaccum=8.0,
-    repeats=(3,3,1),slab_path=None,software="Espresso",socket=False,
+    repeats=(3,3,1),slab_path=None,software="Espresso",socket=False,queue=True,
     software_kwargs={'kpts': (3, 3, 1), 'occupations': 'smearing',
                             'smearing':  'marzari-vanderbilt',
                             'degauss': 0.01, 'ecutwfc': 40, 'nosym': True,
@@ -32,6 +37,12 @@ class Pynta:
         self.metal = metal
         self.adsorbate_fw_dict = dict()
         self.software_kwargs = software_kwargs
+        self.queue = queue
+        self.fworker = None
+        self.qadapter = None
+        if self.queue:
+            self.fworker = FWorker.from_file(fireworks.fw_config.FWORKER_LOC)
+            self.qadapter = load_object_from_file(fireworks.fw_config.QUEUEADAPTER_LOC)
 
     def generate_slab(self):
         slab_type = getattr(ase.build,self.surface_type)
@@ -114,4 +125,8 @@ class Pynta:
 
         wf = Workflow(self.fws, name="pynta")
         self.launchpad.add_wf(wf)
-        rapidfire(lpad)
+
+        if self.queue:
+            rapidfirequeue(lpad,self.fworker,self.qadapter)
+        else:
+            rapidfire(lpad)

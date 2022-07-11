@@ -10,6 +10,10 @@ from importlib import import_module
 from fireworks import *
 from fireworks.core.rocket_launcher import rapidfire
 from fireworks.utilities.fw_utilities import explicit_serialize
+from fireworks.queue.queue_launcher import rapidfire as rapidfirequeue
+from fireworks.utilities.fw_serializers import load_object_from_file
+from fireworks.core.fworker import FWorker
+import fireworks.fw_config
 from pynta.ts import TS
 from xtb.ase.calculator import XTB
 import json
@@ -567,7 +571,15 @@ def debug_fizzled(fw,trace,task):
     else:
         raise ValueError
 
-def restart_wf(lpad):
+def restart_wf(lpad,queue):
+    """
+    lpad is a LaunchPad object
+    queue is a boolean indicating if running in a queue or not
+    """
+    if queue:
+        fworker = FWorker.from_file(fireworks.fw_config.FWORKER_LOC)
+        qadapter = load_object_from_file(fireworks.fw_config.QUEUEADAPTER_LOC)
+
     fw_ids = lpad.get_fw_ids()
 
     wf = lpad.get_wf_by_fw_id(fw_ids[0]) #assumes only one workflow...should fix
@@ -609,7 +621,11 @@ def restart_wf(lpad):
     wf = Workflow(fws, name="restart")
     lpad.reset('', require_password=False)
     lpad.add_wf(wf)
-    rapidfire(lpad)
+
+    if queue:
+        rapidfirequeue(lpad,fworker,qadapter)
+    else:
+        rapidfire(lpad)
 
 def get_unique_sym(geoms):
     ''' Check for the symmetry equivalent structures in the given files
