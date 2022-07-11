@@ -13,7 +13,7 @@ import fireworks.fw_config
 
 class Pynta:
     def __init__(self,path,rxns_file,surface_type,metal,a=3.6,vaccum=8.0,
-    repeats=(3,3,1),slab_path=None,software="Espresso",socket=False,queue=True,
+    repeats=(3,3,1),slab_path=None,software="Espresso",socket=False,queue=True,worker_name="",
     software_kwargs={'kpts': (3, 3, 1), 'occupations': 'smearing',
                             'smearing':  'marzari-vanderbilt',
                             'degauss': 0.01, 'ecutwfc': 40, 'nosym': True,
@@ -40,6 +40,7 @@ class Pynta:
         self.queue = queue
         self.fworker = None
         self.qadapter = None
+        self.worker_name = worker_name
         if self.queue:
             self.fworker = FWorker.from_file(fireworks.fw_config.FWORKER_LOC)
             self.qadapter = load_object_from_file(fireworks.fw_config.QUEUEADAPTER_LOC)
@@ -115,6 +116,7 @@ class Pynta:
     def execute(self):
         if self.slab_path is None: #handle slab
             fwslab = self.generate_slab()
+            fwslab["_fworker"] = self.worker_name
             wfslab = Workflow([fwslab], name="slab")
             self.launchpad.add_wf(wfslab)
             self.rapidfire()
@@ -129,6 +131,8 @@ class Pynta:
         #setup transition states
         self.setup_transition_states()
 
+        for fw in self.fws:
+            fw["_fworker"] = self.worker_name
         wf = Workflow(self.fws, name="pynta")
         self.launchpad.add_wf(wf)
 
