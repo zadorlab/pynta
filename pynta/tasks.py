@@ -60,6 +60,8 @@ def optimize_firework(geo_path,software,label,opt_method=None,sella=None,socket=
     t1 = MolecularOptimizationTask(d)
     directory = os.path.dirname(geo_path)
     if out_path is None: out_path = os.path.join(directory,label+".xyz")
+    print(label+".xyz")
+    print(out_path)
     t2 = FileTransferTask({'files': [{'src': label+'.xyz', 'dest': out_path}], 'mode': 'copy', 'ignore_errors' : ignore_errors})
     return Firework([t1,t2],parents=parents)
 
@@ -113,9 +115,6 @@ class MolecularOptimizationTask(OptimizationTask):
                     ]))
 
             opt_kwargs["trajectory"] = label+".traj"
-            print(opt_method)
-            print(opt_kwargs)
-            print(sp)
             opt = opt_method(sp,**opt_kwargs)
             try:
                 opt.run(**run_kwargs)
@@ -148,6 +147,8 @@ class MolecularOptimizationTask(OptimizationTask):
 
         if e is None:
             write(label+".xyz", sp)
+        else:
+            print(e)
 
         return FWAction()
 
