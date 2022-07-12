@@ -21,7 +21,7 @@ class Pynta:
                             "pseudopotentials": {"Cu": 'Cu.pbe-spn-kjpaw_psl.1.0.0.UPF',"H": 'H.pbe-kjpaw_psl.1.0.0.UPF',"O": 'O.pbe-n-kjpaw_psl.1.0.0.UPF',"C": 'C.pbe-n-kjpaw_psl.1.0.0.UPF',"N": 'N.pbe-n-kjpaw_psl.1.0.0.UPF',
                             }}):
         self.surface_type = surface_type
-        launchpad = LaunchPad()
+        launchpad = LaunchPad.from_file(fireworks.fw_config.LAUNCHPAD_LOC)
         launchpad.reset('', require_password=False)
         self.launchpad = launchpad
         self.slab_path = slab_path
