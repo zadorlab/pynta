@@ -116,7 +116,6 @@ class Pynta:
     def execute(self):
         if self.slab_path is None: #handle slab
             fwslab = self.generate_slab()
-            fwslab.spec["_fworker"] = self.worker_name
             wfslab = Workflow([fwslab], name="slab")
             self.launchpad.add_wf(wfslab)
             self.rapidfire()
@@ -131,8 +130,6 @@ class Pynta:
         #setup transition states
         self.setup_transition_states()
 
-        for fw in self.fws:
-            fw.spec["_fworker"] = self.worker_name
         wf = Workflow(self.fws, name="pynta")
         self.launchpad.add_wf(wf)
 
