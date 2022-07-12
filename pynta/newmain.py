@@ -13,15 +13,16 @@ import fireworks.fw_config
 
 class Pynta:
     def __init__(self,path,rxns_file,surface_type,metal,a=3.6,vaccum=8.0,
-    repeats=(3,3,1),slab_path=None,software="Espresso",socket=False,queue=True,worker_name="",
+    repeats=(3,3,1),slab_path=None,software="Espresso",socket=False,queue=False,
     software_kwargs={'kpts': (3, 3, 1), 'occupations': 'smearing',
                             'smearing':  'marzari-vanderbilt',
                             'degauss': 0.01, 'ecutwfc': 40, 'nosym': True,
                             'conv_thr': 1e-11, 'mixing_mode': 'local-TF',
                             "pseudopotentials": {"Cu": 'Cu.pbe-spn-kjpaw_psl.1.0.0.UPF',"H": 'H.pbe-kjpaw_psl.1.0.0.UPF',"O": 'O.pbe-n-kjpaw_psl.1.0.0.UPF',"C": 'C.pbe-n-kjpaw_psl.1.0.0.UPF',"N": 'N.pbe-n-kjpaw_psl.1.0.0.UPF',
-                            }}):
+                            }},
+        launchpad_path, fworker_path, queue_adapter_path):
         self.surface_type = surface_type
-        launchpad = LaunchPad.from_file(fireworks.fw_config.LAUNCHPAD_LOC)
+        launchpad = LaunchPad.from_file(launchpad_path)
         launchpad.reset('', require_password=False)
         self.launchpad = launchpad
         self.slab_path = slab_path
@@ -42,8 +43,8 @@ class Pynta:
         self.qadapter = None
         self.worker_name = worker_name
         if self.queue:
-            self.fworker = FWorker.from_file(fireworks.fw_config.FWORKER_LOC)
-            self.qadapter = load_object_from_file(fireworks.fw_config.QUEUEADAPTER_LOC)
+            self.fworker = FWorker.from_file(fworker_path)
+            self.qadapter = load_object_from_file(queue_adapter_path)
 
     def generate_slab(self):
         slab_type = getattr(ase.build,self.surface_type)
