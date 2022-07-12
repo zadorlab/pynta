@@ -99,7 +99,7 @@ class MolecularOptimizationTask(OptimizationTask):
             if not ignore_errors:
                 raise e
 
-        sp.calc = SocketIOCalculator(software,log=sys.stdout,unixsocket=unixsocket) if socket else software
+        sp.calc = SocketIOCalculator(software,log=sys.stdout,unixsocket=unixsocket+xyz.replace("/","_")) if socket else software
 
         constraints = self["constraints"] if "constraints" in self.keys() else []
 
