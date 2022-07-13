@@ -120,10 +120,13 @@ class MolecularOptimizationTask(OptimizationTask):
             try:
                 opt = opt_method(sp,**opt_kwargs)
                 opt.run(**run_kwargs)
-            except Exception as e:
-                if socket and isinstance(e, OSError) and software == "Espresso":
+            except OSError as e:
+                if socket and software == "Espresso":
                     pass #Espresso tends to error even after socket calculations finish correctly
                 elif not ignore_errors:
+                    raise e
+            except Exception as e:
+                if not ignore_errors:
                     raise e
         else:
             cons = Constraints(sp)
