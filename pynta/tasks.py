@@ -117,8 +117,8 @@ class MolecularOptimizationTask(OptimizationTask):
                     ]))
 
             opt_kwargs["trajectory"] = label+".traj"
+            opt = opt_method(sp,**opt_kwargs)
             try:
-                opt = opt_method(sp,**opt_kwargs)
                 opt.run(**run_kwargs)
             except OSError as e:
                 if socket and self["software"] == "Espresso":
