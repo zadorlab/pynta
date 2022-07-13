@@ -43,6 +43,7 @@ class Pynta:
         self.fworker = None
         self.qadapter = None
         self.fworker = FWorker.from_file(fworker_path)
+        self.rxns_file = rxns_file
         if queue:
             self.qadapter = load_object_from_file(queue_adapter_path)
 
