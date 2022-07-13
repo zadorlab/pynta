@@ -40,8 +40,10 @@ class AdsorptionSites():
         if surface_atoms is None:
             raise ValueError('Slab must contain surface atoms')
         import logging
+        logging.error(index)
+        logging.error(surface_atoms)
         extended_top = np.where(np.in1d(index, surface_atoms))[0]
-        print(extended_top)
+        logging.error(extended_top)
         self.tol = tol
         self.coordinates = coords[extended_top].tolist()
         self.connectivity = np.ones(extended_top.shape[0]).tolist()
