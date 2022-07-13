@@ -1,5 +1,6 @@
 from pynta.tasks import *
 from pynta.io import IO
+from pynta.adsorbates import Adsorbates
 import ase.build
 from ase.io import read, write
 import os
