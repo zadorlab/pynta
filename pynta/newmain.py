@@ -127,7 +127,7 @@ class Pynta:
             write(os.path.join(self.path,"slab_big_init.xyz"),atoms)
             fwslab2 = optimize_firework(os.path.join(self.path,"slab_big_init.xyz"),self.software,"slab",
                 opt_method="QuasiNewton",socket=self.socket,software_kwargs=self.software_kwargs,
-                run_kwargs={"fmax" : 0.01})
+                run_kwargs={"fmax" : 0.01},constraints=["freeze slab"])
             wfslab2 = Workflow([fwslab2], name="bigslab")
             self.launchpad.add_wf(wfslab2)
             self.rapidfire()
