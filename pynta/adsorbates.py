@@ -158,6 +158,8 @@ class Adsorbates:
             return edges
 
         surface = np.zeros(len(slab_atom), dtype=int)
+        import logging
+        logging.error(pairvecs)
         for i, pairvec in enumerate(pairvecs):
             # Big pairvec means highly asymmetrical atoms, which
             # implies that it is near or at a surface
