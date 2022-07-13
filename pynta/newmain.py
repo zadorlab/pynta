@@ -14,7 +14,7 @@ import fireworks.fw_config
 
 class Pynta:
     def __init__(self,path,launchpad_path,fworker_path,rxns_file,surface_type,metal,a=3.6,vaccum=8.0,
-    repeats=(3,3,1),slab_path=None,software="Espresso",socket=False,queue=False,
+    repeats=[(3,3,1),(1,1,4)],slab_path=None,software="Espresso",socket=False,queue=False,
     software_kwargs={'kpts': (3, 3, 1), 'tprnfor': True, 'occupations': 'smearing',
                             'smearing':  'marzari-vanderbilt',
                             'degauss': 0.01, 'ecutwfc': 40, 'nosym': True,
@@ -124,7 +124,7 @@ class Pynta:
             while not os.path.exists(os.path.join(self.path,"slab_small.xyz")): #wait until slab optimizes, this is required anyway and makes the rest of the code simpler
                 time.sleep(1)
             atoms = read(os.path.join(self.path,"slab_small.xyz")) * self.repeats[1]
-            write(atoms,os.path.join(self.path,"slab_big_init.xyz"))
+            write(os.path.join(self.path,"slab_big_init.xyz"),atoms)
             fwslab2 = optimize_firework(os.path.join(self.path,"slab_big_init.xyz"),self.software,"slab",
                 opt_method="QuasiNewton",socket=self.socket,software_kwargs=self.software_kwargs,
                 run_kwargs={"fmax" : 0.01})
