@@ -14,7 +14,7 @@ import fireworks.fw_config
 class Pynta:
     def __init__(self,path,launchpad_path,fworker_path,rxns_file,surface_type,metal,a=3.6,vaccum=8.0,
     repeats=(3,3,1),slab_path=None,software="Espresso",socket=False,queue=False,
-    software_kwargs={'kpts': (3, 3, 1), 'occupations': 'smearing',
+    software_kwargs={'kpts': (3, 3, 1), 'tprnfor'=True, 'occupations': 'smearing',
                             'smearing':  'marzari-vanderbilt',
                             'degauss': 0.01, 'ecutwfc': 40, 'nosym': True,
                             'conv_thr': 1e-11, 'mixing_mode': 'local-TF',
