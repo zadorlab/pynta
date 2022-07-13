@@ -98,7 +98,9 @@ class MolecularOptimizationTask(OptimizationTask):
         except Exception as e:
             if not ignore_errors:
                 raise e
-
+        if socket and os.isfile(os.path.join("tmp","ipi_"+unixsocket+xyz.replace("/","_"))):
+            os.unlink(os.path.join("tmp","ipi_"+unixsocket+xyz.replace("/","_")))
+        
         sp.calc = SocketIOCalculator(software,log=sys.stdout,unixsocket=unixsocket+xyz.replace("/","_")) if socket else software
 
         constraints = self["constraints"] if "constraints" in self.keys() else []
