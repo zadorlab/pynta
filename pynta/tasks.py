@@ -121,7 +121,7 @@ class MolecularOptimizationTask(OptimizationTask):
                 opt = opt_method(sp,**opt_kwargs)
                 opt.run(**run_kwargs)
             except OSError as e:
-                if socket and software == "Espresso":
+                if socket and self["software"] == "Espresso":
                     pass #Espresso tends to error even after socket calculations finish correctly
                 elif not ignore_errors:
                     raise e
