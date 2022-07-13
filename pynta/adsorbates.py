@@ -220,7 +220,6 @@ class Adsorbates:
 
         # prepare surface for placing adsorbates
         grslab = self.get_grslab()
-        print(grslab)
         ads_builder = Builder(grslab)
 
         # build adsorbates
