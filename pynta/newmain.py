@@ -59,7 +59,7 @@ class Pynta:
         return fwslab
 
     def setup_adsorbates(self):
-        put_adsorbates = Adsorbates(self.path, self.slab_path, self.repeats, self.rxns_file)
+        put_adsorbates = Adsorbates(self.path, self.slab_path, self.repeats, self.rxns_file, self.path)
         adsorbate_dict = put_adsorbates.adjacency_to_3d()
         for adsname,adsorbate in adsorbate_dict.items():
             xyzs = []
