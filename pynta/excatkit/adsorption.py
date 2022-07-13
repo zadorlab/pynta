@@ -47,7 +47,7 @@ class AdsorptionSites():
         self.connectivity = np.ones(extended_top.shape[0]).tolist()
         self.r1_topology = [[i] for i in np.arange(len(extended_top))]
         self.index = index[extended_top]
-
+        print(coords)
         sites = self._get_higher_coordination_sites(coords[extended_top])
         self.r2_topology = sites['top'][2]
 
