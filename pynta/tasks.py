@@ -74,7 +74,10 @@ class MolecularOptimizationTask(OptimizationTask):
         e = None
         software_kwargs = self["software_kwargs"] if "software_kwargs" in self.keys() else dict()
         socket = self["socket"] if "socket" in self.keys() else False
-        if socket: unixsocket = "ase_"+self["software"].lower()
+        if socket:
+            unixsocket = "ase_"+self["software"].lower()+"_"+self["label"]+"_"+self["xyz"].replace("/","_")
+            if "unixsocket" in self["software"]["command"]:
+                self["software"]["command"] = 'pw.x < PREFIX.pwi --ipi {unixsocket}:UNIX > PREFIX.pwo'.format(unixsocket=unixsocket)
         software = name_to_ase_software(self["software"])(**software_kwargs)
 
         opt_kwargs = self["opt_kwargs"] if "opt_kwargs" in self.keys() else dict()
@@ -98,10 +101,11 @@ class MolecularOptimizationTask(OptimizationTask):
         except Exception as e:
             if not ignore_errors:
                 raise e
-        if socket and os.path.isfile(os.path.join("tmp","ipi_"+unixsocket+xyz.replace("/","_"))):
-            os.unlink(os.path.join("tmp","ipi_"+unixsocket+xyz.replace("/","_")))
 
-        sp.calc = SocketIOCalculator(software,log=sys.stdout,unixsocket=unixsocket+xyz.replace("/","_")) if socket else software
+        if socket and os.path.isfile(os.path.join("tmp","ipi_"+unixsocket)):
+            os.unlink(os.path.join("tmp","ipi_"+unixsocket))
+
+        sp.calc = SocketIOCalculator(software,log=sys.stdout,unixsocket=unixsocket) if socket else software
 
         constraints = self["constraints"] if "constraints" in self.keys() else []
 
@@ -120,11 +124,6 @@ class MolecularOptimizationTask(OptimizationTask):
             opt = opt_method(sp,**opt_kwargs)
             try:
                 opt.run(**run_kwargs)
-            except OSError as e:
-                if socket and self["software"] == "Espresso":
-                    pass #Espresso tends to error even after socket calculations finish correctly
-                elif not ignore_errors:
-                    raise e
             except Exception as e:
                 if not ignore_errors:
                     raise e
@@ -145,7 +144,14 @@ class MolecularOptimizationTask(OptimizationTask):
                 if not ignore_errors:
                     raise e
 
-        if socket: sp.calc.close()
+        if socket:
+            try:
+                sp.calc.close()
+            except Exception as e:
+                if self["software"] == "Espresso":
+                    pass #Espresso tends to error even after socket calculations finish correctly
+                else:
+                    raise e
 
         if not opt.converged():
             e = ValueError
