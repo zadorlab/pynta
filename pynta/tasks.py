@@ -75,9 +75,10 @@ class MolecularOptimizationTask(OptimizationTask):
         software_kwargs = self["software_kwargs"] if "software_kwargs" in self.keys() else dict()
         socket = self["socket"] if "socket" in self.keys() else False
         if socket:
-            unixsocket = "ase_"+self["software"].lower()+"_"+self["label"]+"_"+self["xyz"].replace("/","_")
-            if "unixsocket" in self["software"]["command"]:
-                self["software"]["command"] = 'pw.x < PREFIX.pwi --ipi {unixsocket}:UNIX > PREFIX.pwo'.format(unixsocket=unixsocket)
+            unixsocket = "ase_"+self["software"].lower()+"_"+self["label"]+"_"+self["xyz"].replace("/","_").replace(".","_")
+            if "command" in self["software_kwargs"].keys() and "{unixsocket}" in self["software_kwargs"]["command"]:
+                self["software_kwargs"]["command"] = self["software_kwargs"]["command"].format(unixsocket=unixsocket)
+
         software = name_to_ase_software(self["software"])(**software_kwargs)
 
         opt_kwargs = self["opt_kwargs"] if "opt_kwargs" in self.keys() else dict()
