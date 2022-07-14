@@ -49,7 +49,7 @@ class Pynta:
 
     def generate_slab(self):
         slab_type = getattr(ase.build,self.surface_type)
-        slab = slab_type(self.metal,self.repeats[0],self.a,self.vaccum)
+        slab = slab_type(self.metal,self.repeats[1],self.a,self.vaccum)
         slab.pbc = (True, True, False)
         write(os.path.join(self.path,"slab_init.xyz"),slab)
         self.slab_path = os.path.join(self.path,"slab.xyz")
@@ -123,7 +123,7 @@ class Pynta:
             self.rapidfire()
             while not os.path.exists(os.path.join(self.path,"slab_small.xyz")): #wait until slab optimizes, this is required anyway and makes the rest of the code simpler
                 time.sleep(1)
-            atoms = read(os.path.join(self.path,"slab_small.xyz")) * self.repeats[1]
+            atoms = read(os.path.join(self.path,"slab_small.xyz")) * self.repeats[0]
             write(os.path.join(self.path,"slab_big_init.xyz"),atoms)
             fwslab2 = optimize_firework(os.path.join(self.path,"slab_big_init.xyz"),self.software,"slab",
                 opt_method="QuasiNewton",socket=self.socket,software_kwargs=self.software_kwargs,
