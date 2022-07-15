@@ -104,7 +104,7 @@ class Pynta:
             os.makedirs(ts_path)
 
             ts_task = MolecularTSEstimate(rxn,ts_path,self.slab_path,os.path.join(self.path,"Adsorbates"),
-                self.rxns_file,self.repeats[0],self.path.self.metal,out_path=ts_path,scfactor=1.4,scfactor_surface=1.0,
+                self.rxns_file,self.repeats[0],self.path,self.metal,out_path=ts_path,scfactor=1.4,scfactor_surface=1.0,
                     scaled1=True,scaled2=False,spawn_jobs=True,opt_obj_dict=opt_obj_dict,vib_obj_dict=vib_obj_dict,
                     TSnudge_obj_dict=TSnudge_obj_dict)
             reactants,products = IO.get_reactants_and_products(rxn)
