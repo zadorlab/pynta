@@ -85,7 +85,6 @@ class Pynta:
 
             vib_obj_dict = {"software": self.software, "label": str(prefix), "software_kwargs": self.software_kwargs,
                 "constraints": ["freeze slab"]}
-                ["xyzs","check_symm","fw_generators","fw_generator_dicts","out_names","future_check_symms"]
             ctask = MolecularCollect({"xyzs": xyzs, "check_symm": False, "fw_generators": [vibrations_firework], "fw_generator_dicts": [vib_obj_dict],
                     "out_names": ["vib.json"],"future_check_symms": [False]})
             cfw = Firework([ctask],parents=optfws)

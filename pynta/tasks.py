@@ -429,7 +429,6 @@ class MolecularCollect(CollectTask):
             fws.extend(fw)
 
         if len(self.fw_generators) > 1:
-            ["xyzs","check_symm","fw_generators","fw_generator_dicts","out_names","future_check_symms"]
             task = MolecularCollect({"xyzs": out_xyzs,"check_symm": self.future_check_symms[0],
                     "fw_generators": self.fw_generators[1:],"fw_generator_dicts": self.fw_generator_dicts[1:],
                     "out_names": self.out_names[1:],"future_check_symms": self.future_check_symms[1:])
