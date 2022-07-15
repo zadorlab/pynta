@@ -70,16 +70,16 @@ class Pynta:
             optfws = []
             for prefix,structure in adsorbate.items():
                 big_slab_ads = big_slab + structure[nslab:]
-                os.makedirs(os.path.join(self.path,"Adsorbates",adsname,prefix))
-                write(os.path.join(self.path,"Adsorbates",adsname,prefix,prefix+"_init.xyz"),big_slab_ads)
-                xyz = os.path.join(self.path,"Adsorbates",adsname,prefix,prefix+".xyz")
+                os.makedirs(os.path.join(self.path,"Adsorbates",adsname,str(prefix)))
+                write(os.path.join(self.path,"Adsorbates",adsname,str(prefix),str(prefix)+"_init.xyz"),big_slab_ads)
+                xyz = os.path.join(self.path,"Adsorbates",adsname,str(prefix),str(prefix)+".xyz")
                 xyzs.append(xyz)
-                fwopt = optimize_firework(os.path.join(self.path,"Adsorbates",adsname,prefix,prefix+"_init.xyz"),
-                    self.software,prefix,
+                fwopt = optimize_firework(os.path.join(self.path,"Adsorbates",adsname,str(prefix),str(prefix)+"_init.xyz"),
+                    self.software,str(prefix),
                     opt_method="QuasiNewton",socket=self.socket,software_kwargs=self.software_kwargs,
                     run_kwargs={"fmax" : 0.01, "steps" : 70},parents=ads_parents,constraints=["freeze slab"])
 
-                fwvib = vibrations_firework(os.path.join(self.path,"Adsorbates",adsname,prefix,prefix+".xyz"),self.software,
+                fwvib = vibrations_firework(os.path.join(self.path,"Adsorbates",adsname,str(prefix),str(prefix)+".xyz"),self.software,
                     prefix,software_kwargs=self.software_kwargs,parents=ads_parents+[fwopt],constraints=["freeze slab"])
                 optfws.append(fwopt)
 
