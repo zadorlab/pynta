@@ -64,8 +64,7 @@ class Pynta:
                     self.repeats[0], self.rxns_file, self.path)
         nslab = len(put_adsorbates.slab_atom)
         adsorbate_dict = put_adsorbates.adjacency_to_3d()
-        slab = read(self.slab_path)
-        big_slab = small_slab * self.repeats[0]
+        big_slab = self.slab * self.repeats[0]
         for adsname,adsorbate in adsorbate_dict.items():
             xyzs = []
             optfws = []
