@@ -79,8 +79,9 @@ class Pynta:
                     opt_method="QuasiNewton",socket=self.socket,software_kwargs=self.software_kwargs,
                     run_kwargs={"fmax" : 0.01, "steps" : 70},parents=[],constraints=["freeze slab"])
 
-                fwvib = vibrations_firework(os.path.join(self.path,"Adsorbates",adsname,str(prefix),str(prefix)+".xyz"),self.software,
-                    str(prefix),software_kwargs=self.software_kwargs,parents=[fwopt],constraints=["freeze slab"])
+                # fwvib = vibrations_firework(os.path.join(self.path,"Adsorbates",adsname,str(prefix),str(prefix)+".xyz"),self.software,
+                #     str(prefix),software_kwargs=self.software_kwargs,parents=[fwopt],constraints=["freeze slab"])
+                #self.adsorbate_fw_dict[adsname] = cfw
                 optfws.append(fwopt)
 
             vib_obj_dict = {"software": self.software, "label": str(prefix), "software_kwargs": self.software_kwargs,
@@ -88,7 +89,10 @@ class Pynta:
             ctask = MolecularCollect({"xyzs": xyzs, "check_symm": False, "fw_generators": [vibrations_firework], "fw_generator_dicts": [vib_obj_dict],
                     "out_names": ["vib.json"],"future_check_symms": [False]})
             cfw = Firework([ctask],parents=optfws)
+            import logging
+            logging.error(adsname)
             self.adsorbate_fw_dict[adsname] = cfw
+            logging.error(self.adsorbate_fw_dict.keys())
             self.fws.extend(optfws+[cfw])
 
 
