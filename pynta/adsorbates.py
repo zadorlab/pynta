@@ -194,7 +194,9 @@ class Adsorbates:
         .. todo:: Add support for a bidentate adsorption
 
         '''
+        import logging
         all_species_symbols = IO.get_all_unique_species_symbols(self.yamlfile)
+        logging.error(all_species_symbols)
         all_images_with_bonds = IO.get_all_unique_images_with_bonds(
             self.yamlfile)
         # Check atoms in molecular graph and compare to symbol to ensure consistency
@@ -245,6 +247,7 @@ class Adsorbates:
                           sp_gratoms.get_tags())
 
         out_dict = dict()
+        logging.error(structures.keys())
         for sp_symbol, adsorbate in structures.items():
             out_dict[sp_symbol] = dict()
             for prefix, structure in enumerate(adsorbate):
