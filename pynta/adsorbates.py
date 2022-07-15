@@ -223,6 +223,7 @@ class Adsorbates:
         ads_builder = Builder(grslab)
 
         # build adsorbates
+        import logging
         logging.error(all_species_symbols)
         structures = dict()
         for sp_symbol, unique_images_with_bonds in \
