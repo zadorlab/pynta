@@ -431,7 +431,7 @@ class MolecularCollect(CollectTask):
         if len(self.fw_generators) > 1:
             task = MolecularCollect({"xyzs": out_xyzs,"check_symm": self.future_check_symms[0],
                     "fw_generators": self.fw_generators[1:],"fw_generator_dicts": self.fw_generator_dicts[1:],
-                    "out_names": self.out_names[1:],"future_check_symms": self.future_check_symms[1:])
+                    "out_names": self.out_names[1:],"future_check_symms": self.future_check_symms[1:]})
             cfw = Firework([task],parents=fws)
 
         return FWAction(additions=fws,detour=cfw) #using detour allows us to inherit children from the original collect to the subsequent collects
