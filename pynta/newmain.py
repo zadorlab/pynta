@@ -44,6 +44,7 @@ class Pynta:
         self.qadapter = None
         self.fworker = FWorker.from_file(fworker_path)
         self.rxns_file = rxns_file
+        self.slab = read(self.slab_path) if self.slab_path else None
         if queue:
             self.qadapter = load_object_from_file(queue_adapter_path)
 
@@ -55,18 +56,23 @@ class Pynta:
         self.slab_path = os.path.join(self.path,"slab.xyz")
         fwslab = optimize_firework(os.path.join(self.path,"slab_init.xyz"),self.software,"slab",
             opt_method="BFGSLineSearch",socket=self.socket,software_kwargs=self.software_kwargs,
-            run_kwargs={"fmax" : 0.01},out_path=os.path.join(self.path,"slab_small.xyz"))
+            run_kwargs={"fmax" : 0.01},out_path=os.path.join(self.path,"slab.xyz"))
         return fwslab
 
     def setup_adsorbates(self):
-        put_adsorbates = Adsorbates(self.path, self.slab_path, self.repeats[0], self.rxns_file, self.path)
+        put_adsorbates = Adsorbates(self.path, self.slab_path,
+                    self.repeats[0], self.rxns_file, self.path)
+        nslab = len(put_adsorbates.slab_atom)
         adsorbate_dict = put_adsorbates.adjacency_to_3d()
+        slab = read(self.slab_path)
+        big_slab = small_slab * self.repeats[0]
         for adsname,adsorbate in adsorbate_dict.items():
             xyzs = []
             optfws = []
             for prefix,structure in adsorbate.items():
+                big_slab_ads = big_slab + structure[nslab:]
                 os.makedirs(os.path.join(self.path,"Adsorbates",adsname,prefix))
-                write(os.path.join(self.path,"Adsorbates",adsname,prefix,prefix+"_init.xyz"),structure)
+                write(os.path.join(self.path,"Adsorbates",adsname,prefix,prefix+"_init.xyz"),big_slab_ads)
                 xyz = os.path.join(self.path,"Adsorbates",adsname,prefix,prefix+".xyz")
                 xyzs.append(xyz)
                 fwopt = optimize_firework(os.path.join(self.path,"Adsorbates",adsname,prefix,prefix+"_init.xyz"),
@@ -99,7 +105,7 @@ class Pynta:
             os.makedirs(ts_path)
 
             ts_task = MolecularTSEstimate(rxn,ts_path,self.slab_path,os.path.join(self.path,"Adsorbates"),
-                self.rxns_file,self.repeats,self.path.self.metal,out_path=ts_path,scfactor=1.4,scfactor_surface=1.0,
+                self.rxns_file,self.repeats[0],self.path.self.metal,out_path=ts_path,scfactor=1.4,scfactor_surface=1.0,
                     scaled1=True,scaled2=False,spawn_jobs=True,opt_obj_dict=opt_obj_dict,vib_obj_dict=vib_obj_dict,
                     TSnudge_obj_dict=TSnudge_obj_dict)
             reactants,products = IO.get_reactants_and_products(rxn)
@@ -123,18 +129,8 @@ class Pynta:
             self.rapidfire()
             while not os.path.exists(os.path.join(self.path,"slab_small.xyz")): #wait until slab optimizes, this is required anyway and makes the rest of the code simpler
                 time.sleep(1)
-            atoms = read(os.path.join(self.path,"slab_small.xyz")) * self.repeats[0]
-            write(os.path.join(self.path,"slab_big_init.xyz"),atoms)
-            fwslab2 = optimize_firework(os.path.join(self.path,"slab_big_init.xyz"),self.software,"slab",
-                opt_method="QuasiNewton",socket=self.socket,software_kwargs=self.software_kwargs,
-                run_kwargs={"fmax" : 0.01},constraints=["freeze slab"])
-            wfslab2 = Workflow([fwslab2], name="bigslab")
-            self.launchpad.add_wf(wfslab2)
-            self.rapidfire()
-            while not os.path.exists(self.slab_path): #wait until slab optimizes, this is required anyway and makes the rest of the code simpler
-                time.sleep(1)
 
-        slab = read(self.slab_path)
+        self.slab = read(self.slab_path)
 
         #adsorbate optimization
         self.setup_adsorbates()
