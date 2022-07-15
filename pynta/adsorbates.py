@@ -211,11 +211,14 @@ class Adsorbates:
             for j in range(len(enumerated_string)-1,-1,-1):
                 if enumerated_string[j].isdigit():
                     del(enumerated_string[j])
+            if 'X' in enumerated_string:
+                enumerated_string.remove('X')
             for j,k in enumerate(all_images_with_bonds.values()):
                 for l,m in enumerate(k.values()):
                     logging.error(m.symbols)
                     logging.error(enumerated_string)
-                    if sorted(m.symbols) == sorted(enumerated_string):
+                    if sorted(m.symbols) == sorted(''.join(enumerated_string)):
+                        logging.error("reordered")
                         reorder[j]=i
         all_species_copy=all_species_symbols
         all_species_symbols=[]
