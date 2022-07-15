@@ -395,9 +395,11 @@ class MolecularTSEstimate(FiretaskBase):
                 optfws.append(fwxtb)
 
         if spawn_jobs:
-            ctask = MolecularCollect(xyzs,True,[optimize_firework,vibrations_firework,TSnudge_firework], [self.opt_obj_dict, self.vib_obj_dict,
+            ["xyzs","check_symm","fw_generators","fw_generator_dicts","out_names","future_check_symms"]
+            ctask = MolecularCollect({"xyzs":xyzs,"check_symm":True,"fw_generators": [optimize_firework,vibrations_firework,TSnudge_firework],
+                "fw_generator_dicts": [self.opt_obj_dict, self.vib_obj_dict,
                 self.TSnudge_obj_dict],
-                    ["final.xyz","vib.0.traj",""],[True,False,False])
+                    "out_names": ["final.xyz","vib.0.traj",""],"future_check_symms": [True,False,False]})
             cfw = Firework([ctask],parents=optfws)
 
         if spawn_jobs:
@@ -427,9 +429,10 @@ class MolecularCollect(CollectTask):
             fws.extend(fw)
 
         if len(self.fw_generators) > 1:
-            task = MolecularCollect(xyzs=out_xyzs,check_symm=self.future_check_symms[0],
-                    fw_generators=self.fw_generators[1:],fw_generator_dicts=self.fw_generator_dicts[1:],
-                    path_identifiers=self.path_identifiers[1:],future_check_symms=self.future_check_symms[1:])
+            ["xyzs","check_symm","fw_generators","fw_generator_dicts","out_names","future_check_symms"]
+            task = MolecularCollect({"xyzs": out_xyzs,"check_symm": self.future_check_symms[0],
+                    "fw_generators": self.fw_generators[1:],"fw_generator_dicts": self.fw_generator_dicts[1:],
+                    "out_names": self.out_names[1:],"future_check_symms": self.future_check_symms[1:])
             cfw = Firework([task],parents=fws)
 
         return FWAction(additions=fws,detour=cfw) #using detour allows us to inherit children from the original collect to the subsequent collects
