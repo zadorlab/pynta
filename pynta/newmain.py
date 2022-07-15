@@ -96,7 +96,7 @@ class Pynta:
         opt_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":self.software_kwargs,
                 "run_kwargs": {"fmax" : 0.01, "steps" : 70},"constraints": ["freeze slab"],"sella":True,"order":1}
         vib_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":self.software_kwargs,
-                "constraints": constraints}
+                "constraints": ["freeze slab"]}
         TSnudge_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":self.software_kwargs,
                 "run_kwargs":{"fmax" : 0.01, "steps" : 70},"constraints":["freeze slab"],"opt_method":"QuasiNewton"}
         for i,rxn in enumerate(self.rxns):
