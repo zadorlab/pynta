@@ -80,10 +80,10 @@ class Pynta:
                     run_kwargs={"fmax" : 0.01, "steps" : 70},parents=[],constraints=["freeze slab"])
 
                 fwvib = vibrations_firework(os.path.join(self.path,"Adsorbates",adsname,str(prefix),str(prefix)+".xyz"),self.software,
-                    prefix,software_kwargs=self.software_kwargs,parents=[fwopt],constraints=["freeze slab"])
+                    str(prefix),software_kwargs=self.software_kwargs,parents=[fwopt],constraints=["freeze slab"])
                 optfws.append(fwopt)
 
-            vib_obj_dict = {"software": self.software, "label": prefix, "software_kwargs": self.software_kwargs,
+            vib_obj_dict = {"software": self.software, "label": str(prefix), "software_kwargs": self.software_kwargs,
                 "constraints": ["freeze slab"]}
             ctask = MolecularCollect(xyzs,False,[vibrations_firework], [vib_obj_dict],
                     ["vib.json"],[False])
