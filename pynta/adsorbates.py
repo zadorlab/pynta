@@ -194,9 +194,7 @@ class Adsorbates:
         .. todo:: Add support for a bidentate adsorption
 
         '''
-        import logging
         all_species_symbols = IO.get_all_unique_species_symbols(self.yamlfile)
-        logging.error(all_species_symbols)
         all_images_with_bonds = IO.get_all_unique_images_with_bonds(
             self.yamlfile)
         # Check atoms in molecular graph and compare to symbol to ensure consistency
@@ -225,12 +223,15 @@ class Adsorbates:
         ads_builder = Builder(grslab)
 
         # build adsorbates
+        logging.error(all_species_symbols)
         structures = dict()
         for sp_symbol, unique_images_with_bonds in \
                 zip(all_species_symbols, all_images_with_bonds.values()):
+            logging.error(sp_symbol)
             for bond, sp_gratoms in unique_images_with_bonds.items():
-
+                logging.error(bond)
                 if len(sp_gratoms) == 0:
+                    logging.error("sp_gratoms was 0")
                     continue
 
                 # which atom connects to the surface
@@ -241,10 +242,13 @@ class Adsorbates:
                     structs = ads_builder.add_adsorbate(
                         sp_gratoms, index=-1, bonds=bonded)
                     structures[str(sp_symbol)] = structs
+                    logging.error("added structure")
                 except IndexError:
+                    logging.error("errored")
                     print('sp_gratoms, sp_gratoms.edges, sp.gratoms.tags')
                     print(sp_gratoms, sp_gratoms.edges,
                           sp_gratoms.get_tags())
+
 
         out_dict = dict()
         logging.error(structures.keys())
