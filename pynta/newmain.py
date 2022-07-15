@@ -127,7 +127,7 @@ class Pynta:
             wfslab = Workflow([fwslab], name="slab")
             self.launchpad.add_wf(wfslab)
             self.rapidfire()
-            while not os.path.exists(os.path.join(self.path,"slab_small.xyz")): #wait until slab optimizes, this is required anyway and makes the rest of the code simpler
+            while not os.path.exists(os.path.join(self.path,"slab.xyz")): #wait until slab optimizes, this is required anyway and makes the rest of the code simpler
                 time.sleep(1)
 
         self.slab = read(self.slab_path)
