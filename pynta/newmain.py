@@ -77,10 +77,10 @@ class Pynta:
                 fwopt = optimize_firework(os.path.join(self.path,"Adsorbates",adsname,str(prefix),str(prefix)+"_init.xyz"),
                     self.software,str(prefix),
                     opt_method="QuasiNewton",socket=self.socket,software_kwargs=self.software_kwargs,
-                    run_kwargs={"fmax" : 0.01, "steps" : 70},parents=ads_parents,constraints=["freeze slab"])
+                    run_kwargs={"fmax" : 0.01, "steps" : 70},parents=[],constraints=["freeze slab"])
 
                 fwvib = vibrations_firework(os.path.join(self.path,"Adsorbates",adsname,str(prefix),str(prefix)+".xyz"),self.software,
-                    prefix,software_kwargs=self.software_kwargs,parents=ads_parents+[fwopt],constraints=["freeze slab"])
+                    prefix,software_kwargs=self.software_kwargs,parents=[fwopt],constraints=["freeze slab"])
                 optfws.append(fwopt)
 
             vib_obj_dict = {"software": self.software, "label": prefix, "software_kwargs": self.software_kwargs,
