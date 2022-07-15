@@ -109,6 +109,9 @@ class Pynta:
                     "TSnudge_obj_dict": TSnudge_obj_dict})
             reactants,products = IO.get_reactants_and_products(rxn)
             parents = []
+            import logging
+            logging.error(self.adsorbate_fw_dict)
+            logging.error(self.adsorbate_fw_dict.keys())
             for m in reactants+products:
                 parents.append(self.adsorbate_fw_dict[m])
             fw = Firework([ts_task],parents=parents)
