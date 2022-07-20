@@ -213,7 +213,6 @@ class Adsorbates:
             for j,k in enumerate(all_images_with_bonds.values()):
                 for l,m in enumerate(k.values()):
                     if sorted(m.symbols) == sorted(''.join(enumerated_string)):
-                        logging.error("reordered")
                         reorder[j]=i
         all_species_copy=all_species_symbols
         all_species_symbols=[]
