@@ -194,12 +194,9 @@ class Adsorbates:
         .. todo:: Add support for a bidentate adsorption
 
         '''
-        import logging
         all_species_symbols = IO.get_all_unique_species_symbols(self.yamlfile)
-        logging.error(all_species_symbols)
         all_images_with_bonds = IO.get_all_unique_images_with_bonds(
             self.yamlfile)
-        logging.error(all_images_with_bonds)
         # Check atoms in molecular graph and compare to symbol to ensure consistency
         reorder=[-1]*len(all_species_symbols)
         for i in range(len(all_species_symbols)):
@@ -215,8 +212,6 @@ class Adsorbates:
                 enumerated_string.remove('X')
             for j,k in enumerate(all_images_with_bonds.values()):
                 for l,m in enumerate(k.values()):
-                    logging.error(m.symbols)
-                    logging.error(enumerated_string)
                     if sorted(m.symbols) == sorted(''.join(enumerated_string)):
                         logging.error("reordered")
                         reorder[j]=i
@@ -232,7 +227,6 @@ class Adsorbates:
 
         # build adsorbates
 
-        logging.error(all_species_symbols)
         structures = dict()
         for sp_symbol, unique_images_with_bonds in \
                 zip(all_species_symbols, all_images_with_bonds.values()):
