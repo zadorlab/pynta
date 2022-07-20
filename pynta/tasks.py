@@ -20,6 +20,7 @@ import json
 import copy
 import sys
 import shutil
+from copy import deepcopy
 from pathlib import Path
 
 class OptimizationTask(FiretaskBase):
@@ -43,9 +44,9 @@ class DoNothingTask(FiretaskBase):
     def run_task(self, fw_spec):
         return FWAction()
 
-def optimize_firework(geo_path,software,label,opt_method=None,sella=None,socket=False,order=0,software_kwargs={},opt_kwargs={},
+def optimize_firework(xyz,software,label,opt_method=None,sella=None,socket=False,order=0,software_kwargs={},opt_kwargs={},
                       run_kwargs={},constraints=[],parents=[],out_path=None,ignore_errors=False):
-    d = {"xyz" : geo_path, "software" : software,"label" : label}
+    d = {"xyz" : xyz, "software" : software,"label" : label}
     if opt_method: d["opt_method"] = opt_method
     if software_kwargs: d["software_kwargs"] = software_kwargs
     if opt_kwargs: d["opt_kwargs"] = opt_kwargs
@@ -58,12 +59,10 @@ def optimize_firework(geo_path,software,label,opt_method=None,sella=None,socket=
     d["socket"] = socket
     d["ignore_errors"] = ignore_errors
     t1 = MolecularOptimizationTask(d)
-    directory = os.path.dirname(geo_path)
+    directory = os.path.dirname(xyz)
     if out_path is None: out_path = os.path.join(directory,label+".xyz")
-    print(label+".xyz")
-    print(out_path)
     t2 = FileTransferTask({'files': [{'src': label+'.xyz', 'dest': out_path}], 'mode': 'copy', 'ignore_errors' : ignore_errors})
-    return Firework([t1,t2],parents=parents)
+    return Firework([t1,t2],parents=parents,name=label+"opt")
 
 @explicit_serialize
 class MolecularOptimizationTask(OptimizationTask):
@@ -71,7 +70,7 @@ class MolecularOptimizationTask(OptimizationTask):
     optional_params = ["software_kwargs","opt_method",
         "opt_kwargs","run_kwargs", "constraints","sella","order","socket","ignore_errors"]
     def run_task(self, fw_spec):
-        e = None
+        errors = []
         software_kwargs = self["software_kwargs"] if "software_kwargs" in self.keys() else dict()
         socket = self["socket"] if "socket" in self.keys() else False
         if socket:
@@ -102,6 +101,8 @@ class MolecularOptimizationTask(OptimizationTask):
         except Exception as e:
             if not ignore_errors:
                 raise e
+            else:
+                errors.append(e)
 
         if socket and os.path.isfile(os.path.join("tmp","ipi_"+unixsocket)):
             os.unlink(os.path.join("tmp","ipi_"+unixsocket))
@@ -125,9 +126,20 @@ class MolecularOptimizationTask(OptimizationTask):
             opt = opt_method(sp,**opt_kwargs)
             try:
                 opt.run(**run_kwargs)
+            except ConnectionResetError as e:
+                if socket:
+                    fw = restart_opt_firework(self,fw_spec["_tasks"])
+                    return FWAction(detours=[fw])
+                else:
+                    if not ignore_errors:
+                        raise e
+                    else:
+                        errors.append(e)
             except Exception as e:
                 if not ignore_errors:
                     raise e
+                else:
+                    errors.append(e)
         else:
             cons = Constraints(sp)
             for c in constraints:
@@ -144,6 +156,8 @@ class MolecularOptimizationTask(OptimizationTask):
             except Exception as e:
                 if not ignore_errors:
                     raise e
+                else:
+                    errors.append(e)
 
         if socket:
             try:
@@ -152,17 +166,22 @@ class MolecularOptimizationTask(OptimizationTask):
                 if self["software"] == "Espresso":
                     pass #Espresso tends to error even after socket calculations finish correctly
                 else:
-                    raise e
+                    if not ignore_errors:
+                        raise e
+                    else:
+                        errors.append(e)
 
         if not opt.converged():
             e = ValueError
             if not ignore_errors:
                 raise e
+            else:
+                errors.append(e)
 
-        if e is None:
+        if len(errors) == 0:
             write(label+".xyz", sp)
         else:
-            print(e)
+            return FWAction(stored_data={"error": errors},exit=True)
 
         return FWAction()
 
@@ -185,27 +204,26 @@ class MolecularOptimizationFailTask(OptimizationTask):
         sp = read(xyz)
 
         sp.calc = software
-        opt = opt_method(sp)
-        opt.run(fmax=0.02,steps=1)
+        opt = opt_method(sp,trajectory=label+".traj")
+        opt.run(fmax=0.02,steps=2)
 
         if not opt.converged():
-            new_task = MolecularOptimizationTask(self)
-            fw = reconstruct_firework(new_task,self,fw_spec['_tasks'],full=False)
+            fw = restart_opt_firework(self,fw_spec["_tasks"])
             return FWAction(detours=[fw])
 
         write(label+".xyz", sp)
 
         return FWAction()
 
-def energy_firework(geo_path,software,label,software_kwargs={},parents=[],out_path=None,ignore_errors=False):
-    d = {"xyz" : geo_path, "software" : software, "label" : label}
+def energy_firework(xyz,software,label,software_kwargs={},parents=[],out_path=None,ignore_errors=False):
+    d = {"xyz" : xyz, "software" : software, "label" : label}
     if software_kwargs: d["software_kwargs"] = software_kwargs
     d["ignore_errors"] = ignore_errors
     t1 = MolecularEnergyTask(d)
-    directory = os.path.dirname(geo_path)
+    directory = os.path.dirname(xyz)
     if out_path is None: out_path = os.path.join(directory,label+"_energy.json")
     t2 = FileTransferTask({'files': [{'src': label+'_energy.json', 'dest': out_path}], 'mode': 'copy', 'ignore_errors': ignore_errors})
-    return Firework([t1,t2],parents=parents)
+    return Firework([t1,t2],parents=parents,name=label+"energy")
 
 @explicit_serialize
 class MolecularEnergyTask(EnergyTask):
@@ -228,20 +246,22 @@ class MolecularEnergyTask(EnergyTask):
         except Exception as e:
             if not ignore_errors:
                 raise e
+            else:
+                return FWAction(stored_data={"error": e}, exit=True)
 
         return FWAction()
 
-def vibrations_firework(geo_path,software,label,software_kwargs={},parents=[],out_path=None,constraints=[],ignore_errors=False):
-    d = {"xyz" : geo_path, "software" : software, "label" : label}
+def vibrations_firework(xyz,software,label,software_kwargs={},parents=[],out_path=None,constraints=[],ignore_errors=False):
+    d = {"xyz" : xyz, "software" : software, "label" : label}
     if software_kwargs: d["software_kwargs"] = software_kwargs
     if constraints: d["constraints"] = constraints
     d["ignore_errors"] = ignore_errors
     t1 = MolecularVibrationsTask(d)
-    directory = os.path.dirname(geo_path)
+    directory = os.path.dirname(xyz)
     if out_path is None: out_path = os.path.join(directory,label+"_vib.json")
     t2 = FileTransferTask({'files': [{'src': label+'_vib.json', 'dest': out_path},{'src':'vib.0.traj',
         'dest': os.path.join(os.path.split(out_path)[0],"vib.0.traj")}], 'mode': 'copy', 'ignore_errors': ignore_errors})
-    return Firework([t1,t2],parents=parents)
+    return Firework([t1,t2],parents=parents,name=label+"vib")
 
 @explicit_serialize
 class MolecularVibrationsTask(VibrationTask):
@@ -278,13 +298,10 @@ class MolecularVibrationsTask(VibrationTask):
         except Exception as e:
             if not ignore_errors:
                 raise e
+            else:
+                return FWAction(stored_data={"error": e}, exit=True)
 
         return FWAction()
-
-def collect_firework(xyzs,check_symm,fw_generators,fw_generator_dicts,path_identifiers,future_check_symms,parents=[]):
-    task = MolecularCollect({"xyzs": xyzs, "check_symm": check_symm, "fw_generators": fw_generators,
-        "fw_generator_dicts": fw_generator_dicts, "path_identifiers": path_identifiers, "future_check_symms": future_check_symms})
-    return Firework([task],parents=parents)
 
 @explicit_serialize
 class MolecularTSEstimate(FiretaskBase):
@@ -300,24 +317,24 @@ class MolecularTSEstimate(FiretaskBase):
         scaled2 = self["scaled2"] if "scaled2" in self.keys() else True
         spawn_jobs = self["spawn_jobs"] if "spawn_jobs" in self.keys() else False
 
-        rxn = self.rxn
+        rxn = self["rxn"]
 
-        slab = read(self.slab_path)
+        slab = read(self["slab_path"])
 
         ts = TS(
-            self.slab_path,
+            self["slab_path"],
             slab,
             ts_path,
-            self.rxns_file,
-            self.repeats,
-            self.path)
+            self["rxns_file"],
+            self["repeats"],
+            self["path"])
 
         r_name_list, p_name_list = IO.get_reactants_and_products(rxn)
         rxn_name = IO.get_rxn_name(rxn)
-        species_dict = IO().get_species_dict(rxns_file)
+        species_dict = IO().get_species_dict(self["rxns_file"])
         rxn_no = rxn["index"]
         species_list = species_dict['rxn' + str(rxn_no)]
-        reacting_atoms = IO.get_all_reacting_atoms(rxns_file)['rxn_' + str(rxn_no)]
+        reacting_atoms = IO.get_all_reacting_atoms(self["rxns_file"])['rxn_' + str(rxn_no)]
 
         ts.TS_placer(
             ts_path,
@@ -336,7 +353,7 @@ class MolecularTSEstimate(FiretaskBase):
         # get a dictionary with average distances for all species in
         # species_list, e.g. {'CO2': 4.14.., 'H': 1.665..., 'O': 1.847...}
         sp_surf_av_dists = TS.get_av_dist_dict(
-            species_list, metal, self.adsorbates_path, scfactor_surface,
+            species_list, metal, self["adsorbates_path"], scfactor_surface,
             scaled1)
 
         # convert sp_surf_av_dists dict to a tuple and take into accout that
@@ -390,61 +407,74 @@ class MolecularTSEstimate(FiretaskBase):
             shutil.copy(xyz_file,calc_dir)
             if spawn_jobs:
                 xyz = os.path.join(calc_dir,os.path.basename(xyz_file))
-                fwxtb = TSxTBOpt_firework(xyz,self.slab_path,bonds,self.repeats,av_dist_tuple,label=str(prefix),parents=[])
+                fwxtb = TSxTBOpt_firework(xyz,self["slab_path"],bonds,self["repeats"],av_dist_tuple,label=str(prefix),parents=[])
                 xyzs.append(os.path.join(calc_dir,str(prefix)+".traj"))
                 optfws.append(fwxtb)
 
         if spawn_jobs:
             ["xyzs","check_symm","fw_generators","fw_generator_dicts","out_names","future_check_symms"]
-            ctask = MolecularCollect({"xyzs":xyzs,"check_symm":True,"fw_generators": [optimize_firework,vibrations_firework,TSnudge_firework],
-                "fw_generator_dicts": [self.opt_obj_dict, self.vib_obj_dict,
-                self.TSnudge_obj_dict],
-                    "out_names": ["final.xyz","vib.0.traj",""],"future_check_symms": [True,False,False]})
-            cfw = Firework([ctask],parents=optfws)
+            ctask = MolecularCollect({"xyzs":xyzs,"check_symm":True,"fw_generators": ["optimize_firework","vibrations_firework","TSnudge_firework"],
+                "fw_generator_dicts": [self["opt_obj_dict"], self["vib_obj_dict"],
+                self["TSnudge_obj_dict"]],
+                    "out_names": ["final.xyz","vib.0.traj",""],"future_check_symms": [True,False,False], "label": "TS"+str(rxn_no)+"_"+rxn_name})
+            cfw = Firework([ctask],parents=optfws,name="TS"+str(rxn_no)+"_"+rxn_name+"_collect")
 
         if spawn_jobs:
-            return FWAction(additions=optfws,detour=cfw) #using detour allows us to inherit children from the original collect to the subsequent collects
+            return FWAction(additions=optfws,detours=[cfw]) #using detour allows us to inherit children from the original collect to the subsequent collects
         else:
             return FWAction()
 
+def collect_firework(xyzs,check_symm,fw_generators,fw_generator_dicts,out_names,future_check_symms,parents=[],label=""):
+    task = MolecularCollect({"xyzs": xyzs, "check_symm": check_symm, "fw_generators": fw_generators,
+        "fw_generator_dicts": fw_generator_dicts, "out_names": out_names, "future_check_symms": future_check_symms, "label": label})
+    return Firework([task],parents=parents,name=label+"collect")
+
 @explicit_serialize
 class MolecularCollect(CollectTask):
-    required_params = ["xyzs","check_symm","fw_generators","fw_generator_dicts","out_names","future_check_symms"]
+    required_params = ["xyzs","check_symm","fw_generators","fw_generator_dicts","out_names","future_check_symms","label"]
     def run_task(self, fw_spec):
-        xyzs = [xyz for xyz in self.xyzs if os.path.isfile(xyz)] #if the associated task errored a file may not be present
-        if self.check_symm:
+        import logging
+        logging.error(self["xyzs"])
+        xyzs = [xyz for xyz in self["xyzs"] if os.path.isfile(xyz)] #if the associated task errored a file may not be present
+        if self["check_symm"]:
             xyzs = get_unique_sym(xyzs) #only unique structures
         if len(xyzs) == 0:
             raise ValueError("No xyzs to collect")
+        fw_generator = globals()[self["fw_generators"][0]]
         fws = []
         out_xyzs = []
         for xyz in xyzs:
-            d = deepcopy(fw_generator_dicts[0])
+            d = deepcopy(self["fw_generator_dicts"][0])
             d["xyz"] = xyz
-            d["out_path"] = os.path.join(os.path.split(xyz)[0],self.out_name[0])
+            d["out_path"] = os.path.join(os.path.split(xyz)[0],self["out_names"][0])
+            d["label"] = self["out_names"][0]
+            d["ignore_errors"] = True
             out_xyzs.append(d["out_path"])
-            fw = self.fw_generators[0](**d)
+            fw = fw_generator(**d)
             if not isinstance(fw,list):
                 fw = [fw]
             fws.extend(fw)
 
-        if len(self.fw_generators) > 1:
-            task = MolecularCollect({"xyzs": out_xyzs,"check_symm": self.future_check_symms[0],
-                    "fw_generators": self.fw_generators[1:],"fw_generator_dicts": self.fw_generator_dicts[1:],
-                    "out_names": self.out_names[1:],"future_check_symms": self.future_check_symms[1:]})
-            cfw = Firework([task],parents=fws)
+        if len(self["fw_generators"]) > 1:
+            task = MolecularCollect({"xyzs": out_xyzs,"check_symm": self["future_check_symms"][0],
+                    "fw_generators": self["fw_generators"][1:],"fw_generator_dicts": self["fw_generator_dicts"][1:],
+                    "out_names": self["out_names"][1:],"future_check_symms": self["future_check_symms"][1:],"label": self["label"]})
+            cfw = Firework([task],parents=fws,name=self["label"]+"collect")
+            newwf = Workflow(fws+[cfw],name=self["label"]+"collect"+str(-len(self["fw_generators"])))
+            return FWAction(detours=newwf) #using detour allows us to inherit children from the original collect to the subsequent collects
+        else:
+            return FWAction(detours=fws)
 
-        return FWAction(additions=fws,detour=cfw) #using detour allows us to inherit children from the original collect to the subsequent collects
-
-def TSnudge_firework(vib_traj,label,forward_path=None,reverse_path=None,spawn_jobs=False,software=None,opt_method=None,sella=False,
+def TSnudge_firework(xyz,label,forward_path=None,reverse_path=None,spawn_jobs=False,software=None,opt_method=None,sella=False,
         socket=False,software_kwargs={},opt_kwargs={},run_kwargs={},constraints=[],parents=[],out_path=None):
         """
+        xyz is really the vibrational output data file
         out_path is a dud variable here
         """
-        task = MolecularTSNudge(vib_traj,label,forward_path=forward_path,reverse_path=reverse_path,spawn_jobs=spawn_jobs,software=software,
+        task = MolecularTSNudge(xyz,label,forward_path=forward_path,reverse_path=reverse_path,spawn_jobs=spawn_jobs,software=software,
             opt_method=opt_method,sella=sella,socket=socket,software_kwargs=software_kwargs,opt_kwargs=opt_kwargs,run_kwargs=run_kwargs,
             constraints=constraints)
-        fw = Firework([task],parents=[])
+        fw = Firework([task],parents=[],name=label+"TSnudge")
         return fw
 
 @explicit_serialize
@@ -458,48 +488,48 @@ class MolecularTSNudge(FiretaskBase):
         spawn_jobs = self["spawn_jobs"] if "spawn_jobs" in self.keys() else False
 
         AfterTS.get_forward_and_reverse(
-            self.vib_traj,
+            self["vib_traj"],
             forward_path,
             reverse_path)
 
         if spawn_jobs:
-            fwf = optimize_firework(forward_path,self.software,self.label,opt_method=self.opt_method,sella=self.sella,
-                socket=self.socket,order=0,software_kwargs=self.software_kwargs,opt_kwargs=self.opt_kwargs,
-                                  run_kwargs=self.run_kwargs,constraints=self.constraints,parents=[],out_path=label+"_forward_optimized.xyz",
+            fwf = optimize_firework(forward_path,self["software"],self["label"],opt_method=self["opt_method"],sella=self["sella"],
+                socket=self["socket"],order=0,software_kwargs=self["software_kwargs"],opt_kwargs=self["opt_kwargs"],
+                                  run_kwargs=self["run_kwargs"],constraints=self["constraints"],parents=[],out_path=self["label"]+"_forward_optimized.xyz",
                                   ignore_errors=False)
-            fwr = optimize_firework(reverse_path,self.software,self.label,opt_method=self.opt_method,sella=self.sella,
-                socket=self.socket,order=0,software_kwargs=self.software_kwargs,opt_kwargs=self.opt_kwargs,
-                                  run_kwargs=self.run_kwargs,constraints=self.constraints,parents=[],out_path=label+"_reverse_optimized.xyz",
+            fwr = optimize_firework(reverse_path,self["software"],self["label"],opt_method=self["opt_method"],sella=self["sella"],
+                socket=self["socket"],order=0,software_kwargs=self["software_kwargs"],opt_kwargs=self["opt_kwargs"],
+                                  run_kwargs=self["run_kwargs"],constraints=self["constraints"],parents=[],out_path=self["label"]+"_reverse_optimized.xyz",
                                   ignore_errors=False)
             return FWAction(additions=[fwf,fwr])
         else:
             return FWAction()
 
-def TSxTBOpt_firework(xyz,slab_path,bonds,repeats,av_dist_tuple,out_path=None,label=None,parents=[],ignore_errors=False):
+def TSxTBOpt_firework(xyz,slab_path,bonds,repeats,av_dist_tuple,out_path=None,label="",parents=[],ignore_errors=False):
     d = {"xyz": xyz, "slab_path": slab_path, "bonds": bonds, "repeats": repeats, "av_dist_tuple": av_dist_tuple,
         "label": label, "ignore_errors": ignore_errors}
     t1 = MolecularTSxTBOpt(d)
     directory = os.path.dirname(xyz)
     if out_path is None: out_path = os.path.join(directory,label+".traj")
     t2 = FileTransferTask({'files': [{'src': label+'.traj', 'dest': out_path}], 'mode': 'copy', "ignore_errors": ignore_errors})
-    return Firework([t1,t2],parents=parents)
+    return Firework([t1,t2],parents=parents,name=label+"TSxTBopt")
 
 class MolecularTSxTBOpt(OptimizationTask):
     required_params = ["xyz","slab_path","bonds","repeats","av_dist_tuple"]
     optional_params = ["label","ignore_errors"]
 
     def run_task(self, fw_spec):
-        label = self.label if "label" in self.keys() else "xtb"
-        ignore_errors = self.ignore_errors if "ignore_errors" in self.keys() else False
+        label = self["label"] if "label" in self.keys() else "xtb"
+        ignore_errors = self["ignore_errors"] if "ignore_errors" in self.keys() else False
         try:
-            adsorbed = read(self.xyz)
-            slab = read(self.slab_path)
-            big_slab = slab * repeats
+            adsorbed = read(self["xyz"])
+            slab = read(self["slab_path"])
+            big_slab = slab * self["repeats"]
             nbig_slab = len(big_slab)
             ts_estimate = adsorbed[nbig_slab:]
 
             adsplacer = AdsorbatePlacer(
-                big_slab, ts_estimate, bonds, av_dists_tuple,
+                big_slab, ts_estimate, self["bonds"], self["av_dists_tuple"],
                 trajectory=label+".traj"
             )
 
@@ -508,6 +538,8 @@ class MolecularTSxTBOpt(OptimizationTask):
         except Exception as e:
             if not ignore_errors:
                 raise e
+            else:
+                return FWAction(stored_data={"error": e}, exit=True)
 
         return FWAction()
 
@@ -523,6 +555,14 @@ def get_task_index(task_dict,task_list):
     for i,d in enumerate(task_list):
         if d == task_dict:
             return i
+
+def restart_opt_firework(task,task_list):
+    traj_file = task["label"]+".traj"
+    shutil.copy(traj_file,os.path.join(os.path.split(task["xyz"])[0],traj_file))
+    d = deepcopy(task.as_dict())
+    d["xyz"] = os.path.join(os.path.split(task["xyz"])[0],traj_file)
+    new_task = reconstruct_task(d,orig_task=task)
+    return reconstruct_firework(new_task,task,task_list,full=True)
 
 def reconstruct_task(task_dict,orig_task=None):
     name = task_dict["_fw_name"]

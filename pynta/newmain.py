@@ -13,8 +13,8 @@ from fireworks.core.fworker import FWorker
 import fireworks.fw_config
 
 class Pynta:
-    def __init__(self,path,launchpad_path,fworker_path,rxns_file,surface_type,metal,a=3.6,vaccum=8.0,
-    repeats=[(3,3,1),(1,1,4)],slab_path=None,software="Espresso",socket=False,queue=False,
+    def __init__(self,path,launchpad_path,fworker_path,rxns_file,surface_type,metal,label,a=3.6,vaccum=8.0,
+    repeats=[(3,3,1),(1,1,4)],slab_path=None,software="Espresso",socket=False,queue=False,njobs_queue=0,
     software_kwargs={'kpts': (3, 3, 1), 'tprnfor': True, 'occupations': 'smearing',
                             'smearing':  'marzari-vanderbilt',
                             'degauss': 0.01, 'ecutwfc': 40, 'nosym': True,
@@ -45,6 +45,8 @@ class Pynta:
         self.fworker = FWorker.from_file(fworker_path)
         self.rxns_file = rxns_file
         self.slab = read(self.slab_path) if self.slab_path else None
+        self.njobs_queue = njobs_queue
+        self.label = label
         if queue:
             self.qadapter = load_object_from_file(queue_adapter_path)
 
@@ -57,7 +59,13 @@ class Pynta:
         fwslab = optimize_firework(os.path.join(self.path,"slab_init.xyz"),self.software,"slab",
             opt_method="BFGSLineSearch",socket=self.socket,software_kwargs=self.software_kwargs,
             run_kwargs={"fmax" : 0.01},out_path=os.path.join(self.path,"slab.xyz"))
-        return fwslab
+        wfslab = Workflow([fwslab], name=self.label+"_slab")
+        self.launchpad.add_wf(wfslab)
+        self.rapidfire()
+        while not os.path.exists(self.slab_path): #wait until slab optimizes, this is required anyway and makes the rest of the code simpler
+            time.sleep(1)
+
+        self.slab = read(self.slab_path)
 
     def setup_adsorbates(self):
         put_adsorbates = Adsorbates(self.path, self.slab_path,
@@ -79,26 +87,19 @@ class Pynta:
                 fwopt = optimize_firework(os.path.join(self.path,"Adsorbates",adsname,str(prefix),str(prefix)+"_init.xyz"),
                     self.software,str(prefix),
                     opt_method="QuasiNewton",socket=self.socket,software_kwargs=self.software_kwargs,
-                    run_kwargs={"fmax" : 0.01, "steps" : 70},parents=[],constraints=["freeze slab"])
-
-                # fwvib = vibrations_firework(os.path.join(self.path,"Adsorbates",adsname,str(prefix),str(prefix)+".xyz"),self.software,
-                #     str(prefix),software_kwargs=self.software_kwargs,parents=[fwopt],constraints=["freeze slab"])
-                #self.adsorbate_fw_dict[adsname] = cfw
+                    run_kwargs={"fmax" : 0.01, "steps" : 70},parents=[],constraints=["freeze slab"], ignore_errors=True)
                 optfws.append(fwopt)
 
             vib_obj_dict = {"software": self.software, "label": str(prefix), "software_kwargs": self.software_kwargs,
                 "constraints": ["freeze slab"]}
-            ctask = MolecularCollect({"xyzs": xyzs, "check_symm": False, "fw_generators": [vibrations_firework], "fw_generator_dicts": [vib_obj_dict],
-                    "out_names": ["vib.json"],"future_check_symms": [False]})
-            cfw = Firework([ctask],parents=optfws)
-            import logging
-            logging.error(adsname)
+
+            cfw = collect_firework(xyzs,False,["vibrations_firework"],[vib_obj_dict],["vib.json"],[False],parents=optfws,label=adsname)
             self.adsorbate_fw_dict[adsname] = cfw
             logging.error(self.adsorbate_fw_dict.keys())
             self.fws.extend(optfws+[cfw])
 
 
-    def setup_transition_states(self):
+    def setup_transition_states(self,adsorbates_finished=False):
         opt_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":self.software_kwargs,
                 "run_kwargs": {"fmax" : 0.01, "steps" : 70},"constraints": ["freeze slab"],"sella":True,"order":1}
         vib_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":self.software_kwargs,
@@ -115,30 +116,21 @@ class Pynta:
                     "TSnudge_obj_dict": TSnudge_obj_dict})
             reactants,products = IO.get_reactants_and_products(rxn)
             parents = []
-            import logging
-            logging.error(self.adsorbate_fw_dict)
-            logging.error(self.adsorbate_fw_dict.keys())
-            for m in reactants+products:
-                parents.append(self.adsorbate_fw_dict[m])
-            fw = Firework([ts_task],parents=parents)
+            if not adsorbates_finished:
+                for m in reactants+products:
+                    parents.append(self.adsorbate_fw_dict[m])
+            fw = Firework([ts_task],parents=parents,label="TS"+str(i)+"est")
             self.fws.append(fw)
 
     def rapidfire(self):
         if self.queue:
-            rapidfirequeue(self.launchpad,self.fworker,self.qadapter)
+            rapidfirequeue(self.launchpad,self.fworker,self.qadapter,njobs_queue=self.njobs_queue)
         else:
             rapidfire(self.launchpad,fworker=self.fworker)
 
     def execute(self):
         if self.slab_path is None: #handle slab
-            fwslab = self.generate_slab()
-            wfslab = Workflow([fwslab], name="slab")
-            self.launchpad.add_wf(wfslab)
-            self.rapidfire()
-            while not os.path.exists(self.slab_path): #wait until slab optimizes, this is required anyway and makes the rest of the code simpler
-                time.sleep(1)
-
-        self.slab = read(self.slab_path)
+            self.generate_slab()
 
         #adsorbate optimization
         self.setup_adsorbates()
@@ -146,7 +138,7 @@ class Pynta:
         #setup transition states
         self.setup_transition_states()
 
-        wf = Workflow(self.fws, name="pynta")
+        wf = Workflow(self.fws, name=self.label)
         self.launchpad.add_wf(wf)
 
         self.rapidfire()
