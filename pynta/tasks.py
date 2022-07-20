@@ -555,8 +555,13 @@ def get_task_index(task_dict,task_list):
     for i,d in enumerate(task_list):
         if d == task_dict:
             return i
+    else:
+        raise IndexError
 
 def restart_opt_firework(task,task_list):
+    import logging
+    logging.error(task)
+    logging.error(task_list)
     traj_file = task["label"]+".traj"
     shutil.copy(traj_file,os.path.join(os.path.split(task["xyz"])[0],traj_file))
     d = deepcopy(task.as_dict())
@@ -565,7 +570,12 @@ def restart_opt_firework(task,task_list):
     return reconstruct_firework(new_task,task,task_list,full=True)
 
 def reconstruct_task(task_dict,orig_task=None):
+    import logging
+    logging.error("reconstructing task")
+    logging.error(task_dict)
+    logging.error(orig_task)
     name = task_dict["_fw_name"]
+    logging.error(name)
     if orig_task:
         fcn = orig_task.__class__
     else:
@@ -574,12 +584,24 @@ def reconstruct_task(task_dict,orig_task=None):
     return fcn(d)
 
 def reconstruct_firework(new_task,old_task,task_list,full=True):
+    import logging
+    logging.error("in reconstruct_firework")
+    logging.error(new_task)
+    logging.error(old_task)
+    logging.error(task_list)
     task_index = get_task_index(old_task.as_dict(),task_list)
+    logging.error(task_index)
     tasks = []
     for i,d in enumerate(task_list):
         if i == task_index:
+            logging.error("found specified task")
+            logging.error(i)
+            logging.error(d)
             tasks.append(new_task)
         elif full or i > task_index:
+            logging.error("found other task")
+            logging.error(i)
+            logging.error(d)
             tasks.append(reconstruct_task(d))
     return Firework(tasks)
 
@@ -609,11 +631,6 @@ def get_fw_traceback_task(fizzfw):
     task_index = get_task_index(task_dict,task_list)
     task = fizzfw.tasks[task_index]
     return trace,task
-
-def get_task_index(task_dict,task_list):
-    for i,d in enumerate(task_list):
-        if d == task_dict:
-            return i
 
 def debug_fizzled(fw,trace,task):
     launch_dir = fw.as_dict()["launches"][0]["launch_dir"]
