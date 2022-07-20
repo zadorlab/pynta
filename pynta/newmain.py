@@ -119,7 +119,7 @@ class Pynta:
             if not adsorbates_finished:
                 for m in reactants+products:
                     parents.append(self.adsorbate_fw_dict[m])
-            fw = Firework([ts_task],parents=parents,label="TS"+str(i)+"est")
+            fw = Firework([ts_task],parents=parents,name="TS"+str(i)+"est")
             self.fws.append(fw)
 
     def rapidfire(self):
