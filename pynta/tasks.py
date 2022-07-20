@@ -553,9 +553,13 @@ def name_to_ase_opt(opt_name):
 
 def get_task_index(task_dict,task_list):
     for i,d in enumerate(task_list):
-        if d == task_dict:
+        if d['_fw_name'] == task_dict['_fw_name']:
             return i
     else:
+        import logging
+        logging.error("couldn't find index")
+        logging.error(task_dict)
+        logging.error(task_list)
         raise IndexError
 
 def restart_opt_firework(task,task_list):
