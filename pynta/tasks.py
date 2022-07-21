@@ -320,8 +320,8 @@ class MolecularTSEstimate(FiretaskBase):
         scaled2 = self["scaled2"] if "scaled2" in self.keys() else True
         spawn_jobs = self["spawn_jobs"] if "spawn_jobs" in self.keys() else False
 
+        ts_path = self["ts_path"]
         rxn = self["rxn"]
-
         slab = read(self["slab_path"])
 
         ts = TS(
