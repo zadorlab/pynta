@@ -5,7 +5,7 @@ import ase.build
 from ase.io import read, write
 import os
 import time
-from fireworks import LaunchPad
+from fireworks import LaunchPad, Workflow
 from fireworks.queue.queue_launcher import rapidfire as rapidfirequeue
 from fireworks.utilities.fw_serializers import load_object_from_file
 from fireworks.core.rocket_launcher import rapidfire
