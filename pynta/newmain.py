@@ -87,11 +87,11 @@ class Pynta:
                 fwopt = optimize_firework(os.path.join(self.path,"Adsorbates",adsname,str(prefix),str(prefix)+"_init.xyz"),
                     self.software,str(prefix),
                     opt_method="QuasiNewton",socket=self.socket,software_kwargs=self.software_kwargs,
-                    run_kwargs={"fmax" : 0.01, "steps" : 70},parents=[],constraints=["freeze slab"], ignore_errors=True)
+                    run_kwargs={"fmax" : 0.01, "steps" : 70},parents=[],constraints=["freeze half slab"], ignore_errors=True)
                 optfws.append(fwopt)
 
             vib_obj_dict = {"software": self.software, "label": str(prefix), "software_kwargs": self.software_kwargs,
-                "constraints": ["freeze slab"]}
+                "constraints": ["freeze half slab"]}
 
             cfw = collect_firework(xyzs,False,["vibrations_firework"],[vib_obj_dict],["vib.json"],[False],parents=optfws,label=adsname)
             self.adsorbate_fw_dict[adsname] = cfw
@@ -101,11 +101,11 @@ class Pynta:
 
     def setup_transition_states(self,adsorbates_finished=False):
         opt_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":self.software_kwargs,
-                "run_kwargs": {"fmax" : 0.01, "steps" : 70},"constraints": ["freeze slab"],"sella":True,"order":1}
+                "run_kwargs": {"fmax" : 0.01, "steps" : 70},"constraints": ["freeze half slab"],"sella":True,"order":1}
         vib_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":self.software_kwargs,
-                "constraints": ["freeze slab"]}
+                "constraints": ["freeze half slab"]}
         TSnudge_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":self.software_kwargs,
-                "run_kwargs":{"fmax" : 0.01, "steps" : 70},"constraints":["freeze slab"],"opt_method":"QuasiNewton"}
+                "run_kwargs":{"fmax" : 0.01, "steps" : 70},"constraints":["freeze half slab"],"opt_method":"QuasiNewton"}
         for i,rxn in enumerate(self.rxns):
             ts_path = os.path.join(self.path,"TS"+str(i))
             os.makedirs(ts_path)

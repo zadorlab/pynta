@@ -119,7 +119,7 @@ class MolecularOptimizationTask(OptimizationTask):
                 if isinstance(c,dict):
                     constraint = construct_constraint(c)
                     sp.set_constraint(constraint)
-                elif c == "freeze slab":
+                elif c == "freeze half slab":
                     sp.set_constraint(FixAtoms([
                         atom.index for atom in sp if atom.position[2] < sp.cell[2, 2] / 2.
                     ]))
@@ -148,7 +148,7 @@ class MolecularOptimizationTask(OptimizationTask):
             for c in constraints:
                 if isinstance(c,dict):
                     add_sella_constraint(cons,c)
-                elif c == "freeze slab":
+                elif c == "freeze half slab":
                     for atom in sp:
                         if atom.position[2] < sp.cell[2, 2] / 2.:
                             cons.fix_translation(atom.index)
@@ -287,7 +287,7 @@ class MolecularVibrationsTask(VibrationTask):
                 if isinstance(c,dict):
                     constraint = construct_constraint(c)
                     sp.set_constraint(constraint)
-                elif c == "freeze slab":
+                elif c == "freeze half slab":
                     sp.set_constraint(FixAtoms([
                         atom.index for atom in sp if atom.position[2] < sp.cell[2, 2] / 2.
                     ]))
