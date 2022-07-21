@@ -322,7 +322,7 @@ class MolecularTSEstimate(FiretaskBase):
 
         ts_path = self["ts_path"]
         rxn = self["rxn"]
-        slab = read(self["slab_path"])
+        slab = self["slab_path"]
 
         ts = TS(
             self["slab_path"],
