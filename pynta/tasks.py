@@ -17,6 +17,7 @@ from fireworks.core.fworker import FWorker
 import fireworks.fw_config
 from pynta.ts import TS
 from pynta.vib import AfterTS
+from pynta.io import IO
 from xtb.ase.calculator import XTB
 import json
 import copy
