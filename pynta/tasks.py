@@ -5,6 +5,7 @@ from ase.io import write, read
 from ase.io.trajectory import Trajectory
 from ase.calculators.socketio import SocketIOCalculator
 from ase.utils.structure_comparator import SymmetryEquivalenceCheck
+from ase.vibrations import Vibrations
 from sella import Sella, Constraints
 from importlib import import_module
 from fireworks import *
@@ -15,6 +16,7 @@ from fireworks.utilities.fw_serializers import load_object_from_file
 from fireworks.core.fworker import FWorker
 import fireworks.fw_config
 from pynta.ts import TS
+from pynta.vib import AfterTS
 from xtb.ase.calculator import XTB
 import json
 import copy
@@ -259,8 +261,8 @@ def vibrations_firework(xyz,software,label,software_kwargs={},parents=[],out_pat
     t1 = MolecularVibrationsTask(d)
     directory = os.path.dirname(xyz)
     if out_path is None: out_path = os.path.join(directory,label+"_vib.json")
-    t2 = FileTransferTask({'files': [{'src': label+'_vib.json', 'dest': out_path},{'src':'vib.0.traj',
-        'dest': os.path.join(os.path.split(out_path)[0],"vib.0.traj")}], 'mode': 'copy', 'ignore_errors': ignore_errors})
+    t2 = FileTransferTask({'files': [{'src': label+'_vib.json', 'dest': os.path.join(os.path.split(out_path)[0],label+'_vib.json')},{'src':'vib.0.traj',
+        'dest': out_path}], 'mode': 'copy', 'ignore_errors': ignore_errors})
     return Firework([t1,t2],parents=parents,name=label+"vib")
 
 @explicit_serialize
@@ -466,14 +468,14 @@ class MolecularCollect(CollectTask):
             return FWAction(detours=fws)
 
 def TSnudge_firework(xyz,label,forward_path=None,reverse_path=None,spawn_jobs=False,software=None,opt_method=None,sella=False,
-        socket=False,software_kwargs={},opt_kwargs={},run_kwargs={},constraints=[],parents=[],out_path=None):
+        socket=False,software_kwargs={},opt_kwargs={},run_kwargs={},constraints=[],parents=[],out_path=None,ignore_errors=False):
         """
         xyz is really the vibrational output data file
         out_path is a dud variable here
         """
-        task = MolecularTSNudge(xyz,label,forward_path=forward_path,reverse_path=reverse_path,spawn_jobs=spawn_jobs,software=software,
+        task = MolecularTSNudge(vib_traj=xyz,label=label,forward_path=forward_path,reverse_path=reverse_path,spawn_jobs=spawn_jobs,software=software,
             opt_method=opt_method,sella=sella,socket=socket,software_kwargs=software_kwargs,opt_kwargs=opt_kwargs,run_kwargs=run_kwargs,
-            constraints=constraints)
+            constraints=constraints,ignore_errors=ignore_errors)
         fw = Firework([task],parents=[],name=label+"TSnudge")
         return fw
 
@@ -481,11 +483,12 @@ def TSnudge_firework(xyz,label,forward_path=None,reverse_path=None,spawn_jobs=Fa
 class MolecularTSNudge(FiretaskBase):
     required_params = ["vib_traj","label"]
     optional_params = ["forward_path","reverse_path","spawn_jobs","software","opt_method","sella","socket",
-            "software_kwargs", "opt_kwargs", "run_kwargs", "constraints"]
+            "software_kwargs", "opt_kwargs", "run_kwargs", "constraints", "ignore_errors"]
     def run_task(self, fw_spec):
-        forward_path = self["forward_path"] if "forward_path" in self.keys() else self.label+"_forward.xyz"
-        reverse_path = self["reverse_path"] if "reverse_path" in self.keys() else self.label+"_reverse.xyz"
+        forward_path = self["forward_path"] if "forward_path" in self.keys() and self["forward_path"] else os.path.join(os.path.split(self["vib_traj"])[0],self["label"]+"_forward")
+        reverse_path = self["reverse_path"] if "reverse_path" in self.keys() and self["reverse_path"] else os.path.join(os.path.split(self["vib_traj"])[0],self["label"]+"_reverse")
         spawn_jobs = self["spawn_jobs"] if "spawn_jobs" in self.keys() else False
+        ignore_errors = self["ignore_errors"] if "ignore_errors" in self.keys() else False
 
         AfterTS.get_forward_and_reverse(
             self["vib_traj"],
@@ -493,14 +496,16 @@ class MolecularTSNudge(FiretaskBase):
             reverse_path)
 
         if spawn_jobs:
-            fwf = optimize_firework(forward_path,self["software"],self["label"],opt_method=self["opt_method"],sella=self["sella"],
+            fwf = optimize_firework(forward_path+".xyz",self["software"],self["label"],opt_method=self["opt_method"],sella=self["sella"],
                 socket=self["socket"],order=0,software_kwargs=self["software_kwargs"],opt_kwargs=self["opt_kwargs"],
-                                  run_kwargs=self["run_kwargs"],constraints=self["constraints"],parents=[],out_path=self["label"]+"_forward_optimized.xyz",
-                                  ignore_errors=False)
-            fwr = optimize_firework(reverse_path,self["software"],self["label"],opt_method=self["opt_method"],sella=self["sella"],
+                                  run_kwargs=self["run_kwargs"],constraints=self["constraints"],parents=[],
+                                  out_path=os.path.join(os.path.split(forward_path)[0],self["label"]+"_forward_optimized.xyz"),
+                                  ignore_errors=ignore_errors)
+            fwr = optimize_firework(reverse_path+".xyz",self["software"],self["label"],opt_method=self["opt_method"],sella=self["sella"],
                 socket=self["socket"],order=0,software_kwargs=self["software_kwargs"],opt_kwargs=self["opt_kwargs"],
-                                  run_kwargs=self["run_kwargs"],constraints=self["constraints"],parents=[],out_path=self["label"]+"_reverse_optimized.xyz",
-                                  ignore_errors=False)
+                                  run_kwargs=self["run_kwargs"],constraints=self["constraints"],parents=[],
+                                  out_path=os.path.join(os.path.split(reverse_path)[0], self["label"]+"_reverse_optimized.xyz"),
+                                  ignore_errors=ignore_errors)
             return FWAction(additions=[fwf,fwr])
         else:
             return FWAction()
