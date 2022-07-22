@@ -75,19 +75,19 @@ class MolecularOptimizationTask(OptimizationTask):
         "opt_kwargs","run_kwargs", "constraints","sella","order","socket","ignore_errors"]
     def run_task(self, fw_spec):
         errors = []
-        software_kwargs = self["software_kwargs"] if "software_kwargs" in self.keys() else dict()
+        software_kwargs = deepcopy(self["software_kwargs"]) if "software_kwargs" in self.keys() else dict()
         socket = self["socket"] if "socket" in self.keys() else False
         if socket:
             unixsocket = "ase_"+self["software"].lower()+"_"+self["label"]+"_"+self["xyz"].replace("/","_").replace(".","_")
             socket_address = os.path.join("/tmp","ipi_"+unixsocket)
-            if "command" in self["software_kwargs"].keys() and "{unixsocket}" in self["software_kwargs"]["command"]:
-                self["software_kwargs"]["command"] = self["software_kwargs"]["command"].format(unixsocket=unixsocket)
+            if "command" in software_kwargs.keys() and "{unixsocket}" in software_kwargs["command"]:
+                software_kwargs["command"] = software_kwargs["command"].format(unixsocket=unixsocket)
 
         software = name_to_ase_software(self["software"])(**software_kwargs)
 
-        opt_kwargs = self["opt_kwargs"] if "opt_kwargs" in self.keys() else dict()
+        opt_kwargs = deepcopy(self["opt_kwargs"]) if "opt_kwargs" in self.keys() else dict()
         opt_method = name_to_ase_opt(self["opt_method"]) if "opt_method" in self.keys() else BFGS
-        run_kwargs = self["run_kwargs"] if "run_kwargs" in self.keys() else dict()
+        run_kwargs = deepcopy(self["run_kwargs"]) if "run_kwargs" in self.keys() else dict()
         sella = self["sella"] if "sella" in self.keys() else False
         order = self["order"] if "order" in self.keys() else 0
         ignore_errors = self["ignore_errors"] if "ignore_errors" in self.keys() else False
@@ -114,7 +114,7 @@ class MolecularOptimizationTask(OptimizationTask):
 
         sp.calc = SocketIOCalculator(software,log=sys.stdout,unixsocket=unixsocket) if socket else software
 
-        constraints = self["constraints"] if "constraints" in self.keys() else []
+        constraints = deepcopy(self["constraints"]) if "constraints" in self.keys() else []
 
         if not sella:
             assert order == 0
@@ -200,12 +200,12 @@ class MolecularOptimizationFailTask(OptimizationTask):
         "opt_kwargs","run_kwargs"]
     def run_task(self, fw_spec):
         print(fw_spec)
-        software_kwargs = self["software_kwargs"] if "software_kwargs" in self.keys() else dict()
+        software_kwargs = deepcopy(self["software_kwargs"]) if "software_kwargs" in self.keys() else dict()
         software = name_to_ase_software(self["software"])(**software_kwargs)
 
-        opt_kwargs = self["opt_kwargs"] if "opt_kwargs" in self.keys() else dict()
+        opt_kwargs = deepcopy(self["opt_kwargs"]) if "opt_kwargs" in self.keys() else dict()
         opt_method = name_to_ase_opt(self["opt_method"]) if "opt_method" in self.keys() else BFGS
-        run_kwargs = self["run_kwargs"] if "run_kwargs" in self.keys() else dict()
+        run_kwargs = deepcopy(self["run_kwargs"]) if "run_kwargs" in self.keys() else dict()
 
         label = self["label"]
         xyz = self['xyz']
@@ -241,9 +241,9 @@ class MolecularEnergyTask(EnergyTask):
         xyz = self['xyz']
         software = name_to_ase_software(self["software"])
         label = self["label"]
-        software_kwargs = self["software_kwargs"] if "software_kwargs" in self.keys() else dict()
-        energy_kwargs = self["energy_kwargs"] if "energy_kwargs" in self.keys() else dict()
-        ignore_errors = self["ignore_errors"] if "ignore_errors" in self.keys() else False
+        software_kwargs = deepcopy(self["software_kwargs"]) if "software_kwargs" in self.keys() else dict()
+        energy_kwargs = deepcopy(self["energy_kwargs"]) if "energy_kwargs" in self.keys() else dict()
+        ignore_errors = deepcopy(self["ignore_errors"]) if "ignore_errors" in self.keys() else False
 
         try:
             sp = read(xyz)
@@ -280,14 +280,14 @@ class MolecularVibrationsTask(VibrationTask):
         xyz = self['xyz']
         software = name_to_ase_software(self["software"])
         label = self["label"]
-        software_kwargs = self["software_kwargs"] if "software_kwargs" in self.keys() else dict()
-        ignore_errors = self["ignore_errors"] if "ignore_errors" in self.keys() else False
+        software_kwargs = deepcopy(self["software_kwargs"]) if "software_kwargs" in self.keys() else dict()
+        ignore_errors = deepcopy(self["ignore_errors"]) if "ignore_errors" in self.keys() else False
 
         try:
             sp = read(xyz)
             sp.calc = software(**software_kwargs)
 
-            constraints = self["constraints"] if "constraints" in self.keys() else []
+            constraints = deepcopy(self["constraints"]) if "constraints" in self.keys() else []
             for c in constraints:
                 if isinstance(c,dict):
                     constraint = construct_constraint(c)
