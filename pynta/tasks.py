@@ -23,6 +23,7 @@ import json
 import copy
 import sys
 import shutil
+import time
 from copy import deepcopy
 from pathlib import Path
 
@@ -109,6 +110,7 @@ class MolecularOptimizationTask(OptimizationTask):
 
         if socket and os.path.isfile(os.path.join("/tmp","ipi_"+unixsocket)):
             os.unlink(os.path.join("/tmp","ipi_"+unixsocket))
+            time.sleep(65)
 
         sp.calc = SocketIOCalculator(software,log=sys.stdout,unixsocket=unixsocket) if socket else software
 
