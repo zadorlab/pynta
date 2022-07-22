@@ -126,7 +126,14 @@ class MolecularOptimizationTask(OptimizationTask):
                     ]))
 
             opt_kwargs["trajectory"] = label+".traj"
-            opt = opt_method(sp,**opt_kwargs)
+            try:
+                opt = opt_method(sp,**opt_kwargs)
+            except OSError as e:
+                import logging
+                logging.error(os.path.join("/tmp","ipi_"+unixsocket))
+                logging.error(os.path.isfile(os.path.join("/tmp","ipi_"+unixsocket)))
+                raise e
+            
             try:
                 opt.run(**run_kwargs)
             except ConnectionResetError as e:
