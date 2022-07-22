@@ -716,7 +716,7 @@ class TS():
 
         # choose a representative temp .traj file that will be used to create
         # surface_atom_idxs and adsorbate_atom_idxs will be created
-        for filename in os.path.listdir(path_to_species):
+        for filename in os.listdir(path_to_species):
             xyz_path = os.path.join(path_to_species,filename,filename+".xyz")
             if os.path.exists(xyz_path):
                 tmp_traj = read(xyz_path)
