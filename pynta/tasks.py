@@ -107,7 +107,7 @@ class MolecularOptimizationTask(OptimizationTask):
             else:
                 errors.append(e)
 
-        if socket and os.path.isfile(os.path.join("tmp","ipi_"+unixsocket)):
+        if socket and os.path.isfile(os.path.join("/tmp","ipi_"+unixsocket)):
             os.unlink(os.path.join("/tmp","ipi_"+unixsocket))
 
         sp.calc = SocketIOCalculator(software,log=sys.stdout,unixsocket=unixsocket) if socket else software
