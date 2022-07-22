@@ -79,6 +79,7 @@ class MolecularOptimizationTask(OptimizationTask):
         socket = self["socket"] if "socket" in self.keys() else False
         if socket:
             unixsocket = "ase_"+self["software"].lower()+"_"+self["label"]+"_"+self["xyz"].replace("/","_").replace(".","_")
+            socket_address = os.path.join("/tmp","ipi_"+unixsocket)
             if "command" in self["software_kwargs"].keys() and "{unixsocket}" in self["software_kwargs"]["command"]:
                 self["software_kwargs"]["command"] = self["software_kwargs"]["command"].format(unixsocket=unixsocket)
 
@@ -108,9 +109,8 @@ class MolecularOptimizationTask(OptimizationTask):
             else:
                 errors.append(e)
 
-        if socket and os.path.isfile(os.path.join("/tmp","ipi_"+unixsocket)):
-            os.unlink(os.path.join("/tmp","ipi_"+unixsocket))
-            time.sleep(65)
+        if socket and os.path.exists(socket_address):
+            os.unlink(socket_address)
 
         sp.calc = SocketIOCalculator(software,log=sys.stdout,unixsocket=unixsocket) if socket else software
 
@@ -128,14 +128,9 @@ class MolecularOptimizationTask(OptimizationTask):
                     ]))
 
             opt_kwargs["trajectory"] = label+".traj"
-            try:
-                opt = opt_method(sp,**opt_kwargs)
-            except OSError as e:
-                import logging
-                logging.error(os.path.join("/tmp","ipi_"+unixsocket))
-                logging.error(os.path.isfile(os.path.join("/tmp","ipi_"+unixsocket)))
-                raise e
             
+            opt = opt_method(sp,**opt_kwargs)
+
             try:
                 opt.run(**run_kwargs)
             except ConnectionResetError as e:
