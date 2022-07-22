@@ -716,8 +716,11 @@ class TS():
 
         # choose a representative temp .traj file that will be used to create
         # surface_atom_idxs and adsorbate_atom_idxs will be created
-        path_to_tmp_traj = os.path.join(path_to_species, '00.traj')
-        tmp_traj = read(path_to_tmp_traj)
+        for filename in os.path.listdir(path_to_species):
+            xyz_path = os.path.join(path_to_species,filename,filename+".xyz")
+            if os.path.exists(xyz_path):
+                tmp_traj = read(xyz_path)
+                break
 
         # create a list with all surface atom indicies
         surface_atom_idxs = [
@@ -732,7 +735,7 @@ class TS():
         all_dists_bonded = []
         for index in unique_minima_prefixes:
             path_to_unique_minima_traj = os.path.join(
-                path_to_species, '{}.traj'.format(index))
+                path_to_species, str(index), str(index)+".xyz")
             uq_species_atom = read(path_to_unique_minima_traj)
             ads_atom_surf_dist = {}
             for key, ads_atom_idx in adsorbate_atom_idxs.items():
