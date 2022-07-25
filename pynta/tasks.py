@@ -383,11 +383,13 @@ class MolecularTSEstimate(FiretaskBase):
         for ts_est_file in ts_est_files:
             logging.error(ts_est_file)
             prefix = ts_est_file.split("__")[0]
-            file = os.path.join(ts_path,prefix,ts_est_file)
+            directory = os.path.join(ts_path,prefix)
             logging.error(prefix)
             logging.error(file)
-            os.makedirs(os.path.split(file)[0],exist_ok=True)
-            shutil.move(os.path.join(ts_path,ts_est_file),os.path.split(file)[0])
+            os.makedirs(directory ,exist_ok=True)
+            shutil.move(os.path.join(ts_path,ts_est_file),directory)
+            file = os.path.join(directory,ts_est_file.split(".")[0]+"_init.xyz")
+            os.rename(os.path.join(directory,ts_est_file),file)
             ts_estimates_xyz_files.append(file)
 
         import logging
@@ -418,7 +420,7 @@ class MolecularTSEstimate(FiretaskBase):
         xyzs = []
         # Loop through all .xyz files
         for prefix, xyz_file in enumerate(ts_estimates_xyz_files):
-            bonds = self.get_bonds_penalty(
+            bonds = ts.get_bonds_penalty(
                 new_reacting_idx,
                 surface_atoms_idxs,
                 xyz_file)
