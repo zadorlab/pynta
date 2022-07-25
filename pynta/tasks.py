@@ -377,9 +377,19 @@ class MolecularTSEstimate(FiretaskBase):
 
         # get all .xyz files with TS estimates
         ts_estimates_xyz_files = []
-        ts_est = Path(ts_path).glob('*.xyz')
-        for ts in ts_est:
-            ts_estimates_xyz_files.append(str(ts))
+        ts_est_files = os.listdir(ts_path)
+        for ts_est_file in ts_est_files:
+            logging.error(ts_est_file)
+            prefix = ts_est_file.split("__")[0]
+            file = os.path.join(ts_path,prefix,ts_est_file)
+            logging.error(prefix)
+            logging.error(file)
+            os.makedirs(file,exist_ok=True)
+            shutil.move(os.path.join(ts_path,ts_est_file),file)
+            ts_estimates_xyz_files.append(file)
+
+        import logging
+        logging.error(ts_estimates_xyz_files)
 
         # sort it in increasing order
         ts_estimates_xyz_files = sorted(ts_estimates_xyz_files)
