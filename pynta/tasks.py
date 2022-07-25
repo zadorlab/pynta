@@ -433,7 +433,7 @@ class MolecularTSEstimate(FiretaskBase):
             # shutil.copy(xyz_file,calc_dir)
             if spawn_jobs:
                 xyz = os.path.join(calc_dir,os.path.basename(xyz_file))
-                fwxtb = TSxTBOpt_firework(xyz,self["slab_path"],bonds,self["repeats"],av_dist_tuple,label=str(prefix),parents=[])
+                fwxtb = TSxTBOpt_firework(xyz,self["slab_path"],bonds,self["repeats"],av_dists_tuple,label=str(prefix),parents=[])
                 xyzs.append(os.path.join(calc_dir,str(prefix)+".traj"))
                 optfws.append(fwxtb)
 
