@@ -548,8 +548,14 @@ class MolecularTSxTBOpt(OptimizationTask):
         ignore_errors = self["ignore_errors"] if "ignore_errors" in self.keys() else False
         import logging
         logging.error(self["xyz"])
-        logging.error(os.listdir(os.path.split(self["xyz"])[0]))
-        logging.error(os.listdir(os.path.split(os.path.split(self["xyz"])[0])[0]))
+        try:
+            logging.error(os.listdir(os.path.split(self["xyz"])[0]))
+        except:
+            pass
+        try:
+            logging.error(os.listdir(os.path.split(os.path.split(self["xyz"])[0])[0]))
+        except:
+            pass
         try:
             adsorbed = read(self["xyz"])
             slab = read(self["slab_path"])
