@@ -136,6 +136,8 @@ class MolecularOptimizationTask(OptimizationTask):
                 opt.run(**run_kwargs)
             except ConnectionResetError as e:
                 if socket:
+                    import logging
+                    logging.error(e)
                     errors.append(e)
                     sp.calc.close()
                     fw = restart_opt_firework(self,fw_spec["_tasks"])
