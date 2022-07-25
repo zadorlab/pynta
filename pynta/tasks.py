@@ -428,10 +428,6 @@ class MolecularTSEstimate(FiretaskBase):
             # shutil.copy(xyz_file,calc_dir)
             if spawn_jobs:
                 xyz = xyz_file
-                import logging
-                logging.error(xyz)
-                logging.error(os.path.exists(xyz))
-                assert os.path.exists(xyz)
                 fwxtb = TSxTBOpt_firework(xyz,self["slab_path"],bonds,self["repeats"],av_dists_tuple,label=str(prefix),parents=[])
                 xyzs.append(os.path.join(calc_dir,str(prefix)+".traj"))
                 optfws.append(fwxtb)
@@ -550,6 +546,10 @@ class MolecularTSxTBOpt(OptimizationTask):
     def run_task(self, fw_spec):
         label = self["label"] if "label" in self.keys() else "xtb"
         ignore_errors = self["ignore_errors"] if "ignore_errors" in self.keys() else False
+        import logging
+        logging.error(self["xyz"])
+        logging.error(os.listdir(os.path.split(self["xyz"])[0]))
+        logging.error(os.listdir(os.path.split(os.path.split(self["xyz"])[0])[0]))
         try:
             adsorbed = read(self["xyz"])
             slab = read(self["slab_path"])
