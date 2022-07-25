@@ -733,13 +733,9 @@ class TS():
 
         # loop through all unique traj files, e.g. 00.traj, 01.traj ...
         all_dists_bonded = []
-        import logging
-        logging.error(unique_minima_prefixes)
         for index in unique_minima_prefixes:
-            logging.error(index)
             path_to_unique_minima_traj = os.path.join(
                 path_to_species, str(index), str(index)+".xyz")
-            logging.error(path_to_unique_minima_traj)
             uq_species_atom = read(path_to_unique_minima_traj)
             ads_atom_surf_dist = {}
             for key, ads_atom_idx in adsorbate_atom_idxs.items():
@@ -750,9 +746,7 @@ class TS():
             # the shortest distance in bonded_ads_atom_surf_dist.values()
             # is considered as a distance between atom bonded to the surface
             # and the surface
-            logging.error(ads_atom_surf_dist)
             bonded_ads_atom_surf_dist = min(ads_atom_surf_dist.values())
-            logging.error(bonded_ads_atom_surf_dist)
             all_dists_bonded.append(bonded_ads_atom_surf_dist)
         # apply the scalling factor
         if scaled:

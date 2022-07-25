@@ -377,23 +377,17 @@ class MolecularTSEstimate(FiretaskBase):
             reacting_atoms, sp_surf_av_dists)
 
         # get all .xyz files with TS estimates
-        import logging
         ts_estimates_xyz_files = []
         ts_est_files = os.listdir(ts_path)
         for ts_est_file in ts_est_files:
-            logging.error(ts_est_file)
             prefix = ts_est_file.split("__")[0]
             directory = os.path.join(ts_path,prefix)
-            logging.error(prefix)
             os.makedirs(directory ,exist_ok=True)
             shutil.move(os.path.join(ts_path,ts_est_file),directory)
             file = os.path.join(directory,ts_est_file.split(".")[0]+"_init.xyz")
             os.rename(os.path.join(directory,ts_est_file),file)
-            logging.error(file)
             ts_estimates_xyz_files.append(file)
 
-        import logging
-        logging.error(ts_estimates_xyz_files)
 
         # sort it in increasing order
         ts_estimates_xyz_files = sorted(ts_estimates_xyz_files)
@@ -543,6 +537,7 @@ def TSxTBOpt_firework(xyz,slab_path,bonds,repeats,av_dist_tuple,out_path=None,la
     t2 = FileTransferTask({'files': [{'src': label+'.traj', 'dest': out_path}], 'mode': 'copy', "ignore_errors": ignore_errors})
     return Firework([t1,t2],parents=parents,name=label+"TSxTBopt")
 
+@explicit_serialize
 class MolecularTSxTBOpt(OptimizationTask):
     required_params = ["xyz","slab_path","bonds","repeats","av_dist_tuple"]
     optional_params = ["label","ignore_errors"]
