@@ -385,11 +385,11 @@ class MolecularTSEstimate(FiretaskBase):
             prefix = ts_est_file.split("__")[0]
             directory = os.path.join(ts_path,prefix)
             logging.error(prefix)
-            logging.error(file)
             os.makedirs(directory ,exist_ok=True)
             shutil.move(os.path.join(ts_path,ts_est_file),directory)
             file = os.path.join(directory,ts_est_file.split(".")[0]+"_init.xyz")
             os.rename(os.path.join(directory,ts_est_file),file)
+            logging.error(file)
             ts_estimates_xyz_files.append(file)
 
         import logging
