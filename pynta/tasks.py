@@ -140,6 +140,7 @@ class MolecularOptimizationTask(OptimizationTask):
                 else:
                     errors.append(e)
                 # if socket: #auto debugging example
+                #     import logging
                 #     logging.error(e)
                 #     errors.append(e)
                 #     sp.calc.close()
@@ -376,6 +377,7 @@ class MolecularTSEstimate(FiretaskBase):
             reacting_atoms, sp_surf_av_dists)
 
         # get all .xyz files with TS estimates
+        import logging
         ts_estimates_xyz_files = []
         ts_est_files = os.listdir(ts_path)
         for ts_est_file in ts_est_files:
