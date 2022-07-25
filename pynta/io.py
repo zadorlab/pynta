@@ -447,7 +447,8 @@ class IO():
         good_minima = []
         result_dict = {}
         unique_minima_prefixes = []
-        trajlist = sorted(Path(path_to_species).glob('*traj'), key=str)
+        prefixes = os.listdir(path_to_species)
+        trajlist = [os.path.join(path_to_species,prefix,prefix+".xyz") for prefix in prefixes if os.path.exists(os.path.join(path_to_species,prefix,prefix+".xyz"))]
         for traj in trajlist:
             minima = read(traj)
             comparator = SymmetryEquivalenceCheck(to_primitive=True)
