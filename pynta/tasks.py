@@ -412,7 +412,7 @@ class MolecularTSEstimate(FiretaskBase):
         # corresponding indicies
         surface_atoms_idxs = {
             atom.symbol + '_' + str(atom.index): atom.index
-            for atom in tmp_ts_atom if atom.symbol == metal_atom}
+            for atom in tmp_ts_atom if atom.symbol == metal}
 
         optfws = []
         xyzs = []
@@ -424,11 +424,11 @@ class MolecularTSEstimate(FiretaskBase):
                 xyz_file)
 
             # set up some variables
-            prefix = str(prefix).zfill(3)
+            # prefix = str(prefix).zfill(3)
             calc_dir = os.path.join(ts_path, str(prefix))
-            os.makedirs(calc_dir, exist_ok=True)
-
-            shutil.copy(xyz_file,calc_dir)
+            # os.makedirs(calc_dir, exist_ok=True)
+            #
+            # shutil.copy(xyz_file,calc_dir)
             if spawn_jobs:
                 xyz = os.path.join(calc_dir,os.path.basename(xyz_file))
                 fwxtb = TSxTBOpt_firework(xyz,self["slab_path"],bonds,self["repeats"],av_dist_tuple,label=str(prefix),parents=[])
