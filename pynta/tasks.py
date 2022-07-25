@@ -24,6 +24,7 @@ import copy
 import sys
 import shutil
 import time
+import logging
 from copy import deepcopy
 from pathlib import Path
 
@@ -128,16 +129,17 @@ class MolecularOptimizationTask(OptimizationTask):
                     ]))
 
             opt_kwargs["trajectory"] = label+".traj"
-            
+
             opt = opt_method(sp,**opt_kwargs)
 
             try:
                 opt.run(**run_kwargs)
             except ConnectionResetError as e:
                 if socket:
+                    errors.append(e)
                     sp.calc.close()
                     fw = restart_opt_firework(self,fw_spec["_tasks"])
-                    return FWAction(detours=[fw])
+                    return FWAction(stored_data={"debugged_error": errors},detours=[fw])
                 else:
                     if not ignore_errors:
                         raise e
