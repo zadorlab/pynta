@@ -386,8 +386,8 @@ class MolecularTSEstimate(FiretaskBase):
             file = os.path.join(ts_path,prefix,ts_est_file)
             logging.error(prefix)
             logging.error(file)
-            os.makedirs(file,exist_ok=True)
-            shutil.move(os.path.join(ts_path,ts_est_file),file)
+            os.makedirs(os.path.split(file)[0],exist_ok=True)
+            shutil.move(os.path.join(ts_path,ts_est_file),os.path.split(file)[0])
             ts_estimates_xyz_files.append(file)
 
         import logging
