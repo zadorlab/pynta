@@ -134,24 +134,23 @@ class MolecularOptimizationTask(OptimizationTask):
 
             try:
                 opt.run(**run_kwargs)
-            except ConnectionResetError as e:
-                if socket:
-                    import logging
-                    logging.error(e)
-                    errors.append(e)
-                    sp.calc.close()
-                    fw = restart_opt_firework(self,fw_spec["_tasks"])
-                    return FWAction(stored_data={"debugged_error": errors},detours=[fw])
-                else:
-                    if not ignore_errors:
-                        raise e
-                    else:
-                        errors.append(e)
             except Exception as e:
                 if not ignore_errors:
                     raise e
                 else:
                     errors.append(e)
+                # if socket: #auto debugging example
+                #     logging.error(e)
+                #     errors.append(e)
+                #     sp.calc.close()
+                #     fw = restart_opt_firework(self,fw_spec["_tasks"])
+                #     return FWAction(stored_data={"debugged_error": errors},detours=[fw])
+                # else:
+                #     if not ignore_errors:
+                #         raise e
+                #     else:
+                #         errors.append(e)
+
         else:
             cons = Constraints(sp)
             for c in constraints:
