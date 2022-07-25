@@ -529,8 +529,8 @@ class MolecularTSNudge(FiretaskBase):
         else:
             return FWAction()
 
-def TSxTBOpt_firework(xyz,slab_path,bonds,repeats,av_dist_tuple,out_path=None,label="",parents=[],ignore_errors=False):
-    d = {"xyz": xyz, "slab_path": slab_path, "bonds": bonds, "repeats": repeats, "av_dist_tuple": av_dist_tuple,
+def TSxTBOpt_firework(xyz,slab_path,bonds,repeats,av_dists_tuple,out_path=None,label="",parents=[],ignore_errors=False):
+    d = {"xyz": xyz, "slab_path": slab_path, "bonds": bonds, "repeats": repeats, "av_dists_tuple": av_dists_tuple,
         "label": label, "ignore_errors": ignore_errors}
     t1 = MolecularTSxTBOpt(d)
     directory = os.path.dirname(xyz)
