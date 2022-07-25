@@ -540,7 +540,7 @@ def TSxTBOpt_firework(xyz,slab_path,bonds,repeats,av_dist_tuple,out_path=None,la
 
 @explicit_serialize
 class MolecularTSxTBOpt(OptimizationTask):
-    required_params = ["xyz","slab_path","bonds","repeats","av_dist_tuple"]
+    required_params = ["xyz","slab_path","bonds","repeats","av_dists_tuple"]
     optional_params = ["label","ignore_errors"]
 
     def run_task(self, fw_spec):
