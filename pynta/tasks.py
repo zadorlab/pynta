@@ -441,6 +441,7 @@ class MolecularTSEstimate(FiretaskBase):
             cfw = Firework([ctask],parents=optfws,name="TS"+str(rxn_no)+"_"+rxn_name+"_collect")
 
         if spawn_jobs:
+            time.wait(300) #if we don't wait some of the directory changes don't seem to keep up with the fireworks
             return FWAction(additions=optfws,detours=[cfw]) #using detour allows us to inherit children from the original collect to the subsequent collects
         else:
             return FWAction()
