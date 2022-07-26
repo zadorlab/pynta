@@ -553,7 +553,8 @@ class MolecularTSxTBOpt(OptimizationTask):
                 trajectory=label+".traj"
             )
 
-            adsplacer.ads_ref.set_calculator(XTB(method="GFN1-xTB"))
+            #adsplacer.ads_ref.set_calculator(XTB(method="GFN1-xTB"))
+            adsplacer.ads_ref.set_calculator(XTB(method="GFN0-xTB"))
             opt = adsplacer.optimize()
         except Exception as e:
             if not ignore_errors:
