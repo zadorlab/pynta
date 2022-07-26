@@ -422,26 +422,23 @@ class MolecularTSEstimate(FiretaskBase):
 
             # set up some variables
             # prefix = str(prefix).zfill(3)
-            calc_dir = os.path.join(ts_path, str(prefix))
             # os.makedirs(calc_dir, exist_ok=True)
             #
             # shutil.copy(xyz_file,calc_dir)
             if spawn_jobs:
-                xyz = xyz_file
-                fwxtb = TSxTBOpt_firework(xyz,self["slab_path"],bonds,self["repeats"],av_dists_tuple,label=str(prefix),parents=[])
-                xyzs.append(os.path.join(calc_dir,str(prefix)+".traj"))
+                fwxtb = TSxTBOpt_firework(xyz_file,self["slab_path"],bonds,self["repeats"],av_dists_tuple,label=str(prefix),parents=[])
+                new_fname = str(prefix) + ".traj"
+                xyzs.append(os.path.join(os.path.split(xyz_file)[0],new_fname))
                 optfws.append(fwxtb)
 
         if spawn_jobs:
-            ["xyzs","check_symm","fw_generators","fw_generator_dicts","out_names","future_check_symms"]
             ctask = MolecularCollect({"xyzs":xyzs,"check_symm":True,"fw_generators": ["optimize_firework","vibrations_firework","TSnudge_firework"],
                 "fw_generator_dicts": [self["opt_obj_dict"], self["vib_obj_dict"],
                 self["TSnudge_obj_dict"]],
                     "out_names": ["final.xyz","vib.0.traj",""],"future_check_symms": [True,False,False], "label": "TS"+str(rxn_no)+"_"+rxn_name})
             cfw = Firework([ctask],parents=optfws,name="TS"+str(rxn_no)+"_"+rxn_name+"_collect")
-
-        if spawn_jobs:
-            return FWAction(additions=optfws,detours=[cfw]) #using detour allows us to inherit children from the original collect to the subsequent collects
+            newwf = Workflow(optfws+[cfw],name='rxn_'+str(rxn_no)+str(rxn_name))
+            return FWAction(detours=newwf) #using detour allows us to inherit children from the original collect to the subsequent collects
         else:
             return FWAction()
 
@@ -454,8 +451,6 @@ def collect_firework(xyzs,check_symm,fw_generators,fw_generator_dicts,out_names,
 class MolecularCollect(CollectTask):
     required_params = ["xyzs","check_symm","fw_generators","fw_generator_dicts","out_names","future_check_symms","label"]
     def run_task(self, fw_spec):
-        import logging
-        logging.error(self["xyzs"])
         xyzs = [xyz for xyz in self["xyzs"] if os.path.isfile(xyz)] #if the associated task errored a file may not be present
         if self["check_symm"]:
             xyzs = get_unique_sym(xyzs) #only unique structures
@@ -546,16 +541,6 @@ class MolecularTSxTBOpt(OptimizationTask):
     def run_task(self, fw_spec):
         label = self["label"] if "label" in self.keys() else "xtb"
         ignore_errors = self["ignore_errors"] if "ignore_errors" in self.keys() else False
-        import logging
-        logging.error(self["xyz"])
-        try:
-            logging.error(os.listdir(os.path.split(self["xyz"])[0]))
-        except:
-            pass
-        try:
-            logging.error(os.listdir(os.path.split(os.path.split(self["xyz"])[0])[0]))
-        except:
-            pass
         try:
             adsorbed = read(self["xyz"])
             slab = read(self["slab_path"])
@@ -591,16 +576,9 @@ def get_task_index(task_dict,task_list):
         if d['_fw_name'] == task_dict['_fw_name']:
             return i
     else:
-        import logging
-        logging.error("couldn't find index")
-        logging.error(task_dict)
-        logging.error(task_list)
         raise IndexError
 
 def restart_opt_firework(task,task_list):
-    import logging
-    logging.error(task)
-    logging.error(task_list)
     traj_file = task["label"]+".traj"
     shutil.copy(traj_file,os.path.join(os.path.split(task["xyz"])[0],traj_file))
     d = deepcopy(task.as_dict())
@@ -609,12 +587,7 @@ def restart_opt_firework(task,task_list):
     return reconstruct_firework(new_task,task,task_list,full=True)
 
 def reconstruct_task(task_dict,orig_task=None):
-    import logging
-    logging.error("reconstructing task")
-    logging.error(task_dict)
-    logging.error(orig_task)
     name = task_dict["_fw_name"]
-    logging.error(name)
     if orig_task:
         fcn = orig_task.__class__
     else:
@@ -623,24 +596,12 @@ def reconstruct_task(task_dict,orig_task=None):
     return fcn(d)
 
 def reconstruct_firework(new_task,old_task,task_list,full=True):
-    import logging
-    logging.error("in reconstruct_firework")
-    logging.error(new_task)
-    logging.error(old_task)
-    logging.error(task_list)
     task_index = get_task_index(old_task.as_dict(),task_list)
-    logging.error(task_index)
     tasks = []
     for i,d in enumerate(task_list):
         if i == task_index:
-            logging.error("found specified task")
-            logging.error(i)
-            logging.error(d)
             tasks.append(new_task)
         elif full or i > task_index:
-            logging.error("found other task")
-            logging.error(i)
-            logging.error(d)
             tasks.append(reconstruct_task(d))
     return Firework(tasks)
 
