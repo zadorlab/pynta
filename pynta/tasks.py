@@ -6,7 +6,7 @@ from ase.io.trajectory import Trajectory
 from ase.calculators.socketio import SocketIOCalculator
 from ase.utils.structure_comparator import SymmetryEquivalenceCheck
 from ase.vibrations import Vibrations
-from sella import Sella, Constraints
+from sella import Sella, Constraints, IRC
 from importlib import import_module
 from fireworks import *
 from fireworks.core.rocket_launcher import rapidfire
