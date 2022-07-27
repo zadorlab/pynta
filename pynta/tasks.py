@@ -301,7 +301,7 @@ class MolecularVibrationsTask(VibrationTask):
                     sp.set_constraint(FixAtoms([
                         atom.index for atom in sp if atom.position[2] < sp.cell[2, 2] / 2.
                     ]))
-                    indices = [atom.index for atom in atoms if atom.position[2] > atoms.cell[2, 2] / 2.]
+                    indices = [atom.index for atom in sp if atom.position[2] > sp.cell[2, 2] / 2.]
 
             vib = Vibrations(sp,indices=indices)
             vib.run()
