@@ -524,6 +524,108 @@ class MolecularTSNudge(FiretaskBase):
         else:
             return FWAction()
 
+def IRC_firework(xyz,label,out_path,spawn_jobs=False,software=None,
+        socket=False,software_kwargs={},opt_kwargs={},run_kwargs={},constraints=[],parents=[],out_path=None,ignore_errors=False):
+        if out_path is None: out_path = os.path.join(directory,label+"_irc.traj")
+        t1 = MolecularIRC(xyz=xyz,label=label,software=software,
+            socket=socket,software_kwargs=software_kwargs,opt_kwargs=opt_kwargs,run_kwargs=run_kwargs,
+            constraints=constraints,ignore_errors=ignore_errors)
+        t2 = FileTransferTask({'files': [{'src': label+'_irc.traj', 'dest': out_path}], 'mode': 'copy', 'ignore_errors' : ignore_errors})
+        fw = Firework([t1,t2],parents=[],name=label+"_IRC")
+        return fw
+
+@explicit_serialize
+class MolecularIRC(FiretaskBase):
+    required_params = ["xyz","label"]
+    optional_params = ["software","socket",
+            "software_kwargs", "opt_kwargs", "run_kwargs", "constraints", "ignore_errors"]
+    def run_task(self, fw_spec):
+        errors = []
+        software_kwargs = deepcopy(self["software_kwargs"]) if "software_kwargs" in self.keys() else dict()
+        socket = self["socket"] if "socket" in self.keys() else False
+        if socket:
+            unixsocket = "ase_"+self["software"].lower()+"_"+self["label"]+"_"+self["xyz"].replace("/","_").replace(".","_")
+            socket_address = os.path.join("/tmp","ipi_"+unixsocket)
+            if "command" in software_kwargs.keys() and "{unixsocket}" in software_kwargs["command"]:
+                software_kwargs["command"] = software_kwargs["command"].format(unixsocket=unixsocket)
+
+        software = name_to_ase_software(self["software"])(**software_kwargs)
+
+        opt_kwargs = deepcopy(self["opt_kwargs"]) if "opt_kwargs" in self.keys() else dict()
+        run_kwargs = deepcopy(self["run_kwargs"]) if "run_kwargs" in self.keys() else dict()
+        ignore_errors = self["ignore_errors"] if "ignore_errors" in self.keys() else False
+
+        label = self["label"]
+        xyz = self['xyz']
+        suffix = os.path.split(xyz)[-1].split(".")[-1]
+
+        try:
+            if suffix == "xyz":
+                sp = read(xyz)
+            elif suffix == "traj": #take last point on trajectory
+                sp = Trajectory(xyz)[-1]
+            else:
+                raise ValueError("xyz input not understood")
+        except Exception as e:
+            if not ignore_errors:
+                raise e
+            else:
+                errors.append(e)
+
+        if socket and os.path.exists(socket_address):
+            os.unlink(socket_address)
+
+        sp.calc = SocketIOCalculator(software,log=sys.stdout,unixsocket=unixsocket) if socket else software
+
+        constraints = deepcopy(self["constraints"]) if "constraints" in self.keys() else []
+
+        cons = Constraints(sp)
+        for c in constraints:
+            if isinstance(c,dict):
+                add_sella_constraint(cons,c)
+            elif c == "freeze half slab":
+                for atom in sp:
+                    if atom.position[2] < sp.cell[2, 2] / 2.:
+                        cons.fix_translation(atom.index)
+
+        opt = IRC(sp,constraints=cons,trajectory=label+"_irc.traj",dx=0.1,eta=1e-4,gamma=0.4)
+        try:
+            run_kwargs["direction"] = "forward"
+            opt.run(**run_kwargs)
+            run_kwargs["direction"] = "reverse"
+            opt.run(**run_kwargs)
+        except Exception as e:
+            if not ignore_errors:
+                raise e
+            else:
+                errors.append(e)
+
+        if socket:
+            try:
+                sp.calc.close()
+            except Exception as e:
+                if self["software"] == "Espresso":
+                    pass #Espresso tends to error even after socket calculations finish correctly
+                else:
+                    if not ignore_errors:
+                        raise e
+                    else:
+                        errors.append(e)
+
+        if not opt.converged():
+            e = ValueError
+            if not ignore_errors:
+                raise e
+            else:
+                errors.append(e)
+
+        if len(errors) == 0:
+            pass
+        else:
+            return FWAction(stored_data={"error": errors},exit=True)
+
+        return FWAction()
+
 def TSxTBOpt_firework(xyz,slab_path,bonds,repeats,av_dists_tuple,out_path=None,label="",parents=[],ignore_errors=False):
     d = {"xyz": xyz, "slab_path": slab_path, "bonds": bonds, "repeats": repeats, "av_dists_tuple": av_dists_tuple,
         "label": label, "ignore_errors": ignore_errors}
