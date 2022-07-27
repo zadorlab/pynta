@@ -15,4 +15,4 @@ dependencies:
   - glpk==5.0
   - fireworks
   - jax <=0.2.28
-  - xtb-python
+  - cp2k==7.1
