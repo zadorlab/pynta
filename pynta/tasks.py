@@ -322,7 +322,8 @@ class MolecularVibrationsTask(VibrationTask):
 class MolecularTSEstimate(FiretaskBase):
     required_params = ["rxn","ts_path","slab_path","adsorbates_path","rxns_file","repeats","path","metal"]
     optional_params = ["out_path","scfactor","scfactor_surface","scaled1","scaled2","spawn_jobs","opt_obj_dict",
-            "vib_obj_dict","IRC_obj_dict","xtb_parameters_path","dispersion_parameters_path","cp2k_shell_path"]
+            "vib_obj_dict","IRC_obj_dict","xtb_parameters_path","dispersion_parameters_path","cp2k_shell_path",
+            "nprocs"]
     def run_task(self, fw_spec):
         out_path = self["out_path"] if "out_path" in self.keys() else ts_path
         scfactor = self["scfactor"] if "scfactor" in self.keys() else 1.4
@@ -333,6 +334,7 @@ class MolecularTSEstimate(FiretaskBase):
         xtb_parameters_path = self["xtb_parameters_path"] if "xtb_parameters_path" in self.keys() else None
         dispersion_parameters_path = self["dispersion_parameters_path"] if "dispersion_parameters_path" in self.keys() else None
         cp2k_shell_path = self["cp2k_shell_path"] if "cp2k_shell_path" in self.keys() else None
+        nprocs = self["nprocs"] if "nprocs" in self.keys() else 1
 
         ts_path = self["ts_path"]
         rxn = self["rxn"]
@@ -431,9 +433,7 @@ class MolecularTSEstimate(FiretaskBase):
         # Loop through all .xyz files
         inputs = [(xyz_file,xyz_file.replace("_init.xyz","_xtb.xyz"),prefix,ts.get_bonds_penalty(new_reacting_idx,surface_atoms_idxs,xyz_file)) for prefix, xyz_file in enumerate(ts_estimates_xyz_files)]
 
-        n_procs = len(os.sched_getaffinity(0))
-
-        with mp.Pool(n_proc) as pool:
+        with mp.Pool(nproc) as pool:
             errors = pool.map(run_xtb_opt,inputs)
 
         xtb_files = [xyz_file.replace("_init.xyz","_xtb.xyz") for prefix, xyz_file in enumerate(ts_estimates_xyz_files)]
