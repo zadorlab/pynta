@@ -322,7 +322,7 @@ class MolecularVibrationsTask(VibrationTask):
 class MolecularTSEstimate(FiretaskBase):
     required_params = ["rxn","ts_path","slab_path","adsorbates_path","rxns_file","repeats","path","metal"]
     optional_params = ["out_path","scfactor","scfactor_surface","scaled1","scaled2","spawn_jobs","opt_obj_dict",
-            "vib_obj_dict","TSnudge_obj_dict","xtb_parameters_path","dispersion_parameters_path","cp2k_shell_path"]
+            "vib_obj_dict","IRC_obj_dict","xtb_parameters_path","dispersion_parameters_path","cp2k_shell_path"]
     def run_task(self, fw_spec):
         out_path = self["out_path"] if "out_path" in self.keys() else ts_path
         scfactor = self["scfactor"] if "scfactor" in self.keys() else 1.4
@@ -458,10 +458,10 @@ class MolecularTSEstimate(FiretaskBase):
                 optfws.append(fw)
 
         if spawn_jobs:
-            ctask = MolecularCollect({"xyzs":xyzs,"check_symm":True,"fw_generators": ["vibrations_firework","TSnudge_firework"],
-                "fw_generator_dicts": [self["vib_obj_dict"],
-                self["TSnudge_obj_dict"]],
-                    "out_names": ["vib.0.traj",""],"future_check_symms": [False,False], "label": "TS"+str(rxn_no)+"_"+rxn_name})
+            ctask = MolecularCollect({"xyzs":xyzs,"check_symm":True,"fw_generators": [["vibrations_firework","IRC_firework"]],
+                "fw_generator_dicts": [[self["vib_obj_dict"],
+                self["IRC_obj_dict"]],
+                    "out_names": [["vib.0.traj","irc.traj"]],"future_check_symms": [False], "label": "TS"+str(rxn_no)+"_"+rxn_name})
             cfw = Firework([ctask],parents=optfws,name="TS"+str(rxn_no)+"_"+rxn_name+"_collect")
             newwf = Workflow(optfws+[cfw],name='rxn_'+str(rxn_no)+str(rxn_name))
             return FWAction(detours=newwf,stored_data={"error": errors}) #using detour allows us to inherit children from the original collect to the subsequent collects
@@ -477,30 +477,48 @@ def collect_firework(xyzs,check_symm,fw_generators,fw_generator_dicts,out_names,
 class MolecularCollect(CollectTask):
     required_params = ["xyzs","check_symm","fw_generators","fw_generator_dicts","out_names","future_check_symms","label"]
     def run_task(self, fw_spec):
-        xyzs = [xyz for xyz in self["xyzs"] if os.path.isfile(xyz)] #if the associated task errored a file may not be present
+        xyzs = [xyz for xyz in self["xyzs"] if os.path.exists(xyz)] #if the associated task errored a file may not be present
         if self["check_symm"]:
             xyzs = get_unique_sym(xyzs) #only unique structures
         if len(xyzs) == 0:
             raise ValueError("No xyzs to collect")
-        fw_generator = globals()[self["fw_generators"][0]]
+
+        fw_generators = self["fw_generators"]
+        fw_generator_dicts = self["fw_generator_dicts"]
+        out_names = self["out_names"]
+        future_check_symms = self["future_check_symms"]
+        import logging
+        logging.error(fw_generators)
+        for i in range(len(fw_generators)):
+            if not isinstance(fw_generators[i],list):
+                fw_generators[i] = list(fw_generators[i])
+            if not isinstance(fw_generator_dicts[i],list):
+                fw_generator_dicts[i] = list(fw_generator_dicts[i])
+            if not isinstance(out_names[i],list):
+                out_names[i] = list(out_names[i])
+
+
+        logging.error(fw_generators)
         fws = []
         out_xyzs = []
-        for xyz in xyzs:
-            d = deepcopy(self["fw_generator_dicts"][0])
-            d["xyz"] = xyz
-            d["out_path"] = os.path.join(os.path.split(xyz)[0],self["out_names"][0])
-            d["label"] = self["out_names"][0]
-            d["ignore_errors"] = True
-            out_xyzs.append(d["out_path"])
-            fw = fw_generator(**d)
-            if not isinstance(fw,list):
-                fw = [fw]
-            fws.extend(fw)
+        for i,fw_generator in enumerate(fw_generators[0]):
+            fw_generator = globals()[fw_generator]
+            for xyz in xyzs:
+                d = deepcopy(fw_generator_dicts[0][i])
+                d["xyz"] = xyz
+                d["out_path"] = os.path.join(os.path.split(xyz)[0],self["out_names"][0][i])
+                d["label"] = out_names[0][i]
+                d["ignore_errors"] = True
+                out_xyzs.append(d["out_path"])
+                fw = fw_generator(**d)
+                if not isinstance(fw,list):
+                    fw = [fw]
+                fws.extend(fw)
 
-        if len(self["fw_generators"]) > 1:
-            task = MolecularCollect({"xyzs": out_xyzs,"check_symm": self["future_check_symms"][0],
-                    "fw_generators": self["fw_generators"][1:],"fw_generator_dicts": self["fw_generator_dicts"][1:],
-                    "out_names": self["out_names"][1:],"future_check_symms": self["future_check_symms"][1:],"label": self["label"]})
+        if len(fw_generators) > 1:
+            task = MolecularCollect({"xyzs": out_xyzs,"check_symm": future_check_symms[0],
+                    "fw_generators": fw_generators[1:],"fw_generator_dicts": fw_generator_dicts[1:],
+                    "out_names": out_names[1:],"future_check_symms": future_check_symms[1:],"label": self["label"]})
             cfw = Firework([task],parents=fws,name=self["label"]+"collect")
             newwf = Workflow(fws+[cfw],name=self["label"]+"collect"+str(-len(self["fw_generators"])))
             return FWAction(detours=newwf) #using detour allows us to inherit children from the original collect to the subsequent collects
@@ -704,7 +722,7 @@ def run_gfn1xtb_opt(xyz,xyzout,label,slab_path,bonds,av_dists_tuple,repeats,
                 calc=CP2K(command=".".join("cp2k_shell",suffix),
                   inp=temp, xc=None, stress_tensor=False, pseudo_potential=False,
                   potential_file=False, poisson_solver=False, max_scf=False)
-                 break
+                break
             except AssertionError:
                 continue
         else:

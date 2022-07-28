@@ -109,8 +109,8 @@ class Pynta:
                 "run_kwargs": {"fmax" : 0.01, "steps" : 70},"constraints": ["freeze half slab"],"sella":True,"order":1}
         vib_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":self.software_kwargs,
                 "constraints": ["freeze half slab"]}
-        TSnudge_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":self.software_kwargs,
-                "run_kwargs":{"fmax" : 0.01, "steps" : 70},"constraints":["freeze half slab"],"opt_method":"QuasiNewton"}
+        IRC_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":self.software_kwargs,
+                "constraints":["freeze half slab"]}
         for i,rxn in enumerate(self.rxns):
             ts_path = os.path.join(self.path,"TS"+str(i))
             os.makedirs(ts_path)
@@ -118,7 +118,7 @@ class Pynta:
                 "rxns_file": self.rxns_file,"repeats": self.repeats[0],"path": self.path,"metal": self.metal,"out_path": ts_path,
                     "scfactor": 1.4,"scfactor_surface": 1.0,
                     "scaled1": True, "scaled2": False, "spawn_jobs": True, "opt_obj_dict": opt_obj_dict, "vib_obj_dict": vib_obj_dict,
-                    "TSnudge_obj_dict": TSnudge_obj_dict, "xtb_parameters_path": self.xtb_parameters_path,
+                    "IRC_obj_dict": IRC_obj_dict, "xtb_parameters_path": self.xtb_parameters_path,
                     "dispersion_parameters_path": self.dispersion_parameters_path, "cp2k_shell_path": self.cp2k_shell_path})
             reactants,products = IO.get_reactants_and_products(rxn)
             parents = []
