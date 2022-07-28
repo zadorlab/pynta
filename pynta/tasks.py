@@ -736,12 +736,12 @@ def run_gfn1xtb_opt(inputs):
 
     adsplacer.ads_ref.set_calculator(calc)
 
-    try:
-        opt = adsplacer.optimize()
-        write(outxyz,read(traj_path))
-        return None
-    except Exception as e:
-        return e
+    #try:
+    opt = adsplacer.optimize()
+    write(outxyz,read(traj_path))
+    #     return None
+    # except Exception as e:
+    #     return e
 
 def TSxTBOpt_firework(xyz,slab_path,bonds,repeats,av_dists_tuple,out_path=None,label="",parents=[],ignore_errors=False):
     d = {"xyz": xyz, "slab_path": slab_path, "bonds": bonds, "repeats": repeats, "av_dists_tuple": av_dists_tuple,
