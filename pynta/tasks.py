@@ -420,21 +420,14 @@ class MolecularTSEstimate(FiretaskBase):
         optfws = []
         xyzs = []
 
-        def run_xtb_opt(input):
-            xyz,xyzout,label,bonds = input
-            try:
-                run_gfn1xtb_opt(xyz,xyzout,label,self["slab_path"],bonds,av_dists_tuple,self["repeats"],
-                    xtb_parameters_path=xtb_parameters_path,dispersion_parameters_path=dispersion_parameters_path,
-                    cp2k_shell_path=cp2k_shell_path)
-                return None
-            except Exception as e:
-                return e
-
         # Loop through all .xyz files
-        inputs = [(xyz_file,xyz_file.replace("_init.xyz","_xtb.xyz"),prefix,ts.get_bonds_penalty(new_reacting_idx,surface_atoms_idxs,xyz_file)) for prefix, xyz_file in enumerate(ts_estimates_xyz_files)]
+        inputs = [(xyz_file,xyz_file.replace("_init.xyz","_xtb.xyz"),prefix,self["slab_path"],
+                    ts.get_bonds_penalty(new_reacting_idx,surface_atoms_idxs,xyz_file),av_dists_tuple,self["repeats"],xtb_parameters_path,
+                    dispersion_parameters_path,cp2k_shell_path)
+                    for prefix, xyz_file in enumerate(ts_estimates_xyz_files)]
 
         with mp.Pool(nprocs) as pool:
-            errors = pool.map(run_xtb_opt,inputs)
+            errors = pool.map(run_gfn1xtb_opt,inputs)
 
         xtb_files = [xyz_file.replace("_init.xyz","_xtb.xyz") for prefix, xyz_file in enumerate(ts_estimates_xyz_files)]
         xtb_file_to_prefix = {xyz_file.replace("_init.xyz","_xtb.xyz"):prefix for prefix, xyz_file in enumerate(ts_estimates_xyz_files)}
@@ -742,10 +735,13 @@ def run_gfn1xtb_opt(xyz,xyzout,label,slab_path,bonds,av_dists_tuple,repeats,
     )
 
     adsplacer.ads_ref.set_calculator(calc)
-    opt = adsplacer.optimize()
 
-    write(outxyz,read(traj_path))
-    return
+    try:
+        opt = adsplacer.optimize()
+        write(outxyz,read(traj_path))
+        return None
+    except Exception as e:
+        return e
 
 def TSxTBOpt_firework(xyz,slab_path,bonds,repeats,av_dists_tuple,out_path=None,label="",parents=[],ignore_errors=False):
     d = {"xyz": xyz, "slab_path": slab_path, "bonds": bonds, "repeats": repeats, "av_dists_tuple": av_dists_tuple,
