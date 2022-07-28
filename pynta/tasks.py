@@ -459,8 +459,7 @@ class MolecularTSEstimate(FiretaskBase):
 
         if spawn_jobs:
             ctask = MolecularCollect({"xyzs":xyzs,"check_symm":True,"fw_generators": [["vibrations_firework","IRC_firework"]],
-                "fw_generator_dicts": [[self["vib_obj_dict"],
-                self["IRC_obj_dict"]],
+                "fw_generator_dicts": [[self["vib_obj_dict"],self["IRC_obj_dict"]]],
                     "out_names": [["vib.0.traj","irc.traj"]],"future_check_symms": [False], "label": "TS"+str(rxn_no)+"_"+rxn_name})
             cfw = Firework([ctask],parents=optfws,name="TS"+str(rxn_no)+"_"+rxn_name+"_collect")
             newwf = Workflow(optfws+[cfw],name='rxn_'+str(rxn_no)+str(rxn_name))
