@@ -662,8 +662,8 @@ class MolecularIRC(FiretaskBase):
 
         return FWAction()
 
-def run_gfn1xtb_opt(xyz,xyzout,label,slab_path,bonds,av_dists_tuple,repeats,
-        xtb_parameters_path=None,dispersion_parameters_path=None,cp2k_shell_path=None):
+def run_gfn1xtb_opt(inputs):
+    xyz,xyzout,label,slab_path,bonds,av_dists_tuple,repeats,xtb_parameters_path,dispersion_parameters_path,cp2k_shell_path = inputs
     if xtb_parameters_path is None: xtb_parameters_path = os.path.join(os.environ["PYNTA_PATH"],"xTB_parameters")
     if dispersion_parameters_path is None: dispersion_parameters_path = os.path.join(os.environ["PYNTA_PATH"],"dftd3.dat")
 
