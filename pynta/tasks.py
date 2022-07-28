@@ -433,7 +433,7 @@ class MolecularTSEstimate(FiretaskBase):
         # Loop through all .xyz files
         inputs = [(xyz_file,xyz_file.replace("_init.xyz","_xtb.xyz"),prefix,ts.get_bonds_penalty(new_reacting_idx,surface_atoms_idxs,xyz_file)) for prefix, xyz_file in enumerate(ts_estimates_xyz_files)]
 
-        with mp.Pool(nproc) as pool:
+        with mp.Pool(nprocs) as pool:
             errors = pool.map(run_xtb_opt,inputs)
 
         xtb_files = [xyz_file.replace("_init.xyz","_xtb.xyz") for prefix, xyz_file in enumerate(ts_estimates_xyz_files)]
