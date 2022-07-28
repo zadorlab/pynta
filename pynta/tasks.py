@@ -550,8 +550,8 @@ class MolecularTSNudge(FiretaskBase):
         else:
             return FWAction()
 
-def IRC_firework(xyz,label,out_path,spawn_jobs=False,software=None,
-        socket=False,software_kwargs={},opt_kwargs={},run_kwargs={},constraints=[],parents=[],out_path=None,ignore_errors=False):
+def IRC_firework(xyz,label,out_path=None,spawn_jobs=False,software=None,
+        socket=False,software_kwargs={},opt_kwargs={},run_kwargs={},constraints=[],parents=[],ignore_errors=False):
         if out_path is None: out_path = os.path.join(directory,label+"_irc.traj")
         t1 = MolecularIRC(xyz=xyz,label=label,software=software,
             socket=socket,software_kwargs=software_kwargs,opt_kwargs=opt_kwargs,run_kwargs=run_kwargs,

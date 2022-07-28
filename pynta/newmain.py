@@ -80,8 +80,6 @@ class Pynta:
         nslab = len(put_adsorbates.slab_atom)
         adsorbate_dict = put_adsorbates.adjacency_to_3d()
         big_slab = self.slab * self.repeats[0]
-        import logging
-        logging.error(adsorbate_dict.keys())
         for adsname,adsorbate in adsorbate_dict.items():
             xyzs = []
             optfws = []
