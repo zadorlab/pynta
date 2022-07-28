@@ -421,7 +421,7 @@ class MolecularTSEstimate(FiretaskBase):
         xyzs = []
 
         # Loop through all .xyz files
-        inputs = [(xyz_file,xyz_file.replace("_init.xyz","_xtb.xyz"),prefix,self["slab_path"],
+        inputs = [(xyz_file,xyz_file.replace("_init.xyz","_xtb.xyz"),str(prefix),self["slab_path"],
                     ts.get_bonds_penalty(new_reacting_idx,surface_atoms_idxs,xyz_file),av_dists_tuple,self["repeats"],xtb_parameters_path,
                     dispersion_parameters_path,cp2k_shell_path)
                     for prefix, xyz_file in enumerate(ts_estimates_xyz_files)]
@@ -443,9 +443,9 @@ class MolecularTSEstimate(FiretaskBase):
             xtb_file = xyz_file.replace("_init.xyz","_xtb.xyz")
 
             if spawn_jobs:
-                opt_obj_dict["label"] = prefix
+                opt_obj_dict["label"] = str(prefix)
                 opt_obj_dict["xyz"] = xtb_file
-                opt_obj_dict["out_path"] = os.path.join(os.path.split(xyz)[0],prefix+".xyz")
+                opt_obj_dict["out_path"] = os.path.join(os.path.split(xyz)[0],str(prefix)+".xyz")
                 fw = optimize_firework(**opt_obj_dict)
                 xyzs.append(opt_obj_dict["out_path"])
                 optfws.append(fw)
