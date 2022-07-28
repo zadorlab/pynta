@@ -711,7 +711,7 @@ def run_gfn1xtb_opt(inputs):
     if cp2k_shell_path is None:
         for suffix in ["sopt","ssmp","popt","psmp"]:
             try:
-                calc=CP2K(command=".".join("cp2k_shell",suffix),
+                calc=CP2K(command="cp2k_shell"+"."+suffix,
                   inp=temp, xc=None, stress_tensor=False, pseudo_potential=False,
                   potential_file=False, poisson_solver=False, max_scf=False)
                 break
