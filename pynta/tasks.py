@@ -428,9 +428,15 @@ class MolecularTSEstimate(FiretaskBase):
 
         # with mp.Pool(nprocs) as pool:
         #     errors = pool.map(run_gfn1xtb_opt,inputs)
+        import logging
+        import time
         errors = []
-        for input in inputs
+        for input in inputs:
+            logging.error(input)
+            start = time.time()
             out = run_gfn1xtb_opt(input)
+            end = time.time()
+            logging.error(end-start)
             errors.append(out)
 
         xtb_files = [xyz_file.replace("_init.xyz","_xtb.xyz") for prefix, xyz_file in enumerate(ts_estimates_xyz_files)]
