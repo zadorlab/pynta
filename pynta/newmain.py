@@ -21,9 +21,7 @@ class Pynta:
                             'conv_thr': 1e-11, 'mixing_mode': 'local-TF',
                             "pseudopotentials": {"Cu": 'Cu.pbe-spn-kjpaw_psl.1.0.0.UPF',"H": 'H.pbe-kjpaw_psl.1.0.0.UPF',"O": 'O.pbe-n-kjpaw_psl.1.0.0.UPF',"C": 'C.pbe-n-kjpaw_psl.1.0.0.UPF',"N": 'N.pbe-n-kjpaw_psl.1.0.0.UPF',
                             }},
-        reset_launchpad=False,queue_adapter_path=None,
-        xtb_parameters_path=None,dispersion_parameters_path=None,cp2k_shell_path=None,nprocs=48
-        ):
+        reset_launchpad=False,queue_adapter_path=None,nprocs=48):
 
         self.surface_type = surface_type
         launchpad = LaunchPad.from_file(launchpad_path)
@@ -53,9 +51,6 @@ class Pynta:
         self.label = label
         if queue:
             self.qadapter = load_object_from_file(queue_adapter_path)
-        self.xtb_parameters_path = xtb_parameters_path
-        self.dispersion_parameters_path = dispersion_parameters_path
-        self.cp2k_shell_path = cp2k_shell_path
         self.nprocs = nprocs
 
     def generate_slab(self):
@@ -119,9 +114,7 @@ class Pynta:
                 "rxns_file": self.rxns_file,"repeats": self.repeats[0],"path": self.path,"metal": self.metal,"out_path": ts_path,
                     "scfactor": 1.4,"scfactor_surface": 1.0,
                     "scaled1": True, "scaled2": False, "spawn_jobs": True, "opt_obj_dict": opt_obj_dict, "vib_obj_dict": vib_obj_dict,
-                    "IRC_obj_dict": IRC_obj_dict, "xtb_parameters_path": self.xtb_parameters_path,
-                    "dispersion_parameters_path": self.dispersion_parameters_path, "cp2k_shell_path": self.cp2k_shell_path,
-                    "nprocs": self.nprocs})
+                    "IRC_obj_dict": IRC_obj_dict, "nprocs": self.nprocs})
             reactants,products = IO.get_reactants_and_products(rxn)
             parents = []
             if not adsorbates_finished:

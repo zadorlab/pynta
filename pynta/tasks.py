@@ -321,8 +321,7 @@ class MolecularVibrationsTask(VibrationTask):
 class MolecularTSEstimate(FiretaskBase):
     required_params = ["rxn","ts_path","slab_path","adsorbates_path","rxns_file","repeats","path","metal"]
     optional_params = ["out_path","scfactor","scfactor_surface","scaled1","scaled2","spawn_jobs","opt_obj_dict",
-            "vib_obj_dict","IRC_obj_dict","xtb_parameters_path","dispersion_parameters_path","cp2k_shell_path",
-            "nprocs"]
+            "vib_obj_dict","IRC_obj_dict","nprocs"]
     def run_task(self, fw_spec):
         out_path = self["out_path"] if "out_path" in self.keys() else ts_path
         scfactor = self["scfactor"] if "scfactor" in self.keys() else 1.4
@@ -330,9 +329,6 @@ class MolecularTSEstimate(FiretaskBase):
         scaled1 = self["scaled1"] if "scaled1" in self.keys() else True
         scaled2 = self["scaled2"] if "scaled2" in self.keys() else True
         spawn_jobs = self["spawn_jobs"] if "spawn_jobs" in self.keys() else False
-        xtb_parameters_path = self["xtb_parameters_path"] if "xtb_parameters_path" in self.keys() else None
-        dispersion_parameters_path = self["dispersion_parameters_path"] if "dispersion_parameters_path" in self.keys() else None
-        cp2k_shell_path = self["cp2k_shell_path"] if "cp2k_shell_path" in self.keys() else None
         nprocs = self["nprocs"] if "nprocs" in self.keys() else 1
 
         ts_path = self["ts_path"]
@@ -421,22 +417,11 @@ class MolecularTSEstimate(FiretaskBase):
 
         # Loop through all .xyz files
         inputs = [(xyz_file,xyz_file.replace("_init.xyz","_xtb.xyz"),str(prefix),self["slab_path"],
-                    ts.get_bonds_penalty(new_reacting_idx,surface_atoms_idxs,xyz_file),av_dists_tuple,self["repeats"],xtb_parameters_path,
-                    dispersion_parameters_path,cp2k_shell_path)
+                    ts.get_bonds_penalty(new_reacting_idx,surface_atoms_idxs,xyz_file),av_dists_tuple,self["repeats"])
                     for prefix, xyz_file in enumerate(ts_estimates_xyz_files)]
 
-        # with mp.Pool(nprocs) as pool:
-        #     errors = pool.map(run_gfn1xtb_opt,inputs)
-        import logging
-        import time
-        errors = []
-        for input in inputs:
-            logging.error(input)
-            start = time.time()
-            out = run_gfn1xtb_opt(input)
-            end = time.time()
-            logging.error(end-start)
-            errors.append(out)
+        with mp.Pool(nprocs) as pool:
+            errors = pool.map(run_gfn1xtb_opt,inputs)
 
         xtb_files = [xyz_file.replace("_init.xyz","_xtb.xyz") for prefix, xyz_file in enumerate(ts_estimates_xyz_files)]
         xtb_file_to_prefix = {xyz_file.replace("_init.xyz","_xtb.xyz"):prefix for prefix, xyz_file in enumerate(ts_estimates_xyz_files)}
@@ -672,67 +657,9 @@ class MolecularIRC(FiretaskBase):
         return FWAction()
 
 def run_gfn1xtb_opt(inputs):
-    xyz,xyzout,label,slab_path,bonds,av_dists_tuple,repeats,xtb_parameters_path,dispersion_parameters_path,cp2k_shell_path = inputs
-    if xtb_parameters_path is None: xtb_parameters_path = os.path.join(os.environ["PYNTA_PATH"],"xTB_parameters")
-    if dispersion_parameters_path is None: dispersion_parameters_path = os.path.join(os.environ["PYNTA_PATH"],"dftd3.dat")
-
-    param_file_path,param_file_name = os.path.split(xtb_parameters_path)
-    param_file_path += "/"
-
-    # template = """
-    # &FORCE_EVAL
-    # &DFT
-    #   MULTIPLICITY {mult}
-    #   &QS
-    #    METHOD XTB
-    #    &XTB
-    #     CHECK_ATOMIC_CHARGES F               ! Keyword to check if Mulliken charges are physically reasonable
-    #     DO_EWALD  T                          ! Ewald summation is required for periodic structures
-    #     &PARAMETER
-    #       PARAM_FILE_NAME {param_file_name}
-    #       PARAM_FILE_PATH {param_file_path}
-    #       DISPERSION_PARAMETER_FILE {dispersion_parameters_path}
-    #     &END PARAMETER
-    #     USE_HALOGEN_CORRECTION T             ! Element-specific correction for halogen interactions (Cl, Br) with (O, N)
-    #    &END XTB
-    #   &END QS
-    #   &SCF
-    #    SCF_GUESS RESTART
-    #    EPS_SCF 1.E-6
-    #    &OT ON
-    #      PRECONDITIONER FULL_SINGLE_INVERSE
-    #      MINIMIZER DIIS
-    #    &END
-    #    &OUTER_SCF
-    #      MAX_SCF 200
-    #      EPS_SCF 1.E-6
-    #    &END OUTER_SCF
-    #   &END SCF
-    #   UKS {unrestricted}
-    #  &END DFT
-    # &END FORCE_EVAL"""
+    xyz,xyzout,label,slab_path,bonds,av_dists_tuple,repeats = inputs
 
     adsorbed = read(xyz)
-    # mult = sum(adsorbed.get_atomic_numbers()) % 2 + 1
-    # unrestricted = "T" if mult != 1 else "F"
-    # temp = template.format(mult=mult,unrestricted=unrestricted,param_file_name=param_file_name,
-    #         param_file_path=param_file_path,dispersion_parameters_path=dispersion_parameters_path)
-    # if cp2k_shell_path is None:
-    #     for suffix in ["sopt","ssmp","popt","psmp"]:
-    #         try:
-    #             calc=CP2K(command="cp2k_shell"+"."+suffix,
-    #               inp=temp, xc=None, stress_tensor=False, pseudo_potential=False,
-    #               potential_file=False, poisson_solver=False, max_scf=False)
-    #             break
-    #         except AssertionError:
-    #             continue
-    #     else:
-    #         raise AssertionError("Could not identify cp2k_shell install automatically")
-    # else:
-    #     calc=CP2K(command=cp2k_shell_path,
-    #       inp=temp, xc=None, stress_tensor=False, pseudo_potential=False,
-    #       potential_file=False, poisson_solver=False, max_scf=False)
-
     slab = read(slab_path)
     big_slab = slab * repeats
     nbig_slab = len(big_slab)
@@ -745,12 +672,12 @@ def run_gfn1xtb_opt(inputs):
 
     adsplacer.ads_ref.set_calculator(XTB(method="GFN1-xTB"))
 
-    #try:
-    opt = adsplacer.optimize()
-    write(xyzout,read(traj_path))
-    #     return None
-    # except Exception as e:
-    #     return e
+    try:
+        opt = adsplacer.optimize()
+        write(xyzout,read(traj_path))
+        return None
+    except Exception as e:
+         return e
 
 def TSxTBOpt_firework(xyz,slab_path,bonds,repeats,av_dists_tuple,out_path=None,label="",parents=[],ignore_errors=False):
     d = {"xyz": xyz, "slab_path": slab_path, "bonds": bonds, "repeats": repeats, "av_dists_tuple": av_dists_tuple,
