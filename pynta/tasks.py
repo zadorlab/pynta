@@ -747,7 +747,7 @@ def run_gfn1xtb_opt(inputs):
 
     #try:
     opt = adsplacer.optimize()
-    write(xyzout,read(traj_path)[-1])
+    write(xyzout,read(traj_path))
     #     return None
     # except Exception as e:
     #     return e
