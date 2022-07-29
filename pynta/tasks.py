@@ -426,8 +426,12 @@ class MolecularTSEstimate(FiretaskBase):
                     dispersion_parameters_path,cp2k_shell_path)
                     for prefix, xyz_file in enumerate(ts_estimates_xyz_files)]
 
-        with mp.Pool(nprocs) as pool:
-            errors = pool.map(run_gfn1xtb_opt,inputs)
+        # with mp.Pool(nprocs) as pool:
+        #     errors = pool.map(run_gfn1xtb_opt,inputs)
+        errors = []
+        for input in inputs
+            out = run_gfn1xtb_opt(input)
+            errors.append(out)
 
         xtb_files = [xyz_file.replace("_init.xyz","_xtb.xyz") for prefix, xyz_file in enumerate(ts_estimates_xyz_files)]
         xtb_file_to_prefix = {xyz_file.replace("_init.xyz","_xtb.xyz"):prefix for prefix, xyz_file in enumerate(ts_estimates_xyz_files)}
