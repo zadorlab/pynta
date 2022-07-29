@@ -6,7 +6,6 @@ from ase.io.trajectory import Trajectory
 from ase.calculators.socketio import SocketIOCalculator
 from ase.utils.structure_comparator import SymmetryEquivalenceCheck
 from ase.vibrations import Vibrations
-from ase.calculators.cp2k import CP2K
 from sella import Sella, Constraints, IRC
 from importlib import import_module
 from fireworks import *
@@ -680,59 +679,59 @@ def run_gfn1xtb_opt(inputs):
     param_file_path,param_file_name = os.path.split(xtb_parameters_path)
     param_file_path += "/"
 
-    template = """
-    &FORCE_EVAL
-    &DFT
-      MULTIPLICITY {mult}
-      &QS
-       METHOD XTB
-       &XTB
-        CHECK_ATOMIC_CHARGES F               ! Keyword to check if Mulliken charges are physically reasonable
-        DO_EWALD  T                          ! Ewald summation is required for periodic structures
-        &PARAMETER
-          PARAM_FILE_NAME {param_file_name}
-          PARAM_FILE_PATH {param_file_path}
-          DISPERSION_PARAMETER_FILE {dispersion_parameters_path}
-        &END PARAMETER
-        USE_HALOGEN_CORRECTION T             ! Element-specific correction for halogen interactions (Cl, Br) with (O, N)
-       &END XTB
-      &END QS
-      &SCF
-       SCF_GUESS RESTART
-       EPS_SCF 1.E-6
-       &OT ON
-         PRECONDITIONER FULL_SINGLE_INVERSE
-         MINIMIZER DIIS
-       &END
-       &OUTER_SCF
-         MAX_SCF 200
-         EPS_SCF 1.E-6
-       &END OUTER_SCF
-      &END SCF
-      UKS {unrestricted}
-     &END DFT
-    &END FORCE_EVAL"""
+    # template = """
+    # &FORCE_EVAL
+    # &DFT
+    #   MULTIPLICITY {mult}
+    #   &QS
+    #    METHOD XTB
+    #    &XTB
+    #     CHECK_ATOMIC_CHARGES F               ! Keyword to check if Mulliken charges are physically reasonable
+    #     DO_EWALD  T                          ! Ewald summation is required for periodic structures
+    #     &PARAMETER
+    #       PARAM_FILE_NAME {param_file_name}
+    #       PARAM_FILE_PATH {param_file_path}
+    #       DISPERSION_PARAMETER_FILE {dispersion_parameters_path}
+    #     &END PARAMETER
+    #     USE_HALOGEN_CORRECTION T             ! Element-specific correction for halogen interactions (Cl, Br) with (O, N)
+    #    &END XTB
+    #   &END QS
+    #   &SCF
+    #    SCF_GUESS RESTART
+    #    EPS_SCF 1.E-6
+    #    &OT ON
+    #      PRECONDITIONER FULL_SINGLE_INVERSE
+    #      MINIMIZER DIIS
+    #    &END
+    #    &OUTER_SCF
+    #      MAX_SCF 200
+    #      EPS_SCF 1.E-6
+    #    &END OUTER_SCF
+    #   &END SCF
+    #   UKS {unrestricted}
+    #  &END DFT
+    # &END FORCE_EVAL"""
 
     adsorbed = read(xyz)
-    mult = sum(adsorbed.get_atomic_numbers()) % 2 + 1
-    unrestricted = "T" if mult != 1 else "F"
-    temp = template.format(mult=mult,unrestricted=unrestricted,param_file_name=param_file_name,
-            param_file_path=param_file_path,dispersion_parameters_path=dispersion_parameters_path)
-    if cp2k_shell_path is None:
-        for suffix in ["sopt","ssmp","popt","psmp"]:
-            try:
-                calc=CP2K(command="cp2k_shell"+"."+suffix,
-                  inp=temp, xc=None, stress_tensor=False, pseudo_potential=False,
-                  potential_file=False, poisson_solver=False, max_scf=False)
-                break
-            except AssertionError:
-                continue
-        else:
-            raise AssertionError("Could not identify cp2k_shell install automatically")
-    else:
-        calc=CP2K(command=cp2k_shell_path,
-          inp=temp, xc=None, stress_tensor=False, pseudo_potential=False,
-          potential_file=False, poisson_solver=False, max_scf=False)
+    # mult = sum(adsorbed.get_atomic_numbers()) % 2 + 1
+    # unrestricted = "T" if mult != 1 else "F"
+    # temp = template.format(mult=mult,unrestricted=unrestricted,param_file_name=param_file_name,
+    #         param_file_path=param_file_path,dispersion_parameters_path=dispersion_parameters_path)
+    # if cp2k_shell_path is None:
+    #     for suffix in ["sopt","ssmp","popt","psmp"]:
+    #         try:
+    #             calc=CP2K(command="cp2k_shell"+"."+suffix,
+    #               inp=temp, xc=None, stress_tensor=False, pseudo_potential=False,
+    #               potential_file=False, poisson_solver=False, max_scf=False)
+    #             break
+    #         except AssertionError:
+    #             continue
+    #     else:
+    #         raise AssertionError("Could not identify cp2k_shell install automatically")
+    # else:
+    #     calc=CP2K(command=cp2k_shell_path,
+    #       inp=temp, xc=None, stress_tensor=False, pseudo_potential=False,
+    #       potential_file=False, poisson_solver=False, max_scf=False)
 
     slab = read(slab_path)
     big_slab = slab * repeats
@@ -744,7 +743,7 @@ def run_gfn1xtb_opt(inputs):
         trajectory=traj_path,
     )
 
-    adsplacer.ads_ref.set_calculator(calc)
+    adsplacer.ads_ref.set_calculator(XTB(method="GFN1-xTB"))
 
     #try:
     opt = adsplacer.optimize()
