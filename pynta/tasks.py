@@ -483,11 +483,11 @@ class MolecularCollect(CollectTask):
         logging.error(fw_generators)
         for i in range(len(fw_generators)):
             if not isinstance(fw_generators[i],list):
-                fw_generators[i] = list(fw_generators[i])
+                fw_generators[i] = [fw_generators[i]]
             if not isinstance(fw_generator_dicts[i],list):
-                fw_generator_dicts[i] = list(fw_generator_dicts[i])
+                fw_generator_dicts[i] = [fw_generator_dicts[i]]
             if not isinstance(out_names[i],list):
-                out_names[i] = list(out_names[i])
+                out_names[i] = [out_names[i]]
 
 
         logging.error(fw_generators)
