@@ -430,9 +430,9 @@ class MolecularTSEstimate(FiretaskBase):
                     "out_names": ["opt.xyz",["vib.0.traj","irc.traj"]],"future_check_symms": [True,False], "label": "TS"+str(rxn_no)+"_"+rxn_name})
             cfw = Firework([ctask],parents=xtbfws,name="TS"+str(rxn_no)+"_"+rxn_name+"_collect")
             newwf = Workflow(xtbfws+[cfw],name='rxn_'+str(rxn_no)+str(rxn_name))
-            return FWAction(detours=newwf,stored_data={"error": errors}) #using detour allows us to inherit children from the original collect to the subsequent collects
+            return FWAction(detours=newwf) #using detour allows us to inherit children from the original collect to the subsequent collects
         else:
-            return FWAction(stored_data={"error": errors})
+            return FWAction()
 
 def collect_firework(xyzs,check_symm,fw_generators,fw_generator_dicts,out_names,future_check_symms,parents=[],label=""):
     task = MolecularCollect({"xyzs": xyzs, "check_symm": check_symm, "fw_generators": fw_generators,
@@ -639,7 +639,6 @@ class MolecularIRC(FiretaskBase):
 def run_parallel_gfn1xtb_opt(inputs,nprocs):
     with mp.Pool(nprocs) as pool:
         errors = pool.map(run_gfn1xtb_opt,inputs)
-    return errors
 
 def run_gfn1xtb_opt(inputs):
     xyz,xyzout,label,slab_path,bonds,av_dists_tuple,repeats = inputs
