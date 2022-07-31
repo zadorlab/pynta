@@ -307,7 +307,7 @@ class MolecularVibrationsTask(VibrationTask):
             vib = Vibrations(sp,indices=indices)
             vib.run()
             vib.write_mode(n=0)
-            #vibdata = vib.get_vibrations() 
+            #vibdata = vib.get_vibrations()
             #vibdata.write(label+"_vib.json") #operands could not be broadcast together with shapes (20,) (38,)
         except Exception as e:
             if not ignore_errors:
@@ -412,43 +412,24 @@ class MolecularTSEstimate(FiretaskBase):
             atom.symbol + '_' + str(atom.index): atom.index
             for atom in tmp_ts_atom if atom.symbol == metal}
 
-        optfws = []
-        xyzs = []
-
         # Loop through all .xyz files
         inputs = [(xyz_file,xyz_file.replace("_init.xyz","_xtb.xyz"),str(prefix),self["slab_path"],
                     ts.get_bonds_penalty(new_reacting_idx,surface_atoms_idxs,xyz_file),av_dists_tuple,self["repeats"])
                     for prefix, xyz_file in enumerate(ts_estimates_xyz_files)]
 
-        with mp.Pool(nprocs) as pool:
-            errors = pool.map(run_gfn1xtb_opt,inputs)
+        xtbfws = []
+        for i in range(0,len(inputs), nprocs):
+            inps = inputs[i:i+nprocs]
+            xtbfws.append(Firework(PyTask(func='run_parallel_gfn1xtb_opt',args=[inps,nprocs])))
 
-        xtb_files = [xyz_file.replace("_init.xyz","_xtb.xyz") for prefix,xyz_file in enumerate(ts_estimates_xyz_files)]
-        xtb_file_to_prefix = {xyz_file.replace("_init.xyz","_xtb.xyz"):prefix for prefix,xyz_file in enumerate(ts_estimates_xyz_files)}
-        xtb_files = list(xtb_file_to_prefix.keys())
-        xtb_files = [xyz for xyz in xtb_files if os.path.exists(xyz)]
-        xtb_files = get_unique_sym(xtb_files)
-        prefixes = [xtb_file_to_prefix[xtb_file] for xtb_file in xtb_files]
-
-        opt_obj_dict = deepcopy(self["opt_obj_dict"])
-
-        for i, xtb_file in enumerate(xtb_files):
-            prefix = prefixes[i]
-
-            if spawn_jobs:
-                opt_obj_dict["label"] = str(prefix)
-                opt_obj_dict["xyz"] = xtb_file
-                opt_obj_dict["out_path"] = os.path.join(os.path.split(xyz)[0],str(prefix)+".xyz")
-                fw = optimize_firework(**opt_obj_dict)
-                xyzs.append(opt_obj_dict["out_path"])
-                optfws.append(fw)
+        xyzs = [inp[1] for inp in inputs]
 
         if spawn_jobs:
-            ctask = MolecularCollect({"xyzs":xyzs,"check_symm":True,"fw_generators": [["vibrations_firework","IRC_firework"]],
-                "fw_generator_dicts": [[self["vib_obj_dict"],self["IRC_obj_dict"]]],
-                    "out_names": [["vib.0.traj","irc.traj"]],"future_check_symms": [False], "label": "TS"+str(rxn_no)+"_"+rxn_name})
-            cfw = Firework([ctask],parents=optfws,name="TS"+str(rxn_no)+"_"+rxn_name+"_collect")
-            newwf = Workflow(optfws+[cfw],name='rxn_'+str(rxn_no)+str(rxn_name))
+            ctask = MolecularCollect({"xyzs":xyzs,"check_symm":True,"fw_generators": ["optimize_firework",["vibrations_firework","IRC_firework"]],
+                "fw_generator_dicts": [opt_obj_dict,[self["vib_obj_dict"],self["IRC_obj_dict"]]],
+                    "out_names": ["opt.xyz",["vib.0.traj","irc.traj"]],"future_check_symms": [True,False], "label": "TS"+str(rxn_no)+"_"+rxn_name})
+            cfw = Firework([ctask],parents=xtbfws,name="TS"+str(rxn_no)+"_"+rxn_name+"_collect")
+            newwf = Workflow(xtbfws+[cfw],name='rxn_'+str(rxn_no)+str(rxn_name))
             return FWAction(detours=newwf,stored_data={"error": errors}) #using detour allows us to inherit children from the original collect to the subsequent collects
         else:
             return FWAction(stored_data={"error": errors})
@@ -654,6 +635,11 @@ class MolecularIRC(FiretaskBase):
             return FWAction(stored_data={"error": errors},exit=True)
 
         return FWAction()
+
+def run_parallel_gfn1xtb_opt(inputs,nprocs):
+    with mp.Pool(nprocs) as pool:
+        errors = pool.map(run_gfn1xtb_opt,inputs)
+    return errors
 
 def run_gfn1xtb_opt(inputs):
     xyz,xyzout,label,slab_path,bonds,av_dists_tuple,repeats = inputs
