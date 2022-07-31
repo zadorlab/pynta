@@ -307,8 +307,8 @@ class MolecularVibrationsTask(VibrationTask):
             vib = Vibrations(sp,indices=indices)
             vib.run()
             vib.write_mode(n=0)
-            vibdata = vib.get_vibrations()
-            vibdata.write(label+"_vib.json")
+            #vibdata = vib.get_vibrations() 
+            #vibdata.write(label+"_vib.json") #operands could not be broadcast together with shapes (20,) (38,)
         except Exception as e:
             if not ignore_errors:
                 raise e
@@ -423,8 +423,8 @@ class MolecularTSEstimate(FiretaskBase):
         with mp.Pool(nprocs) as pool:
             errors = pool.map(run_gfn1xtb_opt,inputs)
 
-        xtb_files = [xyz_file.replace("_init.xyz","_xtb.xyz") for prefix, xyz_file in enumerate(ts_estimates_xyz_files)]
-        xtb_file_to_prefix = {xyz_file.replace("_init.xyz","_xtb.xyz"):prefix for prefix, xyz_file in enumerate(ts_estimates_xyz_files)}
+        xtb_files = [xyz_file.replace("_init.xyz","_xtb.xyz") for prefix,xyz_file in enumerate(ts_estimates_xyz_files)]
+        xtb_file_to_prefix = {xyz_file.replace("_init.xyz","_xtb.xyz"):prefix for prefix,xyz_file in enumerate(ts_estimates_xyz_files)}
         xtb_files = list(xtb_file_to_prefix.keys())
         xtb_files = [xyz for xyz in xtb_files if os.path.exists(xyz)]
         xtb_files = get_unique_sym(xtb_files)
@@ -434,7 +434,6 @@ class MolecularTSEstimate(FiretaskBase):
 
         for i, xtb_file in enumerate(xtb_files):
             prefix = prefixes[i]
-            xtb_file = xyz_file.replace("_init.xyz","_xtb.xyz")
 
             if spawn_jobs:
                 opt_obj_dict["label"] = str(prefix)
