@@ -420,7 +420,7 @@ class MolecularTSEstimate(FiretaskBase):
         xtbfws = []
         for i in range(0,len(inputs), nprocs):
             inps = inputs[i:i+nprocs]
-            xtbfws.append(Firework(PyTask(func='run_parallel_gfn1xtb_opt',args=[inps,nprocs])))
+            xtbfws.append(Firework(PyTask(func='pynta.tasks.run_parallel_gfn1xtb_opt',args=[inps,nprocs])))
 
         xyzs = [inp[1] for inp in inputs]
 
