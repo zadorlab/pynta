@@ -95,7 +95,7 @@ class Pynta:
                 "constraints": ["freeze half slab"]}
 
             cfw = collect_firework(xyzs,False,[["vibrations_firework"]],[[vib_obj_dict]],[["vib"]],[[False]],parents=optfws,label=adsname)
-            self.adsorbate_fw_dict[adsname] = cfw
+            self.adsorbate_fw_dict[adsname] = optfws
             logging.error(self.adsorbate_fw_dict.keys())
             self.fws.extend(optfws+[cfw])
 
@@ -119,7 +119,7 @@ class Pynta:
             parents = []
             if not adsorbates_finished:
                 for m in reactants+products:
-                    parents.append(self.adsorbate_fw_dict[m])
+                    parents.extend(self.adsorbate_fw_dict[m])
             fw = Firework([ts_task],parents=parents,name="TS"+str(i)+"est")
             self.fws.append(fw)
 
