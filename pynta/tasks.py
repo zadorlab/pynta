@@ -265,8 +265,8 @@ class MolecularEnergyTask(EnergyTask):
 
         return FWAction()
 
-def vibrations_firework(xyz,software,label,software_kwargs={},parents=[],out_path=None,constraints=[],ignore_errors=False):
-    d = {"xyz" : xyz, "software" : software, "label" : label}
+def vibrations_firework(xyz,software,label,software_kwargs={},parents=[],out_path=None,constraints=[],socket=False,ignore_errors=False):
+    d = {"xyz" : xyz, "software" : software, "label" : label, "socket": socket}
     if software_kwargs: d["software_kwargs"] = software_kwargs
     if constraints: d["constraints"] = constraints
     d["ignore_errors"] = ignore_errors
@@ -286,18 +286,27 @@ def vibrations_firework(xyz,software,label,software_kwargs={},parents=[],out_pat
 @explicit_serialize
 class MolecularVibrationsTask(VibrationTask):
     required_params = ["software","label"]
-    optional_params = ["software_kwargs","constraints","ignore_errors"]
+    optional_params = ["software_kwargs","constraints","ignore_errors","socket"]
     def run_task(self, fw_spec):
         indices = None
         xyz = self['xyz']
-        software = name_to_ase_software(self["software"])
         label = self["label"]
         software_kwargs = deepcopy(self["software_kwargs"]) if "software_kwargs" in self.keys() else dict()
+        software = name_to_ase_software(self["software"])(**software_kwargs)
         ignore_errors = deepcopy(self["ignore_errors"]) if "ignore_errors" in self.keys() else False
+        socket = self["socket"] if "socket" in self.keys() else False
+        if socket:
+            unixsocket = "ase_"+self["software"].lower()+"_"+self["label"]+"_"+self["xyz"].replace("/","_").replace(".","_")
+            socket_address = os.path.join("/tmp","ipi_"+unixsocket)
+            if "command" in software_kwargs.keys() and "{unixsocket}" in software_kwargs["command"]:
+                software_kwargs["command"] = software_kwargs["command"].format(unixsocket=unixsocket)
+
+        if socket and os.path.exists(socket_address):
+            os.unlink(socket_address)
 
         try:
             sp = read(xyz)
-            sp.calc = software(**software_kwargs)
+            sp.calc = SocketIOCalculator(software,log=sys.stdout,unixsocket=unixsocket) if socket else software
 
             constraints = deepcopy(self["constraints"]) if "constraints" in self.keys() else []
             for c in constraints:
@@ -312,6 +321,19 @@ class MolecularVibrationsTask(VibrationTask):
 
             vib = Vibrations(sp,indices=indices)
             vib.run()
+
+            if socket:
+                try:
+                    sp.calc.close()
+                except Exception as e:
+                    if self["software"] == "Espresso":
+                        pass #Espresso tends to error even after socket calculations finish correctly
+                    else:
+                        if not ignore_errors:
+                            raise e
+                        else:
+                            errors.append(e)
+
             vib.write_mode(n=0)
 
             vibdata = vib.get_vibrations()
