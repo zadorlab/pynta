@@ -272,10 +272,16 @@ def vibrations_firework(xyz,software,label,software_kwargs={},parents=[],out_pat
     d["ignore_errors"] = ignore_errors
     t1 = MolecularVibrationsTask(d)
     directory = os.path.dirname(xyz)
-    if out_path is None: out_path = os.path.join(directory,label+"_vib.json")
-    t2 = FileTransferTask({'files': [{'src': label+'_vib.json', 'dest': os.path.join(os.path.split(out_path)[0],label+'_vib.json')},{'src':'vib.0.traj',
-        'dest': out_path}], 'mode': 'copy', 'ignore_errors': ignore_errors})
-    return Firework([t1,t2],parents=parents,name=label+"vib")
+    if out_path is None:
+        out_path = directory
+    elif "." in os.path.split(out_path)[1]:
+        out_path = os.path.split(out_path)[0]
+    t2 = FileTransferTask({'files': [{'src': label+'_vib.json', 'dest': os.path.join(out_path,label+'_vib.json')},
+        {'src':'vib.0.traj','dest': os.path.join(out_path,"vib.0.traj")},],
+        'mode': 'copy', 'ignore_errors': ignore_errors})
+    t3 = FileTransferTask({'files': [{'src':'vib','dest':os.path.join(out_path,"vib")}],
+        'mode': 'copytree', 'ignore_errors': ignore_errors})
+    return Firework([t1,t2,t3],parents=parents,name=label+"vib")
 
 @explicit_serialize
 class MolecularVibrationsTask(VibrationTask):
@@ -307,8 +313,13 @@ class MolecularVibrationsTask(VibrationTask):
             vib = Vibrations(sp,indices=indices)
             vib.run()
             vib.write_mode(n=0)
-            #vibdata = vib.get_vibrations()
-            #vibdata.write(label+"_vib.json") #operands could not be broadcast together with shapes (20,) (38,)
+
+            vibdata = vib.get_vibrations()
+            vibdict = {"hessian": vibdata.get_hessian_2d().tolist(),
+                    "frequencies": [str(x) for x in vibdata.get_frequencies().tolist()]}
+            with open(label+"_vib.json","w") as fout:
+                json.dump(vibdict,fout)
+
         except Exception as e:
             if not ignore_errors:
                 raise e
@@ -420,14 +431,14 @@ class MolecularTSEstimate(FiretaskBase):
         xtbfws = []
         for i in range(0,len(inputs), nprocs):
             inps = inputs[i:i+nprocs]
-            xtbfws.append(Firework(PyTask(func='pynta.tasks.run_parallel_gfn1xtb_opt',args=[inps,nprocs])))
+            xtbfws.append(Firework(PyTask(func='pynta.tasks.run_parallel_gfn1xtb_opt',args=[inps,nprocs]),name="xtboptsegment_"+str(i)))
 
         xyzs = [inp[1] for inp in inputs]
 
         if spawn_jobs:
             ctask = MolecularCollect({"xyzs":xyzs,"check_symm":True,"fw_generators": ["optimize_firework",["vibrations_firework","IRC_firework"]],
                 "fw_generator_dicts": [self["opt_obj_dict"],[self["vib_obj_dict"],self["IRC_obj_dict"]]],
-                    "out_names": ["opt.xyz",["vib.0.traj","irc.traj"]],"future_check_symms": [True,False], "label": "TS"+str(rxn_no)+"_"+rxn_name})
+                    "out_names": ["opt.xyz",["vib","irc.traj"]],"future_check_symms": [True,False], "label": "TS"+str(rxn_no)+"_"+rxn_name})
             cfw = Firework([ctask],parents=xtbfws,name="TS"+str(rxn_no)+"_"+rxn_name+"_collect")
             newwf = Workflow(xtbfws+[cfw],name='rxn_'+str(rxn_no)+str(rxn_name))
             return FWAction(detours=newwf) #using detour allows us to inherit children from the original collect to the subsequent collects
@@ -453,8 +464,7 @@ class MolecularCollect(CollectTask):
         fw_generator_dicts = self["fw_generator_dicts"]
         out_names = self["out_names"]
         future_check_symms = self["future_check_symms"]
-        import logging
-        logging.error(fw_generators)
+
         for i in range(len(fw_generators)):
             if not isinstance(fw_generators[i],list):
                 fw_generators[i] = [fw_generators[i]]
@@ -464,7 +474,6 @@ class MolecularCollect(CollectTask):
                 out_names[i] = [out_names[i]]
 
 
-        logging.error(fw_generators)
         fws = []
         out_xyzs = []
         for i,fw_generator in enumerate(fw_generators[0]):
@@ -692,8 +701,7 @@ class MolecularTSxTBOpt(OptimizationTask):
                 trajectory=label+".traj"
             )
 
-            #adsplacer.ads_ref.set_calculator(XTB(method="GFN1-xTB"))
-            adsplacer.ads_ref.set_calculator(XTB(method="GFN0-xTB"))
+            adsplacer.ads_ref.set_calculator(XTB(method="GFN1-xTB"))
             opt = adsplacer.optimize()
         except Exception as e:
             if not ignore_errors:
@@ -704,8 +712,12 @@ class MolecularTSxTBOpt(OptimizationTask):
         return FWAction()
 
 def name_to_ase_software(software_name):
-    module = import_module("ase.calculators."+software_name.lower())
-    return getattr(module, software_name)
+    if software_name == "XTB":
+        module = import_module("xtb.ase.calculator")
+        return getattr(module, software_name)
+    else:
+        module = import_module("ase.calculators."+software_name.lower())
+        return getattr(module, software_name)
 
 def name_to_ase_opt(opt_name):
     module = import_module("ase.optimize")
