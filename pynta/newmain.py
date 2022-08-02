@@ -142,4 +142,5 @@ class Pynta:
         wf = Workflow(self.fws, name=self.label)
         self.launchpad.add_wf(wf)
 
-        self.rapidfire()
+        while True:
+            self.rapidfire()
