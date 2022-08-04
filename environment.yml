@@ -2,6 +2,7 @@ name: pynta_env
 channels:
   - defaults
   - conda-forge
+  - mjohnson541
 dependencies:
   - matplotlib
   - spglib
@@ -17,3 +18,5 @@ dependencies:
   - jax <=0.2.28
   - xtb >=6.4.1
   - xtb-python >=20.2
+  - molecule
+  - acat
