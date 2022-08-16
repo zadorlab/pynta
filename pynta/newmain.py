@@ -126,9 +126,6 @@ class Pynta:
         self.adsorbate_structures = structures
 
     def setup_adsorbates(self):
-        nslab = self.nslab
-        print(type(nslab))
-        print(nslab)
         adsorbate_dict = dict()
         for sp_symbol, adsorbate in self.adsorbate_structures.items():
             adsorbate_dict[sp_symbol] = dict()
@@ -136,6 +133,7 @@ class Pynta:
                 adsorbate_dict[sp_symbol][prefix] = structure
 
         big_slab = self.slab * self.repeats[0]
+        nslab = len(big_slab)
         for adsname,adsorbate in adsorbate_dict.items():
             xyzs = []
             optfws = []
