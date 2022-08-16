@@ -1,6 +1,7 @@
 from pynta.excatkit.gratoms import Gratoms
 from molecule.molecule import Molecule
 from ase.io import read, write
+from ase.data import covalent_radii
 import numpy as np
 
 def molecule_to_gratoms(mol):
