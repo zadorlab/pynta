@@ -138,6 +138,8 @@ class Pynta:
             xyzs = []
             optfws = []
             for prefix,structure in adsorbate.items():
+                print(type(structure))
+                print(structure)
                 big_slab_ads = big_slab + structure[nslab:]
                 os.makedirs(os.path.join(self.path,"Adsorbates",adsname,str(prefix)))
                 write(os.path.join(self.path,"Adsorbates",adsname,str(prefix),str(prefix)+"_init.xyz"),big_slab_ads)
