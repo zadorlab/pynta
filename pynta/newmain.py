@@ -127,7 +127,8 @@ class Pynta:
 
     def setup_adsorbates(self):
         nslab = self.nslab
-
+        print(type(nslab))
+        print(nslab)
         adsorbate_dict = dict()
         for sp_symbol, adsorbate in self.adsorbate_structures.items():
             adsorbate_dict[sp_symbol] = dict()
