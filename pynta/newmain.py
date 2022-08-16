@@ -82,7 +82,7 @@ class Pynta:
 
     def generate_mol_dict(self):
         mols = []
-        for r in self.rxn_dict:
+        for r in self.rxns_dict:
             react = Molecule().from_adjacency_list(r["reactant"])
             prod = Molecule().from_adjacency_list(r["product"])
             react.clear_labeled_atoms()
