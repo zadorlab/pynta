@@ -1,6 +1,7 @@
 from pynta.tasks import *
 from pynta.io import IO
 from pynta.adsorbates import Adsorbates
+from pynta.molecule import *
 import ase.build
 from ase.io import read, write
 import os
@@ -46,12 +47,17 @@ class Pynta:
         self.qadapter = None
         self.fworker = FWorker.from_file(fworker_path)
         self.rxns_file = rxns_file
+        with open(self.rxns_file,'r') as f:
+            self.rxns_dict = yaml.safe_load(f)
         self.slab = read(self.slab_path) if self.slab_path else None
         self.njobs_queue = njobs_queue
         self.label = label
         if queue:
             self.qadapter = load_object_from_file(queue_adapter_path)
         self.nprocs = nprocs
+        self.nslab = np.prod(np.array(self.repeats[0])*np.array(self.repeats[1]))
+        self.mol_dict = None
+
 
     def generate_slab(self):
         slab_type = getattr(ase.build,self.surface_type)
@@ -70,11 +76,59 @@ class Pynta:
 
         self.slab = read(self.slab_path)
 
+    def generate_mol_dict(self):
+        mols = []
+        for r in self.rxn_dict:
+            react = Molecule().from_adjacency_list(r["reactant"])
+            prod = Molecule().from_adjacency_list(r["product"])
+            react.clear_labeled_atoms()
+            prod.clear_labeled_atoms()
+            for mol in react.split()+prod.split():
+                if mol.contains_surface_site() and not mol.is_surface_site():
+                    mols.append(mol)
+
+        unique_mols = []
+        for mol in mols:
+            for m in unique_mols:
+                if mol.is_isomorphic(m):#,save_order=True):
+                    break
+            else:
+                unique_mols.append(mol)
+
+        mol_dict = {mol.to_smiles():mol for mol in unique_mols}
+        self.mol_dict = mol_dict
+
+    def generate_initial_adsorbate_guesses(self):
+        grslab = get_grslab(self.slab_path)
+        ads_builder = Builder(grslab)
+        structures = dict()
+        gratom_to_molecule_atom_maps = dict()
+        gratom_to_molecule_surface_atom_maps = dict()
+        for sm,mol in self.mol_dict.items():
+            gratom,surf_indexes,atom_map,surf_index_atom_map = molecule_to_gratoms(mol)
+            gratom_to_molecule_atom_maps[sm] = atom_map
+            gratom_to_molecule_surface_atom_maps[sm] = surf_index_atom_map
+            try:
+                structs = ads_builder.add_adsorbate(gratom,index=-1,bonds=surf_indexes)
+                structures[sm] = structs
+            except IndexError:
+                print('sp_gratoms, sp_gratoms.edges, sp.gratoms.tags')
+                print(gratom, gratom.edges,
+                                  gratom.get_tags())
+
+        self.gratom_to_molecule_atom_maps = gratom_to_molecule_atom_maps
+        self.gratom_to_molecule_surface_atom_maps = gratom_to_molecule_surface_atom_maps
+        self.adsorbate_structures = structures
+
     def setup_adsorbates(self):
-        put_adsorbates = Adsorbates(self.path, self.slab_path,
-                    self.repeats[0], self.rxns_file, self.path)
-        nslab = len(put_adsorbates.slab_atom)
-        adsorbate_dict = put_adsorbates.adjacency_to_3d()
+        nslab = self.nslab
+
+        adsorbate_dict = dict()
+        for sp_symbol, adsorbate in self.adsorbate_structures.items():
+            adsorbate_dict[sp_symbol] = dict()
+            for prefix, structure in enumerate(adsorbate):
+                adsorbate_dict[sp_symbol][prefix] = structure
+        
         big_slab = self.slab * self.repeats[0]
         for adsname,adsorbate in adsorbate_dict.items():
             xyzs = []
