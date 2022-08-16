@@ -1,7 +1,9 @@
 from pynta.tasks import *
 from pynta.io import IO
 from pynta.adsorbates import Adsorbates
-from pynta.molecule import *
+from pynta.molecule import get_grslab, molecule_to_gratoms
+from pynta.excatkit.adsorption import Builder
+from molecule.molecule import Molecule
 import ase.build
 from ase.io import read, write
 import os
@@ -90,7 +92,7 @@ class Pynta:
         unique_mols = []
         for mol in mols:
             for m in unique_mols:
-                if mol.is_isomorphic(m):#,save_order=True):
+                if mol.is_isomorphic(m):
                     break
             else:
                 unique_mols.append(mol)
@@ -128,7 +130,7 @@ class Pynta:
             adsorbate_dict[sp_symbol] = dict()
             for prefix, structure in enumerate(adsorbate):
                 adsorbate_dict[sp_symbol][prefix] = structure
-        
+
         big_slab = self.slab * self.repeats[0]
         for adsname,adsorbate in adsorbate_dict.items():
             xyzs = []
@@ -186,6 +188,9 @@ class Pynta:
     def execute(self):
         if self.slab_path is None: #handle slab
             self.generate_slab()
+
+        self.generate_mol_dict()
+        self.generate_initial_adsorbate_guesses()
 
         #adsorbate optimization
         self.setup_adsorbates()
