@@ -42,7 +42,6 @@ class Pynta:
         self.path = os.getcwd() if path is None else path
         self.facet = metal + surface_type
         self.fws = []
-        self.rxns = IO.open_yaml_file(rxns_file)
         self.metal = metal
         self.adsorbate_fw_dict = dict()
         self.software_kwargs = software_kwargs
@@ -83,14 +82,22 @@ class Pynta:
 
     def generate_mol_dict(self):
         mols = []
+
         for r in self.rxns_dict:
+            r["reactant_mols"] = []
+            r["product_mols"] = []
             react = Molecule().from_adjacency_list(r["reactant"])
             prod = Molecule().from_adjacency_list(r["product"])
             react.clear_labeled_atoms()
             prod.clear_labeled_atoms()
-            for mol in react.split()+prod.split():
+            for mol in react.split():
                 if mol.contains_surface_site() and not mol.is_surface_site():
                     mols.append(mol)
+                    r["reactant_mols"].append(mol)
+            for mol in prod.split():
+                if mol.contains_surface_site() and not mol.is_surface_site():
+                    mols.append(mol)
+                    r["product_mols"].append(mol)
 
         unique_mols = []
         for mol in mols:
@@ -102,6 +109,24 @@ class Pynta:
 
         mol_dict = {mol.to_smiles():mol for mol in unique_mols}
         self.mol_dict = mol_dict
+
+
+        for r in self.rxns_dict:
+            r["reactant_names"] = []
+            r["product_names"] = []
+
+            for i,rmol in enumerate(r["reactant_mols"]):
+                for sm,mol in mol_dict.items():
+                    if mol is rmol or mol.is_isomorphic(rmol,save_order=True):
+                        r["reactant_mols"][i] = mol
+                        r["reactant_names"].append(sm)
+
+            for i,rmol in enumerate(r["product_mols"]):
+                for sm,mol in mol_dict.items():
+                    if mol is rmol or mol.is_isomorphic(rmol,save_order=True):
+                        r["product_mols"][i] = mol
+                        r["product_names"].append(sm)
+
 
     def generate_initial_adsorbate_guesses(self):
         grslab = get_grslab(self.slab_path)
@@ -165,7 +190,7 @@ class Pynta:
                 "constraints": ["freeze half slab"]}
         IRC_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":self.software_kwargs,
                 "constraints":["freeze half slab"]}
-        for i,rxn in enumerate(self.rxns):
+        for i,rxn in enumerate(self.rxns_dict):
             ts_path = os.path.join(self.path,"TS"+str(i))
             os.makedirs(ts_path)
             ts_task = MolecularTSEstimate({"rxn": rxn,"ts_path": ts_path,"slab_path": self.slab_path,"adsorbates_path": os.path.join(self.path,"Adsorbates"),
@@ -173,7 +198,8 @@ class Pynta:
                     "scfactor": 1.4,"scfactor_surface": 1.0,
                     "scaled1": True, "scaled2": False, "spawn_jobs": True, "opt_obj_dict": opt_obj_dict, "vib_obj_dict": vib_obj_dict,
                     "IRC_obj_dict": IRC_obj_dict, "nprocs": self.nprocs})
-            reactants,products = IO.get_reactants_and_products(rxn)
+            reactants = rxn["reactant_names"]
+            products = rxn["product_names"]
             parents = []
             if not adsorbates_finished:
                 for m in reactants+products:
