@@ -377,11 +377,16 @@ class MolecularTSEstimate(FiretaskBase):
             self["repeats"],
             self["path"])
 
-        r_name_list, p_name_list = IO.get_reactants_and_products(rxn)
-        rxn_name = IO.get_rxn_name(rxn)
+        r_name_list = rxn["reactant_names"]
+        p_name_list = rxn["product_names"]
+        rxn_name = '+'.join(r_name_list) + '_' + '+'.join(p_name_list)
         species_dict = IO().get_species_dict(self["rxns_file"])
         rxn_no = rxn["index"]
-        species_list = species_dict['rxn' + str(rxn_no)]
+        if len(r_name_list) >= len(p_name_list):
+            species_list = r_name_list
+        else:
+            species_list = p_name_list
+
         reacting_atoms = IO.get_all_reacting_atoms(self["rxns_file"])['rxn_' + str(rxn_no)]
 
         ts.TS_placer(
