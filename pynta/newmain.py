@@ -59,7 +59,6 @@ class Pynta:
             self.qadapter = load_object_from_file(queue_adapter_path)
         self.nprocs = nprocs
         self.nslab = int(np.prod(np.array(self.repeats[0])*np.array(self.repeats[1])))
-        print(self.nslab)
         self.mol_dict = None
 
 
