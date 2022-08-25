@@ -2,6 +2,8 @@ from pynta.excatkit.gratoms import Gratoms
 from molecule.molecule import Molecule
 from ase.io import read, write
 from ase.data import covalent_radii
+from acat.adsorption_sites import SlabAdsorptionSites
+from acat.adsorbate_coverage import SlabAdsorbateCoverage
 import numpy as np
 
 def molecule_to_gratoms(mol):
@@ -165,3 +167,172 @@ def get_grslab(slab_path):
     grslab.arrays['surface_atoms'] = tags
 
     return grslab
+
+def get_labeled_bonds(mol):
+    labeled_atoms = mol.get_all_labeled_atoms()
+
+    bonds = dict()
+    for label,atm in labeled_atoms.items():
+        bonds[label] = []
+        bds = mol.get_bonds(atm)
+        for bd in bds.values():
+            if bd.atom1 is atm:
+                if bd.atom2.label:
+                    bonds[label].append(bd.atom2.label)
+            else:
+                if bd.atom1.label:
+                    bonds[label].append(bd.atom1.label)
+
+    return bonds
+
+def get_broken_formed_bonds(reactant,product):
+    reactant_labeled_bonds = get_labeled_bonds(reactant)
+    product_labeled_bonds = get_labeled_bonds(product)
+    broken_bonds = set()
+    formed_bonds = set()
+    for label,rlabels in reactant_labeled_bonds.items():
+        if label in product_labeled_bonds.keys():
+            plabels = product_labeled_bonds[label]
+            missing_from_p = [label for label in rlabels if label not in plabels]
+            missing_from_r = [label for label in plabels if label not in rlabels]
+            for label2 in missing_from_p:
+                broken_bonds.add(frozenset((label,label2)))
+            for label2 in missing_from_r:
+                formed_bonds.add(frozenset((label,label2)))
+
+    return broken_bonds,formed_bonds
+
+def get_template_mol_map(template,mols):
+    """
+    template is the combined labeled Molecule object
+    find dictionary mapping indices of the template to the molecule objects of interest
+    output is a list with each item coresponding to a Molecule object in mols the dictionary
+    maps indices of the template to indices of the corresponding mol object
+    """
+    tempmol_mol_map = []
+    tempmols = [x for x in template.split() if not x.is_surface_site()]
+    ordered_tempmols = []
+    for i,mol in enumerate(mols):
+        for j,tempmol in enumerate(tempmols):
+            if tempmol.is_isomorphic(mol,save_order=True):
+                mapv = tempmol.find_isomorphism(mol,save_order=True)
+                indmap = {tempmol.atoms.index(key): mol.atoms.index(val) for key,val in mapv[0].items()}
+                tempmol_mol_map.append(indmap)
+                ordered_tempmols.append(tempmol)
+                tempmols.pop(j)
+                break
+        else:
+            raise ValueError("mapping could not be found")
+
+    temp_tempmol_map = []
+    for i,tempmol in enumerate(ordered_tempmols):
+        grptempmol = tempmol.to_group()
+        grptempmol.multiplicity = [template.multiplicity]
+        mapv = template.find_subgraph_isomorphisms(grptempmol,save_order=True)
+        maps = get_nonintersectingkeys_maps(mapv)
+        c = 0
+        m = maps[c]
+        indmap = {template.atoms.index(key): grptempmol.atoms.index(val) for key,val in m.items()}
+
+        while set(list(indmap.keys())) in [set(list(v.keys())) for v in temp_tempmol_map]:
+            c += 1
+            m = maps[c]
+            indmap = {template.atoms.index(key): grptempmol.atoms.index(val) for key,val in m.items()}
+        temp_tempmol_map.append(indmap)
+
+    temp_mol_map = []
+    for i in range(len(tempmol_mol_map)):
+        d = {tind: tempmol_mol_map[i][tmolind] for tind,tmolind in temp_tempmol_map[i].items()}
+        temp_mol_map.append(d)
+    return temp_mol_map
+
+def get_nonintersectingkeys_maps(maps):
+    mvals_init = [frozenset(list(m.keys())) for m in maps]
+    mvals_unique = list(set(mvals_init))
+    valid_map_inds = []
+    for mval in mvals_unique:
+        for inds in valid_map_inds:
+            if mval.intersection(inds) != frozenset():
+                break
+        else:
+            valid_map_inds.append(mval)
+
+    inds = [mvals_init.index(mval) for mval in valid_map_inds]
+
+    return [maps[ind] for ind in inds]
+
+def ads_size(mol):
+    return len(mol.atoms) - len(mol.get_surface_sites())
+
+def get_mol_index(ind,template_mol_map):
+    """
+    ind is the index in the template
+    first index corresponds to the molecule object
+    second index corresponds to the index in the molecule object
+    """
+    for i,d in enumerate(template_mol_map):
+        if ind in d.keys():
+            return (i,d[ind])
+    else:
+        return None #surface_site
+
+def get_ase_index(ind,template_mol_map,molecule_to_gratom_maps,nslab,ads_sizes):
+    n = nslab
+    for i,d in enumerate(template_mol_map):
+        if ind in d.keys() and d[ind] in molecule_to_gratom_maps[i].keys():
+            return molecule_to_gratom_maps[i][d[ind]]+n
+        n += ads_sizes[i]
+    else:
+        return None #surface site
+
+def get_bond_lengths_sites(mol,ads,atom_map,surf_atom_map,nslab,facet="fcc111",metal="Cu",cas=None):
+    """
+    gets bond lengths and site information indexed to the Molecule object atoms
+    bond lengths is a matrix with the distances between all atoms that share bonds
+    site information is the atom index mapped to the site type
+    """
+    rev_atom_map = {value: key for key,value in atom_map.items()} #map from mol to ads
+    rev_surf_atom_map = { value: key for key,value in surf_atom_map.items()}
+
+    if cas is None:
+        cas = SlabAdsorptionSites(ads,facet,allow_6fold=False,composition_effect=False,
+                            label_sites=True,
+                            surrogate_metal=metal)
+    adcov = SlabAdsorbateCoverage(ads,adsorption_sites=cas)
+    occ = adcov.get_sites(occupied_only=True)
+    surface_dict = [{"atom_index":x["bonding_index"]-nslab, "site":x["site"],
+                       "bond_length":x["bond_length"], "position":x["position"]} for x in occ]
+    ad = ads[nslab:]
+    bondlengths = np.zeros((len(mol.atoms),len(mol.atoms)))
+    sites = dict()
+    sitelengths = dict()
+
+    for bond in mol.get_all_edges():
+        if bond.atom1.is_surface_site():
+            ind1 = mol.atoms.index(bond.atom1)
+            ind2 = mol.atoms.index(bond.atom2)
+            aind = rev_surf_atom_map[ind2]
+            surfd = [s for s in surface_dict if s["atom_index"] == aind][0]
+            bondlengths[ind1,ind2] = surfd["bond_length"]
+            bondlengths[ind2,ind1] = surfd["bond_length"]
+            sites[ind1] = surfd["site"]
+            sitelengths[ind1] = surfd["bond_length"]
+        elif bond.atom2.is_surface_site():
+            ind1 = mol.atoms.index(bond.atom1)
+            ind2 = mol.atoms.index(bond.atom2)
+            aind = rev_surf_atom_map[ind1]
+            surfd = [s for s in surface_dict if s["atom_index"] == aind][0]
+            bondlengths[ind1,ind2] = surfd["bond_length"]
+            bondlengths[ind2,ind1] = surfd["bond_length"]
+            sites[ind2] = surfd["site"]
+            sitelengths[ind2] = surfd["bond_length"]
+        else: #not a surface bond
+            ind1 = mol.atoms.index(bond.atom1)
+            ind2 = mol.atoms.index(bond.atom2)
+            aind1 = rev_atom_map[ind1]
+            aind2 = rev_atom_map[ind2]
+            d = ad.get_distance(aind1,aind2)
+            bondlengths[ind1,ind2] = d
+            bondlengths[ind2,ind1] = d
+
+    return bondlengths,sites,sitelengths

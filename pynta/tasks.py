@@ -16,6 +16,7 @@ from fireworks.utilities.fw_serializers import load_object_from_file
 from fireworks.core.fworker import FWorker
 import fireworks.fw_config
 from pynta.ts import TS
+from pynta.transitionstate import *
 from pynta.vib import AfterTS
 from pynta.io import IO
 from pynta.penalty_fun import AdsorbatePlacer
@@ -350,124 +351,95 @@ class MolecularVibrationsTask(VibrationTask):
 
         return FWAction()
 
+
 @explicit_serialize
 class MolecularTSEstimate(FiretaskBase):
-    required_params = ["rxn","ts_path","slab_path","adsorbates_path","rxns_file","repeats","path","metal"]
-    optional_params = ["out_path","scfactor","scfactor_surface","scaled1","scaled2","spawn_jobs","opt_obj_dict",
-            "vib_obj_dict","IRC_obj_dict","nprocs"]
+    required_params = ["rxn","ts_path","slab_path","adsorbates_path","rxns_file","repeats","path","metal","facet",
+                        "name_to_adjlist_dict", "gratom_to_molecule_atom_maps",
+                        "gratom_to_molecule_surface_atom_maps","opt_obj_dict",
+                                "vib_obj_dict","IRC_obj_dict","nslab"]
+    optional_params = ["out_path","spawn_jobs","nprocs",]
     def run_task(self, fw_spec):
         out_path = self["out_path"] if "out_path" in self.keys() else ts_path
-        scfactor = self["scfactor"] if "scfactor" in self.keys() else 1.4
-        scfactor_surface = self["scfactor"] if "scfactor" in self.keys() else 1.0
-        scaled1 = self["scaled1"] if "scaled1" in self.keys() else True
-        scaled2 = self["scaled2"] if "scaled2" in self.keys() else True
         spawn_jobs = self["spawn_jobs"] if "spawn_jobs" in self.keys() else False
         nprocs = self["nprocs"] if "nprocs" in self.keys() else 1
 
         ts_path = self["ts_path"]
         rxn = self["rxn"]
-        slab = self["slab_path"]
+        index = rxn["index"]
         metal = self["metal"]
 
-        ts = TS(
-            self["slab_path"],
-            slab,
-            ts_path,
-            self["rxns_file"],
-            self["repeats"],
-            self["path"])
+        slab_path = self["slab_path"]
+        slab = read(slab_path)
+        cas = SlabAdsorptionSites(slab,facet,allow_6fold=False,composition_effect=False,
+                            label_sites=True,
+                            surrogate_metal=metal)
 
-        r_name_list = rxn["reactant_names"]
-        p_name_list = rxn["product_names"]
-        rxn_name = '+'.join(r_name_list) + '_' + '+'.join(p_name_list)
-        species_dict = IO().get_species_dict(self["rxns_file"])
-        rxn_no = rxn["index"]
-        if len(r_name_list) >= len(p_name_list):
-            species_list = r_name_list
+        reactants = Molecule().from_adjacency_list(rxn["reactants"])
+        products = Molecule().from_adjacency_list(rxn["products"])
+
+        reactant_names = rxn["reactant_names"]
+        product_names = rxn["product_names"]
+
+        mol_dict = {name: Molecule().from_adjacency_list(adj) for name,adj in name_to_adjlist_dict.items()}
+
+        reactant_mols = [mol_dict[name] for name in reactant_names]
+        product_mols = [mol_dict[name] for name in product_names]
+
+        adsorbates = get_unique_optimized_adsorbates(rxn,adsorbates_path)
+
+        forward,species_names = determine_TS_construction(reactant_names,
+                    reactant_mols,product_names,product_mols)
+
+        ordered_adsorbates = [adsorbates[name] for name in species_names]
+
+        rnum_surf_sites = [len(mol.get_surface_sites()) for i,mol in enumerate(reactant_mols)]
+        pnum_surf_sites = [len(mol.get_surface_sites()) for i,mol in enumerate(product_mols)]
+
+        if forward:
+            num_surf_sites = rnum_surf_sites
         else:
-            species_list = p_name_list
+            num_surf_sites = pnum_surf_sites
 
-        reacting_atoms = IO.get_all_reacting_atoms(self["rxns_file"])['rxn_' + str(rxn_no)]
+        if forward:
+            reverse_names = product_names
+        else:
+            reverse_names = reactant_names
 
-        ts.TS_placer(
-            ts_path,
-            scfactor,
-            rxn,
-            rxn_name,
-            r_name_list,
-            p_name_list,
-            reacting_atoms)
+        tsstructs = get_unique_TS_structs(adsorbates,species_names,cas,nslab,num_surf_sites,mol_dict,
+                                 gratom_to_molecule_atom_maps,gratom_to_molecule_surface_atom_maps,
+                                 facet,metal)
 
-        ts.filtered_out_equiv_ts_estimates(
-            ts_path,
-            rxn_name)
+        constraint_lists,atom_bond_potential_lists,site_bond_potential_lists,site_bond_dict_list,site_fixed_bond_dict_list = generate_constraints_harmonic_parameters(
+                                            tsstructs,adsorbates,slab,reactants,
+                                             products,rxn["reaction_family"],template_reversed=(not forward),
+                                            ordered_names=species_names,reverse_names=reverse_names,
+                                            mol_dict=mol_dict,gratom_to_molecule_atom_maps=gratom_to_molecule_atom_maps,
+                                            gratom_to_molecule_surface_atom_maps=gratom_to_molecule_surface_atom_maps,
+                                            nslab=nslab,facet=facet,metal=metal,cas=cas)
 
-        #create the xtb-penalty and maybe ts opt fireworks
-        # get a dictionary with average distances for all species in
-        # species_list, e.g. {'CO2': 4.14.., 'H': 1.665..., 'O': 1.847...}
-        sp_surf_av_dists = TS.get_av_dist_dict(
-            species_list, metal, self["adsorbates_path"], scfactor_surface,
-            scaled1)
-
-        # convert sp_surf_av_dists dict to a tuple and take into accout that
-        # the same type of species can be included into penalty function
-        # calculations many times, e.g. ['C', 'H', 'O', 'O'], so the av_dist
-        # for the 'O' have to be specified twice (order not important)
-        av_dists_tuple = TS.get_av_dists_tuple(
-            reacting_atoms, sp_surf_av_dists)
-
-        # get all .xyz files with TS estimates
-        ts_estimates_xyz_files = []
-        ts_est_files = os.listdir(ts_path)
-        for ts_est_file in ts_est_files:
-            prefix = ts_est_file.split("__")[0]
-            directory = os.path.join(ts_path,prefix)
-            os.makedirs(directory ,exist_ok=True)
-            shutil.move(os.path.join(ts_path,ts_est_file),directory)
-            file = os.path.join(directory,ts_est_file.split(".")[0]+"_init.xyz")
-            os.rename(os.path.join(directory,ts_est_file),file)
-            ts_estimates_xyz_files.append(file)
+        out_tsstructs,new_atom_bond_potential_lists,new_site_bond_potential_lists,new_constraint_lists,site_bond_potential_check_lists = get_surface_forming_bond_pairings(
+                            tsstructs,atom_bond_potential_lists,site_bond_potential_lists,constraint_lists,site_bond_dict_list,
+                            site_fixed_bond_dict_list,cas)
 
 
-        # sort it in increasing order
-        ts_estimates_xyz_files = sorted(ts_estimates_xyz_files)
-
-        # take a first file and use it as a template to get info about
-        # surface atom and adsorbate atoms indices
-        tmp_ts_atom = read(ts_estimates_xyz_files[0])
-        tmp_adsorbate = tmp_ts_atom[ts.nslab:]
-
-        # convert tag indicies into index indicies
-        new_reacting_idx = []
-        for reacting_atom_idx in reacting_atoms.values():
-            for atom in tmp_adsorbate:
-                if atom.tag == reacting_atom_idx:
-                    new_reacting_idx.append(atom.index)
-
-        # create surface_atoms_idx dict with all surface atoms and theirs
-        # corresponding indicies
-        surface_atoms_idxs = {
-            atom.symbol + '_' + str(atom.index): atom.index
-            for atom in tmp_ts_atom if atom.symbol == metal}
-
-        # Loop through all .xyz files
-        inputs = [(xyz_file,xyz_file.replace("_init.xyz","_xtb.xyz"),str(prefix),self["slab_path"],
-                    ts.get_bonds_penalty(new_reacting_idx,surface_atoms_idxs,xyz_file),av_dists_tuple,self["repeats"])
-                    for prefix, xyz_file in enumerate(ts_estimates_xyz_files)]
-
-        xtbfws = []
-        for i in range(0,len(inputs), nprocs):
-            inps = inputs[i:i+nprocs]
-            xtbfws.append(Firework(PyTask(func='pynta.tasks.run_parallel_gfn1xtb_opt',args=[inps,nprocs]),name="xtboptsegment_"+str(i)))
-
-        xyzs = [inp[1] for inp in inputs]
+        xyzs = []
+        for j,tsstruct in enumerate(out_tsstructs):
+            os.makedirs(os.path.join(ts_path,str(j)))
+            write(os.path.join(ts_path,str(j),"xtb_init.xyz"),tsstruct)
+            sp = run_harmonically_forced_xtb_sella(out_tsstructs[j],new_atom_bond_potential_lists[j],new_site_bond_potential_lists[j],
+                           nslab=nslab,constraints=new_constraint_lists[j],
+                           site_bond_potential_check_lists=site_bond_potential_check_lists[j])
+            if sp:
+                write(os.path.join(ts_path,str(j),"xtb.xyz"),sp)
+                xyzs.append(os.path.join(ts_path,str(j),"xtb.xyz"))
 
         if spawn_jobs:
             ctask = MolecularCollect({"xyzs":xyzs,"check_symm":True,"fw_generators": ["optimize_firework",["vibrations_firework","IRC_firework"]],
                 "fw_generator_dicts": [self["opt_obj_dict"],[self["vib_obj_dict"],self["IRC_obj_dict"]]],
                     "out_names": ["opt.xyz",["vib.json","irc.traj"]],"future_check_symms": [True,False], "label": "TS"+str(rxn_no)+"_"+rxn_name})
-            cfw = Firework([ctask],parents=xtbfws,name="TS"+str(rxn_no)+"_"+rxn_name+"_collect")
-            newwf = Workflow(xtbfws+[cfw],name='rxn_'+str(rxn_no)+str(rxn_name))
+            cfw = Firework([ctask],name="TS"+str(rxn_no)+"_"+rxn_name+"_collect")
+            newwf = Workflow([cfw],name='rxn_'+str(rxn_no)+str(rxn_name))
             return FWAction(detours=newwf) #using detour allows us to inherit children from the original collect to the subsequent collects
         else:
             return FWAction()
@@ -671,6 +643,53 @@ class MolecularIRC(FiretaskBase):
             return FWAction(stored_data={"error": errors},exit=True)
 
         return FWAction()
+
+def run_harmonically_forced_xtb(atoms,atom_bond_potentials,site_bond_potentials,nslab,method="GFN1-xTB",
+                               site_bond_potential_check_lists=None,constraints=[]):
+    cons = Constraints(atoms)
+
+    for c in constraints:
+        if isinstance(c,dict):
+            add_sella_constraint(cons,c)
+        elif c == "freeze slab":
+            for i,atom in enumerate(atoms): #freeze the slab
+                if i < nslab:
+                    cons.fix_translation(atom.index)
+        else:
+            raise ValueError("Constraint {} not understood".format(c))
+
+
+    hfxtb = HarmonicallyForcedXTB(method="GFN1-xTB",
+                              atom_bond_potentials=atom_bond_potentials,
+                             site_bond_potentials=site_bond_potentials)
+
+    atoms.calc = hfxtb
+
+    opt = Sella(atoms,constraints=cons,trajectory="xtbharm.traj",order=0)
+
+    opt.run(fmax=0.02)
+
+    site_bond_correct = True
+
+    # for atm_ind,site_bond_p_list in site_bond_potential_check_lists.items():
+    #     used_p = [sbp for sbp in site_bond_potentials if sbp["ind"] == atm_ind][0]
+    #     Estar = get_energy_site_bond(atoms,**used_p)
+    #     print("Estar {}".format(atm_ind))
+    #     print(Estar)
+    #     for sbp in site_bond_p_list:
+    #         E = get_energy_site_bond(atoms,**sbp)
+    #         print(E)
+    #         if E-Estar < 0.25:#E < Estar:
+    #             print(sbp)
+    #             site_bond_correct = False
+    #             break
+    #
+    # print(site_bond_correct)
+
+    if site_bond_correct:
+        return atoms
+    else:
+        return None
 
 def run_parallel_gfn1xtb_opt(inputs,nprocs):
     with mp.Pool(nprocs) as pool:
@@ -907,5 +926,37 @@ def get_unique_sym(geoms):
         if comparision is False:
             good_adsorbates_atom_obj_list.append(adsorbate_atom_obj)
             geos_out.append(geom)
+
+    return geos_out
+
+def get_unique_sym_structs(geoms):
+    ''' Check for the symmetry equivalent structures in the given files
+
+    Parameters
+    ___________
+    geoms: list of Atoms objects to compare
+
+    Returns
+    ________
+    idx_list : list(str)
+        a list with prefixes of all symmetrically distinct sites
+
+    '''
+    comparator = SymmetryEquivalenceCheck()
+
+    geoms_copy = deepcopy(geoms)
+
+    good_adsorbates_atom_obj_list = []
+    geos_out = []
+
+    for i,geom in enumerate(geoms_copy):
+        adsorbate_atom_obj = geom
+        adsorbate_atom_obj.pbc = True
+        comparision = comparator.compare(
+            adsorbate_atom_obj, good_adsorbates_atom_obj_list)
+
+        if comparision is False:
+            good_adsorbates_atom_obj_list.append(adsorbate_atom_obj)
+            geos_out.append(geoms[i])
 
     return geos_out

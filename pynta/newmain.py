@@ -108,6 +108,7 @@ class Pynta:
 
         mol_dict = {mol.to_smiles():mol for mol in unique_mols}
         self.mol_dict = mol_dict
+        self.name_to_adjlist_dict = {sm:mol.to_adjacency_list() for sm,mol in mol_dict.items()}
 
 
         for r in self.rxns_dict:
@@ -126,6 +127,8 @@ class Pynta:
                         r["product_mols"][i] = mol
                         r["product_names"].append(sm)
 
+            r["reactant_mols"] = [x.to_adjacency_list() for x in r["reactant_mols"]]
+            r["product_mols"] = [x.to_adjacency_list() for x in r["product_mols"]]
 
     def generate_initial_adsorbate_guesses(self):
         grslab = get_grslab(self.slab_path)
@@ -176,7 +179,7 @@ class Pynta:
             vib_obj_dict = {"software": self.software, "label": str(prefix), "software_kwargs": self.software_kwargs,
                 "constraints": ["freeze half slab"]}
 
-            cfw = collect_firework(xyzs,False,[["vibrations_firework"]],[[vib_obj_dict]],[["vib.json"]],[[False]],parents=optfws,label=adsname)
+            cfw = collect_firework(xyzs,True,[["vibrations_firework"]],[[vib_obj_dict]],[["vib.json"]],[[False]],parents=optfws,label=adsname)
             self.adsorbate_fw_dict[adsname] = optfws
             logging.error(self.adsorbate_fw_dict.keys())
             self.fws.extend(optfws+[cfw])
@@ -193,10 +196,12 @@ class Pynta:
             ts_path = os.path.join(self.path,"TS"+str(i))
             os.makedirs(ts_path)
             ts_task = MolecularTSEstimate({"rxn": rxn,"ts_path": ts_path,"slab_path": self.slab_path,"adsorbates_path": os.path.join(self.path,"Adsorbates"),
-                "rxns_file": self.rxns_file,"repeats": self.repeats[0],"path": self.path,"metal": self.metal,"out_path": ts_path,
-                    "scfactor": 1.4,"scfactor_surface": 1.0,
-                    "scaled1": True, "scaled2": False, "spawn_jobs": True, "opt_obj_dict": opt_obj_dict, "vib_obj_dict": vib_obj_dict,
-                    "IRC_obj_dict": IRC_obj_dict, "nprocs": self.nprocs})
+                "rxns_file": self.rxns_file,"repeats": self.repeats[0],"path": self.path,"metal": self.metal,"facet": self.surface_type, "out_path": ts_path,
+                "spawn_jobs": True, "opt_obj_dict": opt_obj_dict, "vib_obj_dict": vib_obj_dict,
+                    "IRC_obj_dict": IRC_obj_dict, "nprocs": self.nprocs, "name_to_adjlist_dict": self.name_to_adjlist_dict,
+                    "gratom_to_molecule_atom_maps":self.gratom_to_molecule_atom_maps,
+                    "gratom_to_molecule_surface_atom_maps":self.gratom_to_molecule_surface_atom_maps,
+                    "nslab":self.nslab})
             reactants = rxn["reactant_names"]
             products = rxn["product_names"]
             parents = []
