@@ -10,7 +10,7 @@ from acat.adsorption_sites import SlabAdsorptionSites
 from acat.adsorbate_coverage import SlabAdsorbateCoverage
 from acat.settings import site_heights
 import os
-from pynta.tasks import get_unique_sym, get_unique_sym_structs
+from pynta.symmetry import get_unique_sym, get_unique_sym_structs
 from ase.visualize import view
 from ase.atoms import Atoms
 from ase.geometry import get_distances

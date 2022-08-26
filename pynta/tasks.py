@@ -4,7 +4,6 @@ from ase.constraints import *
 from ase.io import write, read
 from ase.io.trajectory import Trajectory
 from ase.calculators.socketio import SocketIOCalculator
-from ase.utils.structure_comparator import SymmetryEquivalenceCheck
 from ase.vibrations import Vibrations
 from sella import Sella, Constraints, IRC
 from importlib import import_module
@@ -17,6 +16,7 @@ from fireworks.core.fworker import FWorker
 import fireworks.fw_config
 from pynta.ts import TS
 from pynta.transitionstate import get_unique_optimized_adsorbates,determine_TS_construction,get_unique_TS_structs,generate_constraints_harmonic_parameters,get_surface_forming_bond_pairings
+from pynta.symmetry import get_unique_sym, get_unique_sym_structs
 from pynta.vib import AfterTS
 from pynta.io import IO
 from pynta.penalty_fun import AdsorbatePlacer
@@ -898,65 +898,3 @@ def restart_wf(lpad,queue):
         rapidfirequeue(lpad,fworker,qadapter)
     else:
         rapidfire(lpad)
-
-def get_unique_sym(geoms):
-    ''' Check for the symmetry equivalent structures in the given files
-
-    Parameters
-    ___________
-    geoms: list of paths to .xyz or .traj files to compare
-
-    Returns
-    ________
-    idx_list : list(str)
-        a list with prefixes of all symmetrically distinct sites
-
-    '''
-    comparator = SymmetryEquivalenceCheck()
-
-    good_adsorbates_atom_obj_list = []
-    geos_out = []
-
-    for geom in geoms:
-        adsorbate_atom_obj = read(geom)
-        adsorbate_atom_obj.pbc = True
-        comparision = comparator.compare(
-            adsorbate_atom_obj, good_adsorbates_atom_obj_list)
-
-        if comparision is False:
-            good_adsorbates_atom_obj_list.append(adsorbate_atom_obj)
-            geos_out.append(geom)
-
-    return geos_out
-
-def get_unique_sym_structs(geoms):
-    ''' Check for the symmetry equivalent structures in the given files
-
-    Parameters
-    ___________
-    geoms: list of Atoms objects to compare
-
-    Returns
-    ________
-    idx_list : list(str)
-        a list with prefixes of all symmetrically distinct sites
-
-    '''
-    comparator = SymmetryEquivalenceCheck()
-
-    geoms_copy = deepcopy(geoms)
-
-    good_adsorbates_atom_obj_list = []
-    geos_out = []
-
-    for i,geom in enumerate(geoms_copy):
-        adsorbate_atom_obj = geom
-        adsorbate_atom_obj.pbc = True
-        comparision = comparator.compare(
-            adsorbate_atom_obj, good_adsorbates_atom_obj_list)
-
-        if comparision is False:
-            good_adsorbates_atom_obj_list.append(adsorbate_atom_obj)
-            geos_out.append(geoms[i])
-
-    return geos_out
