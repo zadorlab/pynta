@@ -203,8 +203,8 @@ class Pynta:
                 "rxns_file": self.rxns_file,"repeats": self.repeats[0],"path": self.path,"metal": self.metal,"facet": self.surface_type, "out_path": ts_path,
                 "spawn_jobs": True, "opt_obj_dict": opt_obj_dict, "vib_obj_dict": vib_obj_dict,
                     "IRC_obj_dict": IRC_obj_dict, "nprocs": self.nprocs, "name_to_adjlist_dict": self.name_to_adjlist_dict,
-                    "gratom_to_molecule_atom_maps":self.gratom_to_molecule_atom_maps,
-                    "gratom_to_molecule_surface_atom_maps":self.gratom_to_molecule_surface_atom_maps,
+                    "gratom_to_molecule_atom_maps":{str(k):v for k,v in self.gratom_to_molecule_atom_maps.items()},
+                    "gratom_to_molecule_surface_atom_maps":{str(k):v for k,v in self.gratom_to_molecule_surface_atom_maps.items()},
                     "nslab":self.nslab})
             reactants = rxn["reactant_names"]
             products = rxn["product_names"]

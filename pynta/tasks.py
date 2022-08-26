@@ -360,6 +360,8 @@ class MolecularTSEstimate(FiretaskBase):
                                 "vib_obj_dict","IRC_obj_dict","nslab"]
     optional_params = ["out_path","spawn_jobs","nprocs",]
     def run_task(self, fw_spec):
+        gratom_to_molecule_atom_maps = {int(k):v for k,v in self["gratom_to_molecule_atom_maps"].items()}
+        gratom_to_molecule_surface_atom_map = {int(k):v for k,v in self["gratom_to_molecule_surface_atom_map"].items()}
         out_path = self["out_path"] if "out_path" in self.keys() else ts_path
         spawn_jobs = self["spawn_jobs"] if "spawn_jobs" in self.keys() else False
         nprocs = self["nprocs"] if "nprocs" in self.keys() else 1
@@ -368,6 +370,8 @@ class MolecularTSEstimate(FiretaskBase):
         rxn = self["rxn"]
         index = rxn["index"]
         metal = self["metal"]
+        facet = self["facet"]
+        nslab = self["nslab"]
 
         slab_path = self["slab_path"]
         slab = read(slab_path)
@@ -375,13 +379,16 @@ class MolecularTSEstimate(FiretaskBase):
                             label_sites=True,
                             surrogate_metal=metal)
 
+        adsorbates_path = self["adsorbates_path"]
+
+
         reactants = Molecule().from_adjacency_list(rxn["reactants"])
         products = Molecule().from_adjacency_list(rxn["products"])
 
         reactant_names = rxn["reactant_names"]
         product_names = rxn["product_names"]
 
-        mol_dict = {name: Molecule().from_adjacency_list(adj) for name,adj in name_to_adjlist_dict.items()}
+        mol_dict = {name: Molecule().from_adjacency_list(adj) for name,adj in self["name_to_adjlist_dict"].items()}
 
         reactant_mols = [mol_dict[name] for name in reactant_names]
         product_mols = [mol_dict[name] for name in product_names]
