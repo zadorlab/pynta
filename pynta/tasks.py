@@ -392,6 +392,7 @@ class MolecularTSEstimate(FiretaskBase):
 
         reactant_names = rxn["reactant_names"]
         product_names = rxn["product_names"]
+        rxn_name = rxn["reaction"]
 
         mol_dict = {name: Molecule().from_adjacency_list(adj.replace("multiplicity -187","")) for name,adj in self["name_to_adjlist_dict"].items()}
 
@@ -455,7 +456,7 @@ class MolecularTSEstimate(FiretaskBase):
         if spawn_jobs:
             ctask = MolecularCollect({"xyzs":xyzs,"check_symm":True,"fw_generators": ["optimize_firework",["vibrations_firework","IRC_firework"]],
                 "fw_generator_dicts": [self["opt_obj_dict"],[self["vib_obj_dict"],self["IRC_obj_dict"]]],
-                    "out_names": ["opt.xyz",["vib.json","irc.traj"]],"future_check_symms": [True,False], "label": "TS"+str(rxn_no)+"_"+rxn_name})
+                    "out_names": ["opt.xyz",["vib.json","irc.traj"]],"future_check_symms": [True,False], "label": "TS"+str(index)+"_"+rxn_name})
             cfw = Firework([ctask],name="TS"+str(index)+"_"+rxn_name+"_collect")
             newwf = Workflow([cfw],name='rxn_'+str(index)+str(rxn_name))
             return FWAction(detours=newwf) #using detour allows us to inherit children from the original collect to the subsequent collects
