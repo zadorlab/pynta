@@ -222,6 +222,9 @@ def get_template_mol_map(template,mols):
                 tempmols.pop(j)
                 break
         else:
+            print(mol.to_adjacency_list())
+            for tempmol in tempmols:
+                print(tempmol.to_adjacency_list())
             raise ValueError("mapping could not be found")
 
     temp_tempmol_map = []
