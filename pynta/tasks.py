@@ -385,8 +385,8 @@ class MolecularTSEstimate(FiretaskBase):
         adsorbates_path = self["adsorbates_path"]
 
 
-        reactants = Molecule().from_adjacency_list(rxn["reactants"])
-        products = Molecule().from_adjacency_list(rxn["products"])
+        reactants = Molecule().from_adjacency_list(rxn["reactant"])
+        products = Molecule().from_adjacency_list(rxn["product"])
 
         reactant_names = rxn["reactant_names"]
         product_names = rxn["product_names"]
