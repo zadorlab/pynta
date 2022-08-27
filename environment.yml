@@ -4,6 +4,7 @@ channels:
   - mjohnson541
   - conda-forge
 dependencies:
+  - python =3.8
   - matplotlib
   - spglib
   - networkx
