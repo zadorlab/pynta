@@ -422,6 +422,9 @@ class MolecularTSEstimate(FiretaskBase):
                                  gratom_to_molecule_atom_maps,gratom_to_molecule_surface_atom_maps,
                                  facet,metal)
 
+        print("number of TS guesses pre-empty-sites:")
+        print(len(tsstructs))
+
         constraint_lists,atom_bond_potential_lists,site_bond_potential_lists,site_bond_dict_list,site_fixed_bond_dict_list = generate_constraints_harmonic_parameters(
                                             tsstructs,adsorbates,slab,reactants,
                                              products,rxn["reaction_family"],template_reversed=(not forward),
@@ -430,12 +433,15 @@ class MolecularTSEstimate(FiretaskBase):
                                             gratom_to_molecule_surface_atom_maps=gratom_to_molecule_surface_atom_maps,
                                             nslab=nslab,facet=facet,metal=metal,cas=cas)
 
+
         out_tsstructs,new_atom_bond_potential_lists,new_site_bond_potential_lists,new_constraint_lists,site_bond_potential_check_lists = get_surface_forming_bond_pairings(
                             tsstructs,atom_bond_potential_lists,site_bond_potential_lists,constraint_lists,site_bond_dict_list,
                             site_fixed_bond_dict_list,cas)
 
 
         xyzs = []
+        print("number of TS guesses final:")
+        print(len(out_tsstructs))
         for j,tsstruct in enumerate(out_tsstructs):
             os.makedirs(os.path.join(ts_path,str(j)))
             write(os.path.join(ts_path,str(j),"xtb_init.xyz"),tsstruct)
@@ -450,8 +456,8 @@ class MolecularTSEstimate(FiretaskBase):
             ctask = MolecularCollect({"xyzs":xyzs,"check_symm":True,"fw_generators": ["optimize_firework",["vibrations_firework","IRC_firework"]],
                 "fw_generator_dicts": [self["opt_obj_dict"],[self["vib_obj_dict"],self["IRC_obj_dict"]]],
                     "out_names": ["opt.xyz",["vib.json","irc.traj"]],"future_check_symms": [True,False], "label": "TS"+str(rxn_no)+"_"+rxn_name})
-            cfw = Firework([ctask],name="TS"+str(rxn_no)+"_"+rxn_name+"_collect")
-            newwf = Workflow([cfw],name='rxn_'+str(rxn_no)+str(rxn_name))
+            cfw = Firework([ctask],name="TS"+str(index)+"_"+rxn_name+"_collect")
+            newwf = Workflow([cfw],name='rxn_'+str(index)+str(rxn_name))
             return FWAction(detours=newwf) #using detour allows us to inherit children from the original collect to the subsequent collects
         else:
             return FWAction()
