@@ -361,7 +361,7 @@ class MolecularTSEstimate(FiretaskBase):
     optional_params = ["out_path","spawn_jobs","nprocs",]
     def run_task(self, fw_spec):
         gratom_to_molecule_atom_maps = {sm: {int(k):v for k,v in d.items()} for sm,d in self["gratom_to_molecule_atom_maps"].items()}
-        gratom_to_molecule_surface_atom_map = {sm: {int(k):v for k,v in d.items()} for sm,d in self["gratom_to_molecule_surface_atom_map"].items()}
+        gratom_to_molecule_surface_atom_maps = {sm: {int(k):v for k,v in d.items()} for sm,d in self["gratom_to_molecule_surface_atom_maps"].items()}
         out_path = self["out_path"] if "out_path" in self.keys() else ts_path
         spawn_jobs = self["spawn_jobs"] if "spawn_jobs" in self.keys() else False
         nprocs = self["nprocs"] if "nprocs" in self.keys() else 1
