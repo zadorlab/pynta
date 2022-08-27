@@ -438,7 +438,7 @@ class MolecularTSEstimate(FiretaskBase):
         for j,tsstruct in enumerate(out_tsstructs):
             os.makedirs(os.path.join(ts_path,str(j)))
             write(os.path.join(ts_path,str(j),"xtb_init.xyz"),tsstruct)
-            sp = run_harmonically_forced_xtb_sella(out_tsstructs[j],new_atom_bond_potential_lists[j],new_site_bond_potential_lists[j],
+            sp = run_harmonically_forced_xtb(out_tsstructs[j],new_atom_bond_potential_lists[j],new_site_bond_potential_lists[j],
                            nslab=nslab,constraints=new_constraint_lists[j],
                            site_bond_potential_check_lists=site_bond_potential_check_lists[j])
             if sp:
