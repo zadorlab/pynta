@@ -26,6 +26,7 @@ from xtb.ase.calculator import XTB
 import multiprocessing as mp
 import json
 import copy
+from copy import deepcopy
 import sys
 import shutil
 import time
