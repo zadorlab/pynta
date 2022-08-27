@@ -375,12 +375,12 @@ class MolecularTSEstimate(FiretaskBase):
         nslab = self["nslab"]
 
         slab_path = self["slab_path"]
-        # slab = read(slab_path)
-        # cas = SlabAdsorptionSites(slab,facet,allow_6fold=False,composition_effect=False,
-        #                     label_sites=True,
-        #                     surrogate_metal=metal)
-        #
-        # adsorbates_path = self["adsorbates_path"]
+        slab = read(slab_path)
+        cas = SlabAdsorptionSites(slab,facet,allow_6fold=False,composition_effect=False,
+                            label_sites=True,
+                            surrogate_metal=metal)
+
+        adsorbates_path = self["adsorbates_path"]
         #
         #
         # reactants = Molecule().from_adjacency_list(rxn["reactants"])
