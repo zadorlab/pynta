@@ -391,7 +391,7 @@ class MolecularTSEstimate(FiretaskBase):
         reactant_names = rxn["reactant_names"]
         product_names = rxn["product_names"]
 
-        mol_dict = {name: Molecule().from_adjacency_list(adj) for name,adj in self["name_to_adjlist_dict"].items()}
+        mol_dict = {name: Molecule().from_adjacency_list(adj.replace("multiplicity -187","")) for name,adj in self["name_to_adjlist_dict"].items()}
 
         reactant_mols = [mol_dict[name] for name in reactant_names]
         product_mols = [mol_dict[name] for name in product_names]
