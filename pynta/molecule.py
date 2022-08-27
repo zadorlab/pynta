@@ -211,6 +211,10 @@ def get_template_mol_map(template,mols):
     """
     tempmol_mol_map = []
     tempmols = [x for x in template.split() if not x.is_surface_site()]
+    for tempmol in tempmols:
+        if tempmol.multiplicity == -187: #handle surface molecules
+            tempmol.multiplicity = 0
+
     ordered_tempmols = []
     for i,mol in enumerate(mols):
         for j,tempmol in enumerate(tempmols):
