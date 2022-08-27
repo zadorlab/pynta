@@ -378,7 +378,7 @@ class MolecularTSEstimate(FiretaskBase):
         nslab = self["nslab"]
 
         slab_path = self["slab_path"]
-        slab = read(slab_path) * repeats
+        slab = read(slab_path) * self["repeats"]
 
         cas = SlabAdsorptionSites(slab,facet,allow_6fold=False,composition_effect=False,
                             label_sites=True,
