@@ -5,6 +5,7 @@ from ase.io import write, read
 from ase.io.trajectory import Trajectory
 from ase.calculators.socketio import SocketIOCalculator
 from ase.vibrations import Vibrations
+from acat.adsorption_sites import SlabAdsorptionSites
 from sella import Sella, Constraints, IRC
 from importlib import import_module
 from fireworks import *
