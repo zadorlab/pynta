@@ -361,6 +361,7 @@ class MolecularTSEstimate(FiretaskBase):
                                 "vib_obj_dict","IRC_obj_dict","nslab"]
     optional_params = ["out_path","spawn_jobs","nprocs",]
     def run_task(self, fw_spec):
+        print("entered MolecularTSEstimate")
         gratom_to_molecule_atom_maps = {sm: {int(k):v for k,v in d.items()} for sm,d in self["gratom_to_molecule_atom_maps"].items()}
         gratom_to_molecule_surface_atom_maps = {sm: {int(k):v for k,v in d.items()} for sm,d in self["gratom_to_molecule_surface_atom_maps"].items()}
         out_path = self["out_path"] if "out_path" in self.keys() else ts_path
@@ -376,9 +377,11 @@ class MolecularTSEstimate(FiretaskBase):
 
         slab_path = self["slab_path"]
         slab = read(slab_path)
+        print("SlabAdsorptionSites starting")
         cas = SlabAdsorptionSites(slab,facet,allow_6fold=False,composition_effect=False,
                             label_sites=True,
                             surrogate_metal=metal)
+        print("SlabAdsorptionSites ending")
 
         adsorbates_path = self["adsorbates_path"]
 
