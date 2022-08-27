@@ -19,6 +19,7 @@ import fireworks.fw_config
 from pynta.ts import TS
 from pynta.transitionstate import get_unique_optimized_adsorbates,determine_TS_construction,get_unique_TS_structs,generate_constraints_harmonic_parameters,get_surface_forming_bond_pairings
 from pynta.symmetry import get_unique_sym, get_unique_sym_structs
+from pynta.calculator import HarmonicallyForcedXTB
 from pynta.vib import AfterTS
 from pynta.io import IO
 from pynta.penalty_fun import AdsorbatePlacer
