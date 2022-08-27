@@ -361,99 +361,100 @@ class MolecularTSEstimate(FiretaskBase):
                                 "vib_obj_dict","IRC_obj_dict","nslab"]
     optional_params = ["out_path","spawn_jobs","nprocs",]
     def run_task(self, fw_spec):
-        print("entered MolecularTSEstimate")
-        gratom_to_molecule_atom_maps = {sm: {int(k):v for k,v in d.items()} for sm,d in self["gratom_to_molecule_atom_maps"].items()}
-        gratom_to_molecule_surface_atom_maps = {sm: {int(k):v for k,v in d.items()} for sm,d in self["gratom_to_molecule_surface_atom_maps"].items()}
-        out_path = self["out_path"] if "out_path" in self.keys() else ts_path
-        spawn_jobs = self["spawn_jobs"] if "spawn_jobs" in self.keys() else False
-        nprocs = self["nprocs"] if "nprocs" in self.keys() else 1
-
-        ts_path = self["ts_path"]
-        rxn = self["rxn"]
-        index = rxn["index"]
-        metal = self["metal"]
-        facet = self["facet"]
-        nslab = self["nslab"]
-
-        slab_path = self["slab_path"]
-        slab = read(slab_path)
-        print("SlabAdsorptionSites starting")
-        cas = SlabAdsorptionSites(slab,facet,allow_6fold=False,composition_effect=False,
-                            label_sites=True,
-                            surrogate_metal=metal)
-        print("SlabAdsorptionSites ending")
-
-        adsorbates_path = self["adsorbates_path"]
-
-
-        reactants = Molecule().from_adjacency_list(rxn["reactants"])
-        products = Molecule().from_adjacency_list(rxn["products"])
-
-        reactant_names = rxn["reactant_names"]
-        product_names = rxn["product_names"]
-
-        mol_dict = {name: Molecule().from_adjacency_list(adj) for name,adj in self["name_to_adjlist_dict"].items()}
-
-        reactant_mols = [mol_dict[name] for name in reactant_names]
-        product_mols = [mol_dict[name] for name in product_names]
-
-        adsorbates = get_unique_optimized_adsorbates(rxn,adsorbates_path)
-
-        forward,species_names = determine_TS_construction(reactant_names,
-                    reactant_mols,product_names,product_mols)
-
-        ordered_adsorbates = [adsorbates[name] for name in species_names]
-
-        rnum_surf_sites = [len(mol.get_surface_sites()) for i,mol in enumerate(reactant_mols)]
-        pnum_surf_sites = [len(mol.get_surface_sites()) for i,mol in enumerate(product_mols)]
-
-        if forward:
-            num_surf_sites = rnum_surf_sites
-        else:
-            num_surf_sites = pnum_surf_sites
-
-        if forward:
-            reverse_names = product_names
-        else:
-            reverse_names = reactant_names
-
-        tsstructs = get_unique_TS_structs(adsorbates,species_names,cas,nslab,num_surf_sites,mol_dict,
-                                 gratom_to_molecule_atom_maps,gratom_to_molecule_surface_atom_maps,
-                                 facet,metal)
-
-        constraint_lists,atom_bond_potential_lists,site_bond_potential_lists,site_bond_dict_list,site_fixed_bond_dict_list = generate_constraints_harmonic_parameters(
-                                            tsstructs,adsorbates,slab,reactants,
-                                             products,rxn["reaction_family"],template_reversed=(not forward),
-                                            ordered_names=species_names,reverse_names=reverse_names,
-                                            mol_dict=mol_dict,gratom_to_molecule_atom_maps=gratom_to_molecule_atom_maps,
-                                            gratom_to_molecule_surface_atom_maps=gratom_to_molecule_surface_atom_maps,
-                                            nslab=nslab,facet=facet,metal=metal,cas=cas)
-
-        out_tsstructs,new_atom_bond_potential_lists,new_site_bond_potential_lists,new_constraint_lists,site_bond_potential_check_lists = get_surface_forming_bond_pairings(
-                            tsstructs,atom_bond_potential_lists,site_bond_potential_lists,constraint_lists,site_bond_dict_list,
-                            site_fixed_bond_dict_list,cas)
-
-
-        xyzs = []
-        for j,tsstruct in enumerate(out_tsstructs):
-            os.makedirs(os.path.join(ts_path,str(j)))
-            write(os.path.join(ts_path,str(j),"xtb_init.xyz"),tsstruct)
-            sp = run_harmonically_forced_xtb_sella(out_tsstructs[j],new_atom_bond_potential_lists[j],new_site_bond_potential_lists[j],
-                           nslab=nslab,constraints=new_constraint_lists[j],
-                           site_bond_potential_check_lists=site_bond_potential_check_lists[j])
-            if sp:
-                write(os.path.join(ts_path,str(j),"xtb.xyz"),sp)
-                xyzs.append(os.path.join(ts_path,str(j),"xtb.xyz"))
-
-        if spawn_jobs:
-            ctask = MolecularCollect({"xyzs":xyzs,"check_symm":True,"fw_generators": ["optimize_firework",["vibrations_firework","IRC_firework"]],
-                "fw_generator_dicts": [self["opt_obj_dict"],[self["vib_obj_dict"],self["IRC_obj_dict"]]],
-                    "out_names": ["opt.xyz",["vib.json","irc.traj"]],"future_check_symms": [True,False], "label": "TS"+str(rxn_no)+"_"+rxn_name})
-            cfw = Firework([ctask],name="TS"+str(rxn_no)+"_"+rxn_name+"_collect")
-            newwf = Workflow([cfw],name='rxn_'+str(rxn_no)+str(rxn_name))
-            return FWAction(detours=newwf) #using detour allows us to inherit children from the original collect to the subsequent collects
-        else:
-            return FWAction()
+        # print("entered MolecularTSEstimate")
+        # gratom_to_molecule_atom_maps = {sm: {int(k):v for k,v in d.items()} for sm,d in self["gratom_to_molecule_atom_maps"].items()}
+        # gratom_to_molecule_surface_atom_maps = {sm: {int(k):v for k,v in d.items()} for sm,d in self["gratom_to_molecule_surface_atom_maps"].items()}
+        # out_path = self["out_path"] if "out_path" in self.keys() else ts_path
+        # spawn_jobs = self["spawn_jobs"] if "spawn_jobs" in self.keys() else False
+        # nprocs = self["nprocs"] if "nprocs" in self.keys() else 1
+        #
+        # ts_path = self["ts_path"]
+        # rxn = self["rxn"]
+        # index = rxn["index"]
+        # metal = self["metal"]
+        # facet = self["facet"]
+        # nslab = self["nslab"]
+        #
+        # slab_path = self["slab_path"]
+        # slab = read(slab_path)
+        # print("SlabAdsorptionSites starting")
+        # cas = SlabAdsorptionSites(slab,facet,allow_6fold=False,composition_effect=False,
+        #                     label_sites=True,
+        #                     surrogate_metal=metal)
+        # print("SlabAdsorptionSites ending")
+        #
+        # adsorbates_path = self["adsorbates_path"]
+        #
+        #
+        # reactants = Molecule().from_adjacency_list(rxn["reactants"])
+        # products = Molecule().from_adjacency_list(rxn["products"])
+        #
+        # reactant_names = rxn["reactant_names"]
+        # product_names = rxn["product_names"]
+        #
+        # mol_dict = {name: Molecule().from_adjacency_list(adj) for name,adj in self["name_to_adjlist_dict"].items()}
+        #
+        # reactant_mols = [mol_dict[name] for name in reactant_names]
+        # product_mols = [mol_dict[name] for name in product_names]
+        #
+        # adsorbates = get_unique_optimized_adsorbates(rxn,adsorbates_path)
+        #
+        # forward,species_names = determine_TS_construction(reactant_names,
+        #             reactant_mols,product_names,product_mols)
+        #
+        # ordered_adsorbates = [adsorbates[name] for name in species_names]
+        #
+        # rnum_surf_sites = [len(mol.get_surface_sites()) for i,mol in enumerate(reactant_mols)]
+        # pnum_surf_sites = [len(mol.get_surface_sites()) for i,mol in enumerate(product_mols)]
+        #
+        # if forward:
+        #     num_surf_sites = rnum_surf_sites
+        # else:
+        #     num_surf_sites = pnum_surf_sites
+        #
+        # if forward:
+        #     reverse_names = product_names
+        # else:
+        #     reverse_names = reactant_names
+        #
+        # tsstructs = get_unique_TS_structs(adsorbates,species_names,cas,nslab,num_surf_sites,mol_dict,
+        #                          gratom_to_molecule_atom_maps,gratom_to_molecule_surface_atom_maps,
+        #                          facet,metal)
+        #
+        # constraint_lists,atom_bond_potential_lists,site_bond_potential_lists,site_bond_dict_list,site_fixed_bond_dict_list = generate_constraints_harmonic_parameters(
+        #                                     tsstructs,adsorbates,slab,reactants,
+        #                                      products,rxn["reaction_family"],template_reversed=(not forward),
+        #                                     ordered_names=species_names,reverse_names=reverse_names,
+        #                                     mol_dict=mol_dict,gratom_to_molecule_atom_maps=gratom_to_molecule_atom_maps,
+        #                                     gratom_to_molecule_surface_atom_maps=gratom_to_molecule_surface_atom_maps,
+        #                                     nslab=nslab,facet=facet,metal=metal,cas=cas)
+        #
+        # out_tsstructs,new_atom_bond_potential_lists,new_site_bond_potential_lists,new_constraint_lists,site_bond_potential_check_lists = get_surface_forming_bond_pairings(
+        #                     tsstructs,atom_bond_potential_lists,site_bond_potential_lists,constraint_lists,site_bond_dict_list,
+        #                     site_fixed_bond_dict_list,cas)
+        #
+        #
+        # xyzs = []
+        # for j,tsstruct in enumerate(out_tsstructs):
+        #     os.makedirs(os.path.join(ts_path,str(j)))
+        #     write(os.path.join(ts_path,str(j),"xtb_init.xyz"),tsstruct)
+        #     sp = run_harmonically_forced_xtb_sella(out_tsstructs[j],new_atom_bond_potential_lists[j],new_site_bond_potential_lists[j],
+        #                    nslab=nslab,constraints=new_constraint_lists[j],
+        #                    site_bond_potential_check_lists=site_bond_potential_check_lists[j])
+        #     if sp:
+        #         write(os.path.join(ts_path,str(j),"xtb.xyz"),sp)
+        #         xyzs.append(os.path.join(ts_path,str(j),"xtb.xyz"))
+        #
+        # if spawn_jobs:
+        #     ctask = MolecularCollect({"xyzs":xyzs,"check_symm":True,"fw_generators": ["optimize_firework",["vibrations_firework","IRC_firework"]],
+        #         "fw_generator_dicts": [self["opt_obj_dict"],[self["vib_obj_dict"],self["IRC_obj_dict"]]],
+        #             "out_names": ["opt.xyz",["vib.json","irc.traj"]],"future_check_symms": [True,False], "label": "TS"+str(rxn_no)+"_"+rxn_name})
+        #     cfw = Firework([ctask],name="TS"+str(rxn_no)+"_"+rxn_name+"_collect")
+        #     newwf = Workflow([cfw],name='rxn_'+str(rxn_no)+str(rxn_name))
+        #     return FWAction(detours=newwf) #using detour allows us to inherit children from the original collect to the subsequent collects
+        # else:
+        #     return FWAction()
+        return FWAction()
 
 def collect_firework(xyzs,check_symm,fw_generators,fw_generator_dicts,out_names,future_check_symms,parents=[],label=""):
     task = MolecularCollect({"xyzs": xyzs, "check_symm": check_symm, "fw_generators": fw_generators,
