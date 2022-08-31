@@ -428,7 +428,7 @@ class MolecularTSEstimate(FiretaskBase):
         print("number of TS guesses pre-empty-sites:")
         print(len(tsstructs))
 
-        constraint_lists,atom_bond_potential_lists,site_bond_potential_lists,site_bond_dict_list,site_fixed_bond_dict_list = generate_constraints_harmonic_parameters(
+        constraint_lists,atom_bond_potential_lists,site_bond_potential_lists,site_bond_dict_list = generate_constraints_harmonic_parameters(
                                             tsstructs,adsorbates,slab,reactants,
                                              products,rxn["reaction_family"],template_reversed=(not forward),
                                             ordered_names=species_names,reverse_names=reverse_names,
@@ -437,9 +437,8 @@ class MolecularTSEstimate(FiretaskBase):
                                             nslab=nslab,facet=facet,metal=metal,cas=cas)
 
 
-        out_tsstructs,new_atom_bond_potential_lists,new_site_bond_potential_lists,new_constraint_lists,site_bond_potential_check_lists = get_surface_forming_bond_pairings(
-                            tsstructs,atom_bond_potential_lists,site_bond_potential_lists,constraint_lists,site_bond_dict_list,
-                            site_fixed_bond_dict_list,cas)
+        out_tsstructs,new_atom_bond_potential_lists,new_site_bond_potential_lists,new_constraint_lists = get_surface_forming_bond_pairings(
+                            tsstructs,atom_bond_potential_lists,site_bond_potential_lists,constraint_lists,site_bond_dict_list,cas)
 
         print("number of TS guesses with empty sites:")
         print(len(out_tsstructs))
@@ -450,8 +449,7 @@ class MolecularTSEstimate(FiretaskBase):
             os.makedirs(os.path.join(ts_path,str(j)))
             write(os.path.join(ts_path,str(j),"xtb_init.xyz"),tsstruct)
             sp,Eharm,Fharm = run_harmonically_forced_xtb(out_tsstructs[j],new_atom_bond_potential_lists[j],new_site_bond_potential_lists[j],
-                           nslab=nslab,constraints=new_constraint_lists[j],
-                           site_bond_potential_check_lists=site_bond_potential_check_lists[j])
+                           nslab=nslab,constraints=new_constraint_lists[j])
 
             if sp:
                 with open(os.path.join(ts_path,str(j),"harm.json")) as f:
