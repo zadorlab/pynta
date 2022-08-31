@@ -452,7 +452,7 @@ class MolecularTSEstimate(FiretaskBase):
                            nslab=nslab,constraints=new_constraint_lists[j])
 
             if sp:
-                with open(os.path.join(ts_path,str(j),"harm.json")) as f:
+                with open(os.path.join(ts_path,str(j),"harm.json"),'w') as f:
                     d = {"harmonic energy": Eharm, "harmonic force": Fharm.tolist(),
                         "passed energy threshold": Eharm < Eharmtol}
                     json.dump(d,f)
