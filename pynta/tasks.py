@@ -454,7 +454,7 @@ class MolecularTSEstimate(FiretaskBase):
             if sp:
                 with open(os.path.join(ts_path,str(j),"harm.json"),'w') as f:
                     d = {"harmonic energy": Eharm, "harmonic force": Fharm.tolist(),
-                        "passed energy threshold": Eharm < Eharmtol}
+                        "passed energy threshold": bool(Eharm < Eharmtol)}
                     json.dump(d,f)
                 write(os.path.join(ts_path,str(j),"xtb.xyz"),sp)
                 Es.append(E)
