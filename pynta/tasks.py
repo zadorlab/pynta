@@ -73,7 +73,8 @@ def optimize_firework(xyz,software,label,opt_method=None,sella=None,socket=False
     t1 = MolecularOptimizationTask(d)
     directory = os.path.dirname(xyz)
     if out_path is None: out_path = os.path.join(directory,label+".xyz")
-    t2 = FileTransferTask({'files': [{'src': label+'.xyz', 'dest': out_path}], 'mode': 'copy', 'ignore_errors' : ignore_errors})
+    t2 = FileTransferTask({'files': [{'src': label+'.xyz', 'dest': out_path}, {'src': label+'.traj', 'dest': os.path.join(directory,label+".traj")}],
+            'mode': 'copy', 'ignore_errors' : ignore_errors})
     return Firework([t1,t2],parents=parents,name=label+"opt")
 
 @explicit_serialize
@@ -361,7 +362,7 @@ class MolecularTSEstimate(FiretaskBase):
     required_params = ["rxn","ts_path","slab_path","adsorbates_path","rxns_file","repeats","path","metal","facet",
                         "name_to_adjlist_dict", "gratom_to_molecule_atom_maps",
                         "gratom_to_molecule_surface_atom_maps","opt_obj_dict",
-                                "vib_obj_dict","IRC_obj_dict","nslab"]
+                                "vib_obj_dict","IRC_obj_dict","nslab","Eharmtol"]
     optional_params = ["out_path","spawn_jobs","nprocs",]
     def run_task(self, fw_spec):
         gratom_to_molecule_atom_maps = {sm: {int(k):v for k,v in d.items()} for sm,d in self["gratom_to_molecule_atom_maps"].items()}
@@ -376,6 +377,7 @@ class MolecularTSEstimate(FiretaskBase):
         metal = self["metal"]
         facet = self["facet"]
         nslab = self["nslab"]
+        Eharmtol = self["Eharmtol"]
 
         slab_path = self["slab_path"]
         slab = read(slab_path) * self["repeats"]
@@ -439,22 +441,36 @@ class MolecularTSEstimate(FiretaskBase):
                             tsstructs,atom_bond_potential_lists,site_bond_potential_lists,constraint_lists,site_bond_dict_list,
                             site_fixed_bond_dict_list,cas)
 
+        print("number of TS guesses with empty sites:")
+        print(len(out_tsstructs))
 
         xyzs = []
-        print("number of TS guesses final:")
-        print(len(out_tsstructs))
+        Es = []
         for j,tsstruct in enumerate(out_tsstructs):
             os.makedirs(os.path.join(ts_path,str(j)))
             write(os.path.join(ts_path,str(j),"xtb_init.xyz"),tsstruct)
-            sp = run_harmonically_forced_xtb(out_tsstructs[j],new_atom_bond_potential_lists[j],new_site_bond_potential_lists[j],
+            sp,Eharm,Fharm = run_harmonically_forced_xtb(out_tsstructs[j],new_atom_bond_potential_lists[j],new_site_bond_potential_lists[j],
                            nslab=nslab,constraints=new_constraint_lists[j],
                            site_bond_potential_check_lists=site_bond_potential_check_lists[j])
+
             if sp:
+                with open(os.path.join(ts_path,str(j),"harm.json")) as f:
+                    d = {"harmonic energy": Eharm, "harmonic force": Fharm.tolist(),
+                        "passed energy threshold": Eharm < Eharmtol}
+                    json.dump(d,f)
                 write(os.path.join(ts_path,str(j),"xtb.xyz"),sp)
+                Es.append(E)
                 xyzs.append(os.path.join(ts_path,str(j),"xtb.xyz"))
 
+        Einds = np.argsort(np.array(Es))
+        Emin = np.min(np.array(Es))
+        xyzsout = []
+        for Eind in Einds:
+            if Es[Eind]/Emin < Eharmtol:
+                xyzsout.append(xyzs[Eind])
+
         if spawn_jobs:
-            ctask = MolecularCollect({"xyzs":xyzs,"check_symm":True,"fw_generators": ["optimize_firework",["vibrations_firework","IRC_firework"]],
+            ctask = MolecularCollect({"xyzs":xyzsout,"check_symm":True,"fw_generators": ["optimize_firework",["vibrations_firework","IRC_firework"]],
                 "fw_generator_dicts": [self["opt_obj_dict"],[self["vib_obj_dict"],self["IRC_obj_dict"]]],
                     "out_names": ["opt.xyz",["vib.json","irc.traj"]],"future_check_symms": [True,False], "label": "TS"+str(index)+"_"+rxn_name})
             cfw = Firework([ctask],name="TS"+str(index)+"_"+rxn_name+"_collect")
@@ -664,7 +680,7 @@ class MolecularIRC(FiretaskBase):
         return FWAction()
 
 def run_harmonically_forced_xtb(atoms,atom_bond_potentials,site_bond_potentials,nslab,method="GFN1-xTB",
-                               site_bond_potential_check_lists=None,constraints=[]):
+                               constraints=[]):
     cons = Constraints(atoms)
 
     for c in constraints:
@@ -686,29 +702,14 @@ def run_harmonically_forced_xtb(atoms,atom_bond_potentials,site_bond_potentials,
 
     opt = Sella(atoms,constraints=cons,trajectory="xtbharm.traj",order=0)
 
-    opt.run(fmax=0.02)
+    try:
+        opt.run(fmax=0.02)
+    except:
+        return None,None,None
 
-    site_bond_correct = True
+    Eharm,Fharm = atoms.calc.get_energy_forces()
 
-    # for atm_ind,site_bond_p_list in site_bond_potential_check_lists.items():
-    #     used_p = [sbp for sbp in site_bond_potentials if sbp["ind"] == atm_ind][0]
-    #     Estar = get_energy_site_bond(atoms,**used_p)
-    #     print("Estar {}".format(atm_ind))
-    #     print(Estar)
-    #     for sbp in site_bond_p_list:
-    #         E = get_energy_site_bond(atoms,**sbp)
-    #         print(E)
-    #         if E-Estar < 0.25:#E < Estar:
-    #             print(sbp)
-    #             site_bond_correct = False
-    #             break
-    #
-    # print(site_bond_correct)
-
-    if site_bond_correct:
-        return atoms
-    else:
-        return None
+    return atoms,Eharm,Fharm
 
 def run_parallel_gfn1xtb_opt(inputs,nprocs):
     with mp.Pool(nprocs) as pool:

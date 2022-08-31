@@ -319,7 +319,6 @@ def generate_constraints_harmonic_parameters(tsstructs,adsorbates,slab,forward_t
     atom_bond_potential_lists = []
     site_bond_potential_lists = []
     site_bond_dict_list = []
-    site_fixed_bond_dict_list = []
 
     mols = [mol_dict[name] for name in ordered_names]
     rev_mols = [mol_dict[name] for name in reverse_names]
@@ -387,7 +386,6 @@ def generate_constraints_harmonic_parameters(tsstructs,adsorbates,slab,forward_t
         site_bond_potentials = []
         fixed_bond_pairs = []
         site_bond_dict = dict()
-        site_fixed_bond_dict = dict()
 
         adcov = SlabAdsorbateCoverage(tsstruct,adsorption_sites=cas)
         sites = adcov.get_sites()
@@ -437,36 +435,20 @@ def generate_constraints_harmonic_parameters(tsstructs,adsorbates,slab,forward_t
                     dwell = occ_bd_lengths[ase_ind2]
                     sitetype = occ_site_types[ase_ind2]
                     pos = occ_site_pos[ase_ind2]
+                    pos[2] += dwell #shift position up to atom position
                     ind = ase_ind2
                     deq,k = estimate_deq_k_fixed_surf_bond(labels,dwell,forward_template,reverse_template,template_name,template_reversed,sitetype=sitetype)
                     d = {"ind":ind,"site_pos":pos.tolist(),"k":k,"deq":deq}
                     site_bond_potentials.append(d)
-
-                    site_fixed_bond_dict[ase_ind2] = dict()
-                    ind_mol,ind1_mol = get_mol_index(ind1,template_mol_map)
-                    site_dict = mols_info[ind_mol]["site_dict"]
-                    for (mol_ind,sitetype) in site_dict.keys():
-                        if mol_ind == ind1_mol:
-                            dwell = site_dict[(mol_ind,sitetype)]
-                            deq,k = estimate_deq_k_fixed_surf_bond(labels,dwell,forward_template,reverse_template,template_name,template_reversed,sitetype=sitetype)
-                            site_fixed_bond_dict[ase_ind2][sitetype] = {"deq":deq,"k":k}
                 else:
                     dwell = occ_bd_lengths[ase_ind1]
                     sitetype = occ_site_types[ase_ind1]
                     pos = occ_site_pos[ase_ind1]
+                    pos[2] += dwell #shift position up to atom position
                     ind = ase_ind1
                     deq,k = estimate_deq_k_fixed_surf_bond(labels,dwell,forward_template,reverse_template,template_name,template_reversed,sitetype=sitetype)
                     d = {"ind":ind,"site_pos":pos.tolist(),"k":k,"deq":deq}
                     site_bond_potentials.append(d)
-
-                    site_fixed_bond_dict[ase_ind1] = dict()
-                    ind_mol,ind2_mol = get_mol_index(ind2,template_mol_map)
-                    site_dict = mols_info[ind_mol]["site_dict"]
-                    for (mol_ind,sitetype) in site_dict.keys():
-                        if mol_ind == ind2_mol:
-                            dwell = site_dict[(mol_ind,sitetype)]
-                            deq,k = estimate_deq_k_fixed_surf_bond(labels,dwell,forward_template,reverse_template,template_name,template_reversed,sitetype=sitetype)
-                            site_fixed_bond_dict[ase_ind1][sitetype] = {"deq":deq,"k":k}
 
         for labels in formed_bonds: #bonds that form
             atmsf = []
@@ -500,7 +482,7 @@ def generate_constraints_harmonic_parameters(tsstructs,adsorbates,slab,forward_t
                     if mol_ind == ind1r_mol:
                         dwell = site_dict[(mol_ind,sitetype)]
                         deq,k = estimate_deq_k(labels,dwell,forward_template,reverse_template,template_name,template_reversed,sitetype=sitetype)
-                        site_bond_dict[ase_ind2][sitetype] = {"deq":deq,"k":k}
+                        site_bond_dict[ase_ind2][sitetype] = {"deq":deq,"k":k,"dwell":dwell}
 
             else:
                 site_bond_dict[ase_ind1] = dict()
@@ -509,7 +491,7 @@ def generate_constraints_harmonic_parameters(tsstructs,adsorbates,slab,forward_t
                     if mol_ind == ind2r_mol:
                         dwell = site_dict[(mol_ind,sitetype)]
                         deq,k = estimate_deq_k(labels,dwell,forward_template,reverse_template,template_name,template_reversed,sitetype=sitetype)
-                        site_bond_dict[ase_ind1][sitetype] = {"deq":deq,"k":k}
+                        site_bond_dict[ase_ind1][sitetype] = {"deq":deq,"k":k,"dwell":dwell}
 
         if fixed_bond_pairs:
             constraint_lists.append([{"type": "FixBondLengths","pairs":fixed_bond_pairs},"freeze slab"])
@@ -518,19 +500,21 @@ def generate_constraints_harmonic_parameters(tsstructs,adsorbates,slab,forward_t
         atom_bond_potential_lists.append(atom_bond_potentials)
         site_bond_potential_lists.append(site_bond_potentials)
         site_bond_dict_list.append(site_bond_dict)
-        site_fixed_bond_dict_list.append(site_fixed_bond_dict)
 
-    return constraint_lists,atom_bond_potential_lists,site_bond_potential_lists,site_bond_dict_list,site_fixed_bond_dict_list
+    return constraint_lists,atom_bond_potential_lists,site_bond_potential_lists,site_bond_dict_list
 
 def estimate_deq_k(labels,dwell,forward_template,reverse_template,template_name,template_reversed,sitetype=None):
-    return dwell*1.4,100.0
+    if sitetype is None: #not a site bond
+        return dwell*1.4,100.0
+    else: #surface position is already shifted up by dwell
+        return dwell*0.4,100.0
 
 def estimate_deq_k_fixed_surf_bond(labels,dwell,forward_template,reverse_template,template_name,template_reversed,sitetype=None):
-    return dwell,100.0
+    return 0.0,100.0
 
 def get_surface_forming_bond_pairings(tsstructs,atom_bond_potential_lists,
                                       site_bond_potential_lists,constraints_list,site_bond_dict_list,
-                                      site_fixed_bond_dict_list,cas):
+                                      cas):
 
     if len(site_bond_dict_list[0]) == 0: #no site bonds formed
         return tsstructs,site_bond_potential_lists,None
@@ -547,13 +531,11 @@ def get_surface_forming_bond_pairings(tsstructs,atom_bond_potential_lists,
     site_tags = [he,ne,ar,kr,xe,rn]
 
     atm_inds = list(site_bond_dict_list[0].keys())
-    fixed_atm_inds = list(site_fixed_bond_dict_list[0].keys())
     site_tags = {atm_ind : site_tags[i] for i,atm_ind in enumerate(atm_inds)}
 
     new_atom_bond_potential_lists = []
     new_site_bond_potential_lists = []
     new_constraints_list = []
-    site_bond_potential_check_lists = []
     out_tsstructs = []
 
     for i,tsstruct in enumerate(tsstructs):
@@ -562,9 +544,7 @@ def get_surface_forming_bond_pairings(tsstructs,atom_bond_potential_lists,
         adcov = SlabAdsorbateCoverage(tsstruct,adsorption_sites=cas)
         unocc = [site for site in adcov.get_sites() if site["occupied"] == False]
         site_bond_dict = site_bond_dict_list[i]
-        site_fixed_bond_dict = site_fixed_bond_dict_list[i]
         site_bond_potential_dict = sites_to_site_bond_potentials(unocc,site_bond_dict,atm_inds)
-        site_fixed_bond_potential_dict = sites_to_site_bond_potentials(unocc,site_fixed_bond_dict,fixed_atm_inds)
         geoms = []
         site_parameters = []
 
@@ -582,6 +562,8 @@ def get_surface_forming_bond_pairings(tsstructs,atom_bond_potential_lists,
                     add_adsorbate_to_site(geo,adsorbate=tag,site=site,height=1.5)
                     params = bond_dict[site["site"]].copy()
                     params["site_pos"] = site["position"].tolist()
+                    params["site_pos"][2] += params["dwell"]
+                    del params["dwell"]
                     params["ind"] = atm_ind
                     param_list.append(params)
 
@@ -604,24 +586,7 @@ def get_surface_forming_bond_pairings(tsstructs,atom_bond_potential_lists,
 
             new_site_bond_potential_lists.append(site_bond_potential)
 
-            site_bond_potential_dict_temp = site_bond_potential_dict.copy()
-            for atm_ind in atm_inds:
-                for param in params:
-                    if param["ind"] == atm_ind:
-                        k = 0
-                        while any([site_bond_potential_dict_temp[atm_ind][k]["site_pos"][v] != param["site_pos"][v] for v in range(3)]):
-                            k += 1
-                        del site_bond_potential_dict_temp[atm_ind][k]
-
-            site_fixed_bond_potential_dict_temp = site_fixed_bond_potential_dict.copy()
-
-            site_bond_potential_dict_sum = {**site_bond_potential_dict_temp,**site_fixed_bond_potential_dict_temp}
-            site_bond_potential_check_lists.append(site_bond_potential_dict_sum)
-
-
-
-
-    return out_tsstructs,new_atom_bond_potential_lists,new_site_bond_potential_lists,new_constraints_list,site_bond_potential_check_lists
+    return out_tsstructs,new_atom_bond_potential_lists,new_site_bond_potential_lists,new_constraints_list
 
 def sites_to_site_bond_potentials(sites,site_bond_dicts,atm_inds):
     site_bond_potentials = dict()
