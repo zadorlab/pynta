@@ -457,7 +457,7 @@ class MolecularTSEstimate(FiretaskBase):
                         "passed energy threshold": bool(Eharm < Eharmtol)}
                     json.dump(d,f)
                 write(os.path.join(ts_path,str(j),"xtb.xyz"),sp)
-                Es.append(E)
+                Es.append(Eharm)
                 xyzs.append(os.path.join(ts_path,str(j),"xtb.xyz"))
 
         Einds = np.argsort(np.array(Es))
