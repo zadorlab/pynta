@@ -24,6 +24,7 @@ from pynta.vib import AfterTS
 from pynta.io import IO
 from pynta.penalty_fun import AdsorbatePlacer
 from xtb.ase.calculator import XTB
+import numpy as np
 import multiprocessing as mp
 import json
 import copy
