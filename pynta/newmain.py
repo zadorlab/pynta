@@ -26,7 +26,7 @@ class Pynta:
                             'conv_thr': 1e-11, 'mixing_mode': 'local-TF',
                             "pseudopotentials": {"Cu": 'Cu.pbe-spn-kjpaw_psl.1.0.0.UPF',"H": 'H.pbe-kjpaw_psl.1.0.0.UPF',"O": 'O.pbe-n-kjpaw_psl.1.0.0.UPF',"C": 'C.pbe-n-kjpaw_psl.1.0.0.UPF',"N": 'N.pbe-n-kjpaw_psl.1.0.0.UPF',
                             }, },
-        reset_launchpad=False,queue_adapter_path=None,nprocs=48,Eharmtol=10.0):
+        reset_launchpad=False,queue_adapter_path=None,nprocs=48,Eharmtol=30.0):
 
         self.surface_type = surface_type
         launchpad = LaunchPad.from_file(launchpad_path)
@@ -195,7 +195,7 @@ class Pynta:
         vib_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":self.software_kwargs,
                 "constraints": ["freeze half slab"]}
         IRC_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":self.software_kwargs,
-                "constraints":["freeze half slab"]}
+                "run_kwargs": {"fmax" : 0.1, "steps" : 1000},"constraints":["freeze half slab"]}
         for i,rxn in enumerate(self.rxns_dict):
             ts_path = os.path.join(self.path,"TS"+str(i))
             os.makedirs(ts_path)

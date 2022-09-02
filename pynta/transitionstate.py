@@ -504,10 +504,24 @@ def generate_constraints_harmonic_parameters(tsstructs,adsorbates,slab,forward_t
     return constraint_lists,atom_bond_potential_lists,site_bond_potential_lists,site_bond_dict_list
 
 def estimate_deq_k(labels,dwell,forward_template,reverse_template,template_name,template_reversed,sitetype=None):
+    label_list = list(labels)
+    if len(label_list) == 1:
+        atms = forward_template.get_labeled_atoms(label_list[0])
+        atm1 = atms[0]
+        atm2 = atms[1]
+    else:
+        atm1 = forward_template.get_labeled_atoms(label_list[0])[0]
+        atm2 = forward_template.get_labeled_atoms(label_list[1])[0]
     if sitetype is None: #not a site bond
-        return dwell*1.4,100.0
+        if atm1.is_hydrogen() or atm2.is_hydrogen():
+            return dwell*1.65,100.0
+        else:
+            return dwell*1.4,100.0
     else: #surface position is already shifted up by dwell
-        return dwell*0.4,100.0
+        if atm1.is_hydrogen() or atm2.is_hydrogen():
+            return dwell*0.04,100.0
+        else:
+            return dwell*0.1,100.0
 
 def estimate_deq_k_fixed_surf_bond(labels,dwell,forward_template,reverse_template,template_name,template_reversed,sitetype=None):
     return 0.0,100.0
