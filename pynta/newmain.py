@@ -181,7 +181,7 @@ class Pynta:
                 optfws.append(fwopt)
 
             vib_obj_dict = {"software": self.software, "label": str(prefix), "software_kwargs": self.software_kwargs,
-                "constraints": ["freeze half slab"]}
+                "constraints": ["freeze all "+self.metal]}
 
             cfw = collect_firework(xyzs,True,[["vibrations_firework"]],[[vib_obj_dict]],[["vib.json"]],[[False]],parents=optfws,label=adsname)
             self.adsorbate_fw_dict[adsname] = optfws
@@ -193,9 +193,9 @@ class Pynta:
         opt_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":self.software_kwargs,
                 "run_kwargs": {"fmax" : 0.01, "steps" : 70},"constraints": ["freeze half slab"],"sella":True,"order":1}
         vib_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":self.software_kwargs,
-                "constraints": ["freeze half slab"]}
+                "constraints": ["freeze all "+self.metal]}
         IRC_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":self.software_kwargs,
-                "run_kwargs": {"fmax" : 0.1, "steps" : 1000},"constraints":["freeze half slab"]}
+                "run_kwargs": {"fmax" : 0.1, "steps" : 1000},"constraints":["freeze all "+self.metal]}
         for i,rxn in enumerate(self.rxns_dict):
             ts_path = os.path.join(self.path,"TS"+str(i))
             os.makedirs(ts_path)

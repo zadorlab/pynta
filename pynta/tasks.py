@@ -111,8 +111,8 @@ class MolecularOptimizationTask(OptimizationTask):
                 sp = read(xyz)
             elif suffix == "traj": #take last point on trajectory
                 sp = Trajectory(xyz)[-1]
-            else:
-                raise ValueError("xyz input not understood")
+            else: #assume xyz
+                sp = read(xyz)
         except Exception as e:
             if not ignore_errors:
                 raise e
@@ -136,6 +136,11 @@ class MolecularOptimizationTask(OptimizationTask):
                     sp.set_constraint(FixAtoms([
                         atom.index for atom in sp if atom.position[2] < sp.cell[2, 2] / 2.
                     ]))
+                elif c.split()[0] == "freeze" and c.split()[1] == "all": #ex: "freeze all Cu"
+                    sym = c.split()[2]
+                    atoms.set_constraint(FixAtoms(
+                        indices=[atom.index for atom in atoms if atom.symbol == sym]
+                        ))
 
             opt_kwargs["trajectory"] = label+".traj"
 
@@ -170,6 +175,11 @@ class MolecularOptimizationTask(OptimizationTask):
                     for atom in sp:
                         if atom.position[2] < sp.cell[2, 2] / 2.:
                             cons.fix_translation(atom.index)
+                elif c.split()[0] == "freeze" and c.split()[1] == "all": #ex: "freeze all Cu"
+                    sym = c.split()[2]
+                    indices = [atom.index for atom in atoms if atom.symbol == sym]
+                    for ind in indices:
+                        cons.fix_translation(ind)
 
             opt = Sella(sp,constraints=cons,trajectory=label+".traj",order=order)
             try:
@@ -325,6 +335,11 @@ class MolecularVibrationsTask(VibrationTask):
                         atom.index for atom in sp if atom.position[2] < sp.cell[2, 2] / 2.
                     ]))
                     indices = [atom.index for atom in sp if atom.position[2] > sp.cell[2, 2] / 2.]
+                elif c.split()[0] == "freeze" and c.split()[1] == "all": #ex: "freeze all Cu"
+                    sym = c.split()[2]
+                    atoms.set_constraint(FixAtoms(
+                        indices=[atom.index for atom in atoms if atom.symbol == sym]
+                        ))
 
             vib = Vibrations(sp,indices=indices)
             vib.run()
@@ -471,7 +486,7 @@ class MolecularTSEstimate(FiretaskBase):
         if spawn_jobs:
             ctask = MolecularCollect({"xyzs":xyzsout,"check_symm":True,"fw_generators": ["optimize_firework",["vibrations_firework","IRC_firework"]],
                 "fw_generator_dicts": [self["opt_obj_dict"],[self["vib_obj_dict"],self["IRC_obj_dict"]]],
-                    "out_names": ["opt",["vib","irc"]],"future_check_symms": [True,False], "label": "TS"+str(index)+"_"+rxn_name})
+                    "out_names": ["opt.xyz",["vib","irc"]],"future_check_symms": [True,False], "label": "TS"+str(index)+"_"+rxn_name})
             cfw = Firework([ctask],name="TS"+str(index)+"_"+rxn_name+"_collect")
             newwf = Workflow([cfw],name='rxn_'+str(index)+str(rxn_name))
             return FWAction(detours=newwf) #using detour allows us to inherit children from the original collect to the subsequent collects
@@ -616,8 +631,8 @@ class MolecularIRC(FiretaskBase):
                 sp = read(xyz)
             elif suffix == "traj": #take last point on trajectory
                 sp = Trajectory(xyz)[-1]
-            else:
-                raise ValueError("xyz input not understood")
+            else: #assume xyz
+                sp = read(xyz)
         except Exception as e:
             if not ignore_errors:
                 raise e
@@ -639,6 +654,11 @@ class MolecularIRC(FiretaskBase):
                 for atom in sp:
                     if atom.position[2] < sp.cell[2, 2] / 2.:
                         cons.fix_translation(atom.index)
+            elif c.split()[0] == "freeze" and c.split()[1] == "all": #ex: "freeze all Cu"
+                sym = c.split()[2]
+                indices = [atom.index for atom in atoms if atom.symbol == sym]
+                for ind in indices:
+                    cons.fix_translation(ind)
 
         opt = IRC(sp,constraints=cons,trajectory=label+"_irc.traj",dx=0.1,eta=1e-4,gamma=0.4)
         try:
