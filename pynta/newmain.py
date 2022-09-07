@@ -90,11 +90,11 @@ class Pynta:
             react.clear_labeled_atoms()
             prod.clear_labeled_atoms()
             for mol in react.split():
-                if mol.contains_surface_site() and not mol.is_surface_site():
+                if not mol.is_surface_site():
                     mols.append(mol)
                     r["reactant_mols"].append(mol)
             for mol in prod.split():
-                if mol.contains_surface_site() and not mol.is_surface_site():
+                if not mol.is_surface_site():
                     mols.append(mol)
                     r["product_mols"].append(mol)
 
