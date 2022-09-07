@@ -147,8 +147,9 @@ class Pynta:
                     structures[sm] = structs
                 else:
                     if isinstance(gratom, Atom):
-                        gratom.position = [0.0,0.0,0.0]
-                        structures[sm] = Atoms(gratom)
+                        sym = gratom.symbol
+                        atms = Atoms(sym, positions=[(0, 0, 0)])
+                        structures[sm] = atms
                     elif isinstance(gratom, Atoms):
                         structures[sm] = gratom
                     else:
