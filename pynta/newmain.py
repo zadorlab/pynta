@@ -6,6 +6,7 @@ from pynta.excatkit.adsorption import Builder
 from molecule.molecule import Molecule
 import ase.build
 from ase.io import read, write
+from ase import Atoms, Atom
 import os
 import time
 import yaml
@@ -145,7 +146,10 @@ class Pynta:
                     structs = ads_builder.add_adsorbate(gratom,index=-1,bonds=surf_indexes)
                     structures[sm] = structs
                 else:
-                    structures[sm] = gratom
+                    if isinstance(gratom, Atom):
+                        structures[sm] = Atoms(gratom)
+                    elif isinstance(gratom, Atoms):
+                        structures[sm] = gratom
             except IndexError:
                 print('sp_gratoms, sp_gratoms.edges, sp.gratoms.tags')
                 print(gratom, gratom.edges,
