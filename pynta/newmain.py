@@ -174,6 +174,7 @@ class Pynta:
                 else: #gas phase
                     big_slab_ads = structure
                 os.makedirs(os.path.join(self.path,"Adsorbates",adsname,str(prefix)))
+                print(big_slab_ads.positions)
                 write(os.path.join(self.path,"Adsorbates",adsname,str(prefix),str(prefix)+"_init.xyz"),big_slab_ads)
                 xyz = os.path.join(self.path,"Adsorbates",adsname,str(prefix),str(prefix)+".xyz")
                 xyzs.append(xyz)
