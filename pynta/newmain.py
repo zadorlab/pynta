@@ -172,7 +172,7 @@ class Pynta:
                 if len(mol.get_surface_sites()) > 0:
                     big_slab_ads = big_slab + structure[nsmall_slab:]
                 else: #gas phase
-                    big_slab_ads = structure[nsmall_slab:]
+                    big_slab_ads = structure
                 os.makedirs(os.path.join(self.path,"Adsorbates",adsname,str(prefix)))
                 write(os.path.join(self.path,"Adsorbates",adsname,str(prefix),str(prefix)+"_init.xyz"),big_slab_ads)
                 xyz = os.path.join(self.path,"Adsorbates",adsname,str(prefix),str(prefix)+".xyz")
