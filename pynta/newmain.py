@@ -141,8 +141,11 @@ class Pynta:
             gratom_to_molecule_atom_maps[sm] = atom_map
             gratom_to_molecule_surface_atom_maps[sm] = surf_index_atom_map
             try:
-                structs = ads_builder.add_adsorbate(gratom,index=-1,bonds=surf_indexes)
-                structures[sm] = structs
+                if len(surf_indexes) > 0:
+                    structs = ads_builder.add_adsorbate(gratom,index=-1,bonds=surf_indexes)
+                    structures[sm] = structs
+                else:
+                    structures[sm] = gratom
             except IndexError:
                 print('sp_gratoms, sp_gratoms.edges, sp.gratoms.tags')
                 print(gratom, gratom.edges,
