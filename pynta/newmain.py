@@ -146,14 +146,7 @@ class Pynta:
                     structs = ads_builder.add_adsorbate(gratom,index=-1,bonds=surf_indexes)
                     structures[sm] = structs
                 else:
-                    if isinstance(gratom, Atom):
-                        sym = gratom.symbol
-                        atms = Atoms(sym, positions=[(0, 0, 0)])
-                        structures[sm] = atms
-                    elif isinstance(gratom, Atoms):
-                        structures[sm] = gratom
-                    else:
-                        raise ValueError
+                    structures[sm] = [gratom]
             except IndexError:
                 print('sp_gratoms, sp_gratoms.edges, sp.gratoms.tags')
                 print(gratom, gratom.edges,
