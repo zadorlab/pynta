@@ -147,9 +147,12 @@ class Pynta:
                     structures[sm] = structs
                 else:
                     if isinstance(gratom, Atom):
+                        gratom.position = [0.0,0.0,0.0]
                         structures[sm] = Atoms(gratom)
                     elif isinstance(gratom, Atoms):
                         structures[sm] = gratom
+                    else:
+                        raise ValueError
             except IndexError:
                 print('sp_gratoms, sp_gratoms.edges, sp.gratoms.tags')
                 print(gratom, gratom.edges,
@@ -178,7 +181,6 @@ class Pynta:
                 else: #gas phase
                     big_slab_ads = structure
                 os.makedirs(os.path.join(self.path,"Adsorbates",adsname,str(prefix)))
-                print(big_slab_ads.positions)
                 write(os.path.join(self.path,"Adsorbates",adsname,str(prefix),str(prefix)+"_init.xyz"),big_slab_ads)
                 xyz = os.path.join(self.path,"Adsorbates",adsname,str(prefix),str(prefix)+".xyz")
                 xyzs.append(xyz)
