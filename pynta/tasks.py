@@ -700,6 +700,9 @@ class MolecularIRC(FiretaskBase):
 
 def run_harmonically_forced_xtb(atoms,atom_bond_potentials,site_bond_potentials,nslab,method="GFN1-xTB",
                                constraints=[]):
+    """
+    Optimize TS guess using xTB + harmonic forcing terms determined by atom_bond_potentials and site_bond_potentials
+    """
     cons = Constraints(atoms)
 
     for c in constraints:
@@ -797,6 +800,10 @@ class MolecularTSxTBOpt(OptimizationTask):
         return FWAction()
 
 def name_to_ase_software(software_name):
+    """
+    go from software_name to the associated
+    ASE calculator constructor
+    """
     if software_name == "XTB":
         module = import_module("xtb.ase.calculator")
         return getattr(module, software_name)
@@ -805,10 +812,17 @@ def name_to_ase_software(software_name):
         return getattr(module, software_name)
 
 def name_to_ase_opt(opt_name):
+    """
+    go from the optimizer name to the
+    ASE optimizer
+    """
     module = import_module("ase.optimize")
     return getattr(module, opt_name)
 
 def get_task_index(task_dict,task_list):
+    """
+    get the index of a task in the task list
+    """
     for i,d in enumerate(task_list):
         if d['_fw_name'] == task_dict['_fw_name']:
             return i
@@ -816,6 +830,10 @@ def get_task_index(task_dict,task_list):
         raise IndexError
 
 def restart_opt_firework(task,task_list):
+    """
+    generate a firework to restart an optimization firework from the trajectory
+    file based on the optimization task and the full task list
+    """
     traj_file = task["label"]+".traj"
     shutil.copy(traj_file,os.path.join(os.path.split(task["xyz"])[0],traj_file))
     d = deepcopy(task.as_dict())
@@ -824,6 +842,9 @@ def restart_opt_firework(task,task_list):
     return reconstruct_firework(new_task,task,task_list,full=True)
 
 def reconstruct_task(task_dict,orig_task=None):
+    """
+    regenerate a task based on the task_dict
+    """
     name = task_dict["_fw_name"]
     if orig_task:
         fcn = orig_task.__class__
@@ -833,6 +854,11 @@ def reconstruct_task(task_dict,orig_task=None):
     return fcn(d)
 
 def reconstruct_firework(new_task,old_task,task_list,full=True):
+    """
+    reconstruct a firework replacing an old_task with new_task based on the task list
+    full indicates whether all of the tasks should be included or just those starting
+    from the replaced task
+    """
     task_index = get_task_index(old_task.as_dict(),task_list)
     tasks = []
     for i,d in enumerate(task_list):
@@ -843,12 +869,23 @@ def reconstruct_firework(new_task,old_task,task_list,full=True):
     return Firework(tasks)
 
 def construct_constraint(d):
+    """
+    construct a constrain from a dictionary that is the input to the constraint
+    constructor plus an additional "type" key that indices the name of the constraint
+    returns the constraint
+    """
     constraint_dict = copy.deepcopy(d)
     constructor = getattr("ase.constraints",constraint_dict["type"])
     del constraint_dict["type"]
     return constructor(**constraint_dict)
 
 def add_sella_constraint(cons,d):
+    """
+    construct a constraint from a dictionary that is the input to the constraint
+    constructor plus an additional "type" key that indices the name of the constraint
+    in this case for Sella the full Constraints object cons must be included in the inputs
+    adds the constraint to Constraints and returns None
+    """
     constraint_dict = copy.deepcopy(d)
     constructor = getattr(cons,constraint_dict["type"])
     del constraint_dict["type"]
@@ -862,6 +899,9 @@ def get_completed_fws(lpad):
     return [lpad.get_fw_by_id(i) for i in lpad.get_fw_ids_in_wfs() if lpad.get_fw_by_id(i).state == "COMPLETED"]
 
 def get_fw_traceback_task(fizzfw):
+    """
+    get the traceback and task errored on for the fizzled firework
+    """
     trace = fizzfw.to_dict()["launches"][0]["action"]["stored_data"]["_exception"]["_stacktrace"]
     task_dict = fizzfw.to_dict()["launches"][0]["action"]["stored_data"]["_task"]
     task_list = fizzfw.to_dict()["spec"]["_tasks"]
@@ -870,6 +910,9 @@ def get_fw_traceback_task(fizzfw):
     return trace,task
 
 def debug_fizzled(fw,trace,task):
+    """
+    generate a new firework to replace the fizzled firework
+    """
     launch_dir = fw.as_dict()["launches"][0]["launch_dir"]
     if issubclass(type(task),OptimizationTask):
         if "ValueError" in trace:

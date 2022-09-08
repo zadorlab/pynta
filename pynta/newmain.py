@@ -64,6 +64,10 @@ class Pynta:
         self.Eharmtol = Eharmtol
 
     def generate_slab(self):
+        """
+        generates and optimizes a small scale slab that can be scaled to a large slab as needed
+        optimization occurs through fireworks and this process waits until the optimization is completed
+        """
         slab_type = getattr(ase.build,self.surface_type)
         slab = slab_type(self.metal,self.repeats[1],self.a,self.vaccum)
         slab.pbc = (True, True, False)
@@ -81,6 +85,11 @@ class Pynta:
         self.slab = read(self.slab_path)
 
     def generate_mol_dict(self):
+        """
+        generates all unique Molecule objects based on the reactions and generates a dictionary
+        mapping smiles to each unique Molecule object
+        also updates self.rxns_dict with addtional useful information for each reaction
+        """
         mols = []
 
         for r in self.rxns_dict:
@@ -132,6 +141,10 @@ class Pynta:
             r["product_mols"] = [x.to_adjacency_list() for x in r["product_mols"]]
 
     def generate_initial_adsorbate_guesses(self):
+        """
+        Generates initial guess geometries for adsorbates and gas phase species
+        Generates maps connecting the molecule objects with these adsorbates
+        """
         grslab = get_grslab(self.slab_path)
         ads_builder = Builder(grslab)
         structures = dict()
@@ -157,6 +170,10 @@ class Pynta:
         self.adsorbate_structures = structures
 
     def setup_adsorbates(self):
+        """
+        Attaches each adsorbate structure to the slab and sets up fireworks to
+        first optimize each possible geometry and then run vibrational calculations on each unique final geometry
+        """
         adsorbate_dict = dict()
         for sp_symbol, adsorbate in self.adsorbate_structures.items():
             adsorbate_dict[sp_symbol] = dict()
@@ -194,6 +211,11 @@ class Pynta:
 
 
     def setup_transition_states(self,adsorbates_finished=False):
+        """
+        Sets up fireworks to generate and filter a set of TS estimates, optimize each unique TS estimate,
+        and run vibrational and IRC calculations on the each unique final transition state
+        Note the vibrational and IRC calculations are launched at the same time
+        """
         opt_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":self.software_kwargs,
                 "run_kwargs": {"fmax" : 0.01, "steps" : 70},"constraints": ["freeze half slab"],"sella":True,"order":1}
         vib_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":self.software_kwargs,
@@ -220,6 +242,9 @@ class Pynta:
             self.fws.append(fw)
 
     def rapidfire(self):
+        """
+        Call appropriate rapidfire function
+        """
         if self.queue:
             rapidfirequeue(self.launchpad,self.fworker,self.qadapter,njobs_queue=self.njobs_queue)
         else:
@@ -241,5 +266,5 @@ class Pynta:
         wf = Workflow(self.fws, name=self.label)
         self.launchpad.add_wf(wf)
 
-        while True:
+        while True: #ensures lanuches continue throughout the calculation process
             self.rapidfire()

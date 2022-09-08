@@ -7,6 +7,14 @@ from acat.adsorbate_coverage import SlabAdsorbateCoverage
 import numpy as np
 
 def molecule_to_gratoms(mol):
+    """
+    generates a Gratoms object from a Molecule object
+    returns the Gratoms object, a list of surface indices,
+    an atom_map from the mol object to the Gratoms object
+    and an atom index mapping (Gratom to Molecule) and a surface mapping
+    that mappings atoms to be attached to the surface in the Gratom to the
+    associated site in the Molecule object
+    """
     symbols = []
     edges = []
     surf_indexes = []
@@ -169,6 +177,9 @@ def get_grslab(slab_path):
     return grslab
 
 def get_labeled_bonds(mol):
+    """
+    generate a list of all Bonds between labeled atoms in the Molecule object
+    """
     labeled_atoms = mol.get_all_labeled_atoms()
 
     bonds = dict()
@@ -186,6 +197,10 @@ def get_labeled_bonds(mol):
     return bonds
 
 def get_broken_formed_bonds(reactant,product):
+    """
+    compares the reactant and product structures assuming bonds only form and break between labeled atoms
+    returns frozensets of pairs of labels associated with atoms whose bond breaks or is formed during the reaction
+    """
     reactant_labeled_bonds = get_labeled_bonds(reactant)
     product_labeled_bonds = get_labeled_bonds(product)
     broken_bonds = set()
@@ -254,6 +269,9 @@ def get_template_mol_map(template,mols):
     return temp_mol_map
 
 def get_nonintersectingkeys_maps(maps):
+    """
+    process the subgraph isomorphisms found to generate a list of valid maps
+    """
     mvals_init = [frozenset(list(m.keys())) for m in maps]
     mvals_unique = list(set(mvals_init))
     valid_map_inds = []
@@ -269,6 +287,9 @@ def get_nonintersectingkeys_maps(maps):
     return [maps[ind] for ind in inds]
 
 def ads_size(mol):
+    """
+    get number of atoms in the adsorbate part of the Molecule
+    """
     return len(mol.atoms) - len(mol.get_surface_sites())
 
 def get_mol_index(ind,template_mol_map):
@@ -284,6 +305,9 @@ def get_mol_index(ind,template_mol_map):
         return None #surface_site
 
 def get_ase_index(ind,template_mol_map,molecule_to_gratom_maps,nslab,ads_sizes):
+    """
+    get the index associated with the ase.Atoms object
+    """
     n = nslab
     for i,d in enumerate(template_mol_map):
         if ind in d.keys() and d[ind] in molecule_to_gratom_maps[i].keys():

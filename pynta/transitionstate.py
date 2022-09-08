@@ -19,6 +19,11 @@ from pynta.calculator import HarmonicallyForcedXTB
 from pynta.molecule import *
 
 def get_unique_optimized_adsorbates(rxn,adsorbates_path):
+    """
+    load the adsorbates associated with the reaction and find the unique optimized
+    adsorbate structures for each species
+    returns a dictionary mapping each adsorbate name to a list of ase.Atoms objects
+    """
     adsorbates = dict()
 
     for name in rxn["reactant_names"]+rxn["product_names"]:
@@ -35,6 +40,13 @@ def get_unique_optimized_adsorbates(rxn,adsorbates_path):
     return adsorbates
 
 def determine_TS_construction(reactant_names,reactant_mols,product_names,product_mols):
+    """
+    determine the direction to generate the TS guess in and the order in which the
+    reactants will be placed on the surface
+    returns forward a boolean indicating if the reaction should be estimated in the forward (True)
+    or reverse (False) direction and ordered_reacting_species which is a list of species in the order
+    they should be placed on the surface
+    """
     forward = None
     rnum_surf_sites = [len(mol.get_surface_sites()) for i,mol in enumerate(reactant_mols)]
     pnum_surf_sites = [len(mol.get_surface_sites()) for i,mol in enumerate(product_mols)]
@@ -234,6 +246,9 @@ def add_adsorbate_to_site(atoms, adsorbate, site, height=None,
 def get_unique_TS_structs(adsorbates,species_names,cas,nslab,num_surf_sites,mol_dict,
                           gratom_to_molecule_atom_maps,gratom_to_molecule_surface_atom_maps,
                           facet,metal,gas_height=5.0):
+    """
+    Generate unique initial structures for TS guess generation
+    """
     tsstructs = []
     ordered_adsorbates = [adsorbates[name] for name in species_names]
     for adss in itertools.product(*ordered_adsorbates):
@@ -315,6 +330,9 @@ def generate_constraints_harmonic_parameters(tsstructs,adsorbates,slab,forward_t
                                              reverse_template,template_name,template_reversed,
                                             ordered_names,reverse_names,mol_dict,gratom_to_molecule_atom_maps,
                                             gratom_to_molecule_surface_atom_maps,nslab,facet,metal,cas):
+    """
+    Generate constraints and harmonic parameters for the harmonically forced optimization
+    """
     constraint_lists = []
     atom_bond_potential_lists = []
     site_bond_potential_lists = []
@@ -504,6 +522,9 @@ def generate_constraints_harmonic_parameters(tsstructs,adsorbates,slab,forward_t
     return constraint_lists,atom_bond_potential_lists,site_bond_potential_lists,site_bond_dict_list
 
 def estimate_deq_k(labels,dwell,forward_template,reverse_template,template_name,template_reversed,sitetype=None):
+    """
+    Estimate the equilibrium bond length and force constant for broken/forming bonds
+    """
     label_list = list(labels)
     if len(label_list) == 1:
         atms = forward_template.get_labeled_atoms(label_list[0])
@@ -524,12 +545,17 @@ def estimate_deq_k(labels,dwell,forward_template,reverse_template,template_name,
             return dwell*0.1,100.0
 
 def estimate_deq_k_fixed_surf_bond(labels,dwell,forward_template,reverse_template,template_name,template_reversed,sitetype=None):
+    """
+    Estimate the equilibrium bond length and force constant for surface bonds
+    """
     return 0.0,100.0
 
 def get_surface_forming_bond_pairings(tsstructs,atom_bond_potential_lists,
                                       site_bond_potential_lists,constraints_list,site_bond_dict_list,
                                       cas):
-
+    """
+    Identify unique site targets for the harmonically forced optimization
+    """
     if len(site_bond_dict_list[0]) == 0: #no site bonds formed
         return tsstructs,site_bond_potential_lists,None
 
@@ -603,6 +629,10 @@ def get_surface_forming_bond_pairings(tsstructs,atom_bond_potential_lists,
     return out_tsstructs,new_atom_bond_potential_lists,new_site_bond_potential_lists,new_constraints_list
 
 def sites_to_site_bond_potentials(sites,site_bond_dicts,atm_inds):
+    """
+    Generate a list of possible site bond formation harmonic parameters for each
+    atom that forms bonds with a site
+    """
     site_bond_potentials = dict()
     for atm_ind in atm_inds:
         params_list = []
