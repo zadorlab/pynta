@@ -138,8 +138,8 @@ class MolecularOptimizationTask(OptimizationTask):
                     ]))
                 elif c.split()[0] == "freeze" and c.split()[1] == "all": #ex: "freeze all Cu"
                     sym = c.split()[2]
-                    atoms.set_constraint(FixAtoms(
-                        indices=[atom.index for atom in atoms if atom.symbol == sym]
+                    sp.set_constraint(FixAtoms(
+                        indices=[atom.index for atom in sp if atom.symbol == sym]
                         ))
 
             opt_kwargs["trajectory"] = label+".traj"
@@ -337,8 +337,8 @@ class MolecularVibrationsTask(VibrationTask):
                     indices = [atom.index for atom in sp if atom.position[2] > sp.cell[2, 2] / 2.]
                 elif c.split()[0] == "freeze" and c.split()[1] == "all": #ex: "freeze all Cu"
                     sym = c.split()[2]
-                    atoms.set_constraint(FixAtoms(
-                        indices=[atom.index for atom in atoms if atom.symbol == sym]
+                    sp.set_constraint(FixAtoms(
+                        indices=[atom.index for atom in sp if atom.symbol == sym]
                         ))
 
             vib = Vibrations(sp,indices=indices)
