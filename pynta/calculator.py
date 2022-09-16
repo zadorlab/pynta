@@ -12,15 +12,23 @@ def get_energy_atom_bond(atoms,ind1,ind2,k,deq):
 def get_forces_atom_bond(atoms,ind1,ind2,k,deq):
     forces = np.zeros(atoms.positions.shape)
     bd,d = get_distances([atoms.positions[ind1]], [atoms.positions[ind2]], cell=atoms.cell, pbc=atoms.pbc)
-    forces[ind1] = 2.0*bd*(1.0-deq/d)
-    forces[ind2] = -forces[ind1]
+    if d != 0.0:
+        forces[ind1] = 2.0*bd*(1.0-deq/d)
+        forces[ind2] = -forces[ind1]
+    else:
+        forces[ind1] = bd
+        forces[ind2] = bd
     return k*forces
 
 def get_energy_forces_atom_bond(atoms,ind1,ind2,k,deq):
     forces = np.zeros(atoms.positions.shape)
     bd,d = get_distances([atoms.positions[ind1]], [atoms.positions[ind2]], cell=atoms.cell, pbc=atoms.pbc)
-    forces[ind1] = 2.0*bd*(1.0-deq/d)
-    forces[ind2] = -forces[ind1]
+    if d != 0.0:
+        forces[ind1] = 2.0*bd*(1.0-deq/d)
+        forces[ind2] = -forces[ind1]
+    else:
+        forces[ind1] = bd
+        forces[ind2] = bd
     energy = k*(d-deq)**2
     return energy,k*forces
 
@@ -31,13 +39,19 @@ def get_energy_site_bond(atoms,ind,site_pos,k,deq):
 def get_forces_site_bond(atoms,ind,site_pos,k,deq):
     forces = np.zeros(atoms.positions.shape)
     bd,d = get_distances([atoms.positions[ind]], [site_pos], cell=atoms.cell, pbc=atoms.pbc)
-    forces[ind] = 2.0*bd*(1.0-deq/d)
+    if d != 0.0:
+        forces[ind] = 2.0*bd*(1.0-deq/d)
+    else:
+        forces[ind] = bd
     return k*forces
 
 def get_energy_forces_site_bond(atoms,ind,site_pos,k,deq):
     forces = np.zeros(atoms.positions.shape)
     bd,d = get_distances([atoms.positions[ind]], [site_pos], cell=atoms.cell, pbc=atoms.pbc)
-    forces[ind] = 2.0*bd*(1.0-deq/d)
+    if d != 0:
+        forces[ind] = 2.0*bd*(1.0-deq/d)
+    else:
+        forces[ind] = bd
     energy = k*(d-deq)**2
     return energy,k*forces
 
