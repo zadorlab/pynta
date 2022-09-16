@@ -428,14 +428,16 @@ class MolecularTSEstimate(FiretaskBase):
         pnum_surf_sites = [len(mol.get_surface_sites()) for i,mol in enumerate(product_mols)]
 
         if forward:
+            reactants = Molecule().from_adjacency_list(rxn["reactant"])
+            products = Molecule().from_adjacency_list(rxn["product"])
             num_surf_sites = rnum_surf_sites
-        else:
-            num_surf_sites = pnum_surf_sites
-
-        if forward:
             reverse_names = product_names
         else:
+            products = Molecule().from_adjacency_list(rxn["reactant"])
+            reactants = Molecule().from_adjacency_list(rxn["product"])
+            num_surf_sites = pnum_surf_sites
             reverse_names = reactant_names
+
 
         tsstructs = get_unique_TS_structs(adsorbates,species_names,cas,nslab,num_surf_sites,mol_dict,
                                  gratom_to_molecule_atom_maps,gratom_to_molecule_surface_atom_maps,
