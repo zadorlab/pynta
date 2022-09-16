@@ -446,7 +446,7 @@ class MolecularTSEstimate(FiretaskBase):
         print("number of TS guesses pre-empty-sites:")
         print(len(tsstructs))
 
-        constraint_lists,atom_bond_potential_lists,site_bond_potential_lists,site_bond_dict_list = generate_constraints_harmonic_parameters(
+        tsstructs_out,constraint_lists,atom_bond_potential_lists,site_bond_potential_lists,site_bond_dict_list = generate_constraints_harmonic_parameters(
                                             tsstructs,adsorbates,slab,reactants,
                                              products,rxn["reaction_family"],template_reversed=(not forward),
                                             ordered_names=species_names,reverse_names=reverse_names,
@@ -456,7 +456,7 @@ class MolecularTSEstimate(FiretaskBase):
 
 
         out_tsstructs,new_atom_bond_potential_lists,new_site_bond_potential_lists,new_constraint_lists = get_surface_forming_bond_pairings(
-                            tsstructs,atom_bond_potential_lists,site_bond_potential_lists,constraint_lists,site_bond_dict_list,cas)
+                            tsstructs_out,atom_bond_potential_lists,site_bond_potential_lists,constraint_lists,site_bond_dict_list,cas)
 
         print("number of TS guesses with empty sites:")
         print(len(out_tsstructs))
