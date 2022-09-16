@@ -333,7 +333,12 @@ def get_bond_lengths_sites(mol,ads,atom_map,surf_atom_map,nslab,facet="fcc111",m
     occ = adcov.get_sites(occupied_only=True)
     surface_dict = [{"atom_index":x["bonding_index"]-nslab, "site":x["site"],
                        "bond_length":x["bond_length"], "position":x["position"]} for x in occ]
-    ad = ads[nslab:]
+
+    if mol.contains_surface_site():
+        ad = ads[nslab:]
+    else:
+        ad = ads
+
     bondlengths = np.zeros((len(mol.atoms),len(mol.atoms)))
     sites = dict()
     sitelengths = dict()
