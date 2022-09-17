@@ -340,7 +340,7 @@ class MolecularVibrationsTask(VibrationTask):
                     sp.set_constraint(FixAtoms(
                         indices=[atom.index for atom in sp if atom.symbol == sym]
                         ))
-                    indices = [atom.index for atom in sp if atom.symbol == sym]
+                    indices = [atom.index for atom in sp if atom.symbol != sym]
 
             vib = Vibrations(sp,indices=indices)
             vib.run()
