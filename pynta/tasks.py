@@ -476,7 +476,7 @@ class MolecularTSEstimate(FiretaskBase):
             return (sp,Eharm,xyz)
 
         inputs = [ {"atoms": out_tsstructs[j], "atom_bond_potentials": new_atom_bond_potential_lists[j],
-                "site_bond_potentials": new_site_bond_potential_lists[j], "nslab": nslab, "constraints": ew_constraint_lists[j]}for j in range(len(out_tsstructs))]
+                "site_bond_potentials": new_site_bond_potential_lists[j], "nslab": nslab, "constraints": new_constraint_lists[j]}for j in range(len(out_tsstructs))]
 
         with mp.Pool(nprocs) as pool:
             outputs = pool.map(run_gfn1xtb_opt,inputs)
