@@ -464,20 +464,7 @@ class MolecularTSEstimate(FiretaskBase):
         print("number of TS guesses with empty sites:")
         print(len(out_tsstructs))
 
-        def map_harmonically_forced_xtb(input):
-            tsstruct,atom_bond_potentials,site_bond_potentials,nslab,constraints = input
-            sp,Eharm,Fharm = run_harmonically_forced_xtb(tsstruct,atom_bond_potentials,site_bond_potentials,nslab,method="GFN1-xTB",
-                                           constraints=constraints)
-            if sp:
-                with open(os.path.join(ts_path,str(j),"harm.json"),'w') as f:
-                    d = {"harmonic energy": Eharm, "harmonic force": Fharm.tolist(),
-                        "passed energy threshold": bool(Eharm < Eharmtol)}
-                    json.dump(d,f)
-                write(os.path.join(ts_path,str(j),"xtb.xyz"),sp)
-                xyz = os.path.join(ts_path,str(j),"xtb.xyz")
-            return (sp,Eharm,xyz)
-
-        inputs = [ (out_tsstructs[j],new_atom_bond_potential_lists[j],new_site_bond_potential_lists[j],nslab,new_constraint_lists[j]) for j in range(len(out_tsstructs))]
+        inputs = [ (out_tsstructs[j],new_atom_bond_potential_lists[j],new_site_bond_potential_lists[j],nslab,new_constraint_lists[j],ts_path,j) for j in range(len(out_tsstructs))]
 
         with mp.Pool(nprocs) as pool:
             outputs = pool.map(map_harmonically_forced_xtb,inputs)
@@ -710,6 +697,18 @@ class MolecularIRC(FiretaskBase):
             return FWAction(stored_data={"error": errors},exit=True)
 
         return FWAction()
+
+def map_harmonically_forced_xtb(input):
+    tsstruct,atom_bond_potentials,site_bond_potentials,nslab,constraints,ts_path,j = input
+    sp,Eharm,Fharm = run_harmonically_forced_xtb(tsstruct,atom_bond_potentials,site_bond_potentials,nslab,method="GFN1-xTB",
+                                   constraints=constraints)
+    if sp:
+        with open(os.path.join(ts_path,str(j),"harm.json"),'w') as f:
+            d = {"harmonic energy": Eharm, "harmonic force": Fharm.tolist()}
+            json.dump(d,f)
+        write(os.path.join(ts_path,str(j),"xtb.xyz"),sp)
+        xyz = os.path.join(ts_path,str(j),"xtb.xyz")
+    return (sp,Eharm,xyz)
 
 def run_harmonically_forced_xtb(atoms,atom_bond_potentials,site_bond_potentials,nslab,method="GFN1-xTB",
                                constraints=[]):
