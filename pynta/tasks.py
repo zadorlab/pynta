@@ -465,7 +465,9 @@ class MolecularTSEstimate(FiretaskBase):
         print(len(out_tsstructs))
 
         def map_harmonically_forced_xtb(input):
-            sp,Eharm,Fharm = run_harmonically_forced_xtb(**input)
+            tsstruct,atom_bond_potentials,site_bond_potentials,nslab,constraints = input
+            sp,Eharm,Fharm = run_harmonically_forced_xtb(tsstruct,atom_bond_potentials,site_bond_potentials,nslab,method="GFN1-xTB",
+                                           constraints=constraints)
             if sp:
                 with open(os.path.join(ts_path,str(j),"harm.json"),'w') as f:
                     d = {"harmonic energy": Eharm, "harmonic force": Fharm.tolist(),
@@ -475,8 +477,7 @@ class MolecularTSEstimate(FiretaskBase):
                 xyz = os.path.join(ts_path,str(j),"xtb.xyz")
             return (sp,Eharm,xyz)
 
-        inputs = [ {"atoms": out_tsstructs[j], "atom_bond_potentials": new_atom_bond_potential_lists[j],
-                "site_bond_potentials": new_site_bond_potential_lists[j], "nslab": nslab, "constraints": new_constraint_lists[j]}for j in range(len(out_tsstructs))]
+        inputs = [ (out_tsstructs[j],new_atom_bond_potential_lists[j],new_site_bond_potential_lists[j],nslab,new_constraint_lists[j]) for j in range(len(out_tsstructs))]
 
         with mp.Pool(nprocs) as pool:
             outputs = pool.map(run_gfn1xtb_opt,inputs)
