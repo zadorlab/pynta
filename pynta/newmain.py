@@ -27,7 +27,7 @@ class Pynta:
                             'conv_thr': 1e-11, 'mixing_mode': 'local-TF',
                             "pseudopotentials": {"Cu": 'Cu.pbe-spn-kjpaw_psl.1.0.0.UPF',"H": 'H.pbe-kjpaw_psl.1.0.0.UPF',"O": 'O.pbe-n-kjpaw_psl.1.0.0.UPF',"C": 'C.pbe-n-kjpaw_psl.1.0.0.UPF',"N": 'N.pbe-n-kjpaw_psl.1.0.0.UPF',
                             }, },
-        reset_launchpad=False,queue_adapter_path=None,nprocs=48,Eharmtol=30.0):
+        reset_launchpad=False,queue_adapter_path=None,nprocs=48,Eharmtol=3.0,Eharmfiltertol=30.0,Ntsmin=5):
 
         self.surface_type = surface_type
         launchpad = LaunchPad.from_file(launchpad_path)
@@ -62,6 +62,8 @@ class Pynta:
         self.nslab = int(np.prod(np.array(self.repeats[0])*np.array(self.repeats[1])))
         self.mol_dict = None
         self.Eharmtol = Eharmtol
+        self.Eharmfiltertol = Eharmfiltertol
+        self.Ntsmin = Ntsmin
 
     def generate_slab(self):
         """
@@ -201,7 +203,7 @@ class Pynta:
                     run_kwargs={"fmax" : 0.01, "steps" : 70},parents=[],constraints=["freeze half slab"], ignore_errors=True)
                 optfws.append(fwopt)
 
-            vib_obj_dict = {"software": self.software, "label": str(prefix), "software_kwargs": self.software_kwargs,
+            vib_obj_dict = {"software": self.software, "label": adsname, "software_kwargs": self.software_kwargs,
                 "constraints": ["freeze all "+self.metal]}
 
             cfw = collect_firework(xyzs,True,[["vibrations_firework"]],[[vib_obj_dict]],[["vib.json"]],[[False]],parents=optfws,label=adsname)
@@ -231,7 +233,7 @@ class Pynta:
                     "IRC_obj_dict": IRC_obj_dict, "nprocs": self.nprocs, "name_to_adjlist_dict": self.name_to_adjlist_dict,
                     "gratom_to_molecule_atom_maps":{sm: {str(k):v for k,v in d.items()} for sm,d in self.gratom_to_molecule_atom_maps.items()},
                     "gratom_to_molecule_surface_atom_maps":{sm: {str(k):v for k,v in d.items()} for sm,d in self.gratom_to_molecule_surface_atom_maps.items()},
-                    "nslab":self.nslab,"Eharmtol":self.Eharmtol})
+                    "nslab":self.nslab,"Eharmtol":self.Eharmtol,"Eharmfiltertol":self.Eharmfiltertol,"Ntsmin":self.Ntsmin})
             reactants = rxn["reactant_names"]
             products = rxn["product_names"]
             parents = []

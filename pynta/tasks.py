@@ -379,7 +379,7 @@ class MolecularTSEstimate(FiretaskBase):
     required_params = ["rxn","ts_path","slab_path","adsorbates_path","rxns_file","repeats","path","metal","facet",
                         "name_to_adjlist_dict", "gratom_to_molecule_atom_maps",
                         "gratom_to_molecule_surface_atom_maps","opt_obj_dict",
-                                "vib_obj_dict","IRC_obj_dict","nslab","Eharmtol"]
+                                "vib_obj_dict","IRC_obj_dict","nslab","Eharmtol","Eharmfiltertol","Ntsmin"]
     optional_params = ["out_path","spawn_jobs","nprocs",]
     def run_task(self, fw_spec):
         gratom_to_molecule_atom_maps = {sm: {int(k):v for k,v in d.items()} for sm,d in self["gratom_to_molecule_atom_maps"].items()}
@@ -395,6 +395,8 @@ class MolecularTSEstimate(FiretaskBase):
         facet = self["facet"]
         nslab = self["nslab"]
         Eharmtol = self["Eharmtol"]
+        Eharmfiltertol = self["Eharmfiltertol"]
+        Ntsmin = self["Ntsmin"]
 
         slab_path = self["slab_path"]
         slab = read(slab_path) * self["repeats"]
@@ -462,28 +464,35 @@ class MolecularTSEstimate(FiretaskBase):
         print("number of TS guesses with empty sites:")
         print(len(out_tsstructs))
 
-        xyzs = []
-        Es = []
-        for j,tsstruct in enumerate(out_tsstructs):
-            os.makedirs(os.path.join(ts_path,str(j)))
-            write(os.path.join(ts_path,str(j),"xtb_init.xyz"),tsstruct)
-            sp,Eharm,Fharm = run_harmonically_forced_xtb(out_tsstructs[j],new_atom_bond_potential_lists[j],new_site_bond_potential_lists[j],
-                           nslab=nslab,constraints=new_constraint_lists[j])
-
+        def map_harmonically_forced_xtb(input):
+            sp,Eharm,Fharm = run_harmonically_forced_xtb(**input)
             if sp:
                 with open(os.path.join(ts_path,str(j),"harm.json"),'w') as f:
                     d = {"harmonic energy": Eharm, "harmonic force": Fharm.tolist(),
                         "passed energy threshold": bool(Eharm < Eharmtol)}
                     json.dump(d,f)
                 write(os.path.join(ts_path,str(j),"xtb.xyz"),sp)
-                Es.append(Eharm)
-                xyzs.append(os.path.join(ts_path,str(j),"xtb.xyz"))
+                xyz = os.path.join(ts_path,str(j),"xtb.xyz")
+            return (sp,Eharm,xyz)
+
+        inputs = [ {"atoms": out_tsstructs[j], "atom_bond_potentials": new_atom_bond_potential_lists[j],
+                "site_bond_potentials": new_site_bond_potential_lists[j], "nslab": nslab, "constraints": ew_constraint_lists[j]}for j in range(len(out_tsstructs))]
+
+        with mp.Pool(nprocs) as pool:
+            outputs = pool.map(run_gfn1xtb_opt,inputs)
+
+        xyzs = [output[2] for output in outputs if output[0]]
+        Es = [output[1] for output in outputs if output[0]]
 
         Einds = np.argsort(np.array(Es))
         Emin = np.min(np.array(Es))
         xyzsout = []
         for Eind in Einds:
-            if Es[Eind]/Emin < Eharmtol:
+            if Es[Eind]/Emin < Eharmtol: #include all TSs with energy close to Emin
+                xyzsout.append(xyzs[Eind])
+            elif Es[Eind]/Emin > Eharmfiltertol: #if the energy is much larger than Emin skip it
+                continue
+            elif len(xyzsout) < Ntsmin: #if the energy isn't similar, but isn't much larger include the smallest until Ntsmin is reached
                 xyzsout.append(xyzs[Eind])
 
         if spawn_jobs:
