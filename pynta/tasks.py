@@ -701,6 +701,7 @@ class MolecularIRC(FiretaskBase):
 
 def map_harmonically_forced_xtb(input):
     tsstruct,atom_bond_potentials,site_bond_potentials,nslab,constraints,ts_path,j = input
+    os.makedirs(os.path.join(ts_path,str(j)))
     sp,Eharm,Fharm = run_harmonically_forced_xtb(tsstruct,atom_bond_potentials,site_bond_potentials,nslab,method="GFN1-xTB",
                                    constraints=constraints)
     if sp:
