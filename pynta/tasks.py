@@ -466,8 +466,9 @@ class MolecularTSEstimate(FiretaskBase):
 
         inputs = [ (out_tsstructs[j],new_atom_bond_potential_lists[j],new_site_bond_potential_lists[j],nslab,new_constraint_lists[j],ts_path,j) for j in range(len(out_tsstructs))]
 
-        with mp.Pool(nprocs) as pool:
-            outputs = pool.map(map_harmonically_forced_xtb,inputs)
+        #with mp.Pool(nprocs) as pool:
+        #    outputs = pool.map(map_harmonically_forced_xtb,inputs)
+        outputs = list(map(map_harmonically_forced_xtb,inputs))
 
         xyzs = [output[2] for output in outputs if output[0]]
         Es = [output[1] for output in outputs if output[0]]
