@@ -657,7 +657,7 @@ class MolecularIRC(FiretaskBase):
                         cons.fix_translation(atom.index)
             elif c.split()[0] == "freeze" and c.split()[1] == "all": #ex: "freeze all Cu"
                 sym = c.split()[2]
-                indices = [atom.index for atom in atoms if atom.symbol == sym]
+                indices = [atom.index for atom in sp if atom.symbol == sym]
                 for ind in indices:
                     cons.fix_translation(ind)
 
