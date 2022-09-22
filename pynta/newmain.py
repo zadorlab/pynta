@@ -191,6 +191,17 @@ class Pynta:
             xyzs = []
             optfws = []
             mol = self.mol_dict[adsname]
+
+            #check if this adsorbate is already calculated
+            exists = False
+            for prefix,structure in adsorbate.items():
+                if os.path.exists(os.path.join(self.path,"Adsorbates",adsname,str(prefix),str(prefix)+".xyz")):
+                    exists = True
+
+            if exists: #if this species already has a completed opt job in any prefix driectory skip it
+                self.adsorbate_fw_dict[adsname] = []
+                continue
+
             for prefix,structure in adsorbate.items():
                 if len(mol.get_surface_sites()) > 0:
                     big_slab_ads = big_slab + structure[nsmall_slab:]
