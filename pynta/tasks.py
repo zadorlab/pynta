@@ -33,6 +33,8 @@ import sys
 import shutil
 import time
 import logging
+import signal
+from contextlib import contextmanager
 from copy import deepcopy
 from pathlib import Path
 
@@ -70,6 +72,7 @@ def optimize_firework(xyz,software,label,opt_method=None,sella=None,socket=False
     d["order"] = order
     d["sella"] = sella
     d["socket"] = socket
+    d["time_limit_hrs"] = time_limit_hrs
     d["ignore_errors"] = ignore_errors
     t1 = MolecularOptimizationTask(d)
     directory = os.path.dirname(xyz)
@@ -147,7 +150,11 @@ class MolecularOptimizationTask(OptimizationTask):
             opt = opt_method(sp,**opt_kwargs)
 
             try:
-                opt.run(**run_kwargs)
+                if np.isinf(time_limit_hrs):
+                    opt.run(**run_kwargs)
+                else:
+                    with limit_time(time_limit_hrs*60.0*60.0):
+                        opt.run(**run_kwargs)
             except Exception as e:
                 if not ignore_errors:
                     raise e
@@ -183,7 +190,11 @@ class MolecularOptimizationTask(OptimizationTask):
 
             opt = Sella(sp,constraints=cons,trajectory=label+".traj",order=order)
             try:
-                opt.run(**run_kwargs)
+                if np.isinf(time_limit_hrs):
+                    opt.run(**run_kwargs)
+                else:
+                    with limit_time(time_limit_hrs*60.0*60.0):
+                        opt.run(**run_kwargs)
             except Exception as e:
                 if not ignore_errors:
                     raise e
@@ -202,17 +213,33 @@ class MolecularOptimizationTask(OptimizationTask):
                     else:
                         errors.append(e)
 
-        if not opt.converged():
-            e = ValueError
-            if not ignore_errors:
-                raise e
+        converged = opt.converged()
+        if not converged:
+            fmax = np.inf
+            try:
+                fmaxsp = get_fmax(sp)
+                tr = Trajectory(label+".traj")
+                fmaxtr = get_fmax(tr[-1])
+                if fmaxtr < fmaxsp:
+                    sp = tr[-1]
+                    fmax = fmaxtr
+                else:
+                    fmax = fmaxsp
+            except:
+                pass
+            if fmax < fmaxhard:
+                converged = True
             else:
-                errors.append(e)
+                e = ValueError
+                if not ignore_errors:
+                    raise e
+                else:
+                    errors.append(e)
 
-        if len(errors) == 0:
+        if converged:
             write(label+".xyz", sp)
         else:
-            return FWAction(stored_data={"error": errors},exit=True)
+            return FWAction(stored_data={"error": errors,"converged": converged}, exit=True)
 
         return FWAction()
 
@@ -812,6 +839,22 @@ class MolecularTSxTBOpt(OptimizationTask):
                 return FWAction(stored_data={"error": e}, exit=True)
 
         return FWAction()
+
+class TimeLimitError(Exception): pass
+
+@contextmanager
+def limit_time(t): #seconds
+    def signal_handler(signum, frame):
+        raise TimeLimitError
+    signal.signal(signal.SIGALRM, signal_handler)
+    signal.alarm(int(t))
+    try:
+        yield
+    finally:
+        signal.alarm(0)
+
+def get_fmax(at):
+    return np.max(np.abs([np.linalg.norm(at.get_forces()[i,:]) for i in range(at.get_forces().shape[0])]))
 
 def name_to_ase_software(software_name):
     """
