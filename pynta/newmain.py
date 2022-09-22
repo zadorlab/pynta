@@ -10,6 +10,7 @@ from ase import Atoms, Atom
 import os
 import time
 import yaml
+from copy import deepcopy
 import numpy as np
 from fireworks import LaunchPad, Workflow
 from fireworks.queue.queue_launcher import rapidfire as rapidfirequeue
@@ -27,7 +28,9 @@ class Pynta:
                             'conv_thr': 1e-11, 'mixing_mode': 'local-TF',
                             "pseudopotentials": {"Cu": 'Cu.pbe-spn-kjpaw_psl.1.0.0.UPF',"H": 'H.pbe-kjpaw_psl.1.0.0.UPF',"O": 'O.pbe-n-kjpaw_psl.1.0.0.UPF',"C": 'C.pbe-n-kjpaw_psl.1.0.0.UPF',"N": 'N.pbe-n-kjpaw_psl.1.0.0.UPF',
                             }, },
-        reset_launchpad=False,queue_adapter_path=None,nprocs=48,Eharmtol=3.0,Eharmfiltertol=30.0,Ntsmin=5):
+        software_kwargs_gas=None,
+        reset_launchpad=False,queue_adapter_path=None,nprocs=48,opt_time_limit_hrs=12.0,
+        Eharmtol=3.0,Eharmfiltertol=30.0,Ntsmin=5):
 
         self.surface_type = surface_type
         launchpad = LaunchPad.from_file(launchpad_path)
@@ -46,6 +49,15 @@ class Pynta:
         self.metal = metal
         self.adsorbate_fw_dict = dict()
         self.software_kwargs = software_kwargs
+
+        if software_kwargs_gas:
+            self.software_kwargs_gas = software_kwargs_gas
+        else:
+            self.software_kwargs_gas = deepcopy(software_kwargs)
+            self.software_kwargs_gas["kpts"] = 'gamma'
+            self.software_kwargs_gas["smearing"] = 'gauss'
+            self.software_kwargs_gas["degauss"] = 0.005
+
         self.queue = queue
         self.fworker = None
         self.qadapter = None
@@ -205,19 +217,25 @@ class Pynta:
             for prefix,structure in adsorbate.items():
                 if len(mol.get_surface_sites()) > 0:
                     big_slab_ads = big_slab + structure[nsmall_slab:]
+                    software_kwargs = deepcopy(self.software_kwargs)
                 else: #gas phase
                     big_slab_ads = structure
+                    software_kwargs = deepcopy(self.software_kwargs_gas)
+                    if len(big_slab_ads) == 1 and self.software == "Espresso": #monoatomic species
+                        software_kwargs["command"] = software_kwargs["command"].replace("< PREFIX.pwi > PREFIX.pwo","-ndiag 1 < PREFIX.pwi > PREFIX.pwo")
+
                 os.makedirs(os.path.join(self.path,"Adsorbates",adsname,str(prefix)))
                 write(os.path.join(self.path,"Adsorbates",adsname,str(prefix),str(prefix)+"_init.xyz"),big_slab_ads)
                 xyz = os.path.join(self.path,"Adsorbates",adsname,str(prefix),str(prefix)+".xyz")
                 xyzs.append(xyz)
                 fwopt = optimize_firework(os.path.join(self.path,"Adsorbates",adsname,str(prefix),str(prefix)+"_init.xyz"),
                     self.software,str(prefix),
-                    opt_method="QuasiNewton",socket=self.socket,software_kwargs=self.software_kwargs,
-                    run_kwargs={"fmax" : 0.01, "steps" : 70},parents=[],constraints=["freeze half slab"], ignore_errors=True)
+                    opt_method="QuasiNewton",socket=self.socket,software_kwargs=software_kwargs,
+                    run_kwargs={"fmax" : 0.01, "steps" : 70},parents=[],constraints=["freeze half slab"], time_limit_hrs=self.opt_time_limit_hrs,
+                    fmaxhard=0.05, ignore_errors=True)
                 optfws.append(fwopt)
 
-            vib_obj_dict = {"software": self.software, "label": adsname, "software_kwargs": self.software_kwargs,
+            vib_obj_dict = {"software": self.software, "label": adsname, "software_kwargs": software_kwargs,
                 "constraints": ["freeze all "+self.metal]}
 
             cfw = collect_firework(xyzs,True,[["vibrations_firework"]],[[vib_obj_dict]],[["vib.json"]],[[False]],parents=optfws,label=adsname)
@@ -233,7 +251,8 @@ class Pynta:
         Note the vibrational and IRC calculations are launched at the same time
         """
         opt_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":self.software_kwargs,
-                "run_kwargs": {"fmax" : 0.01, "steps" : 70},"constraints": ["freeze half slab"],"sella":True,"order":1}
+                "run_kwargs": {"fmax" : 0.01, "steps" : 70},"constraints": ["freeze half slab"],"sella":True,"order":1,
+                "fmaxhard": 0.05, "time_limit_hrs": self.opt_time_limit_hrs}
         vib_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":self.software_kwargs,
                 "constraints": ["freeze all "+self.metal]}
         IRC_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":self.software_kwargs,
