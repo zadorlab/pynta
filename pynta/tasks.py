@@ -60,7 +60,7 @@ class DoNothingTask(FiretaskBase):
         return FWAction()
 
 def optimize_firework(xyz,software,label,opt_method=None,sella=None,socket=False,order=0,software_kwargs={},opt_kwargs={},
-                      run_kwargs={},constraints=[],parents=[],out_path=None,ignore_errors=False):
+                      run_kwargs={},constraints=[],parents=[],out_path=None,time_limit_hrs=np.inf,fmaxhard=0.0,ignore_errors=False):
     d = {"xyz" : xyz, "software" : software,"label" : label}
     if opt_method: d["opt_method"] = opt_method
     if software_kwargs: d["software_kwargs"] = software_kwargs
@@ -73,6 +73,7 @@ def optimize_firework(xyz,software,label,opt_method=None,sella=None,socket=False
     d["sella"] = sella
     d["socket"] = socket
     d["time_limit_hrs"] = time_limit_hrs
+    d["fmaxhard"] = fmaxhard
     d["ignore_errors"] = ignore_errors
     t1 = MolecularOptimizationTask(d)
     directory = os.path.dirname(xyz)
@@ -85,7 +86,7 @@ def optimize_firework(xyz,software,label,opt_method=None,sella=None,socket=False
 class MolecularOptimizationTask(OptimizationTask):
     required_params = ["software","label"]
     optional_params = ["software_kwargs","opt_method",
-        "opt_kwargs","run_kwargs", "constraints","sella","order","socket","ignore_errors"]
+        "opt_kwargs","run_kwargs", "constraints","sella","order","socket","time_limit_hrs","fmaxhard","ignore_errors"]
     def run_task(self, fw_spec):
         errors = []
         software_kwargs = deepcopy(self["software_kwargs"]) if "software_kwargs" in self.keys() else dict()
@@ -103,6 +104,8 @@ class MolecularOptimizationTask(OptimizationTask):
         run_kwargs = deepcopy(self["run_kwargs"]) if "run_kwargs" in self.keys() else dict()
         sella = self["sella"] if "sella" in self.keys() else False
         order = self["order"] if "order" in self.keys() else 0
+        time_limit_hrs = self["time_limit_hrs"] if "time_limit_hrs" in self.keys() else: np.inf
+        fmaxhard = self["fmaxhard"] if "fmaxhard" in self.keys() else: 0.0
         ignore_errors = self["ignore_errors"] if "ignore_errors" in self.keys() else False
 
         label = self["label"]
