@@ -439,13 +439,18 @@ class MolecularTSEstimate(FiretaskBase):
 
 
         reactants = Molecule().from_adjacency_list(rxn["reactant"])
+        reactants.multiplicity = reactants.get_radical_count() + 1
         products = Molecule().from_adjacency_list(rxn["product"])
+        products.multiplicity = products.get_radical_count() + 1
 
         reactant_names = rxn["reactant_names"]
         product_names = rxn["product_names"]
         rxn_name = rxn["reaction"]
 
         mol_dict = {name: Molecule().from_adjacency_list(adj.replace("multiplicity -187","")) for name,adj in self["name_to_adjlist_dict"].items()}
+
+        for sm,mol in mol_dict.items():
+            mol.multiplicity = mol.get_radical_count() + 1
 
         reactant_mols = [mol_dict[name] for name in reactant_names]
         product_mols = [mol_dict[name] for name in product_names]
@@ -461,13 +466,11 @@ class MolecularTSEstimate(FiretaskBase):
         pnum_surf_sites = [len(mol.get_surface_sites()) for i,mol in enumerate(product_mols)]
 
         if forward:
-            reactants = Molecule().from_adjacency_list(rxn["reactant"])
-            products = Molecule().from_adjacency_list(rxn["product"])
             num_surf_sites = rnum_surf_sites
             reverse_names = product_names
         else:
-            products = Molecule().from_adjacency_list(rxn["reactant"])
-            reactants = Molecule().from_adjacency_list(rxn["product"])
+            products = reactants
+            reactants = products
             num_surf_sites = pnum_surf_sites
             reverse_names = reactant_names
 

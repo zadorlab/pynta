@@ -118,6 +118,9 @@ class Pynta:
             else:
                 unique_mols.append(mol)
 
+        for mol in unique_mols:
+            mol.multiplicity = mol.get_radical_count() + 1
+
         mol_dict = {mol.to_smiles():mol for mol in unique_mols}
         self.mol_dict = mol_dict
         self.name_to_adjlist_dict = {sm:mol.to_adjacency_list() for sm,mol in mol_dict.items()}
