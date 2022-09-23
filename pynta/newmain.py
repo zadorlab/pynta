@@ -76,6 +76,7 @@ class Pynta:
         self.Eharmtol = Eharmtol
         self.Eharmfiltertol = Eharmfiltertol
         self.Ntsmin = Ntsmin
+        self.opt_time_limit_hrs = opt_time_limit_hrs
 
     def generate_slab(self):
         """
