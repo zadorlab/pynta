@@ -469,8 +469,9 @@ class MolecularTSEstimate(FiretaskBase):
             num_surf_sites = rnum_surf_sites
             reverse_names = product_names
         else:
+            temp = products
             products = reactants
-            reactants = products
+            reactants = temp
             num_surf_sites = pnum_surf_sites
             reverse_names = reactant_names
 
