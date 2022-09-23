@@ -224,8 +224,10 @@ class Pynta:
                     software_kwargs = deepcopy(self.software_kwargs_gas)
                     if len(big_slab_ads) == 1 and self.software == "Espresso": #monoatomic species
                         software_kwargs["command"] = software_kwargs["command"].replace("< PREFIX.pwi > PREFIX.pwo","-ndiag 1 < PREFIX.pwi > PREFIX.pwo")
-
-                os.makedirs(os.path.join(self.path,"Adsorbates",adsname,str(prefix)))
+                try:
+                    os.makedirs(os.path.join(self.path,"Adsorbates",adsname,str(prefix)))
+                except:
+                    pass
                 write(os.path.join(self.path,"Adsorbates",adsname,str(prefix),str(prefix)+"_init.xyz"),big_slab_ads)
                 xyz = os.path.join(self.path,"Adsorbates",adsname,str(prefix),str(prefix)+".xyz")
                 xyzs.append(xyz)
