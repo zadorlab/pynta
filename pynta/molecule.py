@@ -228,7 +228,7 @@ def get_template_mol_map(template,mols):
     tempmols = [x for x in template.split() if not x.is_surface_site()]
     for tempmol in tempmols:
         if tempmol.multiplicity == -187: #handle surface molecules
-            tempmol.multiplicity = 1
+            tempmol.multiplicity = tempmol.get_radical_count() + 1
 
     ordered_tempmols = []
     for i,mol in enumerate(mols):
