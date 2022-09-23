@@ -104,8 +104,8 @@ class MolecularOptimizationTask(OptimizationTask):
         run_kwargs = deepcopy(self["run_kwargs"]) if "run_kwargs" in self.keys() else dict()
         sella = self["sella"] if "sella" in self.keys() else False
         order = self["order"] if "order" in self.keys() else 0
-        time_limit_hrs = self["time_limit_hrs"] if "time_limit_hrs" in self.keys() else: np.inf
-        fmaxhard = self["fmaxhard"] if "fmaxhard" in self.keys() else: 0.0
+        time_limit_hrs = self["time_limit_hrs"] if "time_limit_hrs" in self.keys() else np.inf
+        fmaxhard = self["fmaxhard"] if "fmaxhard" in self.keys() else 0.0
         ignore_errors = self["ignore_errors"] if "ignore_errors" in self.keys() else False
 
         label = self["label"]
