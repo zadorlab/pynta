@@ -115,10 +115,12 @@ class Pynta:
             react.clear_labeled_atoms()
             prod.clear_labeled_atoms()
             for mol in react.split():
+                mol.multiplicity = mol.get_radical_count() + 1
                 if not mol.is_surface_site():
                     mols.append(mol)
                     r["reactant_mols"].append(mol)
             for mol in prod.split():
+                mol.multiplicity = mol.get_radical_count() + 1
                 if not mol.is_surface_site():
                     mols.append(mol)
                     r["product_mols"].append(mol)
@@ -148,12 +150,22 @@ class Pynta:
                     if mol is rmol or mol.is_isomorphic(rmol,save_order=True):
                         r["reactant_mols"][i] = mol
                         r["reactant_names"].append(sm)
+                        break
+                else:
+                    print("rmol")
+                    print(rmol.to_adjacency_list())
+                    raise ValueError
 
             for i,rmol in enumerate(r["product_mols"]):
                 for sm,mol in mol_dict.items():
                     if mol is rmol or mol.is_isomorphic(rmol,save_order=True):
                         r["product_mols"][i] = mol
                         r["product_names"].append(sm)
+                        break
+                else:
+                    print("rmol")
+                    print(rmol.to_adjacency_list())
+                    raise ValueError
 
             r["reactant_mols"] = [x.to_adjacency_list() for x in r["reactant_mols"]]
             r["product_mols"] = [x.to_adjacency_list() for x in r["product_mols"]]
