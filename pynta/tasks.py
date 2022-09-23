@@ -244,7 +244,7 @@ class MolecularOptimizationTask(OptimizationTask):
         else:
             return FWAction(stored_data={"error": errors,"converged": converged}, exit=True)
 
-        return FWAction()
+        return FWAction(stored_data={"error": errors,"converged": converged})
 
 @explicit_serialize
 class MolecularOptimizationFailTask(OptimizationTask):
