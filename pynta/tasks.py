@@ -60,7 +60,8 @@ class DoNothingTask(FiretaskBase):
         return FWAction()
 
 def optimize_firework(xyz,software,label,opt_method=None,sella=None,socket=False,order=0,software_kwargs={},opt_kwargs={},
-                      run_kwargs={},constraints=[],parents=[],out_path=None,time_limit_hrs=np.inf,fmaxhard=0.0,ignore_errors=False):
+                      run_kwargs={},constraints=[],parents=[],out_path=None,time_limit_hrs=np.inf,fmaxhard=0.0,ignore_errors=False,
+                      target_site_num=None,metal=None,facet=None):
     d = {"xyz" : xyz, "software" : software,"label" : label}
     if opt_method: d["opt_method"] = opt_method
     if software_kwargs: d["software_kwargs"] = software_kwargs
@@ -75,6 +76,9 @@ def optimize_firework(xyz,software,label,opt_method=None,sella=None,socket=False
     d["time_limit_hrs"] = time_limit_hrs
     d["fmaxhard"] = fmaxhard
     d["ignore_errors"] = ignore_errors
+    d["target_site_num"] = target_site_num
+    d["metal"] = metal
+    d["facet"] = facet
     t1 = MolecularOptimizationTask(d)
     directory = os.path.dirname(xyz)
     if out_path is None: out_path = os.path.join(directory,label+".xyz")
@@ -86,7 +90,7 @@ def optimize_firework(xyz,software,label,opt_method=None,sella=None,socket=False
 class MolecularOptimizationTask(OptimizationTask):
     required_params = ["software","label"]
     optional_params = ["software_kwargs","opt_method",
-        "opt_kwargs","run_kwargs", "constraints","sella","order","socket","time_limit_hrs","fmaxhard","ignore_errors"]
+        "opt_kwargs","run_kwargs", "constraints","sella","order","socket","time_limit_hrs","fmaxhard","ignore_errors","target_site_num","metal","facet"]
     def run_task(self, fw_spec):
         errors = []
         software_kwargs = deepcopy(self["software_kwargs"]) if "software_kwargs" in self.keys() else dict()
@@ -106,6 +110,9 @@ class MolecularOptimizationTask(OptimizationTask):
         order = self["order"] if "order" in self.keys() else 0
         time_limit_hrs = self["time_limit_hrs"] if "time_limit_hrs" in self.keys() else np.inf
         fmaxhard = self["fmaxhard"] if "fmaxhard" in self.keys() else 0.0
+        target_site_num = self["target_site_num"] if "target_site_num" in self.keys() else None
+        metal = self["metal"] if "metal" in self.keys() else None
+        facet = self["facet"] if "facet" in self.keys() else None
         ignore_errors = self["ignore_errors"] if "ignore_errors" in self.keys() else False
 
         label = self["label"]
@@ -217,7 +224,7 @@ class MolecularOptimizationTask(OptimizationTask):
                         errors.append(e)
 
         converged = opt.converged()
-        if not converged:
+        if not converged: #optimization has converged
             fmax = np.inf
             try:
                 fmaxsp = get_fmax(sp)
@@ -239,10 +246,25 @@ class MolecularOptimizationTask(OptimizationTask):
                 else:
                     errors.append(e)
 
+        if converged and target_site_num: #optimization converged to correct structure, for now just check has correct number of occupied sites
+            cas = SlabAdsorptionSites(sp,facet,allow_6fold=False,composition_effect=False,
+                            label_sites=True,
+                            surrogate_metal=metal)
+            adcov = SlabAdsorbateCoverage(sp,adsorption_sites=cas)
+            sites = adcov.get_sites()
+            occ = [site for site in sites if site["occupied"]]
+            if target_site_num != len(occ):
+                converged = False
+                e = StructureError
+                if not ignore_errors:
+                    raise e
+                else:
+                    errors.append(e)
+
         if converged:
             write(label+".xyz", sp)
         else:
-            return FWAction(stored_data={"error": errors,"converged": converged}, exit=True)
+            return FWAction(stored_data={"error": errors,"converged": converged})
 
         return FWAction(stored_data={"error": errors,"converged": converged})
 
@@ -847,6 +869,7 @@ class MolecularTSxTBOpt(OptimizationTask):
 
         return FWAction()
 
+class StructureError(Exception): pass
 class TimeLimitError(Exception): pass
 
 @contextmanager
