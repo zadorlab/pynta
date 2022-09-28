@@ -8,11 +8,17 @@ import numpy as np
 from ase.data import covalent_radii
 from acat.adsorption_sites import SlabAdsorptionSites
 from acat.adsorbate_coverage import SlabAdsorbateCoverage
-from acat.settings import site_heights
+from acat.settings import site_heights, adsorbate_molecule
+from acat.utilities import (custom_warning,
+                         is_list_or_tuple,
+                         get_close_atoms,
+                         get_rodrigues_rotation_matrix,
+                         get_angle_between,
+                         get_rejection_between)
 import os
 from pynta.symmetry import get_unique_sym, get_unique_sym_structs
 from ase.visualize import view
-from ase.atoms import Atoms
+from ase.atoms import Atoms, Atom
 from ase.geometry import get_distances
 import itertools
 from pynta.calculator import HarmonicallyForcedXTB
