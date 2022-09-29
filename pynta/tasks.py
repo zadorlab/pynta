@@ -240,7 +240,7 @@ class MolecularOptimizationTask(OptimizationTask):
             if fmax < fmaxhard:
                 converged = True
             else:
-                e = ValueError
+                e = ValueError("Did not converge fmax below fmaxhard")
                 if not ignore_errors:
                     raise e
                 else:
