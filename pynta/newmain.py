@@ -305,48 +305,47 @@ class Pynta:
                 self.adsorbate_fw_dict[adsname] = optfws
                 logging.error(self.adsorbate_fw_dict.keys())
                 self.fws.extend(optfws+[cfw])
-            else:
-                ads_path = os.path.join(self.path,"Adsorbates")
-                for ad in os.listdir(ads_path):
-                    xyz = []
-                    optfws = []
-                    mol = self.mol_dict[ad]
-                    target_site_num = len(mol.get_surface_sites())
-                    ad_path = os.path.join(ads_path,ad)
-                    completed = False
-                    for prefix in os.listdir(ad_path):
-                        if os.path.exists(os.path.join(ad_path,prefix,prefix+".xyz")):
-                            completed = True
-                    if completed:
-                        continue
-                        self.adsorbate_fw_dict[ad] = []
+        else:
+            ads_path = os.path.join(self.path,"Adsorbates")
+            for ad in os.listdir(ads_path):
+                xyz = []
+                optfws = []
+                mol = self.mol_dict[ad]
+                target_site_num = len(mol.get_surface_sites())
+                ad_path = os.path.join(ads_path,ad)
+                completed = False
+                for prefix in os.listdir(ad_path):
+                    if os.path.exists(os.path.join(ad_path,prefix,prefix+".xyz")):
+                        completed = True
+                if completed:
+                    continue
+                    self.adsorbate_fw_dict[ad] = []
 
-                    for prefix in os.listdir(ad_path):
-                        prefix_path = os.path.join(ad_path,prefix)
-                        if target_site_num == 0:
-                            software_kwargs = deepcopy(self.software_kwargs_gas)
-                            if len(mol.atoms) == 1 and self.software == "Espresso": #monoatomic species
-                                software_kwargs["command"] = software_kwargs["command"].replace("< PREFIX.pwi > PREFIX.pwo","-ndiag 1 < PREFIX.pwi > PREFIX.pwo")
-                        else:
-                            software_kwargs = deepcopy(self.software_kwargs)
-                        xyz = os.path.join(prefix_path,str(prefix)+".xyz")
-                        init_path = os.path.join(prefix_path,prefix+"_init.xyz")
-                        assert os.path.exists(init_path)
-                        xyzs.append(xyz)
-                        fwopt = optimize_firework(init_path,
-                            self.software,prefix,
-                            opt_method="QuasiNewton",socket=self.socket,software_kwargs=software_kwargs,
-                            run_kwargs={"fmax" : 0.01, "steps" : 70},parents=[],constraints=["freeze half slab"], time_limit_hrs=self.opt_time_limit_hrs,
-                            fmaxhard=0.05, ignore_errors=True, metal=self.metal, facet=self.surface_type, target_site_num=target_site_num)
-                        optfws.append(fwopt)
+                for prefix in os.listdir(ad_path):
+                    prefix_path = os.path.join(ad_path,prefix)
+                    if target_site_num == 0:
+                        software_kwargs = deepcopy(self.software_kwargs_gas)
+                        if len(mol.atoms) == 1 and self.software == "Espresso": #monoatomic species
+                            software_kwargs["command"] = software_kwargs["command"].replace("< PREFIX.pwi > PREFIX.pwo","-ndiag 1 < PREFIX.pwi > PREFIX.pwo")
+                    else:
+                        software_kwargs = deepcopy(self.software_kwargs)
+                    xyz = os.path.join(prefix_path,str(prefix)+".xyz")
+                    init_path = os.path.join(prefix_path,prefix+"_init.xyz")
+                    assert os.path.exists(init_path)
+                    xyzs.append(xyz)
+                    fwopt = optimize_firework(init_path,
+                        self.software,prefix,
+                        opt_method="QuasiNewton",socket=self.socket,software_kwargs=software_kwargs,
+                        run_kwargs={"fmax" : 0.01, "steps" : 70},parents=[],constraints=["freeze half slab"], time_limit_hrs=self.opt_time_limit_hrs,
+                        fmaxhard=0.05, ignore_errors=True, metal=self.metal, facet=self.surface_type, target_site_num=target_site_num)
+                    optfws.append(fwopt)
 
-                    vib_obj_dict = {"software": self.software, "label": ad, "software_kwargs": software_kwargs,
-                        "constraints": ["freeze all "+self.metal]}
+                vib_obj_dict = {"software": self.software, "label": ad, "software_kwargs": software_kwargs,
+                    "constraints": ["freeze all "+self.metal]}
 
-                    cfw = collect_firework(xyzs,True,[["vibrations_firework"]],[[vib_obj_dict]],[["vib.json"]],[[False]],parents=optfws,label=ad)
-                    self.adsorbate_fw_dict[ad] = optfws
-                    print(self.adsorbate_fw_dict.keys())
-                    self.fws.extend(optfws+[cfw])
+                cfw = collect_firework(xyzs,True,[["vibrations_firework"]],[[vib_obj_dict]],[["vib.json"]],[[False]],parents=optfws,label=ad)
+                self.adsorbate_fw_dict[ad] = optfws
+                self.fws.extend(optfws+[cfw])
 
 
     def setup_transition_states(self,adsorbates_finished=False):
