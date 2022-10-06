@@ -101,7 +101,7 @@ def get_unique_sym_struct_indices(geoms):
     geoms_copy = deepcopy(geoms)
 
     good_adsorbates_atom_obj_list = []
-    geos_out = []
+    indices = []
 
     for i,geom in enumerate(geoms_copy):
         adsorbate_atom_obj = geom
@@ -111,9 +111,43 @@ def get_unique_sym_struct_indices(geoms):
 
         if comparision is False:
             good_adsorbates_atom_obj_list.append(adsorbate_atom_obj)
-            geos_out.append(geoms[i])
+            indices.append(i)
 
-    indices = [geoms_copy.index(g) for g in geos_out]
+    return indices
+
+def get_unique_sym_struct_index_clusters(geoms):
+    ''' Check for the symmetry equivalent structures in the given files
+
+    Parameters
+    ___________
+    geoms: list of Atoms objects to compare
+
+
+    '''
+    comparator = SymmetryEquivalenceCheck()
+
+    geoms_copy = deepcopy(geoms)
+
+    good_adsorbates_atom_obj_list = []
+    indices = []
+
+    for i,geom in enumerate(geoms_copy):
+        adsorbate_atom_obj = geom
+        adsorbate_atom_obj.pbc = True
+        comparison = None
+        for j,adlist in enumerate(good_adsorbates_atom_obj_list):
+            comparison = comparator.compare(adsorbate_atom_obj, [adlist[0]])
+            ind = j
+            if comparison:
+                break
+        else:
+            comparison = False
+
+        if comparison is False:
+            good_adsorbates_atom_obj_list.append([adsorbate_atom_obj])
+            indices.append([i])
+        else:
+            indices[ind].append(i)
 
     return indices
 
