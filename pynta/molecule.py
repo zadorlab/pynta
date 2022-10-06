@@ -176,6 +176,57 @@ def place_adsorbate(ads,slab,atom_surf_inds,sites):
         add_adsorbate_to_site(geo, ads, atom_surf_inds[0], sites[0], height=5.0)
 
     return geo
+
+def generate_unique_site_additions(geo,cas,nslab,site_bond_params_list=[],sites_list=[]):
+    nads = len(geo) - nslab
+    #label sites with unique noble gas atoms
+    he = Atoms('He',positions=[[0, 0, 0],])
+    ne = Atoms('Ne',positions=[[0, 0, 0],])
+    ar = Atoms('Ar',positions=[[0, 0, 0],])
+    kr = Atoms('Kr',positions=[[0, 0, 0],])
+    xe = Atoms('Xe',positions=[[0, 0, 0],])
+    rn = Atoms('Rn',positions=[[0, 0, 0],])
+    site_tags = [he,ne,ar,kr,xe,rn]
+    tag = site_tags[nads]
+    adcov = SlabAdsorbateCoverage(geo,adsorption_sites=cas)
+    sites = adcov.get_sites()
+    unocc = [site for site in sites if site["occupied"] == False]
+
+    site_bond_params_lists = [deepcopy(site_bond_params_list) for i in range(len(unocc))]
+    sites_lists = [deepcopy(sites_list) for i in range(len(unocc))]
+
+    geoms = []
+    for i,site in enumerate(unocc):
+        geom = geo.copy()
+        add_adsorbate_to_site(geom,adsorbate=tag,surf_ind=0,site=site,height=1.5)
+        pos = site["position"].tolist()
+        pos[2] += site_heights[site["site"]]
+        params = {"site_pos": pos,"ind": None, "k": 100.0, "deq": 0.0}
+        site_bond_params_lists[i].append(params)
+        sites_lists[i].append(site)
+        geoms.append(geom)
+
+    indclusters = get_unique_sym_struct_index_clusters(geoms)
+
+    inds = []
+    for cluster in indclusters: #choose symmetric geometries closer to center of cell
+        min_dist = np.inf
+        indout = None
+        for ind in cluster:
+            d = get_adsorbate_dist_from_center(geoms[ind],nslab)
+            if d < min_dist:
+                indout = ind
+                min_dist = d
+        inds.append(indout)
+
+    return [geoms[ind] for ind in inds], [site_bond_params_lists[ind] for ind in inds], [sites_lists[ind] for ind in inds]
+
+def get_adsorbate_dist_from_center(atoms,nslab):
+    cell_center = sum(atoms.cell)/3.5
+    adatoms = atoms[nslab:]
+    adcenter = sum([a.position for a in adatoms])/len(adatoms)
+    return np.linalg.norm(adcenter - cell_center)
+
 def molecule_to_gratoms(mol):
     """
     generates a Gratoms object from a Molecule object
