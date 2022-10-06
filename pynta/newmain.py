@@ -1,12 +1,15 @@
 from pynta.tasks import *
 from pynta.io import IO
 from pynta.adsorbates import Adsorbates
-from pynta.molecule import get_grslab, molecule_to_gratoms
+from pynta.molecule import get_adsorbate, generate_unique_site_additions, generate_adsorbate_guesses
 from pynta.excatkit.adsorption import Builder
 from molecule.molecule import Molecule
 import ase.build
 from ase.io import read, write
 from ase import Atoms, Atom
+from acat.adsorption_sites import SlabAdsorptionSites
+from acat.adsorbate_coverage import SlabAdsorbateCoverage
+from acat.settings import site_heights, adsorbate_molecule
 import os
 import time
 import yaml
