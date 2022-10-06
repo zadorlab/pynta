@@ -310,12 +310,10 @@ class Pynta:
             for ad in os.listdir(ads_path):
                 xyzs = []
                 optfws = []
-                try:
+                if ad in self.mol_dict.keys():
                     mol = self.mol_dict[ad]
-                except KeyError:
-                    print(ad)
-                    print(self.mol_dict.keys())
-                    raise KeyError
+                else:
+                    continue #the species is not in the target reactions so skip it
                 target_site_num = len(mol.get_surface_sites())
                 ad_path = os.path.join(ads_path,ad)
                 completed = False
