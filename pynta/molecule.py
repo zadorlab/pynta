@@ -52,6 +52,89 @@ def get_adsorbate(mol):
     atoms,desorbed_to_atoms_map = get_conformer(desorbed)
     mol_to_atoms_map = {key:desorbed_to_atoms_map[val] for key,val in mol_to_desorbed_map.items()}
     return atoms,mol_to_atoms_map
+
+def generate_adsorbate_guesses(mol,ads,slab,repeats,cas,mol_to_atoms_map,
+                               single_site_bond_params_lists,single_sites_lists,double_site_bond_params_lists,double_sites_lists,
+                               Eharmtol,Eharmfiltertol,Ntsmin):
+    full_slab = slab * repeats
+    mol_surf_inds = [mol.atoms.index(a) for a in mol.get_adatoms()]
+    atom_surf_inds = [mol_to_atoms_map[i] for i in mol_surf_inds]
+    if len(atom_surf_inds) == 1:
+        site_bond_params_lists = deepcopy(single_site_bond_params_lists)
+        sites_lists = single_sites_lists
+        for site_bond_params_list in site_bond_params_lists:
+            site_bond_params_list[0]["ind"] = atom_surf_inds[0]+len(full_slab)
+    elif len(atom_surf_inds) == 2:
+        site_bond_params_lists = deepcopy(double_site_bond_params_lists)
+        sites_lists = double_sites_lists
+        for site_bond_params_list in site_bond_params_lists:
+            site_bond_params_list[0]["ind"] = atom_surf_inds[0]+len(full_slab)
+            site_bond_params_list[1]["ind"] = atom_surf_inds[1]+len(full_slab)
+    else:
+        raise ValueError("Only monodentate and bidentate guesses currently allowed. The infrastructure can support tridenate and higher, but the filtering process may be very expensive above bidentate.")
+
+
+    mol_fixed_bond_pairs = [[mol.atoms.index(bd.atom1),mol.atoms.index(bd.atom2)] for bd in mol.get_all_edges() if (not bd.atom1.is_surface_site()) and (not bd.atom2.is_surface_site())]
+    atom_fixed_bond_pairs = [[mol_to_atoms_map[pair[0]]+len(full_slab),mol_to_atoms_map[pair[1]]+len(full_slab)]for pair in mol_fixed_bond_pairs]
+    constraint_list = [{"type": "fix_bond", "indices": pair} for pair in atom_fixed_bond_pairs]+["freeze slab"]
+
+    geos = []
+    for sites_list in sites_lists:
+        geo = place_adsorbate(ads,full_slab,atom_surf_inds,sites_list)
+        geos.append(geo)
+
+    print("initial geometries")
+    print(len(geos))
+    geos_out = []
+    Eharms = []
+    site_bond_params_lists_out = []
+    for i,geo in enumerate(geos):
+        #freeze bonds for messier first opt
+        geo_out,Eharm,Fharm = run_harmonically_forced_xtb(geo,[],site_bond_params_lists[i],len(full_slab),
+                                                          method="GFN1-xTB",constraints=constraint_list)
+        if geo_out:
+            geo_out.calc = None
+            geos_out.append(geo_out)
+            Eharms.append(Eharm)
+            site_bond_params_lists_out.append(site_bond_params_lists[i])
+
+    print("optimized geometries")
+    print(len(geos_out))
+    inds = get_unique_sym_struct_indices(geos_out)
+
+    print("after symmetry")
+    print(len(inds))
+
+    geos_out = [geos_out[ind] for ind in inds]
+    Eharms = [Eharms[ind] for ind in inds]
+
+    if len(atom_surf_inds) == 1: #should be small, don't bother filtering
+        xyzsout = geos_out
+        site_bond_params_lists_final = [site_bond_params_lists_out[ind] for ind in inds]
+    else:
+        Einds = np.argsort(np.array(Eharms))
+        Emin = np.min(np.array(Eharms))
+        xyzsout = []
+        site_bond_params_lists_final = []
+        for Eind in Einds:
+            if Eharms[Eind]/Emin < Eharmtol: #include all TSs with energy close to Emin
+                xyzsout.append(geos_out[Eind])
+                site_bond_params_lists_final.append(site_bond_params_lists_out[Eind])
+            elif Eharms[Eind]/Emin > Eharmfiltertol: #if the energy is much larger than Emin skip it
+                continue
+            elif len(xyzsout) < Ntsmin: #if the energy isn't similar, but isn't much larger include the smallest until Ntsmin is reached
+                xyzsout.append(geos_out[Eind])
+                site_bond_params_lists_final.append(site_bond_params_lists_out[Eind])
+
+    xyzfinals = []
+    for i,xyz in enumerate(xyzsout):
+        #unfreeze bonds (should be better than rdkit's guess)
+        geo_out,Eharm,Fharm = run_harmonically_forced_xtb(xyz,[],site_bond_params_lists_final[i],len(full_slab),
+                                                          method="GFN1-xTB",constraints=["freeze slab"])
+        xyzfinals.append(geo_out)
+
+    return xyzfinals
+
 def add_adsorbate_to_site(atoms, adsorbate, surf_ind, site, height=None,
                           orientation=None, tilt_angle=0.):
     """The base function for adding one adsorbate to a site.
