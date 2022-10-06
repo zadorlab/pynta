@@ -308,7 +308,7 @@ class Pynta:
         else:
             ads_path = os.path.join(self.path,"Adsorbates")
             for ad in os.listdir(ads_path):
-                xyz = []
+                xyzs = []
                 optfws = []
                 mol = self.mol_dict[ad]
                 target_site_num = len(mol.get_surface_sites())
