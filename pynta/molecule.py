@@ -19,6 +19,39 @@ from rdkit import Chem
 from copy import deepcopy
 import numpy as np
 
+def get_desorbed_with_map(mol):
+    molcopy = mol.copy(deep=True)
+    init_map = {i:a for i,a in enumerate(molcopy.atoms)}
+
+    for bd in molcopy.get_all_edges():
+        if bd.atom1.is_surface_site():
+            bd.atom2.radical_electrons += bd.order
+            molcopy.remove_bond(bd)
+            molcopy.remove_atom(bd.atom1)
+        elif bd.atom2.is_surface_site():
+            bd.atom1.radical_electrons += bd.order
+            molcopy.remove_bond(bd)
+            molcopy.remove_atom(bd.atom2)
+
+    molcopy.sort_atoms()
+    out_map = {i:molcopy.atoms.index(a) for i,a in init_map.items() if a in molcopy.atoms}
+    return molcopy,out_map
+
+def get_conformer(desorbed):
+    rdmol,rdmap = desorbed.to_rdkit_mol(remove_h=False,return_mapping=True)
+    indmap = {i:rdmap[a] for i,a in enumerate(desorbed.atoms)}
+    Chem.AllChem.EmbedMultipleConfs(rdmol,numConfs=1,randomSeed=1)
+    conf = rdmol.GetConformer()
+    pos = conf.GetPositions()
+    syms = [a.GetSymbol() for a in rdmol.GetAtoms()]
+    atoms = Atoms(symbols=syms,positions=pos)
+    return atoms,indmap
+
+def get_adsorbate(mol):
+    desorbed,mol_to_desorbed_map = get_desorbed_with_map(mol)
+    atoms,desorbed_to_atoms_map = get_conformer(desorbed)
+    mol_to_atoms_map = {key:desorbed_to_atoms_map[val] for key,val in mol_to_desorbed_map.items()}
+    return atoms,mol_to_atoms_map
 def add_adsorbate_to_site(atoms, adsorbate, surf_ind, site, height=None,
                           orientation=None, tilt_angle=0.):
     """The base function for adding one adsorbate to a site.
