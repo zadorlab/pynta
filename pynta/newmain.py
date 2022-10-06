@@ -102,6 +102,31 @@ class Pynta:
 
         self.slab = read(self.slab_path)
 
+    def analyze_slab(self):
+        full_slab = self.slab * self.repeats[0]
+        cas = SlabAdsorptionSites(full_slab, self.surface_type,allow_6fold=False,composition_effect=False,
+                        label_sites=True,
+                        surrogate_metal=self.metal)
+
+        self.cas = cas
+
+        single_geoms,single_site_bond_params_lists,single_sites_lists = generate_unique_site_additions(full_slab,cas,len(full_slab),site_bond_params_list=[],sites_list=[])
+
+        double_geoms_full = []
+        double_site_bond_params_lists_full = []
+        double_sites_lists_full = []
+        for i in range(len(single_geoms)):
+            double_geoms,double_site_bond_params_lists,double_sites_lists = generate_unique_site_additions(single_geoms[i],
+                                                                cas,len(full_slab),single_site_bond_params_lists[i],single_sites_lists[i])
+            double_geoms_full.extend(double_geoms)
+            double_site_bond_params_lists_full.extend(double_site_bond_params_lists)
+            double_sites_lists_full.extend(double_sites_lists)
+
+        self.single_site_bond_params_lists = single_site_bond_params_lists
+        self.single_sites_lists = single_sites_lists
+        self.double_site_bond_params_lists = double_site_bond_params_lists_full
+        self.double_sites_lists = double_sites_lists_full
+
     def generate_mol_dict(self):
         """
         generates all unique Molecule objects based on the reactions and generates a dictionary
