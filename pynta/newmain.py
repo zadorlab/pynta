@@ -409,3 +409,24 @@ class Pynta:
 
         while True: #ensures lanuches continue throughout the calculation process
             self.rapidfire()
+
+    def execute_from_initial_ad_guesses(self):
+        if self.slab_path is None: #handle slab
+            self.generate_slab()
+
+        self.analyze_slab()
+        self.generate_mol_dict()
+        self.generate_initial_adsorbate_guesses(skip_structs=True)
+
+        #adsorbate optimization
+        self.setup_adsorbates()
+
+        #setup transition states
+        self.setup_transition_states(initial_guess_finished=True)
+
+        wf = Workflow(self.fws, name=self.label)
+        self.launchpad.add_wf(wf)
+
+        while True: #ensures lanuches continue throughout the calculation process
+            self.rapidfire()
+    
