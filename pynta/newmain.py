@@ -198,7 +198,7 @@ class Pynta:
             r["reactant_mols"] = [x.to_adjacency_list() for x in r["reactant_mols"]]
             r["product_mols"] = [x.to_adjacency_list() for x in r["product_mols"]]
 
-    def generate_initial_adsorbate_guesses(self):
+    def generate_initial_adsorbate_guesses(self,skip_structs=False):
         """
         Generates initial guess geometries for adsorbates and gas phase species
         Generates maps connecting the molecule objects with these adsorbates
@@ -213,15 +213,18 @@ class Pynta:
 
             ads,mol_to_atoms_map = get_adsorbate(mol)
             if len(surf_sites) == 0:
-                structures[sm] = ads
+                if not skip_structs:
+                    ads.pbc = (True,True,False)
+                    structures[sm] = [ads]
                 gratom_to_molecule_atom_maps[sm] = {val:key for key,val in mol_to_atoms_map.items()}
                 gratom_to_molecule_surface_atom_maps[sm] = dict()
             else:
-                structs = generate_adsorbate_guesses(mol,ads,self.slab,self.repeats[0],cas,mol_to_atoms_map,
-                                   self.single_site_bond_params_lists,self.single_sites_lists,
-                                   self.double_site_bond_params_lists,self.double_sites_lists,
-                                   self.Eharmtol,self.Eharmfiltertol,self.Ntsmin)
-                structures[sm] = structs
+                if not skip_structs:
+                    structs = generate_adsorbate_guesses(mol,ads,self.slab,self.repeats[0],cas,mol_to_atoms_map,
+                                       self.single_site_bond_params_lists,self.single_sites_lists,
+                                       self.double_site_bond_params_lists,self.double_sites_lists,
+                                       self.Eharmtol,self.Eharmfiltertol,self.Ntsmin)
+                    structures[sm] = structs
                 gratom_to_molecule_atom_maps[sm] = {val:key for key,val in mol_to_atoms_map.items()}
 
                 adatoms = []
@@ -238,7 +241,8 @@ class Pynta:
 
         self.gratom_to_molecule_atom_maps = gratom_to_molecule_atom_maps
         self.gratom_to_molecule_surface_atom_maps = gratom_to_molecule_surface_atom_maps
-        self.adsorbate_structures = structures
+        if not skip_structs:
+            self.adsorbate_structures = structures
 
     def setup_adsorbates(self):
         """
