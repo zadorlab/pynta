@@ -310,7 +310,12 @@ class Pynta:
             for ad in os.listdir(ads_path):
                 xyzs = []
                 optfws = []
-                mol = self.mol_dict[ad]
+                try:
+                    mol = self.mol_dict[ad]
+                except KeyError:
+                    print(ad)
+                    print(self.mol_dict.keys())
+                    raise KeyError
                 target_site_num = len(mol.get_surface_sites())
                 ad_path = os.path.join(ads_path,ad)
                 completed = False
