@@ -6,6 +6,112 @@ from acat.adsorption_sites import SlabAdsorptionSites
 from acat.adsorbate_coverage import SlabAdsorbateCoverage
 import numpy as np
 
+def add_adsorbate_to_site(atoms, adsorbate, surf_ind, site, height=None,
+                          orientation=None, tilt_angle=0.):
+    """The base function for adding one adsorbate to a site.
+    Site must include information of 'normal' and 'position'.
+    Useful for adding adsorbate to multiple sites or adding
+    multidentate adsorbates.
+
+    Parameters
+    ----------
+    atoms : ase.Atoms object
+        Accept any ase.Atoms object. No need to be built-in.
+
+    adsorbate : str or ase.Atom object or ase.Atoms object
+        The adsorbate species to be added onto the surface.
+
+    site : dict
+        The site that the adsorbate should be added to.
+        Must contain information of the position and the
+        normal vector of the site.
+
+    height : float, default None
+        The height of the added adsorbate from the surface.
+        Use the default settings if not specified.
+
+    orientation : list or numpy.array, default None
+        The vector that the multidentate adsorbate is aligned to.
+
+    tilt_angle: float, default None
+        Tilt the adsorbate with an angle (in degrees) relative to
+        the surface normal.
+
+    """
+    if height is None:
+        height = site_heights[site['site']]
+
+    # Make the correct position
+    normal = site['normal']
+    if np.isnan(np.sum(normal)):
+        warnings.warn('The normal vector is NaN, use [0., 0., 1.] instead.')
+        normal = np.array([0., 0., 1.])
+    pos = site['position'] + normal * height
+
+    # Convert the adsorbate to an Atoms object
+    if isinstance(adsorbate, Atoms):
+        ads = adsorbate
+    elif isinstance(adsorbate, Atom):
+        ads = Atoms([adsorbate])
+
+    # Or assume it is a string representing a molecule
+    else:
+        ads = adsorbate_molecule(adsorbate)
+        if not ads:
+            warnings.warn('Nothing is added.')
+            return
+
+    bondpos = ads[surf_ind].position
+    ads.translate(-bondpos)
+    z = -1. if adsorbate in ['CH','NH','OH','SH'] else 1.
+    ads.rotate(np.asarray([0., 0., z]) - bondpos, normal)
+    if tilt_angle > 0.:
+        pvec = np.cross(np.random.rand(3) - ads[0].position, normal)
+        ads.rotate(tilt_angle, pvec, center=ads[0].position)
+
+#     if adsorbate not in adsorbate_list:
+#         # Always sort the indices the same order as the input symbol.
+#         # This is a naive sorting which might cause H in wrong order.
+#         # Please sort your own adsorbate atoms by reindexing as has
+#         # been done in the adsorbate_molecule function in acat.settings.
+#         symout = list(Formula(adsorbate))
+#         symin = list(ads.symbols)
+#         newids = []
+#         for elt in symout:
+#             idx = symin.index(elt)
+#             newids.append(idx)
+#             symin[idx] = None
+#         ads = ads[newids]
+    if orientation is not None:
+        orientation = np.asarray(orientation)
+        oripos = next((a.position for a in ads[1:] if
+                       a.symbol != 'H'), ads[1].position)
+
+        v1 = get_rejection_between(oripos - bondpos, normal)
+        v2 = get_rejection_between(orientation, normal)
+        theta = get_angle_between(v1, v2)
+
+        # Flip the sign of the angle if the result is not the closest
+        rm_p = get_rodrigues_rotation_matrix(axis=normal, angle=theta)
+        rm_n = get_rodrigues_rotation_matrix(axis=normal, angle=-theta)
+        npos_p, npos_n = rm_p @ oripos, rm_n @ oripos
+        nbpos_p = npos_p + pos - bondpos
+        nbpos_n = npos_n + pos - bondpos
+        d_p = np.linalg.norm(nbpos_p - pos - orientation)
+        d_n = np.linalg.norm(nbpos_n - pos - orientation)
+        if d_p <= d_n:
+            for a in ads:
+                a.position = rm_p @ a.position
+        else:
+            for a in ads:
+                a.position = rm_n @ a.position
+
+    ads.translate(pos - bondpos)
+    atoms += ads
+    if ads.get_chemical_formula() == 'H2':
+        shift = (atoms.positions[-2] - atoms.positions[-1]) / 2
+        atoms.positions[-2:,:] += shift
+
 def molecule_to_gratoms(mol):
     """
     generates a Gratoms object from a Molecule object
