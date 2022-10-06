@@ -419,14 +419,13 @@ class Pynta:
         self.generate_initial_adsorbate_guesses(skip_structs=True)
 
         #adsorbate optimization
-        self.setup_adsorbates()
+        self.setup_adsorbates(initial_guess_finished=True)
 
         #setup transition states
-        self.setup_transition_states(initial_guess_finished=True)
+        self.setup_transition_states()
 
         wf = Workflow(self.fws, name=self.label)
         self.launchpad.add_wf(wf)
 
         while True: #ensures lanuches continue throughout the calculation process
             self.rapidfire()
-    
