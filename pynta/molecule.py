@@ -2,8 +2,21 @@ from pynta.excatkit.gratoms import Gratoms
 from molecule.molecule import Molecule
 from ase.io import read, write
 from ase.data import covalent_radii
+from ase import Atoms
 from acat.adsorption_sites import SlabAdsorptionSites
 from acat.adsorbate_coverage import SlabAdsorbateCoverage
+from acat.settings import site_heights
+from acat.utilities import get_mic
+from acat.utilities import (custom_warning,
+                         is_list_or_tuple,
+                         get_close_atoms,
+                         get_rodrigues_rotation_matrix,
+                         get_angle_between,
+                         get_rejection_between)
+from pynta.symmetry import get_unique_sym_struct_index_clusters, get_unique_sym, get_unique_sym_structs, get_unique_sym_struct_indices
+from pynta.calculator import run_harmonically_forced_xtb
+from rdkit import Chem
+from copy import deepcopy
 import numpy as np
 
 def add_adsorbate_to_site(atoms, adsorbate, surf_ind, site, height=None,
