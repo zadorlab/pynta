@@ -321,9 +321,8 @@ class Pynta:
                     if os.path.exists(os.path.join(ad_path,prefix,prefix+".xyz")):
                         completed = True
                 if completed:
-                    continue
                     self.adsorbate_fw_dict[ad] = []
-
+                    continue
                 for prefix in os.listdir(ad_path):
                     prefix_path = os.path.join(ad_path,prefix)
                     if target_site_num == 0:
