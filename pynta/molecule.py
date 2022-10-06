@@ -158,6 +158,24 @@ def add_adsorbate_to_site(atoms, adsorbate, surf_ind, site, height=None,
         shift = (atoms.positions[-2] - atoms.positions[-1]) / 2
         atoms.positions[-2:,:] += shift
 
+def place_adsorbate(ads,slab,atom_surf_inds,sites):
+    if len(atom_surf_inds) == 1:
+        geo = slab.copy()
+        h = site_heights[sites[0]["site"]]
+        add_adsorbate_to_site(geo, ads, atom_surf_inds[0], sites[0], height=h)
+    elif len(atom_surf_inds) == 2:
+        geo = slab.copy()
+        h = site_heights[sites[0]["site"]]
+        ori = get_mic(sites[0]['position'], sites[1]['position'], geo.cell)
+        add_adsorbate_to_site(geo, deepcopy(ads), atom_surf_inds[0], sites[0], height=h, orientation=ori)
+        if np.isnan(geo.positions).any(): #if nans just ignore orientation and let it optimize
+            geo = slab.copy()
+            add_adsorbate_to_site(geo, deepcopy(ads), atom_surf_inds[0], sites[0], height=h, orientation=None)
+    else: #lets just place it above and hope for the best
+        geo = slab.copy()
+        add_adsorbate_to_site(geo, ads, atom_surf_inds[0], sites[0], height=5.0)
+
+    return geo
 def molecule_to_gratoms(mol):
     """
     generates a Gratoms object from a Molecule object
