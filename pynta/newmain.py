@@ -203,25 +203,38 @@ class Pynta:
         Generates initial guess geometries for adsorbates and gas phase species
         Generates maps connecting the molecule objects with these adsorbates
         """
-        grslab = get_grslab(self.slab_path)
-        ads_builder = Builder(grslab)
+        cas = self.cas
         structures = dict()
         gratom_to_molecule_atom_maps = dict()
         gratom_to_molecule_surface_atom_maps = dict()
         for sm,mol in self.mol_dict.items():
-            gratom,surf_indexes,atom_map,surf_index_atom_map = molecule_to_gratoms(mol)
-            gratom_to_molecule_atom_maps[sm] = atom_map
-            gratom_to_molecule_surface_atom_maps[sm] = surf_index_atom_map
-            try:
-                if len(surf_indexes) > 0:
-                    structs = ads_builder.add_adsorbate(gratom,index=-1,bonds=surf_indexes)
-                    structures[sm] = structs
-                else:
-                    structures[sm] = [gratom]
-            except IndexError:
-                print('sp_gratoms, sp_gratoms.edges, sp.gratoms.tags')
-                print(gratom, gratom.edges,
-                                  gratom.get_tags())
+            print(sm)
+            surf_sites = mol.get_surface_sites()
+
+            ads,mol_to_atoms_map = get_adsorbate(mol)
+            if len(surf_sites) == 0:
+                structures[sm] = ads
+                gratom_to_molecule_atom_maps[sm] = {val:key for key,val in mol_to_atoms_map.items()}
+                gratom_to_molecule_surface_atom_maps[sm] = dict()
+            else:
+                structs = generate_adsorbate_guesses(mol,ads,self.slab,self.repeats[0],cas,mol_to_atoms_map,
+                                   self.single_site_bond_params_lists,self.single_sites_lists,
+                                   self.double_site_bond_params_lists,self.double_sites_lists,
+                                   self.Eharmtol,self.Eharmfiltertol,self.Ntsmin)
+                structures[sm] = structs
+                gratom_to_molecule_atom_maps[sm] = {val:key for key,val in mol_to_atoms_map.items()}
+
+                adatoms = []
+                surf_index_atom_map = dict()
+                for surface_site in mol.get_surface_sites():
+                    mol_ind = mol.atoms.index(surface_site)
+                    if surface_site.bonds:
+                        atms = surface_site.bonds.keys()
+                        atminds = [mol.atoms.index(atm) for atm in atms]
+                        for ind in atminds:
+                            surf_index_atom_map[mol_to_atoms_map[ind]] = mol_ind
+
+                gratom_to_molecule_surface_atom_maps[sm] = surf_index_atom_map
 
         self.gratom_to_molecule_atom_maps = gratom_to_molecule_atom_maps
         self.gratom_to_molecule_surface_atom_maps = gratom_to_molecule_surface_atom_maps
