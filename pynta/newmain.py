@@ -334,6 +334,7 @@ class Pynta:
         if self.slab_path is None: #handle slab
             self.generate_slab()
 
+        self.analyze_slab()
         self.generate_mol_dict()
         self.generate_initial_adsorbate_guesses()
 
