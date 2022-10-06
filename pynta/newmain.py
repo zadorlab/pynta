@@ -345,7 +345,7 @@ class Pynta:
 
                     cfw = collect_firework(xyzs,True,[["vibrations_firework"]],[[vib_obj_dict]],[["vib.json"]],[[False]],parents=optfws,label=ad)
                     self.adsorbate_fw_dict[ad] = optfws
-                    logging.error(self.adsorbate_fw_dict.keys())
+                    print(self.adsorbate_fw_dict.keys())
                     self.fws.extend(optfws+[cfw])
 
 
