@@ -4,6 +4,8 @@ from ase.atoms import Atoms
 from ase.units import Hartree, Bohr
 from ase.geometry import get_distances
 from ase.calculators import calculator
+from sella import Sella, Constraints
+import copy
 
 def get_energy_atom_bond(atoms,ind1,ind2,k,deq):
     bd,d = get_distances([atoms.positions[ind1]], [atoms.positions[ind2]], cell=atoms.cell, pbc=atoms.pbc)
@@ -70,7 +72,7 @@ class HarmonicallyForcedXTB(XTB):
                 E,F = get_energy_forces_site_bond(self.atoms,**site_bond_potential)
                 energy += E
                 forces += F
-        
+
         return energy[0][0],forces
 
     def calculate(self, atoms=None, properties=None, system_changes=calculator.all_changes):
@@ -79,3 +81,51 @@ class HarmonicallyForcedXTB(XTB):
         self.results["energy"] += energy
         self.results["free_energy"] += energy
         self.results["forces"] += forces
+
+def run_harmonically_forced_xtb(atoms,atom_bond_potentials,site_bond_potentials,nslab,method="GFN1-xTB",
+                               constraints=[]):
+    """
+    Optimize TS guess using xTB + harmonic forcing terms determined by atom_bond_potentials and site_bond_potentials
+    """
+    cons = Constraints(atoms)
+
+    for c in constraints:
+        if isinstance(c,dict):
+            add_sella_constraint(cons,c)
+        elif c == "freeze slab":
+            for i,atom in enumerate(atoms): #freeze the slab
+                if i < nslab:
+                    cons.fix_translation(atom.index)
+        else:
+            raise ValueError("Constraint {} not understood".format(c))
+
+
+    hfxtb = HarmonicallyForcedXTB(method="GFN1-xTB",
+                              atom_bond_potentials=atom_bond_potentials,
+                             site_bond_potentials=site_bond_potentials)
+
+    atoms.calc = hfxtb
+
+    opt = Sella(atoms,constraints=cons,trajectory="xtbharm.traj",order=0)
+
+    try:
+        opt.run(fmax=0.02)
+    except Exception as e:
+        return None,None,None
+
+    Eharm,Fharm = atoms.calc.get_energy_forces()
+
+    return atoms,Eharm,Fharm
+
+def add_sella_constraint(cons,d):
+    """
+    construct a constraint from a dictionary that is the input to the constraint
+    constructor plus an additional "type" key that indices the name of the constraint
+    in this case for Sella the full Constraints object cons must be included in the inputs
+    adds the constraint to Constraints and returns None
+    """
+    constraint_dict = copy.deepcopy(d)
+    constructor = getattr(cons,constraint_dict["type"])
+    del constraint_dict["type"]
+    constructor(**constraint_dict)
+    return

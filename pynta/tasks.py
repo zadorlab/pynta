@@ -19,7 +19,7 @@ import fireworks.fw_config
 from pynta.ts import TS
 from pynta.transitionstate import get_unique_optimized_adsorbates,determine_TS_construction,get_unique_TS_structs,generate_constraints_harmonic_parameters,get_surface_forming_bond_pairings
 from pynta.symmetry import get_unique_sym, get_unique_sym_structs, get_unique_sym_struct_indices, get_unique_sym_indices, filter_nonunique_TS_guess_indices
-from pynta.calculator import HarmonicallyForcedXTB
+from pynta.calculator import run_harmonically_forced_xtb, add_sella_constraint
 from pynta.vib import AfterTS
 from pynta.io import IO
 from pynta.penalty_fun import AdsorbatePlacer
@@ -770,40 +770,6 @@ def map_harmonically_forced_xtb(input):
         xyz = os.path.join(ts_path,str(j),"xtb.xyz")
     return (sp,Eharm,xyz)
 
-def run_harmonically_forced_xtb(atoms,atom_bond_potentials,site_bond_potentials,nslab,method="GFN1-xTB",
-                               constraints=[]):
-    """
-    Optimize TS guess using xTB + harmonic forcing terms determined by atom_bond_potentials and site_bond_potentials
-    """
-    cons = Constraints(atoms)
-
-    for c in constraints:
-        if isinstance(c,dict):
-            add_sella_constraint(cons,c)
-        elif c == "freeze slab":
-            for i,atom in enumerate(atoms): #freeze the slab
-                if i < nslab:
-                    cons.fix_translation(atom.index)
-        else:
-            raise ValueError("Constraint {} not understood".format(c))
-
-
-    hfxtb = HarmonicallyForcedXTB(method="GFN1-xTB",
-                              atom_bond_potentials=atom_bond_potentials,
-                             site_bond_potentials=site_bond_potentials)
-
-    atoms.calc = hfxtb
-
-    opt = Sella(atoms,constraints=cons,trajectory="xtbharm.traj",order=0)
-
-    try:
-        opt.run(fmax=0.02)
-    except:
-        return None,None,None
-
-    Eharm,Fharm = atoms.calc.get_energy_forces()
-
-    return atoms,Eharm,Fharm
 
 def run_parallel_gfn1xtb_opt(inputs,nprocs):
     with mp.Pool(nprocs) as pool:
@@ -967,19 +933,6 @@ def construct_constraint(d):
     constructor = getattr("ase.constraints",constraint_dict["type"])
     del constraint_dict["type"]
     return constructor(**constraint_dict)
-
-def add_sella_constraint(cons,d):
-    """
-    construct a constraint from a dictionary that is the input to the constraint
-    constructor plus an additional "type" key that indices the name of the constraint
-    in this case for Sella the full Constraints object cons must be included in the inputs
-    adds the constraint to Constraints and returns None
-    """
-    constraint_dict = copy.deepcopy(d)
-    constructor = getattr(cons,constraint_dict["type"])
-    del constraint_dict["type"]
-    constructor(**constraint_dict)
-    return
 
 def get_fizzled_fws(lpad):
     return [lpad.get_fw_by_id(i) for i in lpad.get_fw_ids_in_wfs() if lpad.get_fw_by_id(i).state == "FIZZLED"]
