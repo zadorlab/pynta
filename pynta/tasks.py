@@ -6,6 +6,7 @@ from ase.io.trajectory import Trajectory
 from ase.calculators.socketio import SocketIOCalculator
 from ase.vibrations import Vibrations
 from acat.adsorption_sites import SlabAdsorptionSites
+from acat.adsorbate_coverage import SlabAdsorbateCoverage
 from molecule.molecule import Molecule
 from sella import Sella, Constraints, IRC
 from importlib import import_module
