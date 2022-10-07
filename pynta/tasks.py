@@ -706,21 +706,20 @@ class MolecularIRC(FiretaskBase):
 
         constraints = deepcopy(self["constraints"]) if "constraints" in self.keys() else []
 
-        cons = Constraints(sp)
         for c in constraints:
-            if isinstance(c,dict):
-                add_sella_constraint(cons,c)
-            elif c == "freeze half slab":
-                for atom in sp:
-                    if atom.position[2] < sp.cell[2, 2] / 2.:
-                        cons.fix_translation(atom.index)
+            if c == "freeze half slab":
+                sp.set_constraint(FixAtoms([
+                    atom.index for atom in sp if atom.position[2] < sp.cell[2, 2] / 2.
+                ]))
             elif c.split()[0] == "freeze" and c.split()[1] == "all": #ex: "freeze all Cu"
                 sym = c.split()[2]
-                indices = [atom.index for atom in sp if atom.symbol == sym]
-                for ind in indices:
-                    cons.fix_translation(ind)
+                sp.set_constraint(FixAtoms(
+                    indices=[atom.index for atom in sp if atom.symbol == sym]
+                    ))
+            else:
+                raise ValueError("Could not interpret constraint: {}".format(c))
 
-        opt = IRC(sp,constraints=cons,trajectory=label+"_irc.traj",dx=0.1,eta=1e-4,gamma=0.4)
+        opt = IRC(sp,trajectory=label+"_irc.traj",dx=0.1,eta=1e-4,gamma=0.4)
         try:
             run_kwargs["direction"] = "forward"
             opt.run(**run_kwargs)
@@ -754,7 +753,7 @@ class MolecularIRC(FiretaskBase):
         if len(errors) == 0:
             pass
         else:
-            return FWAction(stored_data={"error": errors},exit=True)
+            return FWAction(stored_data={"error": errors})
 
         return FWAction()
 
