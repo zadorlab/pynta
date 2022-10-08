@@ -229,13 +229,9 @@ class Pynta:
 
                 adatoms = []
                 surf_index_atom_map = dict()
-                for surface_site in mol.get_surface_sites():
-                    mol_ind = mol.atoms.index(surface_site)
-                    if surface_site.bonds:
-                        atms = surface_site.bonds.keys()
-                        atminds = [mol.atoms.index(atm) for atm in atms]
-                        for ind in atminds:
-                            surf_index_atom_map[mol_to_atoms_map[ind]] = mol_ind
+                for i,atm in enumerate(mol.atoms):
+                    if atm.is_bonded_to_surface():
+                        surf_index_atom_map[mol_to_atoms_map[i]] = i
 
                 gratom_to_molecule_surface_atom_maps[sm] = surf_index_atom_map
 
