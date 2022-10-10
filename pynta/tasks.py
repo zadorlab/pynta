@@ -763,7 +763,10 @@ def map_harmonically_forced_xtb(input):
     os.makedirs(os.path.join(ts_path,str(j)))
     sp,Eharm,Fharm = run_harmonically_forced_xtb(tsstruct,atom_bond_potentials,site_bond_potentials,nslab,method="GFN1-xTB",
                                    constraints=constraints)
+
     if sp:
+        if "initial_charges" in sp.arrays.keys(): #avoid bug in ase
+            del sp.arrays["initial_charges"]
         with open(os.path.join(ts_path,str(j),"harm.json"),'w') as f:
             d = {"harmonic energy": Eharm, "harmonic force": Fharm.tolist()}
             json.dump(d,f)
