@@ -247,20 +247,21 @@ class MolecularOptimizationTask(OptimizationTask):
                 else:
                     errors.append(e)
 
-        if converged and target_site_num: #optimization converged to correct structure, for now just check has correct number of occupied sites
-            cas = SlabAdsorptionSites(sp,facet,allow_6fold=False,composition_effect=False,
-                            label_sites=True,
-                            surrogate_metal=metal)
-            adcov = SlabAdsorbateCoverage(sp,adsorption_sites=cas)
-            sites = adcov.get_sites()
-            occ = [site for site in sites if site["occupied"]]
-            if target_site_num != len(occ):
-                converged = False
-                e = StructureError
-                if not ignore_errors:
-                    raise e
-                else:
-                    errors.append(e)
+        #In principle this was a good idea, but occupied site detection at defaults fails more often than the problem this solves occurs
+        # if converged and target_site_num: #optimization converged to correct structure, for now just check has correct number of occupied sites
+        #     cas = SlabAdsorptionSites(sp,facet,allow_6fold=False,composition_effect=False,
+        #                     label_sites=True,
+        #                     surrogate_metal=metal)
+        #     adcov = SlabAdsorbateCoverage(sp,adsorption_sites=cas)
+        #     sites = adcov.get_sites()
+        #     occ = [site for site in sites if site["occupied"]]
+        #     if target_site_num != len(occ):
+        #         converged = False
+        #         e = StructureError
+        #         if not ignore_errors:
+        #             raise e
+        #         else:
+        #             errors.append(e)
 
         if converged:
             write(label+".xyz", sp)
