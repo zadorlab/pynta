@@ -228,11 +228,17 @@ class Pynta:
                 gratom_to_molecule_surface_atom_maps[sm] = dict()
             else:
                 if not skip_structs:
-                    structs = generate_adsorbate_guesses(mol,ads,self.slab,self.repeats[0],cas,mol_to_atoms_map,
-                                       self.single_site_bond_params_lists,self.single_sites_lists,
-                                       self.double_site_bond_params_lists,self.double_sites_lists,
-                                       self.Eharmtol,self.Eharmfiltertol,self.Ntsmin)
-                    structures[sm] = structs
+                    #check if this adsorbate is already calculated
+                    if os.path.exists(os.path.join(self.path,"Adsorbates",sm)): #assume initial guesses already generated
+                        structures[sm] = None
+                    else:
+                        structs = generate_adsorbate_guesses(mol,ads,self.slab,self.repeats[0],cas,mol_to_atoms_map,
+                                           self.single_site_bond_params_lists,self.single_sites_lists,
+                                           self.double_site_bond_params_lists,self.double_sites_lists,
+                                           self.Eharmtol,self.Eharmfiltertol,self.Ntsmin)
+                        structures[sm] = structs
+
+
                 gratom_to_molecule_atom_maps[sm] = {val:key for key,val in mol_to_atoms_map.items()}
 
                 adatoms = []
@@ -257,8 +263,13 @@ class Pynta:
             adsorbate_dict = dict()
             for sp_symbol, adsorbate in self.adsorbate_structures.items():
                 adsorbate_dict[sp_symbol] = dict()
-                for prefix, structure in enumerate(adsorbate):
-                    adsorbate_dict[sp_symbol][prefix] = structure
+                if adsorbate is not None:
+                    for prefix, structure in enumerate(adsorbate):
+                        adsorbate_dict[sp_symbol][prefix] = structure
+                else: #read from Adsorbates directory
+                    prefixes = os.listdir(os.path.join(self.path,"Adsorbates",sp_symbol))
+                    for prefix in prefixes:
+                        adsorbate_dict[sp_symbol][prefix] = read(os.path.join(self.path,"Adsorbates",sp_symbol,str(prefix),str(prefix)+"_init.xyz"))
 
             big_slab = self.slab * self.repeats[0]
             nsmall_slab = len(self.slab)
