@@ -173,7 +173,6 @@ def add_adsorbate_to_site(atoms, adsorbate, surf_ind, site, height=None,
     # Make the correct position
     normal = site['normal']
     if np.isnan(np.sum(normal)):
-        warnings.warn('The normal vector is NaN, use [0., 0., 1.] instead.')
         normal = np.array([0., 0., 1.])
     pos = site['position'] + normal * height
 
