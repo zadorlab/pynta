@@ -28,9 +28,11 @@ class Pynta:
         software_kwargs={'kpts': (3, 3, 1), 'tprnfor': True, 'occupations': 'smearing',
                             'smearing':  'marzari-vanderbilt',
                             'degauss': 0.01, 'ecutwfc': 40, 'nosym': True,
+                            'conv_thr': 1e-6, 'mixing_mode': 'local-TF',
                             "pseudopotentials": {"Cu": 'Cu.pbe-spn-kjpaw_psl.1.0.0.UPF',"H": 'H.pbe-kjpaw_psl.1.0.0.UPF',"O": 'O.pbe-n-kjpaw_psl.1.0.0.UPF',"C": 'C.pbe-n-kjpaw_psl.1.0.0.UPF',"N": 'N.pbe-n-kjpaw_psl.1.0.0.UPF',
                             }, },
         software_kwargs_gas=None,
+        TS_opt_software_kwargs=None,
         reset_launchpad=False,queue_adapter_path=None,nprocs=48,opt_time_limit_hrs=12.0,
         Eharmtol=3.0,Eharmfiltertol=30.0,Ntsmin=5):
 
