@@ -28,7 +28,6 @@ class Pynta:
         software_kwargs={'kpts': (3, 3, 1), 'tprnfor': True, 'occupations': 'smearing',
                             'smearing':  'marzari-vanderbilt',
                             'degauss': 0.01, 'ecutwfc': 40, 'nosym': True,
-                            'conv_thr': 1e-11, 'mixing_mode': 'local-TF',
                             "pseudopotentials": {"Cu": 'Cu.pbe-spn-kjpaw_psl.1.0.0.UPF',"H": 'H.pbe-kjpaw_psl.1.0.0.UPF',"O": 'O.pbe-n-kjpaw_psl.1.0.0.UPF',"C": 'C.pbe-n-kjpaw_psl.1.0.0.UPF',"N": 'N.pbe-n-kjpaw_psl.1.0.0.UPF',
                             }, },
         software_kwargs_gas=None,
@@ -60,6 +59,13 @@ class Pynta:
             self.software_kwargs_gas["kpts"] = 'gamma'
             self.software_kwargs_gas["smearing"] = 'gauss'
             self.software_kwargs_gas["degauss"] = 0.005
+            self.software_kwargs_gas["mixing_beta"] = 0.2
+            self.software_kwargs_gas["mixing_ndim"] = 10
+
+        if TS_opt_software_kwargs:
+            self.software_kwargs_TS = deepcopy(software_kwargs)
+            for key,val in TS_opt_software_kwargs:
+                self.software_kwargs_TS[key] = val
 
         self.queue = queue
         self.fworker = None
@@ -352,7 +358,7 @@ class Pynta:
         and run vibrational and IRC calculations on the each unique final transition state
         Note the vibrational and IRC calculations are launched at the same time
         """
-        opt_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":self.software_kwargs,
+        opt_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":self.software_kwargs_TS,
                 "run_kwargs": {"fmax" : 0.01, "steps" : 70},"constraints": ["freeze half slab"],"sella":True,"order":1,
                 "fmaxhard": 0.05, "time_limit_hrs": self.opt_time_limit_hrs}
         vib_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":self.software_kwargs,
