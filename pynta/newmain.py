@@ -64,9 +64,9 @@ class Pynta:
             self.software_kwargs_gas["mixing_beta"] = 0.2
             self.software_kwargs_gas["mixing_ndim"] = 10
 
+        self.software_kwargs_TS = deepcopy(software_kwargs)
         if TS_opt_software_kwargs:
-            self.software_kwargs_TS = deepcopy(software_kwargs)
-            for key,val in TS_opt_software_kwargs:
+            for key,val in TS_opt_software_kwargs.items():
                 self.software_kwargs_TS[key] = val
 
         self.queue = queue
