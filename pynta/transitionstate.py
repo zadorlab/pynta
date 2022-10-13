@@ -66,12 +66,19 @@ def determine_TS_construction(reactant_names,reactant_mols,product_names,product
     pnumgas = len([i for i in pnum_surf_sites if i==0])
 
     #avoid directions starting with multiple multidentate species
-    if rnummultidentate > 2 and pnummultidentate > 2:
+    if rnummultidentate >= 2 and pnummultidentate >= 2:
         raise ValueError("Cannot handle multiple bidentates on both sides of reaction")
-    elif rnummultidentate > 2:
+    elif rnummultidentate >= 2:
         forward = False
-    elif pnummultidentate > 2:
+    elif pnummultidentate >= 2:
         forward = True
+
+    #prefer directions with multidentate species, this reduces the time and cost of finding TS guesses
+    if forward is None:
+        if rnummultidentate == 1 and pnummultidentate == 0:
+            forward = True
+        elif pnummultidentate == 1 and rnummultidentate == 0:
+            forward = False
 
     #prefer directions with fewer gas phase species
     if forward is None:
