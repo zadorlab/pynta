@@ -432,8 +432,11 @@ class Pynta:
         wf = Workflow(self.fws, name=self.label)
         self.launchpad.add_wf(wf)
 
-        while True: #ensures lanuches continue throughout the calculation process
+        boo = True
+        while boo: #ensures lanuches continue throughout the calculation process
             self.rapidfire()
+            waiting = [self.launchpad.get_fw_by_id(idnum) for idnum in fw_ids if self.launchpad.get_fw_by_id(idnum).state == "WAITING"]
+            boo = len(waiting) > 0
 
     def execute_from_initial_ad_guesses(self):
         if self.slab_path is None: #handle slab
@@ -452,5 +455,8 @@ class Pynta:
         wf = Workflow(self.fws, name=self.label)
         self.launchpad.add_wf(wf)
 
-        while True: #ensures lanuches continue throughout the calculation process
+        boo = True
+        while boo: #ensures lanuches continue throughout the calculation process
             self.rapidfire()
+            waiting = [self.launchpad.get_fw_by_id(idnum) for idnum in fw_ids if self.launchpad.get_fw_by_id(idnum).state == "WAITING"]
+            boo = len(waiting) > 0
