@@ -85,7 +85,7 @@ def optimize_firework(xyz,software,label,opt_method=None,sella=None,socket=False
     if out_path is None: out_path = os.path.join(directory,label+".xyz")
     t2 = FileTransferTask({'files': [{'src': label+'.xyz', 'dest': out_path}, {'src': label+'.traj', 'dest': os.path.join(directory,label+".traj")}],
             'mode': 'copy', 'ignore_errors' : ignore_errors})
-    return Firework([t1,t2],parents=parents,name=label+"opt")
+    return Firework([t1,t2],parents=parents,name=label+"opt",spec={"_allow_fizzled_parents": True})
 
 @explicit_serialize
 class MolecularOptimizationTask(OptimizationTask):
@@ -308,7 +308,7 @@ def energy_firework(xyz,software,label,software_kwargs={},parents=[],out_path=No
     directory = os.path.dirname(xyz)
     if out_path is None: out_path = os.path.join(directory,label+"_energy.json")
     t2 = FileTransferTask({'files': [{'src': label+'_energy.json', 'dest': out_path}], 'mode': 'copy', 'ignore_errors': ignore_errors})
-    return Firework([t1,t2],parents=parents,name=label+"energy")
+    return Firework([t1,t2],parents=parents,name=label+"energy",spec={"_allow_fizzled_parents": True})
 
 @explicit_serialize
 class MolecularEnergyTask(EnergyTask):
@@ -352,7 +352,7 @@ def vibrations_firework(xyz,software,label,software_kwargs={},parents=[],out_pat
         'mode': 'copy', 'ignore_errors': ignore_errors})
     t3 = FileTransferTask({'files': [{'src':'vib','dest':os.path.join(out_path,"vib")}],
         'mode': 'copytree', 'ignore_errors': ignore_errors})
-    return Firework([t1,t2,t3],parents=parents,name=label+"vib")
+    return Firework([t1,t2,t3],parents=parents,name=label+"vib",spec={"_allow_fizzled_parents": True})
 
 @explicit_serialize
 class MolecularVibrationsTask(VibrationTask):
@@ -548,7 +548,7 @@ class MolecularTSEstimate(FiretaskBase):
             ctask = MolecularCollect({"xyzs":xyzsout,"check_symm":True,"fw_generators": ["optimize_firework",["vibrations_firework","IRC_firework"]],
                 "fw_generator_dicts": [self["opt_obj_dict"],[self["vib_obj_dict"],self["IRC_obj_dict"]]],
                     "out_names": ["opt.xyz",["vib.json","irc.traj"]],"future_check_symms": [True,False], "label": "TS"+str(index)+"_"+rxn_name})
-            cfw = Firework([ctask],name="TS"+str(index)+"_"+rxn_name+"_collect")
+            cfw = Firework([ctask],name="TS"+str(index)+"_"+rxn_name+"_collect",spec={"_allow_fizzled_parents": True})
             newwf = Workflow([cfw],name='rxn_'+str(index)+str(rxn_name))
             return FWAction(detours=newwf) #using detour allows us to inherit children from the original collect to the subsequent collects
         else:
@@ -557,7 +557,7 @@ class MolecularTSEstimate(FiretaskBase):
 def collect_firework(xyzs,check_symm,fw_generators,fw_generator_dicts,out_names,future_check_symms,parents=[],label=""):
     task = MolecularCollect({"xyzs": xyzs, "check_symm": check_symm, "fw_generators": fw_generators,
         "fw_generator_dicts": fw_generator_dicts, "out_names": out_names, "future_check_symms": future_check_symms, "label": label})
-    return Firework([task],parents=parents,name=label+"collect")
+    return Firework([task],parents=parents,name=label+"collect",spec={"_allow_fizzled_parents": True})
 
 @explicit_serialize
 class MolecularCollect(CollectTask):
@@ -603,7 +603,7 @@ class MolecularCollect(CollectTask):
             task = MolecularCollect({"xyzs": out_xyzs,"check_symm": future_check_symms[0],
                     "fw_generators": fw_generators[1:],"fw_generator_dicts": fw_generator_dicts[1:],
                     "out_names": out_names[1:],"future_check_symms": future_check_symms[1:],"label": self["label"]})
-            cfw = Firework([task],parents=fws,name=self["label"]+"collect")
+            cfw = Firework([task],parents=fws,name=self["label"]+"collect",spec={"_allow_fizzled_parents": True})
             newwf = Workflow(fws+[cfw],name=self["label"]+"collect"+str(-len(self["fw_generators"])))
             return FWAction(detours=newwf) #using detour allows us to inherit children from the original collect to the subsequent collects
         else:
@@ -618,7 +618,7 @@ def TSnudge_firework(xyz,label,forward_path=None,reverse_path=None,spawn_jobs=Fa
         task = MolecularTSNudge(vib_traj=xyz,label=label,forward_path=forward_path,reverse_path=reverse_path,spawn_jobs=spawn_jobs,software=software,
             opt_method=opt_method,sella=sella,socket=socket,software_kwargs=software_kwargs,opt_kwargs=opt_kwargs,run_kwargs=run_kwargs,
             constraints=constraints,ignore_errors=ignore_errors)
-        fw = Firework([task],parents=[],name=label+"TSnudge")
+        fw = Firework([task],parents=[],name=label+"TSnudge",spec={"_allow_fizzled_parents": True})
         return fw
 
 @explicit_serialize
@@ -659,7 +659,7 @@ def IRC_firework(xyz,label,out_path=None,spawn_jobs=False,software=None,
             socket=socket,software_kwargs=software_kwargs,opt_kwargs=opt_kwargs,run_kwargs=run_kwargs,
             constraints=constraints,ignore_errors=ignore_errors)
         t2 = FileTransferTask({'files': [{'src': label+'_irc.traj', 'dest': out_path}], 'mode': 'copy', 'ignore_errors' : ignore_errors})
-        fw = Firework([t1,t2],parents=[],name=label+"_IRC")
+        fw = Firework([t1,t2],parents=[],name=label+"_IRC",spec={"_allow_fizzled_parents": True})
         return fw
 
 @explicit_serialize
@@ -809,7 +809,7 @@ def TSxTBOpt_firework(xyz,slab_path,bonds,repeats,av_dists_tuple,out_path=None,l
     directory = os.path.dirname(xyz)
     if out_path is None: out_path = os.path.join(directory,label+".traj")
     t2 = FileTransferTask({'files': [{'src': label+'.traj', 'dest': out_path}], 'mode': 'copy', "ignore_errors": ignore_errors})
-    return Firework([t1,t2],parents=parents,name=label+"TSxTBopt")
+    return Firework([t1,t2],parents=parents,name=label+"TSxTBopt",spec={"_allow_fizzled_parents": True})
 
 @explicit_serialize
 class MolecularTSxTBOpt(OptimizationTask):
@@ -925,7 +925,7 @@ def reconstruct_firework(new_task,old_task,task_list,full=True):
             tasks.append(new_task)
         elif full or i > task_index:
             tasks.append(reconstruct_task(d))
-    return Firework(tasks)
+    return Firework(tasks,spec={"_allow_fizzled_parents": True})
 
 def construct_constraint(d):
     """
