@@ -223,6 +223,7 @@ class Pynta:
             if len(surf_sites) == 0:
                 if not skip_structs:
                     ads.pbc = (True,True,False)
+                    ads.center(vacuum=10)
                     structures[sm] = [ads]
                 gratom_to_molecule_atom_maps[sm] = {val:key for key,val in mol_to_atoms_map.items()}
                 gratom_to_molecule_surface_atom_maps[sm] = dict()
@@ -294,11 +295,13 @@ class Pynta:
                         software_kwargs = deepcopy(self.software_kwargs)
                         target_site_num = len(mol.get_surface_sites())
                         t = self.opt_time_limit_hrs
+                        constraints = ["freeze half slab"]
                     else: #gas phase
                         big_slab_ads = structure
                         target_site_num = None #no slab so can't run site analysis
                         software_kwargs = deepcopy(self.software_kwargs_gas)
                         t = self.opt_time_limit_hrs*2.0 #give it twice as long
+                        constraints = []
                         if len(big_slab_ads) == 1 and self.software == "Espresso": #monoatomic species
                             software_kwargs["command"] = software_kwargs["command"].replace("< PREFIX.pwi > PREFIX.pwo","-ndiag 1 < PREFIX.pwi > PREFIX.pwo")
                     try:
@@ -306,12 +309,16 @@ class Pynta:
                     except:
                         pass
                     write(os.path.join(self.path,"Adsorbates",adsname,str(prefix),str(prefix)+"_init.xyz"),big_slab_ads)
+                    sp_dict = {"name":adsname, "adjlist":mol.to_adjacency_list(),"atom_to_molecule_atom_map": self.gratom_to_molecule_atom_maps[adsname],
+                            "gratom_to_molecule_surface_atom_map": self.gratom_to_molecule_surface_atom_maps[adsname], "nslab": self.nslab}
+                    with open(os.path.join(self.path,"Adsorbates",adsname,"info.json",'w') as f:
+                        json.dump(sp_dict,f)
                     xyz = os.path.join(self.path,"Adsorbates",adsname,str(prefix),str(prefix)+".xyz")
                     xyzs.append(xyz)
                     fwopt = optimize_firework(os.path.join(self.path,"Adsorbates",adsname,str(prefix),str(prefix)+"_init.xyz"),
                         self.software,str(prefix),
                         opt_method="QuasiNewton",socket=self.socket,software_kwargs=software_kwargs,
-                        run_kwargs={"fmax" : 0.01, "steps" : 70},parents=[],constraints=["freeze half slab"], time_limit_hrs=t,
+                        run_kwargs={"fmax" : 0.01, "steps" : 70},parents=[],constraints=constraints, time_limit_hrs=t,
                         fmaxhard=0.05, ignore_errors=True, metal=self.metal, facet=self.surface_type, target_site_num=target_site_num)
                     optfws.append(fwopt)
 
