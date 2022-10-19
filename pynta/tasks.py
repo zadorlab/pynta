@@ -489,6 +489,10 @@ class MolecularTSEstimate(FiretaskBase):
         rnum_surf_sites = [len(mol.get_surface_sites()) for i,mol in enumerate(reactant_mols)]
         pnum_surf_sites = [len(mol.get_surface_sites()) for i,mol in enumerate(product_mols)]
 
+        ts_dict = {"forward": forward, "name": rxn_name, "reactants": reactants.to_adjacency_list(), "products": products.to_adjacency_list(),
+            "species_names": species_names, "nslab": nslab}
+        nslab,ads_sizes
+
         if forward:
             num_surf_sites = rnum_surf_sites
             reverse_names = product_names
@@ -499,6 +503,15 @@ class MolecularTSEstimate(FiretaskBase):
             num_surf_sites = pnum_surf_sites
             reverse_names = reactant_names
 
+        mols = [mol_dict[name] for name in species_names]
+        ts_dict["mols"] = [mol.to_adjacency_list() for mol in mols]
+        ts_dict["ads_sizes"] = [ads_size(mol) for mol in mols]
+        ts_dict["template_mol_map"] = get_template_mol_map(reactants,mols)
+        ts_dict["reverse_names"] = reverse_names
+        ts_dict["molecule_to_atom_maps"] = [{value:key for key,value in gratom_to_molecule_atom_maps[name].items()} for name in species_names]
+
+        with open(os.path.join(ts_path,"info.json"),'w') as f:
+            json.dump(ts_dict,f)
 
         tsstructs = get_unique_TS_structs(adsorbates,species_names,cas,nslab,num_surf_sites,mol_dict,
                                  gratom_to_molecule_atom_maps,gratom_to_molecule_surface_atom_maps,
