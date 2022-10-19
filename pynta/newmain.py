@@ -311,7 +311,7 @@ class Pynta:
                     write(os.path.join(self.path,"Adsorbates",adsname,str(prefix),str(prefix)+"_init.xyz"),big_slab_ads)
                     sp_dict = {"name":adsname, "adjlist":mol.to_adjacency_list(),"atom_to_molecule_atom_map": self.gratom_to_molecule_atom_maps[adsname],
                             "gratom_to_molecule_surface_atom_map": self.gratom_to_molecule_surface_atom_maps[adsname], "nslab": self.nslab}
-                    with open(os.path.join(self.path,"Adsorbates",adsname,"info.json",'w') as f:
+                    with open(os.path.join(self.path,"Adsorbates",adsname,"info.json"),'w') as f:
                         json.dump(sp_dict,f)
                     xyz = os.path.join(self.path,"Adsorbates",adsname,str(prefix),str(prefix)+".xyz")
                     xyzs.append(xyz)
