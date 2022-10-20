@@ -361,10 +361,6 @@ class Pynta:
                         software_kwargs = deepcopy(self.software_kwargs)
                         t = self.opt_time_limit_hrs
                         constraints = ["freeze half slab"]
-                    sp_dict = {"name":ad, "adjlist":mol.to_adjacency_list(),"atom_to_molecule_atom_map": self.gratom_to_molecule_atom_maps[ad],
-                            "gratom_to_molecule_surface_atom_map": self.gratom_to_molecule_surface_atom_maps[ad], "nslab": self.nslab}
-                    with open(os.path.join(self.path,"Adsorbates",ad,"info.json"),'w') as f:
-                        json.dump(sp_dict,f)
                     xyz = os.path.join(prefix_path,str(prefix)+".xyz")
                     init_path = os.path.join(prefix_path,prefix+"_init.xyz")
                     assert os.path.exists(init_path), init_path
