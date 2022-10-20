@@ -348,21 +348,31 @@ class Pynta:
                     self.adsorbate_fw_dict[ad] = []
                     continue
                 for prefix in os.listdir(ad_path):
+                    if prefix.split(".")[-1] == "json":
+                        continue
                     prefix_path = os.path.join(ad_path,prefix)
                     if target_site_num == 0:
                         software_kwargs = deepcopy(self.software_kwargs_gas)
+                        t = self.opt_time_limit_hrs*2.0 #give it twice as long
+                        constraints = []
                         if len(mol.atoms) == 1 and self.software == "Espresso": #monoatomic species
                             software_kwargs["command"] = software_kwargs["command"].replace("< PREFIX.pwi > PREFIX.pwo","-ndiag 1 < PREFIX.pwi > PREFIX.pwo")
                     else:
                         software_kwargs = deepcopy(self.software_kwargs)
+                        t = self.opt_time_limit_hrs
+                        constraints = ["freeze half slab"]
+                    sp_dict = {"name":ad, "adjlist":mol.to_adjacency_list(),"atom_to_molecule_atom_map": self.gratom_to_molecule_atom_maps[ad],
+                            "gratom_to_molecule_surface_atom_map": self.gratom_to_molecule_surface_atom_maps[ad], "nslab": self.nslab}
+                    with open(os.path.join(self.path,"Adsorbates",ad,"info.json"),'w') as f:
+                        json.dump(sp_dict,f)
                     xyz = os.path.join(prefix_path,str(prefix)+".xyz")
                     init_path = os.path.join(prefix_path,prefix+"_init.xyz")
-                    assert os.path.exists(init_path)
+                    assert os.path.exists(init_path), init_path
                     xyzs.append(xyz)
                     fwopt = optimize_firework(init_path,
                         self.software,prefix,
                         opt_method="QuasiNewton",socket=self.socket,software_kwargs=software_kwargs,
-                        run_kwargs={"fmax" : 0.01, "steps" : 70},parents=[],constraints=["freeze half slab"], time_limit_hrs=self.opt_time_limit_hrs,
+                        run_kwargs={"fmax" : 0.01, "steps" : 70},parents=[],constraints=["freeze half slab"], time_limit_hrs=t,
                         fmaxhard=0.05, ignore_errors=True, metal=self.metal, facet=self.surface_type, target_site_num=target_site_num)
                     optfws.append(fwopt)
 
