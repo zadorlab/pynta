@@ -23,6 +23,7 @@ from pynta.symmetry import get_unique_sym, get_unique_sym_structs, get_unique_sy
 from pynta.calculator import run_harmonically_forced_xtb, add_sella_constraint
 from pynta.vib import AfterTS
 from pynta.io import IO
+from pynta.molecule import *
 from pynta.penalty_fun import AdsorbatePlacer
 from xtb.ase.calculator import XTB
 import numpy as np
