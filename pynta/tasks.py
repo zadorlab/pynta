@@ -491,7 +491,6 @@ class MolecularTSEstimate(FiretaskBase):
 
         ts_dict = {"forward": forward, "name": rxn_name, "reactants": reactants.to_adjacency_list(), "products": products.to_adjacency_list(),
             "species_names": species_names, "nslab": nslab}
-        nslab,ads_sizes
 
         if forward:
             num_surf_sites = rnum_surf_sites
