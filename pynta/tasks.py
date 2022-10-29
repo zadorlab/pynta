@@ -86,7 +86,7 @@ def optimize_firework(xyz,software,label,opt_method=None,sella=None,socket=False
     if out_path is None: out_path = os.path.join(directory,label+".xyz")
     t2 = FileTransferTask({'files': [{'src': label+'.xyz', 'dest': out_path}, {'src': label+'.traj', 'dest': os.path.join(directory,label+".traj")}],
             'mode': 'copy', 'ignore_errors' : ignore_errors})
-    return Firework([t1,t2],parents=parents,name=label+"opt",spec={"_allow_fizzled_parents": True})
+    return Firework([t1,t2],parents=parents,name=label+"opt",spec={"_allow_fizzled_parents": True, "_priority": 1})
 
 @explicit_serialize
 class MolecularOptimizationTask(OptimizationTask):
