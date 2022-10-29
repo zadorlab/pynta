@@ -682,3 +682,9 @@ def get_bond_lengths_sites(mol,ads,atom_map,surf_atom_map,nslab,facet="fcc111",m
             bondlengths[ind2,ind1] = d
 
     return bondlengths,sites,sitelengths
+
+def get_name(mol):
+    try:
+        return mol.to_smiles()
+    except:
+        return mol.to_adjacency_list()
