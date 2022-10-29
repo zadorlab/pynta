@@ -25,11 +25,11 @@ def get_desorbed_with_map(mol):
 
     for bd in molcopy.get_all_edges():
         if bd.atom1.is_surface_site():
-            bd.atom2.radical_electrons += bd.order
+            bd.atom2.radical_electrons += round(bd.order)
             molcopy.remove_bond(bd)
             molcopy.remove_atom(bd.atom1)
         elif bd.atom2.is_surface_site():
-            bd.atom1.radical_electrons += bd.order
+            bd.atom1.radical_electrons += round(bd.order)
             molcopy.remove_bond(bd)
             molcopy.remove_atom(bd.atom2)
 
