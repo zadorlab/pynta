@@ -328,7 +328,10 @@ def generate_constraints_harmonic_parameters(tsstructs,adsorbates,slab,forward_t
         adcov = SlabAdsorbateCoverage(tsstruct,adsorption_sites=cas)
         sites = adcov.get_sites()
         occ = [site for site in sites if site["occupied"]]
-        if len(occ) != len(forward_template.get_adatoms()): #if we don't identify as many occupied sites as we should skip this structure
+        if len(occ) < len(forward_template.get_adatoms()): #if we don't identify as many occupied sites as we should skip this structure
+            print("occupied not equal to forward_template")
+            print("occ={0}".format(len(occ)))
+            print("forward_template_occs={0}".format(len(forward_template.get_adatoms())))
             continue
         occ_atom_inds = [site["bonding_index"] for site in occ]
         occ_bd_lengths = {site["bonding_index"]:site['bond_length'] for site in occ}
