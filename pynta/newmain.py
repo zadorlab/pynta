@@ -270,6 +270,8 @@ class Pynta:
                 else: #read from Adsorbates directory
                     prefixes = os.listdir(os.path.join(self.path,"Adsorbates",sp_symbol))
                     for prefix in prefixes:
+                        if prefix == "info.json":
+                            continue
                         adsorbate_dict[sp_symbol][prefix] = read(os.path.join(self.path,"Adsorbates",sp_symbol,str(prefix),str(prefix)+"_init.xyz"))
 
             big_slab = self.slab * self.repeats[0]
