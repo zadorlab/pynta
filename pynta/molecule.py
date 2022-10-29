@@ -637,6 +637,13 @@ def get_bond_lengths_sites(mol,ads,atom_map,surf_atom_map,nslab,facet="fcc111",m
     surface_dict = [{"atom_index":x["bonding_index"]-nslab, "site":x["site"],
                        "bond_length":x["bond_length"], "position":x["position"]} for x in occ]
 
+    if len(occ) < len(surf_atom_map): #number of sites on geometry disagrees with surf_atom_map
+        print("occupational analysis in get_bond_lengths_sites failed")
+        print(mol.to_adjacency_list())
+        print("expected {} sites".format(len(surf_atom_map)))
+        print("found {} sites".format(len(occ)))
+        return None,None,None
+
     if mol.contains_surface_site():
         ad = ads[nslab:]
     else:
