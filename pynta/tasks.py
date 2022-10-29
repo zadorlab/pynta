@@ -480,7 +480,7 @@ class MolecularTSEstimate(FiretaskBase):
         reactant_mols = [mol_dict[name] for name in reactant_names]
         product_mols = [mol_dict[name] for name in product_names]
 
-        adsorbates = get_unique_optimized_adsorbates(rxn,adsorbates_path)
+        adsorbates = get_unique_optimized_adsorbates(rxn,adsorbates_path,mol_dict,cas)
 
         forward,species_names = determine_TS_construction(reactant_names,
                     reactant_mols,product_names,product_mols)

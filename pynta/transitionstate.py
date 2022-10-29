@@ -26,7 +26,7 @@ from pynta.calculator import HarmonicallyForcedXTB
 from pynta.molecule import *
 from copy import deepcopy
 
-def get_unique_optimized_adsorbates(rxn,adsorbates_path):
+def get_unique_optimized_adsorbates(rxn,adsorbates_path,mol_dict,cas):
     """
     load the adsorbates associated with the reaction and find the unique optimized
     adsorbate structures for each species
@@ -42,8 +42,14 @@ def get_unique_optimized_adsorbates(rxn,adsorbates_path):
             if os.path.exists(path):
                 geoms.append(path)
         xyzs = get_unique_sym(geoms)
-        adsorbates[name] = [read(xyz) for xyz in xyzs]
-
+        adsorbates[name] = []
+        for xyz in xyzs:
+            geo = read(xyz)
+            adcov = SlabAdsorbateCoverage(geo,adsorption_sites=cas)
+            sites = adcov.get_sites()
+            occ = [site for site in sites if site["occupied"]]
+            if len(occ) >= len(mol_dict[name].get_adatoms()):
+                adsorbates[name].append(geo)
 
     return adsorbates
 
