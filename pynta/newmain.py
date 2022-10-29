@@ -1,7 +1,7 @@
 from pynta.tasks import *
 from pynta.io import IO
 from pynta.adsorbates import Adsorbates
-from pynta.molecule import get_adsorbate, generate_unique_site_additions, generate_adsorbate_guesses
+from pynta.molecule import get_adsorbate, generate_unique_site_additions, generate_adsorbate_guesses, get_name
 from pynta.excatkit.adsorption import Builder
 from molecule.molecule import Molecule
 import ase.build
@@ -172,7 +172,7 @@ class Pynta:
         for mol in unique_mols:
             mol.multiplicity = mol.get_radical_count() + 1
 
-        mol_dict = {mol.to_smiles():mol for mol in unique_mols}
+        mol_dict = {get_name(mol):mol for mol in unique_mols}
         self.mol_dict = mol_dict
         self.name_to_adjlist_dict = {sm:mol.to_adjacency_list() for sm,mol in mol_dict.items()}
 
