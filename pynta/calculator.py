@@ -109,7 +109,7 @@ def run_harmonically_forced_xtb(atoms,atom_bond_potentials,site_bond_potentials,
     opt = Sella(atoms,constraints=cons,trajectory="xtbharm.traj",order=0)
 
     try:
-        opt.run(fmax=0.02)
+        opt.run(fmax=0.02,steps=150)
     except Exception as e:
         return None,None,None
 
