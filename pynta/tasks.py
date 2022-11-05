@@ -229,20 +229,21 @@ class MolecularOptimizationTask(OptimizationTask):
         if not converged: #optimization has converged
             fmax = np.inf
             try:
-                fmaxsp = get_fmax(sp)
+                fmax = get_fmax(sp)
+            except:
+                pass
+            try:
                 tr = Trajectory(label+".traj")
                 fmaxtr = get_fmax(tr[-1])
-                if fmaxtr < fmaxsp:
+                if fmaxtr < fmax:
                     sp = tr[-1]
                     fmax = fmaxtr
-                else:
-                    fmax = fmaxsp
             except:
                 pass
             if fmax < fmaxhard:
                 converged = True
             else:
-                e = ValueError("Did not converge fmax below fmaxhard")
+                e = ValueError("Did not converge fmax below fmaxhard: {0} > {1}".format(fmax,fmaxhard))
                 if not ignore_errors:
                     raise e
                 else:
