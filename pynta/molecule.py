@@ -64,6 +64,15 @@ def generate_adsorbate_guesses(mol,ads,slab,repeats,cas,mol_to_atoms_map,metal,
         sites_lists = single_sites_lists
         for site_bond_params_list in site_bond_params_lists:
             site_bond_params_list[0]["ind"] = atom_surf_inds[0]+len(full_slab)
+
+            #add up pulling potential
+            for ind in range(len(ads)):
+                if ind in atom_surf_inds:
+                    continue
+                pos = deepcopy(site_bond_params_list[0]["site_pos"])
+                pos[2] += 8.5
+                site_bond_params_list.append({"site_pos": pos,"ind": ind+len(full_slab), "k": 0.3, "deq": 0.0})
+
     elif len(atom_surf_inds) == 2:
         site_bond_params_lists = deepcopy(double_site_bond_params_lists)
         sites_lists = double_sites_lists
@@ -115,6 +124,7 @@ def generate_adsorbate_guesses(mol,ads,slab,repeats,cas,mol_to_atoms_map,metal,
     if len(atom_surf_inds) == 1: #should be small, don't bother filtering
         xyzsout = geos_out
         site_bond_params_lists_final = [site_bond_params_lists_out[ind] for ind in inds]
+        return xyzsout
     else:
         Einds = np.argsort(np.array(Eharms))
         Emin = np.min(np.array(Eharms))
