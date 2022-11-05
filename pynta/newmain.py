@@ -371,7 +371,7 @@ class Pynta:
                         self.software,prefix,
                         opt_method="QuasiNewton",socket=self.socket,software_kwargs=software_kwargs,
                         run_kwargs={"fmax" : 0.01, "steps" : 70},parents=[],constraints=["freeze half slab"], time_limit_hrs=t,
-                        fmaxhard=0.05, ignore_errors=True, metal=self.metal, facet=self.surface_type, target_site_num=target_site_num)
+                        fmaxhard=0.05, ignore_errors=True, metal=self.metal, facet=self.surface_type, target_site_num=target_site_num, priority=3)
                     optfws.append(fwopt)
 
                 vib_obj_dict = {"software": self.software, "label": ad, "software_kwargs": software_kwargs,
