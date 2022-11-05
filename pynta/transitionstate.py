@@ -9,7 +9,7 @@ import numpy as np
 from ase.data import covalent_radii
 from acat.adsorption_sites import SlabAdsorptionSites
 from acat.adsorbate_coverage import SlabAdsorbateCoverage
-from acat.settings import site_heights, adsorbate_molecule
+from acat.settings import adsorbate_molecule
 from acat.utilities import (custom_warning,
                          is_list_or_tuple,
                          get_close_atoms,
