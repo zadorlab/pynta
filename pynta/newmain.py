@@ -233,7 +233,7 @@ class Pynta:
                     if os.path.exists(os.path.join(self.path,"Adsorbates",sm)): #assume initial guesses already generated
                         structures[sm] = None
                     else:
-                        structs = generate_adsorbate_guesses(mol,ads,self.slab,self.repeats[0],cas,mol_to_atoms_map,
+                        structs = generate_adsorbate_guesses(mol,ads,self.slab,self.repeats[0],cas,mol_to_atoms_map,self.metal,
                                            self.single_site_bond_params_lists,self.single_sites_lists,
                                            self.double_site_bond_params_lists,self.double_sites_lists,
                                            self.Eharmtol,self.Eharmfiltertol,self.Ntsmin)

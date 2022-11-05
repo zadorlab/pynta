@@ -53,7 +53,7 @@ def get_adsorbate(mol):
     mol_to_atoms_map = {key:desorbed_to_atoms_map[val] for key,val in mol_to_desorbed_map.items()}
     return atoms,mol_to_atoms_map
 
-def generate_adsorbate_guesses(mol,ads,slab,repeats,cas,mol_to_atoms_map,
+def generate_adsorbate_guesses(mol,ads,slab,repeats,cas,mol_to_atoms_map,metal,
                                single_site_bond_params_lists,single_sites_lists,double_site_bond_params_lists,double_sites_lists,
                                Eharmtol,Eharmfiltertol,Ntsmin):
     full_slab = slab * repeats
@@ -79,8 +79,12 @@ def generate_adsorbate_guesses(mol,ads,slab,repeats,cas,mol_to_atoms_map,
     constraint_list = [{"type": "fix_bond", "indices": pair} for pair in atom_fixed_bond_pairs]+["freeze slab"]
 
     geos = []
-    for sites_list in sites_lists:
-        geo = place_adsorbate(ads,full_slab,atom_surf_inds,sites_list)
+    for i,sites_list in enumerate(sites_lists):
+        geo,h1,h2 = place_adsorbate(ads,full_slab,atom_surf_inds,sites_list,metal)
+        if h1:
+            site_bond_params_lists[i][0]["site_pos"][2] += h1
+        if h2:
+            site_bond_params_lists[i][1]["site_pos"][2] += h2
         geos.append(geo)
 
     print("initial geometries")
@@ -134,6 +138,49 @@ def generate_adsorbate_guesses(mol,ads,slab,repeats,cas,mol_to_atoms_map,
         xyzfinals.append(geo_out)
 
     return xyzfinals
+
+site_bond_length_dict = {
+        ("ontop",None,None): 1.826370311,
+        ("bridge",None,None): 1.806089179,
+        ("fcc",None,None): 1.372599861,
+        ("hcp",None,None): 1.397379832,
+
+        ("ontop","C",None): 2.056904761,
+        ("bridge","C",None): 1.920118777,
+        ("fcc","C",None): 1.795024649,
+        ("hcp","C",None): 1.764312871,
+        ("ontop","O",None): 1.872603673,
+        ("bridge","O",None): 1.69205958,
+        ("fcc","O",None): 1.408365497,
+        ("hcp","O",None): 1.510464567,
+        ("ontop","H",None): 1.5496025,
+        ("fcc","H",None): 1.0321708,
+        ("hcp","H",None): 1.0321708,
+        ("fcc","N",None): 1.2548385,
+        ("hcp","N",None): 1.28257109,
+
+        ("ontop","C","Cu"): 2.056904761,
+        ("bridge","C","Cu"): 1.920118777,
+        ("fcc","C","Cu"): 1.795024649,
+        ("hcp","C","Cu"): 1.764312871,
+        ("ontop","O","Cu"): 1.872603673,
+        ("bridge","O","Cu"): 1.69205958,
+        ("fcc","O","Cu"): 1.408365497,
+        ("hcp","O","Cu"): 1.510464567,
+        ("ontop","H","Cu"): 1.5496025,
+        ("fcc","H","Cu"): 1.0321708,
+        ("hcp","H","Cu"): 1.0321708,
+        ("fcc","N","Cu"): 1.2548385,
+        ("hcp","N","Cu"): 1.28257109,
+}
+
+def get_site_bond_length(sitetype,atomtype=None,metal=None):
+    if (sitetype,atomtype,metal) in site_bond_length_dict.keys():
+        return site_bond_length_dict[(sitetype,atomtype,metal)]
+    elif (sitetype,atomtype,None) in site_bond_length_dict.keys():
+        return site_bond_length_dict[(sitetype,atomtype,None)]
+    else:
+        return site_bond_length_dict[(sitetype,None,None)]
 
 def add_adsorbate_to_site(atoms, adsorbate, surf_ind, site, height=None,
                           orientation=None, tilt_angle=0.):
@@ -240,24 +287,24 @@ def add_adsorbate_to_site(atoms, adsorbate, surf_ind, site, height=None,
         shift = (atoms.positions[-2] - atoms.positions[-1]) / 2
         atoms.positions[-2:,:] += shift
 
-def place_adsorbate(ads,slab,atom_surf_inds,sites):
+def place_adsorbate(ads,slab,atom_surf_inds,sites,metal):
     if len(atom_surf_inds) == 1:
         geo = slab.copy()
-        h = site_heights[sites[0]["site"]]
+        h = get_site_bond_length(sites[0]["site"],ads.get_chemical_symbols()[atom_surf_inds[0]],metal)
         add_adsorbate_to_site(geo, ads, atom_surf_inds[0], sites[0], height=h)
+        return geo,h,None
     elif len(atom_surf_inds) == 2:
         geo = slab.copy()
-        h = site_heights[sites[0]["site"]]
+        h1 = get_site_bond_length(sites[0]["site"],ads.get_chemical_symbols()[atom_surf_inds[0]],metal)
+        h2 = get_site_bond_length(sites[1]["site"],ads.get_chemical_symbols()[atom_surf_inds[1]],metal)
         ori = get_mic(sites[0]['position'], sites[1]['position'], geo.cell)
-        add_adsorbate_to_site(geo, deepcopy(ads), atom_surf_inds[0], sites[0], height=h, orientation=ori)
+        add_adsorbate_to_site(geo, deepcopy(ads), atom_surf_inds[0], sites[0], height=h1, orientation=ori)
         if np.isnan(geo.positions).any(): #if nans just ignore orientation and let it optimize
             geo = slab.copy()
-            add_adsorbate_to_site(geo, deepcopy(ads), atom_surf_inds[0], sites[0], height=h, orientation=None)
-    else: #lets just place it above and hope for the best
-        geo = slab.copy()
-        add_adsorbate_to_site(geo, ads, atom_surf_inds[0], sites[0], height=5.0)
-
-    return geo
+            add_adsorbate_to_site(geo, deepcopy(ads), atom_surf_inds[0], sites[0], height=h1, orientation=None)
+        return geo,h1,h2
+    else:
+        raise ValueError
 
 def generate_unique_site_additions(geo,cas,nslab,site_bond_params_list=[],sites_list=[]):
     nads = len(geo) - nslab
@@ -282,8 +329,7 @@ def generate_unique_site_additions(geo,cas,nslab,site_bond_params_list=[],sites_
         geom = geo.copy()
         add_adsorbate_to_site(geom,adsorbate=tag,surf_ind=0,site=site,height=1.5)
         pos = site["position"].tolist()
-        pos[2] += site_heights[site["site"]]
-        params = {"site_pos": pos,"ind": None, "k": 100.0, "deq": 0.0}
+        params = {"site_pos": pos,"ind": None, "k": 100.0, "deq": 0.0} #just the site position, will shift up later
         site_bond_params_lists[i].append(params)
         sites_lists[i].append(site)
         geoms.append(geom)
