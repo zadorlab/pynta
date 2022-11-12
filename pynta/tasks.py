@@ -234,10 +234,21 @@ class MolecularOptimizationTask(OptimizationTask):
                 pass
             try:
                 tr = Trajectory(label+".traj")
-                fmaxtr = get_fmax(tr[-1])
-                if fmaxtr < fmax:
-                    sp = tr[-1]
-                    fmax = fmaxtr
+                fmaxmin = np.inf
+                minind = len(tr)
+                for i,spt in enumerate(tr):
+                    if "freeze half slab" in constraints:
+                        spt.set_constraint(FixAtoms([
+                                        atom.index for atom in spt if atom.position[2] < spt.cell[2, 2] / 2.
+                                    ]))
+                    fmaxt = get_fmax(spt)
+                    if fmaxt < fmaxmin:
+                        minind = i
+                        fmaxmin = fmaxt
+
+                if fmaxmin < fmax:
+                    fmax = fmaxmin
+                    sp = tr[minind]
             except:
                 pass
             if fmax < fmaxhard:
