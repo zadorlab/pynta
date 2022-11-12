@@ -26,7 +26,7 @@ from pynta.calculator import HarmonicallyForcedXTB
 from pynta.molecule import *
 from copy import deepcopy
 
-def get_unique_optimized_adsorbates(rxn,adsorbates_path,mol_dict,cas):
+def get_unique_optimized_adsorbates(rxn,adsorbates_path,mol_dict,cas,gratom_to_molecule_surface_atom_maps,nslab):
     """
     load the adsorbates associated with the reaction and find the unique optimized
     adsorbate structures for each species
@@ -36,6 +36,7 @@ def get_unique_optimized_adsorbates(rxn,adsorbates_path,mol_dict,cas):
 
     for name in rxn["reactant_names"]+rxn["product_names"]:
         prefixes = os.listdir(os.path.join(adsorbates_path,name))
+        ase_to_mol_surface_atom_map = gratom_to_molecule_surface_atom_maps[name]
         geoms = []
         for prefix in prefixes:
             path = os.path.join(adsorbates_path,name,prefix,prefix+".xyz")
@@ -48,7 +49,9 @@ def get_unique_optimized_adsorbates(rxn,adsorbates_path,mol_dict,cas):
             adcov = SlabAdsorbateCoverage(geo,adsorption_sites=cas)
             sites = adcov.get_sites()
             occ = [site for site in sites if site["occupied"]]
-            if len(occ) >= len(mol_dict[name].get_adatoms()):
+            required_surface_inds = set([ind+nslab for ind in ase_to_mol_surface_atom_map.keys()])
+            found_surface_inds = set([site["bonding_index"] for site in occ])
+            if len(occ) >= len(mol_dict[name].get_adatoms()) and required_surface_inds.issubset(found_surface_inds):
                 adsorbates[name].append(geo)
 
     return adsorbates
