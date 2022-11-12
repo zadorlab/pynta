@@ -186,21 +186,21 @@ class MolecularOptimizationTask(OptimizationTask):
                 #         errors.append(e)
 
         else:
-            cons = Constraints(sp)
             for c in constraints:
                 if isinstance(c,dict):
-                    add_sella_constraint(cons,c)
+                    constraint = construct_constraint(c)
+                    sp.set_constraint(constraint)
                 elif c == "freeze half slab":
-                    for atom in sp:
-                        if atom.position[2] < sp.cell[2, 2] / 2.:
-                            cons.fix_translation(atom.index)
+                    sp.set_constraint(FixAtoms([
+                        atom.index for atom in sp if atom.position[2] < sp.cell[2, 2] / 2.
+                    ]))
                 elif c.split()[0] == "freeze" and c.split()[1] == "all": #ex: "freeze all Cu"
                     sym = c.split()[2]
-                    indices = [atom.index for atom in atoms if atom.symbol == sym]
-                    for ind in indices:
-                        cons.fix_translation(ind)
+                    sp.set_constraint(FixAtoms(
+                        indices=[atom.index for atom in sp if atom.symbol == sym]
+                        ))
 
-            opt = Sella(sp,constraints=cons,trajectory=label+".traj",order=order)
+            opt = Sella(sp,trajectory=label+".traj",order=order)
             try:
                 if np.isinf(time_limit_hrs):
                     opt.run(**run_kwargs)
