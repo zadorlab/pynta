@@ -673,7 +673,7 @@ def IRC_firework(xyz,label,out_path=None,spawn_jobs=False,software=None,
             socket=socket,software_kwargs=software_kwargs,opt_kwargs=opt_kwargs,run_kwargs=run_kwargs,
             constraints=constraints,ignore_errors=ignore_errors)
         t2 = FileTransferTask({'files': [{'src': label+'_irc.traj', 'dest': out_path}], 'mode': 'copy', 'ignore_errors' : ignore_errors})
-        fw = Firework([t1,t2],parents=[],name=label+"_IRC",spec={"_allow_fizzled_parents": True})
+        fw = Firework([t1,t2],parents=[],name=label+"_IRC",spec={"_allow_fizzled_parents": True, "_priority": 0.5})
         return fw
 
 @explicit_serialize
