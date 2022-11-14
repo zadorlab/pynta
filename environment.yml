@@ -22,3 +22,4 @@ dependencies:
   - rmgmolecule
   - acat
   - asap3
+  - libffi <=3.3
