@@ -363,6 +363,10 @@ def generate_constraints_harmonic_parameters(tsstructs,adsorbates,slab,forward_t
                     pos = None
                 elif ase_ind1 is None:
                     assert edge.atom1.is_surface_site()
+                    if ase_ind2 not in occ_bd_lengths.keys():
+                        print("acat occupational detection has failed for a TS guess structure...may be skipping important TS guesses")
+                        tsstruct_valid = False
+                        break
                     dwell = occ_bd_lengths[ase_ind2]
                     sitetype = occ_site_types[ase_ind2]
                     pos = deepcopy(occ_site_pos[ase_ind2])
@@ -370,6 +374,10 @@ def generate_constraints_harmonic_parameters(tsstructs,adsorbates,slab,forward_t
                     ind = ase_ind2
                 else:
                     assert edge.atom2.is_surface_site()
+                    if ase_ind1 not in occ_bd_lengths.keys():
+                        print("acat occupational detection has failed for a TS guess structure...may be skipping important TS guesses")
+                        tsstruct_valid = False
+                        break
                     dwell = occ_bd_lengths[ase_ind1]
                     sitetype = occ_site_types[ase_ind1]
                     pos = deepcopy(occ_site_pos[ase_ind1])
