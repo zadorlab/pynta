@@ -82,7 +82,10 @@ class Pynta:
         if queue:
             self.qadapter = load_object_from_file(queue_adapter_path)
         self.nprocs = nprocs
-        self.nslab = int(np.prod(np.array(self.repeats[0])*np.array(self.repeats[1])))
+        if self.slab_path is None:
+            self.nslab = int(np.prod(np.array(self.repeats[0])*np.array(self.repeats[1])))
+        else:
+            self.nslab = len(read(self.slab_path))
         self.mol_dict = None
         self.Eharmtol = Eharmtol
         self.Eharmfiltertol = Eharmfiltertol
