@@ -678,20 +678,20 @@ class MolecularTSNudge(FiretaskBase):
             return FWAction()
 
 def IRC_firework(xyz,label,out_path=None,spawn_jobs=False,software=None,
-        socket=False,software_kwargs={},opt_kwargs={},run_kwargs={},constraints=[],parents=[],ignore_errors=False):
+        socket=False,software_kwargs={},opt_kwargs={},run_kwargs={},constraints=[],parents=[],ignore_errors=False,forward=True):
         if out_path is None: out_path = os.path.join(directory,label+"_irc.traj")
         t1 = MolecularIRC(xyz=xyz,label=label,software=software,
             socket=socket,software_kwargs=software_kwargs,opt_kwargs=opt_kwargs,run_kwargs=run_kwargs,
-            constraints=constraints,ignore_errors=ignore_errors)
+            constraints=constraints,ignore_errors=ignore_errors,forward=forward)
         t2 = FileTransferTask({'files': [{'src': label+'_irc.traj', 'dest': out_path}], 'mode': 'copy', 'ignore_errors' : ignore_errors})
-        fw = Firework([t1,t2],parents=[],name=label+"_IRC",spec={"_allow_fizzled_parents": True, "_priority": 0.5})
+        fw = Firework([t1,t2],parents=[],name=label+"_IRC",spec={"_priority": 0.5})
         return fw
 
 @explicit_serialize
 class MolecularIRC(FiretaskBase):
     required_params = ["xyz","label"]
     optional_params = ["software","socket",
-            "software_kwargs", "opt_kwargs", "run_kwargs", "constraints", "ignore_errors"]
+            "software_kwargs", "opt_kwargs", "run_kwargs", "constraints", "ignore_errors", "forward"]
     def run_task(self, fw_spec):
         errors = []
         software_kwargs = deepcopy(self["software_kwargs"]) if "software_kwargs" in self.keys() else dict()
@@ -707,6 +707,7 @@ class MolecularIRC(FiretaskBase):
         opt_kwargs = deepcopy(self["opt_kwargs"]) if "opt_kwargs" in self.keys() else dict()
         run_kwargs = deepcopy(self["run_kwargs"]) if "run_kwargs" in self.keys() else dict()
         ignore_errors = self["ignore_errors"] if "ignore_errors" in self.keys() else False
+        forward = self["forward"] if "forward" in self.keys() else False
 
         label = self["label"]
         xyz = self['xyz']
@@ -747,10 +748,12 @@ class MolecularIRC(FiretaskBase):
 
         opt = IRC(sp,trajectory=label+"_irc.traj",dx=0.1,eta=1e-4,gamma=0.4)
         try:
-            run_kwargs["direction"] = "forward"
-            opt.run(**run_kwargs)
-            run_kwargs["direction"] = "reverse"
-            opt.run(**run_kwargs)
+            if forward:
+                run_kwargs["direction"] = "forward"
+                opt.run(**run_kwargs)
+            else:
+                run_kwargs["direction"] = "reverse"
+                opt.run(**run_kwargs)
         except Exception as e:
             if not ignore_errors:
                 raise e
