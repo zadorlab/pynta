@@ -33,7 +33,7 @@ class Pynta:
                             }, },
         software_kwargs_gas=None,
         TS_opt_software_kwargs=None,
-        reset_launchpad=False,queue_adapter_path=None,nprocs=48,opt_time_limit_hrs=12.0,
+        reset_launchpad=False,queue_adapter_path=None,nprocs=48,
         Eharmtol=3.0,Eharmfiltertol=30.0,Ntsmin=5):
 
         self.surface_type = surface_type
@@ -90,7 +90,6 @@ class Pynta:
         self.Eharmtol = Eharmtol
         self.Eharmfiltertol = Eharmfiltertol
         self.Ntsmin = Ntsmin
-        self.opt_time_limit_hrs = opt_time_limit_hrs
 
     def generate_slab(self):
         """
@@ -299,13 +298,11 @@ class Pynta:
                         big_slab_ads = structure
                         software_kwargs = deepcopy(self.software_kwargs)
                         target_site_num = len(mol.get_surface_sites())
-                        t = self.opt_time_limit_hrs
                         constraints = ["freeze half slab"]
                     else: #gas phase
                         big_slab_ads = structure
                         target_site_num = None #no slab so can't run site analysis
                         software_kwargs = deepcopy(self.software_kwargs_gas)
-                        t = self.opt_time_limit_hrs*2.0 #give it twice as long
                         constraints = []
                         if len(big_slab_ads) == 1 and self.software == "Espresso": #monoatomic species
                             software_kwargs["command"] = software_kwargs["command"].replace("< PREFIX.pwi > PREFIX.pwo","-ndiag 1 < PREFIX.pwi > PREFIX.pwo")
@@ -358,13 +355,11 @@ class Pynta:
                     prefix_path = os.path.join(ad_path,prefix)
                     if target_site_num == 0:
                         software_kwargs = deepcopy(self.software_kwargs_gas)
-                        t = self.opt_time_limit_hrs*2.0 #give it twice as long
                         constraints = []
                         if len(mol.atoms) == 1 and self.software == "Espresso": #monoatomic species
                             software_kwargs["command"] = software_kwargs["command"].replace("< PREFIX.pwi > PREFIX.pwo","-ndiag 1 < PREFIX.pwi > PREFIX.pwo")
                     else:
                         software_kwargs = deepcopy(self.software_kwargs)
-                        t = self.opt_time_limit_hrs
                         constraints = ["freeze half slab"]
                     xyz = os.path.join(prefix_path,str(prefix)+".xyz")
                     init_path = os.path.join(prefix_path,prefix+"_init.xyz")
