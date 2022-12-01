@@ -318,16 +318,18 @@ class Pynta:
                     xyz = os.path.join(self.path,"Adsorbates",adsname,str(prefix),str(prefix)+".xyz")
                     xyzs.append(xyz)
                     fwopt = optimize_firework(os.path.join(self.path,"Adsorbates",adsname,str(prefix),str(prefix)+"_init.xyz"),
-                        self.software,str(prefix),
-                        opt_method="QuasiNewton",socket=self.socket,software_kwargs=software_kwargs,
-                        run_kwargs={"fmax" : 0.01, "steps" : 70},parents=[],constraints=constraints, time_limit_hrs=t,
-                        fmaxhard=0.05, ignore_errors=True, metal=self.metal, facet=self.surface_type, target_site_num=target_site_num)
+                        self.software,"weakopt_"+str(prefix),
+                        opt_method="MDmin",socket=self.socket,software_kwargs=software_kwargs,
+                        run_kwargs={"fmax" : 0.5, "steps" : 70},parents=[],constraints=constraints,
+                        ignore_errors=True, metal=self.metal, facet=self.surface_type, target_site_num=target_site_num, priority=3)
                     optfws.append(fwopt)
 
+                opt_obj_dict = {"software":self.software,"label":"strongopt","opt_method":"QuasiNewton","socket":self.socket,"software_kwargs":self.software_kwargs,
+                        "run_kwargs": {"fmax" : 0.02, "steps" : 70},"constraints": ["freeze half slab"],"sella":False,"order":0,"priority": 3}
                 vib_obj_dict = {"software": self.software, "label": adsname, "software_kwargs": software_kwargs,
                     "constraints": ["freeze all "+self.metal]}
 
-                cfw = collect_firework(xyzs,True,[["vibrations_firework"]],[[vib_obj_dict]],[["vib.json"]],[[False]],parents=optfws,label=adsname)
+                cfw = collect_firework(xyzs,True,[["optimize_firework","vibrations_firework"]],[[opt_obj_dict,vib_obj_dict]],[["opt.xyz",],["vib.json"]],[[True,False]],parents=optfws,label=adsname)
                 self.adsorbate_fw_dict[adsname] = optfws
                 logging.error(self.adsorbate_fw_dict.keys())
                 self.fws.extend(optfws+[cfw])
@@ -366,17 +368,20 @@ class Pynta:
                     assert os.path.exists(init_path), init_path
                     xyzs.append(xyz)
                     fwopt = optimize_firework(init_path,
-                        self.software,prefix,
-                        opt_method="QuasiNewton",socket=self.socket,software_kwargs=software_kwargs,
-                        run_kwargs={"fmax" : 0.01, "steps" : 70},parents=[],constraints=["freeze half slab"], time_limit_hrs=t,
-                        fmaxhard=0.05, ignore_errors=True, metal=self.metal, facet=self.surface_type, target_site_num=target_site_num, priority=3)
+                        self.software,"weakopt_"+str(prefix),
+                        opt_method="MDmin",socket=self.socket,software_kwargs=software_kwargs,
+                        run_kwargs={"fmax" : 0.5, "steps" : 70},parents=[],constraints=constraints,
+                        ignore_errors=True, metal=self.metal, facet=self.surface_type, target_site_num=target_site_num, priority=3)
                     optfws.append(fwopt)
 
-                vib_obj_dict = {"software": self.software, "label": ad, "software_kwargs": software_kwargs,
+                opt_obj_dict = {"software":self.software,"label":"strongopt","opt_method":"QuasiNewton","socket":self.socket,"software_kwargs":self.software_kwargs,
+                        "run_kwargs": {"fmax" : 0.02, "steps" : 100},"constraints": ["freeze half slab"],"sella":False,"order":0,"priority": 3}
+                vib_obj_dict = {"software": self.software, "label": adsname, "software_kwargs": software_kwargs,
                     "constraints": ["freeze all "+self.metal]}
 
-                cfw = collect_firework(xyzs,True,[["vibrations_firework"]],[[vib_obj_dict]],[["vib.json"]],[[False]],parents=optfws,label=ad)
+                cfw = collect_firework(xyzs,True,[["optimize_firework","vibrations_firework"]],[[opt_obj_dict,vib_obj_dict]],[["opt.xyz",],["vib.json"]],[[True,False]],parents=optfws,label=ad)
                 self.adsorbate_fw_dict[ad] = optfws
+                logging.error(self.adsorbate_fw_dict.keys())
                 self.fws.extend(optfws+[cfw])
 
 
@@ -387,12 +392,11 @@ class Pynta:
         Note the vibrational and IRC calculations are launched at the same time
         """
         opt_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":self.software_kwargs_TS,
-                "run_kwargs": {"fmax" : 0.01, "steps" : 70},"constraints": ["freeze half slab"],"sella":True,"order":1,
-                "fmaxhard": 0.05, "time_limit_hrs": self.opt_time_limit_hrs}
+                "run_kwargs": {"fmax" : 0.02, "steps" : 100},"constraints": ["freeze half slab"],"sella":True,"order":1,}
         vib_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":self.software_kwargs,
                 "constraints": ["freeze all "+self.metal]}
         IRC_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":self.software_kwargs,
-                "run_kwargs": {"fmax" : 0.1, "steps" : 1000},"constraints":["freeze all "+self.metal]}
+                "run_kwargs": {"fmax" : 0.1, "steps" : 100},"constraints":["freeze all "+self.metal]}
         for i,rxn in enumerate(self.rxns_dict):
             ts_path = os.path.join(self.path,"TS"+str(i))
             os.makedirs(ts_path)
