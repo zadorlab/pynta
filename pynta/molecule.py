@@ -71,7 +71,7 @@ def generate_adsorbate_guesses(mol,ads,slab,repeats,cas,mol_to_atoms_map,metal,
                     continue
                 pos = deepcopy(site_bond_params_list[0]["site_pos"])
                 pos[2] += 8.5
-                site_bond_params_list.append({"site_pos": pos,"ind": ind+len(full_slab), "k": 0.3, "deq": 0.0})
+                site_bond_params_list.append({"site_pos": pos,"ind": ind+len(full_slab), "k": 0.1, "deq": 0.0})
 
     elif len(atom_surf_inds) == 2:
         site_bond_params_lists = deepcopy(double_site_bond_params_lists)
