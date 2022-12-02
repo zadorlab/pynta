@@ -375,7 +375,7 @@ class Pynta:
                     optfws.append(fwopt)
 
                 opt_obj_dict = {"software":self.software,"label":"strongopt","opt_method":"QuasiNewton","socket":self.socket,"software_kwargs":self.software_kwargs,
-                        "run_kwargs": {"fmax" : 0.02, "steps" : 100},"constraints": ["freeze half slab"],"sella":False,"order":0,"priority": 3}
+                        "run_kwargs": {"fmax" : 0.02, "steps" : 70},"constraints": ["freeze half slab"],"sella":False,"order":0,"priority": 3}
                 vib_obj_dict = {"software": self.software, "label": adsname, "software_kwargs": software_kwargs,
                     "constraints": ["freeze all "+self.metal]}
 
@@ -392,11 +392,11 @@ class Pynta:
         Note the vibrational and IRC calculations are launched at the same time
         """
         opt_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":self.software_kwargs_TS,
-                "run_kwargs": {"fmax" : 0.02, "steps" : 100},"constraints": ["freeze half slab"],"sella":True,"order":1,}
+                "run_kwargs": {"fmax" : 0.02, "steps" : 70},"constraints": ["freeze half slab"],"sella":True,"order":1,}
         vib_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":self.software_kwargs,
                 "constraints": ["freeze all "+self.metal]}
         IRC_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":self.software_kwargs,
-                "run_kwargs": {"fmax" : 0.1, "steps" : 100},"constraints":["freeze all "+self.metal]}
+                "run_kwargs": {"fmax" : 0.1, "steps" : 70},"constraints":["freeze all "+self.metal]}
         for i,rxn in enumerate(self.rxns_dict):
             ts_path = os.path.join(self.path,"TS"+str(i))
             os.makedirs(ts_path)
