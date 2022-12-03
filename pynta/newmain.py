@@ -376,7 +376,7 @@ class Pynta:
 
                 opt_obj_dict = {"software":self.software,"label":"strongopt","opt_method":"QuasiNewton","socket":self.socket,"software_kwargs":self.software_kwargs,
                         "run_kwargs": {"fmax" : 0.02, "steps" : 70},"constraints": ["freeze half slab"],"sella":False,"order":0,"priority": 3}
-                vib_obj_dict = {"software": self.software, "label": adsname, "software_kwargs": software_kwargs,
+                vib_obj_dict = {"software": self.software, "label": ad, "software_kwargs": software_kwargs,
                     "constraints": ["freeze all "+self.metal]}
 
                 cfw = collect_firework(xyzs,True,[["optimize_firework","vibrations_firework"]],[[opt_obj_dict,vib_obj_dict]],[["opt.xyz",],["vib.json"]],[[True,False]],parents=optfws,label=ad)
