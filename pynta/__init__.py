@@ -5,7 +5,7 @@ import os
 
 """Catalysis Generator."""
 
-from collections import MutableMapping
+from collections.abc import MutableMapping
 import numpy as np
 import ase
 
@@ -36,22 +36,22 @@ class Defaults(MutableMapping, dict):
 defaults = Defaults()
 
 
-class Licence():
-    def __init__(self):
-        self.path = os.path.dirname(__file__)
-        self.licence_info = os.path.join(self.path, 'license', 'banner.txt')
-
-    def show_banner(self) -> None:
-        ''' Print a copyright banner everytime Pynta is imported'''
-        path_to_excatkit = os.path.join(self.path, 'excatkit')
-        with open(self.licence_info, 'r') as infile:
-            banner = infile.read()
-            with open(self.licence_info, 'w') as outfile:
-                outfile.write(banner.format(
-                    path_to_excatkit=path_to_excatkit))
-        with open(self.licence_info, 'r') as infile:
-            banner = infile.read()
-        print(banner)
-
-
-Licence().show_banner()
+# class Licence():
+#     def __init__(self):
+#         self.path = os.path.dirname(__file__)
+#         self.licence_info = os.path.join(self.path, 'license', 'banner.txt')
+#
+#     def show_banner(self) -> None:
+#         ''' Print a copyright banner everytime Pynta is imported'''
+#         path_to_excatkit = os.path.join(self.path, 'excatkit')
+#         with open(self.licence_info, 'r') as infile:
+#             banner = infile.read()
+#             with open(self.licence_info, 'w') as outfile:
+#                 outfile.write(banner.format(
+#                     path_to_excatkit=path_to_excatkit))
+#         with open(self.licence_info, 'r') as infile:
+#             banner = infile.read()
+#         print(banner)
+#
+#
+# Licence().show_banner()
