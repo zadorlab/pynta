@@ -1,8 +1,6 @@
 from pynta.tasks import *
-from pynta.io import IO
 from pynta.adsorbates import Adsorbates
 from pynta.molecule import get_adsorbate, generate_unique_site_additions, generate_adsorbate_guesses, get_name
-from pynta.excatkit.adsorption import Builder
 from molecule.molecule import Molecule
 import ase.build
 from ase.io import read, write

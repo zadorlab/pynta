@@ -1,8 +1,5 @@
-from pynta.excatkit.adsorption import Builder
-from pynta.excatkit.gratoms import Gratoms
 from molecule.molecule import Molecule
 from molecule.molecule.pathfinder import find_shortest_path
-from pynta.io import IO
 import yaml
 from ase.io import read, write
 import numpy as np
