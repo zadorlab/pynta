@@ -144,5 +144,6 @@ def get_lattice_parameter(metal,surface_type,repeats,vacuum,software,software_kw
         return slab.get_potential_energy()
 
     a0 = reference_states[chemical_symbols.index(metal)]['a']
+    print("ASE reference a: {}".format(a0))
     out = opt.minimize_scalar(f,method='bounded',bounds=(a0-da,a0+da),options=options)
     return out.x
