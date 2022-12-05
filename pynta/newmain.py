@@ -318,7 +318,7 @@ class Pynta:
                             "gratom_to_molecule_surface_atom_map": self.gratom_to_molecule_surface_atom_maps[adsname], "nslab": self.nslab}
                     with open(os.path.join(self.path,"Adsorbates",adsname,"info.json"),'w') as f:
                         json.dump(sp_dict,f)
-                    xyz = os.path.join(self.path,"Adsorbates",adsname,str(prefix),str(prefix)+".xyz")
+                    xyz = os.path.join(self.path,"Adsorbates",adsname,str(prefix),"weakopt_"+str(prefix)+".xyz")
                     xyzs.append(xyz)
                     fwopt = optimize_firework(os.path.join(self.path,"Adsorbates",adsname,str(prefix),str(prefix)+"_init.xyz"),
                         self.software,"weakopt_"+str(prefix),
@@ -366,7 +366,7 @@ class Pynta:
                     else:
                         software_kwargs = deepcopy(self.software_kwargs)
                         constraints = ["freeze half slab"]
-                    xyz = os.path.join(prefix_path,str(prefix)+".xyz")
+                    xyz = os.path.join(prefix_path,"weakopt_"+str(prefix)+".xyz")
                     init_path = os.path.join(prefix_path,prefix+"_init.xyz")
                     assert os.path.exists(init_path), init_path
                     xyzs.append(xyz)
