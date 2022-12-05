@@ -1,3 +1,4 @@
+import ase
 from ase.utils.structure_comparator import SymmetryEquivalenceCheck
 from ase.io import write, read
 from copy import deepcopy
@@ -183,3 +184,26 @@ def filter_nonunique_TS_guess_indices(geoms,Es):
             Esout.append(Es[j])
 
     return geos_out,Esout
+
+def get_fmax(at):
+    return np.max(np.abs([np.linalg.norm(at.get_forces()[i,:]) for i in range(at.get_forces().shape[0])]))
+
+def name_to_ase_software(software_name):
+    """
+    go from software_name to the associated
+    ASE calculator constructor
+    """
+    if software_name == "XTB":
+        module = import_module("xtb.ase.calculator")
+        return getattr(module, software_name)
+    else:
+        module = import_module("ase.calculators."+software_name.lower())
+        return getattr(module, software_name)
+
+def name_to_ase_opt(opt_name):
+    """
+    go from the optimizer name to the
+    ASE optimizer
+    """
+    module = import_module("ase.optimize")
+    return getattr(module, opt_name)
