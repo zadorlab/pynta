@@ -99,6 +99,7 @@ class Pynta:
         slab_type = getattr(ase.build,self.surface_type)
         #optimize the lattice constant
         a = get_lattice_parameter(self.metal,self.surface_type,self.repeats[1],self.vacuum,self.software,self.software_kwargs)
+        print("computed lattice constant of: {} Angstroms".format(a))
         #construct slab with optimial lattice constant
         slab = slab_type(self.metal,self.repeats[1],a,self.vaccum)
         slab.pbc = (True, True, False)
