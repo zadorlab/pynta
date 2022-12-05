@@ -21,7 +21,7 @@ from fireworks.core.fworker import FWorker
 import fireworks.fw_config
 
 class Pynta:
-    def __init__(self,path,launchpad_path,fworker_path,rxns_file,surface_type,metal,label,vaccum=8.0,
+    def __init__(self,path,launchpad_path,fworker_path,rxns_file,surface_type,metal,label,vacuum=8.0,
         repeats=[(3,3,1),(1,1,4)],slab_path=None,software="Espresso",socket=False,queue=False,njobs_queue=0,
         software_kwargs={'kpts': (3, 3, 1), 'tprnfor': True, 'occupations': 'smearing',
                             'smearing':  'marzari-vanderbilt',
@@ -40,7 +40,7 @@ class Pynta:
             launchpad.reset('', require_password=False)
         self.launchpad = launchpad
         self.slab_path = slab_path
-        self.vaccum = vaccum
+        self.vacuum = vacuum
         self.software = software
         self.socket = socket
         self.repeats = repeats
@@ -98,7 +98,7 @@ class Pynta:
         a = get_lattice_parameter(self.metal,self.surface_type,self.repeats[1],self.vacuum,self.software,self.software_kwargs)
         print("computed lattice constant of: {} Angstroms".format(a))
         #construct slab with optimial lattice constant
-        slab = slab_type(self.metal,self.repeats[1],a,self.vaccum)
+        slab = slab_type(self.metal,self.repeats[1],a,self.vacuum)
         slab.pbc = (True, True, False)
         write(os.path.join(self.path,"slab_init.xyz"),slab)
         self.slab_path = os.path.join(self.path,"slab.xyz")
