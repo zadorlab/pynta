@@ -1,10 +1,14 @@
 from xtb.ase.calculator import XTB
 import numpy as np
+import ase
 from ase.atoms import Atoms
 from ase.units import Hartree, Bohr
 from ase.geometry import get_distances
 from ase.calculators import calculator
+from ase.data import reference_states,chemical_symbols
+from pynta.tasks import name_to_ase_software
 from sella import Sella, Constraints
+import scipy.optimize as opt
 import copy
 
 def get_energy_atom_bond(atoms,ind1,ind2,k,deq):
@@ -129,3 +133,16 @@ def add_sella_constraint(cons,d):
     del constraint_dict["type"]
     constructor(**constraint_dict)
     return
+
+def get_lattice_parameter(metal,surface_type,repeats,vacuum,software,software_kwargs,da=0.1,options={"xatol":1e-4}):
+    slab_type = getattr(ase.build,surface_type)
+    soft = name_to_ase_software(software)(**software_kwargs)
+    def f(a):
+        slab = slab_type(metal,repeats,a=a,vacuum=vacuum)
+        slab.calc = soft
+        slab.pbc = (True, True, False)
+        return slab.get_potential_energy()
+
+    a0 = reference_states[chemical_symbols.index(metal)]['a']
+    out = opt.minimize_scalar(f,method='bounded',bounds=(a0-da,a0+da),options=options)
+    return out.x

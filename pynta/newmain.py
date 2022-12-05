@@ -15,6 +15,7 @@ import time
 import yaml
 from copy import deepcopy
 import numpy as np
+from pynta.calculator import get_lattice_parameter
 from fireworks import LaunchPad, Workflow
 from fireworks.queue.queue_launcher import rapidfire as rapidfirequeue
 from fireworks.utilities.fw_serializers import load_object_from_file
@@ -23,7 +24,7 @@ from fireworks.core.fworker import FWorker
 import fireworks.fw_config
 
 class Pynta:
-    def __init__(self,path,launchpad_path,fworker_path,rxns_file,surface_type,metal,label,a=3.6,vaccum=8.0,
+    def __init__(self,path,launchpad_path,fworker_path,rxns_file,surface_type,metal,label,vaccum=8.0,
         repeats=[(3,3,1),(1,1,4)],slab_path=None,software="Espresso",socket=False,queue=False,njobs_queue=0,
         software_kwargs={'kpts': (3, 3, 1), 'tprnfor': True, 'occupations': 'smearing',
                             'smearing':  'marzari-vanderbilt',
@@ -43,7 +44,6 @@ class Pynta:
         self.launchpad = launchpad
         self.slab_path = slab_path
         self.vaccum = vaccum
-        self.a = a
         self.software = software
         self.socket = socket
         self.repeats = repeats
@@ -97,7 +97,10 @@ class Pynta:
         optimization occurs through fireworks and this process waits until the optimization is completed
         """
         slab_type = getattr(ase.build,self.surface_type)
-        slab = slab_type(self.metal,self.repeats[1],self.a,self.vaccum)
+        #optimize the lattice constant
+        a = get_lattice_parameter(self.metal,self.surface_type,self.repeats[1],self.vacuum,self.software,self.software_kwargs)
+        #construct slab with optimial lattice constant
+        slab = slab_type(self.metal,self.repeats[1],a,self.vaccum)
         slab.pbc = (True, True, False)
         write(os.path.join(self.path,"slab_init.xyz"),slab)
         self.slab_path = os.path.join(self.path,"slab.xyz")
