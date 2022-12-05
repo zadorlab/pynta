@@ -18,7 +18,7 @@ from fireworks.utilities.fw_serializers import load_object_from_file
 from fireworks.core.fworker import FWorker
 import fireworks.fw_config
 from pynta.transitionstate import get_unique_optimized_adsorbates,determine_TS_construction,get_unique_TS_structs,generate_constraints_harmonic_parameters,get_surface_forming_bond_pairings
-from pynta.symmetry import get_unique_sym, get_unique_sym_structs, get_unique_sym_struct_indices, get_unique_sym_indices, filter_nonunique_TS_guess_indices
+from pynta.utils import *
 from pynta.calculator import run_harmonically_forced_xtb, add_sella_constraint
 from pynta.molecule import *
 from xtb.ase.calculator import XTB
@@ -884,28 +884,7 @@ def limit_time(t): #seconds
     finally:
         signal.alarm(0)
 
-def get_fmax(at):
-    return np.max(np.abs([np.linalg.norm(at.get_forces()[i,:]) for i in range(at.get_forces().shape[0])]))
 
-def name_to_ase_software(software_name):
-    """
-    go from software_name to the associated
-    ASE calculator constructor
-    """
-    if software_name == "XTB":
-        module = import_module("xtb.ase.calculator")
-        return getattr(module, software_name)
-    else:
-        module = import_module("ase.calculators."+software_name.lower())
-        return getattr(module, software_name)
-
-def name_to_ase_opt(opt_name):
-    """
-    go from the optimizer name to the
-    ASE optimizer
-    """
-    module = import_module("ase.optimize")
-    return getattr(module, opt_name)
 
 def get_task_index(task_dict,task_list):
     """

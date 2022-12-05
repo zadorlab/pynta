@@ -12,7 +12,7 @@ from acat.utilities import (custom_warning,
                          get_rodrigues_rotation_matrix,
                          get_angle_between,
                          get_rejection_between)
-from pynta.symmetry import get_unique_sym_struct_index_clusters, get_unique_sym, get_unique_sym_structs, get_unique_sym_struct_indices
+from pynta.utils import get_unique_sym_struct_index_clusters, get_unique_sym, get_unique_sym_structs, get_unique_sym_struct_indices
 from pynta.calculator import run_harmonically_forced_xtb
 from rdkit import Chem
 from copy import deepcopy
