@@ -134,7 +134,7 @@ def add_sella_constraint(cons,d):
     constructor(**constraint_dict)
     return
 
-def get_lattice_parameter(metal,surface_type,repeats,vacuum,software,software_kwargs,da=0.1,options={"xatol":1e-4}):
+def get_lattice_parameter(metal,surface_type,repeats,vacuum,software,software_kwargs,da=0.1,options={"xatol":1e-6}):
     slab_type = getattr(ase.build,surface_type)
     soft = name_to_ase_software(software)(**software_kwargs)
     def f(a):
@@ -146,4 +146,5 @@ def get_lattice_parameter(metal,surface_type,repeats,vacuum,software,software_kw
     a0 = reference_states[chemical_symbols.index(metal)]['a']
     print("ASE reference a: {}".format(a0))
     out = opt.minimize_scalar(f,method='bounded',bounds=(a0-da,a0+da),options=options)
+    print(out)
     return out.x
