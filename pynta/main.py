@@ -31,6 +31,7 @@ class Pynta:
                             }, },
         software_kwargs_gas=None,
         TS_opt_software_kwargs=None,
+        lattice_opt_software_kwargs={'kpts': (25,25,25), 'ecutwfc': 70, 'degauss':0.02, 'mixing_mode': 'plain'},
         reset_launchpad=False,queue_adapter_path=None,nprocs=48,
         Eharmtol=3.0,Eharmfiltertol=30.0,Ntsmin=5):
 
@@ -65,6 +66,11 @@ class Pynta:
         if TS_opt_software_kwargs:
             for key,val in TS_opt_software_kwargs.items():
                 self.software_kwargs_TS[key] = val
+
+        self.lattice_opt_software_kwargs = deepcopy(software_kwargs)
+        if lattice_opt_software_kwargs:
+            for key,val in lattice_opt_software_kwargs.items():
+                self.lattice_opt_software_kwargs[key] = val
 
         self.queue = queue
         self.fworker = None
