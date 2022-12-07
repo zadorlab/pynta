@@ -6,6 +6,7 @@ from ase.units import Hartree, Bohr
 from ase.geometry import get_distances
 from ase.calculators import calculator
 from ase.data import reference_states,chemical_symbols
+from ase.build import bulk
 from pynta.utils import name_to_ase_software
 from sella import Sella, Constraints
 import scipy.optimize as opt
@@ -134,13 +135,12 @@ def add_sella_constraint(cons,d):
     constructor(**constraint_dict)
     return
 
-def get_lattice_parameter(metal,surface_type,repeats,vacuum,software,software_kwargs,da=0.1,options={"xatol":1e-6}):
-    slab_type = getattr(ase.build,surface_type)
+def get_lattice_parameter(metal,surface_type,software,software_kwargs,da=0.14,options={"xatol":1e-4}):
     soft = name_to_ase_software(software)(**software_kwargs)
     def f(a):
-        slab = slab_type(metal,repeats,a=a,vacuum=vacuum)
+        slab = bulk(metal,surface_type[:3],a=a)
         slab.calc = soft
-        slab.pbc = (True, True, False)
+        slab.pbc = (True, True, True)
         return slab.get_potential_energy()
 
     a0 = reference_states[chemical_symbols.index(metal)]['a']
