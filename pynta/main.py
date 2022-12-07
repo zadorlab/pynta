@@ -110,7 +110,7 @@ class Pynta:
         self.slab_path = os.path.join(self.path,"slab.xyz")
         fwslab = optimize_firework(os.path.join(self.path,"slab_init.xyz"),self.software,"slab",
             opt_method="BFGSLineSearch",socket=self.socket,software_kwargs=self.software_kwargs,
-            run_kwargs={"fmax" : 0.01},out_path=os.path.join(self.path,"slab.xyz"))
+            run_kwargs={"fmax" : 0.01},out_path=os.path.join(self.path,"slab.xyz"),constraints=["freeze half slab"])
         wfslab = Workflow([fwslab], name=self.label+"_slab")
         self.launchpad.add_wf(wfslab)
         self.rapidfire()
