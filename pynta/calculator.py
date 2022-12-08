@@ -162,5 +162,8 @@ def get_lattice_parameter(metal,surface_type,software,software_kwargs,da=0.1,opt
     p = np.polyfit(np.array(outavals)[inds],np.array(Evals)[inds],2)
     a = -p[1]/(2.0*p[0])
     print("ASE reference a: {}".format(a0))
-    print("Calculated a: {}".format(a))
-    return a
+    print("Interpolated a: {}".format(a))
+    out = opt.minimize_scalar(f,method='bounded',bounds=(a-0.01,a+0.01),options=options)
+    print(out)
+    print("Optimized a: {}".format(out.x))
+    return out.x
