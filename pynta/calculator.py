@@ -145,9 +145,21 @@ def get_lattice_parameter(metal,surface_type,software,software_kwargs,da=0.1,opt
 
     a0 = reference_states[chemical_symbols.index(metal)]['a']
     avals = np.arange(a0-da,a0+da,0.01)
-    Evals = np.array([f(a) for a in avals])
+    outavals = []
+    Evals = []
+    for a in avals:
+        try:
+            E = f(a)
+            outavals.append(a)
+            Evals.append(E)
+        except:
+            pass
+    print("a values:")
+    print(outavals)
+    print("E values:")
+    print(Evals)
     inds = np.argsort(np.array(Evals))[:7]
-    p = np.polyfit(np.array(avals)[inds],np.array(Evals)[inds],2)
+    p = np.polyfit(np.array(outavals)[inds],np.array(Evals)[inds],2)
     a = -p[1]/(2.0*p[0])
     print("ASE reference a: {}".format(a0))
     print("Calculated a: {}".format(a))
