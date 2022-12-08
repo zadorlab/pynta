@@ -1,5 +1,5 @@
 from pynta.tasks import *
-from pynta.molecule import get_adsorbate, generate_unique_site_additions, generate_adsorbate_guesses, get_name
+from pynta.mol import get_adsorbate, generate_unique_site_additions, generate_adsorbate_guesses, get_name
 from molecule.molecule import Molecule
 import ase.build
 from ase.io import read, write
