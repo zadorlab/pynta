@@ -1,8 +1,5 @@
 from pynta.tasks import *
-from pynta.io import IO
-from pynta.adsorbates import Adsorbates
 from pynta.molecule import get_adsorbate, generate_unique_site_additions, generate_adsorbate_guesses, get_name
-from pynta.excatkit.adsorption import Builder
 from molecule.molecule import Molecule
 import ase.build
 from ase.io import read, write
@@ -24,8 +21,8 @@ from fireworks.core.fworker import FWorker
 import fireworks.fw_config
 
 class Pynta:
-    def __init__(self,path,launchpad_path,fworker_path,rxns_file,surface_type,metal,label,vaccum=8.0,
-        repeats=[(3,3,1),(1,1,4)],slab_path=None,software="Espresso",socket=False,queue=False,njobs_queue=0,
+    def __init__(self,path,launchpad_path,fworker_path,rxns_file,surface_type,metal,label,vacuum=8.0,
+        repeats=[(1,1,1),(3,3,4)],slab_path=None,software="Espresso",socket=False,queue=False,njobs_queue=0,a=None,
         software_kwargs={'kpts': (3, 3, 1), 'tprnfor': True, 'occupations': 'smearing',
                             'smearing':  'marzari-vanderbilt',
                             'degauss': 0.01, 'ecutwfc': 40, 'nosym': True,
@@ -34,6 +31,7 @@ class Pynta:
                             }, },
         software_kwargs_gas=None,
         TS_opt_software_kwargs=None,
+        lattice_opt_software_kwargs={'kpts': (25,25,25), 'ecutwfc': 70, 'degauss':0.02, 'mixing_mode': 'plain'},
         reset_launchpad=False,queue_adapter_path=None,nprocs=48,
         Eharmtol=3.0,Eharmfiltertol=30.0,Ntsmin=5):
 
@@ -43,7 +41,8 @@ class Pynta:
             launchpad.reset('', require_password=False)
         self.launchpad = launchpad
         self.slab_path = slab_path
-        self.vaccum = vaccum
+        self.vacuum = vacuum
+        self.a = a
         self.software = software
         self.socket = socket
         self.repeats = repeats
@@ -68,6 +67,11 @@ class Pynta:
         if TS_opt_software_kwargs:
             for key,val in TS_opt_software_kwargs.items():
                 self.software_kwargs_TS[key] = val
+
+        self.lattice_opt_software_kwargs = deepcopy(software_kwargs)
+        if lattice_opt_software_kwargs:
+            for key,val in lattice_opt_software_kwargs.items():
+                self.lattice_opt_software_kwargs[key] = val
 
         self.queue = queue
         self.fworker = None
@@ -98,15 +102,20 @@ class Pynta:
         """
         slab_type = getattr(ase.build,self.surface_type)
         #optimize the lattice constant
-        a = get_lattice_parameter(self.metal,self.surface_type,self.repeats[1],self.vacuum,self.software,self.software_kwargs)
+        if self.a is None:
+            a = get_lattice_parameter(self.metal,self.surface_type,self.software,self.lattice_opt_software_kwargs)
+            print("computed lattice constant of: {} Angstroms".format(a))
+            self.a = a
+        else:
+            a = self.a
         #construct slab with optimial lattice constant
-        slab = slab_type(self.metal,self.repeats[1],a,self.vaccum)
+        slab = slab_type(self.metal,self.repeats[1],a,self.vacuum)
         slab.pbc = (True, True, False)
         write(os.path.join(self.path,"slab_init.xyz"),slab)
         self.slab_path = os.path.join(self.path,"slab.xyz")
         fwslab = optimize_firework(os.path.join(self.path,"slab_init.xyz"),self.software,"slab",
             opt_method="BFGSLineSearch",socket=self.socket,software_kwargs=self.software_kwargs,
-            run_kwargs={"fmax" : 0.01},out_path=os.path.join(self.path,"slab.xyz"))
+            run_kwargs={"fmax" : 0.01},out_path=os.path.join(self.path,"slab.xyz"),constraints=["freeze half slab"])
         wfslab = Workflow([fwslab], name=self.label+"_slab")
         self.launchpad.add_wf(wfslab)
         self.rapidfire()
@@ -322,7 +331,7 @@ class Pynta:
                     xyzs.append(xyz)
                     fwopt = optimize_firework(os.path.join(self.path,"Adsorbates",adsname,str(prefix),str(prefix)+"_init.xyz"),
                         self.software,"weakopt_"+str(prefix),
-                        opt_method="MDMin",socket=self.socket,software_kwargs=software_kwargs,
+                        opt_method="MDMin",opt_kwargs={'dt': 0.05},socket=self.socket,software_kwargs=software_kwargs,
                         run_kwargs={"fmax" : 0.5, "steps" : 70},parents=[],constraints=constraints,
                         ignore_errors=True, metal=self.metal, facet=self.surface_type, target_site_num=target_site_num, priority=3)
                     optfws.append(fwopt)
@@ -372,7 +381,7 @@ class Pynta:
                     xyzs.append(xyz)
                     fwopt = optimize_firework(init_path,
                         self.software,"weakopt_"+str(prefix),
-                        opt_method="MDMin",socket=self.socket,software_kwargs=software_kwargs,
+                        opt_method="MDMin",opt_kwargs={'dt': 0.05},socket=self.socket,software_kwargs=software_kwargs,
                         run_kwargs={"fmax" : 0.5, "steps" : 70},parents=[],constraints=constraints,
                         ignore_errors=True, metal=self.metal, facet=self.surface_type, target_site_num=target_site_num, priority=3)
                     optfws.append(fwopt)

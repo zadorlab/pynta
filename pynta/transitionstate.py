@@ -1,8 +1,5 @@
-from pynta.excatkit.adsorption import Builder
-from pynta.excatkit.gratoms import Gratoms
 from molecule.molecule import Molecule
 from molecule.molecule.pathfinder import find_shortest_path
-from pynta.io import IO
 import yaml
 from ase.io import read, write
 import numpy as np
@@ -17,7 +14,7 @@ from acat.utilities import (custom_warning,
                          get_angle_between,
                          get_rejection_between)
 import os
-from pynta.symmetry import get_unique_sym, get_unique_sym_structs
+from pynta.utils import get_unique_sym, get_unique_sym_structs
 from ase.visualize import view
 from ase.atoms import Atoms, Atom
 from ase.geometry import get_distances

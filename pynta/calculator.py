@@ -6,7 +6,8 @@ from ase.units import Hartree, Bohr
 from ase.geometry import get_distances
 from ase.calculators import calculator
 from ase.data import reference_states,chemical_symbols
-from pynta.tasks import name_to_ase_software
+from ase.build import bulk
+from pynta.utils import name_to_ase_software
 from sella import Sella, Constraints
 import scipy.optimize as opt
 import copy
@@ -134,15 +135,37 @@ def add_sella_constraint(cons,d):
     constructor(**constraint_dict)
     return
 
-def get_lattice_parameter(metal,surface_type,repeats,vacuum,software,software_kwargs,da=0.1,options={"xatol":1e-4}):
-    slab_type = getattr(ase.build,surface_type)
+def get_lattice_parameter(metal,surface_type,software,software_kwargs,da=0.1,options={"xatol":1e-4}):
     soft = name_to_ase_software(software)(**software_kwargs)
     def f(a):
-        slab = slab_type(metal,repeats,a=a,vacuum=vacuum)
+        slab = bulk(metal,surface_type[:3],a=a)
         slab.calc = soft
-        slab.pbc = (True, True, False)
+        slab.pbc = (True, True, True)
         return slab.get_potential_energy()
 
     a0 = reference_states[chemical_symbols.index(metal)]['a']
-    out = opt.minimize_scalar(f,method='bounded',bounds=(a0-da,a0+da),options=options)
+    avals = np.arange(a0-da,a0+da,0.01)
+    outavals = []
+    Evals = []
+    print("a,E")
+    for a in avals:
+        try:
+            E = f(a)
+            outavals.append(a)
+            Evals.append(E)
+            print((a,E))
+        except:
+            pass
+    print("a values:")
+    print(outavals)
+    print("E values:")
+    print(Evals)
+    inds = np.argsort(np.array(Evals))[:7]
+    p = np.polyfit(np.array(outavals)[inds],np.array(Evals)[inds],2)
+    a = -p[1]/(2.0*p[0])
+    print("ASE reference a: {}".format(a0))
+    print("Interpolated a: {}".format(a))
+    out = opt.minimize_scalar(f,method='bounded',bounds=(a-0.01,a+0.01),options=options)
+    print(out)
+    print("Optimized a: {}".format(out.x))
     return out.x

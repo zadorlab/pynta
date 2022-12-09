@@ -1,4 +1,3 @@
-from pynta.excatkit.gratoms import Gratoms
 from molecule.molecule import Molecule
 from ase.io import read, write
 from ase.data import covalent_radii
@@ -13,7 +12,7 @@ from acat.utilities import (custom_warning,
                          get_rodrigues_rotation_matrix,
                          get_angle_between,
                          get_rejection_between)
-from pynta.symmetry import get_unique_sym_struct_index_clusters, get_unique_sym, get_unique_sym_structs, get_unique_sym_struct_indices
+from pynta.utils import get_unique_sym_struct_index_clusters, get_unique_sym, get_unique_sym_structs, get_unique_sym_struct_indices
 from pynta.calculator import run_harmonically_forced_xtb
 from rdkit import Chem
 from copy import deepcopy
@@ -365,42 +364,6 @@ def get_adsorbate_dist_from_center(atoms,nslab):
     adcenter = sum([a.position for a in adatoms])/len(adatoms)
     return np.linalg.norm(adcenter - cell_center)
 
-def molecule_to_gratoms(mol):
-    """
-    generates a Gratoms object from a Molecule object
-    returns the Gratoms object, a list of surface indices,
-    an atom_map from the mol object to the Gratoms object
-    and an atom index mapping (Gratom to Molecule) and a surface mapping
-    that mappings atoms to be attached to the surface in the Gratom to the
-    associated site in the Molecule object
-    """
-    symbols = []
-    edges = []
-    surf_indexes = []
-    surf_index_atom_map = {}
-    atom_map = {}
-    c = 0
-    tags = []
-    for i,atm in enumerate(mol.atoms):
-        if not atm.is_surface_site():
-            symbols.append(atm.element.symbol)
-            tags.append(c)
-            atom_map[c] = i
-            if atm.is_bonded_to_surface():
-                surf_indexes.append(c)
-                surf_index_atom_map[c] = i
-            c += 1
-
-    for edge in mol.get_all_edges():
-        if not edge.atom1.is_surface_site() and not edge.atom2.is_surface_site():
-            ind1 = mol.atoms.index(edge.atom1)
-            ind2 = mol.atoms.index(edge.atom2)
-            edges.append((ind1,ind2))
-
-    gra = Gratoms(symbols=symbols,edges=edges)
-    gra.set_tags(tags)
-
-    return gra,surf_indexes,atom_map,surf_index_atom_map
 
 def get_edges(slab_path, find_surface=False):
     ''' Get adsorption edges
@@ -513,27 +476,6 @@ def get_edges(slab_path, find_surface=False):
             # the bottom of the slab
             surface[i] = int(np.sign(pairvec[2]))
     return edges, surface
-
-def get_grslab(slab_path):
-    ''' Convert surface slab Atoms object into Gratoms object
-
-    Returns
-    -------
-    grslab : Gratoms
-        Gratoms representation of the surface slab - ready to place
-        adsorbates
-
-    '''
-    slabedges, tags = get_edges(slab_path, True)
-    slab_atom = read(slab_path)
-    grslab = Gratoms(numbers=slab_atom.numbers,
-                     positions=slab_atom.positions,
-                     cell=slab_atom.cell,
-                     pbc=slab_atom.pbc,
-                     edges=slabedges)
-    grslab.arrays['surface_atoms'] = tags
-
-    return grslab
 
 def get_labeled_bonds(mol):
     """
