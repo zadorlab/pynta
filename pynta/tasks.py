@@ -9,7 +9,6 @@ from acat.adsorption_sites import SlabAdsorptionSites
 from acat.adsorbate_coverage import SlabAdsorbateCoverage
 from molecule.molecule import Molecule
 from sella import Sella, Constraints, IRC
-from importlib import import_module
 from fireworks import *
 from fireworks.core.rocket_launcher import rapidfire
 from fireworks.utilities.fw_utilities import explicit_serialize
