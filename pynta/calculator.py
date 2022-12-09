@@ -147,11 +147,13 @@ def get_lattice_parameter(metal,surface_type,software,software_kwargs,da=0.1,opt
     avals = np.arange(a0-da,a0+da,0.01)
     outavals = []
     Evals = []
+    print("a,E")
     for a in avals:
         try:
             E = f(a)
             outavals.append(a)
             Evals.append(E)
+            print((a,E))
         except:
             pass
     print("a values:")
