@@ -15,10 +15,12 @@ import numpy as np
 from pynta.calculator import get_lattice_parameter
 from fireworks import LaunchPad, Workflow
 from fireworks.queue.queue_launcher import rapidfire as rapidfirequeue
+from fireworks.features.multi_launcher import launch_multiprocess
 from fireworks.utilities.fw_serializers import load_object_from_file
 from fireworks.core.rocket_launcher import rapidfire
 from fireworks.core.fworker import FWorker
 import fireworks.fw_config
+import logging
 
 class Pynta:
     def __init__(self,path,rxns_file,surface_type,metal,label,launchpad_path=None,fworker_path=None,
@@ -32,7 +34,7 @@ class Pynta:
         software_kwargs_gas=None,
         TS_opt_software_kwargs=None,
         lattice_opt_software_kwargs={'kpts': (25,25,25), 'ecutwfc': 70, 'degauss':0.02, 'mixing_mode': 'plain'},
-        reset_launchpad=False,queue_adapter_path=None,nprocs=48,
+        reset_launchpad=False,queue_adapter_path=None,num_jobs=25,
         Eharmtol=3.0,Eharmfiltertol=30.0,Ntsmin=5):
 
         self.surface_type = surface_type
@@ -90,10 +92,10 @@ class Pynta:
             self.rxns_dict = yaml.safe_load(f)
         self.slab = read(self.slab_path) if self.slab_path else None
         self.njobs_queue = njobs_queue
+        self.num_jobs = num_jobs
         self.label = label
         if queue:
             self.qadapter = load_object_from_file(queue_adapter_path)
-        self.nprocs = nprocs
         if self.slab_path is None:
             self.nslab = int(np.prod(np.array(self.repeats[0])*np.array(self.repeats[1])))
         else:
@@ -447,7 +449,7 @@ class Pynta:
             ts_task = MolecularTSEstimate({"rxn": rxn,"ts_path": ts_path,"slab_path": self.slab_path,"adsorbates_path": os.path.join(self.path,"Adsorbates"),
                 "rxns_file": self.rxns_file,"repeats": self.repeats[0],"path": self.path,"metal": self.metal,"facet": self.surface_type, "out_path": ts_path,
                 "spawn_jobs": True, "opt_obj_dict": opt_obj_dict, "vib_obj_dict": vib_obj_dict,
-                    "IRC_obj_dict": IRC_obj_dict, "nprocs": self.nprocs, "name_to_adjlist_dict": self.name_to_adjlist_dict,
+                    "IRC_obj_dict": IRC_obj_dict, "nprocs": 48, "name_to_adjlist_dict": self.name_to_adjlist_dict,
                     "gratom_to_molecule_atom_maps":{sm: {str(k):v for k,v in d.items()} for sm,d in self.gratom_to_molecule_atom_maps.items()},
                     "gratom_to_molecule_surface_atom_maps":{sm: {str(k):v for k,v in d.items()} for sm,d in self.gratom_to_molecule_surface_atom_maps.items()},
                     "nslab":self.nslab,"Eharmtol":self.Eharmtol,"Eharmfiltertol":self.Eharmfiltertol,"Ntsmin":self.Ntsmin})
@@ -460,14 +462,14 @@ class Pynta:
             fw = Firework([ts_task],parents=parents,name="TS"+str(i)+"est",spec={"_priority": 10})
             self.fws.append(fw)
 
-    def rapidfire(self):
+    def launch(self):
         """
         Call appropriate rapidfire function
         """
         if self.queue:
-            rapidfirequeue(self.launchpad,self.fworker,self.qadapter,njobs_queue=self.njobs_queue)
+            rapidfirequeue(self.launchpad,self.fworker,self.qadapter,njobs_queue=self.njobs_queue,nlaunches="infinite")
         else:
-            rapidfire(self.launchpad,fworker=self.fworker)
+            launch_multiprocess(self.launchpad,self.fworker,"INFO","infinite",self.num_jobs,5)
 
     def execute(self):
         if self.slab_path is None: #handle slab
@@ -486,11 +488,8 @@ class Pynta:
         wf = Workflow(self.fws, name=self.label)
         self.launchpad.add_wf(wf)
 
-        boo = True
-        while boo: #ensures lanuches continue throughout the calculation process
-            self.rapidfire()
-            waiting = [self.launchpad.get_fw_by_id(idnum) for idnum in self.launchpad.get_fw_ids() if self.launchpad.get_fw_by_id(idnum).state == "WAITING"]
-            boo = len(waiting) > 0
+        self.launch()
+
 
     def execute_from_initial_ad_guesses(self):
         if self.slab_path is None: #handle slab
@@ -509,8 +508,5 @@ class Pynta:
         wf = Workflow(self.fws, name=self.label)
         self.launchpad.add_wf(wf)
 
-        boo = True
-        while boo: #ensures lanuches continue throughout the calculation process
-            self.rapidfire()
-            waiting = [self.launchpad.get_fw_by_id(idnum) for idnum in self.launchpad.get_fw_ids() if self.launchpad.get_fw_by_id(idnum).state == "WAITING"]
-            boo = len(waiting) > 0
+
+        self.launch()
