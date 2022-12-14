@@ -391,7 +391,7 @@ class Pynta:
                 vib_obj_dict = {"software": self.software, "label": ad, "software_kwargs": software_kwargs,
                     "constraints": ["freeze all "+self.metal]}
 
-                cfw = collect_firework(xyzs,True,[["optimize_firework","vibrations_firework"]],[[opt_obj_dict,vib_obj_dict]],[["opt.xyz",],["vib.json"]],[[True,False]],parents=optfws,label=ad)
+                cfw = collect_firework(xyzs,True,["optimize_firework","vibrations_firework"],[opt_obj_dict,vib_obj_dict],["opt.xyz","vib.json"],[True,False],parents=optfws,label=ad)
                 self.adsorbate_fw_dict[ad] = optfws
                 logging.error(self.adsorbate_fw_dict.keys())
                 self.fws.extend(optfws+[cfw])
