@@ -616,7 +616,7 @@ class MolecularCollect(CollectTask):
             for xyz in xyzs:
                 d = deepcopy(fw_generator_dicts[0][i])
                 d["xyz"] = xyz
-                d["out_path"] = os.path.join(os.path.split(xyz)[0],self["out_names"][0][i])
+                d["out_path"] = os.path.join(os.path.split(xyz)[0],out_names[0][i])
                 d["label"] = out_names[0][i]
                 d["ignore_errors"] = True
                 out_xyzs.append(d["out_path"])
