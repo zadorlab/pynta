@@ -21,8 +21,8 @@ from fireworks.core.fworker import FWorker
 import fireworks.fw_config
 
 class Pynta:
-    def __init__(self,path,launchpad_path,fworker_path,rxns_file,surface_type,metal,label,vacuum=8.0,
-        repeats=[(1,1,1),(3,3,4)],slab_path=None,software="Espresso",socket=False,queue=False,njobs_queue=0,a=None,
+    def __init__(self,path,rxns_file,surface_type,metal,label,launchpad_path=None,fworker_path=None,
+        vacuum=8.0,repeats=[(1,1,1),(3,3,4)],slab_path=None,software="Espresso",socket=False,queue=False,njobs_queue=0,a=None,
         software_kwargs={'kpts': (3, 3, 1), 'tprnfor': True, 'occupations': 'smearing',
                             'smearing':  'marzari-vanderbilt',
                             'degauss': 0.01, 'ecutwfc': 40, 'nosym': True,
@@ -36,7 +36,11 @@ class Pynta:
         Eharmtol=3.0,Eharmfiltertol=30.0,Ntsmin=5):
 
         self.surface_type = surface_type
-        launchpad = LaunchPad.from_file(launchpad_path)
+        if launchpad_path:
+            launchpad = LaunchPad.from_file(launchpad_path)
+        else:
+            launchpad = LaunchPad()
+
         if reset_launchpad:
             launchpad.reset('', require_password=False)
         self.launchpad = launchpad
@@ -76,7 +80,11 @@ class Pynta:
         self.queue = queue
         self.fworker = None
         self.qadapter = None
-        self.fworker = FWorker.from_file(fworker_path)
+        if fworker_path:
+            self.fworker = FWorker.from_file(fworker_path)
+        else:
+            self.fworker = FWorker()
+
         self.rxns_file = rxns_file
         with open(self.rxns_file,'r') as f:
             self.rxns_dict = yaml.safe_load(f)
