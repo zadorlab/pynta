@@ -431,8 +431,12 @@ class Pynta:
         and run vibrational and IRC calculations on the each unique final transition state
         Note the vibrational and IRC calculations are launched at the same time
         """
-        opt_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":self.software_kwargs_TS,
+        if self.software != "XTB":
+            opt_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":self.software_kwargs_TS,
                 "run_kwargs": {"fmax" : 0.02, "steps" : 70},"constraints": ["freeze half slab"],"sella":True,"order":1,}
+        else:
+            opt_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":self.software_kwargs_TS,
+                "run_kwargs": {"fmax" : 0.02, "steps" : 70},"constraints": ["freeze all "+self.metal],"sella":True,"order":1,}
         vib_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":self.software_kwargs,
                 "constraints": ["freeze all "+self.metal]}
         IRC_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":self.software_kwargs,
