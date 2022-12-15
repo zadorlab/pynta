@@ -121,16 +121,19 @@ class Pynta:
         slab.pbc = (True, True, False)
         write(os.path.join(self.path,"slab_init.xyz"),slab)
         self.slab_path = os.path.join(self.path,"slab.xyz")
-        fwslab = optimize_firework(os.path.join(self.path,"slab_init.xyz"),self.software,"slab",
-            opt_method="BFGSLineSearch",socket=self.socket,software_kwargs=self.software_kwargs,
-            run_kwargs={"fmax" : 0.01},out_path=os.path.join(self.path,"slab.xyz"),constraints=["freeze half slab"])
-        wfslab = Workflow([fwslab], name=self.label+"_slab")
-        self.launchpad.add_wf(wfslab)
-        self.rapidfire()
-        while not os.path.exists(self.slab_path): #wait until slab optimizes, this is required anyway and makes the rest of the code simpler
-            time.sleep(1)
-
-        self.slab = read(self.slab_path)
+        if self.software != "XTB":
+            fwslab = optimize_firework(os.path.join(self.path,"slab_init.xyz"),self.software,"slab",
+                opt_method="BFGSLineSearch",socket=self.socket,software_kwargs=self.software_kwargs,
+                run_kwargs={"fmax" : 0.01},out_path=os.path.join(self.path,"slab.xyz"),constraints=["freeze half slab"])
+            wfslab = Workflow([fwslab], name=self.label+"_slab")
+            self.launchpad.add_wf(wfslab)
+            self.rapidfire()
+            while not os.path.exists(self.slab_path): #wait until slab optimizes, this is required anyway and makes the rest of the code simpler
+                time.sleep(1)
+            self.slab = read(self.slab_path)
+        else: #testing
+            self.slab = slab
+            write(self.slab_path,slab)
 
     def analyze_slab(self):
         full_slab = self.slab * self.repeats[0]
