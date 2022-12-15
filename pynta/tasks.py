@@ -273,6 +273,8 @@ class MolecularOptimizationTask(OptimizationTask):
         #             errors.append(e)
 
         if converged:
+            if self["software"] == "XTB" and "initial_charges" in sp.arrays.keys():
+                del sp.arrays["initial_charges"]
             write(label+".xyz", sp)
         else:
             return FWAction(stored_data={"error": errors,"converged": converged})
