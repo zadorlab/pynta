@@ -489,7 +489,7 @@ class Pynta:
         boo = True
         while boo: #ensures lanuches continue throughout the calculation process
             self.rapidfire()
-            waiting = [self.launchpad.get_fw_by_id(idnum) for idnum in fw_ids if self.launchpad.get_fw_by_id(idnum).state == "WAITING"]
+            waiting = [self.launchpad.get_fw_by_id(idnum) for idnum in self.launchpad.get_fw_ids() if self.launchpad.get_fw_by_id(idnum).state == "WAITING"]
             boo = len(waiting) > 0
 
     def execute_from_initial_ad_guesses(self):
@@ -512,5 +512,5 @@ class Pynta:
         boo = True
         while boo: #ensures lanuches continue throughout the calculation process
             self.rapidfire()
-            waiting = [self.launchpad.get_fw_by_id(idnum) for idnum in fw_ids if self.launchpad.get_fw_by_id(idnum).state == "WAITING"]
+            waiting = [self.launchpad.get_fw_by_id(idnum) for idnum in self.launchpad.get_fw_ids() if self.launchpad.get_fw_by_id(idnum).state == "WAITING"]
             boo = len(waiting) > 0
