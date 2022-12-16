@@ -444,7 +444,7 @@ class MolecularTSEstimate(FiretaskBase):
     required_params = ["rxn","ts_path","slab_path","adsorbates_path","rxns_file","repeats","path","metal","facet",
                         "name_to_adjlist_dict", "gratom_to_molecule_atom_maps",
                         "gratom_to_molecule_surface_atom_maps","opt_obj_dict",
-                                "vib_obj_dict","IRC_obj_dict","nslab","Eharmtol","Eharmfiltertol","Ntsmin"]
+                                "vib_obj_dict","IRC_obj_dict","nslab","Eharmtol","Eharmfiltertol","Ntsmin","max_num_hfsp_opts"]
     optional_params = ["out_path","spawn_jobs","nprocs",]
     def run_task(self, fw_spec):
         gratom_to_molecule_atom_maps = {sm: {int(k):v for k,v in d.items()} for sm,d in self["gratom_to_molecule_atom_maps"].items()}
@@ -462,7 +462,7 @@ class MolecularTSEstimate(FiretaskBase):
         Eharmtol = self["Eharmtol"]
         Eharmfiltertol = self["Eharmfiltertol"]
         Ntsmin = self["Ntsmin"]
-
+        max_num_hfsp_opts = self["max_num_hfsp_opts"]
         slab_path = self["slab_path"]
         slab = read(slab_path) * self["repeats"]
 
@@ -544,6 +544,15 @@ class MolecularTSEstimate(FiretaskBase):
 
         print("number of TS guesses with empty sites:")
         print(len(out_tsstructs))
+
+        if max_num_hfsp_opts:
+            inds = index_site_bond_potential_lists_by_site_distances(new_site_bond_potential_lists)[:max_num_hfsp_opts].tolist()
+            out_tsstructs = [out_tsstructs[ind] for ind in inds]
+            new_atom_bond_potential_lists = [new_atom_bond_potential_lists[ind] for ind in inds]
+            new_site_bond_potential_lists = [new_site_bond_potential_lists[ind] for ind in inds]
+            new_constraint_lists = [new_constraint_lists[ind] for ind in inds]
+            print("number of TS guesses after filtering by max distance between sites")
+            print(len(out_tsstructs))
 
         inputs = [ (out_tsstructs[j],new_atom_bond_potential_lists[j],new_site_bond_potential_lists[j],nslab,new_constraint_lists[j],ts_path,j) for j in range(len(out_tsstructs))]
 
@@ -886,7 +895,25 @@ def limit_time(t): #seconds
     finally:
         signal.alarm(0)
 
+def index_site_bond_potential_lists_by_site_distances(site_bond_potential_lists):
+    if len(site_bond_potential_lists[0]) == 1: #if only one site can't do this analysis
+        return np.array(list(range(len(site_bond_potential_lists))))
 
+    max_dists = np.array([get_max_site_dist(L) for L in site_bond_potential_lists])
+    return np.argsort(max_dists)
+
+def get_max_site_dist(site_bond_potential):
+    vecs = [np.array(d["site_pos"]) for d in site_bond_potential]
+    max_dist = 0
+    for i in range(len(vecs)):
+        for j in range(i):
+            if i == j:
+                continue
+            else:
+                v = np.linalg.norm(vecs[i]-vecs[j])
+                if v > max_dist:
+                    max_dist = v
+    return max_dist
 
 def get_task_index(task_dict,task_list):
     """

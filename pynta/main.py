@@ -34,7 +34,7 @@ class Pynta:
         software_kwargs_gas=None,
         TS_opt_software_kwargs=None,
         lattice_opt_software_kwargs={'kpts': (25,25,25), 'ecutwfc': 70, 'degauss':0.02, 'mixing_mode': 'plain'},
-        reset_launchpad=False,queue_adapter_path=None,num_jobs=25,
+        reset_launchpad=False,queue_adapter_path=None,num_jobs=25,max_num_hfsp_opts=None,#max_num_hfsp_opts is mostly for fast testing
         Eharmtol=3.0,Eharmfiltertol=30.0,Ntsmin=5):
 
         self.surface_type = surface_type
@@ -104,6 +104,7 @@ class Pynta:
         self.Eharmtol = Eharmtol
         self.Eharmfiltertol = Eharmfiltertol
         self.Ntsmin = Ntsmin
+        self.max_num_hfsp_opts = max_num_hfsp_opts
 
     def generate_slab(self):
         """
@@ -452,7 +453,8 @@ class Pynta:
                     "IRC_obj_dict": IRC_obj_dict, "nprocs": 48, "name_to_adjlist_dict": self.name_to_adjlist_dict,
                     "gratom_to_molecule_atom_maps":{sm: {str(k):v for k,v in d.items()} for sm,d in self.gratom_to_molecule_atom_maps.items()},
                     "gratom_to_molecule_surface_atom_maps":{sm: {str(k):v for k,v in d.items()} for sm,d in self.gratom_to_molecule_surface_atom_maps.items()},
-                    "nslab":self.nslab,"Eharmtol":self.Eharmtol,"Eharmfiltertol":self.Eharmfiltertol,"Ntsmin":self.Ntsmin})
+                    "nslab":self.nslab,"Eharmtol":self.Eharmtol,"Eharmfiltertol":self.Eharmfiltertol,"Ntsmin":self.Ntsmin,
+                    "max_num_hfsp_opts":self.max_num_hfsp_opts})
             reactants = rxn["reactant_names"]
             products = rxn["product_names"]
             parents = []
