@@ -470,6 +470,8 @@ class Pynta:
         """
         if self.queue:
             rapidfirequeue(self.launchpad,self.fworker,self.qadapter,njobs_queue=self.njobs_queue,nlaunches="infinite")
+        elif not self.queue and self.num_jobs == 1:
+            rapidfire(self.launchpad,self.fworker,nlaunches="infinite")
         else:
             launch_multiprocess(self.launchpad,self.fworker,"INFO","infinite",self.num_jobs,5)
 
