@@ -38,7 +38,7 @@ jobs:
       - name: Get working directory
         run: pwd
       - name: Setup Fireworks configuration
-        run: cp ~/pynta/test/FW_config.yaml ~/pynta/test/pyntatest/launches
+        run: cp /home/runner/work/pynta/pynta/test/FW_config.yaml /home/runner/work/pynta/pynta/test/pyntatest/launches
       - name: Tests
         run: make test-all
       - name: Code coverage
