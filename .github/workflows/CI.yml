@@ -34,7 +34,7 @@ jobs:
       - name: Start MongoDB
         uses: supercharge/mongodb-github-action@1.8.0
         with:
-          mongodb-version: ${{ matrix.mongodb-version }}
+          mongodb-version: 5.0.7
       - name: Setup Fireworks configuration
         run: cp ~/pynta/test/FW_config.yaml ~/pynta/test/pyntatest/launches
       - name: Tests
