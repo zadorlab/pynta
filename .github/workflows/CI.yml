@@ -19,14 +19,11 @@ jobs:
       - uses: conda-incubator/setup-miniconda@v2
         with:
           mamba-version: "*"
-          channels: conda-forge,defaults
+          channels: defaults,mjohnson541,conda-forge
           channel-priority: true
           python-version: 3.8
           activate-environment: pynta_env
-      - name: Generate full pynta_env
-        run: mamba env update -f environment.yml
-      - name: Install codecov
-        run: mamba install -y -c conda-forge codecov
+          environment-file: environment.yml
       - name: Conda info
         run: |
           conda info
@@ -41,5 +38,7 @@ jobs:
         run: cp /home/runner/work/pynta/pynta/test/FW_config.yaml /home/runner/work/pynta/pynta/test/pyntatest/launches
       - name: Tests
         run: make test-all
+      - name: Install codecov
+        run: mamba install -y -c conda-forge codecov
       - name: Code coverage
         run: codecov
