@@ -23,3 +23,5 @@ dependencies:
   - acat
   - asap3 <=3.12.8
   - libffi <=3.3
+  - nose
+  - coverage

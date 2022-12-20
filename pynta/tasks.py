@@ -9,7 +9,6 @@ from acat.adsorption_sites import SlabAdsorptionSites
 from acat.adsorbate_coverage import SlabAdsorbateCoverage
 from molecule.molecule import Molecule
 from sella import Sella, Constraints, IRC
-from importlib import import_module
 from fireworks import *
 from fireworks.core.rocket_launcher import rapidfire
 from fireworks.utilities.fw_utilities import explicit_serialize
@@ -20,7 +19,7 @@ import fireworks.fw_config
 from pynta.transitionstate import get_unique_optimized_adsorbates,determine_TS_construction,get_unique_TS_structs,generate_constraints_harmonic_parameters,get_surface_forming_bond_pairings
 from pynta.utils import *
 from pynta.calculator import run_harmonically_forced_xtb, add_sella_constraint
-from pynta.molecule import *
+from pynta.mol import *
 from xtb.ase.calculator import XTB
 import numpy as np
 import multiprocessing as mp

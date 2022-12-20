@@ -1,0 +1,12 @@
+authsource: fireworks
+host: localhost
+logdir: null
+mongoclient_kwargs: {}
+name: fireworks
+password: null
+port: 27017
+strm_lvl: INFO
+uri_mode: false
+user_indices: []
+username: null
+wf_user_indices: []

@@ -20,7 +20,7 @@ from ase.atoms import Atoms, Atom
 from ase.geometry import get_distances
 import itertools
 from pynta.calculator import HarmonicallyForcedXTB
-from pynta.molecule import *
+from pynta.mol import *
 from copy import deepcopy
 
 def get_unique_optimized_adsorbates(rxn,adsorbates_path,mol_dict,cas,gratom_to_molecule_surface_atom_maps,nslab):

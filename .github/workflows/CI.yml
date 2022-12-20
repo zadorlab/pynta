@@ -1,0 +1,48 @@
+name: CI Tests
+
+on:
+  push:
+  pull_request:
+    branches:
+      - master
+    types: [opened, synchronize, reopened, ready_for_review, review_requested]
+jobs:
+  build-and-test-linux:
+    runs-on: ubuntu-latest
+    strategy:
+      max-parallel: 5
+    defaults:
+      run:
+        shell: bash -l {0}
+    steps:
+      - uses: actions/checkout@v2
+      - uses: conda-incubator/setup-miniconda@v2
+        with:
+          mamba-version: "*"
+          channels: defaults,mjohnson541,conda-forge
+          channel-priority: true
+          python-version: 3.8
+          activate-environment: pynta_env
+          environment-file: environment.yml
+      - name: Conda info
+        run: |
+          conda info
+          conda list
+      - name: Start MongoDB
+        uses: supercharge/mongodb-github-action@1.8.0
+        with:
+          mongodb-version: 5.0.7
+      - name: Get working directory
+        run: pwd
+      - name: Get local files
+        run: ls
+      - name: Setup Fireworks configuration
+        run: |
+          cp /home/runner/work/pynta/pynta/test/FW_config.yaml /home/runner/work/pynta/pynta/test/pyntatest/launches
+          echo y | lpad -l /home/runner/work/pynta/pynta/test/my_launchpad.yaml reset
+      - name: Tests
+        run: make test-all
+      - name: Install codecov
+        run: mamba install -y -c conda-forge codecov
+      - name: Code coverage
+        run: codecov
