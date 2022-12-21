@@ -199,6 +199,11 @@ class MolecularOptimizationTask(OptimizationTask):
                     sp.set_constraint(FixAtoms(
                         indices=[atom.index for atom in sp if atom.symbol == sym]
                         ))
+                elif c.split()[0] == "freeze" and c.split()[1] == "up" and c.split()[2] == "to":
+                    n = int(c.split()[3])
+                    sp.set_constraint(FixAtoms(
+                        indices=list(range(n))
+                        ))
 
             opt = Sella(sp,trajectory=label+".traj",order=order)
             try:
@@ -410,6 +415,12 @@ class MolecularVibrationsTask(VibrationTask):
                         indices=[atom.index for atom in sp if atom.symbol == sym]
                         ))
                     indices = [atom.index for atom in sp if atom.symbol != sym]
+                elif c.split()[0] == "freeze" and c.split()[1] == "up" and c.split()[2] == "to":
+                    n = int(c.split()[3])
+                    sp.set_constraint(FixAtoms(
+                        indices=list(range(n))
+                        ))
+                    indices = list(range(n))
 
             vib = Vibrations(sp,indices=indices)
             vib.run()
@@ -758,6 +769,11 @@ class MolecularIRC(FiretaskBase):
                 sym = c.split()[2]
                 sp.set_constraint(FixAtoms(
                     indices=[atom.index for atom in sp if atom.symbol == sym]
+                    ))
+            elif c.split()[0] == "freeze" and c.split()[1] == "up" and c.split()[2] == "to":
+                n = int(c.split()[3])
+                sp.set_constraint(FixAtoms(
+                    indices=list(range(n))
                     ))
             else:
                 raise ValueError("Could not interpret constraint: {}".format(c))
