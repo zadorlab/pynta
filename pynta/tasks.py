@@ -151,6 +151,11 @@ class MolecularOptimizationTask(OptimizationTask):
                     sp.set_constraint(FixAtoms(
                         indices=[atom.index for atom in sp if atom.symbol == sym]
                         ))
+                elif c.split()[0] == "freeze" and c.split()[1] == "up" and c.split()[2] == "to":
+                    n = int(c.split()[3])
+                    sp.set_constraint(FixAtoms(
+                        indices=list(range(n))
+                        ))
 
             opt_kwargs["trajectory"] = label+".traj"
 
