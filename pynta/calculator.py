@@ -135,15 +135,15 @@ def add_sella_constraint(cons,d):
     constructor(**constraint_dict)
     return
 
-def get_lattice_parameter(metal,surface_type,software,software_kwargs,da=0.1,options={"xatol":1e-4}):
+def get_lattice_parameter(metal,surface_type,software,software_kwargs,da=0.1,options={"xatol":1e-4},a0=None):
     soft = name_to_ase_software(software)(**software_kwargs)
     def f(a):
         slab = bulk(metal,surface_type[:3],a=a)
         slab.calc = soft
         slab.pbc = (True, True, True)
         return slab.get_potential_energy()
-
-    a0 = reference_states[chemical_symbols.index(metal)]['a']
+    if a0 is None:
+        a0 = reference_states[chemical_symbols.index(metal)]['a']
     avals = np.arange(a0-da,a0+da,0.01)
     outavals = []
     Evals = []
