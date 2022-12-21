@@ -127,7 +127,7 @@ class Pynta:
         if self.software != "XTB":
             fwslab = optimize_firework(os.path.join(self.path,"slab_init.xyz"),self.software,"slab",
                 opt_method="BFGSLineSearch",socket=self.socket,software_kwargs=self.software_kwargs,
-                run_kwargs={"fmax" : 0.01},out_path=os.path.join(self.path,"slab.xyz"),constraints=["freeze half slab"])
+                run_kwargs={"fmax" : 0.01},out_path=os.path.join(self.path,"slab.xyz"),constraints=["freeze half slab"],priority=1000)
             wfslab = Workflow([fwslab], name=self.label+"_slab")
             self.launchpad.add_wf(wfslab)
             self.rapidfire()
