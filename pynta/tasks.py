@@ -420,7 +420,9 @@ class MolecularVibrationsTask(VibrationTask):
                     sp.set_constraint(FixAtoms(
                         indices=list(range(n))
                         ))
-                    indices = list(range(n))
+                    indices = [ i for i in range(len(sp)) if i >= n]
+                else:
+                    raise ValueError
 
             vib = Vibrations(sp,indices=indices)
             vib.run()
