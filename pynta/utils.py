@@ -5,6 +5,7 @@ from ase.utils.structure_comparator import SymmetryEquivalenceCheck
 from ase.io import write, read
 from copy import deepcopy
 from importlib import import_module
+import numpy as np
 
 def get_unique_sym(geoms):
     ''' Check for the symmetry equivalent structures in the given files
