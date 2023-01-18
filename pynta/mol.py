@@ -116,7 +116,8 @@ def generate_adsorbate_guesses(mol,ads,slab,repeats,cas,mol_to_atoms_map,metal,
     for i,geo in enumerate(geos):
         #freeze bonds for messier first opt
         geo_out,Eharm,Fharm = run_harmonically_forced_xtb(geo,[],site_bond_params_lists[i],len(full_slab),
-                                                          method="GFN1-xTB",constraints=constraint_list)
+                                molecule_to_atom_maps=mol_to_atoms_map,ase_to_mol_num=None,
+                                method="GFN1-xTB",constraints=constraint_list)
         if geo_out:
             geo_out.calc = None
             geos_out.append(geo_out)

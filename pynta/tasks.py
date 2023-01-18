@@ -533,12 +533,22 @@ class MolecularTSEstimate(FiretaskBase):
         mols = [mol_dict[name] for name in species_names]
         ts_dict["mols"] = [mol.to_adjacency_list() for mol in mols]
         ts_dict["ads_sizes"] = [ads_size(mol) for mol in mols]
-        ts_dict["template_mol_map"] = get_template_mol_map(reactants,mols)
+        template_mol_map = get_template_mol_map(reactants,mols)
+        ts_dict["template_mol_map"] = template_mol_map
         ts_dict["reverse_names"] = reverse_names
         ts_dict["molecule_to_atom_maps"] = [{value:key for key,value in gratom_to_molecule_atom_maps[name].items()} for name in species_names]
 
         with open(os.path.join(ts_path,"info.json"),'w') as f:
             json.dump(ts_dict,f)
+
+        template_to_ase = {i:get_ase_index(i,template_mol_map,mol_atom_maps,nslab,ads_sizes) for i in range(len(reactants.atoms))}
+        ase_to_mol_num = {}
+        for tind,aind in template_to_ase.items():
+            if aind:
+                for i,mol_map in enumerate(template_mol_map):
+                    if tind in mol_map.keys():
+                        ase_to_mol_num[aind] = i
+                        break
 
         tsstructs = get_unique_TS_structs(adsorbates,species_names,cas,nslab,num_surf_sites,mol_dict,
                                  gratom_to_molecule_atom_maps,gratom_to_molecule_surface_atom_maps,
@@ -571,7 +581,7 @@ class MolecularTSEstimate(FiretaskBase):
             print("number of TS guesses after filtering by max distance between sites")
             print(len(out_tsstructs))
 
-        inputs = [ (out_tsstructs[j],new_atom_bond_potential_lists[j],new_site_bond_potential_lists[j],nslab,new_constraint_lists[j],ts_path,j) for j in range(len(out_tsstructs))]
+        inputs = [ (out_tsstructs[j],new_atom_bond_potential_lists[j],new_site_bond_potential_lists[j],nslab,new_constraint_lists[j],ts_path,j,molecule_to_atom_maps,ase_to_mol_num) for j in range(len(out_tsstructs))]
 
         #with mp.Pool(nprocs) as pool:
         #    outputs = pool.map(map_harmonically_forced_xtb,inputs)
@@ -821,10 +831,11 @@ class MolecularIRC(FiretaskBase):
         return FWAction()
 
 def map_harmonically_forced_xtb(input):
-    tsstruct,atom_bond_potentials,site_bond_potentials,nslab,constraints,ts_path,j = input
+    tsstruct,atom_bond_potentials,site_bond_potentials,nslab,constraints,ts_path,j,molecule_to_atom_maps,ase_to_mol_num = input
     os.makedirs(os.path.join(ts_path,str(j)))
-    sp,Eharm,Fharm = run_harmonically_forced_xtb(tsstruct,atom_bond_potentials,site_bond_potentials,nslab,method="GFN1-xTB",
-                                   constraints=constraints)
+    sp,Eharm,Fharm = run_harmonically_forced_xtb(tsstruct,atom_bond_potentials,site_bond_potentials,nslab,
+                    molecule_to_atom_maps=molecule_to_atom_maps,ase_to_mol_num=ase_to_mol_num,
+                    method="GFN1-xTB",constraints=constraints)
 
     if sp:
         if "initial_charges" in sp.arrays.keys(): #avoid bug in ase
