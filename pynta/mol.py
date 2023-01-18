@@ -190,6 +190,10 @@ site_bond_length_dict = {
 }
 
 def get_site_bond_length(sitetype,atomtype=None,metal=None):
+    if "fold" in sitetype:
+        sitetype = "fcc"
+    if sitetype == "longbridge" or sitetype == "shortbridge":
+        sitetype = "bridge"
     if (sitetype,atomtype,metal) in site_bond_length_dict.keys():
         return site_bond_length_dict[(sitetype,atomtype,metal)]
     elif (sitetype,atomtype,None) in site_bond_length_dict.keys():
