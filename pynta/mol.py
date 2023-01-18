@@ -152,14 +152,7 @@ def generate_adsorbate_guesses(mol,ads,full_slab,cas,mol_to_atoms_map,metal,
                 xyzsout.append(geos_out[Eind])
                 site_bond_params_lists_final.append(site_bond_params_lists_out[Eind])
 
-    xyzfinals = []
-    for i,xyz in enumerate(xyzsout):
-        #unfreeze bonds (should be better than rdkit's guess)
-        geo_out,Eharm,Fharm = run_harmonically_forced_xtb(xyz,[],site_bond_params_lists_final[i],len(full_slab),
-                                                          method="GFN1-xTB",constraints=["freeze slab"])
-        xyzfinals.append(geo_out)
-
-    return xyzfinals
+    return xyzsout
 
 site_bond_length_dict = {
         ("ontop",None,None): 1.826370311,
