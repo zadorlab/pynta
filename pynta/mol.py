@@ -37,7 +37,20 @@ def get_desorbed_with_map(mol):
     return molcopy,out_map
 
 def get_conformer(desorbed):
-    rdmol,rdmap = desorbed.to_rdkit_mol(remove_h=False,return_mapping=True)
+    try:
+        rdmol,rdmap = desorbed.to_rdkit_mol(remove_h=False,return_mapping=True)
+    except Exception as e:
+        syms = [a.symbol for a in desorbed.atoms]
+        indmap = {i:i for i in range(len(desorbed.atoms))}
+        if len(desorbed.atoms) == 1:
+            atoms = Atoms(syms[0],positions=[(0,0,0)])
+            return atoms,indmap
+        elif len(desorbed.atoms) == 2:
+            atoms = Atoms(syms[0]+syms[1],positions=[(0,0,0),(1.3,0,0)])
+            return atoms,indmap
+        else:
+            raise e
+
     indmap = {i:rdmap[a] for i,a in enumerate(desorbed.atoms)}
     Chem.AllChem.EmbedMultipleConfs(rdmol,numConfs=1,randomSeed=1)
     conf = rdmol.GetConformer()
