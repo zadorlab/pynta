@@ -475,24 +475,29 @@ class Pynta:
         else:
             launch_multiprocess(self.launchpad,self.fworker,"INFO","infinite",self.num_jobs,5)
 
-    def execute(self):
+    def execute(self,generate_initial_ad_guesses=True,calculate_adsorbates=True,launch=True):
+        if not calculate_adsorbates: #default handling
+            generate_initial_ad_guesses = False
+
         if self.slab_path is None: #handle slab
             self.generate_slab()
 
         self.analyze_slab()
         self.generate_mol_dict()
-        self.generate_initial_adsorbate_guesses()
+        self.generate_initial_adsorbate_guesses(skip_structs=(not generate_initial_ad_guesses))
 
         #adsorbate optimization
-        self.setup_adsorbates()
+        if calculate_adsorbates:
+            self.setup_adsorbates(initial_guess_finished=(not generate_initial_ad_guesses))
 
         #setup transition states
-        self.setup_transition_states()
+        self.setup_transition_states(adsorbates_finished=(not calculate_adsorbates))
 
         wf = Workflow(self.fws, name=self.label)
         self.launchpad.add_wf(wf)
 
-        self.launch()
+        if launch:
+            self.launch()
 
 
     def execute_from_initial_ad_guesses(self):
