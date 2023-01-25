@@ -475,7 +475,17 @@ class Pynta:
         else:
             launch_multiprocess(self.launchpad,self.fworker,"INFO","infinite",self.num_jobs,5)
 
-    def execute(self,generate_initial_ad_guesses=True,calculate_adsorbates=True,launch=True):
+    def execute(self,generate_initial_ad_guesses=True,calculate_adsorbates=True,
+                calculate_transition_states=True,launch=True):
+        """
+        generate and launch a Pynta Fireworks Workflow
+        if generate_initial_ad_guesses is true generates initial guesses, otherwise assumes they are already there
+        if calculate_adsorbates is true generates firework jobs for adsorbates, otherwise assumes they are not needed
+        if calculate_transition_states is true generates fireworks jobs for transition states, otherwise assumes they are not needed
+        if launch is true launches the fireworks workflow in infinite mode...this generates a process that will continue to spawn jobs
+        if launch is false the Fireworks workflow is added to the launchpad, where it can be launched separately using fireworks commands
+        """
+
         if not calculate_adsorbates: #default handling
             generate_initial_ad_guesses = False
 
@@ -490,8 +500,9 @@ class Pynta:
         if calculate_adsorbates:
             self.setup_adsorbates(initial_guess_finished=(not generate_initial_ad_guesses))
 
-        #setup transition states
-        self.setup_transition_states(adsorbates_finished=(not calculate_adsorbates))
+        if calculate_transition_states:
+            #setup transition states
+            self.setup_transition_states(adsorbates_finished=(not calculate_adsorbates))
 
         wf = Workflow(self.fws, name=self.label)
         self.launchpad.add_wf(wf)
