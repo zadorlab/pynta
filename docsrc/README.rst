@@ -24,7 +24,7 @@ information can then be processed to generate thermochemistry and rate coefficie
 for the adsorbates and reactions that can be used in microkinetic models.
 
 Pynta is designed to work with the workflow code
-`Fireworks <https://materialsproject.github.io/fireworks/>`, which provides users
+`Fireworks <https://materialsproject.github.io/fireworks/>`_ , which provides users
 with significant flexiblity in running Pynta.
 
 
@@ -51,8 +51,8 @@ not installed it will prompt you to install XCode Commandline Tools.
 
 Install Anaconda
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Download the appropriate `Anaconda <https://www.anaconda.com/products/distribution#Downloads>`
-or `Miniconda <https://docs.conda.io/en/latest/miniconda.html>`. For the command line/bash installers find the downloaded
+Download the appropriate `Anaconda <https://www.anaconda.com/products/distribution#Downloads>`_
+or `Miniconda <https://docs.conda.io/en/latest/miniconda.html>`_ . For the command line/bash installers find the downloaded
 .sh file and run it with `bash` for example on linux this might look like:
 
 .. code-block:: bash
@@ -107,8 +107,8 @@ Install MongoDB
 The code for fireworks itself is installed within the created pynta_env, however Fireworks requires a MongoDB instance
 to manage workflows. There are many different ways to configure this and the best way depends heavily on where and how you are
 running Pynta. The community edition of MongoDB can be installed on a server or local computer you own, directions are available
-`here <https://www.mongodb.com/docs/manual/administration/install-community/>`. Additionally a MongoDB can be setup with a
-cloud provider. MongoDB provides a free option for their `MongoDB Atlas <https://www.mongodb.com/atlas/database>` that should
+`here <https://www.mongodb.com/docs/manual/administration/install-community/>`_ . Additionally a MongoDB can be setup with a
+cloud provider. MongoDB provides a free option for their `MongoDB Atlas <https://www.mongodb.com/atlas/database>`_ that should
 be sufficient for typical use of Fireworks.
 
 
@@ -116,27 +116,26 @@ Setup Fireworks
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Once the MongoDB is setup we can properly configure Fireworks. There are four configuration files that need written for
 Fireworks: my_launchpad.yaml,my_fworker.yaml, my_qadapter.yaml and FW_config.yaml. The first, my_launchpad.yaml needs
-setup for your particular MongoDB, an example is provided in the last section of this `page <https://materialsproject.github.io/fireworks/installation.html>` of the
+setup for your particular MongoDB, an example is provided in the last section of this `page <https://materialsproject.github.io/fireworks/installation.html>`_ of the
 fireworks documentation. The second, my_fworker.yaml can typically just be:
 
-```
-name: my first fireworker
-category: ''
-query: '{}'
-```
+.. code-block:: yaml
+
+  name: my first fireworker
+  category: ''
+  query: '{}'
 
 The third my_qadapter.yaml is not necessary if you don't intend to have Fireworks submit jobs through a queue. A description of
-how this operates within Fireworks is available in their documentation `here <https://materialsproject.github.io/fireworks/queue_tutorial.html>`. Examples of my_qadapter.yaml are
-available `here <https://github.com/materialsproject/fireworks/tree/main/fw_tutorials/queue>`. Lastly the FW_config.yaml file can be
-configured according to directions in the Fireworks documentation `here <https://materialsproject.github.io/fireworks/config_tutorial.html>`.
+how this operates within Fireworks is available in their documentation `here <https://materialsproject.github.io/fireworks/queue_tutorial.html>`_ . Examples of my_qadapter.yaml are
+available `here <https://github.com/materialsproject/fireworks/tree/main/fw_tutorials/queue>`_ . Lastly the FW_config.yaml file should be
+configured according to directions in the Fireworks documentation `here <https://materialsproject.github.io/fireworks/config_tutorial.html>`_ .
 After configuring fireworks you should be able (after activating the pynta_env) run:
 
 .. code-block:: bash
 
    lpad get_wflows
 
-Fireworks has a lot of handy features that enable you to track workflow progress and statistics in their gui and commands that enable you to manually
- launch and pause components of the workflow. Their documentation is available `here <https://materialsproject.github.io/fireworks/index.html>`.
+Fireworks has a lot of handy features that enable you to track workflow progress and statistics in their gui and commands that enable you to manually launch and pause components of the workflow. Their documentation is available `here <https://materialsproject.github.io/fireworks/index.html>`_ .
 
 Testing Pynta
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -167,9 +166,9 @@ Running Pynta
 =============
 In order to run Pynta we first need to describe the reactions we want Pynta to calculate. We do
 this within a reactions.yaml file. This file describes the reactants, products and the atom
-mapping between them in the RMG adjacency list `format <https://reactionmechanismgenerator.github.io/RMG-Py/reference/molecule/adjlist.html>`.
+mapping between them in the RMG adjacency list `format <https://reactionmechanismgenerator.github.io/RMG-Py/reference/molecule/adjlist.html>`_ .
 All atoms that are part of bonds that break and form in the reaction need to be labeled (with the same label) in both reactants and products.
-The validity of adjacency lists can be checking using RMG's tool `here <https://rmg.mit.edu/molecule_search>`.
+The validity of adjacency lists can be checked using RMG's tool `here <https://rmg.mit.edu/molecule_search>`_ .
 
 
 Example ``reactions.yaml`` file
@@ -267,45 +266,65 @@ An example python script for calling Pynta is available below.
 The Pynta function has many parameters. It is best to divide them based on what they are associated with. First there are
 the run parameters:
 
-path is the directory in which Pynta will execute and save files
-rxns_file is the location of the reactions.yaml file containing the reactions to calculate
+**path**: the directory in which Pynta will execute and save files
+
+**rxns_file**: the location of the reactions.yaml file containing the reactions to calculate
 
 Second there are the Fireworks parameters:
 
-launchpad_path is the path to the my_launchpad.yaml file, by default it will use your default my_launchpad.yaml
-fworker_path   is the path to the my_fworker.yaml file, by default it will use your default my_fworker.yaml
-queue_adapter_path  is the path to the my_qadapter.yaml file, by default it will use your default my_qadapter.yaml
-reset_launchpad if true Pynta will reset the Fireworks launchpad during construction, this will delete any existing workflows on fireworks and is usually undesirable
-num_jobs the number of jobs for Pynta to launch if running on multiple nodes outside a queue
-queue if true will run Fireworks in queue mode using the file at queue_adapter_path
+**launchpad_path**: the path to the my_launchpad.yaml file, by default it will use your default my_launchpad.yaml
+
+**fworker_path**: the path to the my_fworker.yaml file, by default it will use your default my_fworker.yaml
+
+**queue_adapter_path**: the path to the my_qadapter.yaml file, by default it will use your default my_qadapter.yaml
+
+**reset_launchpad**: if true Pynta will reset the Fireworks launchpad during construction, this will delete any existing workflows on fireworks and is usually undesirable
+
+**num_jobs**: the number of jobs for Pynta to launch if running on multiple nodes outside a queue
+
+**queue**: if true will run Fireworks in queue mode using the file at queue_adapter_path
 
 Third there are the slab specification parameters:
 
-metal the identity of the slab metal ex: Cu, Pt
-surface_type the facet ex: fcc111, bcc110
-vacuum the height of the vacuum above the slab in the cell
-repeats in general operation this should be [(1,1,1),(x,y,z)] where x,y,z are the number of atoms in the x,y and z directions in the slab
-a the lattice constant of the metal, if not specified and slab_path is not specified Pynta will calculate it
-slab_path path to the geometry of the slab, this will cause Pynta to skip slab generation, but must be consistent with metal, surface_type, vacuum and repeats
+**metal**: the identity of the slab metal ex: Cu, Pt
+
+**surface_type**: the facet ex: fcc111, bcc110
+
+**vacuum**: the height of the vacuum in Angstroms above the slab in the cell
+
+**repeats**: in general operation this should be [(1,1,1),(x,y,z)] where x,y,z are the number of atoms in the x,y and z directions in the slab
+
+**a**: the lattice constant of the metal, if not specified and slab_path is not specified Pynta will calculate it
+
+**slab_path**: path to the geometry of the slab, this will cause Pynta to skip slab generation, but must be consistent with metal, surface_type, vacuum and repeats
 
 Fourth there are the ASE parameters that control the quantum chemistry calculation execution. All of these parameters need to be
-specified in terms of what `ASE <https://wiki.fysik.dtu.dk/ase/>` expects.
+specified in terms of what `ASE <https://wiki.fysik.dtu.dk/ase/>`_ expects.
 
-software This is the string corresponding to an ASE calculator object. Pynta will search ASE for a calculator with this name.
-software_kwargs This is the dictionary of keyword arguments passed to the ASE calculator object on construction. This particular dictionary is the default set of arguments.
-software_kwargs_gas This is a dictionary of keyword arguments that should be different from software_kwargs when running gas phase calculations
-TS_opt_software_kwargs This is a dictionary of keyword arguments that should be different from software_kwargs when running saddle point optimizations
-lattice_opt_software_kwargs This is a dictionary of keyword arguments that should be different from software_kwargs when optimizing the lattice constant
+**software**: this is the string corresponding to an ASE calculator object. Pynta will search ASE for a calculator with this name.
+
+**software_kwargs**: this is the dictionary of keyword arguments passed to the ASE calculator object on construction. This particular dictionary is the default set of arguments.
+
+**software_kwargs_gas**: this is a dictionary of keyword arguments that should be different from software_kwargs when running gas phase calculations
+
+**TS_opt_software_kwargs**: this is a dictionary of keyword arguments that should be different from software_kwargs when running saddle point optimizations
+
+**lattice_opt_software_kwargs**: this is a dictionary of keyword arguments that should be different from software_kwargs when optimizing the lattice constant
 
 Lastly there are the Pynta energy filter criteria:
 
-Eharmtol is a tolerance such that all TS/adsorbate guesses are always calculated if they have energies less than Emin * Eharmtol
-Eharmfiltertol is a tolerance such that all TS/adsorbate guesses are never calculated if they have energies greater than Emin * Eharmfiltertol
-Ntsmin is the minimum number of TS/adsorbate guesses. If the number of guesses with energies less than Emin * Eharmtol is less than Ntsmin Pynta will add the lowest energy guesses (that are less than Emin * Eharmfiltertol) until it has Ntsmin guesses.
+**Eharmtol**: a tolerance such that all TS/adsorbate guesses are always calculated if they have energies less than Emin * Eharmtol
+
+**Eharmfiltertol**: a tolerance such that all TS/adsorbate guesses are never calculated if they have energies greater than Emin * Eharmfiltertol
+
+**Ntsmin**: the minimum number of TS/adsorbate guesses. If the number of guesses with energies less than Emin * Eharmtol is less than Ntsmin Pynta will add the lowest energy guesses (that are less than Emin * Eharmfiltertol) until it has Ntsmin guesses.
 
 Pynta's execute function has a few important options:
 
-generate_initial_ad_guesses If False Pynta will not generate initial adsorbate guesses and assume they are already in the appropriate directories.
-calculate_adsorbates If False Pynta will not generate Fireworks jobs for calculating adsorbates and will assume the results are already in the appropriate directories.
-calculate_transition_states If False Pynta will not generate Fireworks jobs for finding and calculating transition states
-launch If True Pynta will attempt to launch the Fireworks workflow in infinite mode after it is constructed. If False the workflow is still generated and added to the launchpad, but it is left up to the user to handle launching through Fireworks commands.
+**generate_initial_ad_guesses**: if False Pynta will not generate initial adsorbate guesses and assume they are already in the appropriate directories.
+
+**calculate_adsorbates**: if False Pynta will not generate Fireworks jobs for calculating adsorbates and will assume the results are already in the appropriate directories.
+
+**calculate_transition_states**: if False Pynta will not generate Fireworks jobs for finding and calculating transition states
+
+**launch**: if True Pynta will attempt to launch the Fireworks workflow in infinite mode after it is constructed. If False the workflow is still generated and added to the launchpad, but it is left up to the user to handle launching through Fireworks commands.
