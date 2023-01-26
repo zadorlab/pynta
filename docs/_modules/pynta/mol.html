@@ -1,0 +1,879 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>pynta.mol &mdash; Pynta January 25, 2023 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../../_static/doctools.js"></script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> Pynta
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <!-- Local TOC -->
+              <div class="local-toc"></div>
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">Pynta</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+        
+      <li>pynta.mol</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for pynta.mol</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">molecule.molecule</span> <span class="kn">import</span> <span class="n">Molecule</span>
+<span class="kn">from</span> <span class="nn">ase.io</span> <span class="kn">import</span> <span class="n">read</span><span class="p">,</span> <span class="n">write</span>
+<span class="kn">from</span> <span class="nn">ase.data</span> <span class="kn">import</span> <span class="n">covalent_radii</span>
+<span class="kn">from</span> <span class="nn">ase</span> <span class="kn">import</span> <span class="n">Atoms</span>
+<span class="kn">from</span> <span class="nn">acat.adsorption_sites</span> <span class="kn">import</span> <span class="n">SlabAdsorptionSites</span>
+<span class="kn">from</span> <span class="nn">acat.adsorbate_coverage</span> <span class="kn">import</span> <span class="n">SlabAdsorbateCoverage</span>
+<span class="kn">from</span> <span class="nn">acat.settings</span> <span class="kn">import</span> <span class="n">site_heights</span>
+<span class="kn">from</span> <span class="nn">acat.utilities</span> <span class="kn">import</span> <span class="n">get_mic</span>
+<span class="kn">from</span> <span class="nn">acat.utilities</span> <span class="kn">import</span> <span class="p">(</span><span class="n">custom_warning</span><span class="p">,</span>
+                         <span class="n">is_list_or_tuple</span><span class="p">,</span>
+                         <span class="n">get_close_atoms</span><span class="p">,</span>
+                         <span class="n">get_rodrigues_rotation_matrix</span><span class="p">,</span>
+                         <span class="n">get_angle_between</span><span class="p">,</span>
+                         <span class="n">get_rejection_between</span><span class="p">)</span>
+<span class="kn">from</span> <span class="nn">pynta.utils</span> <span class="kn">import</span> <span class="n">get_unique_sym_struct_index_clusters</span><span class="p">,</span> <span class="n">get_unique_sym</span><span class="p">,</span> <span class="n">get_unique_sym_structs</span><span class="p">,</span> <span class="n">get_unique_sym_struct_indices</span>
+<span class="kn">from</span> <span class="nn">pynta.calculator</span> <span class="kn">import</span> <span class="n">run_harmonically_forced_xtb</span>
+<span class="kn">from</span> <span class="nn">rdkit</span> <span class="kn">import</span> <span class="n">Chem</span>
+<span class="kn">from</span> <span class="nn">copy</span> <span class="kn">import</span> <span class="n">deepcopy</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<div class="viewcode-block" id="get_desorbed_with_map"><a class="viewcode-back" href="../../source/pynta.html#pynta.mol.get_desorbed_with_map">[docs]</a><span class="k">def</span> <span class="nf">get_desorbed_with_map</span><span class="p">(</span><span class="n">mol</span><span class="p">):</span>
+    <span class="n">molcopy</span> <span class="o">=</span> <span class="n">mol</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">deep</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">init_map</span> <span class="o">=</span> <span class="p">{</span><span class="n">i</span><span class="p">:</span><span class="n">a</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">a</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">molcopy</span><span class="o">.</span><span class="n">atoms</span><span class="p">)}</span>
+
+    <span class="k">for</span> <span class="n">bd</span> <span class="ow">in</span> <span class="n">molcopy</span><span class="o">.</span><span class="n">get_all_edges</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">bd</span><span class="o">.</span><span class="n">atom1</span><span class="o">.</span><span class="n">is_surface_site</span><span class="p">():</span>
+            <span class="n">bd</span><span class="o">.</span><span class="n">atom2</span><span class="o">.</span><span class="n">radical_electrons</span> <span class="o">+=</span> <span class="nb">round</span><span class="p">(</span><span class="n">bd</span><span class="o">.</span><span class="n">order</span><span class="p">)</span>
+            <span class="n">molcopy</span><span class="o">.</span><span class="n">remove_bond</span><span class="p">(</span><span class="n">bd</span><span class="p">)</span>
+            <span class="n">molcopy</span><span class="o">.</span><span class="n">remove_atom</span><span class="p">(</span><span class="n">bd</span><span class="o">.</span><span class="n">atom1</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">bd</span><span class="o">.</span><span class="n">atom2</span><span class="o">.</span><span class="n">is_surface_site</span><span class="p">():</span>
+            <span class="n">bd</span><span class="o">.</span><span class="n">atom1</span><span class="o">.</span><span class="n">radical_electrons</span> <span class="o">+=</span> <span class="nb">round</span><span class="p">(</span><span class="n">bd</span><span class="o">.</span><span class="n">order</span><span class="p">)</span>
+            <span class="n">molcopy</span><span class="o">.</span><span class="n">remove_bond</span><span class="p">(</span><span class="n">bd</span><span class="p">)</span>
+            <span class="n">molcopy</span><span class="o">.</span><span class="n">remove_atom</span><span class="p">(</span><span class="n">bd</span><span class="o">.</span><span class="n">atom2</span><span class="p">)</span>
+
+    <span class="n">molcopy</span><span class="o">.</span><span class="n">sort_atoms</span><span class="p">()</span>
+    <span class="n">out_map</span> <span class="o">=</span> <span class="p">{</span><span class="n">i</span><span class="p">:</span><span class="n">molcopy</span><span class="o">.</span><span class="n">atoms</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">a</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">a</span> <span class="ow">in</span> <span class="n">init_map</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">molcopy</span><span class="o">.</span><span class="n">atoms</span><span class="p">}</span>
+    <span class="k">return</span> <span class="n">molcopy</span><span class="p">,</span><span class="n">out_map</span></div>
+
+<div class="viewcode-block" id="get_conformer"><a class="viewcode-back" href="../../source/pynta.html#pynta.mol.get_conformer">[docs]</a><span class="k">def</span> <span class="nf">get_conformer</span><span class="p">(</span><span class="n">desorbed</span><span class="p">):</span>
+    <span class="n">rdmol</span><span class="p">,</span><span class="n">rdmap</span> <span class="o">=</span> <span class="n">desorbed</span><span class="o">.</span><span class="n">to_rdkit_mol</span><span class="p">(</span><span class="n">remove_h</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span><span class="n">return_mapping</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">indmap</span> <span class="o">=</span> <span class="p">{</span><span class="n">i</span><span class="p">:</span><span class="n">rdmap</span><span class="p">[</span><span class="n">a</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">a</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">desorbed</span><span class="o">.</span><span class="n">atoms</span><span class="p">)}</span>
+    <span class="n">Chem</span><span class="o">.</span><span class="n">AllChem</span><span class="o">.</span><span class="n">EmbedMultipleConfs</span><span class="p">(</span><span class="n">rdmol</span><span class="p">,</span><span class="n">numConfs</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span><span class="n">randomSeed</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">conf</span> <span class="o">=</span> <span class="n">rdmol</span><span class="o">.</span><span class="n">GetConformer</span><span class="p">()</span>
+    <span class="n">pos</span> <span class="o">=</span> <span class="n">conf</span><span class="o">.</span><span class="n">GetPositions</span><span class="p">()</span>
+    <span class="n">syms</span> <span class="o">=</span> <span class="p">[</span><span class="n">a</span><span class="o">.</span><span class="n">GetSymbol</span><span class="p">()</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">rdmol</span><span class="o">.</span><span class="n">GetAtoms</span><span class="p">()]</span>
+    <span class="n">atoms</span> <span class="o">=</span> <span class="n">Atoms</span><span class="p">(</span><span class="n">symbols</span><span class="o">=</span><span class="n">syms</span><span class="p">,</span><span class="n">positions</span><span class="o">=</span><span class="n">pos</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">atoms</span><span class="p">,</span><span class="n">indmap</span></div>
+
+<div class="viewcode-block" id="get_adsorbate"><a class="viewcode-back" href="../../source/pynta.html#pynta.mol.get_adsorbate">[docs]</a><span class="k">def</span> <span class="nf">get_adsorbate</span><span class="p">(</span><span class="n">mol</span><span class="p">):</span>
+    <span class="n">desorbed</span><span class="p">,</span><span class="n">mol_to_desorbed_map</span> <span class="o">=</span> <span class="n">get_desorbed_with_map</span><span class="p">(</span><span class="n">mol</span><span class="p">)</span>
+    <span class="n">atoms</span><span class="p">,</span><span class="n">desorbed_to_atoms_map</span> <span class="o">=</span> <span class="n">get_conformer</span><span class="p">(</span><span class="n">desorbed</span><span class="p">)</span>
+    <span class="n">mol_to_atoms_map</span> <span class="o">=</span> <span class="p">{</span><span class="n">key</span><span class="p">:</span><span class="n">desorbed_to_atoms_map</span><span class="p">[</span><span class="n">val</span><span class="p">]</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span><span class="n">val</span> <span class="ow">in</span> <span class="n">mol_to_desorbed_map</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+    <span class="k">return</span> <span class="n">atoms</span><span class="p">,</span><span class="n">mol_to_atoms_map</span></div>
+
+<div class="viewcode-block" id="generate_adsorbate_guesses"><a class="viewcode-back" href="../../source/pynta.html#pynta.mol.generate_adsorbate_guesses">[docs]</a><span class="k">def</span> <span class="nf">generate_adsorbate_guesses</span><span class="p">(</span><span class="n">mol</span><span class="p">,</span><span class="n">ads</span><span class="p">,</span><span class="n">slab</span><span class="p">,</span><span class="n">repeats</span><span class="p">,</span><span class="n">cas</span><span class="p">,</span><span class="n">mol_to_atoms_map</span><span class="p">,</span><span class="n">metal</span><span class="p">,</span>
+                               <span class="n">single_site_bond_params_lists</span><span class="p">,</span><span class="n">single_sites_lists</span><span class="p">,</span><span class="n">double_site_bond_params_lists</span><span class="p">,</span><span class="n">double_sites_lists</span><span class="p">,</span>
+                               <span class="n">Eharmtol</span><span class="p">,</span><span class="n">Eharmfiltertol</span><span class="p">,</span><span class="n">Ntsmin</span><span class="p">):</span>
+    <span class="n">full_slab</span> <span class="o">=</span> <span class="n">slab</span> <span class="o">*</span> <span class="n">repeats</span>
+    <span class="n">mol_surf_inds</span> <span class="o">=</span> <span class="p">[</span><span class="n">mol</span><span class="o">.</span><span class="n">atoms</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">a</span><span class="p">)</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">mol</span><span class="o">.</span><span class="n">get_adatoms</span><span class="p">()]</span>
+    <span class="n">atom_surf_inds</span> <span class="o">=</span> <span class="p">[</span><span class="n">mol_to_atoms_map</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">mol_surf_inds</span><span class="p">]</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">atom_surf_inds</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">site_bond_params_lists</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">single_site_bond_params_lists</span><span class="p">)</span>
+        <span class="n">sites_lists</span> <span class="o">=</span> <span class="n">single_sites_lists</span>
+        <span class="k">for</span> <span class="n">site_bond_params_list</span> <span class="ow">in</span> <span class="n">site_bond_params_lists</span><span class="p">:</span>
+            <span class="n">site_bond_params_list</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;ind&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">atom_surf_inds</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="nb">len</span><span class="p">(</span><span class="n">full_slab</span><span class="p">)</span>
+
+            <span class="c1">#add up pulling potential</span>
+            <span class="k">for</span> <span class="n">ind</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">ads</span><span class="p">)):</span>
+                <span class="k">if</span> <span class="n">ind</span> <span class="ow">in</span> <span class="n">atom_surf_inds</span><span class="p">:</span>
+                    <span class="k">continue</span>
+                <span class="n">pos</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">site_bond_params_list</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;site_pos&quot;</span><span class="p">])</span>
+                <span class="n">pos</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">+=</span> <span class="mf">8.5</span>
+                <span class="n">site_bond_params_list</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">&quot;site_pos&quot;</span><span class="p">:</span> <span class="n">pos</span><span class="p">,</span><span class="s2">&quot;ind&quot;</span><span class="p">:</span> <span class="n">ind</span><span class="o">+</span><span class="nb">len</span><span class="p">(</span><span class="n">full_slab</span><span class="p">),</span> <span class="s2">&quot;k&quot;</span><span class="p">:</span> <span class="mf">0.1</span><span class="p">,</span> <span class="s2">&quot;deq&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">})</span>
+
+    <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">atom_surf_inds</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="n">site_bond_params_lists</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">double_site_bond_params_lists</span><span class="p">)</span>
+        <span class="n">sites_lists</span> <span class="o">=</span> <span class="n">double_sites_lists</span>
+        <span class="k">for</span> <span class="n">site_bond_params_list</span> <span class="ow">in</span> <span class="n">site_bond_params_lists</span><span class="p">:</span>
+            <span class="n">site_bond_params_list</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;ind&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">atom_surf_inds</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="nb">len</span><span class="p">(</span><span class="n">full_slab</span><span class="p">)</span>
+            <span class="n">site_bond_params_list</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s2">&quot;ind&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">atom_surf_inds</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="nb">len</span><span class="p">(</span><span class="n">full_slab</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Only monodentate and bidentate guesses currently allowed. The infrastructure can support tridenate and higher, but the filtering process may be very expensive above bidentate.&quot;</span><span class="p">)</span>
+
+
+    <span class="n">mol_fixed_bond_pairs</span> <span class="o">=</span> <span class="p">[[</span><span class="n">mol</span><span class="o">.</span><span class="n">atoms</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">bd</span><span class="o">.</span><span class="n">atom1</span><span class="p">),</span><span class="n">mol</span><span class="o">.</span><span class="n">atoms</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">bd</span><span class="o">.</span><span class="n">atom2</span><span class="p">)]</span> <span class="k">for</span> <span class="n">bd</span> <span class="ow">in</span> <span class="n">mol</span><span class="o">.</span><span class="n">get_all_edges</span><span class="p">()</span> <span class="k">if</span> <span class="p">(</span><span class="ow">not</span> <span class="n">bd</span><span class="o">.</span><span class="n">atom1</span><span class="o">.</span><span class="n">is_surface_site</span><span class="p">())</span> <span class="ow">and</span> <span class="p">(</span><span class="ow">not</span> <span class="n">bd</span><span class="o">.</span><span class="n">atom2</span><span class="o">.</span><span class="n">is_surface_site</span><span class="p">())]</span>
+    <span class="n">atom_fixed_bond_pairs</span> <span class="o">=</span> <span class="p">[[</span><span class="n">mol_to_atoms_map</span><span class="p">[</span><span class="n">pair</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span><span class="o">+</span><span class="nb">len</span><span class="p">(</span><span class="n">full_slab</span><span class="p">),</span><span class="n">mol_to_atoms_map</span><span class="p">[</span><span class="n">pair</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span><span class="o">+</span><span class="nb">len</span><span class="p">(</span><span class="n">full_slab</span><span class="p">)]</span><span class="k">for</span> <span class="n">pair</span> <span class="ow">in</span> <span class="n">mol_fixed_bond_pairs</span><span class="p">]</span>
+    <span class="n">constraint_list</span> <span class="o">=</span> <span class="p">[{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;fix_bond&quot;</span><span class="p">,</span> <span class="s2">&quot;indices&quot;</span><span class="p">:</span> <span class="n">pair</span><span class="p">}</span> <span class="k">for</span> <span class="n">pair</span> <span class="ow">in</span> <span class="n">atom_fixed_bond_pairs</span><span class="p">]</span><span class="o">+</span><span class="p">[</span><span class="s2">&quot;freeze slab&quot;</span><span class="p">]</span>
+
+    <span class="n">geos</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">sites_list</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">sites_lists</span><span class="p">):</span>
+        <span class="n">geo</span><span class="p">,</span><span class="n">h1</span><span class="p">,</span><span class="n">h2</span> <span class="o">=</span> <span class="n">place_adsorbate</span><span class="p">(</span><span class="n">ads</span><span class="p">,</span><span class="n">full_slab</span><span class="p">,</span><span class="n">atom_surf_inds</span><span class="p">,</span><span class="n">sites_list</span><span class="p">,</span><span class="n">metal</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">h1</span><span class="p">:</span>
+            <span class="n">site_bond_params_lists</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;site_pos&quot;</span><span class="p">][</span><span class="mi">2</span><span class="p">]</span> <span class="o">+=</span> <span class="n">h1</span>
+        <span class="k">if</span> <span class="n">h2</span><span class="p">:</span>
+            <span class="n">site_bond_params_lists</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">1</span><span class="p">][</span><span class="s2">&quot;site_pos&quot;</span><span class="p">][</span><span class="mi">2</span><span class="p">]</span> <span class="o">+=</span> <span class="n">h2</span>
+        <span class="n">geos</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">geo</span><span class="p">)</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;initial geometries&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">geos</span><span class="p">))</span>
+    <span class="n">geos_out</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">Eharms</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">site_bond_params_lists_out</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">geo</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">geos</span><span class="p">):</span>
+        <span class="c1">#freeze bonds for messier first opt</span>
+        <span class="n">geo_out</span><span class="p">,</span><span class="n">Eharm</span><span class="p">,</span><span class="n">Fharm</span> <span class="o">=</span> <span class="n">run_harmonically_forced_xtb</span><span class="p">(</span><span class="n">geo</span><span class="p">,[],</span><span class="n">site_bond_params_lists</span><span class="p">[</span><span class="n">i</span><span class="p">],</span><span class="nb">len</span><span class="p">(</span><span class="n">full_slab</span><span class="p">),</span>
+                                                          <span class="n">method</span><span class="o">=</span><span class="s2">&quot;GFN1-xTB&quot;</span><span class="p">,</span><span class="n">constraints</span><span class="o">=</span><span class="n">constraint_list</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">geo_out</span><span class="p">:</span>
+            <span class="n">geo_out</span><span class="o">.</span><span class="n">calc</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="n">geos_out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">geo_out</span><span class="p">)</span>
+            <span class="n">Eharms</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Eharm</span><span class="p">)</span>
+            <span class="n">site_bond_params_lists_out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">site_bond_params_lists</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;optimized geometries&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">geos_out</span><span class="p">))</span>
+    <span class="n">inds</span> <span class="o">=</span> <span class="n">get_unique_sym_struct_indices</span><span class="p">(</span><span class="n">geos_out</span><span class="p">)</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;after symmetry&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">inds</span><span class="p">))</span>
+
+    <span class="n">geos_out</span> <span class="o">=</span> <span class="p">[</span><span class="n">geos_out</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span> <span class="k">for</span> <span class="n">ind</span> <span class="ow">in</span> <span class="n">inds</span><span class="p">]</span>
+    <span class="n">Eharms</span> <span class="o">=</span> <span class="p">[</span><span class="n">Eharms</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span> <span class="k">for</span> <span class="n">ind</span> <span class="ow">in</span> <span class="n">inds</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">atom_surf_inds</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span> <span class="c1">#should be small, don&#39;t bother filtering</span>
+        <span class="n">xyzsout</span> <span class="o">=</span> <span class="n">geos_out</span>
+        <span class="n">site_bond_params_lists_final</span> <span class="o">=</span> <span class="p">[</span><span class="n">site_bond_params_lists_out</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span> <span class="k">for</span> <span class="n">ind</span> <span class="ow">in</span> <span class="n">inds</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">xyzsout</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">Einds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">Eharms</span><span class="p">))</span>
+        <span class="n">Emin</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">Eharms</span><span class="p">))</span>
+        <span class="n">xyzsout</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">site_bond_params_lists_final</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">Eind</span> <span class="ow">in</span> <span class="n">Einds</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">Eharms</span><span class="p">[</span><span class="n">Eind</span><span class="p">]</span><span class="o">/</span><span class="n">Emin</span> <span class="o">&lt;</span> <span class="n">Eharmtol</span><span class="p">:</span> <span class="c1">#include all TSs with energy close to Emin</span>
+                <span class="n">xyzsout</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">geos_out</span><span class="p">[</span><span class="n">Eind</span><span class="p">])</span>
+                <span class="n">site_bond_params_lists_final</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">site_bond_params_lists_out</span><span class="p">[</span><span class="n">Eind</span><span class="p">])</span>
+            <span class="k">elif</span> <span class="n">Eharms</span><span class="p">[</span><span class="n">Eind</span><span class="p">]</span><span class="o">/</span><span class="n">Emin</span> <span class="o">&gt;</span> <span class="n">Eharmfiltertol</span><span class="p">:</span> <span class="c1">#if the energy is much larger than Emin skip it</span>
+                <span class="k">continue</span>
+            <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">xyzsout</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">Ntsmin</span><span class="p">:</span> <span class="c1">#if the energy isn&#39;t similar, but isn&#39;t much larger include the smallest until Ntsmin is reached</span>
+                <span class="n">xyzsout</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">geos_out</span><span class="p">[</span><span class="n">Eind</span><span class="p">])</span>
+                <span class="n">site_bond_params_lists_final</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">site_bond_params_lists_out</span><span class="p">[</span><span class="n">Eind</span><span class="p">])</span>
+
+    <span class="n">xyzfinals</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">xyz</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">xyzsout</span><span class="p">):</span>
+        <span class="c1">#unfreeze bonds (should be better than rdkit&#39;s guess)</span>
+        <span class="n">geo_out</span><span class="p">,</span><span class="n">Eharm</span><span class="p">,</span><span class="n">Fharm</span> <span class="o">=</span> <span class="n">run_harmonically_forced_xtb</span><span class="p">(</span><span class="n">xyz</span><span class="p">,[],</span><span class="n">site_bond_params_lists_final</span><span class="p">[</span><span class="n">i</span><span class="p">],</span><span class="nb">len</span><span class="p">(</span><span class="n">full_slab</span><span class="p">),</span>
+                                                          <span class="n">method</span><span class="o">=</span><span class="s2">&quot;GFN1-xTB&quot;</span><span class="p">,</span><span class="n">constraints</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;freeze slab&quot;</span><span class="p">])</span>
+        <span class="n">xyzfinals</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">geo_out</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">xyzfinals</span></div>
+
+<span class="n">site_bond_length_dict</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="p">(</span><span class="s2">&quot;ontop&quot;</span><span class="p">,</span><span class="kc">None</span><span class="p">,</span><span class="kc">None</span><span class="p">):</span> <span class="mf">1.826370311</span><span class="p">,</span>
+        <span class="p">(</span><span class="s2">&quot;bridge&quot;</span><span class="p">,</span><span class="kc">None</span><span class="p">,</span><span class="kc">None</span><span class="p">):</span> <span class="mf">1.806089179</span><span class="p">,</span>
+        <span class="p">(</span><span class="s2">&quot;fcc&quot;</span><span class="p">,</span><span class="kc">None</span><span class="p">,</span><span class="kc">None</span><span class="p">):</span> <span class="mf">1.372599861</span><span class="p">,</span>
+        <span class="p">(</span><span class="s2">&quot;hcp&quot;</span><span class="p">,</span><span class="kc">None</span><span class="p">,</span><span class="kc">None</span><span class="p">):</span> <span class="mf">1.397379832</span><span class="p">,</span>
+
+        <span class="p">(</span><span class="s2">&quot;ontop&quot;</span><span class="p">,</span><span class="s2">&quot;C&quot;</span><span class="p">,</span><span class="kc">None</span><span class="p">):</span> <span class="mf">2.056904761</span><span class="p">,</span>
+        <span class="p">(</span><span class="s2">&quot;bridge&quot;</span><span class="p">,</span><span class="s2">&quot;C&quot;</span><span class="p">,</span><span class="kc">None</span><span class="p">):</span> <span class="mf">1.920118777</span><span class="p">,</span>
+        <span class="p">(</span><span class="s2">&quot;fcc&quot;</span><span class="p">,</span><span class="s2">&quot;C&quot;</span><span class="p">,</span><span class="kc">None</span><span class="p">):</span> <span class="mf">1.795024649</span><span class="p">,</span>
+        <span class="p">(</span><span class="s2">&quot;hcp&quot;</span><span class="p">,</span><span class="s2">&quot;C&quot;</span><span class="p">,</span><span class="kc">None</span><span class="p">):</span> <span class="mf">1.764312871</span><span class="p">,</span>
+        <span class="p">(</span><span class="s2">&quot;ontop&quot;</span><span class="p">,</span><span class="s2">&quot;O&quot;</span><span class="p">,</span><span class="kc">None</span><span class="p">):</span> <span class="mf">1.872603673</span><span class="p">,</span>
+        <span class="p">(</span><span class="s2">&quot;bridge&quot;</span><span class="p">,</span><span class="s2">&quot;O&quot;</span><span class="p">,</span><span class="kc">None</span><span class="p">):</span> <span class="mf">1.69205958</span><span class="p">,</span>
+        <span class="p">(</span><span class="s2">&quot;fcc&quot;</span><span class="p">,</span><span class="s2">&quot;O&quot;</span><span class="p">,</span><span class="kc">None</span><span class="p">):</span> <span class="mf">1.408365497</span><span class="p">,</span>
+        <span class="p">(</span><span class="s2">&quot;hcp&quot;</span><span class="p">,</span><span class="s2">&quot;O&quot;</span><span class="p">,</span><span class="kc">None</span><span class="p">):</span> <span class="mf">1.510464567</span><span class="p">,</span>
+        <span class="p">(</span><span class="s2">&quot;ontop&quot;</span><span class="p">,</span><span class="s2">&quot;H&quot;</span><span class="p">,</span><span class="kc">None</span><span class="p">):</span> <span class="mf">1.5496025</span><span class="p">,</span>
+        <span class="p">(</span><span class="s2">&quot;fcc&quot;</span><span class="p">,</span><span class="s2">&quot;H&quot;</span><span class="p">,</span><span class="kc">None</span><span class="p">):</span> <span class="mf">1.0321708</span><span class="p">,</span>
+        <span class="p">(</span><span class="s2">&quot;hcp&quot;</span><span class="p">,</span><span class="s2">&quot;H&quot;</span><span class="p">,</span><span class="kc">None</span><span class="p">):</span> <span class="mf">1.0321708</span><span class="p">,</span>
+        <span class="p">(</span><span class="s2">&quot;fcc&quot;</span><span class="p">,</span><span class="s2">&quot;N&quot;</span><span class="p">,</span><span class="kc">None</span><span class="p">):</span> <span class="mf">1.2548385</span><span class="p">,</span>
+        <span class="p">(</span><span class="s2">&quot;hcp&quot;</span><span class="p">,</span><span class="s2">&quot;N&quot;</span><span class="p">,</span><span class="kc">None</span><span class="p">):</span> <span class="mf">1.28257109</span><span class="p">,</span>
+
+        <span class="p">(</span><span class="s2">&quot;ontop&quot;</span><span class="p">,</span><span class="s2">&quot;C&quot;</span><span class="p">,</span><span class="s2">&quot;Cu&quot;</span><span class="p">):</span> <span class="mf">2.056904761</span><span class="p">,</span>
+        <span class="p">(</span><span class="s2">&quot;bridge&quot;</span><span class="p">,</span><span class="s2">&quot;C&quot;</span><span class="p">,</span><span class="s2">&quot;Cu&quot;</span><span class="p">):</span> <span class="mf">1.920118777</span><span class="p">,</span>
+        <span class="p">(</span><span class="s2">&quot;fcc&quot;</span><span class="p">,</span><span class="s2">&quot;C&quot;</span><span class="p">,</span><span class="s2">&quot;Cu&quot;</span><span class="p">):</span> <span class="mf">1.795024649</span><span class="p">,</span>
+        <span class="p">(</span><span class="s2">&quot;hcp&quot;</span><span class="p">,</span><span class="s2">&quot;C&quot;</span><span class="p">,</span><span class="s2">&quot;Cu&quot;</span><span class="p">):</span> <span class="mf">1.764312871</span><span class="p">,</span>
+        <span class="p">(</span><span class="s2">&quot;ontop&quot;</span><span class="p">,</span><span class="s2">&quot;O&quot;</span><span class="p">,</span><span class="s2">&quot;Cu&quot;</span><span class="p">):</span> <span class="mf">1.872603673</span><span class="p">,</span>
+        <span class="p">(</span><span class="s2">&quot;bridge&quot;</span><span class="p">,</span><span class="s2">&quot;O&quot;</span><span class="p">,</span><span class="s2">&quot;Cu&quot;</span><span class="p">):</span> <span class="mf">1.69205958</span><span class="p">,</span>
+        <span class="p">(</span><span class="s2">&quot;fcc&quot;</span><span class="p">,</span><span class="s2">&quot;O&quot;</span><span class="p">,</span><span class="s2">&quot;Cu&quot;</span><span class="p">):</span> <span class="mf">1.408365497</span><span class="p">,</span>
+        <span class="p">(</span><span class="s2">&quot;hcp&quot;</span><span class="p">,</span><span class="s2">&quot;O&quot;</span><span class="p">,</span><span class="s2">&quot;Cu&quot;</span><span class="p">):</span> <span class="mf">1.510464567</span><span class="p">,</span>
+        <span class="p">(</span><span class="s2">&quot;ontop&quot;</span><span class="p">,</span><span class="s2">&quot;H&quot;</span><span class="p">,</span><span class="s2">&quot;Cu&quot;</span><span class="p">):</span> <span class="mf">1.5496025</span><span class="p">,</span>
+        <span class="p">(</span><span class="s2">&quot;fcc&quot;</span><span class="p">,</span><span class="s2">&quot;H&quot;</span><span class="p">,</span><span class="s2">&quot;Cu&quot;</span><span class="p">):</span> <span class="mf">1.0321708</span><span class="p">,</span>
+        <span class="p">(</span><span class="s2">&quot;hcp&quot;</span><span class="p">,</span><span class="s2">&quot;H&quot;</span><span class="p">,</span><span class="s2">&quot;Cu&quot;</span><span class="p">):</span> <span class="mf">1.0321708</span><span class="p">,</span>
+        <span class="p">(</span><span class="s2">&quot;fcc&quot;</span><span class="p">,</span><span class="s2">&quot;N&quot;</span><span class="p">,</span><span class="s2">&quot;Cu&quot;</span><span class="p">):</span> <span class="mf">1.2548385</span><span class="p">,</span>
+        <span class="p">(</span><span class="s2">&quot;hcp&quot;</span><span class="p">,</span><span class="s2">&quot;N&quot;</span><span class="p">,</span><span class="s2">&quot;Cu&quot;</span><span class="p">):</span> <span class="mf">1.28257109</span><span class="p">,</span>
+<span class="p">}</span>
+
+<div class="viewcode-block" id="get_site_bond_length"><a class="viewcode-back" href="../../source/pynta.html#pynta.mol.get_site_bond_length">[docs]</a><span class="k">def</span> <span class="nf">get_site_bond_length</span><span class="p">(</span><span class="n">sitetype</span><span class="p">,</span><span class="n">atomtype</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span><span class="n">metal</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">sitetype</span><span class="p">,</span><span class="n">atomtype</span><span class="p">,</span><span class="n">metal</span><span class="p">)</span> <span class="ow">in</span> <span class="n">site_bond_length_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="k">return</span> <span class="n">site_bond_length_dict</span><span class="p">[(</span><span class="n">sitetype</span><span class="p">,</span><span class="n">atomtype</span><span class="p">,</span><span class="n">metal</span><span class="p">)]</span>
+    <span class="k">elif</span> <span class="p">(</span><span class="n">sitetype</span><span class="p">,</span><span class="n">atomtype</span><span class="p">,</span><span class="kc">None</span><span class="p">)</span> <span class="ow">in</span> <span class="n">site_bond_length_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="k">return</span> <span class="n">site_bond_length_dict</span><span class="p">[(</span><span class="n">sitetype</span><span class="p">,</span><span class="n">atomtype</span><span class="p">,</span><span class="kc">None</span><span class="p">)]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">site_bond_length_dict</span><span class="p">[(</span><span class="n">sitetype</span><span class="p">,</span><span class="kc">None</span><span class="p">,</span><span class="kc">None</span><span class="p">)]</span></div>
+
+<div class="viewcode-block" id="add_adsorbate_to_site"><a class="viewcode-back" href="../../source/pynta.html#pynta.mol.add_adsorbate_to_site">[docs]</a><span class="k">def</span> <span class="nf">add_adsorbate_to_site</span><span class="p">(</span><span class="n">atoms</span><span class="p">,</span> <span class="n">adsorbate</span><span class="p">,</span> <span class="n">surf_ind</span><span class="p">,</span> <span class="n">site</span><span class="p">,</span> <span class="n">height</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                          <span class="n">orientation</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">tilt_angle</span><span class="o">=</span><span class="mf">0.</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;The base function for adding one adsorbate to a site.</span>
+<span class="sd">    Site must include information of &#39;normal&#39; and &#39;position&#39;.</span>
+<span class="sd">    Useful for adding adsorbate to multiple sites or adding</span>
+<span class="sd">    multidentate adsorbates.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    atoms : ase.Atoms object</span>
+<span class="sd">        Accept any ase.Atoms object. No need to be built-in.</span>
+
+<span class="sd">    adsorbate : str or ase.Atom object or ase.Atoms object</span>
+<span class="sd">        The adsorbate species to be added onto the surface.</span>
+
+<span class="sd">    site : dict</span>
+<span class="sd">        The site that the adsorbate should be added to.</span>
+<span class="sd">        Must contain information of the position and the</span>
+<span class="sd">        normal vector of the site.</span>
+
+<span class="sd">    height : float, default None</span>
+<span class="sd">        The height of the added adsorbate from the surface.</span>
+<span class="sd">        Use the default settings if not specified.</span>
+
+<span class="sd">    orientation : list or numpy.array, default None</span>
+<span class="sd">        The vector that the multidentate adsorbate is aligned to.</span>
+
+<span class="sd">    tilt_angle: float, default None</span>
+<span class="sd">        Tilt the adsorbate with an angle (in degrees) relative to</span>
+<span class="sd">        the surface normal.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">height</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">height</span> <span class="o">=</span> <span class="n">site_heights</span><span class="p">[</span><span class="n">site</span><span class="p">[</span><span class="s1">&#39;site&#39;</span><span class="p">]]</span>
+
+    <span class="c1"># Make the correct position</span>
+    <span class="n">normal</span> <span class="o">=</span> <span class="n">site</span><span class="p">[</span><span class="s1">&#39;normal&#39;</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">normal</span><span class="p">)):</span>
+        <span class="n">normal</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">0.</span><span class="p">,</span> <span class="mf">1.</span><span class="p">])</span>
+    <span class="n">pos</span> <span class="o">=</span> <span class="n">site</span><span class="p">[</span><span class="s1">&#39;position&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="n">normal</span> <span class="o">*</span> <span class="n">height</span>
+
+    <span class="c1"># Convert the adsorbate to an Atoms object</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">adsorbate</span><span class="p">,</span> <span class="n">Atoms</span><span class="p">):</span>
+        <span class="n">ads</span> <span class="o">=</span> <span class="n">adsorbate</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">adsorbate</span><span class="p">,</span> <span class="n">Atom</span><span class="p">):</span>
+        <span class="n">ads</span> <span class="o">=</span> <span class="n">Atoms</span><span class="p">([</span><span class="n">adsorbate</span><span class="p">])</span>
+
+    <span class="c1"># Or assume it is a string representing a molecule</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">ads</span> <span class="o">=</span> <span class="n">adsorbate_molecule</span><span class="p">(</span><span class="n">adsorbate</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">ads</span><span class="p">:</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s1">&#39;Nothing is added.&#39;</span><span class="p">)</span>
+            <span class="k">return</span>
+
+    <span class="n">bondpos</span> <span class="o">=</span> <span class="n">ads</span><span class="p">[</span><span class="n">surf_ind</span><span class="p">]</span><span class="o">.</span><span class="n">position</span>
+    <span class="n">ads</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="o">-</span><span class="n">bondpos</span><span class="p">)</span>
+    <span class="n">z</span> <span class="o">=</span> <span class="o">-</span><span class="mf">1.</span> <span class="k">if</span> <span class="n">adsorbate</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;CH&#39;</span><span class="p">,</span><span class="s1">&#39;NH&#39;</span><span class="p">,</span><span class="s1">&#39;OH&#39;</span><span class="p">,</span><span class="s1">&#39;SH&#39;</span><span class="p">]</span> <span class="k">else</span> <span class="mf">1.</span>
+    <span class="n">ads</span><span class="o">.</span><span class="n">rotate</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">([</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">0.</span><span class="p">,</span> <span class="n">z</span><span class="p">])</span> <span class="o">-</span> <span class="n">bondpos</span><span class="p">,</span> <span class="n">normal</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">tilt_angle</span> <span class="o">&gt;</span> <span class="mf">0.</span><span class="p">:</span>
+        <span class="n">pvec</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cross</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span> <span class="o">-</span> <span class="n">ads</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">position</span><span class="p">,</span> <span class="n">normal</span><span class="p">)</span>
+        <span class="n">ads</span><span class="o">.</span><span class="n">rotate</span><span class="p">(</span><span class="n">tilt_angle</span><span class="p">,</span> <span class="n">pvec</span><span class="p">,</span> <span class="n">center</span><span class="o">=</span><span class="n">ads</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">position</span><span class="p">)</span>
+
+<span class="c1">#     if adsorbate not in adsorbate_list:</span>
+<span class="c1">#         # Always sort the indices the same order as the input symbol.</span>
+<span class="c1">#         # This is a naive sorting which might cause H in wrong order.</span>
+<span class="c1">#         # Please sort your own adsorbate atoms by reindexing as has</span>
+<span class="c1">#         # been done in the adsorbate_molecule function in acat.settings.</span>
+<span class="c1">#         symout = list(Formula(adsorbate))</span>
+<span class="c1">#         symin = list(ads.symbols)</span>
+<span class="c1">#         newids = []</span>
+<span class="c1">#         for elt in symout:</span>
+<span class="c1">#             idx = symin.index(elt)</span>
+<span class="c1">#             newids.append(idx)</span>
+<span class="c1">#             symin[idx] = None</span>
+<span class="c1">#         ads = ads[newids]</span>
+    <span class="k">if</span> <span class="n">orientation</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">orientation</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">orientation</span><span class="p">)</span>
+        <span class="n">oripos</span> <span class="o">=</span> <span class="nb">next</span><span class="p">((</span><span class="n">a</span><span class="o">.</span><span class="n">position</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">ads</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span> <span class="k">if</span>
+                       <span class="n">a</span><span class="o">.</span><span class="n">symbol</span> <span class="o">!=</span> <span class="s1">&#39;H&#39;</span><span class="p">),</span> <span class="n">ads</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">position</span><span class="p">)</span>
+
+        <span class="n">v1</span> <span class="o">=</span> <span class="n">get_rejection_between</span><span class="p">(</span><span class="n">oripos</span> <span class="o">-</span> <span class="n">bondpos</span><span class="p">,</span> <span class="n">normal</span><span class="p">)</span>
+        <span class="n">v2</span> <span class="o">=</span> <span class="n">get_rejection_between</span><span class="p">(</span><span class="n">orientation</span><span class="p">,</span> <span class="n">normal</span><span class="p">)</span>
+        <span class="n">theta</span> <span class="o">=</span> <span class="n">get_angle_between</span><span class="p">(</span><span class="n">v1</span><span class="p">,</span> <span class="n">v2</span><span class="p">)</span>
+
+        <span class="c1"># Flip the sign of the angle if the result is not the closest</span>
+        <span class="n">rm_p</span> <span class="o">=</span> <span class="n">get_rodrigues_rotation_matrix</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="n">normal</span><span class="p">,</span> <span class="n">angle</span><span class="o">=</span><span class="n">theta</span><span class="p">)</span>
+        <span class="n">rm_n</span> <span class="o">=</span> <span class="n">get_rodrigues_rotation_matrix</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="n">normal</span><span class="p">,</span> <span class="n">angle</span><span class="o">=-</span><span class="n">theta</span><span class="p">)</span>
+        <span class="n">npos_p</span><span class="p">,</span> <span class="n">npos_n</span> <span class="o">=</span> <span class="n">rm_p</span> <span class="o">@</span> <span class="n">oripos</span><span class="p">,</span> <span class="n">rm_n</span> <span class="o">@</span> <span class="n">oripos</span>
+        <span class="n">nbpos_p</span> <span class="o">=</span> <span class="n">npos_p</span> <span class="o">+</span> <span class="n">pos</span> <span class="o">-</span> <span class="n">bondpos</span>
+        <span class="n">nbpos_n</span> <span class="o">=</span> <span class="n">npos_n</span> <span class="o">+</span> <span class="n">pos</span> <span class="o">-</span> <span class="n">bondpos</span>
+        <span class="n">d_p</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">nbpos_p</span> <span class="o">-</span> <span class="n">pos</span> <span class="o">-</span> <span class="n">orientation</span><span class="p">)</span>
+        <span class="n">d_n</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">nbpos_n</span> <span class="o">-</span> <span class="n">pos</span> <span class="o">-</span> <span class="n">orientation</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">d_p</span> <span class="o">&lt;=</span> <span class="n">d_n</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">ads</span><span class="p">:</span>
+                <span class="n">a</span><span class="o">.</span><span class="n">position</span> <span class="o">=</span> <span class="n">rm_p</span> <span class="o">@</span> <span class="n">a</span><span class="o">.</span><span class="n">position</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">ads</span><span class="p">:</span>
+                <span class="n">a</span><span class="o">.</span><span class="n">position</span> <span class="o">=</span> <span class="n">rm_n</span> <span class="o">@</span> <span class="n">a</span><span class="o">.</span><span class="n">position</span>
+
+    <span class="n">ads</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="n">pos</span> <span class="o">-</span> <span class="n">bondpos</span><span class="p">)</span>
+    <span class="n">atoms</span> <span class="o">+=</span> <span class="n">ads</span>
+    <span class="k">if</span> <span class="n">ads</span><span class="o">.</span><span class="n">get_chemical_formula</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;H2&#39;</span><span class="p">:</span>
+        <span class="n">shift</span> <span class="o">=</span> <span class="p">(</span><span class="n">atoms</span><span class="o">.</span><span class="n">positions</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span> <span class="o">-</span> <span class="n">atoms</span><span class="o">.</span><span class="n">positions</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span> <span class="o">/</span> <span class="mi">2</span>
+        <span class="n">atoms</span><span class="o">.</span><span class="n">positions</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">:,:]</span> <span class="o">+=</span> <span class="n">shift</span></div>
+
+<div class="viewcode-block" id="place_adsorbate"><a class="viewcode-back" href="../../source/pynta.html#pynta.mol.place_adsorbate">[docs]</a><span class="k">def</span> <span class="nf">place_adsorbate</span><span class="p">(</span><span class="n">ads</span><span class="p">,</span><span class="n">slab</span><span class="p">,</span><span class="n">atom_surf_inds</span><span class="p">,</span><span class="n">sites</span><span class="p">,</span><span class="n">metal</span><span class="p">):</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">atom_surf_inds</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">geo</span> <span class="o">=</span> <span class="n">slab</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">h</span> <span class="o">=</span> <span class="n">get_site_bond_length</span><span class="p">(</span><span class="n">sites</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;site&quot;</span><span class="p">],</span><span class="n">ads</span><span class="o">.</span><span class="n">get_chemical_symbols</span><span class="p">()[</span><span class="n">atom_surf_inds</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span><span class="n">metal</span><span class="p">)</span>
+        <span class="n">add_adsorbate_to_site</span><span class="p">(</span><span class="n">geo</span><span class="p">,</span> <span class="n">ads</span><span class="p">,</span> <span class="n">atom_surf_inds</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">sites</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">height</span><span class="o">=</span><span class="n">h</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">geo</span><span class="p">,</span><span class="n">h</span><span class="p">,</span><span class="kc">None</span>
+    <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">atom_surf_inds</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="n">geo</span> <span class="o">=</span> <span class="n">slab</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">h1</span> <span class="o">=</span> <span class="n">get_site_bond_length</span><span class="p">(</span><span class="n">sites</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;site&quot;</span><span class="p">],</span><span class="n">ads</span><span class="o">.</span><span class="n">get_chemical_symbols</span><span class="p">()[</span><span class="n">atom_surf_inds</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span><span class="n">metal</span><span class="p">)</span>
+        <span class="n">h2</span> <span class="o">=</span> <span class="n">get_site_bond_length</span><span class="p">(</span><span class="n">sites</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s2">&quot;site&quot;</span><span class="p">],</span><span class="n">ads</span><span class="o">.</span><span class="n">get_chemical_symbols</span><span class="p">()[</span><span class="n">atom_surf_inds</span><span class="p">[</span><span class="mi">1</span><span class="p">]],</span><span class="n">metal</span><span class="p">)</span>
+        <span class="n">ori</span> <span class="o">=</span> <span class="n">get_mic</span><span class="p">(</span><span class="n">sites</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;position&#39;</span><span class="p">],</span> <span class="n">sites</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s1">&#39;position&#39;</span><span class="p">],</span> <span class="n">geo</span><span class="o">.</span><span class="n">cell</span><span class="p">)</span>
+        <span class="n">add_adsorbate_to_site</span><span class="p">(</span><span class="n">geo</span><span class="p">,</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">ads</span><span class="p">),</span> <span class="n">atom_surf_inds</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">sites</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">height</span><span class="o">=</span><span class="n">h1</span><span class="p">,</span> <span class="n">orientation</span><span class="o">=</span><span class="n">ori</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">geo</span><span class="o">.</span><span class="n">positions</span><span class="p">)</span><span class="o">.</span><span class="n">any</span><span class="p">():</span> <span class="c1">#if nans just ignore orientation and let it optimize</span>
+            <span class="n">geo</span> <span class="o">=</span> <span class="n">slab</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            <span class="n">add_adsorbate_to_site</span><span class="p">(</span><span class="n">geo</span><span class="p">,</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">ads</span><span class="p">),</span> <span class="n">atom_surf_inds</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">sites</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">height</span><span class="o">=</span><span class="n">h1</span><span class="p">,</span> <span class="n">orientation</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">geo</span><span class="p">,</span><span class="n">h1</span><span class="p">,</span><span class="n">h2</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span></div>
+
+<div class="viewcode-block" id="generate_unique_site_additions"><a class="viewcode-back" href="../../source/pynta.html#pynta.mol.generate_unique_site_additions">[docs]</a><span class="k">def</span> <span class="nf">generate_unique_site_additions</span><span class="p">(</span><span class="n">geo</span><span class="p">,</span><span class="n">cas</span><span class="p">,</span><span class="n">nslab</span><span class="p">,</span><span class="n">site_bond_params_list</span><span class="o">=</span><span class="p">[],</span><span class="n">sites_list</span><span class="o">=</span><span class="p">[]):</span>
+    <span class="n">nads</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">geo</span><span class="p">)</span> <span class="o">-</span> <span class="n">nslab</span>
+    <span class="c1">#label sites with unique noble gas atoms</span>
+    <span class="n">he</span> <span class="o">=</span> <span class="n">Atoms</span><span class="p">(</span><span class="s1">&#39;He&#39;</span><span class="p">,</span><span class="n">positions</span><span class="o">=</span><span class="p">[[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],])</span>
+    <span class="n">ne</span> <span class="o">=</span> <span class="n">Atoms</span><span class="p">(</span><span class="s1">&#39;Ne&#39;</span><span class="p">,</span><span class="n">positions</span><span class="o">=</span><span class="p">[[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],])</span>
+    <span class="n">ar</span> <span class="o">=</span> <span class="n">Atoms</span><span class="p">(</span><span class="s1">&#39;Ar&#39;</span><span class="p">,</span><span class="n">positions</span><span class="o">=</span><span class="p">[[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],])</span>
+    <span class="n">kr</span> <span class="o">=</span> <span class="n">Atoms</span><span class="p">(</span><span class="s1">&#39;Kr&#39;</span><span class="p">,</span><span class="n">positions</span><span class="o">=</span><span class="p">[[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],])</span>
+    <span class="n">xe</span> <span class="o">=</span> <span class="n">Atoms</span><span class="p">(</span><span class="s1">&#39;Xe&#39;</span><span class="p">,</span><span class="n">positions</span><span class="o">=</span><span class="p">[[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],])</span>
+    <span class="n">rn</span> <span class="o">=</span> <span class="n">Atoms</span><span class="p">(</span><span class="s1">&#39;Rn&#39;</span><span class="p">,</span><span class="n">positions</span><span class="o">=</span><span class="p">[[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],])</span>
+    <span class="n">site_tags</span> <span class="o">=</span> <span class="p">[</span><span class="n">he</span><span class="p">,</span><span class="n">ne</span><span class="p">,</span><span class="n">ar</span><span class="p">,</span><span class="n">kr</span><span class="p">,</span><span class="n">xe</span><span class="p">,</span><span class="n">rn</span><span class="p">]</span>
+    <span class="n">tag</span> <span class="o">=</span> <span class="n">site_tags</span><span class="p">[</span><span class="n">nads</span><span class="p">]</span>
+    <span class="n">adcov</span> <span class="o">=</span> <span class="n">SlabAdsorbateCoverage</span><span class="p">(</span><span class="n">geo</span><span class="p">,</span><span class="n">adsorption_sites</span><span class="o">=</span><span class="n">cas</span><span class="p">)</span>
+    <span class="n">sites</span> <span class="o">=</span> <span class="n">adcov</span><span class="o">.</span><span class="n">get_sites</span><span class="p">()</span>
+    <span class="n">unocc</span> <span class="o">=</span> <span class="p">[</span><span class="n">site</span> <span class="k">for</span> <span class="n">site</span> <span class="ow">in</span> <span class="n">sites</span> <span class="k">if</span> <span class="n">site</span><span class="p">[</span><span class="s2">&quot;occupied&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="kc">False</span><span class="p">]</span>
+
+    <span class="n">site_bond_params_lists</span> <span class="o">=</span> <span class="p">[</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">site_bond_params_list</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">unocc</span><span class="p">))]</span>
+    <span class="n">sites_lists</span> <span class="o">=</span> <span class="p">[</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">sites_list</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">unocc</span><span class="p">))]</span>
+
+    <span class="n">geoms</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">site</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">unocc</span><span class="p">):</span>
+        <span class="n">geom</span> <span class="o">=</span> <span class="n">geo</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">add_adsorbate_to_site</span><span class="p">(</span><span class="n">geom</span><span class="p">,</span><span class="n">adsorbate</span><span class="o">=</span><span class="n">tag</span><span class="p">,</span><span class="n">surf_ind</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span><span class="n">site</span><span class="o">=</span><span class="n">site</span><span class="p">,</span><span class="n">height</span><span class="o">=</span><span class="mf">1.5</span><span class="p">)</span>
+        <span class="n">pos</span> <span class="o">=</span> <span class="n">site</span><span class="p">[</span><span class="s2">&quot;position&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;site_pos&quot;</span><span class="p">:</span> <span class="n">pos</span><span class="p">,</span><span class="s2">&quot;ind&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;k&quot;</span><span class="p">:</span> <span class="mf">100.0</span><span class="p">,</span> <span class="s2">&quot;deq&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">}</span> <span class="c1">#just the site position, will shift up later</span>
+        <span class="n">site_bond_params_lists</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+        <span class="n">sites_lists</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">site</span><span class="p">)</span>
+        <span class="n">geoms</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">geom</span><span class="p">)</span>
+
+    <span class="n">indclusters</span> <span class="o">=</span> <span class="n">get_unique_sym_struct_index_clusters</span><span class="p">(</span><span class="n">geoms</span><span class="p">)</span>
+
+    <span class="n">inds</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">cluster</span> <span class="ow">in</span> <span class="n">indclusters</span><span class="p">:</span> <span class="c1">#choose symmetric geometries closer to center of cell</span>
+        <span class="n">min_dist</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span>
+        <span class="n">indout</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">for</span> <span class="n">ind</span> <span class="ow">in</span> <span class="n">cluster</span><span class="p">:</span>
+            <span class="n">d</span> <span class="o">=</span> <span class="n">get_adsorbate_dist_from_center</span><span class="p">(</span><span class="n">geoms</span><span class="p">[</span><span class="n">ind</span><span class="p">],</span><span class="n">nslab</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">d</span> <span class="o">&lt;</span> <span class="n">min_dist</span><span class="p">:</span>
+                <span class="n">indout</span> <span class="o">=</span> <span class="n">ind</span>
+                <span class="n">min_dist</span> <span class="o">=</span> <span class="n">d</span>
+        <span class="n">inds</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">indout</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="p">[</span><span class="n">geoms</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span> <span class="k">for</span> <span class="n">ind</span> <span class="ow">in</span> <span class="n">inds</span><span class="p">],</span> <span class="p">[</span><span class="n">site_bond_params_lists</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span> <span class="k">for</span> <span class="n">ind</span> <span class="ow">in</span> <span class="n">inds</span><span class="p">],</span> <span class="p">[</span><span class="n">sites_lists</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span> <span class="k">for</span> <span class="n">ind</span> <span class="ow">in</span> <span class="n">inds</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="get_adsorbate_dist_from_center"><a class="viewcode-back" href="../../source/pynta.html#pynta.mol.get_adsorbate_dist_from_center">[docs]</a><span class="k">def</span> <span class="nf">get_adsorbate_dist_from_center</span><span class="p">(</span><span class="n">atoms</span><span class="p">,</span><span class="n">nslab</span><span class="p">):</span>
+    <span class="n">cell_center</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">atoms</span><span class="o">.</span><span class="n">cell</span><span class="p">)</span><span class="o">/</span><span class="mf">3.5</span>
+    <span class="n">adatoms</span> <span class="o">=</span> <span class="n">atoms</span><span class="p">[</span><span class="n">nslab</span><span class="p">:]</span>
+    <span class="n">adcenter</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">([</span><span class="n">a</span><span class="o">.</span><span class="n">position</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">adatoms</span><span class="p">])</span><span class="o">/</span><span class="nb">len</span><span class="p">(</span><span class="n">adatoms</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">adcenter</span> <span class="o">-</span> <span class="n">cell_center</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="get_edges"><a class="viewcode-back" href="../../source/pynta.html#pynta.mol.get_edges">[docs]</a><span class="k">def</span> <span class="nf">get_edges</span><span class="p">(</span><span class="n">slab_path</span><span class="p">,</span> <span class="n">find_surface</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39; Get adsorption edges</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ___________</span>
+<span class="sd">    find_surface : bool</span>
+<span class="sd">        specify whether to include surface or not</span>
+<span class="sd">        default = False</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    ________</span>
+<span class="sd">    edges : list[tuple]</span>
+<span class="sd">        adsobrtion edges</span>
+<span class="sd">    surface : numpy.ndarray</span>
+<span class="sd">        an array with tags describing:</span>
+<span class="sd">        top surface atoms (1)</span>
+<span class="sd">        bottom surface (-1)</span>
+<span class="sd">        and bulk atoms (0)</span>
+<span class="sd">        Atoms with tags &#39;1&#39; are considered as the possible binding spots</span>
+
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="c1"># read slab as an Atom object</span>
+    <span class="n">slab_atom</span> <span class="o">=</span> <span class="n">read</span><span class="p">(</span><span class="n">slab_path</span><span class="p">)</span>
+
+    <span class="c1"># If the Atoms object is periodic, we need to check connectivity</span>
+    <span class="c1"># across the unit cell boundary as well.</span>
+    <span class="n">tvecs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">0.</span><span class="p">,</span> <span class="mf">0.</span><span class="p">]])</span>
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">slab_atom</span><span class="o">.</span><span class="n">pbc</span><span class="p">):</span>
+        <span class="n">cell</span> <span class="o">=</span> <span class="n">slab_atom</span><span class="o">.</span><span class="n">cell</span>
+        <span class="c1"># We are looking for atoms that are at most 2.5 times the</span>
+        <span class="c1"># greatest covalent radius of all atoms in the system, so we</span>
+        <span class="c1"># limit the number of periodic images we consider in each</span>
+        <span class="c1"># direction to those that are within this cutoff radius of any</span>
+        <span class="c1"># point on the face of the unit cell</span>
+        <span class="n">cutoff</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">covalent_radii</span><span class="p">[</span><span class="n">slab_atom</span><span class="o">.</span><span class="n">numbers</span><span class="p">])</span> <span class="o">*</span> <span class="mf">2.5</span>
+
+        <span class="c1"># If you want to understand the code below, read the `find_mic`</span>
+        <span class="c1"># code in ASE, located at ase/geometry/geometry.py</span>
+        <span class="n">latt_len</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">((</span><span class="n">cell</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+        <span class="n">V</span> <span class="o">=</span> <span class="n">slab_atom</span><span class="o">.</span><span class="n">get_volume</span><span class="p">()</span>
+        <span class="n">padding</span> <span class="o">=</span> <span class="n">slab_atom</span><span class="o">.</span><span class="n">pbc</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span>
+            <span class="n">cutoff</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">latt_len</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">V</span> <span class="o">*</span> <span class="n">latt_len</span><span class="p">)),</span>
+            <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span>
+        <span class="p">)</span>
+        <span class="n">offsets</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mgrid</span><span class="p">[</span><span class="o">-</span><span class="n">padding</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span><span class="n">padding</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span>
+                           <span class="o">-</span><span class="n">padding</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span><span class="n">padding</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span>
+                           <span class="o">-</span><span class="n">padding</span><span class="p">[</span><span class="mi">2</span><span class="p">]:</span><span class="n">padding</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">T</span>
+        <span class="n">tvecs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">offsets</span><span class="p">,</span> <span class="n">cell</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+
+    <span class="n">edges</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="c1"># pairvecs = np.ndarray(0)</span>
+    <span class="n">pairvecs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">slab_atom</span><span class="o">.</span><span class="n">positions</span><span class="p">)</span>
+
+    <span class="c1"># if find_surface:</span>
+    <span class="c1">#     pairvecs = np.zeros_like(slab_atom.positions)</span>
+    <span class="c1"># else:</span>
+    <span class="c1">#     pairvecs = np.ndarray(0)</span>
+
+    <span class="k">for</span> <span class="n">atomi</span> <span class="ow">in</span> <span class="n">slab_atom</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">atomj</span> <span class="ow">in</span> <span class="n">slab_atom</span><span class="p">:</span>
+            <span class="n">i</span> <span class="o">=</span> <span class="n">atomi</span><span class="o">.</span><span class="n">index</span>
+            <span class="n">j</span> <span class="o">=</span> <span class="n">atomj</span><span class="o">.</span><span class="n">index</span>
+            <span class="c1"># Like above, consider only bonds where j &gt;= i. Note, we do</span>
+            <span class="c1"># need to consider bonds where j == i because of periodic</span>
+            <span class="c1"># boundary conditions.</span>
+            <span class="k">if</span> <span class="n">j</span> <span class="o">&lt;</span> <span class="n">i</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="c1"># 1.25 times the sum of the covalent radii was chosen based</span>
+            <span class="c1"># on trial and error. Too small, and you miss neighbors.</span>
+            <span class="c1"># Too big, and you start including next-nearest-neighbors.</span>
+            <span class="n">cutoff</span> <span class="o">=</span> <span class="mf">1.25</span> <span class="o">*</span> <span class="p">(</span>
+                <span class="n">covalent_radii</span><span class="p">[</span><span class="n">atomi</span><span class="o">.</span><span class="n">number</span><span class="p">]</span> <span class="o">+</span> <span class="n">covalent_radii</span><span class="p">[</span><span class="n">atomj</span><span class="o">.</span><span class="n">number</span><span class="p">]</span>
+            <span class="p">)</span>
+            <span class="c1"># xij is the direct displacement vector in the central unit</span>
+            <span class="c1"># cell.</span>
+            <span class="n">xij</span> <span class="o">=</span> <span class="n">atomj</span><span class="o">.</span><span class="n">position</span> <span class="o">-</span> <span class="n">atomi</span><span class="o">.</span><span class="n">position</span>
+            <span class="n">nbonds</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="c1"># Loop over all neighboring unit cells</span>
+            <span class="k">for</span> <span class="n">tvec</span> <span class="ow">in</span> <span class="n">tvecs</span><span class="p">:</span>
+                <span class="c1"># ...including the central unit cell. If i == j, then</span>
+                <span class="c1"># explicitly skip the central unit cell.</span>
+                <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="n">j</span> <span class="ow">and</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">tvec</span> <span class="o">==</span> <span class="p">[</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">0.</span><span class="p">,</span> <span class="mf">0.</span><span class="p">]):</span>
+                    <span class="k">continue</span>
+                <span class="c1"># Count up the number of times i bonds to j via pbc</span>
+                <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">xij</span> <span class="o">+</span> <span class="n">tvec</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">cutoff</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">find_surface</span><span class="p">:</span>
+                        <span class="n">dx</span> <span class="o">=</span> <span class="n">xij</span> <span class="o">+</span> <span class="n">tvec</span>
+                        <span class="n">dx</span> <span class="o">/=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">dx</span><span class="p">)</span>
+                        <span class="n">pairvecs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">-=</span> <span class="n">dx</span>
+                        <span class="n">pairvecs</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">+=</span> <span class="n">dx</span>
+                    <span class="n">nbonds</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="c1"># CatKit uses NetworkX &quot;MultiGraph&quot;s for periodic systems.</span>
+            <span class="c1"># I&#39;m not entirely sure how to interpret the edges for a</span>
+            <span class="c1"># multigraph, but this is how CatKit wants multiple edges</span>
+            <span class="c1"># between the same two atoms to be specified.</span>
+            <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nbonds</span><span class="p">):</span>
+                <span class="n">edges</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">k</span><span class="p">))</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">find_surface</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">edges</span>
+
+    <span class="n">surface</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">slab_atom</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">pairvec</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">pairvecs</span><span class="p">):</span>
+        <span class="c1"># Big pairvec means highly asymmetrical atoms, which</span>
+        <span class="c1"># implies that it is near or at a surface</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">pairvec</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mf">1.</span><span class="p">:</span>
+            <span class="c1"># Use sign to determine whether it is at the top or</span>
+            <span class="c1"># the bottom of the slab</span>
+            <span class="n">surface</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sign</span><span class="p">(</span><span class="n">pairvec</span><span class="p">[</span><span class="mi">2</span><span class="p">]))</span>
+    <span class="k">return</span> <span class="n">edges</span><span class="p">,</span> <span class="n">surface</span></div>
+
+<div class="viewcode-block" id="get_labeled_bonds"><a class="viewcode-back" href="../../source/pynta.html#pynta.mol.get_labeled_bonds">[docs]</a><span class="k">def</span> <span class="nf">get_labeled_bonds</span><span class="p">(</span><span class="n">mol</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    generate a list of all Bonds between labeled atoms in the Molecule object</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">labeled_atoms</span> <span class="o">=</span> <span class="n">mol</span><span class="o">.</span><span class="n">get_all_labeled_atoms</span><span class="p">()</span>
+
+    <span class="n">bonds</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">label</span><span class="p">,</span><span class="n">atm</span> <span class="ow">in</span> <span class="n">labeled_atoms</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">bonds</span><span class="p">[</span><span class="n">label</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">bds</span> <span class="o">=</span> <span class="n">mol</span><span class="o">.</span><span class="n">get_bonds</span><span class="p">(</span><span class="n">atm</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">bd</span> <span class="ow">in</span> <span class="n">bds</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">bd</span><span class="o">.</span><span class="n">atom1</span> <span class="ow">is</span> <span class="n">atm</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">bd</span><span class="o">.</span><span class="n">atom2</span><span class="o">.</span><span class="n">label</span><span class="p">:</span>
+                    <span class="n">bonds</span><span class="p">[</span><span class="n">label</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">bd</span><span class="o">.</span><span class="n">atom2</span><span class="o">.</span><span class="n">label</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">bd</span><span class="o">.</span><span class="n">atom1</span><span class="o">.</span><span class="n">label</span><span class="p">:</span>
+                    <span class="n">bonds</span><span class="p">[</span><span class="n">label</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">bd</span><span class="o">.</span><span class="n">atom1</span><span class="o">.</span><span class="n">label</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">bonds</span></div>
+
+<div class="viewcode-block" id="get_broken_formed_bonds"><a class="viewcode-back" href="../../source/pynta.html#pynta.mol.get_broken_formed_bonds">[docs]</a><span class="k">def</span> <span class="nf">get_broken_formed_bonds</span><span class="p">(</span><span class="n">reactant</span><span class="p">,</span><span class="n">product</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    compares the reactant and product structures assuming bonds only form and break between labeled atoms</span>
+<span class="sd">    returns frozensets of pairs of labels associated with atoms whose bond breaks or is formed during the reaction</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">reactant_labeled_bonds</span> <span class="o">=</span> <span class="n">get_labeled_bonds</span><span class="p">(</span><span class="n">reactant</span><span class="p">)</span>
+    <span class="n">product_labeled_bonds</span> <span class="o">=</span> <span class="n">get_labeled_bonds</span><span class="p">(</span><span class="n">product</span><span class="p">)</span>
+    <span class="n">broken_bonds</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+    <span class="n">formed_bonds</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">label</span><span class="p">,</span><span class="n">rlabels</span> <span class="ow">in</span> <span class="n">reactant_labeled_bonds</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">label</span> <span class="ow">in</span> <span class="n">product_labeled_bonds</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">plabels</span> <span class="o">=</span> <span class="n">product_labeled_bonds</span><span class="p">[</span><span class="n">label</span><span class="p">]</span>
+            <span class="n">missing_from_p</span> <span class="o">=</span> <span class="p">[</span><span class="n">label</span> <span class="k">for</span> <span class="n">label</span> <span class="ow">in</span> <span class="n">rlabels</span> <span class="k">if</span> <span class="n">label</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">plabels</span><span class="p">]</span>
+            <span class="n">missing_from_r</span> <span class="o">=</span> <span class="p">[</span><span class="n">label</span> <span class="k">for</span> <span class="n">label</span> <span class="ow">in</span> <span class="n">plabels</span> <span class="k">if</span> <span class="n">label</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">rlabels</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">label2</span> <span class="ow">in</span> <span class="n">missing_from_p</span><span class="p">:</span>
+                <span class="n">broken_bonds</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="nb">frozenset</span><span class="p">((</span><span class="n">label</span><span class="p">,</span><span class="n">label2</span><span class="p">)))</span>
+            <span class="k">for</span> <span class="n">label2</span> <span class="ow">in</span> <span class="n">missing_from_r</span><span class="p">:</span>
+                <span class="n">formed_bonds</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="nb">frozenset</span><span class="p">((</span><span class="n">label</span><span class="p">,</span><span class="n">label2</span><span class="p">)))</span>
+
+    <span class="k">return</span> <span class="n">broken_bonds</span><span class="p">,</span><span class="n">formed_bonds</span></div>
+
+<div class="viewcode-block" id="get_template_mol_map"><a class="viewcode-back" href="../../source/pynta.html#pynta.mol.get_template_mol_map">[docs]</a><span class="k">def</span> <span class="nf">get_template_mol_map</span><span class="p">(</span><span class="n">template</span><span class="p">,</span><span class="n">mols</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    template is the combined labeled Molecule object</span>
+<span class="sd">    find dictionary mapping indices of the template to the molecule objects of interest</span>
+<span class="sd">    output is a list with each item coresponding to a Molecule object in mols the dictionary</span>
+<span class="sd">    maps indices of the template to indices of the corresponding mol object</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">tempmol_mol_map</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">tempmols</span> <span class="o">=</span> <span class="p">[</span><span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">template</span><span class="o">.</span><span class="n">split</span><span class="p">()</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">x</span><span class="o">.</span><span class="n">is_surface_site</span><span class="p">()]</span>
+    <span class="k">for</span> <span class="n">tempmol</span> <span class="ow">in</span> <span class="n">tempmols</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">tempmol</span><span class="o">.</span><span class="n">multiplicity</span> <span class="o">==</span> <span class="o">-</span><span class="mi">187</span><span class="p">:</span> <span class="c1">#handle surface molecules</span>
+            <span class="n">tempmol</span><span class="o">.</span><span class="n">multiplicity</span> <span class="o">=</span> <span class="n">tempmol</span><span class="o">.</span><span class="n">get_radical_count</span><span class="p">()</span> <span class="o">+</span> <span class="mi">1</span>
+
+    <span class="n">ordered_tempmols</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">mol</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">mols</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">j</span><span class="p">,</span><span class="n">tempmol</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">tempmols</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">tempmol</span><span class="o">.</span><span class="n">is_isomorphic</span><span class="p">(</span><span class="n">mol</span><span class="p">,</span><span class="n">save_order</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+                <span class="n">mapv</span> <span class="o">=</span> <span class="n">tempmol</span><span class="o">.</span><span class="n">find_isomorphism</span><span class="p">(</span><span class="n">mol</span><span class="p">,</span><span class="n">save_order</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                <span class="n">indmap</span> <span class="o">=</span> <span class="p">{</span><span class="n">tempmol</span><span class="o">.</span><span class="n">atoms</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">key</span><span class="p">):</span> <span class="n">mol</span><span class="o">.</span><span class="n">atoms</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">val</span><span class="p">)</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span><span class="n">val</span> <span class="ow">in</span> <span class="n">mapv</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+                <span class="n">tempmol_mol_map</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">indmap</span><span class="p">)</span>
+                <span class="n">ordered_tempmols</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tempmol</span><span class="p">)</span>
+                <span class="n">tempmols</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">j</span><span class="p">)</span>
+                <span class="k">break</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">mol</span><span class="o">.</span><span class="n">to_adjacency_list</span><span class="p">())</span>
+            <span class="k">for</span> <span class="n">tempmol</span> <span class="ow">in</span> <span class="n">tempmols</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="n">tempmol</span><span class="o">.</span><span class="n">to_adjacency_list</span><span class="p">())</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;mapping could not be found&quot;</span><span class="p">)</span>
+
+    <span class="n">temp_tempmol_map</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">tempmol</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">ordered_tempmols</span><span class="p">):</span>
+        <span class="n">grptempmol</span> <span class="o">=</span> <span class="n">tempmol</span><span class="o">.</span><span class="n">to_group</span><span class="p">()</span>
+        <span class="n">grptempmol</span><span class="o">.</span><span class="n">multiplicity</span> <span class="o">=</span> <span class="p">[</span><span class="n">template</span><span class="o">.</span><span class="n">multiplicity</span><span class="p">]</span>
+        <span class="n">mapv</span> <span class="o">=</span> <span class="n">template</span><span class="o">.</span><span class="n">find_subgraph_isomorphisms</span><span class="p">(</span><span class="n">grptempmol</span><span class="p">,</span><span class="n">save_order</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">maps</span> <span class="o">=</span> <span class="n">get_nonintersectingkeys_maps</span><span class="p">(</span><span class="n">mapv</span><span class="p">)</span>
+        <span class="n">c</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">m</span> <span class="o">=</span> <span class="n">maps</span><span class="p">[</span><span class="n">c</span><span class="p">]</span>
+        <span class="n">indmap</span> <span class="o">=</span> <span class="p">{</span><span class="n">template</span><span class="o">.</span><span class="n">atoms</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">key</span><span class="p">):</span> <span class="n">grptempmol</span><span class="o">.</span><span class="n">atoms</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">val</span><span class="p">)</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span><span class="n">val</span> <span class="ow">in</span> <span class="n">m</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+
+        <span class="k">while</span> <span class="nb">set</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">indmap</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span> <span class="ow">in</span> <span class="p">[</span><span class="nb">set</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">v</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">temp_tempmol_map</span><span class="p">]:</span>
+            <span class="n">c</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="n">m</span> <span class="o">=</span> <span class="n">maps</span><span class="p">[</span><span class="n">c</span><span class="p">]</span>
+            <span class="n">indmap</span> <span class="o">=</span> <span class="p">{</span><span class="n">template</span><span class="o">.</span><span class="n">atoms</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">key</span><span class="p">):</span> <span class="n">grptempmol</span><span class="o">.</span><span class="n">atoms</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">val</span><span class="p">)</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span><span class="n">val</span> <span class="ow">in</span> <span class="n">m</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+        <span class="n">temp_tempmol_map</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">indmap</span><span class="p">)</span>
+
+    <span class="n">temp_mol_map</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">tempmol_mol_map</span><span class="p">)):</span>
+        <span class="n">d</span> <span class="o">=</span> <span class="p">{</span><span class="n">tind</span><span class="p">:</span> <span class="n">tempmol_mol_map</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">tmolind</span><span class="p">]</span> <span class="k">for</span> <span class="n">tind</span><span class="p">,</span><span class="n">tmolind</span> <span class="ow">in</span> <span class="n">temp_tempmol_map</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+        <span class="n">temp_mol_map</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">temp_mol_map</span></div>
+
+<div class="viewcode-block" id="get_nonintersectingkeys_maps"><a class="viewcode-back" href="../../source/pynta.html#pynta.mol.get_nonintersectingkeys_maps">[docs]</a><span class="k">def</span> <span class="nf">get_nonintersectingkeys_maps</span><span class="p">(</span><span class="n">maps</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    process the subgraph isomorphisms found to generate a list of valid maps</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">mvals_init</span> <span class="o">=</span> <span class="p">[</span><span class="nb">frozenset</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">maps</span><span class="p">]</span>
+    <span class="n">mvals_unique</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">mvals_init</span><span class="p">))</span>
+    <span class="n">valid_map_inds</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">mval</span> <span class="ow">in</span> <span class="n">mvals_unique</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">inds</span> <span class="ow">in</span> <span class="n">valid_map_inds</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">mval</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">inds</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">frozenset</span><span class="p">():</span>
+                <span class="k">break</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">valid_map_inds</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">mval</span><span class="p">)</span>
+
+    <span class="n">inds</span> <span class="o">=</span> <span class="p">[</span><span class="n">mvals_init</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">mval</span><span class="p">)</span> <span class="k">for</span> <span class="n">mval</span> <span class="ow">in</span> <span class="n">valid_map_inds</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="p">[</span><span class="n">maps</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span> <span class="k">for</span> <span class="n">ind</span> <span class="ow">in</span> <span class="n">inds</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="ads_size"><a class="viewcode-back" href="../../source/pynta.html#pynta.mol.ads_size">[docs]</a><span class="k">def</span> <span class="nf">ads_size</span><span class="p">(</span><span class="n">mol</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    get number of atoms in the adsorbate part of the Molecule</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="n">mol</span><span class="o">.</span><span class="n">atoms</span><span class="p">)</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">mol</span><span class="o">.</span><span class="n">get_surface_sites</span><span class="p">())</span></div>
+
+<div class="viewcode-block" id="get_mol_index"><a class="viewcode-back" href="../../source/pynta.html#pynta.mol.get_mol_index">[docs]</a><span class="k">def</span> <span class="nf">get_mol_index</span><span class="p">(</span><span class="n">ind</span><span class="p">,</span><span class="n">template_mol_map</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    ind is the index in the template</span>
+<span class="sd">    first index corresponds to the molecule object</span>
+<span class="sd">    second index corresponds to the index in the molecule object</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">d</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">template_mol_map</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">ind</span> <span class="ow">in</span> <span class="n">d</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="k">return</span> <span class="p">(</span><span class="n">i</span><span class="p">,</span><span class="n">d</span><span class="p">[</span><span class="n">ind</span><span class="p">])</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span> <span class="c1">#surface_site</span></div>
+
+<div class="viewcode-block" id="get_ase_index"><a class="viewcode-back" href="../../source/pynta.html#pynta.mol.get_ase_index">[docs]</a><span class="k">def</span> <span class="nf">get_ase_index</span><span class="p">(</span><span class="n">ind</span><span class="p">,</span><span class="n">template_mol_map</span><span class="p">,</span><span class="n">molecule_to_gratom_maps</span><span class="p">,</span><span class="n">nslab</span><span class="p">,</span><span class="n">ads_sizes</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    get the index associated with the ase.Atoms object</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="n">nslab</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">d</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">template_mol_map</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">ind</span> <span class="ow">in</span> <span class="n">d</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="ow">and</span> <span class="n">d</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span> <span class="ow">in</span> <span class="n">molecule_to_gratom_maps</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="k">return</span> <span class="n">molecule_to_gratom_maps</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">d</span><span class="p">[</span><span class="n">ind</span><span class="p">]]</span><span class="o">+</span><span class="n">n</span>
+        <span class="n">n</span> <span class="o">+=</span> <span class="n">ads_sizes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span> <span class="c1">#surface site</span></div>
+
+<div class="viewcode-block" id="get_bond_lengths_sites"><a class="viewcode-back" href="../../source/pynta.html#pynta.mol.get_bond_lengths_sites">[docs]</a><span class="k">def</span> <span class="nf">get_bond_lengths_sites</span><span class="p">(</span><span class="n">mol</span><span class="p">,</span><span class="n">ads</span><span class="p">,</span><span class="n">atom_map</span><span class="p">,</span><span class="n">surf_atom_map</span><span class="p">,</span><span class="n">nslab</span><span class="p">,</span><span class="n">facet</span><span class="o">=</span><span class="s2">&quot;fcc111&quot;</span><span class="p">,</span><span class="n">metal</span><span class="o">=</span><span class="s2">&quot;Cu&quot;</span><span class="p">,</span><span class="n">cas</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    gets bond lengths and site information indexed to the Molecule object atoms</span>
+<span class="sd">    bond lengths is a matrix with the distances between all atoms that share bonds</span>
+<span class="sd">    site information is the atom index mapped to the site type</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">rev_atom_map</span> <span class="o">=</span> <span class="p">{</span><span class="n">value</span><span class="p">:</span> <span class="n">key</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span><span class="n">value</span> <span class="ow">in</span> <span class="n">atom_map</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span> <span class="c1">#map from mol to ads</span>
+    <span class="n">rev_surf_atom_map</span> <span class="o">=</span> <span class="p">{</span> <span class="n">value</span><span class="p">:</span> <span class="n">key</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span><span class="n">value</span> <span class="ow">in</span> <span class="n">surf_atom_map</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+
+    <span class="k">if</span> <span class="n">cas</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">cas</span> <span class="o">=</span> <span class="n">SlabAdsorptionSites</span><span class="p">(</span><span class="n">ads</span><span class="p">,</span><span class="n">facet</span><span class="p">,</span><span class="n">allow_6fold</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span><span class="n">composition_effect</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                            <span class="n">label_sites</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                            <span class="n">surrogate_metal</span><span class="o">=</span><span class="n">metal</span><span class="p">)</span>
+    <span class="n">adcov</span> <span class="o">=</span> <span class="n">SlabAdsorbateCoverage</span><span class="p">(</span><span class="n">ads</span><span class="p">,</span><span class="n">adsorption_sites</span><span class="o">=</span><span class="n">cas</span><span class="p">)</span>
+    <span class="n">occ</span> <span class="o">=</span> <span class="n">adcov</span><span class="o">.</span><span class="n">get_sites</span><span class="p">(</span><span class="n">occupied_only</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">surface_dict</span> <span class="o">=</span> <span class="p">[{</span><span class="s2">&quot;atom_index&quot;</span><span class="p">:</span><span class="n">x</span><span class="p">[</span><span class="s2">&quot;bonding_index&quot;</span><span class="p">]</span><span class="o">-</span><span class="n">nslab</span><span class="p">,</span> <span class="s2">&quot;site&quot;</span><span class="p">:</span><span class="n">x</span><span class="p">[</span><span class="s2">&quot;site&quot;</span><span class="p">],</span>
+                       <span class="s2">&quot;bond_length&quot;</span><span class="p">:</span><span class="n">x</span><span class="p">[</span><span class="s2">&quot;bond_length&quot;</span><span class="p">],</span> <span class="s2">&quot;position&quot;</span><span class="p">:</span><span class="n">x</span><span class="p">[</span><span class="s2">&quot;position&quot;</span><span class="p">]}</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">occ</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">occ</span><span class="p">)</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">surf_atom_map</span><span class="p">):</span> <span class="c1">#number of sites on geometry disagrees with surf_atom_map</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;occupational analysis in get_bond_lengths_sites failed&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">mol</span><span class="o">.</span><span class="n">to_adjacency_list</span><span class="p">())</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;expected </span><span class="si">{}</span><span class="s2"> sites&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">surf_atom_map</span><span class="p">)))</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;found </span><span class="si">{}</span><span class="s2"> sites&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">occ</span><span class="p">)))</span>
+        <span class="k">return</span> <span class="kc">None</span><span class="p">,</span><span class="kc">None</span><span class="p">,</span><span class="kc">None</span>
+
+    <span class="k">if</span> <span class="n">mol</span><span class="o">.</span><span class="n">contains_surface_site</span><span class="p">():</span>
+        <span class="n">ad</span> <span class="o">=</span> <span class="n">ads</span><span class="p">[</span><span class="n">nslab</span><span class="p">:]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">ad</span> <span class="o">=</span> <span class="n">ads</span>
+
+    <span class="n">bondlengths</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">mol</span><span class="o">.</span><span class="n">atoms</span><span class="p">),</span><span class="nb">len</span><span class="p">(</span><span class="n">mol</span><span class="o">.</span><span class="n">atoms</span><span class="p">)))</span>
+    <span class="n">sites</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+    <span class="n">sitelengths</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+
+    <span class="k">for</span> <span class="n">bond</span> <span class="ow">in</span> <span class="n">mol</span><span class="o">.</span><span class="n">get_all_edges</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">bond</span><span class="o">.</span><span class="n">atom1</span><span class="o">.</span><span class="n">is_surface_site</span><span class="p">():</span>
+            <span class="n">ind1</span> <span class="o">=</span> <span class="n">mol</span><span class="o">.</span><span class="n">atoms</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">bond</span><span class="o">.</span><span class="n">atom1</span><span class="p">)</span>
+            <span class="n">ind2</span> <span class="o">=</span> <span class="n">mol</span><span class="o">.</span><span class="n">atoms</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">bond</span><span class="o">.</span><span class="n">atom2</span><span class="p">)</span>
+            <span class="n">aind</span> <span class="o">=</span> <span class="n">rev_surf_atom_map</span><span class="p">[</span><span class="n">ind2</span><span class="p">]</span>
+            <span class="n">surfd</span> <span class="o">=</span> <span class="p">[</span><span class="n">s</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">surface_dict</span> <span class="k">if</span> <span class="n">s</span><span class="p">[</span><span class="s2">&quot;atom_index&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="n">aind</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">bondlengths</span><span class="p">[</span><span class="n">ind1</span><span class="p">,</span><span class="n">ind2</span><span class="p">]</span> <span class="o">=</span> <span class="n">surfd</span><span class="p">[</span><span class="s2">&quot;bond_length&quot;</span><span class="p">]</span>
+            <span class="n">bondlengths</span><span class="p">[</span><span class="n">ind2</span><span class="p">,</span><span class="n">ind1</span><span class="p">]</span> <span class="o">=</span> <span class="n">surfd</span><span class="p">[</span><span class="s2">&quot;bond_length&quot;</span><span class="p">]</span>
+            <span class="n">sites</span><span class="p">[</span><span class="n">ind1</span><span class="p">]</span> <span class="o">=</span> <span class="n">surfd</span><span class="p">[</span><span class="s2">&quot;site&quot;</span><span class="p">]</span>
+            <span class="n">sitelengths</span><span class="p">[</span><span class="n">ind1</span><span class="p">]</span> <span class="o">=</span> <span class="n">surfd</span><span class="p">[</span><span class="s2">&quot;bond_length&quot;</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="n">bond</span><span class="o">.</span><span class="n">atom2</span><span class="o">.</span><span class="n">is_surface_site</span><span class="p">():</span>
+            <span class="n">ind1</span> <span class="o">=</span> <span class="n">mol</span><span class="o">.</span><span class="n">atoms</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">bond</span><span class="o">.</span><span class="n">atom1</span><span class="p">)</span>
+            <span class="n">ind2</span> <span class="o">=</span> <span class="n">mol</span><span class="o">.</span><span class="n">atoms</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">bond</span><span class="o">.</span><span class="n">atom2</span><span class="p">)</span>
+            <span class="n">aind</span> <span class="o">=</span> <span class="n">rev_surf_atom_map</span><span class="p">[</span><span class="n">ind1</span><span class="p">]</span>
+            <span class="n">surfd</span> <span class="o">=</span> <span class="p">[</span><span class="n">s</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">surface_dict</span> <span class="k">if</span> <span class="n">s</span><span class="p">[</span><span class="s2">&quot;atom_index&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="n">aind</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">bondlengths</span><span class="p">[</span><span class="n">ind1</span><span class="p">,</span><span class="n">ind2</span><span class="p">]</span> <span class="o">=</span> <span class="n">surfd</span><span class="p">[</span><span class="s2">&quot;bond_length&quot;</span><span class="p">]</span>
+            <span class="n">bondlengths</span><span class="p">[</span><span class="n">ind2</span><span class="p">,</span><span class="n">ind1</span><span class="p">]</span> <span class="o">=</span> <span class="n">surfd</span><span class="p">[</span><span class="s2">&quot;bond_length&quot;</span><span class="p">]</span>
+            <span class="n">sites</span><span class="p">[</span><span class="n">ind2</span><span class="p">]</span> <span class="o">=</span> <span class="n">surfd</span><span class="p">[</span><span class="s2">&quot;site&quot;</span><span class="p">]</span>
+            <span class="n">sitelengths</span><span class="p">[</span><span class="n">ind2</span><span class="p">]</span> <span class="o">=</span> <span class="n">surfd</span><span class="p">[</span><span class="s2">&quot;bond_length&quot;</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span> <span class="c1">#not a surface bond</span>
+            <span class="n">ind1</span> <span class="o">=</span> <span class="n">mol</span><span class="o">.</span><span class="n">atoms</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">bond</span><span class="o">.</span><span class="n">atom1</span><span class="p">)</span>
+            <span class="n">ind2</span> <span class="o">=</span> <span class="n">mol</span><span class="o">.</span><span class="n">atoms</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">bond</span><span class="o">.</span><span class="n">atom2</span><span class="p">)</span>
+            <span class="n">aind1</span> <span class="o">=</span> <span class="n">rev_atom_map</span><span class="p">[</span><span class="n">ind1</span><span class="p">]</span>
+            <span class="n">aind2</span> <span class="o">=</span> <span class="n">rev_atom_map</span><span class="p">[</span><span class="n">ind2</span><span class="p">]</span>
+            <span class="n">d</span> <span class="o">=</span> <span class="n">ad</span><span class="o">.</span><span class="n">get_distance</span><span class="p">(</span><span class="n">aind1</span><span class="p">,</span><span class="n">aind2</span><span class="p">)</span>
+            <span class="n">bondlengths</span><span class="p">[</span><span class="n">ind1</span><span class="p">,</span><span class="n">ind2</span><span class="p">]</span> <span class="o">=</span> <span class="n">d</span>
+            <span class="n">bondlengths</span><span class="p">[</span><span class="n">ind2</span><span class="p">,</span><span class="n">ind1</span><span class="p">]</span> <span class="o">=</span> <span class="n">d</span>
+
+    <span class="k">return</span> <span class="n">bondlengths</span><span class="p">,</span><span class="n">sites</span><span class="p">,</span><span class="n">sitelengths</span></div>
+
+<div class="viewcode-block" id="get_name"><a class="viewcode-back" href="../../source/pynta.html#pynta.mol.get_name">[docs]</a><span class="k">def</span> <span class="nf">get_name</span><span class="p">(</span><span class="n">mol</span><span class="p">):</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">mol</span><span class="o">.</span><span class="n">to_smiles</span><span class="p">()</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">mol</span><span class="o">.</span><span class="n">to_adjacency_list</span><span class="p">()</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span><span class="s2">&quot; &quot;</span><span class="p">)[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright Copyright 2021 National Technology &amp; Engineering Solutions of Sandia, LLC (NTESS). Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government retains certain rights in this software.
+      <span class="lastupdated">
+        Last updated on Wed, 25 Jan 2023 12:48:54.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

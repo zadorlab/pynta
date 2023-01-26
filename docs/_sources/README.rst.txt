@@ -5,32 +5,27 @@
 Pynta
 =====
 
-``pynta`` is an automated workflow for reaction path exploration on metallic surfaces.
+``pynta`` is an automated workflow code to enable the calculation of thermochemistry
+and rate coefficients for reactions involving metallic surfaces.
 
 The ``pynta`` code is designed to automatically characterize chemical reactions
 relevant to heterogeneous catalysis. In particular, it spawns and processes a
 large number of ab initio quantum chemistry calculations to study gas-phase
-reactions on crystal facets. It is designed to run on petascale and upcoming
-exascale machines.
+reactions on crystal facets. It is designed to run both on local clusters and
+on petascale and upcoming exascale machines.
 
-The code systematically places adsorbates on crystal facets, by enumerating the
-various unique crystal sites and considering the symmetry of the adsorbates and
-the surface. The structures are systematically perturbed, to try to investigate
-all possible adsorption geometries. Following this, the code performs
-modifications to these structures and searches for saddle points on the
-potential energy landscape in order to characterize the reactions these
-adsorbates can undergo. After a series of such calculations the code arrives at
-well-characterized reaction pathways, which can be in turn used to calculate
-rate coefficients and can be implemented in microkinetic mechanisms/models.
+Pynta generates initial guesses for all gas phase species and adsorbates on the surface accounting
+for the symmetry of the surface. These guesses are then optimized and frequencies are calculated for
+the unique resulting geometries. Based on the provided reaction semi-atom mappings the
+adsorbate are placed on the surface and perturbed in many unique ways to generate
+transition state guesses, the best guesses are optimized and vibrational frequencies
+and IRCs are generated for unique successfully optimized transition states. This
+information can then be processed to generate thermochemistry and rate coefficients
+for the adsorbates and reactions that can be used in microkinetic models.
 
 Pynta is designed to work with the workflow code
-`balsam <https://balsam.readthedocs.io/en/latest/>`_ , which enables a seamless
-running of embarrassingly parallel computations on supercomputers. ``pynta``
-includes several so-called apps that are run through ``balsam``, and appear as
-one monolithic job submission in the queue system. Another level of parallelism
-is gained from the ab initio programs, which may or may not include GPU
-acceleration. We use the Atomic Simulation Environment (ASE) that enables
-coupling to a large variety of ab initio quantum chemistry codes.
+`Fireworks <https://materialsproject.github.io/fireworks/>`_ , which provides users
+with significant flexiblity in running Pynta.
 
 
 .. image:: ../workflow_idea.png
@@ -40,457 +35,296 @@ coupling to a large variety of ab initio quantum chemistry codes.
 Installation
 ============
 
+Notes on Installation
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The following instruction assumes that you have several softwares installed on your system, such as:
+Pynta supports only Linux and MacOS installation and currently only
+provides installation from source.
 
-* A queue system e.g. ``Slurm``\ , ``PBS`` or ``Cobalt``
-* An MPI e.g. ``OpenMPI``
-* A math library e.g. ``OpenBlas/LAPACK`` or ``Intel's MKL``
-* A compilier suite e.g. ``GCC`` or ``Intel``
+Install git
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+If you do not already have `git` it needs to be installed. On linux install
+with the appropriate package manager. On MacOS git should be installed through
+XCode Commandline Tools. This can be done by simply running `git` if it is
+not installed it will prompt you to install XCode Commandline Tools.
 
-Install all prerequisites
--------------------------
 
-Set the location you want to use for ``pynta`` build. It is suggested to create a virtual environment e.g 'pynta':
+Install Anaconda
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Download the appropriate `Anaconda <https://www.anaconda.com/products/distribution#Downloads>`_
+or `Miniconda <https://docs.conda.io/en/latest/miniconda.html>`_ . For the command line/bash installers find the downloaded
+.sh file and run it with `bash` for example on linux this might look like:
+
+.. code-block:: bash
+
+  bash Anaconda3-2022.10-Linux-x86_64.sh
+
+Make sure to tell the installer to append Anaconda/Miniconda to PATH when asked.
+
+After installation you will need to exit and reopen your command line interface.
+After doing so we (optionally) recommend that you install `mamba` to speed up a later part of the install:
+
+.. code-block:: bash
+
+  conda install mamba
+
+Install the Pynta source code:
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. code-block:: bash
 
-   $ cd <path/whr/to/build/pynta>
-   $ python3 -m venv pynta
+   git clone git@github.com:zadorlab/pynta.git
 
-Activate your virtual environment:
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Create a conda environment for Pynta
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Enter the Pynta source directory with:
 
 .. code-block:: bash
 
-   $ source pynta/bin/activate
+   cd pynta
 
-(\ *Optional*\ ) Install required python packages (if you skip this process, ``pynta`` installer will do this later.)
+and then create the conda environment. If you have installed `mamba` run
+
+.. code-block:: bash
+
+   mamba env create -f environment.yml
+
+else you can instead run the slower (but equally valid) commmand:
+
+.. code-block:: bash
+
+   conda env create -f environment.yml
+
+Once this is done activate the generated environment with:
+
+.. code-block:: bash
+
+   conda activate pynta_env
+
+Install MongoDB
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The code for fireworks itself is installed within the created pynta_env, however Fireworks requires a MongoDB instance
+to manage workflows. There are many different ways to configure this and the best way depends heavily on where and how you are
+running Pynta. The community edition of MongoDB can be installed on a server or local computer you own, directions are available
+`here <https://www.mongodb.com/docs/manual/administration/install-community/>`_ . Additionally a MongoDB can be setup with a
+cloud provider. MongoDB provides a free option for their `MongoDB Atlas <https://www.mongodb.com/atlas/database>`_ that should
+be sufficient for typical use of Fireworks.
+
+
+Setup Fireworks
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Once the MongoDB is setup we can properly configure Fireworks. There are four configuration files that need written for
+Fireworks: my_launchpad.yaml,my_fworker.yaml, my_qadapter.yaml and FW_config.yaml. The first, my_launchpad.yaml needs
+setup for your particular MongoDB, an example is provided in the last section of this `page <https://materialsproject.github.io/fireworks/installation.html>`_ of the
+fireworks documentation. The second, my_fworker.yaml can typically just be:
+
+.. code-block:: yaml
+
+  name: my first fireworker
+  category: ''
+  query: '{}'
+
+The third my_qadapter.yaml is not necessary if you don't intend to have Fireworks submit jobs through a queue. A description of
+how this operates within Fireworks is available in their documentation `here <https://materialsproject.github.io/fireworks/queue_tutorial.html>`_ . Examples of my_qadapter.yaml are
+available `here <https://github.com/materialsproject/fireworks/tree/main/fw_tutorials/queue>`_ . Lastly the FW_config.yaml file should be
+configured according to directions in the Fireworks documentation `here <https://materialsproject.github.io/fireworks/config_tutorial.html>`_ .
+After configuring fireworks you should be able (after activating the pynta_env) run:
 
 .. code-block:: bash
 
-   $ pip3 install matplotlib<3.2 spglib==1.14.1.post0 networkx<2.4 ase==3.19.0 scipy==1.3.1 numpy==1.18.1 PyYAML==5.3.1 sella==1.0.3
+   lpad get_wflows
 
-Download `PostgreSQL <https://www.enterprisedb.com/download-postgresql-binaries>`_ precompiled binaries that suits your system and add ``path_to_PostgreSQL/pgsql/bin`` to your ``PATH`` by modifying ``~/.bashrc``:
+Fireworks has a lot of handy features that enable you to track workflow progress and statistics in their gui and commands that enable you to manually launch and pause components of the workflow. Their documentation is available `here <https://materialsproject.github.io/fireworks/index.html>`_ .
+
+Testing Pynta
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Pynta has a set of unit and functional tests that can be run to ensure Pynta is properly installed
+and executes properly. In the Pynta directory all tests can be run with
 
 .. code-block:: bash
 
-   $ echo "export PATH=path_to_PostgreSQL/pgsql/bin:$PATH' >> ~/.bashrc"
+   make test-all
 
-
-Install `mpi4py <https://github.com/mpi4py/mpi4py.git>`_\ :
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+only unittests can be run with
 
 .. code-block:: bash
 
-   $ git clone https://github.com/mpi4py/mpi4py.git
-   $ cd mpi4py
-   $ python3 setup.py install
-   $ cd ../
+   make test-unitests
 
-Make sure it works by running
+and only functional tests can be run with
 
 .. code-block:: bash
 
-   $ srun -n 2 python3 -c 'from mpi4py import MPI; print(MPI.COMM_WORLD.Get_rank())'
-   0
-   1
+   make test-functional
 
-Install `balsam <https://github.com/balsam-alcf/balsam.git>`_ using `serial-mode-perf <https://github.com/balsam-alcf/balsam/tree/serial-mode-perf>`_ branch.
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Warning one of the functional tests runs a small, but structurally complete Pynta workflow. Depending on the speed
+of the computer this can take a half hour to several hours to run.
 
-.. code-block:: bash
 
-   git clone https://github.com/balsam-alcf/balsam.git -b serial-mode-perf
-   cd balsam
-   python3 setup.py install
-   cd ../
+Running Pynta
+=============
+In order to run Pynta we first need to describe the reactions we want Pynta to calculate. We do
+this within a reactions.yaml file. This file describes the reactants, products and the atom
+mapping between them in the RMG adjacency list `format <https://reactionmechanismgenerator.github.io/RMG-Py/reference/molecule/adjlist.html>`_ .
+All atoms that are part of bonds that break and form in the reaction need to be labeled (with the same label) in both reactants and products.
+The validity of adjacency lists can be checked using RMG's tool `here <https://rmg.mit.edu/molecule_search>`_ .
 
-Make sure it works by running tests posted on the `balsam <https://github.com/balsam-alcf/balsam.git>`_ GitHub page.
 
-Install `xTB-python <https://github.com/grimme-lab/xtb-python>`_ following instruction provided there. Make sure to correctly link all required libraries. For example:
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-
-* using ``OpenBlas`` and ``GNU`` based compilers:
-
-.. code-block:: bash
-
-   git clone https://github.com/grimme-lab/xtb-python.git
-   cd xtb-python
-   git submodule update --init
-   LDFLAGS="-L/opt/custom/OpenBLAS/0.3.7/lib" meson setup build --prefix=$PWD --libdir=xtb/xtb --buildtype release --optimization 2 -Dla_backend=openblas
-   ninja -C build install
-   pip install -e .
-
-
-* using ``MKL`` and Intel Compilers:
-
-.. code-block:: bash
-
-   git clone https://github.com/grimme-lab/xtb-python.git
-   cd xtb-python
-   git submodule update --init
-   # (Theta specific)
-   # conda instal cffi
-   # module swap PrgEnv-intel PrgEnv-cray; module swap PrgEnv-cray PrgEnv-intel
-   CC=icc CXX=icpc FC=ifort meson setup build --prefix=$PWD --libdir=xtb -Dla_backed=mkl -Dpy=3 --buildtype release --optimization 2
-   ninja -C build install
-   pip install -e .
-
-Make sure it works by running:
-
-.. code-block:: python
-
-   >>> from xtb.ase.calculator import XTB
-   >>> from ase.build import molecule
-   >>> from math import isclose
-   >>> atoms = molecule('H2O')
-   >>> atoms.calc = XTB(method="GFN2-xTB")
-   >>> is_close = isclose(total_ener,-137.9677758730299)
-   >>> print (total_ener)  # True -> that's good; False -> something is wrong
-
-.. warning:: You might be getting SEGFAULT error - ``Segmentation Fault (Core dumped)`` while executing any ``xTB-python`` job, especially for a relatively large molecules. The easiest solution is to unlimit the system stack to avoid stack overflows. In ``bash`` try
-
-.. code-block::
-
-   ulimit -s unlimited
-
-If ``xTB-python`` still fails, try to install `xtb <https://github.com/grimme-lab/xtb>`_ and test ``xTB`` itself for any errors.
-
-.. code-block:: bash
-
-   git clone https://github.com/grimme-lab/xtb.git
-   cd xtb
-   mkdir build
-   pushd build
-   cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=icc -DCMAKE_CXX_COMPILER=icpc -DCMAKE_FC_COMPILER=ifort ..
-   make
-   ctest
-   popd
-   echo 'export LD_LIBRARY_PATH=path/to_xtb/xtb/build:$LD_LIBRARY_PATH' >> ~/.bashrc
-   echo 'export PATH=$HOME/.local/bin:\$PATH' >> ~/.bashrc
-
-Then, rebuild ``xTB-python`` on your system ignoring ``git submodule update --init`` and linking you current ``xTB`` installation.
-
-Install ``pynta``
------------------
-
-Clone the project in your preferable location.
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-.. code-block::
-
-   git clone https://github.com/zadorlab/pynta.git
-
-Usually, ``master`` branch should be fine. If somehow it is not working, make sure to switch to the latest stable version by checking the tags.
-
-Go to ``pynta`` directory
-^^^^^^^^^^^^^^^^^^^^^^^^^
-
-.. code-block::
-
-   cd pynta
-
-Install ``pynta``\ :
-^^^^^^^^^^^^^^^^^^^^
-
-.. code-block::
-
-   python setup.py install
-
-(\ *Optional*\ )  If you do not have admin privileges (e.g. you use it on a supercomputer), do the following instead of 1.6a:
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-.. code-block::
-
-   python setup.py install --user
-
-.. note::
-
-   You should be ready to use ``pynta`` at this point!
-
-Once finished using the workflow:
-
-.. code-block::
-
-   cd pynta
-   deactivate
-
-How to run
-==========
-
-Using Balsam
-------------
-
-Before you run any ``pynta`` calculations, make sure your ``balsam`` DB is initialized and activated, e.g.
-
-.. code-block:: bash
-
-   $ balsam init ~/myWorkflow
-   $ source balsamactivate ~/myWorkflow
-
-You will need **4** files to run the workflow:
-
-
-* ``run_me.py`` a python script that executes the workflow or alternatively, ``restart_me.py`` to restart unfinished calculations
-* ``run_me.sh`` a bash script that submits jobs to the ``balsam`` database
-* ``input.json`` a json file holding all user-modifiable parameters of the ``pynta``
-* ``reactions.yaml`` a yaml file with all reactions to be studied
-
-An example ``run_me.py`` file
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-.. code-block:: python
-
-   #!/usr/bin/env python3
-   from pynta.main import WorkFlow
-
-
-   def run():
-      # instantiate a WorkFlow() class
-      workflow = WorkFlow()
-      # create all input files
-      workflow.gen_job_files()
-      # execute the workflow
-      workflow.execute_all()
-
-
-   if __name__ == '__main__':
-      run()
-
-
-An example ``restart_me.py`` file
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-.. code-block:: python
-
-   ##!/usr/bin/env python3
-   from pynta.main import WorkFlow
-
-
-   def restart():
-      return WorkFlow().restart()
-
-
-   if __name__ == '__main__':
-      restart()
-
-
-An example ``run_me.sh`` file
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-.. code-block:: bash
-
-   #!/bin/bash
-   #SBATCH -J job_name        # name of the job e.g job_name = pynta_workflow
-   #SBATCH --partition=queue  # queue name e.g. queue = day-long-cpu
-   #SBATCH --nodes=x          # number of nodes e.g. x = 2
-   #SBATCH --ntasks=y         # number of CPUs e.g. 2 x 48 = y = 96
-   #SBATCH -e %x.err          # error file name
-   #SBATCH -o %x.out          # out file name
-
-   # load your quantum chemistry calculation package or provide a path to the
-   # executable in 'inputR2S.py'
-   module load espresso
-
-   # activate balsam environment, e.g.
-   source balsamactivate ~/myWorkflow
-
-   # run python executable script
-   python3 $PWD/run_me.py
-
-   # required environment variable if using balsam branch serial-mode-perf and SLURM
-   export SLURM_HOSTS=$(scontrol show hostname)
-
-   # launch serial jobs
-   balsam launcher --job-mode=serial --wf-filter _ --limit-nodes=1 --num-transition-threads=1 &
-
-   # wait a bit to prevent timeing out you jobs before the sockets are ready
-   sleep 45
-
-   # launch mpi jobs
-   balsam launcher --job-mode=mpi --wf-filter QE_Sock --offset-nodes=x-1 --num-transition-threads=1 &
-
-   # wait until finished
-   wait
-
-   # deactivate balsam environment
-   source balsamdeactivate
-
-An example ``reactions.yaml`` file
+Example ``reactions.yaml`` file
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. code-block:: yaml
 
-     - index: 0
-       reaction: OHX + X <=> OX + HX
-       reaction_family: Surface_Abstraction
-       reactant: |
-           multiplicity -187
-           1 *1 O u0 p0 c0 {2,S} {4,S}
-           2 *2 H u0 p0 c0 {1,S}
-           3 *3 X u0 p0 c0
-           4    X u0 p0 c0 {1,S}
-       product: |
-           multiplicity -187
-           1 *1 O u0 p0 c0 {4,S}
-           2 *2 H u0 p0 c0 {3,S}
-           3 *3 X u0 p0 c0 {2,S}
-           4    X u0 p0 c0 {1,S}
-       - index: 1
-       reaction: H2OX + X <=> OHX + HX
-       reaction_family: Surface_Abstraction
-       reactant: |
-           multiplicity -187
-           1 *1 O u0 p0 c0 {2,S} {3,S} {4,S}
-           2 *2 H u0 p0 c0 {1,S}
-           3    H u0 p0 c0 {1,S}
-           4    X u0 p0 c0 {1,S}
-           5 *3 X u0 p0 c0
-       product: |
-           multiplicity -187
-           1 *1 O u0 p0 c0 {2,S} {4,S}
-           2 *2 H u0 p0 c0 {1,S}
-           3    H u0 p0 c0 {5,S}
-           4    X u0 p0 c0 {1,S}
-           5 *3 X u0 p0 c0 {3,S}
+  - index: 0
+    reactant: 'multiplicity 1
 
-An example ``inputR2S.py`` file
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+      1 *3 O u0 p2 c0 {2,S} {5,S}
 
-.. code-block:: json
+      2 *2 C u0 p0 c0 {1,S} {3,S} {4,S} {7,S}
 
-   {
-    "quantum_chemistry": "espresso",
-    "optimize_slab": true,
-    "surface_types_and_repeats": {
-        "fcc111": [
-            [
-                3,
-                3,
-                1
-            ],
-            [
-                1,
-                1,
-                4
-            ]
-        ]
-    },
-    "metal_atom": "Cu",
-    "a": 3.6,
-    "vacuum": 8.0,
-    "pseudo_dir": "/home/mgierad/espresso/pseudo",
-    "pseudopotentials": "dict(Cu='Cu.pbe-spn-kjpaw_psl.1.0.0.UPF',H='H.pbe-kjpaw_psl.1.0.0.UPF',O='O.pbe-n-kjpaw_psl.1.0.0.UPF',C='C.pbe-n-kjpaw_psl.1.0.0.UPF',N='N.pbe-n-kjpaw_psl.1.0.0.UPF')",
-    "executable": "/home/mgierad/00_codes/build/q-e-qe-6.4.1/build/bin/pw.x",
-    "node_packing_count": 48,
-    "balsam_exe_settings": {
-        "num_nodes": 1,
-        "ranks_per_node": 48,
-        "threads_per_rank": 1
-    },
-    "calc_keywords": {
-        "kpts": [
-            3,
-            3,
-            1
-        ],
-        "occupations": "smearing",
-        "smearing": "marzari-vanderbilt",
-        "degauss": 0.01,
-        "ecutwfc": 40,
-        "nosym": true,
-        "conv_thr": 1e-11,
-        "mixing_mode": "local-TF"
-    },
-    "yamlfile": "reactions.yaml",
-    "scfactor": 1.4,
-    "scfactor_surface": 1.0,
-    "scaled1": false,
-    "scaled2": false}
+      3    H u0 p0 c0 {2,S}
 
-An example input files are also located at ``./pynta/example_run_files/``.
+      4    H u0 p0 c0 {2,S}
 
-Keyword parameters
-==================
+      5 *4 H u0 p0 c0 {1,S}
 
-.. list-table::
-   :widths: 25, 5, 25, 25
-   :header-rows: 1
+      6 *1 X u0 p0 c0
 
-   * - Parameter
-     - Description
-     - Type
-     - Avaiable options/examples
-   * - `quantum_chemistry`
-     - specify which quantum chemistry calculator to use
-     - str
-     - ``'espresso'`` , ``'nwchem'`` 
-   * - `yamlfile`
-     - a name of the  yml file with reactions
-     - str
-     - ``reactions.yaml``
-   * - `optimize_slab`
-     - do you want to run surface optimization
-     - bool
-     - ``True``, ``False``
-   * - `surface_types_and_repeats`
-     - specify facet orientation, repeats of the slab+ads and repeats of the slab_opt unit cell
-     - Dict[str:List[Tuple[int]]]
-     - ``{'fcc111': [(3, 3, 1), (1, 1, 4)]}``
-   * - `metal_atom`
-     - surface atoms
-     - str
-     - ``'Cu'``
-   * - `a`
-     - lattice constant
-     - float
-     - ``3.6``
-   * - `vacuum`
-     - vacuum in the z direction (Angstrem)
-     - float
-     - ``8.0``
-   * - `pseudo_dir`
-     - for Quantum Espresso only - path to pseudopotetions directory
-     - str
-     - ``'/home/user/espresso/pseudo'``
-   * - `pseudopotentials`
-     - for Quantum Espresso only - which pseudopotentials to use (str preferable)
-     - str -> Dict[str, str]
-     - ``"dict(Cu='Cu.pbe-spn-kjpaw_psl.1.0.0.UPF', H='H.pbe-kjpaw_psl.1.0.0.UPF')"``
-   * - `executable`
-     - a path to executable of quantum chemistry package
-     - str
-     - ``'/home/user/build/qe/bin/pw.x'``
-   * - `node_packing_count`
-     - number of cores per node - balsam specific keyword
-     - int
-     - ``48``
-   * - `balsam_exe_settings`
-     - how to use avaiable computational resources
-     - Dict[str, any]
-     - ``balsam_exe_settings = {'num_nodes': 1, 'ranks_per_node': node_packing_count, 'threads_per_rank': 1``
-   * - `calc_keywords`
-     - quantum chemistry packages options - see manual of your chosen package to put a correct keywords here
-     - Dict[str, any]
-     - ``{'kpts': (3, 3, 1), 'occupations': 'smearing', 'smearing': 'marzari-vanderbilt', 'degauss': 0.01, 'ecutwfc': 40, 'nosym': True, 'conv_thr': 1e-11, 'mixing_mode': 'local-TF'}``
-   * - `scfactor`
-     - specify a scaling factor to scale the bond distance between two atoms taking part in the reaction
-     - float
-     - ``1.4``
-   * - `scfactor_surface`
-     - specify the scaling factor to scale the target distance i.e. the average bond distance between adsorbate and the nearest surface metal atom
-     - float
-     - ``1.0``
-   * - `scaled1`
-     - apply the `scfactor_surface` to the species 1?
-     - bool
-     - ``True`` or ``False``
-   * - `scaled2`
-     - apply the `scfactor_surface` to the species 2?
-     - bool
-     - ``True`` or ``False``
+      7 *5 X u0 p0 c0 {2,S}
+
+      '
+    product: 'multiplicity 1
+
+      1 *3 O u0 p2 c0 {2,S} {6,S}
+
+      2 *2 C u0 p0 c0 {1,S} {3,S} {4,S} {5,S}
+
+      3    H u0 p0 c0 {2,S}
+
+      4    H u0 p0 c0 {2,S}
+
+      5 *4 H u0 p0 c0 {2,S}
+
+      6 *1 X u0 p0 c0 {1,S}
+
+      7 *5 X u0 p0 c0
+
+      '
+    reaction: OC[Pt] <=> CO[Pt]
+    reaction_family: Surface_Migration
+    - index: 1
+      reactant: 'multiplicity 1
+
+        1 *3 X u0 p0 c0 {2,D}
+
+        2 *1 O u0 p2 c0 {1,D}
+
+        3 *2 H u0 p0 c0 {4,S}
+
+        4 *4 X u0 p0 c0 {3,S}
+
+        '
+      product: 'multiplicity 1
+
+        1 *3 X u0 p0 c0 {2,S}
+
+        2 *1 O u0 p2 c0 {1,S} {3,S}
+
+        3 *2 H u0 p0 c0 {2,S}
+
+        4 *4 X u0 p0 c0
+
+        '
+      reaction: '[Pt] + O[Pt] <=> O=[Pt] + [H][Pt]'
+      reaction_family: Surface_Dissociation
+
+Calling Pynta
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+An example python script for calling Pynta is available below.
+
+.. code-block:: python
+  from pynta.main import Pynta
+
+  pyn = Pynta(path,rxns_file,surface_type,metal,label,launchpad_path=None,fworker_path=None,
+        vacuum=8.0,repeats=[(1,1,1),(3,3,4)],slab_path=None,software="Espresso",socket=False,queue=False,njobs_queue=0,a=None,
+        software_kwargs={'kpts': (3, 3, 1), 'tprnfor': True, 'occupations': 'smearing',
+                            'smearing':  'marzari-vanderbilt',
+                            'degauss': 0.01, 'ecutwfc': 40, 'nosym': True,
+                            'conv_thr': 1e-6, 'mixing_mode': 'local-TF',
+                            "pseudopotentials": {"Cu": 'Cu.pbe-spn-kjpaw_psl.1.0.0.UPF',"H": 'H.pbe-kjpaw_psl.1.0.0.UPF',"O": 'O.pbe-n-kjpaw_psl.1.0.0.UPF',"C": 'C.pbe-n-kjpaw_psl.1.0.0.UPF',"N": 'N.pbe-n-kjpaw_psl.1.0.0.UPF',
+                            }, },
+        software_kwargs_gas=None,
+        TS_opt_software_kwargs=None,
+        lattice_opt_software_kwargs={'kpts': (25,25,25), 'ecutwfc': 70, 'degauss':0.02, 'mixing_mode': 'plain'},
+        reset_launchpad=False,queue_adapter_path=None,num_jobs=25,
+        Eharmtol=3.0,Eharmfiltertol=30.0,Ntsmin=5)
+
+  pyn.execute(generate_initial_ad_guesses=True,calculate_adsorbates=True,
+                calculate_transition_states=True,launch=True)
+
+The Pynta function has many parameters. It is best to divide them based on what they are associated with. First there are
+the run parameters:
+
+**path**: the directory in which Pynta will execute and save files
+
+**rxns_file**: the location of the reactions.yaml file containing the reactions to calculate
+
+Second there are the Fireworks parameters:
+
+**launchpad_path**: the path to the my_launchpad.yaml file, by default it will use your default my_launchpad.yaml
+
+**fworker_path**: the path to the my_fworker.yaml file, by default it will use your default my_fworker.yaml
+
+**queue_adapter_path**: the path to the my_qadapter.yaml file, by default it will use your default my_qadapter.yaml
+
+**reset_launchpad**: if true Pynta will reset the Fireworks launchpad during construction, this will delete any existing workflows on fireworks and is usually undesirable
+
+**num_jobs**: the number of jobs for Pynta to launch if running on multiple nodes outside a queue
+
+**queue**: if true will run Fireworks in queue mode using the file at queue_adapter_path
+
+Third there are the slab specification parameters:
+
+**metal**: the identity of the slab metal ex: Cu, Pt
+
+**surface_type**: the facet ex: fcc111, bcc110
+
+**vacuum**: the height of the vacuum in Angstroms above the slab in the cell
+
+**repeats**: in general operation this should be [(1,1,1),(x,y,z)] where x,y,z are the number of atoms in the x,y and z directions in the slab
+
+**a**: the lattice constant of the metal, if not specified and slab_path is not specified Pynta will calculate it
+
+**slab_path**: path to the geometry of the slab, this will cause Pynta to skip slab generation, but must be consistent with metal, surface_type, vacuum and repeats
+
+Fourth there are the ASE parameters that control the quantum chemistry calculation execution. All of these parameters need to be
+specified in terms of what `ASE <https://wiki.fysik.dtu.dk/ase/>`_ expects.
+
+**software**: this is the string corresponding to an ASE calculator object. Pynta will search ASE for a calculator with this name.
+
+**software_kwargs**: this is the dictionary of keyword arguments passed to the ASE calculator object on construction. This particular dictionary is the default set of arguments.
+
+**software_kwargs_gas**: this is a dictionary of keyword arguments that should be different from software_kwargs when running gas phase calculations
+
+**TS_opt_software_kwargs**: this is a dictionary of keyword arguments that should be different from software_kwargs when running saddle point optimizations
+
+**lattice_opt_software_kwargs**: this is a dictionary of keyword arguments that should be different from software_kwargs when optimizing the lattice constant
+
+Lastly there are the Pynta energy filter criteria:
+
+**Eharmtol**: a tolerance such that all TS/adsorbate guesses are always calculated if they have energies less than Emin * Eharmtol
+
+**Eharmfiltertol**: a tolerance such that all TS/adsorbate guesses are never calculated if they have energies greater than Emin * Eharmfiltertol
+
+**Ntsmin**: the minimum number of TS/adsorbate guesses. If the number of guesses with energies less than Emin * Eharmtol is less than Ntsmin Pynta will add the lowest energy guesses (that are less than Emin * Eharmfiltertol) until it has Ntsmin guesses.
+
+Pynta's execute function has a few important options:
+
+**generate_initial_ad_guesses**: if False Pynta will not generate initial adsorbate guesses and assume they are already in the appropriate directories.
+
+**calculate_adsorbates**: if False Pynta will not generate Fireworks jobs for calculating adsorbates and will assume the results are already in the appropriate directories.
+
+**calculate_transition_states**: if False Pynta will not generate Fireworks jobs for finding and calculating transition states
+
+**launch**: if True Pynta will attempt to launch the Fireworks workflow in infinite mode after it is constructed. If False the workflow is still generated and added to the launchpad, but it is left up to the user to handle launching through Fireworks commands.

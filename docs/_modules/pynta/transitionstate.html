@@ -1,0 +1,969 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>pynta.transitionstate &mdash; Pynta January 25, 2023 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../../_static/doctools.js"></script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> Pynta
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <!-- Local TOC -->
+              <div class="local-toc"></div>
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">Pynta</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+        
+      <li>pynta.transitionstate</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for pynta.transitionstate</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">molecule.molecule</span> <span class="kn">import</span> <span class="n">Molecule</span>
+<span class="kn">from</span> <span class="nn">molecule.molecule.pathfinder</span> <span class="kn">import</span> <span class="n">find_shortest_path</span>
+<span class="kn">import</span> <span class="nn">yaml</span>
+<span class="kn">from</span> <span class="nn">ase.io</span> <span class="kn">import</span> <span class="n">read</span><span class="p">,</span> <span class="n">write</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">ase.data</span> <span class="kn">import</span> <span class="n">covalent_radii</span>
+<span class="kn">from</span> <span class="nn">acat.adsorption_sites</span> <span class="kn">import</span> <span class="n">SlabAdsorptionSites</span>
+<span class="kn">from</span> <span class="nn">acat.adsorbate_coverage</span> <span class="kn">import</span> <span class="n">SlabAdsorbateCoverage</span>
+<span class="kn">from</span> <span class="nn">acat.settings</span> <span class="kn">import</span> <span class="n">adsorbate_molecule</span>
+<span class="kn">from</span> <span class="nn">acat.utilities</span> <span class="kn">import</span> <span class="p">(</span><span class="n">custom_warning</span><span class="p">,</span>
+                         <span class="n">is_list_or_tuple</span><span class="p">,</span>
+                         <span class="n">get_close_atoms</span><span class="p">,</span>
+                         <span class="n">get_rodrigues_rotation_matrix</span><span class="p">,</span>
+                         <span class="n">get_angle_between</span><span class="p">,</span>
+                         <span class="n">get_rejection_between</span><span class="p">)</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">from</span> <span class="nn">pynta.utils</span> <span class="kn">import</span> <span class="n">get_unique_sym</span><span class="p">,</span> <span class="n">get_unique_sym_structs</span>
+<span class="kn">from</span> <span class="nn">ase.visualize</span> <span class="kn">import</span> <span class="n">view</span>
+<span class="kn">from</span> <span class="nn">ase.atoms</span> <span class="kn">import</span> <span class="n">Atoms</span><span class="p">,</span> <span class="n">Atom</span>
+<span class="kn">from</span> <span class="nn">ase.geometry</span> <span class="kn">import</span> <span class="n">get_distances</span>
+<span class="kn">import</span> <span class="nn">itertools</span>
+<span class="kn">from</span> <span class="nn">pynta.calculator</span> <span class="kn">import</span> <span class="n">HarmonicallyForcedXTB</span>
+<span class="kn">from</span> <span class="nn">pynta.mol</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">copy</span> <span class="kn">import</span> <span class="n">deepcopy</span>
+
+<div class="viewcode-block" id="get_unique_optimized_adsorbates"><a class="viewcode-back" href="../../source/pynta.html#pynta.transitionstate.get_unique_optimized_adsorbates">[docs]</a><span class="k">def</span> <span class="nf">get_unique_optimized_adsorbates</span><span class="p">(</span><span class="n">rxn</span><span class="p">,</span><span class="n">adsorbates_path</span><span class="p">,</span><span class="n">mol_dict</span><span class="p">,</span><span class="n">cas</span><span class="p">,</span><span class="n">gratom_to_molecule_surface_atom_maps</span><span class="p">,</span><span class="n">nslab</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    load the adsorbates associated with the reaction and find the unique optimized</span>
+<span class="sd">    adsorbate structures for each species</span>
+<span class="sd">    returns a dictionary mapping each adsorbate name to a list of ase.Atoms objects</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">adsorbates</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+
+    <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">rxn</span><span class="p">[</span><span class="s2">&quot;reactant_names&quot;</span><span class="p">]</span><span class="o">+</span><span class="n">rxn</span><span class="p">[</span><span class="s2">&quot;product_names&quot;</span><span class="p">]:</span>
+        <span class="n">prefixes</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">adsorbates_path</span><span class="p">,</span><span class="n">name</span><span class="p">))</span>
+        <span class="n">ase_to_mol_surface_atom_map</span> <span class="o">=</span> <span class="n">gratom_to_molecule_surface_atom_maps</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
+        <span class="n">geoms</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">prefix</span> <span class="ow">in</span> <span class="n">prefixes</span><span class="p">:</span>
+            <span class="n">path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">adsorbates_path</span><span class="p">,</span><span class="n">name</span><span class="p">,</span><span class="n">prefix</span><span class="p">,</span><span class="n">prefix</span><span class="o">+</span><span class="s2">&quot;.xyz&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+                <span class="n">geoms</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+        <span class="n">xyzs</span> <span class="o">=</span> <span class="n">get_unique_sym</span><span class="p">(</span><span class="n">geoms</span><span class="p">)</span>
+        <span class="n">adsorbates</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">xyz</span> <span class="ow">in</span> <span class="n">xyzs</span><span class="p">:</span>
+            <span class="n">geo</span> <span class="o">=</span> <span class="n">read</span><span class="p">(</span><span class="n">xyz</span><span class="p">)</span>
+            <span class="n">adcov</span> <span class="o">=</span> <span class="n">SlabAdsorbateCoverage</span><span class="p">(</span><span class="n">geo</span><span class="p">,</span><span class="n">adsorption_sites</span><span class="o">=</span><span class="n">cas</span><span class="p">)</span>
+            <span class="n">sites</span> <span class="o">=</span> <span class="n">adcov</span><span class="o">.</span><span class="n">get_sites</span><span class="p">()</span>
+            <span class="n">occ</span> <span class="o">=</span> <span class="p">[</span><span class="n">site</span> <span class="k">for</span> <span class="n">site</span> <span class="ow">in</span> <span class="n">sites</span> <span class="k">if</span> <span class="n">site</span><span class="p">[</span><span class="s2">&quot;occupied&quot;</span><span class="p">]]</span>
+            <span class="n">required_surface_inds</span> <span class="o">=</span> <span class="nb">set</span><span class="p">([</span><span class="n">ind</span><span class="o">+</span><span class="n">nslab</span> <span class="k">for</span> <span class="n">ind</span> <span class="ow">in</span> <span class="n">ase_to_mol_surface_atom_map</span><span class="o">.</span><span class="n">keys</span><span class="p">()])</span>
+            <span class="n">found_surface_inds</span> <span class="o">=</span> <span class="nb">set</span><span class="p">([</span><span class="n">site</span><span class="p">[</span><span class="s2">&quot;bonding_index&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">site</span> <span class="ow">in</span> <span class="n">occ</span><span class="p">])</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">occ</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="nb">len</span><span class="p">(</span><span class="n">mol_dict</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">get_adatoms</span><span class="p">())</span> <span class="ow">and</span> <span class="n">required_surface_inds</span><span class="o">.</span><span class="n">issubset</span><span class="p">(</span><span class="n">found_surface_inds</span><span class="p">):</span>
+                <span class="n">adsorbates</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">geo</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">adsorbates</span></div>
+
+<div class="viewcode-block" id="determine_TS_construction"><a class="viewcode-back" href="../../source/pynta.html#pynta.transitionstate.determine_TS_construction">[docs]</a><span class="k">def</span> <span class="nf">determine_TS_construction</span><span class="p">(</span><span class="n">reactant_names</span><span class="p">,</span><span class="n">reactant_mols</span><span class="p">,</span><span class="n">product_names</span><span class="p">,</span><span class="n">product_mols</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    determine the direction to generate the TS guess in and the order in which the</span>
+<span class="sd">    reactants will be placed on the surface</span>
+<span class="sd">    returns forward a boolean indicating if the reaction should be estimated in the forward (True)</span>
+<span class="sd">    or reverse (False) direction and ordered_reacting_species which is a list of species in the order</span>
+<span class="sd">    they should be placed on the surface</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">forward</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">rnum_surf_sites</span> <span class="o">=</span> <span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">mol</span><span class="o">.</span><span class="n">get_surface_sites</span><span class="p">())</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">mol</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">reactant_mols</span><span class="p">)]</span>
+    <span class="n">pnum_surf_sites</span> <span class="o">=</span> <span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">mol</span><span class="o">.</span><span class="n">get_surface_sites</span><span class="p">())</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">mol</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">product_mols</span><span class="p">)]</span>
+
+    <span class="n">rnummultidentate</span> <span class="o">=</span> <span class="nb">len</span><span class="p">([</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">rnum_surf_sites</span> <span class="k">if</span> <span class="n">i</span><span class="o">&gt;</span><span class="mi">1</span><span class="p">])</span>
+    <span class="n">pnummultidentate</span> <span class="o">=</span> <span class="nb">len</span><span class="p">([</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">pnum_surf_sites</span> <span class="k">if</span> <span class="n">i</span><span class="o">&gt;</span><span class="mi">1</span><span class="p">])</span>
+
+    <span class="n">rnumgas</span> <span class="o">=</span> <span class="nb">len</span><span class="p">([</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">rnum_surf_sites</span> <span class="k">if</span> <span class="n">i</span><span class="o">==</span><span class="mi">0</span><span class="p">])</span>
+    <span class="n">pnumgas</span> <span class="o">=</span> <span class="nb">len</span><span class="p">([</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">pnum_surf_sites</span> <span class="k">if</span> <span class="n">i</span><span class="o">==</span><span class="mi">0</span><span class="p">])</span>
+
+    <span class="c1">#avoid directions starting with multiple multidentate species</span>
+    <span class="k">if</span> <span class="n">rnummultidentate</span> <span class="o">&gt;=</span> <span class="mi">2</span> <span class="ow">and</span> <span class="n">pnummultidentate</span> <span class="o">&gt;=</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Cannot handle multiple bidentates on both sides of reaction&quot;</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">rnummultidentate</span> <span class="o">&gt;=</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="n">forward</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="k">elif</span> <span class="n">pnummultidentate</span> <span class="o">&gt;=</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="n">forward</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="c1">#prefer directions with multidentate species, this reduces the time and cost of finding TS guesses</span>
+    <span class="k">if</span> <span class="n">forward</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">rnummultidentate</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">pnummultidentate</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">forward</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">elif</span> <span class="n">pnummultidentate</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">rnummultidentate</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">forward</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="c1">#prefer directions with fewer gas phase species</span>
+    <span class="k">if</span> <span class="n">forward</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">rnumgas</span> <span class="o">&gt;</span> <span class="n">pnumgas</span><span class="p">:</span>
+            <span class="n">forward</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">elif</span> <span class="n">pnumgas</span> <span class="o">&gt;</span> <span class="n">rnumgas</span><span class="p">:</span>
+            <span class="n">forward</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="c1">#prefer directions with fewer species</span>
+    <span class="k">if</span> <span class="n">forward</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">reactant_mols</span><span class="p">)</span> <span class="o">&gt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">product_mols</span><span class="p">):</span>
+            <span class="n">forward</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">reactant_mols</span><span class="p">)</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">product_mols</span><span class="p">):</span>
+            <span class="n">forward</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="k">if</span> <span class="n">forward</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">forward</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="n">ordered_reacting_species</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">if</span> <span class="n">forward</span><span class="p">:</span>
+        <span class="n">inds_to_order</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">reactant_names</span><span class="p">)))</span>
+        <span class="k">while</span> <span class="nb">len</span><span class="p">(</span><span class="n">ordered_reacting_species</span><span class="p">)</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">reactant_names</span><span class="p">):</span>
+            <span class="n">bidentateinds</span> <span class="o">=</span> <span class="p">[</span><span class="n">ind</span> <span class="k">for</span> <span class="n">ind</span> <span class="ow">in</span> <span class="n">inds_to_order</span> <span class="k">if</span> <span class="n">rnum_surf_sites</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">]</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">bidentateinds</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">indout</span> <span class="o">=</span> <span class="n">bidentateinds</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="c1">#should only be one if any</span>
+                <span class="n">ordered_reacting_species</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">reactant_names</span><span class="p">[</span><span class="n">indout</span><span class="p">])</span>
+                <span class="n">inds_to_order</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">indout</span><span class="p">)</span>
+                <span class="k">continue</span>
+
+            <span class="n">monodentateinds</span> <span class="o">=</span> <span class="p">[</span><span class="n">ind</span> <span class="k">for</span> <span class="n">ind</span> <span class="ow">in</span> <span class="n">inds_to_order</span> <span class="k">if</span> <span class="n">rnum_surf_sites</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">]</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">monodentateinds</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="c1">#biggest monodentate first</span>
+                <span class="n">sorted_inds</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">monodentateinds</span><span class="p">,</span><span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">ind</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">reactant_mols</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span><span class="o">.</span><span class="n">atoms</span><span class="p">))</span>
+                <span class="n">indout</span> <span class="o">=</span> <span class="n">sorted_inds</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+                <span class="n">ordered_reacting_species</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">reactant_names</span><span class="p">[</span><span class="n">indout</span><span class="p">])</span>
+                <span class="n">inds_to_order</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">indout</span><span class="p">)</span>
+                <span class="k">continue</span>
+
+            <span class="c1">#gas phase biggest first</span>
+            <span class="n">sorted_inds</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">inds_to_order</span><span class="p">,</span><span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">ind</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">reactant_mols</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span><span class="o">.</span><span class="n">atoms</span><span class="p">))</span>
+            <span class="n">indout</span> <span class="o">=</span> <span class="n">sorted_inds</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">ordered_reacting_species</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">reactant_names</span><span class="p">[</span><span class="n">indout</span><span class="p">])</span>
+            <span class="n">inds_to_order</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">indout</span><span class="p">)</span>
+            <span class="k">continue</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">inds_to_order</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">product_names</span><span class="p">)))</span>
+        <span class="k">while</span> <span class="nb">len</span><span class="p">(</span><span class="n">ordered_reacting_species</span><span class="p">)</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">product_names</span><span class="p">):</span>
+            <span class="n">bidentateinds</span> <span class="o">=</span> <span class="p">[</span><span class="n">ind</span> <span class="k">for</span> <span class="n">ind</span> <span class="ow">in</span> <span class="n">inds_to_order</span> <span class="k">if</span> <span class="n">pnum_surf_sites</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">]</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">bidentateinds</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">indout</span> <span class="o">=</span> <span class="n">bidentateinds</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="c1">#should only be one if any</span>
+                <span class="n">ordered_reacting_species</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">product_names</span><span class="p">[</span><span class="n">indout</span><span class="p">])</span>
+                <span class="n">inds_to_order</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">indout</span><span class="p">)</span>
+                <span class="k">continue</span>
+
+            <span class="n">monodentateinds</span> <span class="o">=</span> <span class="p">[</span><span class="n">ind</span> <span class="k">for</span> <span class="n">ind</span> <span class="ow">in</span> <span class="n">inds_to_order</span> <span class="k">if</span> <span class="n">pnum_surf_sites</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">]</span>
+
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">monodentateinds</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="c1">#biggest monodentate first</span>
+                <span class="n">sorted_inds</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">monodentateinds</span><span class="p">,</span><span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">ind</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">product_mols</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span><span class="o">.</span><span class="n">atoms</span><span class="p">))</span>
+                <span class="n">indout</span> <span class="o">=</span> <span class="n">sorted_inds</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+                <span class="n">ordered_reacting_species</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">product_names</span><span class="p">[</span><span class="n">indout</span><span class="p">])</span>
+                <span class="n">inds_to_order</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">indout</span><span class="p">)</span>
+                <span class="k">continue</span>
+
+            <span class="c1">#gas phase biggest first</span>
+            <span class="n">sorted_inds</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">inds_to_order</span><span class="p">,</span><span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">ind</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">product_mols</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span><span class="o">.</span><span class="n">atoms</span><span class="p">))</span>
+            <span class="n">indout</span> <span class="o">=</span> <span class="n">sorted_inds</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">ordered_reacting_species</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">product_names</span><span class="p">[</span><span class="n">indout</span><span class="p">])</span>
+            <span class="n">inds_to_order</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">indout</span><span class="p">)</span>
+            <span class="k">continue</span>
+
+    <span class="k">return</span> <span class="n">forward</span><span class="p">,</span><span class="n">ordered_reacting_species</span></div>
+
+
+<div class="viewcode-block" id="get_unique_TS_structs"><a class="viewcode-back" href="../../source/pynta.html#pynta.transitionstate.get_unique_TS_structs">[docs]</a><span class="k">def</span> <span class="nf">get_unique_TS_structs</span><span class="p">(</span><span class="n">adsorbates</span><span class="p">,</span><span class="n">species_names</span><span class="p">,</span><span class="n">cas</span><span class="p">,</span><span class="n">nslab</span><span class="p">,</span><span class="n">num_surf_sites</span><span class="p">,</span><span class="n">mol_dict</span><span class="p">,</span>
+                          <span class="n">gratom_to_molecule_atom_maps</span><span class="p">,</span><span class="n">gratom_to_molecule_surface_atom_maps</span><span class="p">,</span>
+                          <span class="n">facet</span><span class="p">,</span><span class="n">metal</span><span class="p">,</span><span class="n">gas_height</span><span class="o">=</span><span class="mf">5.0</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Generate unique initial structures for TS guess generation</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">tsstructs</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">ordered_adsorbates</span> <span class="o">=</span> <span class="p">[</span><span class="n">adsorbates</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">species_names</span><span class="p">]</span>
+    <span class="k">for</span> <span class="n">adss</span> <span class="ow">in</span> <span class="n">itertools</span><span class="o">.</span><span class="n">product</span><span class="p">(</span><span class="o">*</span><span class="n">ordered_adsorbates</span><span class="p">):</span>
+        <span class="n">adslab</span> <span class="o">=</span> <span class="n">adss</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">adss</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">tsstructs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">adslab</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">num_surf_sites</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">name</span> <span class="o">=</span> <span class="n">species_names</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+                <span class="n">ad</span> <span class="o">=</span> <span class="n">adss</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="n">nslab</span><span class="p">:]</span>
+                <span class="n">bondlengths1</span><span class="p">,</span><span class="n">sites1</span><span class="p">,</span><span class="n">site_lengths1</span> <span class="o">=</span> <span class="n">get_bond_lengths_sites</span><span class="p">(</span><span class="n">mol_dict</span><span class="p">[</span><span class="n">name</span><span class="p">],</span><span class="n">adss</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="n">gratom_to_molecule_atom_maps</span><span class="p">[</span><span class="n">name</span><span class="p">],</span>
+                                                                        <span class="n">gratom_to_molecule_surface_atom_maps</span><span class="p">[</span><span class="n">name</span><span class="p">],</span><span class="n">nslab</span><span class="p">,</span>
+                                                                        <span class="n">facet</span><span class="o">=</span><span class="n">facet</span><span class="p">,</span><span class="n">metal</span><span class="o">=</span><span class="n">metal</span><span class="p">,</span><span class="n">cas</span><span class="o">=</span><span class="n">cas</span><span class="p">)</span>
+                <span class="n">sitetype1</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">sites1</span><span class="o">.</span><span class="n">values</span><span class="p">())[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">height1</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">site_lengths1</span><span class="o">.</span><span class="n">values</span><span class="p">())[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">surf_ind1</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">gratom_to_molecule_surface_atom_maps</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">())[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">adcov</span> <span class="o">=</span> <span class="n">SlabAdsorbateCoverage</span><span class="p">(</span><span class="n">adslab</span><span class="p">,</span><span class="n">adsorption_sites</span><span class="o">=</span><span class="n">cas</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">site</span> <span class="ow">in</span> <span class="n">adcov</span><span class="o">.</span><span class="n">get_sites</span><span class="p">():</span>
+                    <span class="n">adslab2</span> <span class="o">=</span> <span class="n">adslab</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+                    <span class="k">if</span> <span class="n">site</span><span class="p">[</span><span class="s1">&#39;occupied&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="kc">False</span> <span class="ow">and</span> <span class="n">site</span><span class="p">[</span><span class="s2">&quot;site&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="n">sitetype1</span><span class="p">:</span>
+                        <span class="n">add_adsorbate_to_site</span><span class="p">(</span><span class="n">adslab2</span><span class="p">,</span><span class="n">adsorbate</span><span class="o">=</span><span class="n">ad</span><span class="p">,</span><span class="n">surf_ind</span><span class="o">=</span><span class="n">surf_ind1</span><span class="p">,</span><span class="n">site</span><span class="o">=</span><span class="n">site</span><span class="p">,</span><span class="n">height</span><span class="o">=</span><span class="n">height1</span><span class="p">)</span>
+                        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">adss</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+                            <span class="n">tsstructs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">adslab2</span><span class="p">)</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="k">if</span> <span class="n">num_surf_sites</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                                <span class="n">name2</span> <span class="o">=</span> <span class="n">species_names</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+                                <span class="n">ad2</span> <span class="o">=</span> <span class="n">adss</span><span class="p">[</span><span class="mi">2</span><span class="p">][</span><span class="n">nslab</span><span class="p">:]</span>
+                                <span class="n">bondlengths2</span><span class="p">,</span><span class="n">sites2</span><span class="p">,</span><span class="n">site_lengths2</span> <span class="o">=</span> <span class="n">get_bond_lengths_sites</span><span class="p">(</span><span class="n">mol_dict</span><span class="p">[</span><span class="n">name2</span><span class="p">],</span><span class="n">adss</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span><span class="n">gratom_to_molecule_atom_maps</span><span class="p">[</span><span class="n">name2</span><span class="p">],</span>
+                                                                        <span class="n">gratom_to_molecule_surface_atom_maps</span><span class="p">[</span><span class="n">name2</span><span class="p">],</span><span class="n">nslab</span><span class="p">,</span>
+                                                                        <span class="n">facet</span><span class="o">=</span><span class="n">facet</span><span class="p">,</span><span class="n">metal</span><span class="o">=</span><span class="n">metal</span><span class="p">,</span><span class="n">cas</span><span class="o">=</span><span class="n">cas</span><span class="p">)</span>
+                                <span class="n">sitetype2</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">sites2</span><span class="o">.</span><span class="n">values</span><span class="p">())[</span><span class="mi">0</span><span class="p">]</span>
+                                <span class="n">height2</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">site_lengths2</span><span class="o">.</span><span class="n">values</span><span class="p">())[</span><span class="mi">0</span><span class="p">]</span>
+                                <span class="n">surf_ind2</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">gratom_to_molecule_surface_atom_maps</span><span class="p">[</span><span class="n">name2</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">())[</span><span class="mi">0</span><span class="p">]</span>
+                                <span class="n">adcov2</span> <span class="o">=</span> <span class="n">SlabAdsorbateCoverage</span><span class="p">(</span><span class="n">adslab2</span><span class="p">,</span><span class="n">adsorption_sites</span><span class="o">=</span><span class="n">cas</span><span class="p">)</span>
+                                <span class="k">for</span> <span class="n">site2</span> <span class="ow">in</span> <span class="n">adcov2</span><span class="o">.</span><span class="n">get_sites</span><span class="p">():</span>
+                                    <span class="n">adslab3</span> <span class="o">=</span> <span class="n">adslab2</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+                                    <span class="k">if</span> <span class="n">site2</span><span class="p">[</span><span class="s1">&#39;occupied&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="kc">False</span> <span class="ow">and</span> <span class="n">site2</span><span class="p">[</span><span class="s2">&quot;site&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="n">sitetype2</span><span class="p">:</span>
+                                        <span class="n">add_adsorbate_to_site</span><span class="p">(</span><span class="n">adslab3</span><span class="p">,</span><span class="n">adsorbate</span><span class="o">=</span><span class="n">ad2</span><span class="p">,</span><span class="n">surf_ind</span><span class="o">=</span><span class="n">surf_ind2</span><span class="p">,</span><span class="n">site</span><span class="o">=</span><span class="n">site2</span><span class="p">,</span><span class="n">height</span><span class="o">=</span><span class="n">height2</span><span class="p">)</span>
+                                        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">adss</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+                                            <span class="n">tsstructs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">adslab3</span><span class="p">)</span>
+                                        <span class="k">else</span><span class="p">:</span>
+                                            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Cannot handle more than three reactants&quot;</span><span class="p">)</span>
+                            <span class="k">else</span><span class="p">:</span>
+                                <span class="n">adcovl2</span> <span class="o">=</span> <span class="n">SlabAdsorbateCoverage</span><span class="p">(</span><span class="n">adslab2</span><span class="p">,</span><span class="n">adsorption_sites</span><span class="o">=</span><span class="n">cas</span><span class="p">)</span>
+                                <span class="n">sites</span> <span class="o">=</span> <span class="n">adcovl2</span><span class="o">.</span><span class="n">get_sites</span><span class="p">()</span>
+                                <span class="n">c</span> <span class="o">=</span> <span class="mi">0</span>
+                                <span class="n">site</span> <span class="o">=</span> <span class="n">sites</span><span class="p">[</span><span class="n">c</span><span class="p">]</span>
+                                <span class="k">while</span> <span class="n">site</span><span class="p">[</span><span class="s2">&quot;occupied&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="kc">True</span><span class="p">:</span>
+                                    <span class="n">c</span> <span class="o">+=</span> <span class="mi">1</span>
+                                    <span class="n">site</span> <span class="o">=</span> <span class="n">sites</span><span class="p">[</span><span class="n">c</span><span class="p">]</span>
+                                <span class="n">add_adsorbate_to_site</span><span class="p">(</span><span class="n">adslab</span><span class="p">,</span><span class="n">adsorbate</span><span class="o">=</span><span class="n">adss</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span><span class="n">site</span><span class="o">=</span><span class="n">site</span><span class="p">,</span><span class="n">height</span><span class="o">=</span><span class="n">gas_height</span><span class="p">)</span>
+
+            <span class="k">elif</span> <span class="n">num_surf_sites</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">adcovl1</span> <span class="o">=</span> <span class="n">SlabAdsorbateCoverage</span><span class="p">(</span><span class="n">adslab</span><span class="p">,</span><span class="n">adsorption_sites</span><span class="o">=</span><span class="n">cas</span><span class="p">)</span>
+                <span class="n">sites</span> <span class="o">=</span> <span class="n">adcovl1</span><span class="o">.</span><span class="n">get_sites</span><span class="p">()</span>
+                <span class="n">c</span> <span class="o">=</span> <span class="mi">0</span>
+                <span class="n">site</span> <span class="o">=</span> <span class="n">sites</span><span class="p">[</span><span class="n">c</span><span class="p">]</span>
+                <span class="k">while</span> <span class="n">site</span><span class="p">[</span><span class="s2">&quot;occupied&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="kc">True</span><span class="p">:</span>
+                    <span class="n">c</span> <span class="o">+=</span> <span class="mi">1</span>
+                    <span class="n">site</span> <span class="o">=</span> <span class="n">sites</span><span class="p">[</span><span class="n">c</span><span class="p">]</span>
+
+                <span class="n">add_adsorbate_to_site</span><span class="p">(</span><span class="n">adslab</span><span class="p">,</span><span class="n">adsorbate</span><span class="o">=</span><span class="n">adss</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="n">site</span><span class="o">=</span><span class="n">site</span><span class="p">,</span><span class="n">height</span><span class="o">=</span><span class="n">gas_height</span><span class="p">)</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">adss</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+                    <span class="n">tsstructs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">adslab</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">c</span> <span class="o">=</span> <span class="mi">0</span>
+                    <span class="n">site2</span> <span class="o">=</span> <span class="n">sites</span><span class="p">[</span><span class="n">c</span><span class="p">]</span>
+                    <span class="k">while</span> <span class="n">site2</span><span class="p">[</span><span class="s2">&quot;occupied&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="kc">True</span> <span class="ow">and</span> <span class="n">site2</span> <span class="o">!=</span> <span class="n">site</span><span class="p">:</span>
+                        <span class="n">c</span> <span class="o">+=</span> <span class="mi">1</span>
+                        <span class="n">site2</span> <span class="o">=</span> <span class="n">sites</span><span class="p">[</span><span class="n">c</span><span class="p">]</span>
+                    <span class="n">add_adsorbate_to_site</span><span class="p">(</span><span class="n">adslab</span><span class="p">,</span><span class="n">adsorbate</span><span class="o">=</span><span class="n">adss</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span><span class="n">site</span><span class="o">=</span><span class="n">site</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">adss</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+                        <span class="n">tsstructs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">adslab</span><span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Cannot handle more than three reactants&quot;</span><span class="p">)</span>
+
+    <span class="n">unique_tsstructs</span> <span class="o">=</span> <span class="n">get_unique_sym_structs</span><span class="p">(</span><span class="n">tsstructs</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">unique_tsstructs</span></div>
+
+<div class="viewcode-block" id="generate_constraints_harmonic_parameters"><a class="viewcode-back" href="../../source/pynta.html#pynta.transitionstate.generate_constraints_harmonic_parameters">[docs]</a><span class="k">def</span> <span class="nf">generate_constraints_harmonic_parameters</span><span class="p">(</span><span class="n">tsstructs</span><span class="p">,</span><span class="n">adsorbates</span><span class="p">,</span><span class="n">slab</span><span class="p">,</span><span class="n">forward_template</span><span class="p">,</span>
+                                             <span class="n">reverse_template</span><span class="p">,</span><span class="n">template_name</span><span class="p">,</span><span class="n">template_reversed</span><span class="p">,</span>
+                                            <span class="n">ordered_names</span><span class="p">,</span><span class="n">reverse_names</span><span class="p">,</span><span class="n">mol_dict</span><span class="p">,</span><span class="n">gratom_to_molecule_atom_maps</span><span class="p">,</span>
+                                            <span class="n">gratom_to_molecule_surface_atom_maps</span><span class="p">,</span><span class="n">nslab</span><span class="p">,</span><span class="n">facet</span><span class="p">,</span><span class="n">metal</span><span class="p">,</span><span class="n">cas</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Generate constraints and harmonic parameters for the harmonically forced optimization</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">constraint_lists</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">atom_bond_potential_lists</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">site_bond_potential_lists</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">site_bond_dict_list</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">out_structs</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="n">mols</span> <span class="o">=</span> <span class="p">[</span><span class="n">mol_dict</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">ordered_names</span><span class="p">]</span>
+    <span class="n">rev_mols</span> <span class="o">=</span> <span class="p">[</span><span class="n">mol_dict</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">reverse_names</span><span class="p">]</span>
+    <span class="n">ads_sizes</span> <span class="o">=</span> <span class="p">[</span><span class="n">ads_size</span><span class="p">(</span><span class="n">mol</span><span class="p">)</span> <span class="k">for</span> <span class="n">mol</span> <span class="ow">in</span> <span class="n">mols</span><span class="p">]</span>
+    <span class="n">mols_rev</span> <span class="o">=</span> <span class="p">[</span><span class="n">mol_dict</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">reverse_names</span><span class="p">]</span>
+    <span class="n">template_mol_map</span> <span class="o">=</span> <span class="n">get_template_mol_map</span><span class="p">(</span><span class="n">forward_template</span><span class="p">,</span><span class="n">mols</span><span class="p">)</span>
+    <span class="n">reverse_template_mol_map</span> <span class="o">=</span> <span class="n">get_template_mol_map</span><span class="p">(</span><span class="n">reverse_template</span><span class="p">,</span><span class="n">rev_mols</span><span class="p">)</span>
+    <span class="n">molecule_to_gratom_maps</span> <span class="o">=</span> <span class="p">[{</span><span class="n">value</span><span class="p">:</span><span class="n">key</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span><span class="n">value</span> <span class="ow">in</span> <span class="n">gratom_to_molecule_atom_maps</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">ordered_names</span><span class="p">]</span>
+    <span class="n">broken_bonds</span><span class="p">,</span><span class="n">formed_bonds</span> <span class="o">=</span> <span class="n">get_broken_formed_bonds</span><span class="p">(</span><span class="n">forward_template</span><span class="p">,</span><span class="n">reverse_template</span><span class="p">)</span>
+
+    <span class="n">mols_info</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">ordered_names</span><span class="p">:</span>
+        <span class="n">bdlength_list</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">sites_list</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">site_lengths_list</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">ads</span> <span class="ow">in</span> <span class="n">adsorbates</span><span class="p">[</span><span class="n">name</span><span class="p">]:</span>
+            <span class="n">bondlengths</span><span class="p">,</span><span class="n">sites</span><span class="p">,</span><span class="n">site_lengths</span> <span class="o">=</span> <span class="n">get_bond_lengths_sites</span><span class="p">(</span><span class="n">mol_dict</span><span class="p">[</span><span class="n">name</span><span class="p">],</span><span class="n">ads</span><span class="p">,</span>
+                                                                <span class="n">gratom_to_molecule_atom_maps</span><span class="p">[</span><span class="n">name</span><span class="p">],</span>
+                                                                <span class="n">gratom_to_molecule_surface_atom_maps</span><span class="p">[</span><span class="n">name</span><span class="p">],</span>
+                                                                <span class="n">nslab</span><span class="p">,</span><span class="n">facet</span><span class="o">=</span><span class="n">facet</span><span class="p">,</span><span class="n">metal</span><span class="o">=</span><span class="n">metal</span><span class="p">,</span><span class="n">cas</span><span class="o">=</span><span class="n">cas</span><span class="p">)</span>
+            <span class="n">bdlength_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">bondlengths</span><span class="p">)</span>
+            <span class="n">sites_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sites</span><span class="p">)</span>
+            <span class="n">site_lengths_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">site_lengths</span><span class="p">)</span>
+
+        <span class="n">ave_bdlength</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">bdlength_list</span><span class="p">)</span><span class="o">/</span><span class="nb">len</span><span class="p">(</span><span class="n">bdlength_list</span><span class="p">)</span>
+        <span class="n">site_dict</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">sites</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">sites_list</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">key</span><span class="p">,</span><span class="n">site</span> <span class="ow">in</span> <span class="n">sites</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="k">if</span> <span class="p">(</span><span class="n">key</span><span class="p">,</span><span class="n">site</span><span class="p">)</span> <span class="ow">in</span> <span class="n">site_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                    <span class="n">site_dict</span><span class="p">[(</span><span class="n">key</span><span class="p">,</span><span class="n">site</span><span class="p">)]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">site_lengths_list</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">key</span><span class="p">])</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">site_dict</span><span class="p">[(</span><span class="n">key</span><span class="p">,</span><span class="n">site</span><span class="p">)]</span> <span class="o">=</span> <span class="p">[</span><span class="n">site_lengths_list</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">key</span><span class="p">]]</span>
+
+        <span class="n">site_dict</span> <span class="o">=</span> <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span><span class="n">value</span> <span class="ow">in</span> <span class="n">site_dict</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+        <span class="n">mols_info</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">&quot;bondlengths&quot;</span><span class="p">:</span><span class="n">ave_bdlength</span><span class="p">,</span><span class="s2">&quot;site_dict&quot;</span><span class="p">:</span><span class="n">site_dict</span><span class="p">})</span>
+
+    <span class="n">rev_mols_info</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">reverse_names</span><span class="p">:</span>
+        <span class="n">bdlength_list</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">sites_list</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">site_lengths_list</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">ads</span> <span class="ow">in</span> <span class="n">adsorbates</span><span class="p">[</span><span class="n">name</span><span class="p">]:</span>
+            <span class="n">bondlengths</span><span class="p">,</span><span class="n">sites</span><span class="p">,</span><span class="n">site_lengths</span> <span class="o">=</span> <span class="n">get_bond_lengths_sites</span><span class="p">(</span><span class="n">mol_dict</span><span class="p">[</span><span class="n">name</span><span class="p">],</span><span class="n">ads</span><span class="p">,</span>
+                                                                <span class="n">gratom_to_molecule_atom_maps</span><span class="p">[</span><span class="n">name</span><span class="p">],</span>
+                                                                <span class="n">gratom_to_molecule_surface_atom_maps</span><span class="p">[</span><span class="n">name</span><span class="p">],</span>
+                                                                <span class="n">nslab</span><span class="p">,</span><span class="n">facet</span><span class="o">=</span><span class="n">facet</span><span class="p">,</span><span class="n">metal</span><span class="o">=</span><span class="n">metal</span><span class="p">,</span><span class="n">cas</span><span class="o">=</span><span class="n">cas</span><span class="p">)</span>
+            <span class="n">bdlength_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">bondlengths</span><span class="p">)</span>
+            <span class="n">sites_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sites</span><span class="p">)</span>
+            <span class="n">site_lengths_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">site_lengths</span><span class="p">)</span>
+
+        <span class="n">ave_bdlength</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">bdlength_list</span><span class="p">)</span><span class="o">/</span><span class="nb">len</span><span class="p">(</span><span class="n">bdlength_list</span><span class="p">)</span>
+        <span class="n">site_dict</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">sites</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">sites_list</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">key</span><span class="p">,</span><span class="n">site</span> <span class="ow">in</span> <span class="n">sites</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="k">if</span> <span class="p">(</span><span class="n">key</span><span class="p">,</span><span class="n">site</span><span class="p">)</span> <span class="ow">in</span> <span class="n">site_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                    <span class="n">site_dict</span><span class="p">[(</span><span class="n">key</span><span class="p">,</span><span class="n">site</span><span class="p">)]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">site_lengths_list</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">key</span><span class="p">])</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">site_dict</span><span class="p">[(</span><span class="n">key</span><span class="p">,</span><span class="n">site</span><span class="p">)]</span> <span class="o">=</span> <span class="p">[</span><span class="n">site_lengths_list</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">key</span><span class="p">]]</span>
+
+        <span class="n">site_dict</span> <span class="o">=</span> <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span><span class="n">value</span> <span class="ow">in</span> <span class="n">site_dict</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+        <span class="n">rev_mols_info</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">&quot;bondlengths&quot;</span><span class="p">:</span><span class="n">ave_bdlength</span><span class="p">,</span><span class="s2">&quot;site_dict&quot;</span><span class="p">:</span><span class="n">site_dict</span><span class="p">})</span>
+
+    <span class="k">for</span> <span class="n">tsstruct</span> <span class="ow">in</span> <span class="n">tsstructs</span><span class="p">:</span>
+        <span class="n">tsstruct_valid</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="n">atom_bond_potentials</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">site_bond_potentials</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">fixed_bond_pairs</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">site_bond_dict</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+
+        <span class="n">adcov</span> <span class="o">=</span> <span class="n">SlabAdsorbateCoverage</span><span class="p">(</span><span class="n">tsstruct</span><span class="p">,</span><span class="n">adsorption_sites</span><span class="o">=</span><span class="n">cas</span><span class="p">)</span>
+        <span class="n">sites</span> <span class="o">=</span> <span class="n">adcov</span><span class="o">.</span><span class="n">get_sites</span><span class="p">()</span>
+        <span class="n">occ</span> <span class="o">=</span> <span class="p">[</span><span class="n">site</span> <span class="k">for</span> <span class="n">site</span> <span class="ow">in</span> <span class="n">sites</span> <span class="k">if</span> <span class="n">site</span><span class="p">[</span><span class="s2">&quot;occupied&quot;</span><span class="p">]]</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">occ</span><span class="p">)</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">forward_template</span><span class="o">.</span><span class="n">get_adatoms</span><span class="p">()):</span> <span class="c1">#if we don&#39;t identify as many occupied sites as we should skip this structure</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;occupied not equal to forward_template&quot;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;occ=</span><span class="si">{0}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">occ</span><span class="p">)))</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;forward_template_occs=</span><span class="si">{0}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">forward_template</span><span class="o">.</span><span class="n">get_adatoms</span><span class="p">())))</span>
+            <span class="k">continue</span>
+        <span class="n">occ_atom_inds</span> <span class="o">=</span> <span class="p">[</span><span class="n">site</span><span class="p">[</span><span class="s2">&quot;bonding_index&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">site</span> <span class="ow">in</span> <span class="n">occ</span><span class="p">]</span>
+        <span class="n">occ_bd_lengths</span> <span class="o">=</span> <span class="p">{</span><span class="n">site</span><span class="p">[</span><span class="s2">&quot;bonding_index&quot;</span><span class="p">]:</span><span class="n">site</span><span class="p">[</span><span class="s1">&#39;bond_length&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">site</span> <span class="ow">in</span> <span class="n">occ</span><span class="p">}</span>
+        <span class="n">occ_site_types</span> <span class="o">=</span> <span class="p">{</span><span class="n">site</span><span class="p">[</span><span class="s2">&quot;bonding_index&quot;</span><span class="p">]:</span><span class="n">site</span><span class="p">[</span><span class="s1">&#39;site&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">site</span> <span class="ow">in</span> <span class="n">occ</span><span class="p">}</span>
+        <span class="n">occ_site_pos</span> <span class="o">=</span> <span class="p">{</span><span class="n">site</span><span class="p">[</span><span class="s2">&quot;bonding_index&quot;</span><span class="p">]:</span><span class="n">site</span><span class="p">[</span><span class="s1">&#39;position&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">site</span> <span class="ow">in</span> <span class="n">occ</span><span class="p">}</span>
+        <span class="n">unocc</span> <span class="o">=</span> <span class="p">[</span><span class="n">site</span> <span class="k">for</span> <span class="n">site</span> <span class="ow">in</span> <span class="n">sites</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">site</span><span class="p">[</span><span class="s2">&quot;occupied&quot;</span><span class="p">]]</span>
+
+        <span class="k">for</span> <span class="n">edge</span> <span class="ow">in</span> <span class="n">forward_template</span><span class="o">.</span><span class="n">get_all_edges</span><span class="p">():</span>
+            <span class="n">ind1</span> <span class="o">=</span> <span class="n">forward_template</span><span class="o">.</span><span class="n">atoms</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">edge</span><span class="o">.</span><span class="n">atom1</span><span class="p">)</span>
+            <span class="n">ind2</span> <span class="o">=</span> <span class="n">forward_template</span><span class="o">.</span><span class="n">atoms</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">edge</span><span class="o">.</span><span class="n">atom2</span><span class="p">)</span>
+            <span class="n">label1</span> <span class="o">=</span> <span class="n">edge</span><span class="o">.</span><span class="n">atom1</span><span class="o">.</span><span class="n">label</span>
+            <span class="n">label2</span> <span class="o">=</span> <span class="n">edge</span><span class="o">.</span><span class="n">atom2</span><span class="o">.</span><span class="n">label</span>
+            <span class="n">ase_ind1</span> <span class="o">=</span> <span class="n">get_ase_index</span><span class="p">(</span><span class="n">ind1</span><span class="p">,</span><span class="n">template_mol_map</span><span class="p">,</span><span class="n">molecule_to_gratom_maps</span><span class="p">,</span><span class="n">nslab</span><span class="p">,</span><span class="n">ads_sizes</span><span class="p">)</span>
+            <span class="n">ase_ind2</span> <span class="o">=</span> <span class="n">get_ase_index</span><span class="p">(</span><span class="n">ind2</span><span class="p">,</span><span class="n">template_mol_map</span><span class="p">,</span><span class="n">molecule_to_gratom_maps</span><span class="p">,</span><span class="n">nslab</span><span class="p">,</span><span class="n">ads_sizes</span><span class="p">)</span>
+            <span class="k">if</span> <span class="p">((</span><span class="n">ase_ind1</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">ase_ind2</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)):</span>
+                <span class="nb">print</span><span class="p">(</span><span class="n">ind1</span><span class="p">)</span>
+                <span class="nb">print</span><span class="p">(</span><span class="n">ind2</span><span class="p">)</span>
+                <span class="nb">print</span><span class="p">(</span><span class="n">nslab</span><span class="p">)</span>
+                <span class="nb">print</span><span class="p">(</span><span class="n">ads_sizes</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span>
+            <span class="n">labels</span> <span class="o">=</span> <span class="nb">set</span><span class="p">([</span><span class="n">label1</span><span class="p">,</span><span class="n">label2</span><span class="p">])</span>
+            <span class="k">if</span> <span class="n">labels</span> <span class="ow">in</span> <span class="n">broken_bonds</span><span class="p">:</span> <span class="c1">#bonds that break</span>
+                <span class="k">if</span> <span class="n">ase_ind1</span> <span class="ow">and</span> <span class="n">ase_ind2</span><span class="p">:</span>
+                    <span class="n">dwell</span> <span class="o">=</span> <span class="n">tsstruct</span><span class="o">.</span><span class="n">get_distance</span><span class="p">(</span><span class="n">ase_ind1</span><span class="p">,</span><span class="n">ase_ind2</span><span class="p">,</span><span class="n">mic</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                    <span class="n">sitetype</span> <span class="o">=</span> <span class="kc">None</span>
+                    <span class="n">pos</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="k">elif</span> <span class="n">ase_ind1</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="k">assert</span> <span class="n">edge</span><span class="o">.</span><span class="n">atom1</span><span class="o">.</span><span class="n">is_surface_site</span><span class="p">()</span>
+                    <span class="k">if</span> <span class="n">ase_ind2</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">occ_bd_lengths</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;acat occupational detection has failed for a TS guess structure...may be skipping important TS guesses&quot;</span><span class="p">)</span>
+                        <span class="n">tsstruct_valid</span> <span class="o">=</span> <span class="kc">False</span>
+                        <span class="k">break</span>
+                    <span class="n">dwell</span> <span class="o">=</span> <span class="n">occ_bd_lengths</span><span class="p">[</span><span class="n">ase_ind2</span><span class="p">]</span>
+                    <span class="n">sitetype</span> <span class="o">=</span> <span class="n">occ_site_types</span><span class="p">[</span><span class="n">ase_ind2</span><span class="p">]</span>
+                    <span class="n">pos</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">occ_site_pos</span><span class="p">[</span><span class="n">ase_ind2</span><span class="p">])</span>
+                    <span class="n">pos</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">+=</span> <span class="n">dwell</span>
+                    <span class="n">ind</span> <span class="o">=</span> <span class="n">ase_ind2</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">assert</span> <span class="n">edge</span><span class="o">.</span><span class="n">atom2</span><span class="o">.</span><span class="n">is_surface_site</span><span class="p">()</span>
+                    <span class="k">if</span> <span class="n">ase_ind1</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">occ_bd_lengths</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;acat occupational detection has failed for a TS guess structure...may be skipping important TS guesses&quot;</span><span class="p">)</span>
+                        <span class="n">tsstruct_valid</span> <span class="o">=</span> <span class="kc">False</span>
+                        <span class="k">break</span>
+                    <span class="n">dwell</span> <span class="o">=</span> <span class="n">occ_bd_lengths</span><span class="p">[</span><span class="n">ase_ind1</span><span class="p">]</span>
+                    <span class="n">sitetype</span> <span class="o">=</span> <span class="n">occ_site_types</span><span class="p">[</span><span class="n">ase_ind1</span><span class="p">]</span>
+                    <span class="n">pos</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">occ_site_pos</span><span class="p">[</span><span class="n">ase_ind1</span><span class="p">])</span>
+                    <span class="n">pos</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">+=</span> <span class="n">dwell</span>
+                    <span class="n">ind</span> <span class="o">=</span> <span class="n">ase_ind1</span>
+                <span class="n">deq</span><span class="p">,</span><span class="n">k</span> <span class="o">=</span> <span class="n">estimate_deq_k</span><span class="p">(</span><span class="n">labels</span><span class="p">,</span><span class="n">dwell</span><span class="p">,</span><span class="n">forward_template</span><span class="p">,</span><span class="n">reverse_template</span><span class="p">,</span><span class="n">template_name</span><span class="p">,</span><span class="n">template_reversed</span><span class="p">,</span><span class="n">broken_bonds</span><span class="p">,</span><span class="n">formed_bonds</span><span class="p">,</span><span class="n">sitetype</span><span class="o">=</span><span class="n">sitetype</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">pos</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">d</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;ind&quot;</span><span class="p">:</span><span class="n">ind</span><span class="p">,</span><span class="s2">&quot;site_pos&quot;</span><span class="p">:</span><span class="n">pos</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span><span class="s2">&quot;k&quot;</span><span class="p">:</span><span class="n">k</span><span class="p">,</span><span class="s2">&quot;deq&quot;</span><span class="p">:</span><span class="n">deq</span><span class="p">}</span>
+                    <span class="n">site_bond_potentials</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">d</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;ind1&quot;</span><span class="p">:</span><span class="n">ase_ind1</span><span class="p">,</span><span class="s2">&quot;ind2&quot;</span><span class="p">:</span><span class="n">ase_ind2</span><span class="p">,</span><span class="s2">&quot;k&quot;</span><span class="p">:</span><span class="n">k</span><span class="p">,</span><span class="s2">&quot;deq&quot;</span><span class="p">:</span><span class="n">deq</span><span class="p">}</span>
+                    <span class="n">atom_bond_potentials</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span> <span class="c1">#bond that doesn&#39;t break</span>
+                <span class="k">if</span> <span class="n">ase_ind1</span> <span class="ow">and</span> <span class="n">ase_ind2</span><span class="p">:</span>
+                    <span class="n">fixed_bond_pairs</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">ase_ind1</span><span class="p">,</span><span class="n">ase_ind2</span><span class="p">])</span>
+                <span class="k">elif</span> <span class="n">ase_ind1</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span> <span class="c1">#surface bonds that don&#39;t break</span>
+                    <span class="n">dwell</span> <span class="o">=</span> <span class="n">occ_bd_lengths</span><span class="p">[</span><span class="n">ase_ind2</span><span class="p">]</span>
+                    <span class="n">sitetype</span> <span class="o">=</span> <span class="n">occ_site_types</span><span class="p">[</span><span class="n">ase_ind2</span><span class="p">]</span>
+                    <span class="n">pos</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">occ_site_pos</span><span class="p">[</span><span class="n">ase_ind2</span><span class="p">])</span>
+                    <span class="n">pos</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">+=</span> <span class="n">dwell</span> <span class="c1">#shift position up to atom position</span>
+                    <span class="n">ind</span> <span class="o">=</span> <span class="n">ase_ind2</span>
+                    <span class="n">deq</span><span class="p">,</span><span class="n">k</span> <span class="o">=</span> <span class="n">estimate_deq_k_fixed_surf_bond</span><span class="p">(</span><span class="n">labels</span><span class="p">,</span><span class="n">dwell</span><span class="p">,</span><span class="n">forward_template</span><span class="p">,</span><span class="n">reverse_template</span><span class="p">,</span><span class="n">template_name</span><span class="p">,</span><span class="n">template_reversed</span><span class="p">,</span><span class="n">broken_bonds</span><span class="p">,</span><span class="n">formed_bonds</span><span class="p">,</span><span class="n">sitetype</span><span class="o">=</span><span class="n">sitetype</span><span class="p">)</span>
+                    <span class="n">d</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;ind&quot;</span><span class="p">:</span><span class="n">ind</span><span class="p">,</span><span class="s2">&quot;site_pos&quot;</span><span class="p">:</span><span class="n">pos</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span><span class="s2">&quot;k&quot;</span><span class="p">:</span><span class="n">k</span><span class="p">,</span><span class="s2">&quot;deq&quot;</span><span class="p">:</span><span class="n">deq</span><span class="p">}</span>
+                    <span class="n">site_bond_potentials</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">dwell</span> <span class="o">=</span> <span class="n">occ_bd_lengths</span><span class="p">[</span><span class="n">ase_ind1</span><span class="p">]</span>
+                    <span class="n">sitetype</span> <span class="o">=</span> <span class="n">occ_site_types</span><span class="p">[</span><span class="n">ase_ind1</span><span class="p">]</span>
+                    <span class="n">pos</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">occ_site_pos</span><span class="p">[</span><span class="n">ase_ind1</span><span class="p">])</span>
+                    <span class="n">pos</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">+=</span> <span class="n">dwell</span> <span class="c1">#shift position up to atom position</span>
+                    <span class="n">ind</span> <span class="o">=</span> <span class="n">ase_ind1</span>
+                    <span class="n">deq</span><span class="p">,</span><span class="n">k</span> <span class="o">=</span> <span class="n">estimate_deq_k_fixed_surf_bond</span><span class="p">(</span><span class="n">labels</span><span class="p">,</span><span class="n">dwell</span><span class="p">,</span><span class="n">forward_template</span><span class="p">,</span><span class="n">reverse_template</span><span class="p">,</span><span class="n">template_name</span><span class="p">,</span><span class="n">template_reversed</span><span class="p">,</span><span class="n">broken_bonds</span><span class="p">,</span><span class="n">formed_bonds</span><span class="p">,</span><span class="n">sitetype</span><span class="o">=</span><span class="n">sitetype</span><span class="p">)</span>
+                    <span class="n">d</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;ind&quot;</span><span class="p">:</span><span class="n">ind</span><span class="p">,</span><span class="s2">&quot;site_pos&quot;</span><span class="p">:</span><span class="n">pos</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span><span class="s2">&quot;k&quot;</span><span class="p">:</span><span class="n">k</span><span class="p">,</span><span class="s2">&quot;deq&quot;</span><span class="p">:</span><span class="n">deq</span><span class="p">}</span>
+                    <span class="n">site_bond_potentials</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">labels</span> <span class="ow">in</span> <span class="n">formed_bonds</span><span class="p">:</span> <span class="c1">#bonds that form</span>
+            <span class="n">atmsf</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">label</span> <span class="ow">in</span> <span class="n">labels</span><span class="p">:</span>
+                <span class="n">atmsf</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">forward_template</span><span class="o">.</span><span class="n">get_labeled_atoms</span><span class="p">(</span><span class="n">label</span><span class="p">))</span>
+            <span class="n">indsf</span> <span class="o">=</span> <span class="p">[</span><span class="n">forward_template</span><span class="o">.</span><span class="n">atoms</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">atm</span><span class="p">)</span> <span class="k">for</span> <span class="n">atm</span> <span class="ow">in</span> <span class="n">atmsf</span><span class="p">]</span>
+            <span class="n">ind1f</span> <span class="o">=</span> <span class="n">indsf</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">ind2f</span> <span class="o">=</span> <span class="n">indsf</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">ase_ind1</span> <span class="o">=</span> <span class="n">get_ase_index</span><span class="p">(</span><span class="n">ind1f</span><span class="p">,</span><span class="n">template_mol_map</span><span class="p">,</span><span class="n">molecule_to_gratom_maps</span><span class="p">,</span><span class="n">nslab</span><span class="p">,</span><span class="n">ads_sizes</span><span class="p">)</span>
+            <span class="n">ase_ind2</span> <span class="o">=</span> <span class="n">get_ase_index</span><span class="p">(</span><span class="n">ind2f</span><span class="p">,</span><span class="n">template_mol_map</span><span class="p">,</span><span class="n">molecule_to_gratom_maps</span><span class="p">,</span><span class="n">nslab</span><span class="p">,</span><span class="n">ads_sizes</span><span class="p">)</span>
+            <span class="n">atmsr</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">label</span> <span class="ow">in</span> <span class="n">labels</span><span class="p">:</span>
+                <span class="n">atmsr</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">reverse_template</span><span class="o">.</span><span class="n">get_labeled_atoms</span><span class="p">(</span><span class="n">label</span><span class="p">))</span>
+            <span class="n">indsr</span> <span class="o">=</span> <span class="p">[</span><span class="n">reverse_template</span><span class="o">.</span><span class="n">atoms</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">atm</span><span class="p">)</span> <span class="k">for</span> <span class="n">atm</span> <span class="ow">in</span> <span class="n">atmsr</span><span class="p">]</span>
+            <span class="n">ind1r</span> <span class="o">=</span> <span class="n">indsr</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">ind2r</span> <span class="o">=</span> <span class="n">indsr</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">ind1_mol_r</span><span class="p">,</span><span class="n">ind1r_mol</span> <span class="o">=</span> <span class="n">get_mol_index</span><span class="p">(</span><span class="n">ind1r</span><span class="p">,</span><span class="n">reverse_template_mol_map</span><span class="p">)</span>
+            <span class="n">ind2_mol_r</span><span class="p">,</span><span class="n">ind2r_mol</span> <span class="o">=</span> <span class="n">get_mol_index</span><span class="p">(</span><span class="n">ind2r</span><span class="p">,</span><span class="n">reverse_template_mol_map</span><span class="p">)</span>
+            <span class="k">assert</span> <span class="n">ind1_mol_r</span> <span class="o">==</span> <span class="n">ind2_mol_r</span>
+
+            <span class="k">if</span> <span class="n">ase_ind1</span> <span class="ow">and</span> <span class="n">ase_ind2</span><span class="p">:</span> <span class="c1">#bond between atoms</span>
+                <span class="n">dwell</span> <span class="o">=</span> <span class="n">rev_mols_info</span><span class="p">[</span><span class="n">ind1_mol_r</span><span class="p">][</span><span class="s2">&quot;bondlengths&quot;</span><span class="p">][</span><span class="n">ind1r_mol</span><span class="p">,</span><span class="n">ind2r_mol</span><span class="p">]</span>
+                <span class="n">sitetype</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="n">deq</span><span class="p">,</span><span class="n">k</span> <span class="o">=</span> <span class="n">estimate_deq_k</span><span class="p">(</span><span class="n">labels</span><span class="p">,</span><span class="n">dwell</span><span class="p">,</span><span class="n">forward_template</span><span class="p">,</span><span class="n">reverse_template</span><span class="p">,</span><span class="n">template_name</span><span class="p">,</span><span class="n">template_reversed</span><span class="p">,</span><span class="n">broken_bonds</span><span class="p">,</span><span class="n">formed_bonds</span><span class="p">,</span><span class="n">sitetype</span><span class="o">=</span><span class="n">sitetype</span><span class="p">)</span>
+                <span class="n">d</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;ind1&quot;</span><span class="p">:</span><span class="n">ase_ind1</span><span class="p">,</span><span class="s2">&quot;ind2&quot;</span><span class="p">:</span><span class="n">ase_ind2</span><span class="p">,</span><span class="s2">&quot;k&quot;</span><span class="p">:</span><span class="n">k</span><span class="p">,</span><span class="s2">&quot;deq&quot;</span><span class="p">:</span><span class="n">deq</span><span class="p">}</span>
+                <span class="n">atom_bond_potentials</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">ase_ind1</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span> <span class="c1">#surface bond to ase_ind2</span>
+                <span class="n">site_dict</span> <span class="o">=</span> <span class="n">rev_mols_info</span><span class="p">[</span><span class="n">ind1_mol_r</span><span class="p">][</span><span class="s2">&quot;site_dict&quot;</span><span class="p">]</span>
+                <span class="n">reusing_site</span> <span class="o">=</span> <span class="kc">False</span>
+
+                <span class="c1">#check if site reused</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">forward_template</span><span class="o">.</span><span class="n">atoms</span><span class="p">[</span><span class="n">ind1f</span><span class="p">]</span><span class="o">.</span><span class="n">bonds</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">reusing_site</span> <span class="o">=</span> <span class="kc">True</span>
+                    <span class="n">atm</span> <span class="o">=</span> <span class="n">forward_template</span><span class="o">.</span><span class="n">atoms</span><span class="p">[</span><span class="n">ind1f</span><span class="p">]</span>
+                    <span class="n">bd</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">forward_template</span><span class="o">.</span><span class="n">atoms</span><span class="p">[</span><span class="n">ind1f</span><span class="p">]</span><span class="o">.</span><span class="n">bonds</span><span class="o">.</span><span class="n">values</span><span class="p">())[</span><span class="mi">0</span><span class="p">]</span>
+                    <span class="k">if</span> <span class="n">bd</span><span class="o">.</span><span class="n">atom1</span> <span class="o">==</span> <span class="n">atm</span><span class="p">:</span>
+                        <span class="n">bonded_atom</span> <span class="o">=</span> <span class="n">bd</span><span class="o">.</span><span class="n">atom2</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">bonded_atom</span> <span class="o">=</span> <span class="n">bd</span><span class="o">.</span><span class="n">atom1</span>
+                    <span class="n">template_bonded_index</span> <span class="o">=</span> <span class="n">forward_template</span><span class="o">.</span><span class="n">atoms</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">bonded_atom</span><span class="p">)</span>
+                    <span class="n">ase_bonded_index</span> <span class="o">=</span> <span class="n">get_ase_index</span><span class="p">(</span><span class="n">template_bonded_index</span><span class="p">,</span><span class="n">template_mol_map</span><span class="p">,</span><span class="n">molecule_to_gratom_maps</span><span class="p">,</span><span class="n">nslab</span><span class="p">,</span><span class="n">ads_sizes</span><span class="p">)</span>
+                    <span class="n">reused_site_type</span> <span class="o">=</span> <span class="n">occ_site_types</span><span class="p">[</span><span class="n">ase_bonded_index</span><span class="p">]</span>
+                    <span class="n">reused_site_pos</span> <span class="o">=</span> <span class="n">occ_site_pos</span><span class="p">[</span><span class="n">ase_bonded_index</span><span class="p">]</span>
+
+                <span class="k">if</span> <span class="n">reusing_site</span> <span class="ow">and</span> <span class="p">(</span><span class="n">reused_site_type</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">site_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">()]):</span> <span class="c1">#the site one of the reactants is attached to is not stable in the products</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{reused_site}</span><span class="s2"> not in list of sites </span><span class="si">{site_list}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">reused_site</span><span class="o">=</span><span class="n">reused_site_type</span><span class="p">,</span><span class="n">site_list</span><span class="o">=</span><span class="p">[</span><span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">site_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">()]))</span>
+                    <span class="n">tsstruct_valid</span> <span class="o">=</span> <span class="kc">False</span>
+                    <span class="k">break</span>
+
+                <span class="n">site_bond_dict</span><span class="p">[</span><span class="n">ase_ind2</span><span class="p">]</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+                <span class="k">for</span> <span class="p">(</span><span class="n">mol_ind</span><span class="p">,</span><span class="n">sitetype</span><span class="p">)</span> <span class="ow">in</span> <span class="n">site_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                    <span class="k">if</span> <span class="n">mol_ind</span> <span class="o">==</span> <span class="n">ind1r_mol</span><span class="p">:</span>
+                        <span class="n">dwell</span> <span class="o">=</span> <span class="n">site_dict</span><span class="p">[(</span><span class="n">mol_ind</span><span class="p">,</span><span class="n">sitetype</span><span class="p">)]</span>
+                        <span class="n">deq</span><span class="p">,</span><span class="n">k</span> <span class="o">=</span> <span class="n">estimate_deq_k</span><span class="p">(</span><span class="n">labels</span><span class="p">,</span><span class="n">dwell</span><span class="p">,</span><span class="n">forward_template</span><span class="p">,</span><span class="n">reverse_template</span><span class="p">,</span><span class="n">template_name</span><span class="p">,</span><span class="n">template_reversed</span><span class="p">,</span><span class="n">broken_bonds</span><span class="p">,</span><span class="n">formed_bonds</span><span class="p">,</span><span class="n">sitetype</span><span class="o">=</span><span class="n">sitetype</span><span class="p">)</span>
+                        <span class="k">if</span> <span class="n">reusing_site</span><span class="p">:</span> <span class="c1">#attaching to a site that was bonded to another atom</span>
+                            <span class="k">if</span> <span class="n">reused_site_type</span> <span class="o">==</span> <span class="n">sitetype</span><span class="p">:</span>
+                                <span class="n">pos</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">reused_site_pos</span><span class="p">)</span>
+                                <span class="n">pos</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">+=</span> <span class="n">dwell</span>
+                                <span class="n">d</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;ind&quot;</span><span class="p">:</span><span class="n">ase_ind2</span><span class="p">,</span><span class="s2">&quot;site_pos&quot;</span><span class="p">:</span><span class="n">pos</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span><span class="s2">&quot;k&quot;</span><span class="p">:</span><span class="n">k</span><span class="p">,</span><span class="s2">&quot;deq&quot;</span><span class="p">:</span><span class="n">deq</span><span class="p">}</span>
+                                <span class="n">site_bond_potentials</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>
+                                <span class="k">if</span> <span class="n">ase_ind2</span> <span class="ow">in</span> <span class="n">site_bond_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                                    <span class="k">del</span> <span class="n">site_bond_dict</span><span class="p">[</span><span class="n">ase_ind2</span><span class="p">]</span>
+                        <span class="k">else</span><span class="p">:</span> <span class="c1">#attaching to a new empty site</span>
+                            <span class="n">site_bond_dict</span><span class="p">[</span><span class="n">ase_ind2</span><span class="p">][</span><span class="n">sitetype</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;deq&quot;</span><span class="p">:</span><span class="n">deq</span><span class="p">,</span><span class="s2">&quot;k&quot;</span><span class="p">:</span><span class="n">k</span><span class="p">,</span><span class="s2">&quot;dwell&quot;</span><span class="p">:</span><span class="n">dwell</span><span class="p">}</span>
+
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">site_dict</span> <span class="o">=</span> <span class="n">rev_mols_info</span><span class="p">[</span><span class="n">ind2_mol_r</span><span class="p">][</span><span class="s2">&quot;site_dict&quot;</span><span class="p">]</span>
+                <span class="n">reusing_site</span> <span class="o">=</span> <span class="kc">False</span>
+
+                <span class="c1">#check if site reused</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">forward_template</span><span class="o">.</span><span class="n">atoms</span><span class="p">[</span><span class="n">ind2f</span><span class="p">]</span><span class="o">.</span><span class="n">bonds</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">reusing_site</span> <span class="o">=</span> <span class="kc">True</span>
+                    <span class="n">atm</span> <span class="o">=</span> <span class="n">forward_template</span><span class="o">.</span><span class="n">atoms</span><span class="p">[</span><span class="n">ind2f</span><span class="p">]</span>
+                    <span class="n">bd</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">forward_template</span><span class="o">.</span><span class="n">atoms</span><span class="p">[</span><span class="n">ind2f</span><span class="p">]</span><span class="o">.</span><span class="n">bonds</span><span class="o">.</span><span class="n">values</span><span class="p">())[</span><span class="mi">0</span><span class="p">]</span>
+                    <span class="k">if</span> <span class="n">bd</span><span class="o">.</span><span class="n">atom1</span> <span class="o">==</span> <span class="n">atm</span><span class="p">:</span>
+                        <span class="n">bonded_atom</span> <span class="o">=</span> <span class="n">bd</span><span class="o">.</span><span class="n">atom2</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">bonded_atom</span> <span class="o">=</span> <span class="n">bd</span><span class="o">.</span><span class="n">atom1</span>
+                    <span class="n">template_bonded_index</span> <span class="o">=</span> <span class="n">forward_template</span><span class="o">.</span><span class="n">atoms</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">bonded_atom</span><span class="p">)</span>
+                    <span class="n">ase_bonded_index</span> <span class="o">=</span> <span class="n">get_ase_index</span><span class="p">(</span><span class="n">template_bonded_index</span><span class="p">,</span><span class="n">template_mol_map</span><span class="p">,</span><span class="n">molecule_to_gratom_maps</span><span class="p">,</span><span class="n">nslab</span><span class="p">,</span><span class="n">ads_sizes</span><span class="p">)</span>
+                    <span class="n">reused_site_type</span> <span class="o">=</span> <span class="n">occ_site_types</span><span class="p">[</span><span class="n">ase_bonded_index</span><span class="p">]</span>
+                    <span class="n">reused_site_pos</span> <span class="o">=</span> <span class="n">occ_site_pos</span><span class="p">[</span><span class="n">ase_bonded_index</span><span class="p">]</span>
+
+                <span class="k">if</span> <span class="n">reusing_site</span> <span class="ow">and</span> <span class="p">(</span><span class="n">reused_site_type</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">site_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">()]):</span> <span class="c1">#the site one of the reactants is attached to is not stable in the products</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{reused_site}</span><span class="s2"> not in list of sites </span><span class="si">{site_list}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">reused_site</span><span class="o">=</span><span class="n">reused_site_type</span><span class="p">,</span><span class="n">site_list</span><span class="o">=</span><span class="p">[</span><span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">site_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">()]))</span>
+                    <span class="n">tsstruct_valid</span> <span class="o">=</span> <span class="kc">False</span>
+                    <span class="k">break</span>
+
+                <span class="n">site_bond_dict</span><span class="p">[</span><span class="n">ase_ind1</span><span class="p">]</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+                <span class="k">for</span> <span class="p">(</span><span class="n">mol_ind</span><span class="p">,</span><span class="n">sitetype</span><span class="p">)</span> <span class="ow">in</span> <span class="n">site_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                    <span class="k">if</span> <span class="n">mol_ind</span> <span class="o">==</span> <span class="n">ind2r_mol</span><span class="p">:</span>
+                        <span class="n">dwell</span> <span class="o">=</span> <span class="n">site_dict</span><span class="p">[(</span><span class="n">mol_ind</span><span class="p">,</span><span class="n">sitetype</span><span class="p">)]</span>
+                        <span class="n">deq</span><span class="p">,</span><span class="n">k</span> <span class="o">=</span> <span class="n">estimate_deq_k</span><span class="p">(</span><span class="n">labels</span><span class="p">,</span><span class="n">dwell</span><span class="p">,</span><span class="n">forward_template</span><span class="p">,</span><span class="n">reverse_template</span><span class="p">,</span><span class="n">template_name</span><span class="p">,</span><span class="n">template_reversed</span><span class="p">,</span><span class="n">broken_bonds</span><span class="p">,</span><span class="n">formed_bonds</span><span class="p">,</span><span class="n">sitetype</span><span class="o">=</span><span class="n">sitetype</span><span class="p">)</span>
+                        <span class="k">if</span> <span class="n">reusing_site</span><span class="p">:</span> <span class="c1">#attaching to a site that was bonded to another atom</span>
+                            <span class="k">if</span> <span class="n">reused_site_type</span> <span class="o">==</span> <span class="n">sitetype</span><span class="p">:</span>
+                                <span class="n">pos</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">reused_site_pos</span><span class="p">)</span>
+                                <span class="n">pos</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">+=</span> <span class="n">dwell</span>
+                                <span class="n">d</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;ind&quot;</span><span class="p">:</span><span class="n">ase_ind1</span><span class="p">,</span><span class="s2">&quot;site_pos&quot;</span><span class="p">:</span><span class="n">pos</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span><span class="s2">&quot;k&quot;</span><span class="p">:</span><span class="n">k</span><span class="p">,</span><span class="s2">&quot;deq&quot;</span><span class="p">:</span><span class="n">deq</span><span class="p">}</span>
+                                <span class="n">site_bond_potentials</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>
+                                <span class="k">if</span> <span class="n">ase_ind1</span> <span class="ow">in</span> <span class="n">site_bond_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                                    <span class="k">del</span> <span class="n">site_bond_dict</span><span class="p">[</span><span class="n">ase_ind1</span><span class="p">]</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="n">site_bond_dict</span><span class="p">[</span><span class="n">ase_ind1</span><span class="p">][</span><span class="n">sitetype</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;deq&quot;</span><span class="p">:</span><span class="n">deq</span><span class="p">,</span><span class="s2">&quot;k&quot;</span><span class="p">:</span><span class="n">k</span><span class="p">,</span><span class="s2">&quot;dwell&quot;</span><span class="p">:</span><span class="n">dwell</span><span class="p">}</span>
+
+        <span class="k">if</span> <span class="n">tsstruct_valid</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">fixed_bond_pairs</span><span class="p">:</span>
+                <span class="n">constraint_list</span> <span class="o">=</span> <span class="p">[{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;fix_bond&quot;</span><span class="p">,</span> <span class="s2">&quot;indices&quot;</span><span class="p">:</span> <span class="n">pair</span><span class="p">}</span> <span class="k">for</span> <span class="n">pair</span> <span class="ow">in</span> <span class="n">fixed_bond_pairs</span><span class="p">]</span><span class="o">+</span><span class="p">[</span><span class="s2">&quot;freeze slab&quot;</span><span class="p">]</span>
+                <span class="n">constraint_lists</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">constraint_list</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">constraint_lists</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="s2">&quot;freeze slab&quot;</span><span class="p">])</span>
+            <span class="n">atom_bond_potential_lists</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">atom_bond_potentials</span><span class="p">)</span>
+            <span class="n">site_bond_potential_lists</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">site_bond_potentials</span><span class="p">)</span>
+            <span class="n">site_bond_dict_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">site_bond_dict</span><span class="p">)</span>
+            <span class="n">out_structs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tsstruct</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">out_structs</span><span class="p">,</span><span class="n">constraint_lists</span><span class="p">,</span><span class="n">atom_bond_potential_lists</span><span class="p">,</span><span class="n">site_bond_potential_lists</span><span class="p">,</span><span class="n">site_bond_dict_list</span></div>
+
+<div class="viewcode-block" id="estimate_deq_k"><a class="viewcode-back" href="../../source/pynta.html#pynta.transitionstate.estimate_deq_k">[docs]</a><span class="k">def</span> <span class="nf">estimate_deq_k</span><span class="p">(</span><span class="n">labels</span><span class="p">,</span><span class="n">dwell</span><span class="p">,</span><span class="n">forward_template</span><span class="p">,</span><span class="n">reverse_template</span><span class="p">,</span><span class="n">template_name</span><span class="p">,</span><span class="n">template_reversed</span><span class="p">,</span>
+    <span class="n">broken_bonds</span><span class="p">,</span><span class="n">formed_bonds</span><span class="p">,</span><span class="n">sitetype</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Estimate the equilibrium bond length and force constant for broken/forming bonds</span>
+<span class="sd">    0--(1--2)--3</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">interactions</span> <span class="o">=</span> <span class="n">broken_bonds</span> <span class="o">|</span> <span class="n">formed_bonds</span>
+    <span class="n">formed</span> <span class="o">=</span> <span class="n">labels</span> <span class="ow">in</span> <span class="n">formed_bonds</span>
+
+    <span class="n">label_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">labels</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">label_list</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span> <span class="c1">#get the atoms participating in the interaction</span>
+        <span class="n">atms</span> <span class="o">=</span> <span class="n">forward_template</span><span class="o">.</span><span class="n">get_labeled_atoms</span><span class="p">(</span><span class="n">label_list</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">atm1</span> <span class="o">=</span> <span class="n">atms</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">atm2</span> <span class="o">=</span> <span class="n">atms</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">atmsr</span> <span class="o">=</span> <span class="n">reverse_template</span><span class="o">.</span><span class="n">get_labeled_atoms</span><span class="p">(</span><span class="n">label_list</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">atm1r</span> <span class="o">=</span> <span class="n">atms</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">atm2r</span> <span class="o">=</span> <span class="n">atms</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">atm1</span> <span class="o">=</span> <span class="n">forward_template</span><span class="o">.</span><span class="n">get_labeled_atoms</span><span class="p">(</span><span class="n">label_list</span><span class="p">[</span><span class="mi">0</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">atm2</span> <span class="o">=</span> <span class="n">forward_template</span><span class="o">.</span><span class="n">get_labeled_atoms</span><span class="p">(</span><span class="n">label_list</span><span class="p">[</span><span class="mi">1</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">atm1r</span> <span class="o">=</span> <span class="n">reverse_template</span><span class="o">.</span><span class="n">get_labeled_atoms</span><span class="p">(</span><span class="n">label_list</span><span class="p">[</span><span class="mi">0</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">atm2r</span> <span class="o">=</span> <span class="n">reverse_template</span><span class="o">.</span><span class="n">get_labeled_atoms</span><span class="p">(</span><span class="n">label_list</span><span class="p">[</span><span class="mi">1</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">formed</span><span class="p">:</span> <span class="c1">#if the bond is forming the reverse will always have dist 2...if breaking forward will always have dist 2...so ignore that side</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="n">find_shortest_path</span><span class="p">(</span><span class="n">atm1r</span><span class="p">,</span><span class="n">atm2r</span><span class="p">)</span> <span class="c1">#Number of atoms in path None if no path</span>
+        <span class="k">if</span> <span class="n">path</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">dist</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">dist</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="n">find_shortest_path</span><span class="p">(</span><span class="n">atm1r</span><span class="p">,</span><span class="n">atm2r</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">path</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">dist</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">dist</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+
+    <span class="n">hydrogen_interaction</span> <span class="o">=</span> <span class="n">atm1</span><span class="o">.</span><span class="n">is_hydrogen</span><span class="p">()</span> <span class="ow">or</span> <span class="n">atm2</span><span class="o">.</span><span class="n">is_hydrogen</span><span class="p">()</span>
+
+    <span class="c1">#get the interactions adjacent to the interaction</span>
+    <span class="n">atms0</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">atms3</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">label_set</span> <span class="ow">in</span> <span class="n">interactions</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">atm1</span><span class="o">.</span><span class="n">label</span> <span class="ow">in</span> <span class="n">label_set</span> <span class="ow">and</span> <span class="n">atm2</span><span class="o">.</span><span class="n">label</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">label_set</span><span class="p">:</span>
+            <span class="n">label</span> <span class="o">=</span> <span class="p">[</span><span class="n">label</span> <span class="k">for</span> <span class="n">label</span> <span class="ow">in</span> <span class="n">label_set</span> <span class="k">if</span> <span class="n">label</span> <span class="o">!=</span> <span class="n">atm1</span><span class="o">.</span><span class="n">label</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">atms0</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">forward_template</span><span class="o">.</span><span class="n">get_labeled_atoms</span><span class="p">(</span><span class="n">label</span><span class="p">))</span>
+        <span class="k">elif</span> <span class="n">atm2</span><span class="o">.</span><span class="n">label</span> <span class="ow">in</span> <span class="n">label_set</span> <span class="ow">and</span> <span class="n">atm1</span><span class="o">.</span><span class="n">label</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">label_set</span><span class="p">:</span>
+            <span class="n">label</span> <span class="o">=</span> <span class="p">[</span><span class="n">label</span> <span class="k">for</span> <span class="n">label</span> <span class="ow">in</span> <span class="n">label_set</span> <span class="k">if</span> <span class="n">label</span> <span class="o">!=</span> <span class="n">atm2</span><span class="o">.</span><span class="n">label</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">atms3</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">forward_template</span><span class="o">.</span><span class="n">get_labeled_atoms</span><span class="p">(</span><span class="n">label</span><span class="p">))</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">atms0</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">atm0</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">atms0</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">atm0</span> <span class="o">=</span> <span class="n">atms0</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">sites</span> <span class="o">=</span> <span class="p">[</span><span class="n">a</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">atms0</span> <span class="k">if</span> <span class="n">a</span><span class="o">.</span><span class="n">is_surface_site</span><span class="p">()]</span> <span class="c1">#choose surface sites over other atoms</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sites</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">atm0</span> <span class="o">=</span> <span class="n">sites</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">atm0</span> <span class="o">=</span> <span class="n">atms0</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">atms3</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">atm3</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">atms3</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">atm3</span> <span class="o">=</span> <span class="n">atms3</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">sites</span> <span class="o">=</span> <span class="p">[</span><span class="n">a</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">atms3</span> <span class="k">if</span> <span class="n">a</span><span class="o">.</span><span class="n">is_surface_site</span><span class="p">()]</span> <span class="c1">#choose surface sites over other atoms</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sites</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">atm3</span> <span class="o">=</span> <span class="n">sites</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">atm3</span> <span class="o">=</span> <span class="n">atms3</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">atm_to_symbol</span><span class="p">(</span><span class="n">atm</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">atm</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s2">&quot;&quot;</span>
+        <span class="k">elif</span> <span class="n">atm</span><span class="o">.</span><span class="n">is_surface_site</span><span class="p">():</span>
+            <span class="k">return</span> <span class="s2">&quot;X&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s2">&quot;R&quot;</span>
+
+    <span class="n">s</span> <span class="o">=</span> <span class="n">atm_to_symbol</span><span class="p">(</span><span class="n">atm0</span><span class="p">)</span><span class="o">+</span><span class="s2">&quot;--(&quot;</span><span class="o">+</span><span class="n">atm_to_symbol</span><span class="p">(</span><span class="n">atm1</span><span class="p">)</span><span class="o">+</span><span class="s2">&quot;--&quot;</span><span class="o">+</span><span class="n">atm_to_symbol</span><span class="p">(</span><span class="n">atm2</span><span class="p">)</span><span class="o">+</span><span class="s2">&quot;)--&quot;</span><span class="o">+</span><span class="n">atm_to_symbol</span><span class="p">(</span><span class="n">atm3</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">s</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;--(X--R)--&quot;</span><span class="p">,</span> <span class="s2">&quot;--(R--X)--&quot;</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="n">hydrogen_interaction</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">dwell</span><span class="o">*</span><span class="mf">0.2</span><span class="p">,</span><span class="mf">100.0</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">dwell</span><span class="o">*</span><span class="mf">0.2</span><span class="p">,</span><span class="mf">100.0</span>
+    <span class="k">elif</span> <span class="n">s</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;--(X--R)--R&quot;</span><span class="p">,</span><span class="s2">&quot;R--(R--X)--&quot;</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="n">hydrogen_interaction</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">dwell</span><span class="o">*</span><span class="mf">0.2</span><span class="p">,</span><span class="mf">100.0</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">dwell</span><span class="o">*</span><span class="mf">0.2</span><span class="p">,</span><span class="mf">100.0</span>
+    <span class="k">elif</span> <span class="n">s</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;--(X--R)--X&quot;</span><span class="p">,</span><span class="s2">&quot;X--(R--X)--&quot;</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="n">hydrogen_interaction</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">dwell</span><span class="o">*</span><span class="mf">0.2</span><span class="p">,</span><span class="mf">100.0</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">dwell</span><span class="o">*</span><span class="mf">0.2</span><span class="p">,</span><span class="mf">100.0</span>
+    <span class="k">elif</span> <span class="n">s</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;X--(R--R)--X&quot;</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="n">dist</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span> <span class="c1">#if it is an intermolecular interaction</span>
+            <span class="k">return</span> <span class="n">dwell</span><span class="o">*</span><span class="mf">1.25</span><span class="p">,</span><span class="mf">100.0</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">hydrogen_interaction</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">dwell</span><span class="o">*</span><span class="mf">1.6</span><span class="p">,</span><span class="mf">100.0</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">dwell</span><span class="o">*</span><span class="mf">1.4</span><span class="p">,</span><span class="mf">100.0</span>
+    <span class="k">elif</span> <span class="n">s</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;X--(R--R)--&quot;</span><span class="p">,</span> <span class="s2">&quot;--(R--R)--X&quot;</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="n">dist</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">dwell</span><span class="o">*</span><span class="mf">1.25</span><span class="p">,</span><span class="mf">100.0</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">hydrogen_interaction</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">dwell</span><span class="o">*</span><span class="mf">1.6</span><span class="p">,</span><span class="mf">100.0</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">dwell</span><span class="o">*</span><span class="mf">1.4</span><span class="p">,</span><span class="mf">100.0</span>
+    <span class="k">elif</span> <span class="n">s</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;--(R--R)--&quot;</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="n">dist</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">dwell</span><span class="o">*</span><span class="mf">1.25</span><span class="p">,</span><span class="mf">100.0</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">hydrogen_interaction</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">dwell</span><span class="o">*</span><span class="mf">1.6</span><span class="p">,</span><span class="mf">100.0</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">dwell</span><span class="o">*</span><span class="mf">1.4</span><span class="p">,</span><span class="mf">100.0</span>
+    <span class="k">elif</span> <span class="n">s</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;R--(R--R)--&quot;</span><span class="p">,</span><span class="s2">&quot;--(R--R)--R&quot;</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="n">dist</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">dwell</span><span class="o">*</span><span class="mf">1.25</span><span class="p">,</span><span class="mf">100.0</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">hydrogen_interaction</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">dwell</span><span class="o">*</span><span class="mf">1.6</span><span class="p">,</span><span class="mf">100.0</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">dwell</span><span class="o">*</span><span class="mf">1.4</span><span class="p">,</span><span class="mf">100.0</span>
+    <span class="k">elif</span> <span class="n">s</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;R--(R--R)--X&quot;</span><span class="p">,</span><span class="s2">&quot;X--(R--R)--R&quot;</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="n">dist</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">dwell</span><span class="o">*</span><span class="mf">1.25</span><span class="p">,</span><span class="mf">100.0</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">hydrogen_interaction</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">dwell</span><span class="o">*</span><span class="mf">1.6</span><span class="p">,</span><span class="mf">100.0</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">dwell</span><span class="o">*</span><span class="mf">1.4</span><span class="p">,</span><span class="mf">100.0</span>
+    <span class="k">elif</span> <span class="n">s</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;R--(R--R)--R&quot;</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="n">dist</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">dwell</span><span class="o">*</span><span class="mf">1.25</span><span class="p">,</span><span class="mf">100.0</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">hydrogen_interaction</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">dwell</span><span class="o">*</span><span class="mf">1.6</span><span class="p">,</span><span class="mf">100.0</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">dwell</span><span class="o">*</span><span class="mf">1.4</span><span class="p">,</span><span class="mf">100.0</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Could not interpret interaction string: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">s</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="estimate_deq_k_fixed_surf_bond"><a class="viewcode-back" href="../../source/pynta.html#pynta.transitionstate.estimate_deq_k_fixed_surf_bond">[docs]</a><span class="k">def</span> <span class="nf">estimate_deq_k_fixed_surf_bond</span><span class="p">(</span><span class="n">labels</span><span class="p">,</span><span class="n">dwell</span><span class="p">,</span><span class="n">forward_template</span><span class="p">,</span><span class="n">reverse_template</span><span class="p">,</span><span class="n">template_name</span><span class="p">,</span><span class="n">template_reversed</span><span class="p">,</span>
+    <span class="n">broken_bonds</span><span class="p">,</span><span class="n">formed_bonds</span><span class="p">,</span><span class="n">sitetype</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Estimate the equilibrium bond length and force constant for surface bonds</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="mf">0.0</span><span class="p">,</span><span class="mf">100.0</span></div>
+
+<div class="viewcode-block" id="get_surface_forming_bond_pairings"><a class="viewcode-back" href="../../source/pynta.html#pynta.transitionstate.get_surface_forming_bond_pairings">[docs]</a><span class="k">def</span> <span class="nf">get_surface_forming_bond_pairings</span><span class="p">(</span><span class="n">tsstructs</span><span class="p">,</span><span class="n">atom_bond_potential_lists</span><span class="p">,</span>
+                                      <span class="n">site_bond_potential_lists</span><span class="p">,</span><span class="n">constraints_list</span><span class="p">,</span><span class="n">site_bond_dict_list</span><span class="p">,</span>
+                                      <span class="n">cas</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Identify unique site targets for the harmonically forced optimization</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">site_bond_dict_list</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span> <span class="c1">#no site bonds formed</span>
+        <span class="k">return</span> <span class="n">tsstructs</span><span class="p">,</span><span class="n">atom_bond_potential_lists</span><span class="p">,</span><span class="n">site_bond_potential_lists</span><span class="p">,</span><span class="n">constraints_list</span>
+
+    <span class="n">adslablen</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">tsstructs</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+    <span class="c1">#label sites with unique noble gas atoms</span>
+    <span class="n">he</span> <span class="o">=</span> <span class="n">Atoms</span><span class="p">(</span><span class="s1">&#39;He&#39;</span><span class="p">,</span><span class="n">positions</span><span class="o">=</span><span class="p">[[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],])</span>
+    <span class="n">ne</span> <span class="o">=</span> <span class="n">Atoms</span><span class="p">(</span><span class="s1">&#39;Ne&#39;</span><span class="p">,</span><span class="n">positions</span><span class="o">=</span><span class="p">[[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],])</span>
+    <span class="n">ar</span> <span class="o">=</span> <span class="n">Atoms</span><span class="p">(</span><span class="s1">&#39;Ar&#39;</span><span class="p">,</span><span class="n">positions</span><span class="o">=</span><span class="p">[[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],])</span>
+    <span class="n">kr</span> <span class="o">=</span> <span class="n">Atoms</span><span class="p">(</span><span class="s1">&#39;Kr&#39;</span><span class="p">,</span><span class="n">positions</span><span class="o">=</span><span class="p">[[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],])</span>
+    <span class="n">xe</span> <span class="o">=</span> <span class="n">Atoms</span><span class="p">(</span><span class="s1">&#39;Xe&#39;</span><span class="p">,</span><span class="n">positions</span><span class="o">=</span><span class="p">[[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],])</span>
+    <span class="n">rn</span> <span class="o">=</span> <span class="n">Atoms</span><span class="p">(</span><span class="s1">&#39;Rn&#39;</span><span class="p">,</span><span class="n">positions</span><span class="o">=</span><span class="p">[[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],])</span>
+    <span class="n">site_tags</span> <span class="o">=</span> <span class="p">[</span><span class="n">he</span><span class="p">,</span><span class="n">ne</span><span class="p">,</span><span class="n">ar</span><span class="p">,</span><span class="n">kr</span><span class="p">,</span><span class="n">xe</span><span class="p">,</span><span class="n">rn</span><span class="p">]</span>
+
+    <span class="n">atm_inds</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">site_bond_dict_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+    <span class="n">site_tags</span> <span class="o">=</span> <span class="p">{</span><span class="n">atm_ind</span> <span class="p">:</span> <span class="n">site_tags</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">atm_ind</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">atm_inds</span><span class="p">)}</span>
+
+    <span class="n">new_atom_bond_potential_lists</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">new_site_bond_potential_lists</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">new_constraints_list</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">out_tsstructs</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">tsstruct</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">tsstructs</span><span class="p">):</span>
+        <span class="n">atom_bond_potential_list</span> <span class="o">=</span> <span class="n">atom_bond_potential_lists</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="n">constraints</span> <span class="o">=</span> <span class="n">constraints_list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="n">adcov</span> <span class="o">=</span> <span class="n">SlabAdsorbateCoverage</span><span class="p">(</span><span class="n">tsstruct</span><span class="p">,</span><span class="n">adsorption_sites</span><span class="o">=</span><span class="n">cas</span><span class="p">)</span>
+        <span class="n">unocc</span> <span class="o">=</span> <span class="p">[</span><span class="n">site</span> <span class="k">for</span> <span class="n">site</span> <span class="ow">in</span> <span class="n">adcov</span><span class="o">.</span><span class="n">get_sites</span><span class="p">()</span> <span class="k">if</span> <span class="n">site</span><span class="p">[</span><span class="s2">&quot;occupied&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="kc">False</span><span class="p">]</span>
+        <span class="n">site_bond_dict</span> <span class="o">=</span> <span class="n">site_bond_dict_list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="n">site_bond_potential_dict</span> <span class="o">=</span> <span class="n">sites_to_site_bond_potentials</span><span class="p">(</span><span class="n">unocc</span><span class="p">,</span><span class="n">site_bond_dict</span><span class="p">,</span><span class="n">atm_inds</span><span class="p">)</span>
+        <span class="n">geoms</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">site_parameters</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="n">pd</span> <span class="o">=</span> <span class="p">[</span><span class="n">unocc</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">atm_inds</span><span class="p">))]</span>
+        <span class="k">for</span> <span class="n">sites</span> <span class="ow">in</span> <span class="n">itertools</span><span class="o">.</span><span class="n">product</span><span class="p">(</span><span class="o">*</span><span class="n">pd</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">([</span><span class="nb">repr</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">sites</span><span class="p">]))</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">sites</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">any</span><span class="p">([</span><span class="n">sites</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="s2">&quot;site&quot;</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">site_bond_dict</span><span class="p">[</span><span class="n">atm_ind</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="k">for</span> <span class="n">j</span><span class="p">,</span><span class="n">atm_ind</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">atm_inds</span><span class="p">)]):</span>
+                <span class="k">continue</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">param_list</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="n">geo</span> <span class="o">=</span> <span class="n">tsstruct</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+                <span class="k">for</span> <span class="n">j</span><span class="p">,</span><span class="n">atm_ind</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">atm_inds</span><span class="p">):</span>
+                    <span class="n">tag</span> <span class="o">=</span> <span class="n">site_tags</span><span class="p">[</span><span class="n">atm_ind</span><span class="p">]</span>
+                    <span class="n">bond_dict</span> <span class="o">=</span> <span class="n">site_bond_dict</span><span class="p">[</span><span class="n">atm_ind</span><span class="p">]</span>
+                    <span class="n">site</span> <span class="o">=</span> <span class="n">sites</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
+                    <span class="n">add_adsorbate_to_site</span><span class="p">(</span><span class="n">geo</span><span class="p">,</span><span class="n">adsorbate</span><span class="o">=</span><span class="n">tag</span><span class="p">,</span><span class="n">surf_ind</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span><span class="n">site</span><span class="o">=</span><span class="n">site</span><span class="p">,</span><span class="n">height</span><span class="o">=</span><span class="mf">1.5</span><span class="p">)</span>
+                    <span class="n">params</span> <span class="o">=</span> <span class="n">bond_dict</span><span class="p">[</span><span class="n">site</span><span class="p">[</span><span class="s2">&quot;site&quot;</span><span class="p">]]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+                    <span class="n">params</span><span class="p">[</span><span class="s2">&quot;site_pos&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">site</span><span class="p">[</span><span class="s2">&quot;position&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+                    <span class="n">params</span><span class="p">[</span><span class="s2">&quot;site_pos&quot;</span><span class="p">][</span><span class="mi">2</span><span class="p">]</span> <span class="o">+=</span> <span class="n">params</span><span class="p">[</span><span class="s2">&quot;dwell&quot;</span><span class="p">]</span>
+                    <span class="k">del</span> <span class="n">params</span><span class="p">[</span><span class="s2">&quot;dwell&quot;</span><span class="p">]</span>
+                    <span class="n">params</span><span class="p">[</span><span class="s2">&quot;ind&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">atm_ind</span>
+                    <span class="n">param_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+
+                <span class="n">site_parameters</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">param_list</span><span class="p">)</span>
+                <span class="n">geoms</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">geo</span><span class="p">)</span>
+
+        <span class="n">unique_geoms</span> <span class="o">=</span> <span class="n">get_unique_sym_structs</span><span class="p">(</span><span class="n">geoms</span><span class="p">)</span>
+        <span class="n">unique_site_parameters</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">for</span> <span class="n">geom</span> <span class="ow">in</span> <span class="n">unique_geoms</span><span class="p">:</span>
+            <span class="n">ind</span> <span class="o">=</span> <span class="n">geoms</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">geom</span><span class="p">)</span>
+            <span class="n">out_tsstructs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">geom</span><span class="p">[:</span><span class="n">adslablen</span><span class="p">])</span>
+            <span class="n">new_atom_bond_potential_lists</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">atom_bond_potential_list</span><span class="p">)</span>
+            <span class="n">new_constraints_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">constraints</span><span class="p">)</span>
+
+            <span class="n">params</span> <span class="o">=</span> <span class="n">site_parameters</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span>
+
+            <span class="n">site_bond_potential</span> <span class="o">=</span> <span class="n">site_bond_potential_lists</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            <span class="n">site_bond_potential</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+
+            <span class="n">new_site_bond_potential_lists</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">site_bond_potential</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">out_tsstructs</span><span class="p">,</span><span class="n">new_atom_bond_potential_lists</span><span class="p">,</span><span class="n">new_site_bond_potential_lists</span><span class="p">,</span><span class="n">new_constraints_list</span></div>
+
+<div class="viewcode-block" id="sites_to_site_bond_potentials"><a class="viewcode-back" href="../../source/pynta.html#pynta.transitionstate.sites_to_site_bond_potentials">[docs]</a><span class="k">def</span> <span class="nf">sites_to_site_bond_potentials</span><span class="p">(</span><span class="n">sites</span><span class="p">,</span><span class="n">site_bond_dicts</span><span class="p">,</span><span class="n">atm_inds</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Generate a list of possible site bond formation harmonic parameters for each</span>
+<span class="sd">    atom that forms bonds with a site</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">site_bond_potentials</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">atm_ind</span> <span class="ow">in</span> <span class="n">atm_inds</span><span class="p">:</span>
+        <span class="n">params_list</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">site</span> <span class="ow">in</span> <span class="n">sites</span><span class="p">:</span>
+            <span class="n">bond_dict</span> <span class="o">=</span> <span class="n">site_bond_dicts</span><span class="p">[</span><span class="n">atm_ind</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">site</span><span class="p">[</span><span class="s2">&quot;site&quot;</span><span class="p">]</span> <span class="ow">in</span> <span class="n">bond_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="n">params</span> <span class="o">=</span> <span class="n">bond_dict</span><span class="p">[</span><span class="n">site</span><span class="p">[</span><span class="s2">&quot;site&quot;</span><span class="p">]]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+                <span class="n">params</span><span class="p">[</span><span class="s2">&quot;site_pos&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">site</span><span class="p">[</span><span class="s2">&quot;position&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+                <span class="n">params</span><span class="p">[</span><span class="s2">&quot;ind&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">atm_ind</span>
+                <span class="n">params_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+        <span class="n">site_bond_potentials</span><span class="p">[</span><span class="n">atm_ind</span><span class="p">]</span> <span class="o">=</span> <span class="n">params_list</span>
+
+    <span class="k">return</span> <span class="n">site_bond_potentials</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright Copyright 2021 National Technology &amp; Engineering Solutions of Sandia, LLC (NTESS). Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government retains certain rights in this software.
+      <span class="lastupdated">
+        Last updated on Wed, 25 Jan 2023 12:48:54.
+      </span>
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>
