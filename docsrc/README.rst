@@ -311,6 +311,10 @@ specified in terms of what `ASE <https://wiki.fysik.dtu.dk/ase/>`_ expects.
 
 **lattice_opt_software_kwargs**: this is a dictionary of keyword arguments that should be different from software_kwargs when optimizing the lattice constant
 
+**fmaxopt**: this is the fmax used for all slab, adsorbate and TS geometry optimization jobs
+
+**fmaxirc**: this is the fmax used for IRC calculations
+
 Lastly there are the Pynta energy filter criteria:
 
 **Eharmtol**: a tolerance such that all TS/adsorbate guesses are always calculated if they have energies less than Emin * Eharmtol
