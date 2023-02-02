@@ -325,6 +325,74 @@ def place_adsorbate(ads,slab,atom_surf_inds,sites,metal):
     else:
         raise ValueError
 
+def get_unique_sites(cas, unique_composition=False,
+                         unique_subsurf=False,
+                         return_signatures=False,
+                         return_site_indices=False,
+                         about=None, site_list=None):
+        """Function mostly copied from the ACAT software 
+        Get all symmetry-inequivalent adsorption sites (one
+        site for each type).
+
+        Parameters
+        ----------
+        unique_composition : bool, default False
+            Take site composition into consideration when
+            checking uniqueness.
+
+        unique_subsurf : bool, default False
+            Take subsurface element into consideration when
+            checking uniqueness.
+
+        return_signatures : bool, default False
+            Whether to return the unique signatures of the
+            sites instead.
+
+        return_site_indices: bool, default False
+            Whether to return the indices of each unique
+            site (in the site list).
+
+        about: numpy.array, default None
+            If specified, returns unique sites closest to
+            this reference position.
+
+        """
+
+        if site_list is None:
+            sl = cas.site_list
+        else:
+            sl = site_list
+        key_list = ['site', 'morphology']
+        if unique_composition:
+            if not cas.composition_effect:
+                raise ValueError('the site list does not include '
+                                 + 'information of composition')
+            key_list.append('composition')
+            if unique_subsurf:
+                key_list.append('subsurf_element')
+        else:
+            if unique_subsurf:
+                raise ValueError('to include the subsurface element, ' +
+                                 'unique_composition also need to be set to True')
+        if return_signatures:
+            sklist = sorted([[s[k] for k in key_list] for s in sl])
+            return sorted(list(sklist for sklist, _ in groupby(sklist)))
+        else:
+            seen_tuple = []
+            uni_sites = []
+            if about is not None:
+                sl = sorted(sl, key=lambda x: get_mic(x['position'],
+                            about, cas.cell, return_squared_distance=True))
+            for i, s in enumerate(sl):
+                sig = tuple(s[k] for k in key_list)
+                if sig not in seen_tuple:
+                    seen_tuple.append(sig)
+                    if return_site_indices:
+                        s = i
+                    uni_sites.append(s)
+
+            return uni_sites
+
 def generate_unique_site_additions(geo,cas,nslab,site_bond_params_list=[],sites_list=[]):
     nads = len(geo) - nslab
     #label sites with unique noble gas atoms
