@@ -1,5 +1,5 @@
 from pynta.tasks import *
-from pynta.mol import get_adsorbate, generate_unique_site_additions, generate_adsorbate_guesses, get_name
+from pynta.mol import get_adsorbate, generate_unique_site_additions, generate_adsorbate_guesses, get_name,generate_unique_placements
 from molecule.molecule import Molecule
 import ase.build
 from ase.io import read, write
@@ -35,7 +35,7 @@ class Pynta:
         TS_opt_software_kwargs=None,
         lattice_opt_software_kwargs={'kpts': (25,25,25), 'ecutwfc': 70, 'degauss':0.02, 'mixing_mode': 'plain'},
         reset_launchpad=False,queue_adapter_path=None,num_jobs=25,max_num_hfsp_opts=None,#max_num_hfsp_opts is mostly for fast testing
-        Eharmtol=3.0,Eharmfiltertol=30.0,Ntsmin=5):
+        Eharmtol=3.0,Eharmfiltertol=30.0,Ntsmin=5,fmaxopt=0.05,fmaxirc=0.1):
 
         self.surface_type = surface_type
         if launchpad_path:
@@ -105,6 +105,8 @@ class Pynta:
         self.Eharmfiltertol = Eharmfiltertol
         self.Ntsmin = Ntsmin
         self.max_num_hfsp_opts = max_num_hfsp_opts
+        self.fmaxopt = fmaxopt
+        self.fmaxirc = fmaxirc
 
     def generate_slab(self):
         """
@@ -127,7 +129,7 @@ class Pynta:
         if self.software != "XTB":
             fwslab = optimize_firework(os.path.join(self.path,"slab_init.xyz"),self.software,"slab",
                 opt_method="BFGSLineSearch",socket=self.socket,software_kwargs=self.software_kwargs,
-                run_kwargs={"fmax" : 0.01},out_path=os.path.join(self.path,"slab.xyz"),constraints=["freeze half slab"],priority=1000)
+                run_kwargs={"fmax" : self.fmaxopt},out_path=os.path.join(self.path,"slab.xyz"),constraints=["freeze half slab"],priority=1000)
             wfslab = Workflow([fwslab], name=self.label+"_slab")
             self.launchpad.add_wf(wfslab)
             self.rapidfire()
@@ -345,7 +347,7 @@ class Pynta:
                     fwopt2 = optimize_firework(os.path.join(self.path,"Adsorbates",adsname,str(prefix),"weakopt_"+str(prefix)+".xyz"),
                         self.software,str(prefix),
                         opt_method="QuasiNewton",socket=self.socket,software_kwargs=software_kwargs,
-                        run_kwargs={"fmax" : 0.02, "steps" : 70},parents=[fwopt],constraints=constraints,
+                        run_kwargs={"fmax" : self.fmaxopt, "steps" : 70},parents=[fwopt],constraints=constraints,
                         ignore_errors=True, metal=self.metal, facet=self.surface_type, target_site_num=target_site_num, priority=3)
                     optfws.append(fwopt)
                     optfws.append(fwopt2)
@@ -404,7 +406,7 @@ class Pynta:
                     fwopt2 = optimize_firework(os.path.join(self.path,"Adsorbates",ad,str(prefix),"weakopt_"+str(prefix)+".xyz"),
                         self.software,str(prefix),
                         opt_method="QuasiNewton",socket=self.socket,software_kwargs=software_kwargs,
-                        run_kwargs={"fmax" : 0.02, "steps" : 70},parents=[fwopt],constraints=constraints,
+                        run_kwargs={"fmax" : self.fmaxopt, "steps" : 70},parents=[fwopt],constraints=constraints,
                         ignore_errors=True, metal=self.metal, facet=self.surface_type, target_site_num=target_site_num, priority=3)
                     optfws.append(fwopt)
                     optfws.append(fwopt2)
@@ -426,14 +428,14 @@ class Pynta:
         """
         if self.software != "XTB":
             opt_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":self.software_kwargs_TS,
-                "run_kwargs": {"fmax" : 0.02, "steps" : 70},"constraints": ["freeze half slab"],"sella":True,"order":1,}
+                "run_kwargs": {"fmax" : self.fmaxopt, "steps" : 70},"constraints": ["freeze half slab"],"sella":True,"order":1,}
         else:
             opt_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":self.software_kwargs_TS,
                 "run_kwargs": {"fmax" : 0.02, "steps" : 70},"constraints": ["freeze up to "+str(self.nslab)],"sella":True,"order":1,}
         vib_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":self.software_kwargs,
                 "constraints": ["freeze up to "+str(self.nslab)]}
         IRC_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":self.software_kwargs,
-                "run_kwargs": {"fmax" : 0.1, "steps" : 70},"constraints":["freeze up to "+str(self.nslab)]}
+                "run_kwargs": {"fmax" : self.fmaxirc, "steps" : 70},"constraints":["freeze up to "+str(self.nslab)]}
         for i,rxn in enumerate(self.rxns_dict):
             ts_path = os.path.join(self.path,"TS"+str(i))
             os.makedirs(ts_path)
