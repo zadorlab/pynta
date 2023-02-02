@@ -2,6 +2,7 @@ from molecule.molecule import Molecule
 from ase.io import read, write
 from ase.data import covalent_radii
 from ase import Atoms
+from ase.geometry import get_distances
 from acat.adsorption_sites import SlabAdsorptionSites
 from acat.adsorbate_coverage import SlabAdsorbateCoverage
 from acat.settings import site_heights
@@ -392,6 +393,50 @@ def get_unique_sites(cas, unique_composition=False,
                     uni_sites.append(s)
 
             return uni_sites
+
+def generate_unique_placements(slab,cas):
+    nslab = len(slab)
+    middle = sum(slab.cell)/2.0
+
+    unique_single_sites = get_unique_sites(cas,about=middle)
+
+    unique_site_pairs = dict() # (site1site,site1morph,),(site2site,site2morph),xydist,zdist
+    for unique_site in unique_single_sites:
+        uni_site_fingerprint = (unique_site["site"],unique_site["morphology"])
+        for site in cas.get_sites():
+            site_fingerprint = (site["site"],site["morphology"])
+            bd,d = get_distances([unique_site["position"]], [site["position"]], cell=slab.cell, pbc=(True,True,False))
+            xydist = np.linalg.norm(bd[0][0][:1])
+            zdist = bd[0][0][2]
+
+            fingerprint = (uni_site_fingerprint,site_fingerprint,round(xydist,3),round(zdist,3))
+
+            if fingerprint in unique_site_pairs.keys():
+                current_sites = unique_site_pairs[fingerprint]
+                current_dist = np.linalg.norm(sum([s["position"][:1] for s in current_sites])/2-middle[:1])
+                possible_dist = np.linalg.norm((unique_site["position"][:1]+site["position"][:1])/2-middle[:1])
+                if possible_dist < current_dist:
+                    unique_site_pairs[fingerprint] = [unique_site,site]
+            else:
+                unique_site_pairs[fingerprint] = [unique_site,site]
+
+    unique_site_pairs_lists = list(unique_site_pairs.values())
+    unique_site_lists = [[unique_site] for unique_site in unique_single_sites]
+
+    single_site_bond_params_lists = []
+    for unique_site_list in unique_site_lists:
+        pos = unique_site_list[0]["position"]
+        single_site_bond_params_lists.append([{"site_pos": pos,"ind": None, "k": 100.0, "deq": 0.0}])
+
+    double_site_bond_params_lists = []
+    for unique_site_pair_list in unique_site_pairs_lists:
+        bond_params_list = []
+        for site in unique_site_pair_list:
+            pos = site["position"]
+            bond_params_list.append({"site_pos": pos,"ind": None, "k": 100.0, "deq": 0.0})
+        double_site_bond_params_lists.append(bond_params_list)
+
+    return unique_site_lists,unique_site_pairs_lists,single_site_bond_params_lists,double_site_bond_params_lists
 
 def generate_unique_site_additions(geo,cas,nslab,site_bond_params_list=[],sites_list=[]):
     nads = len(geo) - nslab
