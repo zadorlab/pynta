@@ -541,7 +541,7 @@ class MolecularTSEstimate(FiretaskBase):
         with open(os.path.join(ts_path,"info.json"),'w') as f:
             json.dump(ts_dict,f)
 
-        template_to_ase = {i:get_ase_index(i,template_mol_map,gratom_to_molecule_atom_maps,nslab,ads_sizes) for i in range(len(reactants.atoms))}
+        template_to_ase = {i:get_ase_index(i,template_mol_map,gratom_to_molecule_atom_maps,nslab,[ads_size(mol) for mol in mols]) for i in range(len(reactants.atoms))}
         ase_to_mol_num = {}
         for tind,aind in template_to_ase.items():
             if aind:
