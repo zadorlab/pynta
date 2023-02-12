@@ -135,7 +135,7 @@ class Pynta:
                 run_kwargs={"fmax" : self.fmaxopt},out_path=os.path.join(self.path,"slab.xyz"),constraints=["freeze up to {}".format(self.freeze_ind)],priority=1000)
             wfslab = Workflow([fwslab], name=self.label+"_slab")
             self.launchpad.add_wf(wfslab)
-            self.launch()
+            self.launch(single_job=True)
             while not os.path.exists(self.slab_path): #wait until slab optimizes, this is required anyway and makes the rest of the code simpler
                 time.sleep(1)
             self.slab = read(self.slab_path)
@@ -459,13 +459,13 @@ class Pynta:
             fw = Firework([ts_task],parents=parents,name="TS"+str(i)+"est",spec={"_priority": 10})
             self.fws.append(fw)
 
-    def launch(self):
+    def launch(self,single_job=False):
         """
         Call appropriate rapidfire function
         """
         if self.queue:
             rapidfirequeue(self.launchpad,self.fworker,self.qadapter,njobs_queue=self.njobs_queue,nlaunches="infinite")
-        elif not self.queue and self.num_jobs == 1:
+        elif not self.queue and (self.num_jobs == 1 or single_job):
             rapidfire(self.launchpad,self.fworker,nlaunches="infinite")
         else:
             launch_multiprocess(self.launchpad,self.fworker,"INFO","infinite",self.num_jobs,5)
