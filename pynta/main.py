@@ -111,7 +111,7 @@ class Pynta:
         self.fmaxopt = fmaxopt
         self.fmaxirc = fmaxirc
 
-    def generate_slab(self):
+    def generate_slab(self,async=False):
         """
         generates and optimizes a small scale slab that can be scaled to a large slab as needed
         optimization occurs through fireworks and this process waits until the optimization is completed
@@ -136,6 +136,8 @@ class Pynta:
             wfslab = Workflow([fwslab], name=self.label+"_slab")
             self.launchpad.add_wf(wfslab)
             self.launch(single_job=True)
+            if async:
+                return
             while not os.path.exists(self.slab_path): #wait until slab optimizes, this is required anyway and makes the rest of the code simpler
                 time.sleep(1)
             self.slab = read(self.slab_path)
