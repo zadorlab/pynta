@@ -426,14 +426,14 @@ def generate_unique_placements(slab,cas):
 
     single_site_bond_params_lists = []
     for unique_site_list in unique_site_lists:
-        pos = unique_site_list[0]["position"]
+        pos = deepcopy(unique_site_list[0]["position"])
         single_site_bond_params_lists.append([{"site_pos": pos,"ind": None, "k": 100.0, "deq": 0.0}])
 
     double_site_bond_params_lists = []
     for unique_site_pair_list in unique_site_pairs_lists:
         bond_params_list = []
         for site in unique_site_pair_list:
-            pos = site["position"]
+            pos = deepcopy(site["position"])
             bond_params_list.append({"site_pos": pos,"ind": None, "k": 100.0, "deq": 0.0})
         double_site_bond_params_lists.append(bond_params_list)
 
