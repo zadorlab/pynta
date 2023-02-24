@@ -1,0 +1,35 @@
+#### this is a general instruction to install and launch pynta on nersc machines ###
+
+# - Working directory: 
+# We have a project directory where you can install pynta, save scripts that you want to use for pynta. You can also store them on $HOME directory. However, the storage to $HOME is very limited. 
+# 
+# project directory is: /global/cfs/cdirs/<project number>
+#
+# Please ask your PI what your project number is.
+# If the project directory is not set up, please ask your PI to create the directory.
+# 
+# - Production run:
+# Due to the limited quota on $HOME, please execute production runs on working directory, or scratch directory.
+# 
+# 1. Before running pynta test, please request mongoDB account from NERSC. You need to request the MongoDB account via Iris, or by filling out the form here. https://docs.nersc.gov/services/databases/
+# 
+# 2. Set up Fireworks: 
+# Instructions of connecting MongoDB and Fireworks as well as sample examples to run Fireworks is listed in NERSC document. https://docs.nersc.gov/jobs/workflow/fireworks/ It is a useful link to help you setup Fireworks to your (any) working environment. 
+# 
+# 3. Pynta-test
+# When pynta and Fireworks are connected, you can run testruns. Details on test runs are written in pynta documents which you can find in Docs/. 
+# For NERSC machines, there are a few things to change in order to run the test.
+# 
+#    (1) In pynta/testMain.py, 
+#     def test_workflow(self):
+#      lpad = LaunchPad.from_file("/where/your/launchpad/file/is/at/my_launchpad.yaml")
+#      !!change the lpad path to the path where your "my_launchpad.yaml" is saved.
+# 
+#    (2) In testMain.py,
+#    def test_workflow(self):
+#    ...
+#        pyn = Pynta(path=self.path,
+#            launchpad_path="/where/your/launchpad/file/is/at/my_launchpad.yaml",
+#     !!change the lpad path to the path where your "my_launchpad.yaml" is saved.  
+#
+# Once above changes are made, run the test. 
