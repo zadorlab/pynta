@@ -58,7 +58,7 @@ class DoNothingTask(FiretaskBase):
 
 def optimize_firework(xyz,software,label,opt_method=None,sella=None,socket=False,order=0,software_kwargs={},opt_kwargs={},
                       run_kwargs={},constraints=[],parents=[],out_path=None,time_limit_hrs=np.inf,fmaxhard=0.0,ignore_errors=False,
-                      target_site_num=None,metal=None,facet=None,priority=1):
+                      target_site_num=None,metal=None,facet=None,priority=1,allow_fizzled_parents=False):
     d = {"xyz" : xyz, "software" : software,"label" : label}
     if opt_method: d["opt_method"] = opt_method
     if software_kwargs: d["software_kwargs"] = software_kwargs
@@ -81,7 +81,7 @@ def optimize_firework(xyz,software,label,opt_method=None,sella=None,socket=False
     if out_path is None: out_path = os.path.join(directory,label+".xyz")
     t2 = FileTransferTask({'files': [{'src': label+'.xyz', 'dest': out_path}, {'src': label+'.traj', 'dest': os.path.join(directory,label+".traj")}],
             'mode': 'copy', 'ignore_errors' : ignore_errors})
-    return Firework([t1,t2],parents=parents,name=label+"opt",spec={"_priority": priority})
+    return Firework([t1,t2],parents=parents,name=label+"opt",spec={"_allow_fizzled_parents": allow_fizzled_parents,"_priority": priority})
 
 @explicit_serialize
 class MolecularOptimizationTask(OptimizationTask):
@@ -612,16 +612,16 @@ class MolecularTSEstimate(FiretaskBase):
             ctask = MolecularCollect({"xyzs":xyzsout,"check_symm":True,"fw_generators": ["optimize_firework",["vibrations_firework","IRC_firework","IRC_firework"]],
                 "fw_generator_dicts": [self["opt_obj_dict"],[self["vib_obj_dict"],irc_obj_dict_forward,irc_obj_dict_reverse]],
                     "out_names": ["opt.xyz",["vib.json","irc_forward.traj","irc_reverse.traj"]],"future_check_symms": [True,False], "label": "TS"+str(index)+"_"+rxn_name})
-            cfw = Firework([ctask],name="TS"+str(index)+"_"+rxn_name+"_collect",spec={"_priority": 5})
+            cfw = Firework([ctask],name="TS"+str(index)+"_"+rxn_name+"_collect",spec={"_allow_fizzled_parents": True, "_priority": 5})
             newwf = Workflow([cfw],name='rxn_'+str(index)+str(rxn_name))
             return FWAction(detours=newwf) #using detour allows us to inherit children from the original collect to the subsequent collects
         else:
             return FWAction()
 
-def collect_firework(xyzs,check_symm,fw_generators,fw_generator_dicts,out_names,future_check_symms,parents=[],label=""):
+def collect_firework(xyzs,check_symm,fw_generators,fw_generator_dicts,out_names,future_check_symms,parents=[],label="",allow_fizzled_parents=False):
     task = MolecularCollect({"xyzs": xyzs, "check_symm": check_symm, "fw_generators": fw_generators,
         "fw_generator_dicts": fw_generator_dicts, "out_names": out_names, "future_check_symms": future_check_symms, "label": label})
-    return Firework([task],parents=parents,name=label+"collect",spec={"_priority": 5})
+    return Firework([task],parents=parents,name=label+"collect",spec={"_allow_fizzled_parents": allow_fizzled_parents,"_priority": 5})
 
 @explicit_serialize
 class MolecularCollect(CollectTask):
@@ -667,7 +667,7 @@ class MolecularCollect(CollectTask):
             task = MolecularCollect({"xyzs": out_xyzs,"check_symm": future_check_symms[0],
                     "fw_generators": fw_generators[1:],"fw_generator_dicts": fw_generator_dicts[1:],
                     "out_names": out_names[1:],"future_check_symms": future_check_symms[1:],"label": self["label"]})
-            cfw = Firework([task],parents=fws,name=self["label"]+"collect")
+            cfw = Firework([task],parents=fws,name=self["label"]+"collect",spec={"_allow_fizzled_parents":True,"_priority": 4})
             newwf = Workflow(fws+[cfw],name=self["label"]+"collect"+str(-len(self["fw_generators"])))
             return FWAction(detours=newwf) #using detour allows us to inherit children from the original collect to the subsequent collects
         else:

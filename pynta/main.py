@@ -35,7 +35,7 @@ class Pynta:
         TS_opt_software_kwargs=None,
         lattice_opt_software_kwargs={'kpts': (25,25,25), 'ecutwfc': 70, 'degauss':0.02, 'mixing_mode': 'plain'},
         reset_launchpad=False,queue_adapter_path=None,num_jobs=25,max_num_hfsp_opts=None,#max_num_hfsp_opts is mostly for fast testing
-        Eharmtol=3.0,Eharmfiltertol=30.0,Ntsmin=5,frozen_layers=2,fmaxopt=0.05,fmaxirc=0.1):
+        Eharmtol=3.0,Eharmfiltertol=30.0,Ntsmin=5,frozen_layers=2,fmaxopt=0.05,fmaxirc=0.1,fmaxopthard=0.05):
 
         self.surface_type = surface_type
         if launchpad_path:
@@ -110,6 +110,7 @@ class Pynta:
         self.max_num_hfsp_opts = max_num_hfsp_opts
         self.fmaxopt = fmaxopt
         self.fmaxirc = fmaxirc
+        self.fmaxopthard = fmaxopthard
 
     def generate_slab(self,skip_launch=False):
         """
@@ -353,7 +354,8 @@ class Pynta:
                         self.software,str(prefix),
                         opt_method="QuasiNewton",socket=self.socket,software_kwargs=software_kwargs,
                         run_kwargs={"fmax" : self.fmaxopt, "steps" : 70},parents=[fwopt],constraints=constraints,
-                        ignore_errors=True, metal=self.metal, facet=self.surface_type, target_site_num=target_site_num, priority=3)
+                        ignore_errors=True, metal=self.metal, facet=self.surface_type, target_site_num=target_site_num, priority=3, fmaxhard=self.fmaxopthard,
+                        allow_fizzled_parents=True)
                     optfws.append(fwopt)
                     optfws.append(fwopt2)
                     optfws2.append(fwopt2)
