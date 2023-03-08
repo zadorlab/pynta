@@ -552,7 +552,7 @@ class MolecularTSEstimate(FiretaskBase):
                         ase_to_mol_num[aind] = i
                         break
 
-        tsstructs = get_unique_TS_structs(adsorbates,species_names,cas,nslab,num_surf_sites,mol_dict,
+        tsstructs = get_unique_TS_structs(adsorbates,species_names,slab,cas,nslab,num_surf_sites,mol_dict,
                                  gratom_to_molecule_atom_maps,gratom_to_molecule_surface_atom_maps,
                                  facet,metal)
 
