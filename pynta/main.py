@@ -419,7 +419,7 @@ class Pynta:
                 vib_obj_dict = {"software": self.software, "label": ad, "software_kwargs": software_kwargs,
                     "constraints": ["freeze up to "+str(self.nslab)]}
 
-                cfw = collect_firework(xyzs,True,["vibrations_firework"],[vib_obj_dict],["vib.json"],[True,False],parents=optfws2,label=ad)
+                cfw = collect_firework(xyzs,True,["vibrations_firework"],[vib_obj_dict],["vib.json"],[True,False],parents=optfws2,label=ad,allow_fizzled_parents=False)
                 self.adsorbate_fw_dict[ad] = optfws2
                 logging.error(self.adsorbate_fw_dict.keys())
                 self.fws.extend(optfws+[cfw])
@@ -457,7 +457,7 @@ class Pynta:
             if not adsorbates_finished:
                 for m in reactants+products:
                     parents.extend(self.adsorbate_fw_dict[m])
-            fw = Firework([ts_task],parents=parents,name="TS"+str(i)+"est",spec={"_priority": 10})
+            fw = Firework([ts_task],parents=parents,name="TS"+str(i)+"est",spec={"_allow_fizzled_parents": True,"_priority": 10})
             self.fws.append(fw)
 
     def launch(self,single_job=False):
