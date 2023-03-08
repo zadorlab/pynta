@@ -226,7 +226,7 @@ def get_unique_TS_structs(adsorbates,species_names,cas,nslab,num_surf_sites,mol_
                     c += 1
                     site = sites[c]
 
-                add_adsorbate_to_site(adslab,adsorbate=adss[1],site=site,height=gas_height)
+                add_adsorbate_to_site(adslab,adsorbate=adss[1],surf_ind=0,site=site,height=gas_height)
                 if len(adss) == 2:
                     tsstructs.append(adslab)
                 else:
@@ -235,7 +235,7 @@ def get_unique_TS_structs(adsorbates,species_names,cas,nslab,num_surf_sites,mol_
                     while site2["occupied"] == True and site2 != site:
                         c += 1
                         site2 = sites[c]
-                    add_adsorbate_to_site(adslab,adsorbate=adss[2],site=site)
+                    add_adsorbate_to_site(adslab,adsorbate=adss[2],surf_ind=0,site=site2,height=gas_height)
                     if len(adss) == 3:
                         tsstructs.append(adslab)
                     else:
