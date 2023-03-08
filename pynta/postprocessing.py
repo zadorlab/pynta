@@ -267,3 +267,15 @@ def get_reactant_products_energy(ts_path,reactants,products):
         pthermos.append(pthermo[ind])
     return rE,pE,rthermos,pthermos
 
+def get_vibdata(dopt,dvib,nslab):
+    xyz = read(dopt)
+    inds = range(nslab,len(xyz))
+    with open(dvib,'r') as f:
+        out = json.load(f)
+    sh = (len(inds),3,len(inds),3)
+    H = np.asarray(out["hessian"])
+    if H.shape != sh:
+        H = H.reshape(sh)
+    vib = VibrationsData(xyz,H,inds)
+    return vib
+
