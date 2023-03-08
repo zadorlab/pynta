@@ -102,6 +102,39 @@ def get_energies(path):
 
     return Es,thermos,fs
 
+def get_kinetics(path,metal,facet):
+    info = json.load(open(os.path.join(path,"info.json"),'r'))
+    slab = read(os.path.join(os.path.split(path)[0],"slab.xyz"))
+    site_density = get_site_density(slab,metal,facet)
+    rnames = info["species_names"]
+    pnames = info["reverse_names"]
+    if info["forward"]:
+        rnum = len(Molecule().from_adjacency_list(info["reactants"]).split())
+        pnum = len(Molecule().from_adjacency_list(info["products"]).split())
+    else:
+        rnum = len(Molecule().from_adjacency_list(info["products"]).split())
+        pnum = len(Molecule().from_adjacency_list(info["reactants"]).split())
+    rE,pE,rthermos,pthermos = get_reactant_products_energy(path,rnames,pnames)
+    Es,thermos,_ = get_energies(path)
+
+    fEs = {k: E-rE if E else None for k,E in Es.items()}
+    rEs = {k: E-pE if E else None for k,E in Es.items()}
+    fks = dict()
+    for i,fE in fEs.items():
+        if thermos[i]:
+            arr = fit_rate_coefficient(rthermos,thermos[i],fE,rnum,s0=site_density)
+            fks[i] = arr
+        else:
+            fks[i] = None
+    rks = dict()
+    for i,rE in rEs.items():
+        if thermos[i]:
+            arr = fit_rate_coefficient(pthermos,thermos[i],rE,pnum,s0=site_density)
+            rks[i] = arr
+        else:
+            rks[i] = None
+    return fEs,rEs,fks,rks
+
 def fit_rate_coefficient(thermoRs,thermoTS,dE,rnum,s0,Ts=None):
     if Ts is None:
         Ts = np.linspace(298.0,2500.0,50)
