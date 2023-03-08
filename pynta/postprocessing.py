@@ -236,3 +236,34 @@ def get_adsorbate_energies(ad_path,include_zpe=True):
 
     return Es,thermos,fs
 
+
+
+def get_reactant_products_energy(ts_path,reactants,products):
+    path = os.path.split(ts_path)[0]
+    ads_path = os.path.join(path,"Adsorbates")
+    rthermos = []
+    pthermos = []
+    rE = 0.0
+
+    for r in reactants:
+        dr,rthermo,_ = get_adsorbate_energies(os.path.join(ads_path,r))
+        Emin = np.inf
+        ind = -1
+        for key,val in dr.items():
+            if val and val < Emin:
+                ind = key
+        rE += dr[ind]
+        rthermos.append(rthermo[ind])
+
+    pE = 0.0
+    for p in products:
+        dp,pthermo,_ = get_adsorbate_energies(os.path.join(ads_path,p))
+        Emin = np.inf
+        ind = -1
+        for key,val in dp.items():
+            if val and val < Emin:
+                ind = key
+        pE += dp[ind]
+        pthermos.append(pthermo[ind])
+    return rE,pE,rthermos,pthermos
+
