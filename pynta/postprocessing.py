@@ -291,3 +291,12 @@ def get_animated_mode(dopt,dvib,nslab,n=0):
     view(tr2)
     os.remove("temp_vib_vib.traj")
 
+def get_site_density(slab,metal,facet):
+    cas = SlabAdsorptionSites(slab, facet,allow_6fold=False,composition_effect=False,
+                        label_sites=True,
+                        surrogate_metal=metal)
+    S = len(cas.get_sites())
+    cell = slab.cell
+    n = np.cross(cell[0],cell[1])
+    A = np.linalg.norm(n)
+    return S/A * 10**20 #molecules/m^2
