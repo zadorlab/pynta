@@ -159,7 +159,7 @@ def determine_TS_construction(reactant_names,reactant_mols,product_names,product
     return forward,ordered_reacting_species
 
 
-def get_unique_TS_structs(adsorbates,species_names,cas,nslab,num_surf_sites,mol_dict,
+def get_unique_TS_structs(adsorbates,species_names,slab,cas,nslab,num_surf_sites,mol_dict,
                           gratom_to_molecule_atom_maps,gratom_to_molecule_surface_atom_maps,
                           facet,metal,gas_height=5.0):
     """
@@ -168,9 +168,14 @@ def get_unique_TS_structs(adsorbates,species_names,cas,nslab,num_surf_sites,mol_
     tsstructs = []
     ordered_adsorbates = [adsorbates[name] for name in species_names]
     for adss in itertools.product(*ordered_adsorbates):
-        adslab = adss[0]
         if len(adss) == 1:
-            tsstructs.append(adslab)
+            if num_surf_sites[0] > 0:
+                tsstructs.append(adss[0])
+            else:
+                adslab = deepcopy(slab)
+                site = cas.get_sites()[0]
+                add_adsorbate_to_site(adslab,adsorbate=adss[0],surf_ind=0,site=site,height=gas_height)
+                tsstructs.append(adslab)
         else:
             if num_surf_sites[1] == 1:
                 name = species_names[1]
