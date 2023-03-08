@@ -847,7 +847,9 @@ def map_harmonically_forced_xtb(input):
             json.dump(d,f)
         write(os.path.join(ts_path,str(j),"xtb.xyz"),sp)
         xyz = os.path.join(ts_path,str(j),"xtb.xyz")
-    return (sp,Eharm,xyz)
+        return (sp,Eharm,xyz)
+    else:
+        return (None,None,None)
 
 class StructureError(Exception): pass
 class TimeLimitError(Exception): pass
