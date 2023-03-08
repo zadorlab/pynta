@@ -32,3 +32,42 @@ def plot_eharm(path,Eharmtol=3.0,Eharmfiltertol=30.0):
     plt.plot(range(len(eharms)),np.ones(len(eharms))*eharmmin*Eharmtol)
     plt.plot(range(len(eharms)),np.ones(len(eharms))*eharmmin*Eharmfiltertol)
 
+def get_opt_dirs(path):
+    opt_dirs = []
+    guess_dirs = os.listdir(path)
+    for guess in guess_dirs:
+        p = os.path.join(path,guess,"opt.xyz")
+        if os.path.exists(p):
+            opt_dirs.append(p)
+    return opt_dirs
+
+def get_opt_traj_dirs(path):
+    opt_dirs = []
+    guess_dirs = os.listdir(path)
+    for guess in guess_dirs:
+        p = os.path.join(path,guess,"opt.xyz.traj")
+        if os.path.exists(p):
+            opt_dirs.append(p)
+    return opt_dirs
+
+def get_freq_dirs(path):
+    freq_dirs = []
+    guess_dirs = os.listdir(path)
+    for guess in guess_dirs:
+        p = os.path.join(path,guess,"vib.0.traj")
+        if os.path.exists(p):
+            freq_dirs.append(p)
+    return freq_dirs
+
+def get_irc_dirs(path):
+    freq_dirs = []
+    guess_dirs = os.listdir(path)
+    for guess in guess_dirs:
+        p = os.path.join(path,guess,"irc_forward.traj")
+        if os.path.exists(p):
+            freq_dirs.append(p)
+        p = os.path.join(path,guess,"irc_reverse.traj")
+        if os.path.exists(p):
+            freq_dirs.append(p)
+    return freq_dirs
+
