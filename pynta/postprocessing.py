@@ -279,3 +279,15 @@ def get_vibdata(dopt,dvib,nslab):
     vib = VibrationsData(xyz,H,inds)
     return vib
 
+def get_animated_mode(dopt,dvib,nslab,n=0):
+
+    vib = get_vibdata(dopt,dvib,nslab)
+    atoms = vib.iter_animated_mode(n)
+
+    tr = Trajectory("temp_vib_vib.traj",mode='a')
+    for a in atoms:
+        tr.write(a)
+    tr2 = Trajectory("temp_vib_vib.traj")
+    view(tr2)
+    os.remove("temp_vib_vib.traj")
+
