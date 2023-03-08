@@ -102,3 +102,43 @@ def get_energies(path):
 
     return Es,thermos,fs
 
+def fit_rate_coefficient(thermoRs,thermoTS,dE,rnum,s0,Ts=None):
+    if Ts is None:
+        Ts = np.linspace(298.0,2500.0,50)
+    kB = ase.units.kB
+    h = 6.582119569e-16 # eV * s
+    c0 = 2.4282*10**22*1000.0 #molecules/m^3
+    Lunits = None
+    ks = []
+
+    for T in Ts:
+        GTS = thermoTS.get_helmholtz_energy(T,verbose=False)
+        GR = 0.0
+        factor = s0
+        Lunits = -2
+
+        for therm in thermoRs:
+            if isinstance(therm,HarmonicThermo):
+                GR += therm.get_helmholtz_energy(T,verbose=False)
+                factor /= s0
+                Lunits += 2
+            elif isinstance(therm,IdealGasThermo):
+                GR += therm.get_gibbs_energy(T,1.0e5,verbose=False)
+                factor /= c0
+                Lunits += 3
+        for i in range(rnum-len(thermoRs)): # account for sites
+            factor /= s0
+            Lunits += 2
+
+        k = kB*T/h * np.exp(-(GTS-GR)/(kB*T)) * factor
+        ks.append(k)
+
+    molecules = rnum-1
+    if Lunits == 0 and molecules==0:
+        arr = SurfaceArrhenius().fit_to_data(Ts,np.array(ks),"s^-1")
+    elif molecules == 1:
+        arr = SurfaceArrhenius().fit_to_data(Ts,np.array(ks),"m^{Lunits}/(molecule*s)".format(Lunits=Lunits))
+    else:
+        arr = SurfaceArrhenius().fit_to_data(Ts,np.array(ks),"m^{Lunits}/(molecules^{mols}*s)".format(Lunits=Lunits,mols=molecules))
+
+    return arr
