@@ -220,7 +220,7 @@ def get_unique_TS_structs(adsorbates,species_names,slab,cas,nslab,num_surf_sites
                                 while site["occupied"] == True:
                                     c += 1
                                     site = sites[c]
-                                add_adsorbate_to_site(adslab,adsorbate=adss[2],site=site,height=gas_height)
+                                add_adsorbate_to_site(adslab,adsorbate=adss[2],surf_ind=0,site=site,height=gas_height)
 
             elif num_surf_sites[1] == 0:
                 adcovl1 = SlabAdsorbateCoverage(adslab,adsorption_sites=cas)
