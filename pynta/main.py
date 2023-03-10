@@ -160,7 +160,7 @@ class Pynta:
                 run_kwargs={"fmax" : 0.01},out_path=os.path.join(self.path,"slab.xyz"),constraints=["freeze half slab"])
             wfslab = Workflow([fwslab], name=self.label+"_slab")
             self.launchpad.add_wf(wfslab)
-            self.launch()
+            self.launch()#            self.rapidfire()
             while not os.path.exists(self.slab_path): #wait until slab optimizes, this is required anyway and makes the rest of the code simpler
                 time.sleep(1)
             self.slab = read(self.slab_path)
