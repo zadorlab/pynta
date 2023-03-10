@@ -168,14 +168,14 @@ def get_unique_TS_structs(adsorbates,species_names,slab,cas,nslab,num_surf_sites
     tsstructs = []
     ordered_adsorbates = [adsorbates[name] for name in species_names]
     for adss in itertools.product(*ordered_adsorbates):
+        if num_surf_sites[0] > 0:
+            adslab = adss[0].copy()
+        else:
+            adslab = slab.copy()
+            site = cas.get_sites()[0]
+            add_adsorbate_to_site(adslab,adsorbate=adss[0],surf_ind=0,site=site,height=gas_height)
         if len(adss) == 1:
-            if num_surf_sites[0] > 0:
-                tsstructs.append(adss[0])
-            else:
-                adslab = deepcopy(slab)
-                site = cas.get_sites()[0]
-                add_adsorbate_to_site(adslab,adsorbate=adss[0],surf_ind=0,site=site,height=gas_height)
-                tsstructs.append(adslab)
+            tsstructs.append(adslab)
         else:
             if num_surf_sites[1] == 1:
                 name = species_names[1]
