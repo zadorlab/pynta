@@ -162,6 +162,14 @@ def run_harmonically_forced_xtb_no_pbc(atoms,atom_bond_potentials,site_bond_pote
                 site_poss[i] = site_pos
                 site_inds[i] = ind
 
+    for mol_ind in set(ase_to_mol_num.values()): #handle gas phase species that don't have site_bond_potentials
+        if mol_ind not in site_mols:
+            for key,val in ase_to_mol_num.items():
+                if val == mol_ind:
+                    site_mols.append(mol_ind)
+                    site_poss.append(atoms.positions[key])
+                    break
+
     trans = get_best_translation(site_poss,atoms.cell)
     mol_to_trans = {site_mols[i]: trans[i] for i in range(len(site_mols))}
 
