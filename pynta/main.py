@@ -31,7 +31,7 @@ class Pynta:
         lattice_opt_software_kwargs=None,
         reset_launchpad=False,queue_adapter_path=None,num_jobs=25,max_num_hfsp_opts=None,#max_num_hfsp_opts is mostly for fast testing
         Eharmtol=3.0,Eharmfiltertol=30.0,Ntsmin=5):
-
+# users need to define in input which QM software they want to use. Depending on the QM software the user define, default keywords are determined. 
         self.surface_type = surface_type
         if launchpad_path:
             launchpad = LaunchPad.from_file(launchpad_path)
@@ -54,9 +54,9 @@ class Pynta:
         self.adsorbate_fw_dict = dict()
         self.software_kwargs = software_kwargs
 
-        if software_kwargs:
-            self.software_kwargs = software_kwargs
-        if self.software == 'Espresso':
+        if software_kwargs: 
+            self.software_kwargs = software_kwargs #use user defined keywords.
+        if self.software == 'Espresso': #user defined keywords are not provided but if software="Espresso", use keywords below.
             self.software_kwargs={
                 'kpts': (3, 3, 1), 
                 'tprnfor': True, 
@@ -72,7 +72,7 @@ class Pynta:
                 "O": 'O.pbe-n-kjpaw_psl.1.0.0.UPF',
                 "C": 'C.pbe-n-kjpaw_psl.1.0.0.UPF',
                 "N": 'N.pbe-n-kjpaw_psl.1.0.0.UPF',}}
-        if self.software_kwargs == 'NWChem':
+        if self.software_kwargs == 'NWChem': #user defined keywords are not provided but if software="NWChem", use keywords below.
             self.software_kwargs={
                 'set nwpw': 'cif_filename slab',
                 'nwpw':{'smear':'marzari-vanderbilt',
@@ -90,14 +90,14 @@ class Pynta:
 
         if software_kwargs_gas:
             self.software_kwargs_gas = software_kwargs_gas
-        if self.software == 'Espresso':
+        if self.software == 'Espresso': #user defined keywords are not provided but if software="Espresso", use keywords below.
             self.software_kwargs_gas = deepcopy(software_kwargs)
             self.software_kwargs_gas["kpts"] = 'gamma'
             self.software_kwargs_gas["smearing"] = 'gauss'
             self.software_kwargs_gas["degauss"] = 0.005
             self.software_kwargs_gas["mixing_beta"] = 0.2
             self.software_kwargs_gas["mixing_ndim"] = 10
-        if self.software =='NWChem':
+        if self.software =='NWChem':#user defined keywords are not provided but if software="NWChem", software_kwards_gas = software_kwards
             self.software_kwargs_gas = deepcopy(software_kwargs)
 
         self.software_kwargs_TS = deepcopy(software_kwargs)
