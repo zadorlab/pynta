@@ -24,16 +24,11 @@ import logging
 
 class Pynta:
     def __init__(self,path,rxns_file,surface_type,metal,label,launchpad_path=None,fworker_path=None,
-        vacuum=8.0,repeats=[(1,1,1),(3,3,4)],slab_path=None,software="Espresso",socket=False,queue=False,njobs_queue=0,a=None,
-        software_kwargs={'kpts': (3, 3, 1), 'tprnfor': True, 'occupations': 'smearing',
-                            'smearing':  'marzari-vanderbilt',
-                            'degauss': 0.01, 'ecutwfc': 40, 'nosym': True,
-                            'conv_thr': 1e-6, 'mixing_mode': 'local-TF',
-                            "pseudopotentials": {"Cu": 'Cu.pbe-spn-kjpaw_psl.1.0.0.UPF',"H": 'H.pbe-kjpaw_psl.1.0.0.UPF',"O": 'O.pbe-n-kjpaw_psl.1.0.0.UPF',"C": 'C.pbe-n-kjpaw_psl.1.0.0.UPF',"N": 'N.pbe-n-kjpaw_psl.1.0.0.UPF',
-                            }, },
+        vacuum=8.0,repeats=[(1,1,1),(3,3,4)],slab_path=None,software=None,socket=False,queue=False,njobs_queue=0,a=None,
+        software_kwargs=None,
         software_kwargs_gas=None,
         TS_opt_software_kwargs=None,
-        lattice_opt_software_kwargs={'kpts': (25,25,25), 'ecutwfc': 70, 'degauss':0.02, 'mixing_mode': 'plain'},
+        lattice_opt_software_kwargs=None,
         reset_launchpad=False,queue_adapter_path=None,num_jobs=25,max_num_hfsp_opts=None,#max_num_hfsp_opts is mostly for fast testing
         Eharmtol=3.0,Eharmfiltertol=30.0,Ntsmin=5):
 
@@ -59,15 +54,51 @@ class Pynta:
         self.adsorbate_fw_dict = dict()
         self.software_kwargs = software_kwargs
 
+        if software_kwargs:
+            self.software_kwargs = software_kwargs
+        if self.software == 'Espresso':
+            self.software_kwargs={
+                'kpts': (3, 3, 1), 
+                'tprnfor': True, 
+                'occupations': 'smearing',
+                'smearing':  'marzari-vanderbilt',
+                'degauss': 0.01, 
+                'ecutwfc': 40, 
+                'nosym': True,
+                'conv_thr': 1e-6, 
+                'mixing_mode': 'local-TF',
+                "pseudopotentials": {"Cu": 'Cu.pbe-spn-kjpaw_psl.1.0.0.UPF',
+                "H": 'H.pbe-kjpaw_psl.1.0.0.UPF',
+                "O": 'O.pbe-n-kjpaw_psl.1.0.0.UPF',
+                "C": 'C.pbe-n-kjpaw_psl.1.0.0.UPF',
+                "N": 'N.pbe-n-kjpaw_psl.1.0.0.UPF',}}
+        if self.software_kwargs == 'NWChem':
+            self.software_kwargs={
+                'set nwpw': 'cif_filename slab',
+                'nwpw':{'smear':'marzari-vanderbilt',
+                        'ewald_ncut': 10,
+                        'ewald_rcut': 3.0,
+                        'xc':'beef-vdw',
+                        'kpts':(3,3,2),
+                        'loop':'10,10',
+                        'cutoff':20.0},
+                'nwpw':{
+                        'pseudopotentials':'Cu library paw_default',
+                        '':'end'},
+                'set':{'nwpw:kbpp_ray': True,
+                        'nwpw:kbpp_filter': True}}
+
         if software_kwargs_gas:
             self.software_kwargs_gas = software_kwargs_gas
-        else:
+        if self.software == 'Espresso':
             self.software_kwargs_gas = deepcopy(software_kwargs)
             self.software_kwargs_gas["kpts"] = 'gamma'
             self.software_kwargs_gas["smearing"] = 'gauss'
             self.software_kwargs_gas["degauss"] = 0.005
             self.software_kwargs_gas["mixing_beta"] = 0.2
             self.software_kwargs_gas["mixing_ndim"] = 10
+        if self.software =='NWChem':
+            self.software_kwargs_gas = deepcopy(software_kwargs)
 
         self.software_kwargs_TS = deepcopy(software_kwargs)
         if TS_opt_software_kwargs:
@@ -130,7 +161,7 @@ class Pynta:
                 run_kwargs={"fmax" : 0.01},out_path=os.path.join(self.path,"slab.xyz"),constraints=["freeze half slab"])
             wfslab = Workflow([fwslab], name=self.label+"_slab")
             self.launchpad.add_wf(wfslab)
-            self.launch() #call self.launch
+            self.launch()
             while not os.path.exists(self.slab_path): #wait until slab optimizes, this is required anyway and makes the rest of the code simpler
                 time.sleep(1)
             self.slab = read(self.slab_path)
@@ -336,6 +367,8 @@ class Pynta:
                         constraints = []
                         if len(big_slab_ads) == 1 and self.software == "Espresso": #monoatomic species
                             software_kwargs["command"] = software_kwargs["command"].replace("< PREFIX.pwi > PREFIX.pwo","-ndiag 1 < PREFIX.pwi > PREFIX.pwo")
+                        if len(big_slab_ads) == 1 and self.software == "NWChem": #monoatomic species
+                            software_kwargs["command"] = software_kwargs["command"].replace("< PREFIX.nwi > PREFIX.nwo","-ndiag 1 < PREFIX.nwi > PREFIX.nwo")
                     try:
                         os.makedirs(os.path.join(self.path,"Adsorbates",adsname,str(prefix)))
                     except:
@@ -396,6 +429,8 @@ class Pynta:
                         constraints = []
                         if len(mol.atoms) == 1 and self.software == "Espresso": #monoatomic species
                             software_kwargs["command"] = software_kwargs["command"].replace("< PREFIX.pwi > PREFIX.pwo","-ndiag 1 < PREFIX.pwi > PREFIX.pwo")
+                        if len(mol.atoms) == 1 and self.software == "NWChem": #monoatomic species
+                            software_kwargs["command"] = software_kwargs["command"].replace("< PREFIX.nwi > PREFIX.nwo","-ndiag 1 < PREFIX.nwi > PREFIX.nwo")
                     else:
                         software_kwargs = deepcopy(self.software_kwargs)
                         if self.software != "XTB":
@@ -477,23 +512,28 @@ class Pynta:
 
     def execute(self):
         if self.slab_path is None: #handle slab
+            print("if self.generate_slab()")
             self.generate_slab()
 
+        print("self.analyze_slab()")
         self.analyze_slab()
+        print("self.generate_mole_dict()")
         self.generate_mol_dict()
+        print("self.generate_initial_absorbate_guesses()")
         self.generate_initial_adsorbate_guesses()
 
         #adsorbate optimization
+        print("self.setup_adsorbate")
         self.setup_adsorbates()
 
         #setup transition states
+        print("self.setup_transition_states()")
         self.setup_transition_states()
 
         wf = Workflow(self.fws, name=self.label)
         self.launchpad.add_wf(wf)
 
         self.launch()
-
 
     def execute_from_initial_ad_guesses(self):
         if self.slab_path is None: #handle slab
