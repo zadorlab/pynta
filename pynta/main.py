@@ -54,9 +54,15 @@ class Pynta:
         self.adsorbate_fw_dict = dict()
         self.software_kwargs = software_kwargs
 
+<<<<<<< HEAD
         if software_kwargs: 
             self.software_kwargs = software_kwargs #use user defined keywords.
         elif self.software == 'Espresso': #user defined keywords are not provided but if software="Espresso", use keywords below.
+=======
+        if software_kwargs:
+            self.software_kwargs = software_kwargs
+        if self.software == 'Espresso':
+>>>>>>> 75209f2... condition to run nwchem is added
             self.software_kwargs={
                 'kpts': (3, 3, 1), 
                 'tprnfor': True, 
@@ -67,8 +73,17 @@ class Pynta:
                 'nosym': True,
                 'conv_thr': 1e-6, 
                 'mixing_mode': 'local-TF',
+<<<<<<< HEAD
                 "pseudopotentials": {"Cu": 'Cu.pbe-spn-kjpaw_psl.1.0.0.UPF'}}
         elif self.software_kwargs == 'NWChem': #user defined keywords are not provided but if software="NWChem", use keywords below.
+=======
+                "pseudopotentials": {"Cu": 'Cu.pbe-spn-kjpaw_psl.1.0.0.UPF',
+                "H": 'H.pbe-kjpaw_psl.1.0.0.UPF',
+                "O": 'O.pbe-n-kjpaw_psl.1.0.0.UPF',
+                "C": 'C.pbe-n-kjpaw_psl.1.0.0.UPF',
+                "N": 'N.pbe-n-kjpaw_psl.1.0.0.UPF',}}
+        if self.software_kwargs == 'NWChem':
+>>>>>>> 75209f2... condition to run nwchem is added
             self.software_kwargs={
                 'set nwpw': 'cif_filename slab',
                 'nwpw':{'smear':'marzari-vanderbilt',
@@ -79,21 +94,33 @@ class Pynta:
                         'loop':'10,10',
                         'cutoff':20.0},
                 'nwpw':{
+<<<<<<< HEAD
                         'pseudopotentials':'Cu library pspw_default',
+=======
+                        'pseudopotentials':'Cu library paw_default',
+>>>>>>> 75209f2... condition to run nwchem is added
                         '':'end'},
                 'set':{'nwpw:kbpp_ray': True,
                         'nwpw:kbpp_filter': True}}
 
         if software_kwargs_gas:
             self.software_kwargs_gas = software_kwargs_gas
+<<<<<<< HEAD
         elif self.software == 'Espresso': #user defined keywords are not provided but if software="Espresso", use keywords below.
+=======
+        if self.software == 'Espresso':
+>>>>>>> 75209f2... condition to run nwchem is added
             self.software_kwargs_gas = deepcopy(software_kwargs)
             self.software_kwargs_gas["kpts"] = 'gamma'
             self.software_kwargs_gas["smearing"] = 'gauss'
             self.software_kwargs_gas["degauss"] = 0.005
             self.software_kwargs_gas["mixing_beta"] = 0.2
             self.software_kwargs_gas["mixing_ndim"] = 10
+<<<<<<< HEAD
         elif self.software =='NWChem':#user defined keywords are not provided but if software="NWChem", software_kwards_gas = software_kwards
+=======
+        if self.software =='NWChem':
+>>>>>>> 75209f2... condition to run nwchem is added
             self.software_kwargs_gas = deepcopy(software_kwargs)
 
         self.software_kwargs_TS = deepcopy(software_kwargs)
@@ -363,7 +390,11 @@ class Pynta:
                         constraints = []
                         if len(big_slab_ads) == 1 and self.software == "Espresso": #monoatomic species
                             software_kwargs["command"] = software_kwargs["command"].replace("< PREFIX.pwi > PREFIX.pwo","-ndiag 1 < PREFIX.pwi > PREFIX.pwo")
+<<<<<<< HEAD
                         elif len(big_slab_ads) == 1 and self.software == "NWChem": #monoatomic species
+=======
+                        if len(big_slab_ads) == 1 and self.software == "NWChem": #monoatomic species
+>>>>>>> 75209f2... condition to run nwchem is added
                             software_kwargs["command"] = software_kwargs["command"].replace("< PREFIX.nwi > PREFIX.nwo","-ndiag 1 < PREFIX.nwi > PREFIX.nwo")
                     try:
                         os.makedirs(os.path.join(self.path,"Adsorbates",adsname,str(prefix)))
@@ -425,7 +456,11 @@ class Pynta:
                         constraints = []
                         if len(mol.atoms) == 1 and self.software == "Espresso": #monoatomic species
                             software_kwargs["command"] = software_kwargs["command"].replace("< PREFIX.pwi > PREFIX.pwo","-ndiag 1 < PREFIX.pwi > PREFIX.pwo")
+<<<<<<< HEAD
                         elif len(mol.atoms) == 1 and self.software == "NWChem": #monoatomic species
+=======
+                        if len(mol.atoms) == 1 and self.software == "NWChem": #monoatomic species
+>>>>>>> 75209f2... condition to run nwchem is added
                             software_kwargs["command"] = software_kwargs["command"].replace("< PREFIX.nwi > PREFIX.nwo","-ndiag 1 < PREFIX.nwi > PREFIX.nwo")
                     else:
                         software_kwargs = deepcopy(self.software_kwargs)
@@ -521,10 +556,14 @@ class Pynta:
             generate_initial_ad_guesses = False
 
         if self.slab_path is None: #handle slab
+            print("if self.generate_slab()")
             self.generate_slab()
 
+        print("self.analyze_slab()")
         self.analyze_slab()
+        print("self.generate_mole_dict()")
         self.generate_mol_dict()
+<<<<<<< HEAD
         self.generate_initial_adsorbate_guesses(skip_structs=(not generate_initial_ad_guesses))
 
         #adsorbate optimization
@@ -534,13 +573,24 @@ class Pynta:
         if calculate_transition_states:
             #setup transition states
             self.setup_transition_states(adsorbates_finished=(not calculate_adsorbates))
+=======
+        print("self.generate_initial_absorbate_guesses()")
+        self.generate_initial_adsorbate_guesses()
+
+        #adsorbate optimization
+        print("self.setup_adsorbate")
+        self.setup_adsorbates()
+
+        #setup transition states
+        print("self.setup_transition_states()")
+        self.setup_transition_states()
+>>>>>>> 75209f2... condition to run nwchem is added
 
         wf = Workflow(self.fws, name=self.label)
         self.launchpad.add_wf(wf)
 
         if launch:
             self.launch()
-
 
     def execute_from_initial_ad_guesses(self):
         if self.slab_path is None: #handle slab
