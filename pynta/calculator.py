@@ -170,7 +170,14 @@ def run_harmonically_forced_xtb_no_pbc(atoms,atom_bond_potentials,site_bond_pote
                     site_poss.append(atoms.positions[key])
                     break
 
-    trans = get_best_translation(site_poss,atoms.cell)
+    aposx = [a.position[0] for a in atoms[nslab:]]
+    aposy = [a.position[1] for a in atoms[nslab:]]
+    apos = [np.array([min(aposx),min(aposy)]),
+            np.array([min(aposx),max(aposy)]),
+            np.array([max(aposx),min(aposy)]),
+            np.array([max(aposx),max(aposy)])]
+    trans = get_best_translation(site_poss,apos,atoms.cell)
+
     mol_to_trans = {site_mols[i]: trans[i] for i in range(len(site_mols))}
 
     new_site_potentials = []
@@ -264,7 +271,7 @@ def run_harmonically_forced_xtb_no_pbc(atoms,atom_bond_potentials,site_bond_pote
 
     return outadslab,Eharm,Fharm
 
-def get_best_translation(poss,cell):
+def get_best_translation(poss,apos,cell):
     target = cell[0][:2] + cell[1][:2]
     pos2ds = [np.array(pos[:2]) for pos in poss]
     translations = [np.zeros(2),cell[0][:2],cell[1][:2],cell[0][:2] + cell[1][:2]]
@@ -275,7 +282,8 @@ def get_best_translation(poss,cell):
         dist = 0.0
         pos2ddist = 0.0
         for i in range(len(pos2ds)):
-            dist += np.linalg.norm(pos2ds[i]+transs[i]-target)
+            for pos in apos:
+                dist += np.linalg.norm(pos+transs-target)
             for j in range(i):
                 pos2ddist += np.linalg.norm(pos2ds[i]+transs[i]-(pos2ds[j]+transs[j]))
         if abs(pos2ddist - minpos2ddist) > 0.1 and pos2ddist < minpos2ddist:
