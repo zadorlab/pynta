@@ -36,6 +36,7 @@ class Pynta:
         lattice_opt_software_kwargs={'kpts': (25,25,25), 'ecutwfc': 70, 'degauss':0.02, 'mixing_mode': 'plain'},
         reset_launchpad=False,queue_adapter_path=None,num_jobs=25,max_num_hfsp_opts=None,#max_num_hfsp_opts is mostly for fast testing
         Eharmtol=3.0,Eharmfiltertol=30.0,Ntsmin=5):
+
         self.surface_type = surface_type
         if launchpad_path:
             launchpad = LaunchPad.from_file(launchpad_path)
@@ -58,15 +59,51 @@ class Pynta:
         self.adsorbate_fw_dict = dict()
         self.software_kwargs = software_kwargs
 
+        if software_kwargs:
+            self.software_kwargs = software_kwargs
+        if self.software == 'Espresso':
+            self.software_kwargs={
+                'kpts': (3, 3, 1), 
+                'tprnfor': True, 
+                'occupations': 'smearing',
+                'smearing':  'marzari-vanderbilt',
+                'degauss': 0.01, 
+                'ecutwfc': 40, 
+                'nosym': True,
+                'conv_thr': 1e-6, 
+                'mixing_mode': 'local-TF',
+                "pseudopotentials": {"Cu": 'Cu.pbe-spn-kjpaw_psl.1.0.0.UPF',
+                "H": 'H.pbe-kjpaw_psl.1.0.0.UPF',
+                "O": 'O.pbe-n-kjpaw_psl.1.0.0.UPF',
+                "C": 'C.pbe-n-kjpaw_psl.1.0.0.UPF',
+                "N": 'N.pbe-n-kjpaw_psl.1.0.0.UPF',}}
+        if self.software_kwargs == 'NWChem':
+            self.software_kwargs={
+                'set nwpw': 'cif_filename slab',
+                'nwpw':{'smear':'marzari-vanderbilt',
+                        'ewald_ncut': 10,
+                        'ewald_rcut': 3.0,
+                        'xc':'beef-vdw',
+                        'kpts':(3,3,2),
+                        'loop':'10,10',
+                        'cutoff':20.0},
+                'nwpw':{
+                        'pseudopotentials':'Cu library paw_default',
+                        '':'end'},
+                'set':{'nwpw:kbpp_ray': True,
+                        'nwpw:kbpp_filter': True}}
+
         if software_kwargs_gas:
             self.software_kwargs_gas = software_kwargs_gas
-        else:
+        if self.software == 'Espresso':
             self.software_kwargs_gas = deepcopy(software_kwargs)
             self.software_kwargs_gas["kpts"] = 'gamma'
             self.software_kwargs_gas["smearing"] = 'gauss'
             self.software_kwargs_gas["degauss"] = 0.005
             self.software_kwargs_gas["mixing_beta"] = 0.2
             self.software_kwargs_gas["mixing_ndim"] = 10
+        if self.software =='NWChem':
+            self.software_kwargs_gas = deepcopy(software_kwargs)
 
         self.software_kwargs_TS = deepcopy(software_kwargs)
         if TS_opt_software_kwargs:
