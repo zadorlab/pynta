@@ -190,7 +190,7 @@ def run_harmonically_forced_xtb_no_pbc(atoms,atom_bond_potentials,site_bond_pote
 
     slab = atoms[:nslab]
     ad = atoms[nslab:]
-    bigslab = slab * (2,2,1)
+    bigslab = slab * (3,3,1)
 
     for ind,molind in ase_to_mol_num.items():
         ad.positions[ind-nslab] += mol_to_trans[molind]
@@ -272,9 +272,10 @@ def run_harmonically_forced_xtb_no_pbc(atoms,atom_bond_potentials,site_bond_pote
     return outadslab,Eharm,Fharm
 
 def get_best_translation(poss,apos,cell):
-    target = cell[0][:2] + cell[1][:2]
+    target = (cell[0][:2] + cell[1][:2])*1.5
     pos2ds = [np.array(pos[:2]) for pos in poss]
-    translations = [np.zeros(2),cell[0][:2],cell[1][:2],cell[0][:2] + cell[1][:2]]
+    translations = [np.zeros(2),cell[0][:2],cell[1][:2],cell[0][:2] + cell[1][:2],
+                2*cell[0][:2], 2*cell[1][:2], 2*cell[0][:2] + cell[1][:2],cell[0][:2] + 2*cell[1][:2],2*cell[0][:2] + 2*cell[1][:2]]
     mindist = np.inf
     minpos2ddist = np.inf
     tranout = None
