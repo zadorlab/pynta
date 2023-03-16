@@ -170,8 +170,8 @@ def run_harmonically_forced_xtb_no_pbc(atoms,atom_bond_potentials,site_bond_pote
                     site_poss.append(atoms.positions[key])
                     break
 
-    aposx = [a.position[0] for a in atoms[nslab:]]
-    aposy = [a.position[1] for a in atoms[nslab:]]
+    aposx = [a.position[0] for a in atoms[nslab:]] + [a[0] for a in site_poss]
+    aposy = [a.position[1] for a in atoms[nslab:]] + [a[1] for a in site_poss]
     apos = [np.array([min(aposx),min(aposy)]),
             np.array([min(aposx),max(aposy)]),
             np.array([max(aposx),min(aposy)]),
@@ -204,6 +204,9 @@ def run_harmonically_forced_xtb_no_pbc(atoms,atom_bond_potentials,site_bond_pote
         for j,a in enumerate(ad):
             if np.linalg.norm(atom.position[:2]-a.position[:2]) < dist:
                 dist = np.linalg.norm(atom.position[:2]-a.position[:2])
+        for sitep in new_site_potentials:
+            if np.linalg.norm(atom.position[:2]-sitep["site_pos"][:2]) < dist:
+                dist = np.linalg.norm(atom.position[:2]-sitep["site_pos"][:2])
         if dist > dthresh:
             delinds.append(i)
 
