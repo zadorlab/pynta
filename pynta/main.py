@@ -31,7 +31,6 @@ class Pynta:
         lattice_opt_software_kwargs=None,
         reset_launchpad=False,queue_adapter_path=None,num_jobs=25,max_num_hfsp_opts=None,#max_num_hfsp_opts is mostly for fast testing
         Eharmtol=3.0,Eharmfiltertol=30.0,Ntsmin=5):
-# users need to define in input which QM software they want to use. Depending on the QM software the user define, default keywords are determined. 
         self.surface_type = surface_type
         if launchpad_path:
             launchpad = LaunchPad.from_file(launchpad_path)
