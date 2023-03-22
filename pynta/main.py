@@ -104,9 +104,6 @@ class Pynta:
             self.software_kwargs_gas["mixing_ndim"] = 10
         if self.software =='NWChem':#user defined keywords are not provided but if software="NWChem", software_kwards_gas = software_kwards
             self.software_kwargs_gas = deepcopy(software_kwargs)
-        
-        else:
-            print("software_kwargs_gas are not defined. Please provide software keywords in the input")
 
         self.software_kwargs_TS = deepcopy(software_kwargs)
         if TS_opt_software_kwargs:
