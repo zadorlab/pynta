@@ -78,7 +78,7 @@ class Pynta:
                         'loop':'10,10',
                         'cutoff':20.0},
                 'nwpw':{
-                        'pseudopotentials':'Cu library paw_default',
+                        'pseudopotentials':'Cu library pspw_default',
                         '':'end'},
                 'set':{'nwpw:kbpp_ray': True,
                         'nwpw:kbpp_filter': True}}
