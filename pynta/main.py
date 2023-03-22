@@ -373,11 +373,7 @@ class Pynta:
                         constraints = []
                         if len(big_slab_ads) == 1 and self.software == "Espresso": #monoatomic species
                             software_kwargs["command"] = software_kwargs["command"].replace("< PREFIX.pwi > PREFIX.pwo","-ndiag 1 < PREFIX.pwi > PREFIX.pwo")
-<<<<<<< HEAD
-                        elif len(big_slab_ads) == 1 and self.software == "NWChem": #monoatomic species
-=======
                         if len(big_slab_ads) == 1 and self.software == "NWChem": #monoatomic species
->>>>>>> 75209f2... condition to run nwchem is added
                             software_kwargs["command"] = software_kwargs["command"].replace("< PREFIX.nwi > PREFIX.nwo","-ndiag 1 < PREFIX.nwi > PREFIX.nwo")
                     try:
                         os.makedirs(os.path.join(self.path,"Adsorbates",adsname,str(prefix)))
@@ -439,11 +435,7 @@ class Pynta:
                         constraints = []
                         if len(mol.atoms) == 1 and self.software == "Espresso": #monoatomic species
                             software_kwargs["command"] = software_kwargs["command"].replace("< PREFIX.pwi > PREFIX.pwo","-ndiag 1 < PREFIX.pwi > PREFIX.pwo")
-<<<<<<< HEAD
-                        elif len(mol.atoms) == 1 and self.software == "NWChem": #monoatomic species
-=======
                         if len(mol.atoms) == 1 and self.software == "NWChem": #monoatomic species
->>>>>>> 75209f2... condition to run nwchem is added
                             software_kwargs["command"] = software_kwargs["command"].replace("< PREFIX.nwi > PREFIX.nwo","-ndiag 1 < PREFIX.nwi > PREFIX.nwo")
                     else:
                         software_kwargs = deepcopy(self.software_kwargs)
