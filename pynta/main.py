@@ -82,11 +82,7 @@ class Pynta:
                         'loop':'10,10',
                         'cutoff':20.0},
                 'nwpw':{
-<<<<<<< HEAD
-                        'pseudopotentials':'Cu library pspw_default',
-=======
                         'pseudopotentials':'Cu library paw_default',
->>>>>>> 75209f2... condition to run nwchem is added
                         '':'end'},
                 'set':{'nwpw:kbpp_ray': True,
                         'nwpw:kbpp_filter': True}}
