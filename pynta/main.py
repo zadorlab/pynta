@@ -53,9 +53,9 @@ class Pynta:
         self.adsorbate_fw_dict = dict()
         self.software_kwargs = software_kwargs
 
-        if software_kwargs:
-            self.software_kwargs = software_kwargs
-        if self.software == 'Espresso':
+        if software_kwargs: 
+            self.software_kwargs = software_kwargs #use user defined keywords.
+        if self.software == 'Espresso': #user defined keywords are not provided but if software="Espresso", use keywords below.
             self.software_kwargs={
                 'kpts': (3, 3, 1), 
                 'tprnfor': True, 
@@ -66,16 +66,12 @@ class Pynta:
                 'nosym': True,
                 'conv_thr': 1e-6, 
                 'mixing_mode': 'local-TF',
-<<<<<<< HEAD
-                "pseudopotentials": {"Cu": 'Cu.pbe-spn-kjpaw_psl.1.0.0.UPF'}}
-        elif self.software_kwargs == 'NWChem': #user defined keywords are not provided but if software="NWChem", use keywords below.
-=======
                 "pseudopotentials": {"Cu": 'Cu.pbe-spn-kjpaw_psl.1.0.0.UPF',
                 "H": 'H.pbe-kjpaw_psl.1.0.0.UPF',
                 "O": 'O.pbe-n-kjpaw_psl.1.0.0.UPF',
                 "C": 'C.pbe-n-kjpaw_psl.1.0.0.UPF',
                 "N": 'N.pbe-n-kjpaw_psl.1.0.0.UPF',}}
-        if self.software_kwargs == 'NWChem':
+        if self.software_kwargs == 'NWChem': #user defined keywords are not provided but if software="NWChem", use keywords below.
             self.software_kwargs={
                 'set nwpw': 'cif_filename slab',
                 'nwpw':{'smear':'marzari-vanderbilt',
@@ -97,15 +93,18 @@ class Pynta:
 
         if software_kwargs_gas:
             self.software_kwargs_gas = software_kwargs_gas
-        if self.software == 'Espresso':
+        if self.software == 'Espresso': #user defined keywords are not provided but if software="Espresso", use keywords below.
             self.software_kwargs_gas = deepcopy(software_kwargs)
             self.software_kwargs_gas["kpts"] = 'gamma'
             self.software_kwargs_gas["smearing"] = 'gauss'
             self.software_kwargs_gas["degauss"] = 0.005
             self.software_kwargs_gas["mixing_beta"] = 0.2
             self.software_kwargs_gas["mixing_ndim"] = 10
-        if self.software =='NWChem':
+        if self.software =='NWChem':#user defined keywords are not provided but if software="NWChem", software_kwards_gas = software_kwards
             self.software_kwargs_gas = deepcopy(software_kwargs)
+        
+        else:
+            print("software_kwargs_gas are not defined. Please provide software keywords in the input")
 
         self.software_kwargs_TS = deepcopy(software_kwargs)
         if TS_opt_software_kwargs:
@@ -540,33 +539,17 @@ class Pynta:
             generate_initial_ad_guesses = False
 
         if self.slab_path is None: #handle slab
-            print("if self.generate_slab()")
             self.generate_slab()
 
-        print("self.analyze_slab()")
         self.analyze_slab()
-        print("self.generate_mole_dict()")
         self.generate_mol_dict()
-<<<<<<< HEAD
-        self.generate_initial_adsorbate_guesses(skip_structs=(not generate_initial_ad_guesses))
-
-        #adsorbate optimization
-        if calculate_adsorbates:
-            self.setup_adsorbates(initial_guess_finished=(not generate_initial_ad_guesses))
-
-        if calculate_transition_states:
-            #setup transition states
-            self.setup_transition_states(adsorbates_finished=(not calculate_adsorbates))
-=======
         print("self.generate_initial_absorbate_guesses()")
         self.generate_initial_adsorbate_guesses()
 
         #adsorbate optimization
-        print("self.setup_adsorbate")
         self.setup_adsorbates()
 
         #setup transition states
-        print("self.setup_transition_states()")
         self.setup_transition_states()
 >>>>>>> 75209f2... condition to run nwchem is added
 
