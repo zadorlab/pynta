@@ -36,7 +36,6 @@ class Pynta:
         lattice_opt_software_kwargs={'kpts': (25,25,25), 'ecutwfc': 70, 'degauss':0.02, 'mixing_mode': 'plain'},
         reset_launchpad=False,queue_adapter_path=None,num_jobs=25,max_num_hfsp_opts=None,#max_num_hfsp_opts is mostly for fast testing
         Eharmtol=3.0,Eharmfiltertol=30.0,Ntsmin=5):
-
         self.surface_type = surface_type
         if launchpad_path:
             launchpad = LaunchPad.from_file(launchpad_path)
@@ -166,7 +165,7 @@ class Pynta:
                 run_kwargs={"fmax" : 0.01},out_path=os.path.join(self.path,"slab.xyz"),constraints=["freeze half slab"])
             wfslab = Workflow([fwslab], name=self.label+"_slab")
             self.launchpad.add_wf(wfslab)
-            self.launch() #call self.launch
+            self.launch()
             while not os.path.exists(self.slab_path): #wait until slab optimizes, this is required anyway and makes the rest of the code simpler
                 time.sleep(1)
             self.slab = read(self.slab_path)
@@ -515,41 +514,26 @@ class Pynta:
         else:
             launch_multiprocess(self.launchpad,self.fworker,"INFO","infinite",self.num_jobs,5)
 
-    def execute(self,generate_initial_ad_guesses=True,calculate_adsorbates=True,
-                calculate_transition_states=True,launch=True):
-        """
-        generate and launch a Pynta Fireworks Workflow
-        if generate_initial_ad_guesses is true generates initial guesses, otherwise assumes they are already there
-        if calculate_adsorbates is true generates firework jobs for adsorbates, otherwise assumes they are not needed
-        if calculate_transition_states is true generates fireworks jobs for transition states, otherwise assumes they are not needed
-        if launch is true launches the fireworks workflow in infinite mode...this generates a process that will continue to spawn jobs
-        if launch is false the Fireworks workflow is added to the launchpad, where it can be launched separately using fireworks commands
-        """
-
-        if not calculate_adsorbates: #default handling
-            generate_initial_ad_guesses = False
-
+    def execute(self):
         if self.slab_path is None: #handle slab
             self.generate_slab()
 
         self.analyze_slab()
         self.generate_mol_dict()
-        print("self.generate_initial_absorbate_guesses()")
-        self.generate_initial_adsorbate_guesses()
+        self.generate_initial_adsorbate_guesses(skip_structs=(not generate_initial_ad_guesses))
 
         #adsorbate optimization
-        self.setup_adsorbates()
+        if calculate_adsorbates:
+            self.setup_adsorbates(initial_guess_finished=(not generate_initial_ad_guesses))
 
-        #setup transition states
-        self.setup_transition_states()
->>>>>>> 75209f2... condition to run nwchem is added
+        if calculate_transition_states:
+            #setup transition states
+            self.setup_transition_states(adsorbates_finished=(not calculate_adsorbates))
 
         wf = Workflow(self.fws, name=self.label)
         self.launchpad.add_wf(wf)
 
-        if launch:
-            self.launch()
-
+        self.launch()
 
     def execute_from_initial_ad_guesses(self):
         if self.slab_path is None: #handle slab
