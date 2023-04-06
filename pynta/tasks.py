@@ -1001,17 +1001,6 @@ def reconstruct_firework(new_task,old_task,task_list,full=True):
             tasks.append(reconstruct_task(d))
     return Firework(tasks)
 
-def construct_constraint(d):
-    """
-    construct a constrain from a dictionary that is the input to the constraint
-    constructor plus an additional "type" key that indices the name of the constraint
-    returns the constraint
-    """
-    constraint_dict = copy.deepcopy(d)
-    constructor = getattr("ase.constraints",constraint_dict["type"])
-    del constraint_dict["type"]
-    return constructor(**constraint_dict)
-
 def get_fizzled_fws(lpad):
     return [lpad.get_fw_by_id(i) for i in lpad.get_fw_ids_in_wfs() if lpad.get_fw_by_id(i).state == "FIZZLED"]
 
