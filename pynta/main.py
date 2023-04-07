@@ -35,7 +35,7 @@ class Pynta:
         TS_opt_software_kwargs=None,
         lattice_opt_software_kwargs={'kpts': (25,25,25), 'ecutwfc': 70, 'degauss':0.02, 'mixing_mode': 'plain'},
         reset_launchpad=False,queue_adapter_path=None,num_jobs=25,max_num_hfsp_opts=None,#max_num_hfsp_opts is mostly for fast testing
-        Eharmtol=3.0,Eharmfiltertol=30.0,Ntsmin=5):
+        Eharmtol=3.0,Eharmfiltertol=30.0,Ntsmin=5,frozen_layers=2):
 
         self.surface_type = surface_type
         if launchpad_path:
@@ -100,6 +100,8 @@ class Pynta:
             self.nslab = int(np.prod(np.array(self.repeats[0])*np.array(self.repeats[1])))
         else:
             self.nslab = len(read(self.slab_path))
+        self.layers = self.repeats[1][2]
+        self.freeze_ind = int((self.nslab/self.layers)*self.frozen_layers)
         self.mol_dict = None
         self.Eharmtol = Eharmtol
         self.Eharmfiltertol = Eharmfiltertol
@@ -127,7 +129,7 @@ class Pynta:
         if self.software != "XTB":
             fwslab = optimize_firework(os.path.join(self.path,"slab_init.xyz"),self.software,"slab",
                 opt_method="BFGSLineSearch",socket=self.socket,software_kwargs=self.software_kwargs,
-                run_kwargs={"fmax" : 0.01},out_path=os.path.join(self.path,"slab.xyz"),constraints=["freeze half slab"])
+                run_kwargs={"fmax" : 0.01},out_path=os.path.join(self.path,"slab.xyz"),constraints=["freeze up to {}".format(self.freeze_ind)])
             wfslab = Workflow([fwslab], name=self.label+"_slab")
             self.launchpad.add_wf(wfslab)
             self.rapidfire()
@@ -326,7 +328,7 @@ class Pynta:
                         software_kwargs = deepcopy(self.software_kwargs)
                         target_site_num = len(mol.get_surface_sites())
                         if self.software != "XTB":
-                            constraints = ["freeze half slab"]
+                            constraints = ["freeze up to {}".format(self.freeze_ind)]
                         else:
                             constraints = ["freeze all "+self.metal]
                     else: #gas phase
@@ -399,7 +401,7 @@ class Pynta:
                     else:
                         software_kwargs = deepcopy(self.software_kwargs)
                         if self.software != "XTB":
-                            constraints = ["freeze half slab"]
+                            constraints = ["freeze up to {}".format(self.freeze_ind)]
                         else:
                             constraints = ["freeze all "+self.metal]
                     xyz = os.path.join(prefix_path,str(prefix)+".xyz")
@@ -436,7 +438,7 @@ class Pynta:
         """
         if self.software != "XTB":
             opt_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":self.software_kwargs_TS,
-                "run_kwargs": {"fmax" : 0.02, "steps" : 70},"constraints": ["freeze half slab"],"sella":True,"order":1,}
+                "run_kwargs": {"fmax" : 0.02, "steps" : 70},"constraints": ["freeze up to {}".format(self.freeze_ind)],"sella":True,"order":1,}
         else:
             opt_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":self.software_kwargs_TS,
                 "run_kwargs": {"fmax" : 0.02, "steps" : 70},"constraints": ["freeze all "+self.metal],"sella":True,"order":1,}
