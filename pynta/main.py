@@ -101,6 +101,7 @@ class Pynta:
         else:
             self.nslab = len(read(self.slab_path))
         self.layers = self.repeats[1][2]
+        self.frozen_layers = frozen_layers
         self.freeze_ind = int((self.nslab/self.layers)*self.frozen_layers)
         self.mol_dict = None
         self.Eharmtol = Eharmtol
