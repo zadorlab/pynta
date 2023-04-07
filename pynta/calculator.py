@@ -8,6 +8,7 @@ from ase.calculators import calculator
 from ase.data import reference_states,chemical_symbols
 from ase.build import bulk
 from ase.constraints import *
+from ase.optimize import QuasiNewton
 from ase.io.trajectory import TrajectoryWriter, Trajectory
 from pynta.utils import name_to_ase_software, construct_constraint
 from sella import Sella, Constraints
@@ -383,6 +384,58 @@ def bond_scan_sella(sp,inds,enddist,increment=0.02,constraints=["freeze slab"],t
                     ))
         
         opt = Sella(atoms,order=order)
+        opt.run(**run_kwargs)
+        bd,d = get_distances([atoms.positions[inds[0]]],[atoms.positions[inds[1]]],cell=atoms.cell,pbc=atoms.pbc)
+        bd = bd[0][0]
+        d = d[0][0]
+        dists.append(d)
+        Es.append(atoms.get_potential_energy())
+        if trajectory:
+            trw.write(atoms=atoms)
+        
+        if (increment > 0 and d < enddist) or (increment < 0 and d > enddist):
+            atoms.positions[inds[0]] -= bd / np.linalg.norm(bd) * increment * 0.5
+            atoms.positions[inds[1]] += bd / np.linalg.norm(bd) * increment * 0.5
+            k += 1
+        else:
+            break
+    
+    tr = Trajectory(trajectory)
+    return dists,Es,tr
+
+def bond_scan(sp,inds,enddist,increment=0.02,constraints=["freeze slab"],trajectory="",nslab=0,run_kwargs={'fmax': 0.02,'steps': 150},
+                    opt_kwargs={},optimizer=QuasiNewton):
+    atoms = sp.copy()
+    atoms.calc = sp.calc
+    dist = None
+    dists = []
+    Es = []
+    if trajectory:
+        trw = TrajectoryWriter(trajectory)
+    constraints.append({'type': 'FixBondLength', 'a1': inds[0],'a2':inds[1]})
+    boo = True
+    k = 0
+    while boo:
+        for c in constraints:
+            if isinstance(c,dict):
+                constraint = construct_constraint(c)
+                atoms.set_constraint(constraint)
+            elif c == "freeze half slab":
+                atoms.set_constraint(FixAtoms([
+                    atom.index for atom in atoms if atom.position[2] < sp.cell[2, 2] / 2.
+                ]))
+            elif c.split()[0] == "freeze" and c.split()[1] == "all": #ex: "freeze all Cu"
+                sym = c.split()[2]
+                atoms.set_constraint(FixAtoms(
+                    indices=[atom.index for atom in atoms if atom.symbol == sym]
+                    ))
+            elif c.split()[0] == "freeze" and c.split()[1] == "up" and c.split()[2] == "to":
+                n = int(c.split()[3])
+                atoms.set_constraint(FixAtoms(
+                    indices=list(range(n))
+                    ))
+        
+        opt = optimizer(atoms,**opt_kwargs)
         opt.run(**run_kwargs)
         bd,d = get_distances([atoms.positions[inds[0]]],[atoms.positions[inds[1]]],cell=atoms.cell,pbc=atoms.pbc)
         bd = bd[0][0]
