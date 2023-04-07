@@ -258,7 +258,7 @@ An example python script for calling Pynta is available below.
         TS_opt_software_kwargs=None,
         lattice_opt_software_kwargs={'kpts': (25,25,25), 'ecutwfc': 70, 'degauss':0.02, 'mixing_mode': 'plain'},
         reset_launchpad=False,queue_adapter_path=None,num_jobs=25,
-        Eharmtol=3.0,Eharmfiltertol=30.0,Ntsmin=5)
+        Eharmtol=3.0,Eharmfiltertol=30.0,Ntsmin=5,frozen_layers=2)
 
   pyn.execute(generate_initial_ad_guesses=True,calculate_adsorbates=True,
                 calculate_transition_states=True,launch=True)
@@ -318,6 +318,8 @@ Lastly there are the Pynta energy filter criteria:
 **Eharmfiltertol**: a tolerance such that all TS/adsorbate guesses are never calculated if they have energies greater than Emin * Eharmfiltertol
 
 **Ntsmin**: the minimum number of TS/adsorbate guesses. If the number of guesses with energies less than Emin * Eharmtol is less than Ntsmin Pynta will add the lowest energy guesses (that are less than Emin * Eharmfiltertol) until it has Ntsmin guesses.
+
+**frozen_layers**: the number of layers (starting from the bottom of the slab) frozen during optimizations 
 
 Pynta's execute function has a few important options:
 
