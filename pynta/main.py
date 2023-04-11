@@ -24,11 +24,16 @@ import logging
 
 class Pynta:
     def __init__(self,path,rxns_file,surface_type,metal,label,launchpad_path=None,fworker_path=None,
-        vacuum=8.0,repeats=[(1,1,1),(3,3,4)],slab_path=None,software=None,socket=False,queue=False,njobs_queue=0,a=None,
-        software_kwargs=None,
+        vacuum=8.0,repeats=[(1,1,1),(3,3,4)],slab_path=None,software="Espresso",socket=False,queue=False,njobs_queue=0,a=None,
+        software_kwargs={'kpts': (3, 3, 1), 'tprnfor': True, 'occupations': 'smearing',
+                            'smearing':  'marzari-vanderbilt',
+                            'degauss': 0.01, 'ecutwfc': 40, 'nosym': True,
+                            'conv_thr': 1e-6, 'mixing_mode': 'local-TF',
+                            "pseudopotentials": {"Cu": 'Cu.pbe-spn-kjpaw_psl.1.0.0.UPF',"H": 'H.pbe-kjpaw_psl.1.0.0.UPF',"O": 'O.pbe-n-kjpaw_psl.1.0.0.UPF',"C": 'C.pbe-n-kjpaw_psl.1.0.0.UPF',"N": 'N.pbe-n-kjpaw_psl.1.0.0.UPF',
+                            }, },
         software_kwargs_gas=None,
         TS_opt_software_kwargs=None,
-        lattice_opt_software_kwargs=None,
+        lattice_opt_software_kwargs={'kpts': (25,25,25), 'ecutwfc': 70, 'degauss':0.02, 'mixing_mode': 'plain'},
         reset_launchpad=False,queue_adapter_path=None,num_jobs=25,max_num_hfsp_opts=None,#max_num_hfsp_opts is mostly for fast testing
         Eharmtol=3.0,Eharmfiltertol=30.0,Ntsmin=5):
 
@@ -54,47 +59,15 @@ class Pynta:
         self.adsorbate_fw_dict = dict()
         self.software_kwargs = software_kwargs
 
-        if software_kwargs: 
-            self.software_kwargs = software_kwargs #use user defined keywords.
-        elif self.software == 'Espresso': #user defined keywords are not provided but if software="Espresso", use keywords below.
-            self.software_kwargs={
-                'kpts': (3, 3, 1), 
-                'tprnfor': True, 
-                'occupations': 'smearing',
-                'smearing':  'marzari-vanderbilt',
-                'degauss': 0.01, 
-                'ecutwfc': 40, 
-                'nosym': True,
-                'conv_thr': 1e-6, 
-                'mixing_mode': 'local-TF',
-                "pseudopotentials": {"Cu": 'Cu.pbe-spn-kjpaw_psl.1.0.0.UPF'}}
-        elif self.software_kwargs == 'NWChem': #user defined keywords are not provided but if software="NWChem", use keywords below.
-            self.software_kwargs={
-                'set nwpw': 'cif_filename slab',
-                'nwpw':{'smear':'marzari-vanderbilt',
-                        'ewald_ncut': 10,
-                        'ewald_rcut': 3.0,
-                        'xc':'beef-vdw',
-                        'kpts':(3,3,2),
-                        'loop':'10,10',
-                        'cutoff':20.0},
-                'nwpw':{
-                        'pseudopotentials':'Cu library pspw_default',
-                        '':'end'},
-                'set':{'nwpw:kbpp_ray': True,
-                        'nwpw:kbpp_filter': True}}
-
         if software_kwargs_gas:
             self.software_kwargs_gas = software_kwargs_gas
-        elif self.software == 'Espresso': #user defined keywords are not provided but if software="Espresso", use keywords below.
+        else:
             self.software_kwargs_gas = deepcopy(software_kwargs)
             self.software_kwargs_gas["kpts"] = 'gamma'
             self.software_kwargs_gas["smearing"] = 'gauss'
             self.software_kwargs_gas["degauss"] = 0.005
             self.software_kwargs_gas["mixing_beta"] = 0.2
             self.software_kwargs_gas["mixing_ndim"] = 10
-        elif self.software =='NWChem':#user defined keywords are not provided but if software="NWChem", software_kwards_gas = software_kwards
-            self.software_kwargs_gas = deepcopy(software_kwargs)
 
         self.software_kwargs_TS = deepcopy(software_kwargs)
         if TS_opt_software_kwargs:
