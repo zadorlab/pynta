@@ -292,7 +292,7 @@ Third there are the slab specification parameters:
 
 **vacuum**: the height of the vacuum in Angstroms above the slab in the cell
 
-**repeats**: in general operation this should be [(1,1,1),(x,y,z)] where x,y,z are the number of atoms in the x,y and z directions in the slab
+**repeats**: (x,y,z) where x,y,z are the number of atoms in the x,y and z directions in the slab
 
 **a**: the lattice constant of the metal, if not specified and slab_path is not specified Pynta will calculate it
 
