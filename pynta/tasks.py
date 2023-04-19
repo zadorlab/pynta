@@ -440,7 +440,7 @@ class MolecularVibrationsTask(VibrationTask):
 
 @explicit_serialize
 class MolecularTSEstimate(FiretaskBase):
-    required_params = ["rxn","ts_path","slab_path","adsorbates_path","rxns_file","repeats","path","metal","facet",
+    required_params = ["rxn","ts_path","slab_path","adsorbates_path","rxns_file","path","metal","facet",
                         "name_to_adjlist_dict", "gratom_to_molecule_atom_maps",
                         "gratom_to_molecule_surface_atom_maps","opt_obj_dict",
                                 "vib_obj_dict","IRC_obj_dict","nslab","Eharmtol","Eharmfiltertol","Ntsmin","max_num_hfsp_opts"]
@@ -463,7 +463,7 @@ class MolecularTSEstimate(FiretaskBase):
         Ntsmin = self["Ntsmin"]
         max_num_hfsp_opts = self["max_num_hfsp_opts"]
         slab_path = self["slab_path"]
-        slab = read(slab_path) * self["repeats"]
+        slab = read(slab_path)
 
         cas = SlabAdsorptionSites(slab,facet,allow_6fold=False,composition_effect=False,
                             label_sites=True,

@@ -24,7 +24,7 @@ import logging
 
 class Pynta:
     def __init__(self,path,rxns_file,surface_type,metal,label,launchpad_path=None,fworker_path=None,
-        vacuum=8.0,repeats=[(1,1,1),(3,3,4)],slab_path=None,software="Espresso",socket=False,queue=False,njobs_queue=0,a=None,
+        vacuum=8.0,repeats=(3,3,4),slab_path=None,software="Espresso",socket=False,queue=False,njobs_queue=0,a=None,
         software_kwargs={'kpts': (3, 3, 1), 'tprnfor': True, 'occupations': 'smearing',
                             'smearing':  'marzari-vanderbilt',
                             'degauss': 0.01, 'ecutwfc': 40, 'nosym': True,
@@ -97,10 +97,10 @@ class Pynta:
         if queue:
             self.qadapter = load_object_from_file(queue_adapter_path)
         if self.slab_path is None:
-            self.nslab = int(np.prod(np.array(self.repeats[0])*np.array(self.repeats[1])))
+            self.nslab = int(np.prod(np.array(self.repeats)))
         else:
             self.nslab = len(read(self.slab_path))
-        self.layers = self.repeats[1][2]
+        self.layers = self.repeats[2]
         self.frozen_layers = frozen_layers
         self.freeze_ind = int((self.nslab/self.layers)*self.frozen_layers)
         self.mol_dict = None
@@ -123,7 +123,7 @@ class Pynta:
         else:
             a = self.a
         #construct slab with optimial lattice constant
-        slab = slab_type(self.metal,self.repeats[1],a,self.vacuum)
+        slab = slab_type(self.metal,self.repeats,a,self.vacuum)
         slab.pbc = (True, True, False)
         write(os.path.join(self.path,"slab_init.xyz"),slab)
         self.slab_path = os.path.join(self.path,"slab.xyz")
@@ -142,7 +142,7 @@ class Pynta:
             write(self.slab_path,slab)
 
     def analyze_slab(self):
-        full_slab = self.slab * self.repeats[0]
+        full_slab = self.slab
         cas = SlabAdsorptionSites(full_slab, self.surface_type,allow_6fold=False,composition_effect=False,
                         label_sites=True,
                         surrogate_metal=self.metal)
@@ -264,7 +264,7 @@ class Pynta:
                     if os.path.exists(os.path.join(self.path,"Adsorbates",sm)): #assume initial guesses already generated
                         structures[sm] = None
                     else:
-                        structs = generate_adsorbate_guesses(mol,ads,self.slab,self.repeats[0],cas,mol_to_atoms_map,self.metal,
+                        structs = generate_adsorbate_guesses(mol,ads,self.slab,cas,mol_to_atoms_map,self.metal,
                                            self.single_site_bond_params_lists,self.single_sites_lists,
                                            self.double_site_bond_params_lists,self.double_sites_lists,
                                            self.Eharmtol,self.Eharmfiltertol,self.Ntsmin)
@@ -305,7 +305,7 @@ class Pynta:
                             continue
                         adsorbate_dict[sp_symbol][prefix] = read(os.path.join(self.path,"Adsorbates",sp_symbol,str(prefix),str(prefix)+"_init.xyz"))
 
-            big_slab = self.slab * self.repeats[0]
+            big_slab = self.slab
             nsmall_slab = len(self.slab)
             for adsname,adsorbate in adsorbate_dict.items():
                 xyzs = []
@@ -451,7 +451,7 @@ class Pynta:
             ts_path = os.path.join(self.path,"TS"+str(i))
             os.makedirs(ts_path)
             ts_task = MolecularTSEstimate({"rxn": rxn,"ts_path": ts_path,"slab_path": self.slab_path,"adsorbates_path": os.path.join(self.path,"Adsorbates"),
-                "rxns_file": self.rxns_file,"repeats": self.repeats[0],"path": self.path,"metal": self.metal,"facet": self.surface_type, "out_path": ts_path,
+                "rxns_file": self.rxns_file,"path": self.path,"metal": self.metal,"facet": self.surface_type, "out_path": ts_path,
                 "spawn_jobs": True, "opt_obj_dict": opt_obj_dict, "vib_obj_dict": vib_obj_dict,
                     "IRC_obj_dict": IRC_obj_dict, "nprocs": 48, "name_to_adjlist_dict": self.name_to_adjlist_dict,
                     "gratom_to_molecule_atom_maps":{sm: {str(k):v for k,v in d.items()} for sm,d in self.gratom_to_molecule_atom_maps.items()},
