@@ -50,7 +50,7 @@ class MainTest(unittest.TestCase):
                 rxns_file=os.path.join(self.path,"rxn_test.yaml"),
                 software="XTB",
                 surface_type="fcc111",metal="Cu",socket=False,queue=False,a=3.61,
-                repeats=[(1,1,1),(3,3,4)],label=name,num_jobs=1,max_num_hfsp_opts=2,
+                repeats=(3,3,4),label=name,num_jobs=1,max_num_hfsp_opts=2,
                 software_kwargs={"method": "GFN1-xTB"},
                 software_kwargs_gas={"method": "GFN1-xTB"},
                TS_opt_software_kwargs={},

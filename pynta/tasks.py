@@ -440,7 +440,7 @@ class MolecularVibrationsTask(VibrationTask):
 
 @explicit_serialize
 class MolecularTSEstimate(FiretaskBase):
-    required_params = ["rxn","ts_path","slab_path","adsorbates_path","rxns_file","repeats","path","metal","facet",
+    required_params = ["rxn","ts_path","slab_path","adsorbates_path","rxns_file","path","metal","facet",
                         "name_to_adjlist_dict", "gratom_to_molecule_atom_maps",
                         "gratom_to_molecule_surface_atom_maps","opt_obj_dict",
                                 "vib_obj_dict","IRC_obj_dict","nslab","Eharmtol","Eharmfiltertol","Ntsmin","max_num_hfsp_opts"]
@@ -463,7 +463,7 @@ class MolecularTSEstimate(FiretaskBase):
         Ntsmin = self["Ntsmin"]
         max_num_hfsp_opts = self["max_num_hfsp_opts"]
         slab_path = self["slab_path"]
-        slab = read(slab_path) * self["repeats"]
+        slab = read(slab_path)
 
         cas = SlabAdsorptionSites(slab,facet,allow_6fold=False,composition_effect=False,
                             label_sites=True,
@@ -812,73 +812,6 @@ def map_harmonically_forced_xtb(input):
         write(os.path.join(ts_path,str(j),"xtb.xyz"),sp)
         xyz = os.path.join(ts_path,str(j),"xtb.xyz")
     return (sp,Eharm,xyz)
-
-
-def run_parallel_gfn1xtb_opt(inputs,nprocs):
-    with mp.Pool(nprocs) as pool:
-        errors = pool.map(run_gfn1xtb_opt,inputs)
-
-def run_gfn1xtb_opt(inputs):
-    xyz,xyzout,label,slab_path,bonds,av_dists_tuple,repeats = inputs
-
-    adsorbed = read(xyz)
-    slab = read(slab_path)
-    big_slab = slab * repeats
-    nbig_slab = len(big_slab)
-    ts_estimate = adsorbed[nbig_slab:]
-    traj_path = label+".traj"
-    adsplacer = AdsorbatePlacer(
-        big_slab, ts_estimate, bonds, av_dists_tuple,
-        trajectory=traj_path,
-    )
-
-    adsplacer.ads_ref.set_calculator(XTB(method="GFN1-xTB"))
-
-    try:
-        opt = adsplacer.optimize()
-        write(xyzout,read(traj_path))
-        return None
-    except Exception as e:
-         return e
-
-def TSxTBOpt_firework(xyz,slab_path,bonds,repeats,av_dists_tuple,out_path=None,label="",parents=[],ignore_errors=False):
-    d = {"xyz": xyz, "slab_path": slab_path, "bonds": bonds, "repeats": repeats, "av_dists_tuple": av_dists_tuple,
-        "label": label, "ignore_errors": ignore_errors}
-    t1 = MolecularTSxTBOpt(d)
-    directory = os.path.dirname(xyz)
-    if out_path is None: out_path = os.path.join(directory,label+".traj")
-    t2 = FileTransferTask({'files': [{'src': label+'.traj', 'dest': out_path}], 'mode': 'copy', "ignore_errors": ignore_errors})
-    return Firework([t1,t2],parents=parents,name=label+"TSxTBopt")
-
-@explicit_serialize
-class MolecularTSxTBOpt(OptimizationTask):
-    required_params = ["xyz","slab_path","bonds","repeats","av_dists_tuple"]
-    optional_params = ["label","ignore_errors"]
-
-    def run_task(self, fw_spec):
-        label = self["label"] if "label" in self.keys() else "xtb"
-        ignore_errors = self["ignore_errors"] if "ignore_errors" in self.keys() else False
-        try:
-            adsorbed = read(self["xyz"])
-            slab = read(self["slab_path"])
-            big_slab = slab * self["repeats"]
-            nbig_slab = len(big_slab)
-            ts_estimate = adsorbed[nbig_slab:]
-
-            adsplacer = AdsorbatePlacer(
-                big_slab, ts_estimate, self["bonds"], self["av_dists_tuple"],
-                trajectory=label+".traj"
-            )
-
-            adsplacer.ads_ref.set_calculator(XTB(method="GFN1-xTB"))
-            opt = adsplacer.optimize()
-        except Exception as e:
-            if not ignore_errors:
-                raise e
-            else:
-                return FWAction(stored_data={"error": e}, exit=True)
-
-        return FWAction()
 
 class StructureError(Exception): pass
 class TimeLimitError(Exception): pass
