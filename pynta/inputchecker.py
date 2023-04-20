@@ -20,20 +20,20 @@ def check_reaction_file(file_path):
     #check for duplicates in reactant
         reactant_molecules = reactant.split('*')[1:]
         reactant_molecules = [int(m.split()[0]) for m in reactant_molecules]
-    if len(reactant_molecules) != len(set(reactant_molecules)):
-        print(f'Error in reaction index {i}: duplicate molecule labels in reactant')
+        if len(reactant_molecules) != len(set(reactant_molecules)):
+            print(f'Error in reaction "index {i}": duplicate molecule labels in reactant')
 
     #check for duplicates in product
-    product_molecules = product.split('*')[1:]
-    product_molecules = [int(m.split()[0]) for m in product_molecules]
-    if len(product_molecules) != len(set(product_molecules)):
-        print(f'Error in reaction index {i}: duplicate molecule labels in product')
+        product_molecules = product.split('*')[1:]
+        product_molecules = [int(m.split()[0]) for m in product_molecules]
+        if len(product_molecules) != len(set(product_molecules)):
+            print(f'Error in reaction "index {i}": duplicate molecule labels in product')
 
     #check if the same molecule labels are used in reactant and product for each reaction 
-    if set(reactant_molecules) != set(product_molecules):
-        print(f'Warning in reaction index {i}: molecule labels in reactant and product do not match')
+        if set(reactant_molecules) != set(product_molecules):
+            print(f'Warning in reaction "index {i}": molecule labels in reactant and product do not match')
     #task 4: if there are no errors, good to go!
-    else:
-        print(f'congrats! your reaction index {i} looks good to go')
+        else:
+            print(f'==== Congrats! the format for your reaction in "index {i}" looks good ====')
 
-        return   
+    return   
