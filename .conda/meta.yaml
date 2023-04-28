@@ -1,0 +1,48 @@
+# For conda build
+package:
+  name: pynta
+  version: 2.0.0
+
+source:
+  path: ../
+
+build:
+  number: {{ environ.get('GIT_DESCRIBE_NUMBER', 0) }}
+
+requirements:
+  host:
+    - python =3.8
+    - numpy
+    - jax <=0.2.28
+    - xtb >=6.4.1
+    - scipy >=1.1.0
+    - libffi <=3.3
+    - anaconda::glpk
+  run:
+    - python =3.8
+    - matplotlib
+    - spglib
+    - ase >=3.22.1
+    - numpy
+    - pyyaml
+    - sella >=2.2.0
+    - sphinx
+    - anaconda::glpk
+    - fireworks
+    - scipy >=1.1.0
+    - jax <=0.2.28
+    - xtb >=6.4.1
+    - xtb-python >=20.2
+    - rmgmolecule
+    - acat
+    - libffi <=3.3
+    - nose
+    - coverage
+test:
+  imports:
+    - pynta
+
+about:
+  home: https://github.com/zadorlab/pynta
+  license: GNU
+  summary: "An automated workflow code to enable the calculation of thermochemistry and rate coefficients for reactions involving metallic surfaces."
