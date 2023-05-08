@@ -98,7 +98,7 @@ def get_energies(path):
             ZPE = vibdata.get_zero_point_energy()
             E = sp.get_potential_energy()
             Es[guess] = E+ZPE-Eslab
-            thermos[guess] = (HarmonicThermo(np.array([x for x in np.real(vibdata.get_energies()) if x > 0.0]),potentialenergy=E+ZPE-Eslab))
+            thermos[guess] = (HarmonicThermo(np.array([x for x in np.real(vibdata.get_energies()) if x > 0.0]),potentialenergy=E-Eslab))
 
     return Es,thermos,fs
 
@@ -216,7 +216,7 @@ def get_adsorbate_energies(ad_path,include_zpe=True):
                 Es[d] = E + ZPE - Eslab
             else:
                 Es[d] = E - Eslab
-            thermos[d] = HarmonicThermo(np.array([x for x in np.real(vibdata.get_energies()) if x > 0.0]),potentialenergy=Es[d])
+            thermos[d] = HarmonicThermo(np.array([x for x in np.real(vibdata.get_energies()) if x > 0.0]),potentialenergy=E-Eslab)
         else:
             if len(sp) == 1:
                 geometry = 'monatomic'
