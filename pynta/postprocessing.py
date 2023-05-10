@@ -74,15 +74,28 @@ def get_irc_dirs(path):
             freq_dirs.append(p)
     return freq_dirs
 
-def get_energies(path):
+def get_energies(path,atom_corrections=None):
     Es = dict()
     thermos = dict()
     fs = dict()
     guess_dirs = os.listdir(path)
     slab = read(os.path.join(os.path.split(path)[0],"slab.xyz"))
     Eslab = slab.get_potential_energy()
+    with open(os.path.join(path,"info.json"),'r') as f:
+        info = json.load(f)
+    
+    m = Molecule().from_adjacency_list(info["reactants"])
+    if atom_corrections:
+        AEC = 0.0
+        for atom in m.atoms:
+            s = str(atom.element)
+            if not "X" in s:
+                AEC += atom_corrections[s]
+    else: #if no corrections don't add a correction
+        AEC = 0.0
+    
     for guess in guess_dirs:
-        p = os.path.join(path,guess,"irc_forward.traj")
+        p = os.path.join(path,guess,"vib.json_vib.json")
         if os.path.exists(p):
             sp = read(os.path.join(path,guess,"opt.xyz"))
             freqdir = os.path.join(path,guess,"vib.json_vib.json")
@@ -95,13 +108,11 @@ def get_energies(path):
             fs[guess] = freqs
             freqs = [np.complex128(x) for x in freqs]
             ind = np.argmax(np.abs(np.imag(np.array(freqs))))
-            if len([f for f in freqs if np.imag(f) > 100]) > 1:
-                print("didn't like freqs")
 
             ZPE = vibdata.get_zero_point_energy()
             E = sp.get_potential_energy()
-            Es[guess] = E+ZPE-Eslab
-            thermos[guess] = (HarmonicThermo(np.array([x for x in np.real(vibdata.get_energies()) if x > 0.0]),potentialenergy=E-Eslab))
+            Es[guess] = E+ZPE-Eslab-AEC
+            thermos[guess] = (HarmonicThermo(np.array([x for x in np.real(vibdata.get_energies()) if x > 0.0]),potentialenergy=E-Eslab-AEC))
 
     return Es,thermos,fs
 
@@ -179,7 +190,7 @@ def fit_rate_coefficient(thermoRs,thermoTS,dE,rnum,s0,Ts=None):
 
     return arr
 
-def get_adsorbate_energies(ad_path,include_zpe=True):
+def get_adsorbate_energies(ad_path,atom_corrections=None,include_zpe=True):
     """
     get ZPE corrected adsorbate energies
     """
@@ -189,6 +200,16 @@ def get_adsorbate_energies(ad_path,include_zpe=True):
     with open(os.path.join(ad_path,"info.json")) as f:
         info = json.load(f)
 
+    m = Molecule().from_adjacency_list(info["adjlist"])
+    if atom_corrections:
+        AEC = 0.0
+        for atom in m.atoms:
+            s = str(atom.element)
+            if not "X" in s:
+                AEC += atom_corrections[s]
+    else: #if no corrections don't add a correction
+        AEC = 0.0
+    
     gasphase = len(info["gratom_to_molecule_surface_atom_map"]) == 0
     spin = (Molecule().from_adjacency_list(info["adjlist"]).multiplicity - 1.0)/2.0
     Es = dict()
@@ -216,10 +237,10 @@ def get_adsorbate_energies(ad_path,include_zpe=True):
         if not gasphase:
 
             if include_zpe:
-                Es[d] = E + ZPE - Eslab
+                Es[d] = E + ZPE - Eslab - AEC
             else:
-                Es[d] = E - Eslab
-            thermos[d] = HarmonicThermo(np.array([x for x in np.real(vibdata.get_energies()) if x > 0.0]),potentialenergy=E-Eslab)
+                Es[d] = E - Eslab - AEC
+            thermos[d] = HarmonicThermo(np.array([x for x in np.real(vibdata.get_energies()) if x > 0.0]),potentialenergy=E-Eslab-AEC)
         else:
             if len(sp) == 1:
                 geometry = 'monatomic'
@@ -229,9 +250,9 @@ def get_adsorbate_energies(ad_path,include_zpe=True):
                 geometry = "nonlinear"
 
             if include_zpe:
-                Es[d] = E + ZPE
+                Es[d] = E + ZPE - AEC
             else:
-                Es[d] = E
+                Es[d] = E - AEC
 
             thermos[d] = IdealGasThermo(np.real(vibdata.get_energies()),geometry,
                                         potentialenergy=Es[d],atoms=sp,symmetrynumber=1,
