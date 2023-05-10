@@ -357,3 +357,27 @@ def get_nasa_for_species(th,dT=0.01):
 
     nasa = wh.to_nasa(Tmin=10.0, Tmax=3000.0, Tint=500.0)
     return nasa
+
+def get_gibbs_energy_reaction(rnasas,pnasas,T,dT=0.01): 
+    dG = 0.0
+    for th in rnasas:
+        dG -= th.get_free_energy(T)
+    for th in pnasas:
+        dG += th.get_free_energy(T)
+    return dG
+
+def get_entropy_reaction(rnasas,pnasas,T,dT=0.01): 
+    dG = 0.0
+    for th in rnasas:
+        dG -= th.get_entropy(T)
+    for th in pnasas:
+        dG += th.get_entropy(T)
+    return dG
+
+def get_enthalpy_reaction(rnasas,pnasas,T,dT=0.01): 
+    dG = 0.0
+    for th in rnasas:
+        dG -= th.get_enthalpy(T)
+    for th in pnasas:
+        dG += th.get_enthalpy(T)
+    return dG
