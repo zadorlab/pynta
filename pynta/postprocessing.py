@@ -134,20 +134,22 @@ def get_kinetics(path,metal,facet):
     fEs = {k: E-rE if E else None for k,E in Es.items()}
     rEs = {k: E-pE if E else None for k,E in Es.items()}
     fks = dict()
-    for i,fE in fEs.items():
-        if thermos[i]:
-            arr = fit_rate_coefficient(rthermos,thermos[i],fE,rnum,s0=site_density)
-            fks[i] = arr
-        else:
-            fks[i] = None
+    if rthermos:
+        for i,fE in fEs.items():
+            if thermos[i]:
+                arr = fit_rate_coefficient(rthermos,thermos[i],fE,rnum,s0=site_density)
+                fks[i] = arr
+            else:
+                fks[i] = None
     rks = dict()
-    for i,rE in rEs.items():
-        if thermos[i]:
-            arr = fit_rate_coefficient(pthermos,thermos[i],rE,pnum,s0=site_density)
-            rks[i] = arr
-        else:
-            rks[i] = None
-    return fEs,rEs,fks,rks
+    if pthermos:
+        for i,rE in rEs.items():
+            if thermos[i]:
+                arr = fit_rate_coefficient(pthermos,thermos[i],rE,pnum,s0=site_density)
+                rks[i] = arr
+            else:
+                rks[i] = None
+    return fEs,rEs,fks,rks,[get_nasa_for_species(th) for th in rthermos],[get_nasa_for_species(th) for th in pthermos]
 
 def fit_rate_coefficient(thermoRs,thermoTS,dE,rnum,s0,Ts=None):
     if Ts is None:
@@ -276,7 +278,11 @@ def get_reactant_products_energy(ts_path,reactants,products):
         for key,val in dr.items():
             if val and val < Emin:
                 ind = key
+        if ind == -1:
+            rthermos = []
+            break
         rE += dr[ind]
+        
         rthermos.append(rthermo[ind])
 
     pE = 0.0
@@ -287,6 +293,9 @@ def get_reactant_products_energy(ts_path,reactants,products):
         for key,val in dp.items():
             if val and val < Emin:
                 ind = key
+        if ind == -1:
+            pthermos = []
+            break
         pE += dp[ind]
         pthermos.append(pthermo[ind])
     return rE,pE,rthermos,pthermos
