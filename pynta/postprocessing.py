@@ -11,6 +11,9 @@ from molecule.kinetics import SurfaceArrhenius
 import ase.units
 from molecule.molecule import Molecule
 from acat.adsorption_sites import SlabAdsorptionSites
+from molecule.thermo import Wilhoit
+
+eV_to_Jmol = 9.648328e4
 
 def plot_eharm(path,Eharmtol=3.0,Eharmfiltertol=30.0):
     eharms = []
