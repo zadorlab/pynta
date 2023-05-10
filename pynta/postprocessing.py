@@ -324,3 +324,27 @@ def get_site_density(slab,metal,facet):
     n = np.cross(cell[0],cell[1])
     A = np.linalg.norm(n)
     return S/A * 10**20 #molecules/m^2
+
+def get_cp(th,T,dT=0.01):
+    return ((th.get_helmholtz_energy(T+dT,verbose=False) + (T+dT)*th.get_entropy(T+dT,verbose=False)) - (th.get_helmholtz_energy(T-dT,verbose=False) + (T-dT)*th.get_entropy(T-dT,verbose=False)))/(2*dT)
+
+def get_nasa_for_species(th,dT=0.01):
+    S298 = th.get_entropy(298.0,verbose=False) * eV_to_Jmol
+    if isinstance(th,HarmonicThermo):
+        G298 = th.get_helmholtz_energy(298.0,verbose=False) * eV_to_Jmol
+    elif isinstance(th,IdealGasThermo):
+        G298 = th.get_gibbs_energy(298.0,verbose=False) * eV_to_Jmol
+    else:
+        raise ValueError
+    H298 = G298 + 298.0*S298
+    Cp0 = get_cp(th,1.0,dT=0.1) * eV_to_Jmol
+    CpInf = get_cp(th,1e7,dT=dT) * eV_to_Jmol
+    Cps = []
+    Ts = np.arange(10.0, 3001.0, 10.0, np.float64)
+    for T in Ts:
+        Cps.append(get_cp(th,T,dT=dT)*eV_to_Jmol)
+
+    wh = Wilhoit().fit_to_data(Tdata=Ts,Cpdata=np.array(Cps),Cp0=Cp0,CpInf=CpInf,H298=H298,S298=S298)
+
+    nasa = wh.to_nasa(Tmin=10.0, Tmax=3000.0, Tint=500.0)
+    return nasa
