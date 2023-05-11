@@ -335,14 +335,19 @@ def get_site_density(slab,metal,facet):
     return S/A * 10**20 #molecules/m^2
 
 def get_cp(th,T,dT=0.01):
-    return ((th.get_helmholtz_energy(T+dT,verbose=False) + (T+dT)*th.get_entropy(T+dT,verbose=False)) - (th.get_helmholtz_energy(T-dT,verbose=False) + (T-dT)*th.get_entropy(T-dT,verbose=False)))/(2*dT)
+    if isinstance(th,HarmonicThermo):
+        return ((th.get_helmholtz_energy(T+dT,verbose=False) + (T+dT)*th.get_entropy(T+dT,verbose=False)) - (th.get_helmholtz_energy(T-dT,verbose=False) + (T-dT)*th.get_entropy(T-dT,verbose=False)))/(2*dT)
+    elif isinstance(th,IdealGasThermo):
+        return ((th.get_enthalpy(T+dT,verbose=False) + (T+dT)*th.get_entropy(T+dT,pressure=1.0e5,verbose=False)) - (th.get_enthalpy(T-dT,verbose=False) + (T-dT)*th.get_entropy(T-dT,pressure=1.0e5,verbose=False)))/(2*dT)
 
 def get_nasa_for_species(th,dT=0.01):
-    S298 = th.get_entropy(298.0,verbose=False) * eV_to_Jmol
+    
     if isinstance(th,HarmonicThermo):
         G298 = th.get_helmholtz_energy(298.0,verbose=False) * eV_to_Jmol
+        S298 = th.get_entropy(298.0,verbose=False) * eV_to_Jmol
     elif isinstance(th,IdealGasThermo):
-        G298 = th.get_gibbs_energy(298.0,verbose=False) * eV_to_Jmol
+        G298 = th.get_gibbs_energy(298.0,pressure=1.0e5,verbose=False) * eV_to_Jmol
+        S298 = th.get_entropy(298.0,pressure=1.0e5,verbose=False) * eV_to_Jmol
     else:
         raise ValueError
     H298 = G298 + 298.0*S298
