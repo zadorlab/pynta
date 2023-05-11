@@ -257,7 +257,7 @@ def get_adsorbate_energies(ad_path,atom_corrections=None,include_zpe=True):
                 Es[d] = E - AEC
 
             thermos[d] = IdealGasThermo(np.real(vibdata.get_energies()),geometry,
-                                        potentialenergy=Es[d],atoms=sp,symmetrynumber=1,
+                                        potentialenergy=E - AEC,atoms=sp,symmetrynumber=1,
                                         natoms=len(sp),spin=spin)
 
     return Es,thermos,fs
