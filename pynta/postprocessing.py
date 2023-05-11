@@ -11,6 +11,9 @@ from molecule.kinetics import SurfaceArrhenius
 import ase.units
 from molecule.molecule import Molecule
 from acat.adsorption_sites import SlabAdsorptionSites
+from molecule.thermo import Wilhoit
+
+eV_to_Jmol = 9.648328e4
 
 def plot_eharm(path,Eharmtol=3.0,Eharmfiltertol=30.0):
     eharms = []
@@ -71,15 +74,28 @@ def get_irc_dirs(path):
             freq_dirs.append(p)
     return freq_dirs
 
-def get_energies(path):
+def get_energies(path,atom_corrections=None):
     Es = dict()
     thermos = dict()
     fs = dict()
     guess_dirs = os.listdir(path)
     slab = read(os.path.join(os.path.split(path)[0],"slab.xyz"))
     Eslab = slab.get_potential_energy()
+    with open(os.path.join(path,"info.json"),'r') as f:
+        info = json.load(f)
+    
+    m = Molecule().from_adjacency_list(info["reactants"])
+    if atom_corrections:
+        AEC = 0.0
+        for atom in m.atoms:
+            s = str(atom.element)
+            if not "X" in s:
+                AEC += atom_corrections[s]
+    else: #if no corrections don't add a correction
+        AEC = 0.0
+    
     for guess in guess_dirs:
-        p = os.path.join(path,guess,"irc_forward.traj")
+        p = os.path.join(path,guess,"vib.json_vib.json")
         if os.path.exists(p):
             sp = read(os.path.join(path,guess,"opt.xyz"))
             freqdir = os.path.join(path,guess,"vib.json_vib.json")
@@ -92,13 +108,11 @@ def get_energies(path):
             fs[guess] = freqs
             freqs = [np.complex128(x) for x in freqs]
             ind = np.argmax(np.abs(np.imag(np.array(freqs))))
-            if len([f for f in freqs if np.imag(f) > 100]) > 1:
-                print("didn't like freqs")
 
             ZPE = vibdata.get_zero_point_energy()
             E = sp.get_potential_energy()
-            Es[guess] = E+ZPE-Eslab
-            thermos[guess] = (HarmonicThermo(np.array([x for x in np.real(vibdata.get_energies()) if x > 0.0]),potentialenergy=E+ZPE-Eslab))
+            Es[guess] = E+ZPE-Eslab-AEC
+            thermos[guess] = (HarmonicThermo(np.array([x for x in np.real(vibdata.get_energies()) if x > 0.0]),potentialenergy=E-Eslab-AEC))
 
     return Es,thermos,fs
 
@@ -120,20 +134,22 @@ def get_kinetics(path,metal,facet):
     fEs = {k: E-rE if E else None for k,E in Es.items()}
     rEs = {k: E-pE if E else None for k,E in Es.items()}
     fks = dict()
-    for i,fE in fEs.items():
-        if thermos[i]:
-            arr = fit_rate_coefficient(rthermos,thermos[i],fE,rnum,s0=site_density)
-            fks[i] = arr
-        else:
-            fks[i] = None
+    if rthermos:
+        for i,fE in fEs.items():
+            if thermos[i]:
+                arr = fit_rate_coefficient(rthermos,thermos[i],fE,rnum,s0=site_density)
+                fks[i] = arr
+            else:
+                fks[i] = None
     rks = dict()
-    for i,rE in rEs.items():
-        if thermos[i]:
-            arr = fit_rate_coefficient(pthermos,thermos[i],rE,pnum,s0=site_density)
-            rks[i] = arr
-        else:
-            rks[i] = None
-    return fEs,rEs,fks,rks
+    if pthermos:
+        for i,rE in rEs.items():
+            if thermos[i]:
+                arr = fit_rate_coefficient(pthermos,thermos[i],rE,pnum,s0=site_density)
+                rks[i] = arr
+            else:
+                rks[i] = None
+    return fEs,rEs,fks,rks,[get_nasa_for_species(th) for th in rthermos],[get_nasa_for_species(th) for th in pthermos]
 
 def fit_rate_coefficient(thermoRs,thermoTS,dE,rnum,s0,Ts=None):
     if Ts is None:
@@ -176,7 +192,7 @@ def fit_rate_coefficient(thermoRs,thermoTS,dE,rnum,s0,Ts=None):
 
     return arr
 
-def get_adsorbate_energies(ad_path,include_zpe=True):
+def get_adsorbate_energies(ad_path,atom_corrections=None,include_zpe=True):
     """
     get ZPE corrected adsorbate energies
     """
@@ -186,6 +202,16 @@ def get_adsorbate_energies(ad_path,include_zpe=True):
     with open(os.path.join(ad_path,"info.json")) as f:
         info = json.load(f)
 
+    m = Molecule().from_adjacency_list(info["adjlist"])
+    if atom_corrections:
+        AEC = 0.0
+        for atom in m.atoms:
+            s = str(atom.element)
+            if not "X" in s:
+                AEC += atom_corrections[s]
+    else: #if no corrections don't add a correction
+        AEC = 0.0
+    
     gasphase = len(info["gratom_to_molecule_surface_atom_map"]) == 0
     spin = (Molecule().from_adjacency_list(info["adjlist"]).multiplicity - 1.0)/2.0
     Es = dict()
@@ -213,10 +239,10 @@ def get_adsorbate_energies(ad_path,include_zpe=True):
         if not gasphase:
 
             if include_zpe:
-                Es[d] = E + ZPE - Eslab
+                Es[d] = E + ZPE - Eslab - AEC
             else:
-                Es[d] = E - Eslab
-            thermos[d] = HarmonicThermo(np.array([x for x in np.real(vibdata.get_energies()) if x > 0.0]),potentialenergy=Es[d])
+                Es[d] = E - Eslab - AEC
+            thermos[d] = HarmonicThermo(np.array([x for x in np.real(vibdata.get_energies()) if x > 0.0]),potentialenergy=E-Eslab-AEC)
         else:
             if len(sp) == 1:
                 geometry = 'monatomic'
@@ -226,9 +252,9 @@ def get_adsorbate_energies(ad_path,include_zpe=True):
                 geometry = "nonlinear"
 
             if include_zpe:
-                Es[d] = E + ZPE
+                Es[d] = E + ZPE - AEC
             else:
-                Es[d] = E
+                Es[d] = E - AEC
 
             thermos[d] = IdealGasThermo(np.real(vibdata.get_energies()),geometry,
                                         potentialenergy=Es[d],atoms=sp,symmetrynumber=1,
@@ -252,7 +278,11 @@ def get_reactant_products_energy(ts_path,reactants,products):
         for key,val in dr.items():
             if val and val < Emin:
                 ind = key
+        if ind == -1:
+            rthermos = []
+            break
         rE += dr[ind]
+        
         rthermos.append(rthermo[ind])
 
     pE = 0.0
@@ -263,6 +293,9 @@ def get_reactant_products_energy(ts_path,reactants,products):
         for key,val in dp.items():
             if val and val < Emin:
                 ind = key
+        if ind == -1:
+            pthermos = []
+            break
         pE += dp[ind]
         pthermos.append(pthermo[ind])
     return rE,pE,rthermos,pthermos
@@ -300,3 +333,51 @@ def get_site_density(slab,metal,facet):
     n = np.cross(cell[0],cell[1])
     A = np.linalg.norm(n)
     return S/A * 10**20 #molecules/m^2
+
+def get_cp(th,T,dT=0.01):
+    return ((th.get_helmholtz_energy(T+dT,verbose=False) + (T+dT)*th.get_entropy(T+dT,verbose=False)) - (th.get_helmholtz_energy(T-dT,verbose=False) + (T-dT)*th.get_entropy(T-dT,verbose=False)))/(2*dT)
+
+def get_nasa_for_species(th,dT=0.01):
+    S298 = th.get_entropy(298.0,verbose=False) * eV_to_Jmol
+    if isinstance(th,HarmonicThermo):
+        G298 = th.get_helmholtz_energy(298.0,verbose=False) * eV_to_Jmol
+    elif isinstance(th,IdealGasThermo):
+        G298 = th.get_gibbs_energy(298.0,verbose=False) * eV_to_Jmol
+    else:
+        raise ValueError
+    H298 = G298 + 298.0*S298
+    Cp0 = get_cp(th,1.0,dT=0.1) * eV_to_Jmol
+    CpInf = get_cp(th,1e7,dT=dT) * eV_to_Jmol
+    Cps = []
+    Ts = np.arange(10.0, 3001.0, 10.0, np.float64)
+    for T in Ts:
+        Cps.append(get_cp(th,T,dT=dT)*eV_to_Jmol)
+
+    wh = Wilhoit().fit_to_data(Tdata=Ts,Cpdata=np.array(Cps),Cp0=Cp0,CpInf=CpInf,H298=H298,S298=S298)
+
+    nasa = wh.to_nasa(Tmin=10.0, Tmax=3000.0, Tint=500.0)
+    return nasa
+
+def get_gibbs_energy_reaction(rnasas,pnasas,T,dT=0.01): 
+    dG = 0.0
+    for th in rnasas:
+        dG -= th.get_free_energy(T)
+    for th in pnasas:
+        dG += th.get_free_energy(T)
+    return dG
+
+def get_entropy_reaction(rnasas,pnasas,T,dT=0.01): 
+    dG = 0.0
+    for th in rnasas:
+        dG -= th.get_entropy(T)
+    for th in pnasas:
+        dG += th.get_entropy(T)
+    return dG
+
+def get_enthalpy_reaction(rnasas,pnasas,T,dT=0.01): 
+    dG = 0.0
+    for th in rnasas:
+        dG -= th.get_enthalpy(T)
+    for th in pnasas:
+        dG += th.get_enthalpy(T)
+    return dG
