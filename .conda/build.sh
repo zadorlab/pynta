@@ -1,0 +1,1 @@
+cp -r ${SRC_DIR}/pynta ${SP_DIR}
