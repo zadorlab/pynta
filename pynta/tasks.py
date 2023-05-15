@@ -832,6 +832,66 @@ class MolecularIRC(FiretaskBase):
 
         return FWAction()
 
+def HFSP_firework(xyz,atom_bond_potentials,site_bond_potentials,nslab,constraints,molecule_to_atom_maps,ase_to_mol_num,
+                      out_path=None,label="",parents=[],ignore_errors=False):
+    d = {"xyz": xyz, "atom_bond_potentials": atom_bond_potentials, "site_bond_potentials": site_bond_potentials, 
+         "nslab": nslab, "constraints": constraints, "molecule_to_atom_maps": molecule_to_atom_maps, "ase_to_mol_num": ase_to_mol_num,
+        "label": label, "ignore_errors": ignore_errors}
+    t1 = MolecularHFSP(d)
+    directory = os.path.dirname(xyz)
+    if out_path is None: out_path = os.path.join(directory,label+".traj")
+    t2 = FileTransferTask({'files': [{'src': label+'.xyz', 'dest': out_path}, {'src': "xtbharm.traj", 'dest': os.path.join(directory,label+".traj")}],
+            'mode': 'copy', 'ignore_errors' : ignore_errors})
+    return Firework([t1,t2],parents=parents,name=label+"HFSP")
+
+@explicit_serialize
+class MolecularHFSP(OptimizationTask):
+    required_params = ["xyz","atom_bond_potentials","site_bond_potentials","nslab","constraints","molecule_to_atom_maps","ase_to_mol_num"]
+    optional_params = ["label","ignore_errors","method"]
+
+    def run_task(self, fw_spec):
+        label = self["label"] if "label" in self.keys() else "xtb"
+        ignore_errors = self["ignore_errors"] if "ignore_errors" in self.keys() else False
+        method = self["method"] if "method" in self.keys() else "GFN1-xTB"
+        
+        atom_bond_potentials = self["atom_bond_potentials"]
+        site_bond_potentials = self["site_bond_potentials"]
+        nslab = self["nslab"]
+        molecule_to_atom_maps = self["molecule_to_atom_maps"]
+        ase_to_mol_num = self["ase_to_mol_num"]
+        constraints = self["constraints"]
+        xyz = self['xyz']
+        
+        errors = []
+        
+        suffix = os.path.split(xyz)[-1].split(".")[-1]
+        
+        try:
+            if suffix == "xyz":
+                sp = read(xyz)
+            elif suffix == "traj": #take last point on trajectory
+                sp = Trajectory(xyz)[-1]
+            else: #assume xyz
+                sp = read(xyz)
+        except Exception as e:
+            if not ignore_errors:
+                raise e
+            else:
+                errors.append(e)
+
+        spout,Eharm,Fharm = run_harmonically_forced_xtb(sp,atom_bond_potentials,site_bond_potentials,nslab,
+                    molecule_to_atom_maps=molecule_to_atom_maps,ase_to_mol_num=ase_to_mol_num,
+                    method="GFN1-xTB",constraints=constraints)
+        if spout:
+            if "initial_charges" in sp.arrays.keys(): #avoid bug in ase
+                del sp.arrays["initial_charges"]
+            write(label+".xyz", spout)
+            converged = True 
+        else:
+            converged = False
+        
+        return FWAction(stored_data={"error": errors,"converged": converged})
+
 def map_harmonically_forced_xtb(input):
     tsstruct,atom_bond_potentials,site_bond_potentials,nslab,constraints,ts_path,j,molecule_to_atom_maps,ase_to_mol_num = input
     os.makedirs(os.path.join(ts_path,str(j)))
