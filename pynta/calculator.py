@@ -7,6 +7,7 @@ from ase.geometry import get_distances
 from ase.calculators import calculator
 from ase.data import reference_states,chemical_symbols
 from ase.build import bulk
+from ase.constraints import *
 from pynta.utils import name_to_ase_software
 from sella import Sella, Constraints
 import scipy.optimize as opt
