@@ -14,6 +14,7 @@ import scipy.optimize as opt
 import copy
 from copy import deepcopy
 import itertools
+from pynta.utils import *
 
 def get_energy_atom_bond(atoms,ind1,ind2,k,deq):
     bd,d = get_distances([atoms.positions[ind1]], [atoms.positions[ind2]], cell=atoms.cell, pbc=atoms.pbc)

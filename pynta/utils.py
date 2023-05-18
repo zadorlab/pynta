@@ -3,9 +3,12 @@ import os
 import ase
 from ase.utils.structure_comparator import SymmetryEquivalenceCheck
 from ase.io import write, read
+import ase.constraints
 from copy import deepcopy
 from importlib import import_module
 import numpy as np
+import copy
+
 
 def get_unique_sym(geoms):
     ''' Check for the symmetry equivalent structures in the given files
@@ -236,3 +239,14 @@ def clean_pynta_path(path,save_initial_guess=True):
                                     os.remove(pa)
                     else:
                         os.remove(os.path.join(path,p,ad,ind))
+
+def construct_constraint(d):
+    """
+    construct a constrain from a dictionary that is the input to the constraint
+    constructor plus an additional "type" key that indices the name of the constraint
+    returns the constraint
+    """
+    constraint_dict = copy.deepcopy(d)
+    constructor = getattr(ase.constraints,constraint_dict["type"])
+    del constraint_dict["type"]
+    return constructor(**constraint_dict)
