@@ -125,7 +125,7 @@ def run_harmonically_forced_xtb(atoms,atom_bond_potentials,site_bond_potentials,
 
     atoms.calc = hfxtb
 
-    opt = Sella(atoms,constraints=cons,trajectory="xtbharm.traj",order=0)
+    opt = Sella(atoms,trajectory="xtbharm.traj",order=0)
 
     try:
         opt.run(fmax=0.02,steps=150)
@@ -278,7 +278,7 @@ def run_harmonically_forced_xtb_no_pbc(atoms,atom_bond_potentials,site_bond_pote
 
     bigad.calc = hfxtb
 
-    opt = Sella(bigad,constraints=cons,trajectory="xtbharm.traj",order=0)
+    opt = Sella(bigad,trajectory="xtbharm.traj",order=0)
 
     try:
         opt.run(fmax=0.02,steps=150)
