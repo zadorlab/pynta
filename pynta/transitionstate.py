@@ -519,7 +519,7 @@ def generate_constraints_harmonic_parameters(tsstructs,adsorbates,slab,forward_t
 
         if tsstruct_valid:
             if fixed_bond_pairs:
-                constraint_list = [{"type": "fix_bond", "indices": pair} for pair in fixed_bond_pairs]+["freeze slab"]
+                constraint_list = [{"type": "FixBondLength", "a1": pair[0], "a2": pair[1]} for pair in fixed_bond_pairs]+["freeze slab"]
                 constraint_lists.append(constraint_list)
             else:
                 constraint_lists.append(["freeze slab"])

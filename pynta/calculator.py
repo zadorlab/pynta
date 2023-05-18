@@ -247,6 +247,10 @@ def run_harmonically_forced_xtb_no_pbc(atoms,atom_bond_potentials,site_bond_pote
             c = deepcopy(constraint)
             for i in range(len(c["indices"])):
                 c["indices"][i] += new_nslab-nslab
+            if "a1" in c:
+                c["a1"] += new_nslab-nslab
+            if "a2" in c:
+                c["a2"] += new_nslab-nslab
             new_constraints.append(c)
 
     for c in new_constraints:

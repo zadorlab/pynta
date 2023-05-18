@@ -97,7 +97,7 @@ def generate_adsorbate_guesses(mol,ads,full_slab,cas,mol_to_atoms_map,metal,
 
     mol_fixed_bond_pairs = [[mol.atoms.index(bd.atom1),mol.atoms.index(bd.atom2)] for bd in mol.get_all_edges() if (not bd.atom1.is_surface_site()) and (not bd.atom2.is_surface_site())]
     atom_fixed_bond_pairs = [[mol_to_atoms_map[pair[0]]+len(full_slab),mol_to_atoms_map[pair[1]]+len(full_slab)]for pair in mol_fixed_bond_pairs]
-    constraint_list = [{"type": "fix_bond", "indices": pair} for pair in atom_fixed_bond_pairs]+["freeze slab"]
+    constraint_list = [{"type": "FixBondLength", "a1": pair[0], "a2": pair[1]} for pair in atom_fixed_bond_pairs]+["freeze slab"]
 
     geos = []
     for i,sites_list in enumerate(sites_lists):
