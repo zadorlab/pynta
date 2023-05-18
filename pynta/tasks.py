@@ -857,7 +857,7 @@ class MolecularHFSP(OptimizationTask):
         atom_bond_potentials = self["atom_bond_potentials"]
         site_bond_potentials = self["site_bond_potentials"]
         nslab = self["nslab"]
-        molecule_to_atom_maps = {int(k):v for k,v in self["molecule_to_atom_maps"].items()}
+        molecule_to_atom_maps = [{int(k):v for k,v in x.items()} for x in self["molecule_to_atom_maps"]]
         ase_to_mol_num = {int(k):v for k,v in self["ase_to_mol_num"].items()}
         constraints = self["constraints"]
         xyz = self['xyz']
