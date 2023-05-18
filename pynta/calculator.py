@@ -97,23 +97,23 @@ def run_harmonically_forced_xtb(atoms,atom_bond_potentials,site_bond_potentials,
     for c in constraints:
         if isinstance(c,dict):
             constraint = construct_constraint(c)
-            sp.set_constraint(constraint)
+            atoms.set_constraint(constraint)
         elif c == "freeze half slab":
-            sp.set_constraint(FixAtoms([
-                atom.index for atom in sp if atom.position[2] < sp.cell[2, 2] / 2.
+            atoms.set_constraint(FixAtoms([
+                atom.index for atom in atoms if atom.position[2] < atoms.cell[2, 2] / 2.
             ]))
         elif c == "freeze slab":
-            sp.set_constraint(FixAtoms(
+            atoms.set_constraint(FixAtoms(
                 indices=list(range(nslab))
                 ))
         elif c.split()[0] == "freeze" and c.split()[1] == "all": #ex: "freeze all Cu"
             sym = c.split()[2]
-            sp.set_constraint(FixAtoms(
-                indices=[atom.index for atom in sp if atom.symbol == sym]
+            atoms.set_constraint(FixAtoms(
+                indices=[atom.index for atom in atoms if atom.symbol == sym]
                 ))
         elif c.split()[0] == "freeze" and c.split()[1] == "up" and c.split()[2] == "to":
             n = int(c.split()[3])
-            sp.set_constraint(FixAtoms(
+            atoms.set_constraint(FixAtoms(
                 indices=list(range(n))
                 ))
 
@@ -250,23 +250,23 @@ def run_harmonically_forced_xtb_no_pbc(atoms,atom_bond_potentials,site_bond_pote
     for c in new_constraints:
         if isinstance(c,dict):
             constraint = construct_constraint(c)
-            sp.set_constraint(constraint)
+            atoms.set_constraint(constraint)
         elif c == "freeze half slab":
-            sp.set_constraint(FixAtoms([
-                atom.index for atom in sp if atom.position[2] < sp.cell[2, 2] / 2.
+            bigad.set_constraint(FixAtoms([
+                atom.index for atom in bigad if atom.position[2] < bigad.cell[2, 2] / 2.
             ]))
         elif c == "freeze slab":
-            sp.set_constraint(FixAtoms(
-                indices=list(range(nslab))
+            bigad.set_constraint(FixAtoms(
+                indices=list(range(new_nslab))
                 ))
         elif c.split()[0] == "freeze" and c.split()[1] == "all": #ex: "freeze all Cu"
             sym = c.split()[2]
-            sp.set_constraint(FixAtoms(
-                indices=[atom.index for atom in sp if atom.symbol == sym]
+            bigad.set_constraint(FixAtoms(
+                indices=[atom.index for atom in bigad if atom.symbol == sym]
                 ))
         elif c.split()[0] == "freeze" and c.split()[1] == "up" and c.split()[2] == "to":
             n = int(c.split()[3])
-            sp.set_constraint(FixAtoms(
+            atoms.set_constraint(FixAtoms(
                 indices=list(range(n))
                 ))
 
