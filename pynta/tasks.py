@@ -839,7 +839,7 @@ def HFSP_firework(xyz,atom_bond_potentials,site_bond_potentials,nslab,constraint
         "label": label, "ignore_errors": ignore_errors}
     t1 = MolecularHFSP(d)
     directory = os.path.dirname(xyz)
-    if out_path is None: out_path = os.path.join(directory,label+".traj")
+    if out_path is None: out_path = os.path.join(directory,label+".xyz")
     t2 = FileTransferTask({'files': [{'src': label+'.xyz', 'dest': out_path}, {'src': "xtbharm.traj", 'dest': os.path.join(directory,label+".traj")}],
             'mode': 'copy', 'ignore_errors' : ignore_errors})
     return Firework([t1,t2],parents=parents,name=label+"HFSP")
