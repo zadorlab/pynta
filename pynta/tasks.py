@@ -138,25 +138,27 @@ class MolecularOptimizationTask(OptimizationTask):
 
         if not sella:
             assert order == 0
+            out_constraints = []
             for c in constraints:
                 if isinstance(c,dict):
                     constraint = construct_constraint(c)
-                    sp.set_constraint(constraint)
+                    out_constraints.append(constraint)
                 elif c == "freeze half slab":
-                    sp.set_constraint(FixAtoms([
+                    out_constraints.append(FixAtoms([
                         atom.index for atom in sp if atom.position[2] < sp.cell[2, 2] / 2.
                     ]))
                 elif c.split()[0] == "freeze" and c.split()[1] == "all": #ex: "freeze all Cu"
                     sym = c.split()[2]
-                    sp.set_constraint(FixAtoms(
+                    out_constraints.append(FixAtoms(
                         indices=[atom.index for atom in sp if atom.symbol == sym]
                         ))
                 elif c.split()[0] == "freeze" and c.split()[1] == "up" and c.split()[2] == "to":
                     n = int(c.split()[3])
-                    sp.set_constraint(FixAtoms(
+                    out_constraints.append(FixAtoms(
                         indices=list(range(n))
                         ))
-
+                
+            sp.set_constraint(out_constraints)
             opt_kwargs["trajectory"] = label+".traj"
 
             opt = opt_method(sp,**opt_kwargs)
@@ -186,25 +188,28 @@ class MolecularOptimizationTask(OptimizationTask):
                 #         errors.append(e)
 
         else:
+            out_constraints = []
             for c in constraints:
                 if isinstance(c,dict):
                     constraint = construct_constraint(c)
-                    sp.set_constraint(constraint)
+                    out_constraints.append(constraint)
                 elif c == "freeze half slab":
-                    sp.set_constraint(FixAtoms([
+                    out_constraints.append(FixAtoms([
                         atom.index for atom in sp if atom.position[2] < sp.cell[2, 2] / 2.
                     ]))
                 elif c.split()[0] == "freeze" and c.split()[1] == "all": #ex: "freeze all Cu"
                     sym = c.split()[2]
-                    sp.set_constraint(FixAtoms(
+                    out_constraints.append(FixAtoms(
                         indices=[atom.index for atom in sp if atom.symbol == sym]
                         ))
                 elif c.split()[0] == "freeze" and c.split()[1] == "up" and c.split()[2] == "to":
                     n = int(c.split()[3])
-                    sp.set_constraint(FixAtoms(
+                    out_constraints.append(FixAtoms(
                         indices=list(range(n))
                         ))
 
+            sp.set_constraint(out_constraints)
+            
             opt = Sella(sp,trajectory=label+".traj",order=order)
             try:
                 if np.isinf(time_limit_hrs):
@@ -400,30 +405,33 @@ class MolecularVibrationsTask(VibrationTask):
             sp.calc = SocketIOCalculator(software,log=sys.stdout,unixsocket=unixsocket) if socket else software
 
             constraints = deepcopy(self["constraints"]) if "constraints" in self.keys() else []
+            out_constraints = []
             for c in constraints:
                 if isinstance(c,dict):
                     constraint = construct_constraint(c)
-                    sp.set_constraint(constraint)
+                    out_constraints.append(constraint)
                 elif c == "freeze half slab":
-                    sp.set_constraint(FixAtoms([
+                    out_constraints.append(FixAtoms([
                         atom.index for atom in sp if atom.position[2] < sp.cell[2, 2] / 2.
                     ]))
                     indices = [atom.index for atom in sp if atom.position[2] > sp.cell[2, 2] / 2.]
                 elif c.split()[0] == "freeze" and c.split()[1] == "all": #ex: "freeze all Cu"
                     sym = c.split()[2]
-                    sp.set_constraint(FixAtoms(
+                    out_constraints.append(FixAtoms(
                         indices=[atom.index for atom in sp if atom.symbol == sym]
                         ))
                     indices = [atom.index for atom in sp if atom.symbol != sym]
                 elif c.split()[0] == "freeze" and c.split()[1] == "up" and c.split()[2] == "to":
                     n = int(c.split()[3])
-                    sp.set_constraint(FixAtoms(
+                    out_constraints.append(FixAtoms(
                         indices=list(range(n))
                         ))
                     indices = [ i for i in range(len(sp)) if i >= n]
                 else:
                     raise ValueError
-
+                
+            sp.set_constraint(out_constraints)
+            
             vib = Vibrations(sp,indices=indices)
             vib.run()
 
@@ -773,25 +781,28 @@ class MolecularIRC(FiretaskBase):
         sp.calc = SocketIOCalculator(software,log=sys.stdout,unixsocket=unixsocket) if socket else software
 
         constraints = deepcopy(self["constraints"]) if "constraints" in self.keys() else []
-
+        
+        out_constraints = []
         for c in constraints:
             if c == "freeze half slab":
-                sp.set_constraint(FixAtoms([
+                out_constraints.append(FixAtoms([
                     atom.index for atom in sp if atom.position[2] < sp.cell[2, 2] / 2.
                 ]))
             elif c.split()[0] == "freeze" and c.split()[1] == "all": #ex: "freeze all Cu"
                 sym = c.split()[2]
-                sp.set_constraint(FixAtoms(
+                out_constraints.append(FixAtoms(
                     indices=[atom.index for atom in sp if atom.symbol == sym]
                     ))
             elif c.split()[0] == "freeze" and c.split()[1] == "up" and c.split()[2] == "to":
                 n = int(c.split()[3])
-                sp.set_constraint(FixAtoms(
+                out_constraints.append(FixAtoms(
                     indices=list(range(n))
                     ))
             else:
                 raise ValueError("Could not interpret constraint: {}".format(c))
-
+            
+        sp.set_constraint(out_constraints)
+        
         opt = IRC(sp,trajectory=label+"_irc.traj",dx=0.1,eta=1e-4,gamma=0.4)
         try:
             if forward:

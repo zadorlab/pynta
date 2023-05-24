@@ -96,29 +96,32 @@ def run_harmonically_forced_xtb(atoms,atom_bond_potentials,site_bond_potentials,
     """
     Optimize TS guess using xTB + harmonic forcing terms determined by atom_bond_potentials and site_bond_potentials
     """
+    out_constraints = []
     for c in constraints:
         if isinstance(c,dict):
             constraint = construct_constraint(c)
-            atoms.set_constraint(constraint)
+            out_constraints.append(constraint)
         elif c == "freeze half slab":
-            atoms.set_constraint(FixAtoms([
+            out_constraints.append(FixAtoms([
                 atom.index for atom in atoms if atom.position[2] < atoms.cell[2, 2] / 2.
             ]))
         elif c == "freeze slab":
-            atoms.set_constraint(FixAtoms(
+            out_constraints.append(FixAtoms(
                 indices=list(range(nslab))
                 ))
         elif c.split()[0] == "freeze" and c.split()[1] == "all": #ex: "freeze all Cu"
             sym = c.split()[2]
-            atoms.set_constraint(FixAtoms(
+            out_constraints.append(FixAtoms(
                 indices=[atom.index for atom in atoms if atom.symbol == sym]
                 ))
         elif c.split()[0] == "freeze" and c.split()[1] == "up" and c.split()[2] == "to":
             n = int(c.split()[3])
-            atoms.set_constraint(FixAtoms(
+            out_constraints.append(FixAtoms(
                 indices=list(range(n))
                 ))
-
+            
+    atoms.set_constraint(out_constraints)
+    
     hfxtb = HarmonicallyForcedXTB(method="GFN1-xTB",
                               atom_bond_potentials=atom_bond_potentials,
                              site_bond_potentials=site_bond_potentials)
@@ -252,30 +255,32 @@ def run_harmonically_forced_xtb_no_pbc(atoms,atom_bond_potentials,site_bond_pote
             if "a2" in c:
                 c["a2"] += new_nslab-nslab
             new_constraints.append(c)
-
+    
+    out_constraints = []
     for c in new_constraints:
         if isinstance(c,dict):
             constraint = construct_constraint(c)
-            atoms.set_constraint(constraint)
+            out_constraints.append(constraint)
         elif c == "freeze half slab":
-            bigad.set_constraint(FixAtoms([
+            out_constraints.append(FixAtoms([
                 atom.index for atom in bigad if atom.position[2] < bigad.cell[2, 2] / 2.
             ]))
         elif c == "freeze slab":
-            bigad.set_constraint(FixAtoms(
+            out_constraints.append(FixAtoms(
                 indices=list(range(new_nslab))
                 ))
         elif c.split()[0] == "freeze" and c.split()[1] == "all": #ex: "freeze all Cu"
             sym = c.split()[2]
-            bigad.set_constraint(FixAtoms(
+            out_constraints.append(FixAtoms(
                 indices=[atom.index for atom in bigad if atom.symbol == sym]
                 ))
         elif c.split()[0] == "freeze" and c.split()[1] == "up" and c.split()[2] == "to":
             n = int(c.split()[3])
-            atoms.set_constraint(FixAtoms(
+            out_constraints.append(FixAtoms(
                 indices=list(range(n))
                 ))
-
+    atoms.set_constraint(out_constraints)
+    
     hfxtb = HarmonicallyForcedXTB(method="GFN1-xTB",
                                   atom_bond_potentials=new_atom_bond_potentials,
                                  site_bond_potentials=new_site_potentials)
