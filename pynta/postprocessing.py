@@ -278,6 +278,7 @@ def get_reactant_products_energy(ts_path,reactants,products):
         for key,val in dr.items():
             if val and val < Emin:
                 ind = key
+                Emin = val
         if ind == -1:
             rthermos = []
             break
@@ -293,6 +294,7 @@ def get_reactant_products_energy(ts_path,reactants,products):
         for key,val in dp.items():
             if val and val < Emin:
                 ind = key
+                Emin = val
         if ind == -1:
             pthermos = []
             break
