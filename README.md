@@ -9,6 +9,8 @@
 
 # Pynta
 
+![Pynta_Logo](https://github.com/zadorlab/pynta/assets/40675474/16319699-f628-481b-a093-7741acbed906)
+
 ``pynta`` is an automated workflow code to enable the calculation of thermochemistry
 and rate coefficients for reactions involving metallic surfaces.
 
