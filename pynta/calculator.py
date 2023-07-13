@@ -280,7 +280,6 @@ def run_harmonically_forced_xtb_no_pbc(atoms,atom_bond_potentials,site_bond_pote
             out_constraints.append(FixAtoms(
                 indices=list(range(n))
                 ))
-    atoms.set_constraint(out_constraints)
     
     hfxtb = HarmonicallyForcedXTB(method="GFN1-xTB",
                                   atom_bond_potentials=new_atom_bond_potentials,
