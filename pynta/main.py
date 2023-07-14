@@ -1,5 +1,5 @@
 from pynta.tasks import *
-from pynta.mol import get_adsorbate, generate_unique_site_additions, generate_adsorbate_guesses, get_name
+from pynta.mol import get_adsorbate, generate_unique_site_additions, generate_adsorbate_guesses, get_name,generate_unique_placements
 from molecule.molecule import Molecule
 import ase.build
 from ase.io import read, write
@@ -35,7 +35,7 @@ class Pynta:
         TS_opt_software_kwargs=None,
         lattice_opt_software_kwargs={'kpts': (25,25,25), 'ecutwfc': 70, 'degauss':0.02, 'mixing_mode': 'plain'},
         reset_launchpad=False,queue_adapter_path=None,num_jobs=25,max_num_hfsp_opts=None,#max_num_hfsp_opts is mostly for fast testing
-        Eharmtol=3.0,Eharmfiltertol=30.0,Ntsmin=5,frozen_layers=2):
+        Eharmtol=3.0,Eharmfiltertol=30.0,Ntsmin=5,frozen_layers=2,fmaxopt=0.05,fmaxirc=0.1,fmaxopthard=0.05):
 
         self.surface_type = surface_type
         if launchpad_path:
@@ -108,8 +108,11 @@ class Pynta:
         self.Eharmfiltertol = Eharmfiltertol
         self.Ntsmin = Ntsmin
         self.max_num_hfsp_opts = max_num_hfsp_opts
+        self.fmaxopt = fmaxopt
+        self.fmaxirc = fmaxirc
+        self.fmaxopthard = fmaxopthard
 
-    def generate_slab(self):
+    def generate_slab(self,skip_launch=False):
         """
         generates and optimizes a small scale slab that can be scaled to a large slab as needed
         optimization occurs through fireworks and this process waits until the optimization is completed
@@ -130,10 +133,12 @@ class Pynta:
         if self.software != "XTB":
             fwslab = optimize_firework(os.path.join(self.path,"slab_init.xyz"),self.software,"slab",
                 opt_method="BFGSLineSearch",socket=self.socket,software_kwargs=self.software_kwargs,
-                run_kwargs={"fmax" : 0.01},out_path=os.path.join(self.path,"slab.xyz"),constraints=["freeze up to {}".format(self.freeze_ind)])
+                run_kwargs={"fmax" : self.fmaxopt},out_path=os.path.join(self.path,"slab.xyz"),constraints=["freeze up to {}".format(self.freeze_ind)],priority=1000)
             wfslab = Workflow([fwslab], name=self.label+"_slab")
             self.launchpad.add_wf(wfslab)
-            self.launch()
+            if skip_launch:
+                return
+            self.launch(single_job=True)
             while not os.path.exists(self.slab_path): #wait until slab optimizes, this is required anyway and makes the rest of the code simpler
                 time.sleep(1)
             self.slab = read(self.slab_path)
@@ -149,22 +154,12 @@ class Pynta:
 
         self.cas = cas
 
-        single_geoms,single_site_bond_params_lists,single_sites_lists = generate_unique_site_additions(full_slab,cas,len(full_slab),site_bond_params_list=[],sites_list=[])
-
-        double_geoms_full = []
-        double_site_bond_params_lists_full = []
-        double_sites_lists_full = []
-        for i in range(len(single_geoms)):
-            double_geoms,double_site_bond_params_lists,double_sites_lists = generate_unique_site_additions(single_geoms[i],
-                                                                cas,len(full_slab),single_site_bond_params_lists[i],single_sites_lists[i])
-            double_geoms_full.extend(double_geoms)
-            double_site_bond_params_lists_full.extend(double_site_bond_params_lists)
-            double_sites_lists_full.extend(double_sites_lists)
+        unique_site_lists,unique_site_pairs_lists,single_site_bond_params_lists,double_site_bond_params_lists = generate_unique_placements(full_slab,cas)
 
         self.single_site_bond_params_lists = single_site_bond_params_lists
-        self.single_sites_lists = single_sites_lists
-        self.double_site_bond_params_lists = double_site_bond_params_lists_full
-        self.double_sites_lists = double_sites_lists_full
+        self.single_sites_lists = unique_site_lists
+        self.double_site_bond_params_lists = double_site_bond_params_lists
+        self.double_sites_lists = unique_site_pairs_lists
 
     def generate_mol_dict(self):
         """
@@ -331,7 +326,7 @@ class Pynta:
                         if self.software != "XTB":
                             constraints = ["freeze up to {}".format(self.freeze_ind)]
                         else:
-                            constraints = ["freeze all "+self.metal]
+                            constraints = ["freeze up to "+str(self.nslab)]
                     else: #gas phase
                         big_slab_ads = structure
                         target_site_num = None #no slab so can't run site analysis
@@ -358,14 +353,15 @@ class Pynta:
                     fwopt2 = optimize_firework(os.path.join(self.path,"Adsorbates",adsname,str(prefix),"weakopt_"+str(prefix)+".xyz"),
                         self.software,str(prefix),
                         opt_method="QuasiNewton",socket=self.socket,software_kwargs=software_kwargs,
-                        run_kwargs={"fmax" : 0.02, "steps" : 70},parents=[fwopt],constraints=constraints,
-                        ignore_errors=True, metal=self.metal, facet=self.surface_type, target_site_num=target_site_num, priority=3)
+                        run_kwargs={"fmax" : self.fmaxopt, "steps" : 70},parents=[fwopt],constraints=constraints,
+                        ignore_errors=True, metal=self.metal, facet=self.surface_type, target_site_num=target_site_num, priority=3, fmaxhard=self.fmaxopthard,
+                        allow_fizzled_parents=True)
                     optfws.append(fwopt)
                     optfws.append(fwopt2)
                     optfws2.append(fwopt2)
 
                 vib_obj_dict = {"software": self.software, "label": adsname, "software_kwargs": software_kwargs,
-                    "constraints": ["freeze all "+self.metal]}
+                    "constraints": ["freeze up to "+str(self.nslab)]}
 
                 cfw = collect_firework(xyzs,True,["vibrations_firework"],[vib_obj_dict],["vib.json"],[],parents=optfws2,label=adsname)
                 self.adsorbate_fw_dict[adsname] = optfws2
@@ -404,7 +400,7 @@ class Pynta:
                         if self.software != "XTB":
                             constraints = ["freeze up to {}".format(self.freeze_ind)]
                         else:
-                            constraints = ["freeze all "+self.metal]
+                            constraints = ["freeze up to "+str(self.nslab)]
                     xyz = os.path.join(prefix_path,str(prefix)+".xyz")
                     init_path = os.path.join(prefix_path,prefix+"_init.xyz")
                     assert os.path.exists(init_path), init_path
@@ -417,16 +413,16 @@ class Pynta:
                     fwopt2 = optimize_firework(os.path.join(self.path,"Adsorbates",ad,str(prefix),"weakopt_"+str(prefix)+".xyz"),
                         self.software,str(prefix),
                         opt_method="QuasiNewton",socket=self.socket,software_kwargs=software_kwargs,
-                        run_kwargs={"fmax" : 0.02, "steps" : 70},parents=[fwopt],constraints=constraints,
+                        run_kwargs={"fmax" : self.fmaxopt, "steps" : 70},parents=[fwopt],constraints=constraints,
                         ignore_errors=True, metal=self.metal, facet=self.surface_type, target_site_num=target_site_num, priority=3)
                     optfws.append(fwopt)
                     optfws.append(fwopt2)
                     optfws2.append(fwopt2)
 
                 vib_obj_dict = {"software": self.software, "label": ad, "software_kwargs": software_kwargs,
-                    "constraints": ["freeze all "+self.metal]}
+                    "constraints": ["freeze up to "+str(self.nslab)]}
 
-                cfw = collect_firework(xyzs,True,["vibrations_firework"],[vib_obj_dict],["vib.json"],[True,False],parents=optfws2,label=ad)
+                cfw = collect_firework(xyzs,True,["vibrations_firework"],[vib_obj_dict],["vib.json"],[True,False],parents=optfws2,label=ad,allow_fizzled_parents=False)
                 self.adsorbate_fw_dict[ad] = optfws2
                 logging.error(self.adsorbate_fw_dict.keys())
                 self.fws.extend(optfws+[cfw])
@@ -439,14 +435,14 @@ class Pynta:
         """
         if self.software != "XTB":
             opt_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":self.software_kwargs_TS,
-                "run_kwargs": {"fmax" : 0.02, "steps" : 70},"constraints": ["freeze up to {}".format(self.freeze_ind)],"sella":True,"order":1,}
+                "run_kwargs": {"fmax" : self.fmaxopt, "steps" : 70},"constraints": ["freeze up to {}".format(self.freeze_ind)],"sella":True,"order":1,}
         else:
             opt_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":self.software_kwargs_TS,
-                "run_kwargs": {"fmax" : 0.02, "steps" : 70},"constraints": ["freeze all "+self.metal],"sella":True,"order":1,}
+                "run_kwargs": {"fmax" : 0.02, "steps" : 70},"constraints": ["freeze up to "+str(self.nslab)],"sella":True,"order":1,}
         vib_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":self.software_kwargs,
-                "constraints": ["freeze all "+self.metal]}
+                "constraints": ["freeze up to "+str(self.nslab)]}
         IRC_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":self.software_kwargs,
-                "run_kwargs": {"fmax" : 0.1, "steps" : 70},"constraints":["freeze all "+self.metal]}
+                "run_kwargs": {"fmax" : self.fmaxirc, "steps" : 70},"constraints":["freeze up to "+str(self.nslab)]}
         for i,rxn in enumerate(self.rxns_dict):
             ts_path = os.path.join(self.path,"TS"+str(i))
             os.makedirs(ts_path)
@@ -464,16 +460,16 @@ class Pynta:
             if not adsorbates_finished:
                 for m in reactants+products:
                     parents.extend(self.adsorbate_fw_dict[m])
-            fw = Firework([ts_task],parents=parents,name="TS"+str(i)+"est",spec={"_priority": 10})
+            fw = Firework([ts_task],parents=parents,name="TS"+str(i)+"est",spec={"_allow_fizzled_parents": True,"_priority": 10})
             self.fws.append(fw)
 
-    def launch(self):
+    def launch(self,single_job=False):
         """
         Call appropriate rapidfire function
         """
         if self.queue:
             rapidfirequeue(self.launchpad,self.fworker,self.qadapter,njobs_queue=self.njobs_queue,nlaunches="infinite")
-        elif not self.queue and self.num_jobs == 1:
+        elif not self.queue and (self.num_jobs == 1 or single_job):
             rapidfire(self.launchpad,self.fworker,nlaunches="infinite")
         else:
             launch_multiprocess(self.launchpad,self.fworker,"INFO","infinite",self.num_jobs,5)

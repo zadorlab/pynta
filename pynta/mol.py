@@ -2,6 +2,7 @@ from molecule.molecule import Molecule
 from ase.io import read, write
 from ase.data import covalent_radii
 from ase import Atoms
+from ase.geometry import get_distances
 from acat.adsorption_sites import SlabAdsorptionSites
 from acat.adsorbate_coverage import SlabAdsorbateCoverage
 from acat.settings import site_heights
@@ -37,7 +38,20 @@ def get_desorbed_with_map(mol):
     return molcopy,out_map
 
 def get_conformer(desorbed):
-    rdmol,rdmap = desorbed.to_rdkit_mol(remove_h=False,return_mapping=True)
+    try:
+        rdmol,rdmap = desorbed.to_rdkit_mol(remove_h=False,return_mapping=True)
+    except Exception as e:
+        syms = [a.symbol for a in desorbed.atoms]
+        indmap = {i:i for i in range(len(desorbed.atoms))}
+        if len(desorbed.atoms) == 1:
+            atoms = Atoms(syms[0],positions=[(0,0,0)])
+            return atoms,indmap
+        elif len(desorbed.atoms) == 2:
+            atoms = Atoms(syms[0]+syms[1],positions=[(0,0,0),(1.3,0,0)])
+            return atoms,indmap
+        else:
+            raise e
+
     indmap = {i:rdmap[a] for i,a in enumerate(desorbed.atoms)}
     Chem.AllChem.EmbedMultipleConfs(rdmol,numConfs=1,randomSeed=1)
     conf = rdmol.GetConformer()
@@ -83,7 +97,7 @@ def generate_adsorbate_guesses(mol,ads,full_slab,cas,mol_to_atoms_map,metal,
 
     mol_fixed_bond_pairs = [[mol.atoms.index(bd.atom1),mol.atoms.index(bd.atom2)] for bd in mol.get_all_edges() if (not bd.atom1.is_surface_site()) and (not bd.atom2.is_surface_site())]
     atom_fixed_bond_pairs = [[mol_to_atoms_map[pair[0]]+len(full_slab),mol_to_atoms_map[pair[1]]+len(full_slab)]for pair in mol_fixed_bond_pairs]
-    constraint_list = [{"type": "fix_bond", "indices": pair} for pair in atom_fixed_bond_pairs]+["freeze slab"]
+    constraint_list = [{"type": "FixBondLength", "a1": pair[0], "a2": pair[1]} for pair in atom_fixed_bond_pairs]+["freeze slab"]
 
     geos = []
     for i,sites_list in enumerate(sites_lists):
@@ -102,7 +116,8 @@ def generate_adsorbate_guesses(mol,ads,full_slab,cas,mol_to_atoms_map,metal,
     for i,geo in enumerate(geos):
         #freeze bonds for messier first opt
         geo_out,Eharm,Fharm = run_harmonically_forced_xtb(geo,[],site_bond_params_lists[i],len(full_slab),
-                                                          method="GFN1-xTB",constraints=constraint_list)
+                                molecule_to_atom_maps=mol_to_atoms_map,ase_to_mol_num=None,
+                                method="GFN1-xTB",constraints=constraint_list)
         if geo_out:
             geo_out.calc = None
             geos_out.append(geo_out)
@@ -138,14 +153,7 @@ def generate_adsorbate_guesses(mol,ads,full_slab,cas,mol_to_atoms_map,metal,
                 xyzsout.append(geos_out[Eind])
                 site_bond_params_lists_final.append(site_bond_params_lists_out[Eind])
 
-    xyzfinals = []
-    for i,xyz in enumerate(xyzsout):
-        #unfreeze bonds (should be better than rdkit's guess)
-        geo_out,Eharm,Fharm = run_harmonically_forced_xtb(xyz,[],site_bond_params_lists_final[i],len(full_slab),
-                                                          method="GFN1-xTB",constraints=["freeze slab"])
-        xyzfinals.append(geo_out)
-
-    return xyzfinals
+    return xyzsout
 
 site_bond_length_dict = {
         ("ontop",None,None): 1.826370311,
@@ -183,6 +191,10 @@ site_bond_length_dict = {
 }
 
 def get_site_bond_length(sitetype,atomtype=None,metal=None):
+    if "fold" in sitetype:
+        sitetype = "fcc"
+    if sitetype == "longbridge" or sitetype == "shortbridge":
+        sitetype = "bridge"
     if (sitetype,atomtype,metal) in site_bond_length_dict.keys():
         return site_bond_length_dict[(sitetype,atomtype,metal)]
     elif (sitetype,atomtype,None) in site_bond_length_dict.keys():
@@ -313,6 +325,118 @@ def place_adsorbate(ads,slab,atom_surf_inds,sites,metal):
         return geo,h1,h2
     else:
         raise ValueError
+
+def get_unique_sites(cas, unique_composition=False,
+                         unique_subsurf=False,
+                         return_signatures=False,
+                         return_site_indices=False,
+                         about=None, site_list=None):
+        """Function mostly copied from the ACAT software 
+        Get all symmetry-inequivalent adsorption sites (one
+        site for each type).
+
+        Parameters
+        ----------
+        unique_composition : bool, default False
+            Take site composition into consideration when
+            checking uniqueness.
+
+        unique_subsurf : bool, default False
+            Take subsurface element into consideration when
+            checking uniqueness.
+
+        return_signatures : bool, default False
+            Whether to return the unique signatures of the
+            sites instead.
+
+        return_site_indices: bool, default False
+            Whether to return the indices of each unique
+            site (in the site list).
+
+        about: numpy.array, default None
+            If specified, returns unique sites closest to
+            this reference position.
+
+        """
+
+        if site_list is None:
+            sl = cas.site_list
+        else:
+            sl = site_list
+        key_list = ['site', 'morphology']
+        if unique_composition:
+            if not cas.composition_effect:
+                raise ValueError('the site list does not include '
+                                 + 'information of composition')
+            key_list.append('composition')
+            if unique_subsurf:
+                key_list.append('subsurf_element')
+        else:
+            if unique_subsurf:
+                raise ValueError('to include the subsurface element, ' +
+                                 'unique_composition also need to be set to True')
+        if return_signatures:
+            sklist = sorted([[s[k] for k in key_list] for s in sl])
+            return sorted(list(sklist for sklist, _ in groupby(sklist)))
+        else:
+            seen_tuple = []
+            uni_sites = []
+            if about is not None:
+                sl = sorted(sl, key=lambda x: get_mic(x['position'],
+                            about, cas.cell, return_squared_distance=True))
+            for i, s in enumerate(sl):
+                sig = tuple(s[k] for k in key_list)
+                if sig not in seen_tuple:
+                    seen_tuple.append(sig)
+                    if return_site_indices:
+                        s = i
+                    uni_sites.append(s)
+
+            return uni_sites
+
+def generate_unique_placements(slab,cas):
+    nslab = len(slab)
+    middle = sum(slab.cell)/2.0
+
+    unique_single_sites = get_unique_sites(cas,about=middle)
+
+    unique_site_pairs = dict() # (site1site,site1morph,),(site2site,site2morph),xydist,zdist
+    for unique_site in unique_single_sites:
+        uni_site_fingerprint = (unique_site["site"],unique_site["morphology"])
+        for site in cas.get_sites():
+            site_fingerprint = (site["site"],site["morphology"])
+            bd,d = get_distances([unique_site["position"]], [site["position"]], cell=slab.cell, pbc=(True,True,False))
+            xydist = np.linalg.norm(bd[0][0][:1])
+            zdist = bd[0][0][2]
+
+            fingerprint = (uni_site_fingerprint,site_fingerprint,round(xydist,3),round(zdist,3))
+
+            if fingerprint in unique_site_pairs.keys():
+                current_sites = unique_site_pairs[fingerprint]
+                current_dist = np.linalg.norm(sum([s["position"][:1] for s in current_sites])/2-middle[:1])
+                possible_dist = np.linalg.norm((unique_site["position"][:1]+site["position"][:1])/2-middle[:1])
+                if possible_dist < current_dist:
+                    unique_site_pairs[fingerprint] = [unique_site,site]
+            else:
+                unique_site_pairs[fingerprint] = [unique_site,site]
+
+    unique_site_pairs_lists = list(unique_site_pairs.values())
+    unique_site_lists = [[unique_site] for unique_site in unique_single_sites]
+
+    single_site_bond_params_lists = []
+    for unique_site_list in unique_site_lists:
+        pos = deepcopy(unique_site_list[0]["position"])
+        single_site_bond_params_lists.append([{"site_pos": pos,"ind": None, "k": 100.0, "deq": 0.0}])
+
+    double_site_bond_params_lists = []
+    for unique_site_pair_list in unique_site_pairs_lists:
+        bond_params_list = []
+        for site in unique_site_pair_list:
+            pos = deepcopy(site["position"])
+            bond_params_list.append({"site_pos": pos,"ind": None, "k": 100.0, "deq": 0.0})
+        double_site_bond_params_lists.append(bond_params_list)
+
+    return unique_site_lists,unique_site_pairs_lists,single_site_bond_params_lists,double_site_bond_params_lists
 
 def generate_unique_site_additions(geo,cas,nslab,site_bond_params_list=[],sites_list=[]):
     nads = len(geo) - nslab

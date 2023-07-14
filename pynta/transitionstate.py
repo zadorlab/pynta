@@ -159,7 +159,7 @@ def determine_TS_construction(reactant_names,reactant_mols,product_names,product
     return forward,ordered_reacting_species
 
 
-def get_unique_TS_structs(adsorbates,species_names,cas,nslab,num_surf_sites,mol_dict,
+def get_unique_TS_structs(adsorbates,species_names,slab,cas,nslab,num_surf_sites,mol_dict,
                           gratom_to_molecule_atom_maps,gratom_to_molecule_surface_atom_maps,
                           facet,metal,gas_height=5.0):
     """
@@ -168,7 +168,12 @@ def get_unique_TS_structs(adsorbates,species_names,cas,nslab,num_surf_sites,mol_
     tsstructs = []
     ordered_adsorbates = [adsorbates[name] for name in species_names]
     for adss in itertools.product(*ordered_adsorbates):
-        adslab = adss[0]
+        if num_surf_sites[0] > 0:
+            adslab = adss[0].copy()
+        else:
+            adslab = slab.copy()
+            site = cas.get_sites()[0]
+            add_adsorbate_to_site(adslab,adsorbate=adss[0],surf_ind=0,site=site,height=gas_height)
         if len(adss) == 1:
             tsstructs.append(adslab)
         else:
@@ -215,7 +220,7 @@ def get_unique_TS_structs(adsorbates,species_names,cas,nslab,num_surf_sites,mol_
                                 while site["occupied"] == True:
                                     c += 1
                                     site = sites[c]
-                                add_adsorbate_to_site(adslab,adsorbate=adss[2],site=site,height=gas_height)
+                                add_adsorbate_to_site(adslab,adsorbate=adss[2],surf_ind=0,site=site,height=gas_height)
 
             elif num_surf_sites[1] == 0:
                 adcovl1 = SlabAdsorbateCoverage(adslab,adsorption_sites=cas)
@@ -226,7 +231,7 @@ def get_unique_TS_structs(adsorbates,species_names,cas,nslab,num_surf_sites,mol_
                     c += 1
                     site = sites[c]
 
-                add_adsorbate_to_site(adslab,adsorbate=adss[1],site=site,height=gas_height)
+                add_adsorbate_to_site(adslab,adsorbate=adss[1],surf_ind=0,site=site,height=gas_height)
                 if len(adss) == 2:
                     tsstructs.append(adslab)
                 else:
@@ -235,7 +240,7 @@ def get_unique_TS_structs(adsorbates,species_names,cas,nslab,num_surf_sites,mol_
                     while site2["occupied"] == True and site2 != site:
                         c += 1
                         site2 = sites[c]
-                    add_adsorbate_to_site(adslab,adsorbate=adss[2],site=site)
+                    add_adsorbate_to_site(adslab,adsorbate=adss[2],surf_ind=0,site=site2,height=gas_height)
                     if len(adss) == 3:
                         tsstructs.append(adslab)
                     else:
@@ -514,7 +519,7 @@ def generate_constraints_harmonic_parameters(tsstructs,adsorbates,slab,forward_t
 
         if tsstruct_valid:
             if fixed_bond_pairs:
-                constraint_list = [{"type": "fix_bond", "indices": pair} for pair in fixed_bond_pairs]+["freeze slab"]
+                constraint_list = [{"type": "FixBondLength", "a1": pair[0], "a2": pair[1]} for pair in fixed_bond_pairs]+["freeze slab"]
                 constraint_lists.append(constraint_list)
             else:
                 constraint_lists.append(["freeze slab"])
