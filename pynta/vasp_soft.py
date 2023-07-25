@@ -2,7 +2,7 @@ default_software_kwargs = \
                             {kpts:(4, 4, 1),
                              potim:0.5,
                              encut:500,
-                             ispin:2,
+                             ispin:1,
                              nsw:50,
                              prec:'Normal',
                              istart:1,

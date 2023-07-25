@@ -97,6 +97,8 @@ def run_harmonically_forced_xtb(atoms,atom_bond_potentials,site_bond_potentials,
     Optimize TS guess using xTB + harmonic forcing terms determined by atom_bond_potentials and site_bond_potentials
     """
     out_constraints = []
+    # Need to capture original pbc for application later
+    pbc = atoms.pbc
     for c in constraints:
         if isinstance(c,dict):
             constraint = construct_constraint(c)
@@ -133,7 +135,7 @@ def run_harmonically_forced_xtb(atoms,atom_bond_potentials,site_bond_potentials,
     try:
         opt.run(fmax=0.02,steps=150)
     except Exception as e: #no pbc fallback
-        return run_harmonically_forced_xtb_no_pbc(atoms,atom_bond_potentials,site_bond_potentials,nslab,
+        return run_harmonically_forced_xtb_no_pbc(pbc, atoms,atom_bond_potentials,site_bond_potentials,nslab,
                                        molecule_to_atom_maps=molecule_to_atom_maps,ase_to_mol_num=ase_to_mol_num,
                                                constraints=constraints,method=method,dthresh=4.0)
 
@@ -141,7 +143,7 @@ def run_harmonically_forced_xtb(atoms,atom_bond_potentials,site_bond_potentials,
 
     return atoms,Eharm,Fharm
 
-def run_harmonically_forced_xtb_no_pbc(atoms,atom_bond_potentials,site_bond_potentials,nslab,
+def run_harmonically_forced_xtb_no_pbc(pbc, atoms,atom_bond_potentials,site_bond_potentials,nslab,
                                molecule_to_atom_maps,ase_to_mol_num=None,
                                        constraints=[],method="GFN1-xTB",dthresh=4.0):
     """
@@ -302,8 +304,10 @@ def run_harmonically_forced_xtb_no_pbc(atoms,atom_bond_potentials,site_bond_pote
         newad.positions[ind-nslab] -= mol_to_trans[molind]
 
     outadslab = slab + newad
-
-    outadslab.pbc = (True,True,False)
+    # Set pbc from original atoms object. Different for vasp and espresso
+    outadslab.pbc = pbc
+    #if software.lower() == 'vasp':
+    #    outadslab.pbc = (True, True, True)
 
     return outadslab,Eharm,Fharm
 
