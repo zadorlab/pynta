@@ -285,7 +285,7 @@ def run_harmonically_forced_xtb_no_pbc(atoms,atom_bond_potentials,site_bond_pote
     hfxtb = HarmonicallyForcedXTB(method="GFN1-xTB",
                                   atom_bond_potentials=new_atom_bond_potentials,
                                  site_bond_potentials=new_site_potentials)
-    bigslab.set_constraint(out_constraints)
+    bigad.set_constraint(out_constraints)
     bigad.calc = hfxtb
 
     opt = Sella(bigad,trajectory="xtbharm.traj",order=0)
