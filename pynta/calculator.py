@@ -15,6 +15,7 @@ import copy
 from copy import deepcopy
 import itertools
 from pynta.utils import *
+from deepmd.calculator import DP
 
 def get_energy_atom_bond(atoms,ind1,ind2,k,deq):
     bd,d = get_distances([atoms.positions[ind1]], [atoms.positions[ind2]], cell=atoms.cell, pbc=atoms.pbc)
@@ -352,11 +353,16 @@ def add_sella_constraint(cons,d):
     return
 
 def get_lattice_parameter(metal,surface_type,software,software_kwargs,da=0.1,options={"xatol":1e-4},a0=None):
-    soft = name_to_ase_software(software)(**software_kwargs)
+    if software.lower() == 'vasp' or software.lower() == 'espresso':
+        soft = name_to_ase_software(software)(**software_kwargs)
     def f(a):
         slab = bulk(metal,surface_type[:3],a=a)
-        slab.calc = soft
-        slab.pbc = (True, True, True)
+        if self.software.lower() == 'vasp' or self.software.lower() == 'deepmd':
+            slab.calc = soft
+            slab.pbc = (True, True, True)
+        else:
+            DPcalculator=DP(model="/home/tdprice/deepmd_pynta/pynta/graph.pb")
+            slab.set_calculator(DPcalculator)
         return slab.get_potential_energy()
     if a0 is None:
         a0 = reference_states[chemical_symbols.index(metal)]['a']
