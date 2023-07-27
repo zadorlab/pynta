@@ -1,4 +1,4 @@
-from molecule.molecule import Molecule
+from molecule.molecule import Molecule, Bond
 from molecule.molecule.pathfinder import find_shortest_path
 import yaml
 from ase.io import read, write
@@ -22,6 +22,7 @@ import itertools
 from pynta.calculator import HarmonicallyForcedXTB
 from pynta.mol import *
 from copy import deepcopy
+from pysidt import *
 
 def get_unique_optimized_adsorbates(rxn,adsorbates_path,mol_dict,cas,gratom_to_molecule_surface_atom_maps,nslab):
     """
@@ -261,7 +262,11 @@ def generate_constraints_harmonic_parameters(tsstructs,adsorbates,slab,forward_t
     site_bond_potential_lists = []
     site_bond_dict_list = []
     out_structs = []
-
+    
+    nodes_file = "/home/mjohns9/TS_tree_nodes.json"
+    nodes = read_nodes(nodes_file)
+    sidt = SubgraphIsomorphicDecisionTree(nodes=nodes)
+    
     mols = [mol_dict[name] for name in ordered_names]
     rev_mols = [mol_dict[name] for name in reverse_names]
     ads_sizes = [ads_size(mol) for mol in mols]
@@ -385,7 +390,7 @@ def generate_constraints_harmonic_parameters(tsstructs,adsorbates,slab,forward_t
                     pos = deepcopy(occ_site_pos[ase_ind1])
                     pos[2] += dwell
                     ind = ase_ind1
-                deq,k = estimate_deq_k(labels,dwell,forward_template,reverse_template,template_name,template_reversed,broken_bonds,formed_bonds,sitetype=sitetype)
+                deq,k = estimate_deq_k(sidt,labels,dwell,forward_template,reverse_template,template_name,template_reversed,broken_bonds,formed_bonds,sitetype=sitetype)
                 if pos is not None:
                     d = {"ind":ind,"site_pos":pos.tolist(),"k":k,"deq":deq}
                     site_bond_potentials.append(d)
@@ -436,7 +441,7 @@ def generate_constraints_harmonic_parameters(tsstructs,adsorbates,slab,forward_t
             if ase_ind1 and ase_ind2: #bond between atoms
                 dwell = rev_mols_info[ind1_mol_r]["bondlengths"][ind1r_mol,ind2r_mol]
                 sitetype = None
-                deq,k = estimate_deq_k(labels,dwell,forward_template,reverse_template,template_name,template_reversed,broken_bonds,formed_bonds,sitetype=sitetype)
+                deq,k = estimate_deq_k(sidt,labels,dwell,forward_template,reverse_template,template_name,template_reversed,broken_bonds,formed_bonds,sitetype=sitetype)
                 d = {"ind1":ase_ind1,"ind2":ase_ind2,"k":k,"deq":deq}
                 atom_bond_potentials.append(d)
             elif ase_ind1 is None: #surface bond to ase_ind2
@@ -466,7 +471,7 @@ def generate_constraints_harmonic_parameters(tsstructs,adsorbates,slab,forward_t
                 for (mol_ind,sitetype) in site_dict.keys():
                     if mol_ind == ind1r_mol:
                         dwell = site_dict[(mol_ind,sitetype)]
-                        deq,k = estimate_deq_k(labels,dwell,forward_template,reverse_template,template_name,template_reversed,broken_bonds,formed_bonds,sitetype=sitetype)
+                        deq,k = estimate_deq_k(sidt,labels,dwell,forward_template,reverse_template,template_name,template_reversed,broken_bonds,formed_bonds,sitetype=sitetype)
                         if reusing_site: #attaching to a site that was bonded to another atom
                             if reused_site_type == sitetype:
                                 pos = deepcopy(reused_site_pos)
@@ -505,7 +510,7 @@ def generate_constraints_harmonic_parameters(tsstructs,adsorbates,slab,forward_t
                 for (mol_ind,sitetype) in site_dict.keys():
                     if mol_ind == ind2r_mol:
                         dwell = site_dict[(mol_ind,sitetype)]
-                        deq,k = estimate_deq_k(labels,dwell,forward_template,reverse_template,template_name,template_reversed,broken_bonds,formed_bonds,sitetype=sitetype)
+                        deq,k = estimate_deq_k(sidt,labels,dwell,forward_template,reverse_template,template_name,template_reversed,broken_bonds,formed_bonds,sitetype=sitetype)
                         if reusing_site: #attaching to a site that was bonded to another atom
                             if reused_site_type == sitetype:
                                 pos = deepcopy(reused_site_pos)
@@ -530,7 +535,7 @@ def generate_constraints_harmonic_parameters(tsstructs,adsorbates,slab,forward_t
 
     return out_structs,constraint_lists,atom_bond_potential_lists,site_bond_potential_lists,site_bond_dict_list
 
-def estimate_deq_k(labels,dwell,forward_template,reverse_template,template_name,template_reversed,
+def estimate_deq_k(sidt,labels,dwell,forward_template,reverse_template,template_name,template_reversed,
     broken_bonds,formed_bonds,sitetype=None):
     """
     Estimate the equilibrium bond length and force constant for broken/forming bonds
@@ -538,144 +543,166 @@ def estimate_deq_k(labels,dwell,forward_template,reverse_template,template_name,
     """
     interactions = broken_bonds | formed_bonds
     formed = labels in formed_bonds
+    mol = deepcopy(forward_template)
+    all_labels = set()
+    for inter in interactions:
+        label_list = list(inter)
+        all_labels.add(label_list[0])
+        all_labels.add(label_list[1])
+        a1 = mol.get_labeled_atoms(label_list[0])[0]
+        a2 = mol.get_labeled_atoms(label_list[1])[0]
+        if mol.has_bond(a1,a2):
+            bd = mol.get_bond(a1,a2)
+            bd.set_order_str('R')
+        else:
+            mol.add_bond(Bond(a1,a2,order='R'))
+    
+    for label in all_labels:
+        a = mol.get_labeled_atoms(label)[0]
+        if label in labels:
+            a.label = '*'
+        else:
+            a.label = ''
+    
+    return dwell*sidt.evaluate(mol),100.0
 
-    label_list = list(labels)
-    if len(label_list) == 1: #get the atoms participating in the interaction
-        atms = forward_template.get_labeled_atoms(label_list[0])
-        atm1 = atms[0]
-        atm2 = atms[1]
-        atmsr = reverse_template.get_labeled_atoms(label_list[0])
-        atm1r = atms[0]
-        atm2r = atms[1]
-    else:
-        atm1 = forward_template.get_labeled_atoms(label_list[0])[0]
-        atm2 = forward_template.get_labeled_atoms(label_list[1])[0]
-        atm1r = reverse_template.get_labeled_atoms(label_list[0])[0]
-        atm2r = reverse_template.get_labeled_atoms(label_list[1])[0]
+    # label_list = list(labels)
+    # if len(label_list) == 1: #get the atoms participating in the interaction
+    #     atms = forward_template.get_labeled_atoms(label_list[0])
+    #     atm1 = atms[0]
+    #     atm2 = atms[1]
+    #     atmsr = reverse_template.get_labeled_atoms(label_list[0])
+    #     atm1r = atms[0]
+    #     atm2r = atms[1]
+    # else:
+    #     atm1 = forward_template.get_labeled_atoms(label_list[0])[0]
+    #     atm2 = forward_template.get_labeled_atoms(label_list[1])[0]
+    #     atm1r = reverse_template.get_labeled_atoms(label_list[0])[0]
+    #     atm2r = reverse_template.get_labeled_atoms(label_list[1])[0]
 
-    if formed: #if the bond is forming the reverse will always have dist 2...if breaking forward will always have dist 2...so ignore that side
-        path = find_shortest_path(atm1r,atm2r) #Number of atoms in path None if no path
-        if path is None:
-            dist = None
-        else:
-            dist = len(path)
-    else:
-        path = find_shortest_path(atm1r,atm2r)
-        if path is None:
-            dist = None
-        else:
-            dist = len(path)
+    # if formed: #if the bond is forming the reverse will always have dist 2...if breaking forward will always have dist 2...so ignore that side
+    #     path = find_shortest_path(atm1r,atm2r) #Number of atoms in path None if no path
+    #     if path is None:
+    #         dist = None
+    #     else:
+    #         dist = len(path)
+    # else:
+    #     path = find_shortest_path(atm1r,atm2r)
+    #     if path is None:
+    #         dist = None
+    #     else:
+    #         dist = len(path)
 
-    hydrogen_interaction = atm1.is_hydrogen() or atm2.is_hydrogen()
+    # hydrogen_interaction = atm1.is_hydrogen() or atm2.is_hydrogen()
 
-    #get the interactions adjacent to the interaction
-    atms0 = []
-    atms3 = []
-    for label_set in interactions:
-        if atm1.label in label_set and atm2.label not in label_set:
-            label = [label for label in label_set if label != atm1.label][0]
-            atms0.extend(forward_template.get_labeled_atoms(label))
-        elif atm2.label in label_set and atm1.label not in label_set:
-            label = [label for label in label_set if label != atm2.label][0]
-            atms3.extend(forward_template.get_labeled_atoms(label))
+    # #get the interactions adjacent to the interaction
+    # atms0 = []
+    # atms3 = []
+    # for label_set in interactions:
+    #     if atm1.label in label_set and atm2.label not in label_set:
+    #         label = [label for label in label_set if label != atm1.label][0]
+    #         atms0.extend(forward_template.get_labeled_atoms(label))
+    #     elif atm2.label in label_set and atm1.label not in label_set:
+    #         label = [label for label in label_set if label != atm2.label][0]
+    #         atms3.extend(forward_template.get_labeled_atoms(label))
 
-    if len(atms0) == 0:
-        atm0 = None
-    elif len(atms0) == 1:
-        atm0 = atms0[0]
-    else:
-        sites = [a for a in atms0 if a.is_surface_site()] #choose surface sites over other atoms
-        if len(sites) > 0:
-            atm0 = sites[0]
-        else:
-            atm0 = atms0[0]
+    # if len(atms0) == 0:
+    #     atm0 = None
+    # elif len(atms0) == 1:
+    #     atm0 = atms0[0]
+    # else:
+    #     sites = [a for a in atms0 if a.is_surface_site()] #choose surface sites over other atoms
+    #     if len(sites) > 0:
+    #         atm0 = sites[0]
+    #     else:
+    #         atm0 = atms0[0]
 
-    if len(atms3) == 0:
-        atm3 = None
-    elif len(atms3) == 1:
-        atm3 = atms3[0]
-    else:
-        sites = [a for a in atms3 if a.is_surface_site()] #choose surface sites over other atoms
-        if len(sites) > 0:
-            atm3 = sites[0]
-        else:
-            atm3 = atms3[0]
+    # if len(atms3) == 0:
+    #     atm3 = None
+    # elif len(atms3) == 1:
+    #     atm3 = atms3[0]
+    # else:
+    #     sites = [a for a in atms3 if a.is_surface_site()] #choose surface sites over other atoms
+    #     if len(sites) > 0:
+    #         atm3 = sites[0]
+    #     else:
+    #         atm3 = atms3[0]
 
-    def atm_to_symbol(atm):
-        if atm is None:
-            return ""
-        elif atm.is_surface_site():
-            return "X"
-        else:
-            return "R"
+    # def atm_to_symbol(atm):
+    #     if atm is None:
+    #         return ""
+    #     elif atm.is_surface_site():
+    #         return "X"
+    #     else:
+    #         return "R"
 
-    s = atm_to_symbol(atm0)+"--("+atm_to_symbol(atm1)+"--"+atm_to_symbol(atm2)+")--"+atm_to_symbol(atm3)
+    # s = atm_to_symbol(atm0)+"--("+atm_to_symbol(atm1)+"--"+atm_to_symbol(atm2)+")--"+atm_to_symbol(atm3)
 
-    if s in ["--(X--R)--", "--(R--X)--"]:
-        if hydrogen_interaction:
-            return dwell*0.2,100.0
-        else:
-            return dwell*0.2,100.0
-    elif s in ["--(X--R)--R","R--(R--X)--"]:
-        if hydrogen_interaction:
-            return dwell*0.2,100.0
-        else:
-            return dwell*0.2,100.0
-    elif s in ["--(X--R)--X","X--(R--X)--"]:
-        if hydrogen_interaction:
-            return dwell*0.2,100.0
-        else:
-            return dwell*0.2,100.0
-    elif s in ["X--(R--R)--X"]:
-        if dist is not None: #if it is an intermolecular interaction
-            return dwell*1.25,100.0
-        else:
-            if hydrogen_interaction:
-                return dwell*1.6,100.0
-            else:
-                return dwell*1.4,100.0
-    elif s in ["X--(R--R)--", "--(R--R)--X"]:
-        if dist is not None:
-            return dwell*1.25,100.0
-        else:
-            if hydrogen_interaction:
-                return dwell*1.6,100.0
-            else:
-                return dwell*1.4,100.0
-    elif s in ["--(R--R)--"]:
-        if dist is not None:
-            return dwell*1.25,100.0
-        else:
-            if hydrogen_interaction:
-                return dwell*1.6,100.0
-            else:
-                return dwell*1.4,100.0
-    elif s in ["R--(R--R)--","--(R--R)--R"]:
-        if dist is not None:
-            return dwell*1.25,100.0
-        else:
-            if hydrogen_interaction:
-                return dwell*1.6,100.0
-            else:
-                return dwell*1.4,100.0
-    elif s in ["R--(R--R)--X","X--(R--R)--R"]:
-        if dist is not None:
-            return dwell*1.25,100.0
-        else:
-            if hydrogen_interaction:
-                return dwell*1.6,100.0
-            else:
-                return dwell*1.4,100.0
-    elif s in ["R--(R--R)--R"]:
-        if dist is not None:
-            return dwell*1.25,100.0
-        else:
-            if hydrogen_interaction:
-                return dwell*1.6,100.0
-            else:
-                return dwell*1.4,100.0
-    else:
-        raise ValueError("Could not interpret interaction string: {}".format(s))
+    # if s in ["--(X--R)--", "--(R--X)--"]:
+    #     if hydrogen_interaction:
+    #         return dwell*0.2,100.0
+    #     else:
+    #         return dwell*0.2,100.0
+    # elif s in ["--(X--R)--R","R--(R--X)--"]:
+    #     if hydrogen_interaction:
+    #         return dwell*0.2,100.0
+    #     else:
+    #         return dwell*0.2,100.0
+    # elif s in ["--(X--R)--X","X--(R--X)--"]:
+    #     if hydrogen_interaction:
+    #         return dwell*0.2,100.0
+    #     else:
+    #         return dwell*0.2,100.0
+    # elif s in ["X--(R--R)--X"]:
+    #     if dist is not None: #if it is an intermolecular interaction
+    #         return dwell*1.25,100.0
+    #     else:
+    #         if hydrogen_interaction:
+    #             return dwell*1.6,100.0
+    #         else:
+    #             return dwell*1.4,100.0
+    # elif s in ["X--(R--R)--", "--(R--R)--X"]:
+    #     if dist is not None:
+    #         return dwell*1.25,100.0
+    #     else:
+    #         if hydrogen_interaction:
+    #             return dwell*1.6,100.0
+    #         else:
+    #             return dwell*1.4,100.0
+    # elif s in ["--(R--R)--"]:
+    #     if dist is not None:
+    #         return dwell*1.25,100.0
+    #     else:
+    #         if hydrogen_interaction:
+    #             return dwell*1.6,100.0
+    #         else:
+    #             return dwell*1.4,100.0
+    # elif s in ["R--(R--R)--","--(R--R)--R"]:
+    #     if dist is not None:
+    #         return dwell*1.25,100.0
+    #     else:
+    #         if hydrogen_interaction:
+    #             return dwell*1.6,100.0
+    #         else:
+    #             return dwell*1.4,100.0
+    # elif s in ["R--(R--R)--X","X--(R--R)--R"]:
+    #     if dist is not None:
+    #         return dwell*1.25,100.0
+    #     else:
+    #         if hydrogen_interaction:
+    #             return dwell*1.6,100.0
+    #         else:
+    #             return dwell*1.4,100.0
+    # elif s in ["R--(R--R)--R"]:
+    #     if dist is not None:
+    #         return dwell*1.25,100.0
+    #     else:
+    #         if hydrogen_interaction:
+    #             return dwell*1.6,100.0
+    #         else:
+    #             return dwell*1.4,100.0
+    # else:
+    #     raise ValueError("Could not interpret interaction string: {}".format(s))
 
 
 def estimate_deq_k_fixed_surf_bond(labels,dwell,forward_template,reverse_template,template_name,template_reversed,
