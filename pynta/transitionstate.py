@@ -564,7 +564,11 @@ def estimate_deq_k(sidt,labels,dwell,forward_template,reverse_template,template_
         else:
             a.label = ''
     
-    return dwell*sidt.evaluate(mol),100.0
+    v = sidt.evaluate(mol)
+    if any([a.is_surface_site() for a in mol.get_labeled_atoms('*')]):
+        return dwell*(v-1.0),100.0
+    else:
+        return dwell*v,100.0
 
     # label_list = list(labels)
     # if len(label_list) == 1: #get the atoms participating in the interaction
