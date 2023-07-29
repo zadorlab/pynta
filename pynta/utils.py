@@ -203,6 +203,9 @@ def name_to_ase_software(software_name):
     if software_name == "XTB":
         module = import_module("xtb.ase.calculator")
         return getattr(module, software_name)
+    elif software_name == 'DP':
+        module = import_module('deepmd.calculator')
+        return getattr(module, software_name)
     else:
         module = import_module("ase.calculators."+software_name.lower())
         return getattr(module, software_name)

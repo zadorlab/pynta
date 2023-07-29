@@ -128,7 +128,7 @@ class Pynta:
         #construct slab with optimial lattice constant
         slab = slab_type(self.metal,self.repeats,a,self.vacuum)
         slab.pbc = (True, True, False)
-        if self.software.lower() == 'vasp' or self.software.lower() == 'deepmd':
+        if self.software.lower() == 'vasp' or self.software.lower() == 'dp':
             slab.pbc = (True, True, True)
         write(os.path.join(self.path,"slab_init.xyz"),slab)
         self.slab_path = os.path.join(self.path,"slab.xyz")
@@ -251,7 +251,7 @@ class Pynta:
             if len(surf_sites) == 0:
                 if not skip_structs:
                     ads.pbc = (True,True,False)
-                    if self.software.lower() = 'vasp':
+                    if self.software.lower() == 'vasp' or self.software.lower() == 'dp':
                         ads.pbc = (True, True, True)
                     ads.center(vacuum=10)
                     structures[sm] = [ads]

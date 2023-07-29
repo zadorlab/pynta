@@ -15,7 +15,6 @@ import copy
 from copy import deepcopy
 import itertools
 from pynta.utils import *
-from deepmd.calculator import DP
 
 def get_energy_atom_bond(atoms,ind1,ind2,k,deq):
     bd,d = get_distances([atoms.positions[ind1]], [atoms.positions[ind2]], cell=atoms.cell, pbc=atoms.pbc)
@@ -98,7 +97,7 @@ def run_harmonically_forced_xtb(atoms,atom_bond_potentials,site_bond_potentials,
     Optimize TS guess using xTB + harmonic forcing terms determined by atom_bond_potentials and site_bond_potentials
     """
     out_constraints = []
-    # Need to capture original pbc for application later
+    # Need to capture original PBC for application later, vasp and espresso require different PBC
     pbc = atoms.pbc
     for c in constraints:
         if isinstance(c,dict):
@@ -307,8 +306,7 @@ def run_harmonically_forced_xtb_no_pbc(pbc, atoms,atom_bond_potentials,site_bond
     outadslab = slab + newad
     # Set pbc from original atoms object. Different for vasp and espresso
     outadslab.pbc = pbc
-    #if software.lower() == 'vasp':
-    #    outadslab.pbc = (True, True, True)
+
 
     return outadslab,Eharm,Fharm
 
@@ -353,16 +351,12 @@ def add_sella_constraint(cons,d):
     return
 
 def get_lattice_parameter(metal,surface_type,software,software_kwargs,da=0.1,options={"xatol":1e-4},a0=None):
-    if software.lower() == 'vasp' or software.lower() == 'espresso':
-        soft = name_to_ase_software(software)(**software_kwargs)
+    soft = name_to_ase_software(software)(**software_kwargs)
     def f(a):
         slab = bulk(metal,surface_type[:3],a=a)
-        if self.software.lower() == 'vasp' or self.software.lower() == 'deepmd':
+        if software.lower() == 'vasp' or software.lower() == 'dp':
             slab.calc = soft
             slab.pbc = (True, True, True)
-        else:
-            DPcalculator=DP(model="/home/tdprice/deepmd_pynta/pynta/graph.pb")
-            slab.set_calculator(DPcalculator)
         return slab.get_potential_energy()
     if a0 is None:
         a0 = reference_states[chemical_symbols.index(metal)]['a']
