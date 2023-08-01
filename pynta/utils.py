@@ -3,6 +3,7 @@ import os
 import ase
 from ase.utils.structure_comparator import SymmetryEquivalenceCheck
 from ase.io import write, read
+from ase.constraints import FixAtoms
 import ase.constraints
 from copy import deepcopy
 from importlib import import_module
@@ -113,6 +114,11 @@ def get_unique_sym_struct_indices(geoms):
 
     for i,geom in enumerate(geoms_copy):
         adsorbate_atom_obj = geom
+        for constraint in adsorbate_atom_obj.constraints:
+            if isinstance(constraint, FixAtoms):
+                c = constraint # Capturing constraints of slab
+        adsorbate_atom_obj.set_constraint() # Reset constraints
+        adsorbate_atom_obj.set_constraint(c) # Apply slab constraints
         adsorbate_atom_obj.pbc = True
         comparision = comparator.compare(
             adsorbate_atom_obj, good_adsorbates_atom_obj_list)
