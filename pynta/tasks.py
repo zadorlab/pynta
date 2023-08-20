@@ -60,7 +60,7 @@ def optimize_firework(xyz,software,label,machine,opt_method=None,sella=None,sock
                       run_kwargs={},constraints=[],parents=[],out_path=None,time_limit_hrs=np.inf,fmaxhard=0.0,ignore_errors=False,
                       target_site_num=None,metal=None,facet=None,priority=1,allow_fizzled_parents=False):
     d = {"xyz" : xyz, "software" : software,"label" : label, "machine": machine}
-    for machine == "polaris":
+    if machine == "polaris":
         if software == "Espresso":
             node = MapTaskToNodes()
             newcommand = node.getCommand()
@@ -334,7 +334,7 @@ class MolecularOptimizationFailTask(OptimizationTask):
 
 def energy_firework(xyz,software,label,machine,software_kwargs={},parents=[],out_path=None,ignore_errors=False):
     d = {"xyz" : xyz, "software" : software, "label" : label, "machine": machine}
-    for machine == "polaris":
+    if machine == "polaris":
         if software == "Espresso":
             node = MapTaskToNodes()
             newcommand = node.getCommand()
@@ -377,7 +377,7 @@ class MolecularEnergyTask(EnergyTask):
 
 def vibrations_firework(xyz,software,label,machine,software_kwargs={},parents=[],out_path=None,constraints=[],socket=False,ignore_errors=False):
     d = {"xyz" : xyz, "software" : software, "label" : label, "socket": socket, "machine": machine}
-    for machine == "polaris":
+    if machine == "polaris":
         if software == "Espresso":
             node = MapTaskToNodes()
             newcommand = node.getCommand()
@@ -749,7 +749,7 @@ class MolecularTSNudge(FiretaskBase):
 
 def IRC_firework(xyz,label,out_path=None,spawn_jobs=False,software=None,machine=None,
         socket=False,software_kwargs={},opt_kwargs={},run_kwargs={},constraints=[],parents=[],ignore_errors=False,forward=True):
-        for machine == "polaris":
+        if machine == "polaris":
             if software == "Espresso":
                 node = MapTaskToNodes()
                 newcommand = node.getCommand()
