@@ -61,7 +61,7 @@ def optimize_firework(xyz,software,label,machine,opt_method=None,sella=None,sock
                       target_site_num=None,metal=None,facet=None,priority=1,allow_fizzled_parents=False):
     d = {"xyz" : xyz, "software" : software,"label" : label, "machine": machine}
     if machine == "polaris":
-        if software == "Espresso":
+        for software == "Espresso":
             node = MapTaskToNodes()
             newcommand = node.getCommand()
             software_kwargs["command"] = newcommand
@@ -335,7 +335,7 @@ class MolecularOptimizationFailTask(OptimizationTask):
 def energy_firework(xyz,software,label,machine,software_kwargs={},parents=[],out_path=None,ignore_errors=False):
     d = {"xyz" : xyz, "software" : software, "label" : label, "machine": machine}
     if machine == "polaris":
-        if software == "Espresso":
+        for software == "Espresso":
             node = MapTaskToNodes()
             newcommand = node.getCommand()
             software_kwargs["command"] = newcommand
@@ -378,7 +378,7 @@ class MolecularEnergyTask(EnergyTask):
 def vibrations_firework(xyz,software,label,machine,software_kwargs={},parents=[],out_path=None,constraints=[],socket=False,ignore_errors=False):
     d = {"xyz" : xyz, "software" : software, "label" : label, "socket": socket, "machine": machine}
     if machine == "polaris":
-        if software == "Espresso":
+        for software == "Espresso":
             node = MapTaskToNodes()
             newcommand = node.getCommand()
             software_kwargs["command"] = newcommand
@@ -750,7 +750,7 @@ class MolecularTSNudge(FiretaskBase):
 def IRC_firework(xyz,label,out_path=None,spawn_jobs=False,software=None,machine=None,
         socket=False,software_kwargs={},opt_kwargs={},run_kwargs={},constraints=[],parents=[],ignore_errors=False,forward=True):
         if machine == "polaris":
-            if software == "Espresso":
+            for software == "Espresso":
                 node = MapTaskToNodes()
                 newcommand = node.getCommand()
                 software_kwargs["command"] = newcommand
