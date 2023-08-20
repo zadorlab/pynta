@@ -374,13 +374,13 @@ class MolecularEnergyTask(EnergyTask):
         return FWAction()
 
 def vibrations_firework(xyz,software,label,machine,software_kwargs={},parents=[],out_path=None,constraints=[],socket=False,ignore_errors=False):
-    d = {"xyz" : xyz, "software" : software, "label" : label, "socket": socket, "machine": machine}
+    d = {"xyz" : xyz, "software" : software, "label" : label, "socket": socket}
     if machine == "polaris":
         if software == "Espresso":
             node = MapTaskToNodes()
             newcommand = node.getCommand()
             software_kwargs["command"] = newcommand
-
+            
     if software_kwargs: d["software_kwargs"] = software_kwargs
     if constraints: d["constraints"] = constraints
     d["ignore_errors"] = ignore_errors
