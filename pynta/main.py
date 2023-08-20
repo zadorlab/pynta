@@ -407,12 +407,12 @@ class Pynta:
                     assert os.path.exists(init_path), init_path
                     xyzs.append(xyz)
                     fwopt = optimize_firework(init_path,
-                        self.software,"weakopt_"+str(prefix),
+                        self.software,"weakopt_"+str(prefix),self.machine,
                         opt_method="MDMin",opt_kwargs={'dt': 0.05},socket=self.socket,software_kwargs=software_kwargs,
                         run_kwargs={"fmax" : 0.5, "steps" : 70},parents=[],constraints=constraints,
                         ignore_errors=True, metal=self.metal, facet=self.surface_type, target_site_num=target_site_num, priority=3)
                     fwopt2 = optimize_firework(os.path.join(self.path,"Adsorbates",ad,str(prefix),"weakopt_"+str(prefix)+".xyz"),
-                        self.software,str(prefix),
+                        self.software,self.machine,str(prefix),
                         opt_method="QuasiNewton",socket=self.socket,software_kwargs=software_kwargs,
                         run_kwargs={"fmax" : self.fmaxopt, "steps" : 70},parents=[fwopt],constraints=constraints,
                         ignore_errors=True, metal=self.metal, facet=self.surface_type, target_site_num=target_site_num, priority=3)
