@@ -25,6 +25,9 @@ import logging
 class Pynta:
     def __init__(self,path,rxns_file,surface_type,metal,label,launchpad_path=None,fworker_path=None,
         vacuum=8.0,repeats=(3,3,4),slab_path=None,software="Espresso",socket=False,queue=False,njobs_queue=0,a=None,
+        scale=0, #for initial_magnetization. if scale=0, there is no magnetization applied.
+        tol_acat=0.5, #for ACAT slabAdsorptionSite() keyword
+        surrogate_metal_acat='Cu',  #for ACAT slabAdsorptionSite() keyword        
         software_kwargs={'kpts': (3, 3, 1), 'tprnfor': True, 'occupations': 'smearing',
                             'smearing':  'marzari-vanderbilt',
                             'degauss': 0.01, 'ecutwfc': 40, 'nosym': True,
@@ -58,7 +61,10 @@ class Pynta:
         self.metal = metal
         self.adsorbate_fw_dict = dict()
         self.software_kwargs = software_kwargs
-
+        self.scale = scale
+        self.tol_acat = tol_acat #ACAT SlabAdsorptionSite() Keyword
+        self.surrogate_metal_acat = surrogate_metal_acat #ACAT SlabAdsorptionSite() Keyword
+        
         if software_kwargs_gas:
             self.software_kwargs_gas = software_kwargs_gas
         else:
@@ -148,9 +154,18 @@ class Pynta:
 
     def analyze_slab(self):
         full_slab = self.slab
-        cas = SlabAdsorptionSites(full_slab, self.surface_type,allow_6fold=False,composition_effect=False,
-                        label_sites=True,
-                        surrogate_metal=self.metal)
+        emt_metals = ['Ni','Cu','Pd','Ag','Pt','Au'] #list of pure transition metals used in EMT calculator
+        
+        print('Input metal element is:', self.metal,' Surrogate metal option for ACAT SlabAdsorptionSite() is set as:',self.surrogate_metal_acat) #double check 
+
+        for metals in emt_metals: 
+            if metals == self.metal: #if 'metal' keyword in input file is one of the metals in EMT calculator,
+                cas = SlabAdsorptionSites(full_slab, self.surface_type,allow_6fold=False,composition_effect=False,label_sites=True,
+                    tol=self.tol_acat,surrogate_metal=self.metal) #surrogate metal will be the same as 'metal' keyword
+            else: #if 'metal' keyword in input script is NOT in the EMT metal list, use user-defined surrogate metal
+                cas = SlabAdsorptionSites(full_slab,self.surface_type,allow_6fold=False,composition_effect=False,
+                    label_sites=True,tol=self.tol_acat,
+                    surrogate_metal=self.surrogate_metal_acat) #change tolerance if needed.
 
         self.cas = cas
 
