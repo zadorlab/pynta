@@ -250,3 +250,58 @@ def construct_constraint(d):
     constructor = getattr(ase.constraints,constraint_dict["type"])
     del constraint_dict["type"]
     return constructor(**constraint_dict)
+
+# Initial implementation by Raymundo H. Argonne National Laboratory:
+# Map the FW-task on polaris single-queue allocation
+
+""" Polaris Mapping """
+
+def getNodes():
+    nodes_list = []
+    nodefile = os.environ.get("PBS_NODEFILE")
+
+    if nodefile is None:
+        nodes_list.append('localhost00')
+        nodes_list.append('localhost01')
+        return nodes_list
+
+    with open(nodefile) as f:
+        for line in f:
+            nodes_list.append(line.strip('\n'))
+
+    return nodes_list
+
+
+def getBin():
+    binary = os.environ.get('QE_EXE')
+    if binary is None:
+        binary = '/lus/eagle/projects/catalysis_aesp/abagusetty/qe-7.1/build_cuda_nompiaware/bin/pw.x'
+
+    return binary
+
+
+class MapTaskToNodes():
+    count = 0  # Class variable to count the number of instances created.
+    # Every time I create a instance, this number increase.
+
+    def __init__(self):
+        self.icount = MapTaskToNodes.count
+        self.listNodes = getNodes()
+        self.nnodes = len(self.listNodes)
+        self.binary = getBin()
+
+        MapTaskToNodes.count += 1
+
+    def getCommand(self):
+        affinity = ['list:24-31:56-63', 'list:16-23:48-55',
+                    'list:8-15:40-47', 'list:0-7:32-39']
+        idx = self.icount % int (self.nnodes/2)
+        inode = 2 * idx
+        command = 'mpiexec --hosts {},{} -n 4 --ppn 8 -d 8 --cpu-bind depth --env OMP_NUM_THREADS=8 --env CUDA_VISIBLE_DEVICES=0,1,2,3  {} -nk 4 -in PREFIX.pwi > PREFIX.pwo'.format(
+            self.listNodes[inode],self.listNodes[inode+1], self.binary)
+
+        #command = 'mpiexec  -n 4 --ppn 4 -d 8 --cpu-bind depth --env OMP_NUM_THREADS=8 --env CUDA_VISIBLE_DEVICES=0,1,2,3  {} -nk 4 -in PREFIX.pwi > PREFIX.pwo'.format(self.binary)
+        return command
+
+
+
