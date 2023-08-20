@@ -61,12 +61,11 @@ def optimize_firework(xyz,software,label,machine,opt_method=None,sella=None,sock
                       target_site_num=None,metal=None,facet=None,priority=1,allow_fizzled_parents=False):
     d = {"xyz" : xyz, "software" : software,"label" : label, "machine": machine}
     if machine == "polaris":
-        for software == "Espresso":
+        if software == "Espresso":
             node = MapTaskToNodes()
             newcommand = node.getCommand()
             software_kwargs["command"] = newcommand
-        else:
-            continue
+
     if opt_method: d["opt_method"] = opt_method
     if software_kwargs: d["software_kwargs"] = software_kwargs
     if opt_kwargs: d["opt_kwargs"] = opt_kwargs
@@ -335,12 +334,11 @@ class MolecularOptimizationFailTask(OptimizationTask):
 def energy_firework(xyz,software,label,machine,software_kwargs={},parents=[],out_path=None,ignore_errors=False):
     d = {"xyz" : xyz, "software" : software, "label" : label, "machine": machine}
     if machine == "polaris":
-        for software == "Espresso":
+        if software == "Espresso":
             node = MapTaskToNodes()
             newcommand = node.getCommand()
             software_kwargs["command"] = newcommand
-        else:
-            continue        
+       
     if software_kwargs: d["software_kwargs"] = software_kwargs
     d["ignore_errors"] = ignore_errors
     t1 = MolecularEnergyTask(d)
@@ -378,12 +376,11 @@ class MolecularEnergyTask(EnergyTask):
 def vibrations_firework(xyz,software,label,machine,software_kwargs={},parents=[],out_path=None,constraints=[],socket=False,ignore_errors=False):
     d = {"xyz" : xyz, "software" : software, "label" : label, "socket": socket, "machine": machine}
     if machine == "polaris":
-        for software == "Espresso":
+        if software == "Espresso":
             node = MapTaskToNodes()
             newcommand = node.getCommand()
             software_kwargs["command"] = newcommand
-        else:
-            continue  
+
     if software_kwargs: d["software_kwargs"] = software_kwargs
     if constraints: d["constraints"] = constraints
     d["ignore_errors"] = ignore_errors
@@ -750,12 +747,11 @@ class MolecularTSNudge(FiretaskBase):
 def IRC_firework(xyz,label,out_path=None,spawn_jobs=False,software=None,machine=None,
         socket=False,software_kwargs={},opt_kwargs={},run_kwargs={},constraints=[],parents=[],ignore_errors=False,forward=True):
         if machine == "polaris":
-            for software == "Espresso":
+            if software == "Espresso":
                 node = MapTaskToNodes()
                 newcommand = node.getCommand()
                 software_kwargs["command"] = newcommand
-            else:
-                continue  
+
         if out_path is None: out_path = os.path.join(directory,label+"_irc.traj")
         t1 = MolecularIRC(xyz=xyz,label=label,software=software,
             socket=socket,software_kwargs=software_kwargs,opt_kwargs=opt_kwargs,run_kwargs=run_kwargs,
