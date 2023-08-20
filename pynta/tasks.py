@@ -65,8 +65,8 @@ def optimize_firework(xyz,software,label,machine,opt_method=None,sella=None,sock
             node = MapTaskToNodes()
             newcommand = node.getCommand()
             software_kwargs["command"] = newcommand
-    else:
-        continue
+        else:
+            continue
     if opt_method: d["opt_method"] = opt_method
     if software_kwargs: d["software_kwargs"] = software_kwargs
     if opt_kwargs: d["opt_kwargs"] = opt_kwargs
@@ -339,8 +339,8 @@ def energy_firework(xyz,software,label,machine,software_kwargs={},parents=[],out
             node = MapTaskToNodes()
             newcommand = node.getCommand()
             software_kwargs["command"] = newcommand
-    else:
-        continue        
+        else:
+            continue        
     if software_kwargs: d["software_kwargs"] = software_kwargs
     d["ignore_errors"] = ignore_errors
     t1 = MolecularEnergyTask(d)
@@ -382,8 +382,8 @@ def vibrations_firework(xyz,software,label,machine,software_kwargs={},parents=[]
             node = MapTaskToNodes()
             newcommand = node.getCommand()
             software_kwargs["command"] = newcommand
-    else:
-        continue  
+        else:
+            continue  
     if software_kwargs: d["software_kwargs"] = software_kwargs
     if constraints: d["constraints"] = constraints
     d["ignore_errors"] = ignore_errors
@@ -754,8 +754,8 @@ def IRC_firework(xyz,label,out_path=None,spawn_jobs=False,software=None,machine=
                 node = MapTaskToNodes()
                 newcommand = node.getCommand()
                 software_kwargs["command"] = newcommand
-        else:
-            continue  
+            else:
+                continue  
         if out_path is None: out_path = os.path.join(directory,label+"_irc.traj")
         t1 = MolecularIRC(xyz=xyz,label=label,software=software,
             socket=socket,software_kwargs=software_kwargs,opt_kwargs=opt_kwargs,run_kwargs=run_kwargs,
