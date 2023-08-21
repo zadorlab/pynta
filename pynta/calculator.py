@@ -151,6 +151,10 @@ def run_harmonically_forced_xtb_no_pbc(atoms,atom_bond_potentials,site_bond_pote
 
     dthresh is the threshold x-y distance a slab atom must be away from an adsorbate atom to be truncated
     """
+
+    # Need to capture original PBC for application later, vasp and espresso require different PBC
+    og_pbc = atoms.pbc
+
     if ase_to_mol_num is None: #assume only one adsorbate and translate that as a unit
         ase_to_mol_num = {i+nslab:0 for i in range(len(atoms) - nslab)}
 
@@ -302,7 +306,7 @@ def run_harmonically_forced_xtb_no_pbc(atoms,atom_bond_potentials,site_bond_pote
 
     outadslab = slab + newad
 
-    outadslab.pbc = (True,True,False)
+    outadslab.pbc = og_pbc
 
     return outadslab,Eharm,Fharm
 

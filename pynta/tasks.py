@@ -227,7 +227,7 @@ class MolecularOptimizationTask(OptimizationTask):
             try:
                 sp.calc.close()
             except Exception as e:
-                if self["software"] == "Espresso":
+                if self["software"] == "Espresso" or self["software"] == "DP" or self["software"] == "Vasp":
                     pass #Espresso tends to error even after socket calculations finish correctly
                 else:
                     if not ignore_errors:
@@ -439,7 +439,7 @@ class MolecularVibrationsTask(VibrationTask):
                 try:
                     sp.calc.close()
                 except Exception as e:
-                    if self["software"] == "Espresso":
+                    if self["software"] == "Espresso" or self["software"] == "DP" or self["software"] == "Vasp":
                         pass #Espresso tends to error even after socket calculations finish correctly
                     else:
                         if not ignore_errors:
@@ -821,7 +821,7 @@ class MolecularIRC(FiretaskBase):
             try:
                 sp.calc.close()
             except Exception as e:
-                if self["software"] == "Espresso":
+                if self["software"] == "Espresso" or self["software"] == "DP" or self["software"] == "Vasp":
                     pass #Espresso tends to error even after socket calculations finish correctly
                 else:
                     if not ignore_errors:
