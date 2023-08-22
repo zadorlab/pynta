@@ -374,7 +374,7 @@ class MolecularEnergyTask(EnergyTask):
         return FWAction()
 
 def vibrations_firework(xyz,software,label,machine,software_kwargs={},parents=[],out_path=None,constraints=[],socket=False,ignore_errors=False):
-    d = {"xyz" : xyz, "software" : software, "label" : label, "socket": socket}
+    d = {"xyz" : xyz, "software" : software, "label" : label, "socket": socket, "machine":machine}
     if machine == "polaris":
         if software == "Espresso":
             node = MapTaskToNodes()
