@@ -685,6 +685,7 @@ class MolecularCollect(CollectTask):
                 d["out_path"] = os.path.join(os.path.split(xyz)[0],out_names[0][i])
                 d["label"] = out_names[0][i]
                 d["ignore_errors"] = True
+                d["machine"] = machine
                 out_xyzs.append(d["out_path"])
                 fw = fw_generator(**d)
                 if not isinstance(fw,list):
