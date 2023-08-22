@@ -435,10 +435,10 @@ class Pynta:
         Note the vibrational and IRC calculations are launched at the same time
         """
         if self.software != "XTB":
-            opt_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":self.software_kwargs_TS,
+            opt_obj_dict = {"software":self.software,"label":"prefix","machine":self.machine,"socket":self.socket,"software_kwargs":self.software_kwargs_TS,
                 "run_kwargs": {"fmax" : self.fmaxopt, "steps" : 70},"constraints": ["freeze up to {}".format(self.freeze_ind)],"sella":True,"order":1,}
         else:
-            opt_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":self.software_kwargs_TS,
+            opt_obj_dict = {"software":self.software,"label":"prefix","machine":self.machine,"socket":self.socket,"software_kwargs":self.software_kwargs_TS,
                 "run_kwargs": {"fmax" : 0.02, "steps" : 70},"constraints": ["freeze up to "+str(self.nslab)],"sella":True,"order":1,}
         vib_obj_dict = {"software":self.software,"label":"prefix", "machine":self.machine, "socket":self.socket,"software_kwargs":self.software_kwargs,
                 "constraints": ["freeze up to "+str(self.nslab)]}
