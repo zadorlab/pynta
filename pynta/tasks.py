@@ -374,13 +374,13 @@ class MolecularEnergyTask(EnergyTask):
         return FWAction()
 
 def vibrations_firework(xyz,software,label,machine,software_kwargs={},parents=[],out_path=None,constraints=[],socket=False,ignore_errors=False):
-    d = {"xyz" : xyz, "software" : software, "label" : label, "socket": socket, "machine":machine}
+    d = {"xyz" : xyz, "software" : software, "label" : label, "socket": socket }
     if machine == "polaris":
         if software == "Espresso":
             node = MapTaskToNodes()
             newcommand = node.getCommand()
             software_kwargs["command"] = newcommand
-    if machine: d["machine"] = machine        
+            
     if software_kwargs: d["software_kwargs"] = software_kwargs
     if constraints: d["constraints"] = constraints
     d["ignore_errors"] = ignore_errors
@@ -685,7 +685,7 @@ class MolecularCollect(CollectTask):
                 d["out_path"] = os.path.join(os.path.split(xyz)[0],out_names[0][i])
                 d["label"] = out_names[0][i]
                 d["ignore_errors"] = True
-                d["machine"] = machine
+               
                 out_xyzs.append(d["out_path"])
                 fw = fw_generator(**d)
                 if not isinstance(fw,list):
