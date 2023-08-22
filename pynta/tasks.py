@@ -380,7 +380,7 @@ def vibrations_firework(xyz,software,label,machine,software_kwargs={},parents=[]
             node = MapTaskToNodes()
             newcommand = node.getCommand()
             software_kwargs["command"] = newcommand
-            
+    if machine: d["machine"] = machine        
     if software_kwargs: d["software_kwargs"] = software_kwargs
     if constraints: d["constraints"] = constraints
     d["ignore_errors"] = ignore_errors
