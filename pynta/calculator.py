@@ -85,6 +85,9 @@ class HarmonicallyForcedXTB(XTB):
 
         return energy[0][0],forces
 
+    hfxtb = HarmonicallyForcedXTB(method="GFN1-xTB",
+                                  atom_bond_potentials=atom_bond_potentials,
+                                  site_bond_potentials=site_bond_potentials)
     def calculate(self, atoms=None, properties=None, system_changes=calculator.all_changes):
         XTB.calculate(self,atoms=atoms,properties=properties,system_changes=system_changes)
         energy,forces = self.get_energy_forces()
@@ -93,8 +96,6 @@ class HarmonicallyForcedXTB(XTB):
         self.results["forces"] += forces
 
 class HarmonicallyForcedDeepMD(DP):
-    module = import_module('deepmd.calculator')
-    getattr(module, software_name)
     def get_energy_forces(self):
         energy = 0.0
         forces = np.zeros(self.atoms.positions.shape)
@@ -152,11 +153,15 @@ def run_harmonically_forced_xtb(atoms,atom_bond_potentials,site_bond_potentials,
             
     atoms.set_constraint(out_constraints)
     
-    hfxtb = HarmonicallyForcedXTB(method="GFN1-xTB",
-                              atom_bond_potentials=atom_bond_potentials,
-                             site_bond_potentials=site_bond_potentials)
+    #hfxtb = HarmonicallyForcedXTB(method="GFN1-xTB",
+    #                         atom_bond_potentials=atom_bond_potentials,
+    #                         site_bond_potentials=site_bond_potentials)
+    hfml = HarmonicallyForcedDeepMD(model="path to graph.pb",
+                                    atom_bond_potentials=atom_bond_potentials,
+                                    site_bond_potentials=site_bond_potentials)
 
-    atoms.calc = hfxtb
+    #atoms.calc = hfxtb
+    atoms.calc = hfml
 
     opt = Sella(atoms,trajectory="xtbharm.traj",order=0)
 
@@ -311,12 +316,17 @@ def run_harmonically_forced_xtb_no_pbc(pbc, atoms,atom_bond_potentials,site_bond
                 indices=list(range(n))
                 ))
 
-    
-    hfxtb = HarmonicallyForcedXTB(method="GFN1-xTB",
-                                  atom_bond_potentials=new_atom_bond_potentials,
-                                 site_bond_potentials=new_site_potentials)
+    hfml = HarmonicallyForcedDeepMD(model="path to graph.pb",
+                                    atom_bond_potentials=new_atom_bond_potentials,
+                                    site_bond_potentials=new_site_potentials)
+
+
+    #hfxtb = HarmonicallyForcedXTB(method="GFN1-xTB",
+    #                              atom_bond_potentials=new_atom_bond_potentials,
+    #                             site_bond_potentials=new_site_potentials)
     bigad.set_constraint(out_constraints)
-    bigad.calc = hfxtb
+    #bigad.calc = hfxtb
+    bigad.calc = hfml
 
     opt = Sella(bigad,trajectory="xtbharm.traj",order=0)
 
