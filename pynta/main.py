@@ -420,7 +420,7 @@ class Pynta:
                     optfws.append(fwopt2)
                     optfws2.append(fwopt2)
 
-                vib_obj_dict = {"software": self.software, "label": ad, "software_kwargs": software_kwargs,
+                vib_obj_dict = {"software": self.software, "label": ad, "machine":self.machine, "software_kwargs": software_kwargs,
                     "constraints": ["freeze up to "+str(self.nslab)]}
 
                 cfw = collect_firework(xyzs,True,["vibrations_firework"],[vib_obj_dict],["vib.json"],[True,False],parents=optfws2,label=ad,allow_fizzled_parents=False)
