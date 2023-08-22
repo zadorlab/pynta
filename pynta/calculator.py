@@ -15,6 +15,7 @@ import copy
 from copy import deepcopy
 import itertools
 from pynta.utils import *
+from deepmd.calculator import DP
 
 def get_energy_atom_bond(atoms,ind1,ind2,k,deq):
     bd,d = get_distances([atoms.positions[ind1]], [atoms.positions[ind2]], cell=atoms.cell, pbc=atoms.pbc)
@@ -67,6 +68,33 @@ def get_energy_forces_site_bond(atoms,ind,site_pos,k,deq):
     return energy,k*forces
 
 class HarmonicallyForcedXTB(XTB):
+    def get_energy_forces(self):
+        energy = 0.0
+        forces = np.zeros(self.atoms.positions.shape)
+        if hasattr(self.parameters,"atom_bond_potentials"):
+            for atom_bond_potential in self.parameters.atom_bond_potentials:
+                E,F = get_energy_forces_atom_bond(self.atoms,**atom_bond_potential)
+                energy += E
+                forces += F
+
+        if hasattr(self.parameters,"site_bond_potentials"):
+            for site_bond_potential in self.parameters.site_bond_potentials:
+                E,F = get_energy_forces_site_bond(self.atoms,**site_bond_potential)
+                energy += E
+                forces += F
+
+        return energy[0][0],forces
+
+    def calculate(self, atoms=None, properties=None, system_changes=calculator.all_changes):
+        XTB.calculate(self,atoms=atoms,properties=properties,system_changes=system_changes)
+        energy,forces = self.get_energy_forces()
+        self.results["energy"] += energy
+        self.results["free_energy"] += energy
+        self.results["forces"] += forces
+
+class HarmonicallyForcedDeepMD(DP):
+    module = import_module('deepmd.calculator')
+    getattr(module, software_name)
     def get_energy_forces(self):
         energy = 0.0
         forces = np.zeros(self.atoms.positions.shape)
