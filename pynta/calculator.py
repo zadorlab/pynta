@@ -117,7 +117,7 @@ class HarmonicallyForcedDeepMD(DP):
         self.results["free_energy"] += energy
         self.results["forces"] += forces
 
-def run_harmonically_forced_xtb(atoms,atom_bond_potentials,site_bond_potentials,nslab,
+def run_harmonically_forced_xtb(atoms,atom_bond_potentials,site_bond_potentials,nslab, i,
         molecule_to_atom_maps=None,ase_to_mol_num=None,method="GFN1-xTB",constraints=[]):
     """
     Optimize TS guess using xTB + harmonic forcing terms determined by atom_bond_potentials and site_bond_potentials
@@ -161,12 +161,12 @@ def run_harmonically_forced_xtb(atoms,atom_bond_potentials,site_bond_potentials,
     print(f"hfml {hfml}")
     atoms.calc = hfml
 
-    opt = Sella(atoms,trajectory="xtbharm.traj",order=0)
+    opt = Sella(atoms,trajectory=f"xtbharm_{i}.traj",order=0)
 
     try:
         opt.run(fmax=0.02,steps=150)
     except Exception as e: #no pbc fallback
-        return run_harmonically_forced_xtb_no_pbc(pbc, atoms,atom_bond_potentials,site_bond_potentials,nslab,
+        return run_harmonically_forced_xtb_no_pbc(pbc, atoms,atom_bond_potentials,site_bond_potentials,nslab, i,
                                        molecule_to_atom_maps=molecule_to_atom_maps,ase_to_mol_num=ase_to_mol_num,
                                                constraints=constraints,method=method,dthresh=4.0)
 
@@ -174,7 +174,7 @@ def run_harmonically_forced_xtb(atoms,atom_bond_potentials,site_bond_potentials,
 
     return atoms,Eharm,Fharm
 
-def run_harmonically_forced_xtb_no_pbc(pbc, atoms,atom_bond_potentials,site_bond_potentials,nslab,
+def run_harmonically_forced_xtb_no_pbc(pbc, atoms,atom_bond_potentials,site_bond_potentials,nslab, i,
                                molecule_to_atom_maps,ase_to_mol_num=None,
                                        constraints=[],method="GFN1-xTB",dthresh=4.0):
     """
@@ -326,7 +326,7 @@ def run_harmonically_forced_xtb_no_pbc(pbc, atoms,atom_bond_potentials,site_bond
     #bigad.calc = hfxtb
     bigad.calc = hfml
 
-    opt = Sella(bigad,trajectory="xtbharm.traj",order=0)
+    opt = Sella(bigad,trajectory=f"xtbharm_{i}.traj",order=0)
 
     try:
         opt.run(fmax=0.02,steps=150)
