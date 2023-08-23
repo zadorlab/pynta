@@ -60,8 +60,10 @@ def optimize_firework(xyz,software,label,machine,opt_method=None,sella=None,sock
                       run_kwargs={},constraints=[],parents=[],out_path=None,time_limit_hrs=np.inf,fmaxhard=0.0,ignore_errors=False,
                       target_site_num=None,metal=None,facet=None,priority=1,allow_fizzled_parents=False):
     d = {"xyz" : xyz, "software" : software,"label" : label}
+    print("machine",machine)
     if machine == "polaris":
         if software == "Espresso":
+            print("machine is polaris and using QE")
             node = MapTaskToNodes()
             newcommand = node.getCommand()
             software_kwargs["command"] = newcommand
