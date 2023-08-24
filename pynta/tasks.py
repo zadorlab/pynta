@@ -876,7 +876,7 @@ class MolecularHFSP(OptimizationTask):
         errors = []
         
         suffix = os.path.split(xyz)[-1].split(".")[-1]
-        
+        j=os.path.split(xyz)[-1].split(".")[-2]
         try:
             if suffix == "xyz":
                 sp = read(xyz)
@@ -890,7 +890,7 @@ class MolecularHFSP(OptimizationTask):
             else:
                 errors.append(e)
 
-        spout,Eharm,Fharm = run_harmonically_forced_xtb(sp,atom_bond_potentials,site_bond_potentials,nslab,
+        spout,Eharm,Fharm = run_harmonically_forced_xtb(sp,atom_bond_potentials,site_bond_potentials,nslab, j,
                     molecule_to_atom_maps=molecule_to_atom_maps,ase_to_mol_num=ase_to_mol_num,
                     method="GFN1-xTB",constraints=constraints)
         if spout:
@@ -906,7 +906,7 @@ class MolecularHFSP(OptimizationTask):
 def map_harmonically_forced_xtb(input):
     tsstruct,atom_bond_potentials,site_bond_potentials,nslab,constraints,ts_path,j,molecule_to_atom_maps,ase_to_mol_num = input
     os.makedirs(os.path.join(ts_path,str(j)))
-    sp,Eharm,Fharm = run_harmonically_forced_xtb(tsstruct,atom_bond_potentials,site_bond_potentials,nslab,
+    sp,Eharm,Fharm = run_harmonically_forced_xtb(tsstruct,atom_bond_potentials,site_bond_potentials,nslab,j,
                     molecule_to_atom_maps=molecule_to_atom_maps,ase_to_mol_num=ase_to_mol_num,
                     method="GFN1-xTB",constraints=constraints)
 
