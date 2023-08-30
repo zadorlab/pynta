@@ -24,7 +24,7 @@ import logging
 
 class Pynta:
     def __init__(self,path,rxns_file,surface_type,metal,label,launchpad_path=None,fworker_path=None,
-        vacuum=8.0,repeats=(3,3,4),slab_path=None,software="Espresso", pbc= (True,True,False),socket=False,queue=False,njobs_queue=0,a=None,
+        vacuum=8.0,repeats=(3,3,4),slab_path=None,software="Espresso", pbc=(True,True,False),socket=False,queue=False,njobs_queue=0,a=None,
         software_kwargs={'kpts': (3, 3, 1), 'tprnfor': True, 'occupations': 'smearing',
                             'smearing':  'marzari-vanderbilt',
                             'degauss': 0.01, 'ecutwfc': 40, 'nosym': True,
@@ -60,6 +60,9 @@ class Pynta:
         self.adsorbate_fw_dict = dict()
         self.software_kwargs = software_kwargs
 
+        if software.lower() == 'vasp':
+            self.pbc = (True,True,True)
+        
         if software_kwargs_gas:
             self.software_kwargs_gas = software_kwargs_gas
         else:
