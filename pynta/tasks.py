@@ -18,7 +18,7 @@ from fireworks.core.fworker import FWorker
 import fireworks.fw_config
 from pynta.transitionstate import get_unique_optimized_adsorbates,determine_TS_construction,get_unique_TS_structs,generate_constraints_harmonic_parameters,get_surface_forming_bond_pairings
 from pynta.utils import *
-from pynta.calculator import run_harmonically_forced_xtb, add_sella_constraint
+from pynta.calculator import run_harmonically_forced_pre_opt, add_sella_constraint
 from pynta.mol import *
 from xtb.ase.calculator import XTB
 import numpy as np
@@ -463,13 +463,13 @@ class MolecularVibrationsTask(VibrationTask):
 
         return FWAction()
 
-
 @explicit_serialize
 class MolecularTSEstimate(FiretaskBase):
     required_params = ["rxn","ts_path","slab_path","adsorbates_path","rxns_file","path","metal","facet",
                         "name_to_adjlist_dict", "gratom_to_molecule_atom_maps",
                         "gratom_to_molecule_surface_atom_maps","opt_obj_dict",
-                                "vib_obj_dict","IRC_obj_dict","nslab","Eharmtol","Eharmfiltertol","Ntsmin","max_num_hfsp_opts"]
+                                "vib_obj_dict","IRC_obj_dict","nslab","Eharmtol","Eharmfiltertol","Ntsmin","max_num_hfsp_opts",
+                       "method", "model_path"]
     optional_params = ["out_path","spawn_jobs","nprocs",]
     def run_task(self, fw_spec):
         gratom_to_molecule_atom_maps = {sm: {int(k):v for k,v in d.items()} for sm,d in self["gratom_to_molecule_atom_maps"].items()}
@@ -490,6 +490,8 @@ class MolecularTSEstimate(FiretaskBase):
         max_num_hfsp_opts = self["max_num_hfsp_opts"]
         slab_path = self["slab_path"]
         slab = read(slab_path)
+        method = self["method"]
+        model_path = self["model_path"]
 
         cas = SlabAdsorptionSites(slab,facet,allow_6fold=False,composition_effect=False,
                             label_sites=True,
@@ -591,7 +593,7 @@ class MolecularTSEstimate(FiretaskBase):
             print("number of TS guesses after filtering by max distance between sites")
             print(len(out_tsstructs))
 
-        inputs = [ (out_tsstructs[j],new_atom_bond_potential_lists[j],new_site_bond_potential_lists[j],nslab,new_constraint_lists[j],ts_path,j,molecule_to_atom_maps,ase_to_mol_num) for j in range(len(out_tsstructs))]
+        inputs = [ (out_tsstructs[j],new_atom_bond_potential_lists[j],new_site_bond_potential_lists[j],nslab,new_constraint_lists[j],ts_path,j,molecule_to_atom_maps,ase_to_mol_num, method, model_path) for j in range(len(out_tsstructs))]
 
         #with mp.Pool(nprocs) as pool:
         #    outputs = pool.map(map_harmonically_forced_xtb,inputs)
@@ -844,10 +846,10 @@ class MolecularIRC(FiretaskBase):
         return FWAction()
 
 def HFSP_firework(xyz,atom_bond_potentials,site_bond_potentials,nslab,constraints,molecule_to_atom_maps,ase_to_mol_num,
-                      out_path=None,label="",parents=[],ignore_errors=False):
+                      out_path=None,label="",parents=[],ignore_errors=False, method="GFN1-xTB", pre_opt_model_path=None):
     d = {"xyz": xyz, "atom_bond_potentials": atom_bond_potentials, "site_bond_potentials": site_bond_potentials, 
          "nslab": nslab, "constraints": constraints, "molecule_to_atom_maps": molecule_to_atom_maps, "ase_to_mol_num": ase_to_mol_num,
-        "label": label, "ignore_errors": ignore_errors}
+        "label": label, "ignore_errors": ignore_errors, "method": method, "model_path":pre_opt_model_path}
     t1 = MolecularHFSP(d)
     directory = os.path.dirname(xyz)
     if out_path is None: out_path = os.path.join(directory,label+".xyz")
@@ -864,7 +866,7 @@ class MolecularHFSP(OptimizationTask):
         label = self["label"] if "label" in self.keys() else "xtb"
         ignore_errors = self["ignore_errors"] if "ignore_errors" in self.keys() else False
         method = self["method"] if "method" in self.keys() else "GFN1-xTB"
-        
+        model_path = self["model_path"] if "model_path" in self.keys() else None
         atom_bond_potentials = self["atom_bond_potentials"]
         site_bond_potentials = self["site_bond_potentials"]
         nslab = self["nslab"]
@@ -890,9 +892,9 @@ class MolecularHFSP(OptimizationTask):
             else:
                 errors.append(e)
 
-        spout,Eharm,Fharm = run_harmonically_forced_xtb(sp,atom_bond_potentials,site_bond_potentials,nslab,
+        spout,Eharm,Fharm = run_harmonically_forced_pre_opt(sp,atom_bond_potentials,site_bond_potentials,nslab,
                     molecule_to_atom_maps=molecule_to_atom_maps,ase_to_mol_num=ase_to_mol_num,
-                    method="GFN1-xTB",constraints=constraints)
+                    method=method,constraints=constraints, pre_opt_model_path=model_path)
         if spout:
             if "initial_charges" in sp.arrays.keys(): #avoid bug in ase
                 del sp.arrays["initial_charges"]
@@ -904,11 +906,11 @@ class MolecularHFSP(OptimizationTask):
         return FWAction(stored_data={"error": errors,"converged": converged})
 
 def map_harmonically_forced_xtb(input):
-    tsstruct,atom_bond_potentials,site_bond_potentials,nslab,constraints,ts_path,j,molecule_to_atom_maps,ase_to_mol_num = input
+    tsstruct,atom_bond_potentials,site_bond_potentials,nslab,constraints,ts_path,j,molecule_to_atom_maps,ase_to_mol_num, method, model_path = input
     os.makedirs(os.path.join(ts_path,str(j)))
-    sp,Eharm,Fharm = run_harmonically_forced_xtb(tsstruct,atom_bond_potentials,site_bond_potentials,nslab,
+    sp,Eharm,Fharm = run_harmonically_forced_pre_opt(tsstruct,atom_bond_potentials,site_bond_potentials,nslab,
                     molecule_to_atom_maps=molecule_to_atom_maps,ase_to_mol_num=ase_to_mol_num,
-                    method="GFN1-xTB",constraints=constraints)
+                    method=method,constraints=constraints, pre_opt_model_path=model_path)
 
     if sp:
         if "initial_charges" in sp.arrays.keys(): #avoid bug in ase

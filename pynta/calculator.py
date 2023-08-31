@@ -119,7 +119,7 @@ class HarmonicallyForcedDeepMD(DP):
         self.results["forces"] += forces
 
 def run_harmonically_forced_pre_opt(atoms,atom_bond_potentials,site_bond_potentials,nslab,
-        molecule_to_atom_maps=None,ase_to_mol_num=None,method,constraints=[],pre_opt_model_path=None):
+        molecule_to_atom_maps=None,ase_to_mol_num=None,method="GFN1-xTB",constraints=[],pre_opt_model_path=None):
     """
     Optimize TS guess using xTB + harmonic forcing terms determined by atom_bond_potentials and site_bond_potentials
     """
