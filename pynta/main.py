@@ -62,7 +62,7 @@ class Pynta:
 
         if software.lower() == 'vasp':
             self.pbc = (True,True,True)
-        
+
         if software_kwargs_gas:
             self.software_kwargs_gas = software_kwargs_gas
         else:
@@ -131,7 +131,7 @@ class Pynta:
             a = self.a
         #construct slab with optimial lattice constant
         slab = slab_type(self.metal,self.repeats,a,self.vacuum)
-        slab.pbc = (True, True, False)
+        slab.pbc = self.pbc
         write(os.path.join(self.path,"slab_init.xyz"),slab)
         self.slab_path = os.path.join(self.path,"slab.xyz")
         if self.software != "XTB":
@@ -252,7 +252,7 @@ class Pynta:
             ads,mol_to_atoms_map = get_adsorbate(mol)
             if len(surf_sites) == 0:
                 if not skip_structs:
-                    ads.pbc = (True,True,False)
+                    ads.pbc = self.pbc
                     ads.center(vacuum=10)
                     structures[sm] = [ads]
                 gratom_to_molecule_atom_maps[sm] = {val:key for key,val in mol_to_atoms_map.items()}

@@ -159,6 +159,8 @@ def run_harmonically_forced_xtb_no_pbc(atoms,atom_bond_potentials,site_bond_pote
 
     target = atoms.cell[0][:2] + atoms.cell[1][:2]
 
+    og_pbc = atoms.pbc # Need to apply original pbc's on atoms object (depends on QC software)
+
     site_poss = []
     site_inds = []
     site_mols = []
@@ -302,7 +304,7 @@ def run_harmonically_forced_xtb_no_pbc(atoms,atom_bond_potentials,site_bond_pote
 
     outadslab = slab + newad
 
-    outadslab.pbc = (True,True,False)
+    outadslab.pbc = og_pbc
 
     return outadslab,Eharm,Fharm
 
