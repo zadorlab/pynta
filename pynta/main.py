@@ -24,7 +24,7 @@ import logging
 
 class Pynta:
     def __init__(self,path,rxns_file,surface_type,metal,label,launchpad_path=None,fworker_path=None,
-        vacuum=8.0,repeats=(3,3,4),slab_path=None,software="Espresso",pbc=(True,True,False),socket=False,queue=False,njobs_queue=0,a=None,
+        vacuum=8.0,repeats=(3,3,4),slab_path=None,pre_opt_method='GFN1-xTB', pre_opt_model_path=None,software="Espresso",pbc=(True,True,False),socket=False,queue=False,njobs_queue=0,a=None,
         software_kwargs={'kpts': (3, 3, 1), 'tprnfor': True, 'occupations': 'smearing',
                             'smearing':  'marzari-vanderbilt',
                             'degauss': 0.01, 'ecutwfc': 40, 'nosym': True,
@@ -51,6 +51,8 @@ class Pynta:
         self.a = a
         self.pbc = pbc
         self.software = software
+        self.pre_opt_method = pre_opt_method
+        self.pre_opt_model_path = pre_opt_model_path
         self.socket = socket
         self.repeats = repeats
         self.path = os.getcwd() if path is None else path
@@ -266,7 +268,7 @@ class Pynta:
                         structs = generate_adsorbate_guesses(mol,ads,self.slab,cas,mol_to_atoms_map,self.metal,
                                            self.single_site_bond_params_lists,self.single_sites_lists,
                                            self.double_site_bond_params_lists,self.double_sites_lists,
-                                           self.Eharmtol,self.Eharmfiltertol,self.Ntsmin)
+                                           self.Eharmtol,self.Eharmfiltertol,self.Ntsmin,self.pre_opt_method, self.pre_opt_model_path)
                         structures[sm] = structs
 
 

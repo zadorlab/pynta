@@ -1,4 +1,6 @@
 from xtb.ase.calculator import XTB
+from deepmd.calculator import DP
+import os
 import numpy as np
 import ase
 from ase.atoms import Atoms
@@ -91,8 +93,33 @@ class HarmonicallyForcedXTB(XTB):
         self.results["free_energy"] += energy
         self.results["forces"] += forces
 
-def run_harmonically_forced_xtb(atoms,atom_bond_potentials,site_bond_potentials,nslab,
-        molecule_to_atom_maps=None,ase_to_mol_num=None,method="GFN1-xTB",constraints=[]):
+class HarmonicallyForcedDeepMD(DP):
+    def get_energy_forces(self):
+        energy = 0.0
+        forces = np.zeros(self.atoms.positions.shape)
+        if hasattr(self.parameters,"atom_bond_potentials"):
+            for atom_bond_potential in self.parameters.atom_bond_potentials:
+                E,F = get_energy_forces_atom_bond(self.atoms,**atom_bond_potential)
+                energy += E
+                forces += F
+
+        if hasattr(self.parameters,"site_bond_potentials"):
+            for site_bond_potential in self.parameters.site_bond_potentials:
+                E,F = get_energy_forces_site_bond(self.atoms,**site_bond_potential)
+                energy += E
+                forces += F
+
+        return energy[0][0],forces
+
+    def calculate(self, atoms=None, properties=None, system_changes=calculator.all_changes):
+        DP.calculate(self,atoms=atoms,properties=properties,system_changes=system_changes)
+        energy,forces = self.get_energy_forces()
+        self.results["energy"] += energy
+        self.results["free_energy"] += energy
+        self.results["forces"] += forces
+
+def run_harmonically_forced_pre_opt(atoms,atom_bond_potentials,site_bond_potentials,nslab,
+        molecule_to_atom_maps=None,ase_to_mol_num=None,method,constraints=[],pre_opt_model_path=None):
     """
     Optimize TS guess using xTB + harmonic forcing terms determined by atom_bond_potentials and site_bond_potentials
     """
@@ -121,29 +148,35 @@ def run_harmonically_forced_xtb(atoms,atom_bond_potentials,site_bond_potentials,
                 ))
             
     atoms.set_constraint(out_constraints)
-    
-    hfxtb = HarmonicallyForcedXTB(method="GFN1-xTB",
-                              atom_bond_potentials=atom_bond_potentials,
-                             site_bond_potentials=site_bond_potentials)
 
-    atoms.calc = hfxtb
+
+    if not isinstance(pre_opt_model_path, type(None)) and method.lower()=='dp':
+        hf_preopt = HarmonicallyForcedDeepMD(model=pre_opt_model_path,
+                                             atom_bond_potentials=atom_bond_potentials,
+                                             site_bond_potentials=site_bond_potentials)
+    if 'GFN' in method:
+        hf_preopt = HarmonicallyForcedXTB(method=method,
+                                      atom_bond_potentials=atom_bond_potentials,
+                                      site_bond_potentials=site_bond_potentials)
+    atoms.calc = hf_preopt
 
     opt = Sella(atoms,trajectory="xtbharm.traj",order=0)
 
     try:
         opt.run(fmax=0.02,steps=150)
     except Exception as e: #no pbc fallback
-        return run_harmonically_forced_xtb_no_pbc(atoms,atom_bond_potentials,site_bond_potentials,nslab,
+        return run_harmonically_forced_pre_opt_no_pbc(atoms,atom_bond_potentials,site_bond_potentials,nslab,
                                        molecule_to_atom_maps=molecule_to_atom_maps,ase_to_mol_num=ase_to_mol_num,
-                                               constraints=constraints,method=method,dthresh=4.0)
+                                               constraints=constraints,method=method,dthresh=4.0,
+                                                  pre_opt_model_path=pre_opt_model_path)
 
     Eharm,Fharm = atoms.calc.get_energy_forces()
 
     return atoms,Eharm,Fharm
 
-def run_harmonically_forced_xtb_no_pbc(atoms,atom_bond_potentials,site_bond_potentials,nslab,
+def run_harmonically_forced_pre_opt_no_pbc(atoms,atom_bond_potentials,site_bond_potentials,nslab,
                                molecule_to_atom_maps,ase_to_mol_num=None,
-                                       constraints=[],method="GFN1-xTB",dthresh=4.0):
+                                       constraints=[],method="GFN1-xTB",dthresh=4.0,pre_opt_model_path=None):
     """
     This algorithm extends the slab and selects a section of the slab in which the adsorbates are closest
     together, truncates the slab around it and optimizes without pbc based on the truncated slab before
@@ -282,12 +315,20 @@ def run_harmonically_forced_xtb_no_pbc(atoms,atom_bond_potentials,site_bond_pote
             out_constraints.append(FixAtoms(
                 indices=list(range(n))
                 ))
-    
-    hfxtb = HarmonicallyForcedXTB(method="GFN1-xTB",
-                                  atom_bond_potentials=new_atom_bond_potentials,
-                                 site_bond_potentials=new_site_potentials)
+
     bigad.set_constraint(out_constraints)
-    bigad.calc = hfxtb
+
+    if not isinstance(pre_opt_model_path, type(None)) and method.lower()=='dp':
+        hf_preopt = HarmonicallyForcedDeepMD(model=pre_opt_model_path,
+                                             atom_bond_potentials=atom_bond_potentials,
+                                             site_bond_potentials=site_bond_potentials)
+    if 'GFN' in method:
+        hf_preopt = HarmonicallyForcedXTB(method=method,
+                                      atom_bond_potentials=atom_bond_potentials,
+                                      site_bond_potentials=site_bond_potentials)
+
+
+    bigad.calc = hf_preopt
 
     opt = Sella(bigad,trajectory="xtbharm.traj",order=0)
 

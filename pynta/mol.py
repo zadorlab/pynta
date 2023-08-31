@@ -14,7 +14,7 @@ from acat.utilities import (custom_warning,
                          get_angle_between,
                          get_rejection_between)
 from pynta.utils import get_unique_sym_struct_index_clusters, get_unique_sym, get_unique_sym_structs, get_unique_sym_struct_indices
-from pynta.calculator import run_harmonically_forced_xtb
+from pynta.calculator import run_harmonically_forced_pre_opt
 from rdkit import Chem
 from copy import deepcopy
 import numpy as np
@@ -68,7 +68,7 @@ def get_adsorbate(mol):
 
 def generate_adsorbate_guesses(mol,ads,full_slab,cas,mol_to_atoms_map,metal,
                                single_site_bond_params_lists,single_sites_lists,double_site_bond_params_lists,double_sites_lists,
-                               Eharmtol,Eharmfiltertol,Ntsmin):
+                               Eharmtol,Eharmfiltertol,Ntsmin,pre_opt_method,pre_opt_model_path):
     mol_surf_inds = [mol.atoms.index(a) for a in mol.get_adatoms()]
     atom_surf_inds = [mol_to_atoms_map[i] for i in mol_surf_inds]
     if len(atom_surf_inds) == 1:
@@ -115,9 +115,9 @@ def generate_adsorbate_guesses(mol,ads,full_slab,cas,mol_to_atoms_map,metal,
     site_bond_params_lists_out = []
     for i,geo in enumerate(geos):
         #freeze bonds for messier first opt
-        geo_out,Eharm,Fharm = run_harmonically_forced_xtb(geo,[],site_bond_params_lists[i],len(full_slab),
+        geo_out,Eharm,Fharm = run_harmonically_forced_pre_opt(geo,[],site_bond_params_lists[i],len(full_slab),
                                 molecule_to_atom_maps=mol_to_atoms_map,ase_to_mol_num=None,
-                                method="GFN1-xTB",constraints=constraint_list)
+                                method=pre_opt_method,constraints=constraint_list, pre_opt_model_path=pre_opt_model_path)
         if geo_out:
             geo_out.calc = None
             geos_out.append(geo_out)
