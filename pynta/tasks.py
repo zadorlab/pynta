@@ -1,3 +1,5 @@
+import os
+
 from ase import Atoms
 from ase.optimize import *
 from ase.constraints import *
@@ -913,6 +915,7 @@ def map_harmonically_forced_xtb(input):
                     method=method,constraints=constraints, pre_opt_model_path=model_path)
 
     if sp:
+        shutil.copy(os.getcwd() +'/xtbharm.traj', os.path.join(ts_path,str(j),'xtbharm.traj'))
         if "initial_charges" in sp.arrays.keys(): #avoid bug in ase
             del sp.arrays["initial_charges"]
         with open(os.path.join(ts_path,str(j),"harm.json"),'w') as f:
