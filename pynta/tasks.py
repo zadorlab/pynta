@@ -35,7 +35,7 @@ from contextlib import contextmanager
 from copy import deepcopy
 from pathlib import Path
 #polaris node mapping
-from pynta.polaris import MapTaskToNodes
+from pynta.polaris import createCommand
 
 class OptimizationTask(FiretaskBase):
     def run_task(self, fw_spec):
@@ -62,11 +62,6 @@ def optimize_firework(xyz,software,label,opt_method=None,sella=None,socket=False
                       run_kwargs={},constraints=[],parents=[],out_path=None,time_limit_hrs=np.inf,fmaxhard=0.0,ignore_errors=False,
                       target_site_num=None,metal=None,facet=None,priority=1,allow_fizzled_parents=False):
     d = {"xyz" : xyz, "software" : software,"label" : label}
-    #polaris node mapping
-    if software == "Espresso" or software == "PWDFT":
-        node = MapTaskToNodes()
-        newcommand = node.getCommand()
-        software_kwargs["command"] = newcommand
     if opt_method: d["opt_method"] = opt_method
     if software_kwargs: d["software_kwargs"] = software_kwargs
     if opt_kwargs: d["opt_kwargs"] = opt_kwargs
@@ -98,6 +93,10 @@ class MolecularOptimizationTask(OptimizationTask):
     def run_task(self, fw_spec):
         errors = []
         software_kwargs = deepcopy(self["software_kwargs"]) if "software_kwargs" in self.keys() else dict()
+        # Mapping nodes to fworkers
+        if self["software"] == "Espresso" or self["software"] == "PWDFT":
+            software_kwargs["command"] = createCommand(fw_spec["_fw_env"]["host"], self["software"])
+
         socket = self["socket"] if "socket" in self.keys() else False
         if socket:
             unixsocket = "ase_"+self["software"].lower()+"_"+self["label"]+"_"+self["xyz"].replace("/","_").replace(".","_")
@@ -164,7 +163,7 @@ class MolecularOptimizationTask(OptimizationTask):
                     out_constraints.append(FixAtoms(
                         indices=list(range(n))
                         ))
-                
+
             sp.set_constraint(out_constraints)
             opt_kwargs["trajectory"] = label+".traj"
 
@@ -216,7 +215,7 @@ class MolecularOptimizationTask(OptimizationTask):
                         ))
 
             sp.set_constraint(out_constraints)
-            
+
             opt = Sella(sp,trajectory=label+".traj",order=order)
             try:
                 if np.isinf(time_limit_hrs):
@@ -310,6 +309,9 @@ class MolecularOptimizationFailTask(OptimizationTask):
     def run_task(self, fw_spec):
         print(fw_spec)
         software_kwargs = deepcopy(self["software_kwargs"]) if "software_kwargs" in self.keys() else dict()
+        # Mapping nodes to fworkers
+        if self["software"] == "Espresso" or self["software"] == "PWDFT":
+            software_kwargs["command"] = createCommand(fw_spec["_fw_env"]["host"], self["software"])
         software = name_to_ase_software(self["software"])(**software_kwargs)
 
         opt_kwargs = deepcopy(self["opt_kwargs"]) if "opt_kwargs" in self.keys() else dict()
@@ -334,11 +336,6 @@ class MolecularOptimizationFailTask(OptimizationTask):
 
 def energy_firework(xyz,software,label,software_kwargs={},parents=[],out_path=None,ignore_errors=False):
     d = {"xyz" : xyz, "software" : software, "label" : label}
-    #polaris node mapping
-    if software == "Espresso" or software == "PWDFT":
-        node = MapTaskToNodes()
-        newcommand = node.getCommand()
-        software_kwargs["command"] = newcommand
 
     if software_kwargs: d["software_kwargs"] = software_kwargs
     d["ignore_errors"] = ignore_errors
@@ -359,6 +356,9 @@ class MolecularEnergyTask(EnergyTask):
         software_kwargs = deepcopy(self["software_kwargs"]) if "software_kwargs" in self.keys() else dict()
         energy_kwargs = deepcopy(self["energy_kwargs"]) if "energy_kwargs" in self.keys() else dict()
         ignore_errors = deepcopy(self["ignore_errors"]) if "ignore_errors" in self.keys() else False
+        # Mapping nodes to fworkers
+        if self["software"] == "Espresso" or self["software"] == "PWDFT":
+            software_kwargs["command"] = createCommand(fw_spec["_fw_env"]["host"], self["software"])
 
         try:
             sp = read(xyz)
@@ -376,12 +376,7 @@ class MolecularEnergyTask(EnergyTask):
 
 def vibrations_firework(xyz,software,label,software_kwargs={},parents=[],out_path=None,constraints=[],socket=False,ignore_errors=False):
     d = {"xyz" : xyz, "software" : software, "label" : label, "socket": socket}
-    #polars node mapping
-    if software == "Espresso" or software == "PWDFT":
-        node = MapTaskToNodes()
-        newcommand = node.getCommand()
-        software_kwargs["command"] = newcommand
-    
+
     if software_kwargs: d["software_kwargs"] = software_kwargs
     if constraints: d["constraints"] = constraints
     d["ignore_errors"] = ignore_errors
@@ -407,6 +402,9 @@ class MolecularVibrationsTask(VibrationTask):
         xyz = self['xyz']
         label = self["label"]
         software_kwargs = deepcopy(self["software_kwargs"]) if "software_kwargs" in self.keys() else dict()
+        # Mapping nodes to fworkers
+        if self["software"] == "Espresso" or self["software"] == "PWDFT":
+            software_kwargs["command"] = createCommand(fw_spec["_fw_env"]["host"], self["software"])
         software = name_to_ase_software(self["software"])(**software_kwargs)
         ignore_errors = deepcopy(self["ignore_errors"]) if "ignore_errors" in self.keys() else False
         socket = self["socket"] if "socket" in self.keys() else False
@@ -448,9 +446,9 @@ class MolecularVibrationsTask(VibrationTask):
                     indices = [ i for i in range(len(sp)) if i >= n]
                 else:
                     raise ValueError
-                
+
             sp.set_constraint(out_constraints)
-            
+
             vib = Vibrations(sp,indices=indices)
             vib.run()
 
@@ -751,11 +749,6 @@ class MolecularTSNudge(FiretaskBase):
 
 def IRC_firework(xyz,label,out_path=None,spawn_jobs=False,software=None,
         socket=False,software_kwargs={},opt_kwargs={},run_kwargs={},constraints=[],parents=[],ignore_errors=False,forward=True):
-        #polaris node mapping
-        if software == "Espresso" or software == "PWDFT":
-            node = MapTaskToNodes()
-            newcommand = node.getCommand()
-            software_kwargs["command"] = newcommand
 
         if out_path is None: out_path = os.path.join(directory,label+"_irc.traj")
         t1 = MolecularIRC(xyz=xyz,label=label,software=software,
@@ -773,6 +766,9 @@ class MolecularIRC(FiretaskBase):
     def run_task(self, fw_spec):
         errors = []
         software_kwargs = deepcopy(self["software_kwargs"]) if "software_kwargs" in self.keys() else dict()
+        # Mapping nodes to fworkers
+        if self["software"] == "Espresso" or self["software"] == "PWDFT":
+            software_kwargs["command"] = createCommand(fw_spec["_fw_env"]["host"], self["software"])
         socket = self["socket"] if "socket" in self.keys() else False
         if socket:
             unixsocket = "ase_"+self["software"].lower()+"_"+self["label"]+"_"+self["xyz"].replace("/","_").replace(".","_")
@@ -810,7 +806,7 @@ class MolecularIRC(FiretaskBase):
         sp.calc = SocketIOCalculator(software,log=sys.stdout,unixsocket=unixsocket) if socket else software
 
         constraints = deepcopy(self["constraints"]) if "constraints" in self.keys() else []
-        
+
         out_constraints = []
         for c in constraints:
             if c == "freeze half slab":
@@ -829,9 +825,9 @@ class MolecularIRC(FiretaskBase):
                     ))
             else:
                 raise ValueError("Could not interpret constraint: {}".format(c))
-            
+
         sp.set_constraint(out_constraints)
-        
+
         opt = IRC(sp,trajectory=label+"_irc.traj",dx=0.1,eta=1e-4,gamma=0.4)
         try:
             if forward:
@@ -874,7 +870,7 @@ class MolecularIRC(FiretaskBase):
 
 def HFSP_firework(xyz,atom_bond_potentials,site_bond_potentials,nslab,constraints,molecule_to_atom_maps,ase_to_mol_num,
                       out_path=None,label="",parents=[],ignore_errors=False):
-    d = {"xyz": xyz, "atom_bond_potentials": atom_bond_potentials, "site_bond_potentials": site_bond_potentials, 
+    d = {"xyz": xyz, "atom_bond_potentials": atom_bond_potentials, "site_bond_potentials": site_bond_potentials,
          "nslab": nslab, "constraints": constraints, "molecule_to_atom_maps": molecule_to_atom_maps, "ase_to_mol_num": ase_to_mol_num,
         "label": label, "ignore_errors": ignore_errors}
     t1 = MolecularHFSP(d)
@@ -893,7 +889,7 @@ class MolecularHFSP(OptimizationTask):
         label = self["label"] if "label" in self.keys() else "xtb"
         ignore_errors = self["ignore_errors"] if "ignore_errors" in self.keys() else False
         method = self["method"] if "method" in self.keys() else "GFN1-xTB"
-        
+
         atom_bond_potentials = self["atom_bond_potentials"]
         site_bond_potentials = self["site_bond_potentials"]
         nslab = self["nslab"]
@@ -901,11 +897,11 @@ class MolecularHFSP(OptimizationTask):
         ase_to_mol_num = {int(k):v for k,v in self["ase_to_mol_num"].items()}
         constraints = self["constraints"]
         xyz = self['xyz']
-        
+
         errors = []
-        
+
         suffix = os.path.split(xyz)[-1].split(".")[-1]
-        
+
         try:
             if suffix == "xyz":
                 sp = read(xyz)
@@ -926,10 +922,10 @@ class MolecularHFSP(OptimizationTask):
             if "initial_charges" in sp.arrays.keys(): #avoid bug in ase
                 del sp.arrays["initial_charges"]
             write(label+".xyz", spout)
-            converged = True 
+            converged = True
         else:
             converged = False
-        
+
         return FWAction(stored_data={"error": errors,"converged": converged})
 
 def map_harmonically_forced_xtb(input):

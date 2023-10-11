@@ -1,6 +1,7 @@
 import shutil
 import os
 import ase
+import sys
 from ase.utils.structure_comparator import SymmetryEquivalenceCheck
 from ase.io import write, read
 import ase.constraints
@@ -202,6 +203,9 @@ def name_to_ase_software(software_name):
     """
     if software_name == "XTB":
         module = import_module("xtb.ase.calculator")
+        return getattr(module, software_name)
+    elif: software_name == "PWDFT":
+        module = import_module("pynta.ase_pwdft.pwdft")
         return getattr(module, software_name)
     else:
         module = import_module("ase.calculators."+software_name.lower())
