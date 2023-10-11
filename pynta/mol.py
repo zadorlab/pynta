@@ -750,9 +750,15 @@ def get_bond_lengths_sites(mol,ads,atom_map,surf_atom_map,nslab,facet="fcc111",m
     rev_surf_atom_map = { value: key for key,value in surf_atom_map.items()}
 
     if cas is None:
-        cas = SlabAdsorptionSites(ads,facet,allow_6fold=False,composition_effect=False,
-                            label_sites=True,
-                            surrogate_metal=metal)
+
+#       cas = SlabAdsorptionSites(full_slab, self.surface_type,allow_6fold=False,composition_effect=False,
+#                        label_sites=True,
+#                        surrogate_metal=metal)
+
+        cas = SlabAdsorptionSites(full_slab, self.surface_type,allow_6fold=False,composition_effect=False,
+                        label_sites=True, tol=0.5,
+                        surrogate_metal='Pt')
+
     adcov = SlabAdsorbateCoverage(ads,adsorption_sites=cas)
     occ = adcov.get_sites(occupied_only=True)
     surface_dict = [{"atom_index":x["bonding_index"]-nslab, "site":x["site"],
