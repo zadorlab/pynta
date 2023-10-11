@@ -210,7 +210,7 @@ def name_to_ase_software(software_name):
     if software_name == "XTB":
         module = import_module("xtb.ase.calculator")
         return getattr(module, software_name)
-    elif: software_name == "PWDFT":
+    elif software_name == "PWDFT":
         module = import_module("pynta.ase_pwdft.pwdft")
         return getattr(module, software_name)
     else:
