@@ -21,6 +21,12 @@ from fireworks.core.rocket_launcher import rapidfire
 from fireworks.core.fworker import FWorker
 import fireworks.fw_config
 import logging
+#restart RHE
+import pickle
+import time
+from pynta.polaris import MapTaskToNodes
+from pynta.utils import copyDataAndSave
+import json
 
 #logger
 logger = logging.getLogger(__name__)
@@ -41,9 +47,11 @@ class Pynta:
         irc_mode="fixed", #choose irc mode: 'skip', 'relaxed', 'fixed'
         lattice_opt_software_kwargs={'kpts': (25,25,25), 'ecutwfc': 70, 'degauss':0.02, 'mixing_mode': 'plain'},
         reset_launchpad=False,queue_adapter_path=None,num_jobs=25,max_num_hfsp_opts=None,#max_num_hfsp_opts is mostly for fast testing
-        Eharmtol=3.0,Eharmfiltertol=30.0,Ntsmin=5,frozen_layers=2,fmaxopt=0.05,fmaxirc=0.1,fmaxopthard=0.05,c=None):
+        Eharmtol=3.0,Eharmfiltertol=30.0,Ntsmin=5,frozen_layers=2,fmaxopt=0.05,fmaxirc=0.1,fmaxopthard=0.05,c=None,pickled=0):
 
         self.surface_type = surface_type
+        self.pickled = pickled
+
         if launchpad_path:
             launchpad = LaunchPad.from_file(launchpad_path)
         else:
@@ -168,19 +176,47 @@ class Pynta:
             write(self.slab_path,slab)
 
     def analyze_slab(self):
-        full_slab = self.slab
-        cas = SlabAdsorptionSites(full_slab, self.surface_type,allow_6fold=False,composition_effect=False,
-                        label_sites=True,
-                        surrogate_metal=self.metal)
+        #pickle info RHE
+        if self.pickled == 0:
+            full_slab = self.slab
+#            cas = SlabAdsorptionSites(full_slab, self.surface_type,allow_6fold=False,composition_effect=False,
+#                        label_sites=True,
+#                        surrogate_metal=self.metal)
 
-        self.cas = cas
+            cas = SlabAdsorptionSites(full_slab, self.surface_type,allow_6fold=False,composition_effect=False,
+                        label_sites=True, tol=0.5,
+                        surrogate_metal='Pt')
 
-        unique_site_lists,unique_site_pairs_lists,single_site_bond_params_lists,double_site_bond_params_lists = generate_unique_placements(full_slab,cas)
+            self.cas = cas
 
-        self.single_site_bond_params_lists = single_site_bond_params_lists
-        self.single_sites_lists = unique_site_lists
-        self.double_site_bond_params_lists = double_site_bond_params_lists
-        self.double_sites_lists = unique_site_pairs_lists
+            unique_site_lists,unique_site_pairs_lists,single_site_bond_params_lists,double_site_bond_params_lists = generate_unique_placements(full_slab,cas)
+
+            self.single_site_bond_params_lists = single_site_bond_params_lists
+            self.single_sites_lists = unique_site_lists
+            self.double_site_bond_params_lists = double_site_bond_params_lists
+            self.double_sites_lists = unique_site_pairs_lists
+
+            my_dictionary_to_pickled  = {'cas' : cas,
+                                        'single_site_bond_params_list': single_site_bond_params_lists,
+                                        'single_sites_lists': unique_site_lists,
+                                        'double_site_bond_params_lists': double_site_bond_params_lists,
+                                        'double_sites_lists_full': unique_site_pairs_lists}
+
+            print("Save as a pickle")
+            with open('analize_slab.pickle', 'wb') as myfile:
+                pickle.dump(my_dictionary_to_pickled, myfile)
+
+        else :
+            with open('analize_slab.pickle', 'rb') as myfile:
+                my_dict = pickle.load(myfile)
+
+            print("Load from a pickle")
+
+            self.cas = my_dict['cas']
+            self.single_site_bond_params_lists = my_dict['single_site_bond_params_list']
+            self.single_sites_lists = my_dict['unique_site_lists']
+            self.double_site_bond_params_lists = my_dict['double_site_bond_params_lists']
+            self.double_sites_lists = my_dict['unique_site_pairs_lists']
 
     def generate_mol_dict(self):
         """
@@ -569,6 +605,79 @@ class Pynta:
 
         wf = Workflow(self.fws, name=self.label)
         self.launchpad.add_wf(wf)
+
+
+        self.launch()
+
+#restart option: RHE
+    def reset(self):
+        # Get the information of the workflow
+        wf1 = self.launchpad.get_wf_summary_dict(1, mode='more')
+
+        # Save the states of the workflow
+        wf_states = wf1['states']
+
+        # Save the launcher directories
+        wf_launchers = wf1['launch_dirs']
+
+        # In this bucle-for the tasks that are not completed, change the status
+        # We need the number of the task(id)
+
+        for task_name, task_state in wf_states.items():
+            if task_state != 'COMPLETED':
+                # Here we will change  the map - node
+                task_id = int(task_name.split('--')[-1])
+                d = self.launchpad.get_fw_dict_by_id(task_id)
+                newd = deepcopy(d['spec'])
+
+                nameTask = newd['_tasks'][0]['_fw_name']
+
+                nameTasks = ['{{pynta.tasks.MolecularOptimizationTask}}',
+                            '{{pynta.tasks.MolecularVibrationsTask}}',
+                            '{{pynta.tasks.MolecularIRC}}']
+
+                if nameTask in nameTasks:
+                    opt_method = newd['_tasks'][0]['opt_method'] if 'opt_method' in newd['_tasks'][0] else None
+
+                    if self.software == "Espresso" or self.software == "PWDFT":
+                        print(" Change: ", newd['_tasks'][0]['software_kwargs']['command'], end='')
+                        node = MapTaskToNodes()
+                        newcommand = node.getCommand()
+                        newd['_tasks'][0]['software_kwargs']['command'] = newcommand
+                        print(" by: ", newcommand)
+                # Here we work with reset the optimization task
+                # We load the trajectory file and save this structure in the
+                # tree of each uncompleted task
+
+                if 'opt' in task_name:
+                    dirs = wf_launchers[task_name]
+                    if dirs != []:
+                        src = dirs[0]
+                        print(' Name task {0:^20s} {1:^12s} {2}'.format(task_name, task_state, src))
+                        file_traj = [name for name in os.listdir(src) if name.endswith(".traj")]
+                        if len(file_traj) > 1:
+                            file_traj = file_traj[0]
+                            base, ext = os.path.splitext(file_traj)
+
+                            with open (os.path.join(src, "FW.json")) as file:
+                                filejson = json.load(file)
+
+                            if opt_method == 'QuasiNewton':
+                                namexyz = f'weakopt_{base}.xyz'
+                            else:
+                                namexyz = f'{base}_init.xyz'
+
+                            atoms = read(os.path.join(src, file_traj), index=-1)
+                            dst = os.path.dirname(filejson['spec']['_tasks'][0]['xyz'])
+
+                            write(f'{src}/{namexyz}', atoms, format='xyz')
+
+                            copyDataAndSave(src, dst, namexyz)
+                            copyDataAndSave(src, dst, f'{base}.traj')
+
+                # Keep on with the task_state != 'COMPLETED'
+                self.launchpad.rerun_fw(task_id)
+                self.launchpad.update_spec([task_id], newd)
 
 
         self.launch()
