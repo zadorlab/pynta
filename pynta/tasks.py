@@ -34,6 +34,8 @@ import signal
 from contextlib import contextmanager
 from copy import deepcopy
 from pathlib import Path
+#polaris node mapping
+from pynta.polaris import MapTaskToNodes
 
 class OptimizationTask(FiretaskBase):
     def run_task(self, fw_spec):
@@ -60,6 +62,11 @@ def optimize_firework(xyz,software,label,opt_method=None,sella=None,socket=False
                       run_kwargs={},constraints=[],parents=[],out_path=None,time_limit_hrs=np.inf,fmaxhard=0.0,ignore_errors=False,
                       target_site_num=None,metal=None,facet=None,priority=1,allow_fizzled_parents=False):
     d = {"xyz" : xyz, "software" : software,"label" : label}
+    #polaris node mapping
+    if software == "Espresso" or software == "PWDFT":
+        node = MapTaskToNodes()
+        newcommand = node.getCommand()
+        software_kwargs["command"] = newcommand
     if opt_method: d["opt_method"] = opt_method
     if software_kwargs: d["software_kwargs"] = software_kwargs
     if opt_kwargs: d["opt_kwargs"] = opt_kwargs
@@ -327,6 +334,12 @@ class MolecularOptimizationFailTask(OptimizationTask):
 
 def energy_firework(xyz,software,label,software_kwargs={},parents=[],out_path=None,ignore_errors=False):
     d = {"xyz" : xyz, "software" : software, "label" : label}
+    #polaris node mapping
+    if software == "Espresso" or software == "PWDFT":
+        node = MapTaskToNodes()
+        newcommand = node.getCommand()
+        software_kwargs["command"] = newcommand
+
     if software_kwargs: d["software_kwargs"] = software_kwargs
     d["ignore_errors"] = ignore_errors
     t1 = MolecularEnergyTask(d)
@@ -363,6 +376,12 @@ class MolecularEnergyTask(EnergyTask):
 
 def vibrations_firework(xyz,software,label,software_kwargs={},parents=[],out_path=None,constraints=[],socket=False,ignore_errors=False):
     d = {"xyz" : xyz, "software" : software, "label" : label, "socket": socket}
+    #polars node mapping
+    if software == "Espresso" or software == "PWDFT":
+        node = MapTaskToNodes()
+        newcommand = node.getCommand()
+        software_kwargs["command"] = newcommand
+    
     if software_kwargs: d["software_kwargs"] = software_kwargs
     if constraints: d["constraints"] = constraints
     d["ignore_errors"] = ignore_errors
@@ -491,9 +510,13 @@ class MolecularTSEstimate(FiretaskBase):
         slab_path = self["slab_path"]
         slab = read(slab_path)
 
+#       cas = SlabAdsorptionSites(full_slab, self.surface_type,allow_6fold=False,composition_effect=False,
+#                        label_sites=True,
+#                        surrogate_metal=self.metal)
+
         cas = SlabAdsorptionSites(slab,facet,allow_6fold=False,composition_effect=False,
-                            label_sites=True,
-                            surrogate_metal=metal)
+                            label_sites=True,tol=0.5,
+                        surrogate_metal='Pt')
 
         adsorbates_path = self["adsorbates_path"]
 
@@ -728,6 +751,12 @@ class MolecularTSNudge(FiretaskBase):
 
 def IRC_firework(xyz,label,out_path=None,spawn_jobs=False,software=None,
         socket=False,software_kwargs={},opt_kwargs={},run_kwargs={},constraints=[],parents=[],ignore_errors=False,forward=True):
+        #polaris node mapping
+        if software == "Espresso" or software == "PWDFT":
+            node = MapTaskToNodes()
+            newcommand = node.getCommand()
+            software_kwargs["command"] = newcommand
+
         if out_path is None: out_path = os.path.join(directory,label+"_irc.traj")
         t1 = MolecularIRC(xyz=xyz,label=label,software=software,
             socket=socket,software_kwargs=software_kwargs,opt_kwargs=opt_kwargs,run_kwargs=run_kwargs,
