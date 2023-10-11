@@ -24,8 +24,9 @@ import logging
 #restart RHE
 import pickle
 import time
-from pynta.polaris import MapTaskToNodes
+from pynta.polaris import createFWorkers
 from pynta.utils import copyDataAndSave
+from pynta.multi_launcher import launch_multiprocess2
 import json
 
 class Pynta:
@@ -508,7 +509,8 @@ class Pynta:
         elif not self.queue and (self.num_jobs == 1 or single_job):
             rapidfire(self.launchpad,self.fworker,nlaunches="infinite")
         else:
-            launch_multiprocess(self.launchpad,self.fworker,"INFO","infinite",self.num_jobs,5)
+            listfworkers = createFWorkers(self.num_jobs)
+            launch_multiprocess2(self.launchpad,listfworkers,"INFO",0,self.num_jobs,5)
 
     def execute(self,generate_initial_ad_guesses=True,calculate_adsorbates=True,
                 calculate_transition_states=True,launch=True):
@@ -593,15 +595,15 @@ class Pynta:
                             '{{pynta.tasks.MolecularVibrationsTask}}',
                             '{{pynta.tasks.MolecularIRC}}']
 
-                if nameTask in nameTasks:
-                    opt_method = newd['_tasks'][0]['opt_method'] if 'opt_method' in newd['_tasks'][0] else None
+                #if nameTask in nameTasks:
+                #    opt_method = newd['_tasks'][0]['opt_method'] if 'opt_method' in newd['_tasks'][0] else None
 
-                    if self.software == "Espresso" or self.software == "PWDFT":
-                        print(" Change: ", newd['_tasks'][0]['software_kwargs']['command'], end='')
-                        node = MapTaskToNodes()
-                        newcommand = node.getCommand()
-                        newd['_tasks'][0]['software_kwargs']['command'] = newcommand
-                        print(" by: ", newcommand)
+                #    if self.software == "Espresso" or self.software == "PWDFT":
+                #        print(" Change: ", newd['_tasks'][0]['software_kwargs']['command'], end='')
+                #        node = MapTaskToNodes()
+                #        newcommand = node.getCommand()
+                #        newd['_tasks'][0]['software_kwargs']['command'] = newcommand
+                #        print(" by: ", newcommand)
                 # Here we work with reset the optimization task
                 # We load the trajectory file and save this structure in the
                 # tree of each uncompleted task
