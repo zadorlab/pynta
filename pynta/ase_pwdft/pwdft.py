@@ -5,8 +5,8 @@ https://github.com/ebylaska/PWDFT
 import os
 import numpy as np
 
-from pwdftio.pwdftwriter import write_pwdft_in
-from pwdftio.pwdftreader import read_pwdft_out
+from .pwdftio.pwdftwriter import write_pwdft_in
+from .pwdftio.pwdftreader import read_pwdft_out
 from ase.units import Hartree
 from ase.calculators.calculator import FileIOCalculator
 
