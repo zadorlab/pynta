@@ -14,7 +14,7 @@ def createCommand(node, software):
         command = 'mpiexec --hosts {} -n 4 --ppn 4 --depth=8 --cpu-bind depth --env OMP_NUM_THREADS=8 --env CUDA_VISIBLE_DEVICES=0,1,2,3 {} -in PREFIX.pwi > PREFIX.pwo'.format(node, binary)
     elif software == 'PWDFT':
         command = 'mpiexec --hosts {} -n 4 --ppn 4 --cpu-bind depth --env OMP_NUM_THREADS=1 --env CUDA_VISIBLE_DEVICES=0,1,2,3 {} PREFIX.nwxi > PREFIX.nwxo'.format(node, binary)
-
+#add NWChem?
     return command
 
 
