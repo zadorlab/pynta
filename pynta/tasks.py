@@ -94,7 +94,7 @@ class MolecularOptimizationTask(OptimizationTask):
         errors = []
         software_kwargs = deepcopy(self["software_kwargs"]) if "software_kwargs" in self.keys() else dict()
         # Mapping nodes to fworkers
-        if self["software"] == "Espresso" or self["software"] == "PWDFT":
+        if self["machine"] == "alcf" and (self["software"] == "Espresso" or self["software"] == "PWDFT"):
             software_kwargs["command"] = createCommand(fw_spec["_fw_env"]["host"], self["software"])
 
         socket = self["socket"] if "socket" in self.keys() else False
@@ -310,7 +310,7 @@ class MolecularOptimizationFailTask(OptimizationTask):
         print(fw_spec)
         software_kwargs = deepcopy(self["software_kwargs"]) if "software_kwargs" in self.keys() else dict()
         # Mapping nodes to fworkers
-        if self["software"] == "Espresso" or self["software"] == "PWDFT":
+        if self["machine"] == "alcf" and (self["software"] == "Espresso" or self["software"] == "PWDFT"):
             software_kwargs["command"] = createCommand(fw_spec["_fw_env"]["host"], self["software"])
         software = name_to_ase_software(self["software"])(**software_kwargs)
 
@@ -357,7 +357,7 @@ class MolecularEnergyTask(EnergyTask):
         energy_kwargs = deepcopy(self["energy_kwargs"]) if "energy_kwargs" in self.keys() else dict()
         ignore_errors = deepcopy(self["ignore_errors"]) if "ignore_errors" in self.keys() else False
         # Mapping nodes to fworkers
-        if self["software"] == "Espresso" or self["software"] == "PWDFT":
+        if self["machine"] == "alcf" and (self["software"] == "Espresso" or self["software"] == "PWDFT"):
             software_kwargs["command"] = createCommand(fw_spec["_fw_env"]["host"], self["software"])
 
         try:
@@ -403,7 +403,7 @@ class MolecularVibrationsTask(VibrationTask):
         label = self["label"]
         software_kwargs = deepcopy(self["software_kwargs"]) if "software_kwargs" in self.keys() else dict()
         # Mapping nodes to fworkers
-        if self["software"] == "Espresso" or self["software"] == "PWDFT":
+        if self["machine"] == "alcf" and (self["software"] == "Espresso" or self["software"] == "PWDFT"):
             software_kwargs["command"] = createCommand(fw_spec["_fw_env"]["host"], self["software"])
         software = name_to_ase_software(self["software"])(**software_kwargs)
         ignore_errors = deepcopy(self["ignore_errors"]) if "ignore_errors" in self.keys() else False
@@ -506,6 +506,8 @@ class MolecularTSEstimate(FiretaskBase):
         Ntsmin = self["Ntsmin"]
         max_num_hfsp_opts = self["max_num_hfsp_opts"]
         slab_path = self["slab_path"]
+        acat_tol = self["acat_tol"] #acat_tol for cas 
+        emt_metal = self["emt_metal"] #acat emt calculator metal
         slab = read(slab_path)
 
 #       cas = SlabAdsorptionSites(full_slab, self.surface_type,allow_6fold=False,composition_effect=False,
@@ -513,8 +515,8 @@ class MolecularTSEstimate(FiretaskBase):
 #                        surrogate_metal=self.metal)
 
         cas = SlabAdsorptionSites(slab,facet,allow_6fold=False,composition_effect=False,
-                            label_sites=True,tol=0.5,
-                        surrogate_metal='Pt')
+                            label_sites=True,tol=acat_tol,
+                        surrogate_metal=emt_metal)
 
         adsorbates_path = self["adsorbates_path"]
 
@@ -767,7 +769,7 @@ class MolecularIRC(FiretaskBase):
         errors = []
         software_kwargs = deepcopy(self["software_kwargs"]) if "software_kwargs" in self.keys() else dict()
         # Mapping nodes to fworkers
-        if self["software"] == "Espresso" or self["software"] == "PWDFT":
+        if self["machine"] == "alcf" and (self["software"] == "Espresso" or self["software"] == "PWDFT"):
             software_kwargs["command"] = createCommand(fw_spec["_fw_env"]["host"], self["software"])
         socket = self["socket"] if "socket" in self.keys() else False
         if socket:
