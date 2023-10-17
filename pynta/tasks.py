@@ -87,7 +87,7 @@ def optimize_firework(xyz,software,machine,label,opt_method=None,sella=None,sock
 
 @explicit_serialize
 class MolecularOptimizationTask(OptimizationTask):
-    required_params = ["software","label"]
+    required_params = ["software","label","machine"]
     optional_params = ["software_kwargs","opt_method",
         "opt_kwargs","run_kwargs", "constraints","sella","order","socket","time_limit_hrs","fmaxhard","ignore_errors","target_site_num","metal","facet"]
     def run_task(self, fw_spec):
