@@ -662,7 +662,7 @@ def collect_firework(xyzs,check_symm,fw_generators,fw_generator_dicts,out_names,
 
 @explicit_serialize
 class MolecularCollect(CollectTask):
-    required_params = ["xyzs","check_symm","fw_generators","fw_generator_dicts","out_names","future_check_symms","label"]
+    required_params = ["xyzs","check_symm","fw_generators","fw_generator_dicts","out_names","future_check_symms","label","machine"]
     def run_task(self, fw_spec):
         xyzs = [xyz for xyz in self["xyzs"] if os.path.exists(xyz)] #if the associated task errored a file may not be present
         if self["check_symm"]:
