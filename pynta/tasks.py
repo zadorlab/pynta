@@ -689,7 +689,6 @@ class MolecularCollect(CollectTask):
             fw_generator = globals()[fw_generator]
             for xyz in xyzs:
                 d = deepcopy(fw_generator_dicts[0][i])
-                d["machine"] = machine
                 d["xyz"] = xyz
                 d["out_path"] = os.path.join(os.path.split(xyz)[0],out_names[0][i])
                 d["label"] = out_names[0][i]
