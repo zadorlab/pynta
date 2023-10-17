@@ -382,6 +382,7 @@ def vibrations_firework(xyz,software,machine,label,software_kwargs={},parents=[]
     if software_kwargs: d["software_kwargs"] = software_kwargs
     if constraints: d["constraints"] = constraints
     d["ignore_errors"] = ignore_errors
+    d["machine"] = machine
     t1 = MolecularVibrationsTask(d)
     directory = os.path.dirname(xyz)
     if out_path is None:
@@ -688,6 +689,7 @@ class MolecularCollect(CollectTask):
             fw_generator = globals()[fw_generator]
             for xyz in xyzs:
                 d = deepcopy(fw_generator_dicts[0][i])
+                d["machine"] = machine
                 d["xyz"] = xyz
                 d["out_path"] = os.path.join(os.path.split(xyz)[0],out_names[0][i])
                 d["label"] = out_names[0][i]
