@@ -404,6 +404,7 @@ class MolecularVibrationsTask(VibrationTask):
         indices = None
         xyz = self['xyz']
         label = self["label"]
+        machine = self["machine"]
         software_kwargs = deepcopy(self["software_kwargs"]) if "software_kwargs" in self.keys() else dict()
         # Mapping nodes to fworkers
         if self["machine"] == "alcf" and (self["software"] == "Espresso" or self["software"] == "PWDFT"):
