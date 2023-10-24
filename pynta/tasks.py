@@ -308,7 +308,6 @@ class MolecularOptimizationFailTask(OptimizationTask):
     optional_params = ["software_kwargs","opt_method",
         "opt_kwargs","run_kwargs"]
     def run_task(self, fw_spec):
-        print(fw_spec)
         software_kwargs = deepcopy(self["software_kwargs"]) if "software_kwargs" in self.keys() else dict()
         # Mapping nodes to fworkers
         if self["machine"] == "alcf" and (self["software"] == "Espresso" or self["software"] == "PWDFT"):
@@ -340,7 +339,7 @@ def energy_firework(xyz,software,machine,label,software_kwargs={},parents=[],out
 
     if software_kwargs: d["software_kwargs"] = software_kwargs
     d["ignore_errors"] = ignore_errors
-    d["machine"] = machine 
+    d["machine"] = machine
     t1 = MolecularEnergyTask(d)
     directory = os.path.dirname(xyz)
     if out_path is None: out_path = os.path.join(directory,label+"_energy.json")
@@ -383,6 +382,7 @@ def vibrations_firework(xyz,software,machine,label,software_kwargs={},parents=[]
     if constraints: d["constraints"] = constraints
     d["ignore_errors"] = ignore_errors
     d["machine"] = machine
+
     t1 = MolecularVibrationsTask(d)
     directory = os.path.dirname(xyz)
     if out_path is None:
@@ -510,7 +510,7 @@ class MolecularTSEstimate(FiretaskBase):
         Ntsmin = self["Ntsmin"]
         max_num_hfsp_opts = self["max_num_hfsp_opts"]
         slab_path = self["slab_path"]
-        acat_tol = self["acat_tol"] #acat_tol for cas 
+        acat_tol = self["acat_tol"] #acat_tol for cas
         emt_metal = self["emt_metal"] #acat emt calculator metal
         slab = read(slab_path)
 
@@ -757,7 +757,8 @@ def IRC_firework(xyz,label,machine,out_path=None,spawn_jobs=False,software=None,
         socket=False,software_kwargs={},opt_kwargs={},run_kwargs={},constraints=[],parents=[],ignore_errors=False,forward=True):
 
         if out_path is None: out_path = os.path.join(directory,label+"_irc.traj")
-        t1 = MolecularIRC(xyz=xyz,label=label,software=software,
+
+        t1 = MolecularIRC(xyz=xyz,label=label,software=software,machine=machine,
             socket=socket,software_kwargs=software_kwargs,opt_kwargs=opt_kwargs,run_kwargs=run_kwargs,
             constraints=constraints,ignore_errors=ignore_errors,forward=forward)
         t2 = FileTransferTask({'files': [{'src': label+'_irc.traj', 'dest': out_path}], 'mode': 'copy', 'ignore_errors' : ignore_errors})
