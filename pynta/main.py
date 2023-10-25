@@ -32,7 +32,7 @@ import json
 class Pynta:
     def __init__(self,path,rxns_file,surface_type,metal,label,launchpad_path=None,fworker_path=None,
         vacuum=8.0,repeats=(3,3,4),slab_path=None,software="Espresso",socket=False,queue=False,njobs_queue=0,a=None,
-        machine="normal",acat_tol=0.5,emt_metal=None,
+        machine=None,acat_tol=0.5,emt_metal=None,
         software_kwargs={'kpts': (3, 3, 1), 'tprnfor': True, 'occupations': 'smearing',
                             'smearing':  'marzari-vanderbilt',
                             'degauss': 0.01, 'ecutwfc': 40, 'nosym': True,
@@ -68,7 +68,7 @@ class Pynta:
         self.metal = metal
         self.adsorbate_fw_dict = dict()
         self.software_kwargs = software_kwargs
-        self.machine = machine #restart available for polaris only
+        self.machine = machine #chose machines for restart
         self.acat_tol = acat_tol #acat site defining tolerance
         self.emt_metal = emt_metal #emt metal for acat site info
 
@@ -402,7 +402,7 @@ class Pynta:
                     optfws2.append(fwopt2)
 
                 vib_obj_dict = {"software": self.software, "label": adsname, "software_kwargs": software_kwargs,
-                    "machine": self.machine, "constraints": ["freeze up to "+str(self.nslab)]}
+                    "constraints": ["freeze up to "+str(self.nslab)]}
 
                 cfw = collect_firework(xyzs,True,["vibrations_firework"],[vib_obj_dict],["vib.json"],[],parents=optfws2,label=adsname)
                 self.adsorbate_fw_dict[adsname] = optfws2
@@ -461,7 +461,7 @@ class Pynta:
                     optfws2.append(fwopt2)
 
                 vib_obj_dict = {"software": self.software, "label": ad, "software_kwargs": software_kwargs,
-                    "machine": self.machine, "constraints": ["freeze up to "+str(self.nslab)]}
+                    "constraints": ["freeze up to "+str(self.nslab)]}
 
                 cfw = collect_firework(xyzs,True,["vibrations_firework"],[vib_obj_dict],["vib.json"],[True,False],parents=optfws2,label=ad,allow_fizzled_parents=False)
                 self.adsorbate_fw_dict[ad] = optfws2
@@ -475,26 +475,26 @@ class Pynta:
         Note the vibrational and IRC calculations are launched at the same time
         """
         if self.software != "XTB":
-            opt_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":self.software_kwargs_TS,"machine": self.machine,
+            opt_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":self.software_kwargs_TS,
                 "run_kwargs": {"fmax" : self.fmaxopt, "steps" : 70},"constraints": ["freeze up to {}".format(self.freeze_ind)],"sella":True,"order":1,}
         else:
-            opt_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":self.software_kwargs_TS,"machine": self.machine,
+            opt_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":self.software_kwargs_TS,
                 "run_kwargs": {"fmax" : 0.02, "steps" : 70},"constraints": ["freeze up to "+str(self.nslab)],"sella":True,"order":1,}
         vib_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":self.software_kwargs,
-                "machine": self.machine, "constraints": ["freeze up to "+str(self.nslab)]}
+                "constraints": ["freeze up to "+str(self.nslab)]}
         IRC_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":self.software_kwargs,
-                "machine": self.machine, "run_kwargs": {"fmax" : self.fmaxirc, "steps" : 70},"constraints":["freeze up to "+str(self.nslab)]}
+                "run_kwargs": {"fmax" : self.fmaxirc, "steps" : 70},"constraints":["freeze up to "+str(self.nslab)]}
         for i,rxn in enumerate(self.rxns_dict):
             ts_path = os.path.join(self.path,"TS"+str(i))
             os.makedirs(ts_path)
             ts_task = MolecularTSEstimate({"rxn": rxn,"ts_path": ts_path,"slab_path": self.slab_path,"adsorbates_path": os.path.join(self.path,"Adsorbates"),
-                "rxns_file": self.rxns_file,"path": self.path,"metal": self.metal,"facet": self.surface_type, "out_path": ts_path, "machine": self.machine,
+                "rxns_file": self.rxns_file,"path": self.path,"metal": self.metal,"facet": self.surface_type, "out_path": ts_path,
                 "spawn_jobs": True, "opt_obj_dict": opt_obj_dict, "vib_obj_dict": vib_obj_dict,
                     "IRC_obj_dict": IRC_obj_dict, "nprocs": 48, "name_to_adjlist_dict": self.name_to_adjlist_dict,
                     "gratom_to_molecule_atom_maps":{sm: {str(k):v for k,v in d.items()} for sm,d in self.gratom_to_molecule_atom_maps.items()},
                     "gratom_to_molecule_surface_atom_maps":{sm: {str(k):v for k,v in d.items()} for sm,d in self.gratom_to_molecule_surface_atom_maps.items()},
                     "nslab":self.nslab,"Eharmtol":self.Eharmtol,"Eharmfiltertol":self.Eharmfiltertol,"Ntsmin":self.Ntsmin,
-                    "max_num_hfsp_opts":self.max_num_hfsp_opts, "acat_tol": self.acat_tol, "emt_metal": self.emt_metal})
+                    "max_num_hfsp_opts":self.max_num_hfsp_opts})
             reactants = rxn["reactant_names"]
             products = rxn["product_names"]
             parents = []
