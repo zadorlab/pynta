@@ -32,7 +32,7 @@ import json
 class Pynta:
     def __init__(self,path,rxns_file,surface_type,metal,label,launchpad_path=None,fworker_path=None,
         vacuum=8.0,repeats=(3,3,4),slab_path=None,software="Espresso",socket=False,queue=False,njobs_queue=0,a=None,
-        machine="normal",acat_tol=0.5,emt_metal=None,
+        machine=None,acat_tol=0.5,emt_metal=None,
         software_kwargs={'kpts': (3, 3, 1), 'tprnfor': True, 'occupations': 'smearing',
                             'smearing':  'marzari-vanderbilt',
                             'degauss': 0.01, 'ecutwfc': 40, 'nosym': True,
