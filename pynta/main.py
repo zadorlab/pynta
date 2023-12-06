@@ -12,7 +12,7 @@ import time
 import yaml
 from copy import deepcopy
 import numpy as np
-from pynta.calculator import get_lattice_parameter
+from pynta.calculator import get_lattice_parameters
 from fireworks import LaunchPad, Workflow
 from fireworks.queue.queue_launcher import rapidfire as rapidfirequeue
 from fireworks.features.multi_launcher import launch_multiprocess
@@ -41,7 +41,7 @@ class Pynta:
         irc_mode="fixed", #choose irc mode: 'skip', 'relaxed', 'fixed'
         lattice_opt_software_kwargs={'kpts': (25,25,25), 'ecutwfc': 70, 'degauss':0.02, 'mixing_mode': 'plain'},
         reset_launchpad=False,queue_adapter_path=None,num_jobs=25,max_num_hfsp_opts=None,#max_num_hfsp_opts is mostly for fast testing
-        Eharmtol=3.0,Eharmfiltertol=30.0,Ntsmin=5,frozen_layers=2,fmaxopt=0.05,fmaxirc=0.1,fmaxopthard=0.05):
+        Eharmtol=3.0,Eharmfiltertol=30.0,Ntsmin=5,frozen_layers=2,fmaxopt=0.05,fmaxirc=0.1,fmaxopthard=0.05,c=None):
 
         self.surface_type = surface_type
         if launchpad_path:
@@ -56,6 +56,7 @@ class Pynta:
         self.vacuum = vacuum
         self.a = a
         self.pbc = pbc
+        self.c = c
         self.software = software
         self.socket = socket
         self.repeats = repeats
@@ -133,14 +134,20 @@ class Pynta:
         slab_type = getattr(ase.build,self.surface_type)
         #optimize the lattice constant
         if self.a is None:
-            a = get_lattice_parameter(self.metal,self.surface_type,self.software,self.lattice_opt_software_kwargs)
-            print("computed lattice constant of: {} Angstroms".format(a))
-            self.a = a
-        else:
-            a = self.a
+            a = get_lattice_parameters(self.metal,self.surface_type,self.software,self.lattice_opt_software_kwargs)
+            print("computed lattice constants of: {} Angstroms".format(a))
+            if isinstance(a,float):
+                self.a = a
+            else:
+                self.a = a[0]
+                self.c = a[1]
+        
         logger.info('Construct slab with optimal lattice constant')
         #construct slab with optimial lattice constant
-        slab = slab_type(self.metal,self.repeats,a,self.vacuum)
+        if self.c:
+            slab = slab_type(symbol=self.metal,size=self.repeats,a=self.a,vacuum=self.vacuum,c=self.c)
+        else:
+            slab = slab_type(symbol=self.metal,size=self.repeats,a=self.a,vacuum=self.vacuum)
         slab.pbc = self.pbc
         write(os.path.join(self.path,"slab_init.xyz"),slab)
         self.slab_path = os.path.join(self.path,"slab.xyz")
