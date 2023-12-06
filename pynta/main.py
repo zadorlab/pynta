@@ -35,7 +35,7 @@ class Pynta:
         TS_opt_software_kwargs=None,
         lattice_opt_software_kwargs={'kpts': (25,25,25), 'ecutwfc': 70, 'degauss':0.02, 'mixing_mode': 'plain'},
         reset_launchpad=False,queue_adapter_path=None,num_jobs=25,max_num_hfsp_opts=None,#max_num_hfsp_opts is mostly for fast testing
-        Eharmtol=3.0,Eharmfiltertol=30.0,Ntsmin=5,frozen_layers=2,fmaxopt=0.05,fmaxirc=0.1,fmaxopthard=0.05):
+        Eharmtol=3.0,Eharmfiltertol=30.0,Ntsmin=5,frozen_layers=2,fmaxopt=0.05,fmaxirc=0.1,fmaxopthard=0.05,c=None):
 
         self.surface_type = surface_type
         if launchpad_path:
@@ -50,6 +50,7 @@ class Pynta:
         self.vacuum = vacuum
         self.a = a
         self.pbc = pbc
+        self.c = c
         self.software = software
         self.socket = socket
         self.repeats = repeats
@@ -124,13 +125,18 @@ class Pynta:
         slab_type = getattr(ase.build,self.surface_type)
         #optimize the lattice constant
         if self.a is None:
-            a = get_lattice_parameter(self.metal,self.surface_type,self.software,self.lattice_opt_software_kwargs)
-            print("computed lattice constant of: {} Angstroms".format(a))
-            self.a = a
+            a = get_lattice_parameters(self.metal,self.surface_type,self.software,self.lattice_opt_software_kwargs)
+            print("computed lattice constants of: {} Angstroms".format(a))
+            if not isinstance(a,list):
+                self.a = a
+            else:
+                self.a = a[0]
+                self.c = a[1]
         else:
             a = self.a
+            c = self.c
         #construct slab with optimial lattice constant
-        slab = slab_type(self.metal,self.repeats,a,self.vacuum)
+        slab = slab_type(self.metal,self.repeats,a,self.vacuum,c=c)
         slab.pbc = self.pbc
         write(os.path.join(self.path,"slab_init.xyz"),slab)
         self.slab_path = os.path.join(self.path,"slab.xyz")
