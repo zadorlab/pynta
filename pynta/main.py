@@ -12,7 +12,7 @@ import time
 import yaml
 from copy import deepcopy
 import numpy as np
-from pynta.calculator import get_lattice_parameter
+from pynta.calculator import get_lattice_parameters
 from fireworks import LaunchPad, Workflow
 from fireworks.queue.queue_launcher import rapidfire as rapidfirequeue
 from fireworks.features.multi_launcher import launch_multiprocess
