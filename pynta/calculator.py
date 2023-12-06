@@ -391,7 +391,8 @@ def get_lattice_parameters(metal,surface_type,software,software_kwargs,da=0.1,op
             return slab.get_potential_energy()
         if a0 is None:
             a0 = reference_states[chemical_symbols.index(metal)]['a']
-        c0 = reference_states[chemical_symbols.index(metal)]['c']
+        cpera = reference_states[chemical_symbols.index(metal)]['c/a']
+        c0 = cpera * a0
         init_guess = [a0,c0]
         out = opt.minimize(f,x0=init_guess,options=options)
         print(out)
