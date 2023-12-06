@@ -348,7 +348,7 @@ def add_sella_constraint(cons,d):
     constructor(**constraint_dict)
     return
 
-def get_lattice_parameter(metal,surface_type,software,software_kwargs,da=0.1,options={"xatol":1e-4},a0=None):
+def get_lattice_parameters(metal,surface_type,software,software_kwargs,da=0.1,options={"xatol":1e-4},a0=None):
     soft = name_to_ase_software(software)(**software_kwargs)
     if surface_type != "hcp0001":
         def f(a):
