@@ -348,35 +348,50 @@ def add_sella_constraint(cons,d):
 
 def get_lattice_parameter(metal,surface_type,software,software_kwargs,da=0.1,options={"xatol":1e-4},a0=None):
     soft = name_to_ase_software(software)(**software_kwargs)
-    def f(a):
-        slab = bulk(metal,surface_type[:3],a=a)
-        slab.calc = soft
-        slab.pbc = (True, True, True)
-        return slab.get_potential_energy()
-    if a0 is None:
-        a0 = reference_states[chemical_symbols.index(metal)]['a']
-    avals = np.arange(a0-da,a0+da,0.01)
-    outavals = []
-    Evals = []
-    print("a,E")
-    for a in avals:
-        try:
-            E = f(a)
-            outavals.append(a)
-            Evals.append(E)
-            print((a,E))
-        except:
-            pass
-    print("a values:")
-    print(outavals)
-    print("E values:")
-    print(Evals)
-    inds = np.argsort(np.array(Evals))[:7]
-    p = np.polyfit(np.array(outavals)[inds],np.array(Evals)[inds],2)
-    a = -p[1]/(2.0*p[0])
-    print("ASE reference a: {}".format(a0))
-    print("Interpolated a: {}".format(a))
-    out = opt.minimize_scalar(f,method='bounded',bounds=(a-0.01,a+0.01),options=options)
-    print(out)
-    print("Optimized a: {}".format(out.x))
-    return out.x
+    if surface_type != "hcp0001":
+        def f(a):
+            slab = bulk(metal,surface_type[:3],a=a)
+            slab.calc = soft
+            slab.pbc = (True, True, True)
+            return slab.get_potential_energy()
+        if a0 is None:
+            a0 = reference_states[chemical_symbols.index(metal)]['a']
+        avals = np.arange(a0-da,a0+da,0.01)
+        outavals = []
+        Evals = []
+        print("a,E")
+        for a in avals:
+            try:
+                E = f(a)
+                outavals.append(a)
+                Evals.append(E)
+                print((a,E))
+            except:
+                pass
+        print("a values:")
+        print(outavals)
+        print("E values:")
+        print(Evals)
+        inds = np.argsort(np.array(Evals))[:7]
+        p = np.polyfit(np.array(outavals)[inds],np.array(Evals)[inds],2)
+        a = -p[1]/(2.0*p[0])
+        print("ASE reference a: {}".format(a0))
+        print("Interpolated a: {}".format(a))
+        out = opt.minimize_scalar(f,method='bounded',bounds=(a-0.01,a+0.01),options=options)
+        print(out)
+        print("Optimized a: {}".format(out.x))
+        return out.x
+    else:
+        def f(a):
+            slab = bulk(metal,surface_type[:3],a=a[0],c=a[1])
+            slab.calc = soft
+            slab.pbc = (True, True, True)
+            return slab.get_potential_energy()
+        if a0 is None:
+            a0 = reference_states[chemical_symbols.index(metal)]['a']
+        c0 = reference_states[chemical_symbols.index(metal)]['c']
+        init_guess = [a0,c0]
+        out = opt.minimize(f,x0=init_guess,options=options)
+        print(out)
+        print("Optimized a,c: {}".format(out.x))
+        return out.x
