@@ -61,6 +61,7 @@ class Pynta:
         self.vacuum = vacuum
         self.a = a
         self.pbc = pbc
+        self.c = c
         self.software = software
         self.socket = socket
         self.repeats = repeats
@@ -145,7 +146,10 @@ class Pynta:
             a = self.a
         logger.info('Construct slab with optimal lattice constant')
         #construct slab with optimial lattice constant
-        slab = slab_type(self.metal,self.repeats,a,self.vacuum)
+        if self.c:
+            slab = slab_type(symbol=self.metal,size=self.repeats,a=self.a,vacuum=self.vacuum,c=self.c)
+        else:
+            slab = slab_type(symbol=self.metal,size=self.repeats,a=self.a,vacuum=self.vacuum)
         slab.pbc = self.pbc
         write(os.path.join(self.path,"slab_init.xyz"),slab)
         self.slab_path = os.path.join(self.path,"slab.xyz")
