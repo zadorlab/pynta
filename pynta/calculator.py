@@ -383,7 +383,7 @@ def get_lattice_parameters(metal,surface_type,software,software_kwargs,da=0.1,a0
         print("Optimized a: {}".format(out.x))
         return out.x
     else:
-        options={"gtol":1e-8,'xrtol':0.001}
+        options={"gtol":1e-8,'xrtol':0.0001}
         def f(a):
             slab = bulk(metal,surface_type[:3],a=a[0],c=a[1])
             slab.calc = soft
