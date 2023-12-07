@@ -348,9 +348,10 @@ def add_sella_constraint(cons,d):
     constructor(**constraint_dict)
     return
 
-def get_lattice_parameters(metal,surface_type,software,software_kwargs,da=0.1,options={"xatol":1e-4},a0=None):
+def get_lattice_parameters(metal,surface_type,software,software_kwargs,da=0.1,a0=None):
     soft = name_to_ase_software(software)(**software_kwargs)
     if surface_type != "hcp0001":
+        options={"xatol":1e-4}
         def f(a):
             slab = bulk(metal,surface_type[:3],a=a)
             slab.calc = soft
@@ -384,6 +385,7 @@ def get_lattice_parameters(metal,surface_type,software,software_kwargs,da=0.1,op
         print("Optimized a: {}".format(out.x))
         return out.x
     else:
+        options={"gtol":1e-6}
         def f(a):
             slab = bulk(metal,surface_type[:3],a=a[0],c=a[1])
             slab.calc = soft
@@ -394,7 +396,7 @@ def get_lattice_parameters(metal,surface_type,software,software_kwargs,da=0.1,op
         cpera = reference_states[chemical_symbols.index(metal)]['c/a']
         c0 = cpera * a0
         init_guess = [a0,c0]
-        out = opt.minimize(f,x0=init_guess,options=options)
+        out = opt.minimize(f,x0=init_guess,method="BFGS",options=options)
         print(out)
         print("Optimized a,c: {}".format(out.x))
         return out.x
