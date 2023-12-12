@@ -9,7 +9,7 @@
 
 # Pynta
 
-![Pynta_Logo](https://github.com/zadorlab/pynta/assets/40675474/16319699-f628-481b-a093-7741acbed906)
+![image](https://github.com/zadorlab/pynta/assets/40675474/3a55408a-ab09-446e-8efb-a1fbf73880c1)
 
 ``pynta`` is an automated workflow code to enable the calculation of thermochemistry
 and rate coefficients for reactions involving metallic surfaces.
@@ -33,8 +33,8 @@ Pynta is designed to work with the workflow code
 [Fireworks](https://materialsproject.github.io/fireworks/), which provides users
 with significant flexiblity in running Pynta.
 
-<center><img src='./workflow_idea.png' style="width:400px"></center>
-<br>
+
+
 
 # Pynta Documentation
 
@@ -42,7 +42,27 @@ Instructions on how to install and run Pynta are available in the documentation 
 
 # Acknowledgments
 
-If you are using `pynta` or you wish to use it, let me know!
+Please cite our paper if you are using Pynta:
+
+Matthew S. Johnson, Maciej Gierada, Eric D. Hermes, David H. Bross, Khachik Sargsyan, Habib N. Najm, and Judit Zádor
+Journal of Chemical Information and Modeling 2023 63 (16), 5153-5168 https://doi.org/10.1021/acs.jcim.3c00948 
+
+```
+@article{Johnson2023,
+   author = {Johnson, Matthew S. and Gierada, Maciej and Hermes, Eric D. and Bross, David H. and Sargsyan, Khachik and Najm, Habib N. and Zádor, Judit},
+   title = {Pynta─An Automated Workflow for Calculation of Surface and Gas–Surface Kinetics},
+   journal = {Journal of Chemical Information and Modeling},
+   volume = {63},
+   number = {16},
+   pages = {5153-5168},
+   note = {doi: 10.1021/acs.jcim.3c00948},
+   ISSN = {1549-9596},
+   DOI = {10.1021/acs.jcim.3c00948},
+   url = {https://doi.org/10.1021/acs.jcim.3c00948},
+   year = {2023},
+   type = {Journal Article}
+}
+```
 
 # Copyright Notice
 
