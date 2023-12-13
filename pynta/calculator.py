@@ -383,7 +383,7 @@ def get_lattice_parameters(metal,surface_type,software,software_kwargs,da=0.1,a0
         print("Optimized a: {}".format(out.x))
         return out.x
     else:
-        options={"gtol":1e-8,'xrtol':0.0001}
+        options={"gtol":1e-10,'xrtol':0.0001}
         def f(a):
             slab = bulk(metal,surface_type[:3],a=a[0],c=a[1])
             slab.calc = soft
@@ -393,7 +393,30 @@ def get_lattice_parameters(metal,surface_type,software,software_kwargs,da=0.1,a0
             a0 = reference_states[chemical_symbols.index(metal)]['a']
         cpera = reference_states[chemical_symbols.index(metal)]['c/a']
         c0 = cpera * a0
-        init_guess = [a0,c0]
+        print("ASE Reference a,c: {}".format((a0,c0)))
+        
+        dx = 0.01
+        avals = a0 * np.linspace(1 - dx, 1 + dx, 3)
+        cvals = c0 * np.linspace(1 - dx, 1 + dx, 3)
+        A = np.array([np.ones(len(avals)),avals,cvals,avals**2,avals*cvals,cvals**2]).T
+        Evals = np.zeros(9)
+        iter = 0
+        for a in avals:
+            for c in cvals:
+                Evals[iter] = f([a,c])
+                iter += 1
+        
+        p = np.linalg.lstsq(A,Evals)[0]
+        
+        p1 = p[1:3]
+        p2 = np.array([(2 * p[3], p[4]),
+               (p[4], 2 * p[5])])
+        a02, c02 = np.linalg.solve(p2.T, -p1)
+        
+        init_guess = [a02,c02]
+        
+        print("Interpolated a,c: {}".format((a02,c02)))
+        
         out = opt.minimize(f,x0=init_guess,method="BFGS",options=options)
         print(out)
         print("Optimized a,c: {}".format(out.x))
