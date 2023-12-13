@@ -398,11 +398,12 @@ def get_lattice_parameters(metal,surface_type,software,software_kwargs,da=0.1,a0
         dx = 0.01
         avals = a0 * np.linspace(1 - dx, 1 + dx, 3)
         cvals = c0 * np.linspace(1 - dx, 1 + dx, 3)
-        A = np.array([np.ones(len(avals)),avals,cvals,avals**2,avals*cvals,cvals**2]).T
+        A = np.zeros((9,6))
         Evals = np.zeros(9)
         iter = 0
         for a in avals:
             for c in cvals:
+                A[iter,:] = np.array([1.0,a,c,a**2,a*c,c**2]) 
                 Evals[iter] = f([a,c])
                 iter += 1
         
