@@ -123,7 +123,7 @@ class Pynta:
         if self.a is None:
             a = get_lattice_parameters(self.metal,self.surface_type,self.software,self.lattice_opt_software_kwargs)
             print("computed lattice constants of: {} Angstroms".format(a))
-            if not isinstance(a,list):
+            if isinstance(a,float):
                 self.a = a
             else:
                 self.a = a[0]
