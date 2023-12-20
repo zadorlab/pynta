@@ -30,6 +30,7 @@ def get_unique_sym(geoms):
 
     for geom in geoms:
         adsorbate_atom_obj = read(geom)
+        adsorbate_atom_obj.set_constraint()
         adsorbate_atom_obj.pbc = True
         adsorbate_atom_obj.set_constraint() # Reset constraints for comparison
         comparision = comparator.compare(
@@ -56,6 +57,7 @@ def get_unique_sym_indices(geoms):
 
     for geom in geoms:
         adsorbate_atom_obj = read(geom)
+        adsorbate_atom_obj.set_constraint()
         adsorbate_atom_obj.pbc = True
         adsorbate_atom_obj.set_constraint() # Reset constraints before comparison
         comparision = comparator.compare(
@@ -87,6 +89,7 @@ def get_unique_sym_structs(geoms):
 
     for i,geom in enumerate(geoms_copy):
         adsorbate_atom_obj = geom
+        adsorbate_atom_obj.set_constraint()
         adsorbate_atom_obj.pbc = True
         adsorbate_atom_obj.set_constraint() # Reset constraints before comparison
         comparision = comparator.compare(
@@ -116,6 +119,7 @@ def get_unique_sym_struct_indices(geoms):
 
     for i,geom in enumerate(geoms_copy):
         adsorbate_atom_obj = geom
+        adsorbate_atom_obj.set_constraint()
         adsorbate_atom_obj.pbc = True
         adsorbate_atom_obj.set_constraint() # Reset constraints before comparison
         comparision = comparator.compare(
@@ -145,6 +149,7 @@ def get_unique_sym_struct_index_clusters(geoms):
 
     for i,geom in enumerate(geoms_copy):
         adsorbate_atom_obj = geom
+        adsorbate_atom_obj.set_constraint()
         adsorbate_atom_obj.pbc = True
         adsorbate_atom_obj.set_constraint() # Reset constraints before comparison
         comparison = None
@@ -180,6 +185,7 @@ def filter_nonunique_TS_guess_indices(geoms,Es):
 
     for j,geom in enumerate(geoms):
         adsorbate_atom_obj = read(geom)
+        adsorbate_atom_obj.set_constraint()
         adsorbate_atom_obj.pbc = True
         adsorbate_atom_obj.set_constraint() # Reset constraints before comparison
         for i,good_adsorbate in enumerate(good_adsorbates_atom_obj_list):
