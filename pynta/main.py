@@ -41,7 +41,8 @@ class Pynta:
         irc_mode="fixed", #choose irc mode: 'skip', 'relaxed', 'fixed'
         lattice_opt_software_kwargs={'kpts': (25,25,25), 'ecutwfc': 70, 'degauss':0.02, 'mixing_mode': 'plain'},
         reset_launchpad=False,queue_adapter_path=None,num_jobs=25,max_num_hfsp_opts=None,#max_num_hfsp_opts is mostly for fast testing
-        Eharmtol=3.0,Eharmfiltertol=30.0,Ntsmin=5,frozen_layers=2,fmaxopt=0.05,fmaxirc=0.1,fmaxopthard=0.05,c=None):
+        Eharmtol=3.0,Eharmfiltertol=30.0,Ntsmin=5,frozen_layers=2,fmaxopt=0.05,fmaxirc=0.1,fmaxopthard=0.05,c=None,
+        surrogate_metal=None):
 
         self.surface_type = surface_type
         if launchpad_path:
@@ -64,6 +65,10 @@ class Pynta:
         self.facet = metal + surface_type
         self.fws = []
         self.metal = metal
+        if surrogate_metal is None:
+            self.surrogate_metal = metal
+        else:
+            self.surrogate_metal = surrogate_metal
         self.adsorbate_fw_dict = dict()
         self.software_kwargs = software_kwargs
         self.irc_mode = irc_mode
@@ -171,7 +176,7 @@ class Pynta:
         full_slab = self.slab
         cas = SlabAdsorptionSites(full_slab, self.surface_type,allow_6fold=False,composition_effect=False,
                         label_sites=True,
-                        surrogate_metal=self.metal)
+                        surrogate_metal=self.surrogate_metal)
 
         self.cas = cas
 
@@ -496,7 +501,7 @@ class Pynta:
                     "gratom_to_molecule_atom_maps":{sm: {str(k):v for k,v in d.items()} for sm,d in self.gratom_to_molecule_atom_maps.items()},
                     "gratom_to_molecule_surface_atom_maps":{sm: {str(k):v for k,v in d.items()} for sm,d in self.gratom_to_molecule_surface_atom_maps.items()},
                     "nslab":self.nslab,"Eharmtol":self.Eharmtol,"Eharmfiltertol":self.Eharmfiltertol,"Ntsmin":self.Ntsmin,
-                    "max_num_hfsp_opts":self.max_num_hfsp_opts})
+                    "max_num_hfsp_opts":self.max_num_hfsp_opts, "surrogate_metal":self.surrogate_metal})
             reactants = rxn["reactant_names"]
             products = rxn["product_names"]
             parents = []
