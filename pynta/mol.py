@@ -18,6 +18,7 @@ from pynta.calculator import run_harmonically_forced_xtb
 from rdkit import Chem
 from copy import deepcopy
 import numpy as np
+import random
 
 def get_desorbed_with_map(mol):
     molcopy = mol.copy(deep=True)
@@ -302,6 +303,13 @@ def add_adsorbate_to_site(atoms, adsorbate, surf_ind, site, height=None,
                 a.position = rm_n @ a.position
 
     ads.translate(pos - bondpos)
+    # Randomly offsetting atoms to avoid highly symmetric structures
+    for atom in ads:
+        x_trans = random.choice([-0.05, 0.05])
+        y_trans = random.choice([-0.05, 0.05])
+        atom.position[0] += x_trans
+        atom.position[1] += y_trans
+
     atoms += ads
     if ads.get_chemical_formula() == 'H2':
         shift = (atoms.positions[-2] - atoms.positions[-1]) / 2
