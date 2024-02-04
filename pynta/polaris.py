@@ -8,7 +8,7 @@ from fireworks.core.fworker import FWorker
 def createCommand(node, software):
     binary = os.environ.get("EXE")
     if binary is None:
-        binary = '/lus/eagle/projects/catalysis_aesp/abagusetty/qe-7.1/build_cuda_nompiaware/bin/pw.x'
+        binary = '/lus/eagle/projects/catalysis_aesp/raymundohe/soft/qe-7.1/build_cuda_nogpuawarempi_openmp/bin/pw.x'
 
     if software == 'Espresso':
         command = 'mpiexec --hosts {} -n 4 --ppn 4 --depth=8 --cpu-bind depth --env OMP_NUM_THREADS=8 --env CUDA_VISIBLE_DEVICES=0,1,2,3 {} -in PREFIX.pwi > PREFIX.pwo'.format(node, binary)
@@ -35,6 +35,7 @@ def createFWorkers(num_jobs):
 
     for i in range(num_jobs):
         host = nodes_list[i]
+        print("host", host)
         env = {'host': host}
 
         fworkers.append(FWorker(env=env))
