@@ -287,7 +287,7 @@ def run_harmonically_forced_xtb_no_pbc(atoms,atom_bond_potentials,site_bond_pote
     bigad.set_constraint(out_constraints)
     bigad.calc = hfxtb
 
-    opt = Sella(bigad,trajectory="xtbharm.traj",order=0)
+    opt = Sella(bigad,trajectory="xtbharm.traj",order=0,eta=1e-3)
 
     try:
         opt.run(fmax=0.02,steps=150)
