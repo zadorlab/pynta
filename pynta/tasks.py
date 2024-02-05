@@ -59,7 +59,11 @@ class DoNothingTask(FiretaskBase):
         return FWAction()
 
 def optimize_firework(xyz,software,machine,label,opt_method=None,sella=None,socket=False,order=0,software_kwargs={},opt_kwargs={},
+<<<<<<< HEAD
                       run_kwargs={},constraints=[],parents=[],out_path=None,time_limit_hrs=np.inf,fmaxhard=0.0,ignore_errors=False,
+=======
+                      run_kwargs={},constraints=[],parents=[],out_path=None,time_limit_hrs=np.inf,fmaxhard=0.10,ignore_errors=False,
+>>>>>>> 83f979f (fmax value hardcoded to 0.1 (temporarily))
                       target_site_num=None,metal=None,facet=None,priority=1,allow_fizzled_parents=False):
     d = {"xyz" : xyz, "software" : software,"label" : label, "machine":machine}
     if opt_method: d["opt_method"] = opt_method
@@ -217,7 +221,7 @@ class MolecularOptimizationTask(OptimizationTask):
 
             sp.set_constraint(out_constraints)
 
-            opt = Sella(sp,trajectory=label+".traj",order=order)
+            opt = Sella(sp,trajectory=label+".traj",order=order,eta=1e-3)
             try:
                 if np.isinf(time_limit_hrs):
                     opt.run(**run_kwargs)
@@ -247,6 +251,8 @@ class MolecularOptimizationTask(OptimizationTask):
             fmax = np.inf
             try:
                 fmax = get_fmax(sp)
+                print("fmax",fmax)
+                print("fmaxhard",fmaxhard)
             except:
                 pass
             try:
@@ -324,7 +330,7 @@ class MolecularOptimizationFailTask(OptimizationTask):
 
         sp.calc = software
         opt = opt_method(sp,trajectory=label+".traj")
-        opt.run(fmax=0.02,steps=2)
+        opt.run(fmax=0.50,steps=2)
 
         if not opt.converged():
             fw = restart_opt_firework(self,fw_spec["_tasks"])
@@ -521,7 +527,11 @@ class MolecularTSEstimate(FiretaskBase):
         cas = SlabAdsorptionSites(slab,facet,allow_6fold=False,composition_effect=False,
                             label_sites=True,tol=acat_tol,
                         surrogate_metal=emt_metal)
+<<<<<<< HEAD
 
+=======
+#
+>>>>>>> 83f979f (fmax value hardcoded to 0.1 (temporarily))
         adsorbates_path = self["adsorbates_path"]
 
 
@@ -543,7 +553,7 @@ class MolecularTSEstimate(FiretaskBase):
         product_mols = [mol_dict[name] for name in product_names]
 
         adsorbates = get_unique_optimized_adsorbates(rxn,adsorbates_path,mol_dict,cas,gratom_to_molecule_surface_atom_maps,nslab)
-
+        print("adsorbate_path",adsorbates_path)
         forward,species_names = determine_TS_construction(reactant_names,
                     reactant_mols,product_names,product_mols)
 
