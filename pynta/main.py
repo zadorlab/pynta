@@ -504,6 +504,7 @@ class Pynta:
         """
         Call appropriate rapidfire function
         """
+<<<<<<< HEAD
         if self.queue:
             rapidfirequeue(self.launchpad,self.fworker,self.qadapter,njobs_queue=self.njobs_queue,nlaunches="infinite")
         elif not self.queue and (self.num_jobs == 1 or single_job):
@@ -511,6 +512,25 @@ class Pynta:
         else:
             listfworkers = createFWorkers(self.num_jobs)
             launch_multiprocess2(self.launchpad,listfworkers,"INFO",0,self.num_jobs,5)
+=======
+        if self.machine == "alcf":
+            print("You are using alcf machine: if you want to restart, run pyn.reset(wfid='1')")
+            if self.queue:
+                rapidfirequeue(self.launchpad,self.fworker,self.qadapter,njobs_queue=self.njobs_queue,nlaunches="infinite")
+            elif not self.queue and (self.num_jobs == 1 or single_job):
+                rapidfire(self.launchpad,self.fworker,nlaunches="infinite")
+            else:
+                listfworkers = createFWorkers(self.num_jobs)
+                launch_multiprocess2(self.launchpad,listfworkers,"INFO",0,self.num_jobs,5)
+        else:
+            print("machine choice is not alcf: check your Fireworks Workflow id before restart Pynta")
+            if self.queue:
+                rapidfirequeue(self.launchpad,self.fworker,self.qadapter,njobs_queue=self.njobs_queue,nlaunches="infinite")
+            elif not self.queue and (self.num_jobs == 1 or single_job):
+                rapidfire(self.launchpad,self.fworker,nlaunches="infinite")
+            else:
+                launch_multiprocess(self.launchpad,self.fworker,"INFO","infinite",self.num_jobs,5)
+>>>>>>> c8278d3 (modify reset() to add workflow id)
 
     def execute(self,generate_initial_ad_guesses=True,calculate_adsorbates=True,
                 calculate_transition_states=True,launch=True):
@@ -569,9 +589,11 @@ class Pynta:
         self.launch()
 
 #restart option: RHE
-    def reset(self):
+    def reset(self,wfid):
+
+        id_number = int(wfid)
         # Get the information of the workflow
-        wf1 = self.launchpad.get_wf_summary_dict(1, mode='more')
+        wf1 = self.launchpad.get_wf_summary_dict(id_number, mode='more')
 
         # Save the states of the workflow
         wf_states = wf1['states']
