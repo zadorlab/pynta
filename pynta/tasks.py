@@ -523,11 +523,6 @@ class MolecularTSEstimate(FiretaskBase):
         cas = SlabAdsorptionSites(slab,facet,allow_6fold=False,composition_effect=False,
                             label_sites=True,tol=acat_tol,
                         surrogate_metal=emt_metal)
-<<<<<<< HEAD
-
-=======
-#
->>>>>>> 83f979f (fmax value hardcoded to 0.1 (temporarily))
         adsorbates_path = self["adsorbates_path"]
 
 
