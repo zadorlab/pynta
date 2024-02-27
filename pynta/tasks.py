@@ -217,7 +217,7 @@ class MolecularOptimizationTask(OptimizationTask):
 
             sp.set_constraint(out_constraints)
 
-            opt = Sella(sp,trajectory=label+".traj",order=order)
+            opt = Sella(sp,trajectory=label+".traj",order=order,eta=1e-3)
             try:
                 if np.isinf(time_limit_hrs):
                     opt.run(**run_kwargs)
@@ -247,6 +247,8 @@ class MolecularOptimizationTask(OptimizationTask):
             fmax = np.inf
             try:
                 fmax = get_fmax(sp)
+                print("fmax",fmax)
+                print("fmaxhard",fmaxhard)
             except:
                 pass
             try:
@@ -324,7 +326,7 @@ class MolecularOptimizationFailTask(OptimizationTask):
 
         sp.calc = software
         opt = opt_method(sp,trajectory=label+".traj")
-        opt.run(fmax=0.02,steps=2)
+        opt.run(fmax=0.50,steps=2)
 
         if not opt.converged():
             fw = restart_opt_firework(self,fw_spec["_tasks"])
@@ -521,7 +523,6 @@ class MolecularTSEstimate(FiretaskBase):
         cas = SlabAdsorptionSites(slab,facet,allow_6fold=False,composition_effect=False,
                             label_sites=True,tol=acat_tol,
                         surrogate_metal=emt_metal)
-
         adsorbates_path = self["adsorbates_path"]
 
 
@@ -543,7 +544,7 @@ class MolecularTSEstimate(FiretaskBase):
         product_mols = [mol_dict[name] for name in product_names]
 
         adsorbates = get_unique_optimized_adsorbates(rxn,adsorbates_path,mol_dict,cas,gratom_to_molecule_surface_atom_maps,nslab)
-
+        print("adsorbate_path",adsorbates_path)
         forward,species_names = determine_TS_construction(reactant_names,
                     reactant_mols,product_names,product_mols)
 

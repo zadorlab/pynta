@@ -32,7 +32,7 @@ import json
 class Pynta:
     def __init__(self,path,rxns_file,surface_type,metal,label,launchpad_path=None,fworker_path=None,
         vacuum=8.0,repeats=(3,3,4),slab_path=None,software="Espresso",socket=False,queue=False,njobs_queue=0,a=None,
-        machine=None,acat_tol=0.5,emt_metal=None,
+        machine=None,
         software_kwargs={'kpts': (3, 3, 1), 'tprnfor': True, 'occupations': 'smearing',
                             'smearing':  'marzari-vanderbilt',
                             'degauss': 0.01, 'ecutwfc': 40, 'nosym': True,
@@ -68,9 +68,7 @@ class Pynta:
         self.metal = metal
         self.adsorbate_fw_dict = dict()
         self.software_kwargs = software_kwargs
-        self.machine = machine #restart available for polaris only
-        self.acat_tol = acat_tol #acat site defining tolerance
-        self.emt_metal = emt_metal #emt metal for acat site info
+        self.machine = machine #need to specify 'alcf' or other machine of choice
 
         if software_kwargs_gas:
             self.software_kwargs_gas = software_kwargs_gas
@@ -168,8 +166,8 @@ class Pynta:
 #                        surrogate_metal=self.metal)
 
             cas = SlabAdsorptionSites(full_slab, self.surface_type,allow_6fold=False,composition_effect=False,
-                        label_sites=True, tol=self.acat_tol,
-                        surrogate_metal=self.emt_metal)
+                        label_sites=True, tol=0.5,
+                        surrogate_metal='Pt')
 
             self.cas = cas
 
@@ -509,6 +507,7 @@ class Pynta:
         Call appropriate rapidfire function
         """
         if self.machine == "alcf":
+            print("You are using alcf machine: if you want to restart, run pyn.reset(wfid='1')")
             if self.queue:
                 rapidfirequeue(self.launchpad,self.fworker,self.qadapter,njobs_queue=self.njobs_queue,nlaunches="infinite")
             elif not self.queue and (self.num_jobs == 1 or single_job):
@@ -517,7 +516,7 @@ class Pynta:
                 listfworkers = createFWorkers(self.num_jobs)
                 launch_multiprocess2(self.launchpad,listfworkers,"INFO",0,self.num_jobs,5)
         else:
-            print("machine choice is not alcf")
+            print("machine choice is not alcf: check your Fireworks Workflow id before restart Pynta")
             if self.queue:
                 rapidfirequeue(self.launchpad,self.fworker,self.qadapter,njobs_queue=self.njobs_queue,nlaunches="infinite")
             elif not self.queue and (self.num_jobs == 1 or single_job):
@@ -582,9 +581,11 @@ class Pynta:
         self.launch()
 
 #restart option: RHE
-    def reset(self):
+    def reset(self,wfid):
+
+        id_number = int(wfid)
         # Get the information of the workflow
-        wf1 = self.launchpad.get_wf_summary_dict(1, mode='more')
+        wf1 = self.launchpad.get_wf_summary_dict(id_number, mode='more')
 
         # Save the states of the workflow
         wf_states = wf1['states']
