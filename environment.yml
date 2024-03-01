@@ -16,7 +16,7 @@ dependencies:
   - anaconda::glpk
   - fireworks
   - jax <=0.2.28
-  - xtb >=6.4.1
+  - xtb =6.4.1
   - xtb-python >=20.2
   - rmgmolecule
   - acat
