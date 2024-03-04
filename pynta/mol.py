@@ -812,8 +812,14 @@ def get_bond_lengths_sites(mol,ads,atom_map,surf_atom_map,nslab,facet="fcc111",m
 
     return bondlengths,sites,sitelengths
 
-def get_name(mol):
+def get_name(mol,mol_names):
     try:
-        return mol.to_smiles()
+        basename = mol.to_smiles()
     except:
-        return mol.to_adjacency_list().replace("\n"," ")[:-1]
+        basename = mol.to_adjacency_list().replace("\n"," ")[:-1]
+    i = 0 
+    name = basename
+    while name in mol_names:
+        i += 1
+        name = basename + "-" + str(i)
+    return name

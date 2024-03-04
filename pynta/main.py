@@ -187,18 +187,19 @@ class Pynta:
                     mols.append(mol)
                     r["product_mols"].append(mol)
 
-        unique_mols = []
-        for mol in mols:
-            for m in unique_mols:
-                if mol.is_isomorphic(m):
-                    break
-            else:
-                unique_mols.append(mol)
-
+        # unique_mols = []
+        # for mol in mols:
+        #     for m in unique_mols:
+        #         if mol.is_isomorphic(m):
+        #             break
+        #     else:
+        #         unique_mols.append(mol)
+        unique_mols = mols[:]
         for mol in unique_mols:
             mol.multiplicity = mol.get_radical_count() + 1
-
-        mol_dict = {get_name(mol):mol for mol in unique_mols}
+        mol_dict = dict()
+        for mol in unique_mols:
+            mol_dict[get_name(mol,mol_dict.keys())] = mol
         self.mol_dict = mol_dict
         self.name_to_adjlist_dict = {sm:mol.to_adjacency_list() for sm,mol in mol_dict.items()}
 
