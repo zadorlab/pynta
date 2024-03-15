@@ -327,11 +327,13 @@ class Pynta:
                             constraints = ["freeze up to {}".format(self.freeze_ind)]
                         else:
                             constraints = ["freeze up to "+str(self.nslab)]
+                        vib_constraints = ["freeze up to "+str(self.nslab)]
                     else: #gas phase
                         big_slab_ads = structure
                         target_site_num = None #no slab so can't run site analysis
                         software_kwargs = deepcopy(self.software_kwargs_gas)
                         constraints = []
+                        vib_constraints = []
                         if len(big_slab_ads) == 1 and self.software == "Espresso": #monoatomic species
                             software_kwargs["command"] = software_kwargs["command"].replace("< PREFIX.pwi > PREFIX.pwo","-ndiag 1 < PREFIX.pwi > PREFIX.pwo")
                     try:
@@ -361,7 +363,7 @@ class Pynta:
                     optfws2.append(fwopt2)
 
                 vib_obj_dict = {"software": self.software, "label": adsname, "software_kwargs": software_kwargs,
-                    "constraints": ["freeze up to "+str(self.nslab)]}
+                    "constraints": vib_constraints}
 
                 cfw = collect_firework(xyzs,True,["vibrations_firework"],[vib_obj_dict],["vib.json"],[],parents=optfws2,label=adsname)
                 self.adsorbate_fw_dict[adsname] = optfws2
@@ -393,6 +395,7 @@ class Pynta:
                     if target_site_num == 0:
                         software_kwargs = deepcopy(self.software_kwargs_gas)
                         constraints = []
+                        vib_constraints = []
                         if len(mol.atoms) == 1 and self.software == "Espresso": #monoatomic species
                             software_kwargs["command"] = software_kwargs["command"].replace("< PREFIX.pwi > PREFIX.pwo","-ndiag 1 < PREFIX.pwi > PREFIX.pwo")
                     else:
@@ -401,6 +404,7 @@ class Pynta:
                             constraints = ["freeze up to {}".format(self.freeze_ind)]
                         else:
                             constraints = ["freeze up to "+str(self.nslab)]
+                        vib_constraints = ["freeze up to "+str(self.nslab)]
                     xyz = os.path.join(prefix_path,str(prefix)+".xyz")
                     init_path = os.path.join(prefix_path,prefix+"_init.xyz")
                     assert os.path.exists(init_path), init_path
@@ -420,7 +424,7 @@ class Pynta:
                     optfws2.append(fwopt2)
 
                 vib_obj_dict = {"software": self.software, "label": ad, "software_kwargs": software_kwargs,
-                    "constraints": ["freeze up to "+str(self.nslab)]}
+                    "constraints": vib_constraints}
 
                 cfw = collect_firework(xyzs,True,["vibrations_firework"],[vib_obj_dict],["vib.json"],[True,False],parents=optfws2,label=ad,allow_fizzled_parents=False)
                 self.adsorbate_fw_dict[ad] = optfws2
