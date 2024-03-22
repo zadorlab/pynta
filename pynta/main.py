@@ -24,7 +24,7 @@ import logging
 
 class Pynta:
     def __init__(self,path,rxns_file,surface_type,metal,label,launchpad_path=None,fworker_path=None,
-        vacuum=8.0,repeats=(3,3,4),slab_path=None,software="Espresso",socket=False,queue=False,njobs_queue=0,a=None,
+        vacuum=8.0,repeats=(3,3,4),slab_path=None,software="Espresso", pbc=(True,True,False),socket=False,queue=False,njobs_queue=0,a=None,
         software_kwargs={'kpts': (3, 3, 1), 'tprnfor': True, 'occupations': 'smearing',
                             'smearing':  'marzari-vanderbilt',
                             'degauss': 0.01, 'ecutwfc': 40, 'nosym': True,
@@ -49,6 +49,7 @@ class Pynta:
         self.slab_path = slab_path
         self.vacuum = vacuum
         self.a = a
+        self.pbc = pbc
         self.software = software
         self.socket = socket
         self.repeats = repeats
@@ -58,6 +59,9 @@ class Pynta:
         self.metal = metal
         self.adsorbate_fw_dict = dict()
         self.software_kwargs = software_kwargs
+
+        if software.lower() == 'vasp':
+            self.pbc = (True,True,True)
 
         if software_kwargs_gas:
             self.software_kwargs_gas = software_kwargs_gas
@@ -127,7 +131,7 @@ class Pynta:
             a = self.a
         #construct slab with optimial lattice constant
         slab = slab_type(self.metal,self.repeats,a,self.vacuum)
-        slab.pbc = (True, True, False)
+        slab.pbc = self.pbc
         write(os.path.join(self.path,"slab_init.xyz"),slab)
         self.slab_path = os.path.join(self.path,"slab.xyz")
         if self.software != "XTB":
@@ -248,7 +252,7 @@ class Pynta:
             ads,mol_to_atoms_map = get_adsorbate(mol)
             if len(surf_sites) == 0:
                 if not skip_structs:
-                    ads.pbc = (True,True,False)
+                    ads.pbc = self.pbc
                     ads.center(vacuum=10)
                     structures[sm] = [ads]
                 gratom_to_molecule_atom_maps[sm] = {val:key for key,val in mol_to_atoms_map.items()}
