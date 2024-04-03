@@ -169,7 +169,7 @@ class Pynta:
         write(os.path.join(self.path,"slab_init.xyz"),slab)
         self.slab_path = os.path.join(self.path,"slab.xyz")
         if self.software != "XTB":
-            fwslab = optimize_firework(os.path.join(self.path,"slab_init.xyz"),self.software,"slab",
+            fwslab = optimize_firework(os.path.join(self.path,"slab_init.xyz"),self.software,self.machine,"slab",
                 opt_method="BFGSLineSearch",socket=self.socket,software_kwargs=self.software_kwargs,
                 run_kwargs={"fmax" : self.fmaxopt},out_path=os.path.join(self.path,"slab.xyz"),constraints=["freeze up to {}".format(self.freeze_ind)],priority=1000)
             wfslab = Workflow([fwslab], name=self.label+"_slab")
@@ -390,12 +390,12 @@ class Pynta:
                     xyz = os.path.join(self.path,"Adsorbates",adsname,str(prefix),str(prefix)+".xyz")
                     xyzs.append(xyz)
                     fwopt = optimize_firework(os.path.join(self.path,"Adsorbates",adsname,str(prefix),str(prefix)+"_init.xyz"),
-                        self.software,"weakopt_"+str(prefix),
+                        self.software,self.machine,"weakopt_"+str(prefix),
                         opt_method="MDMin",opt_kwargs={'dt': 0.05},socket=self.socket,software_kwargs=software_kwargs,
                         run_kwargs={"fmax" : 0.5, "steps" : 70},parents=[],constraints=constraints,
                         ignore_errors=True, metal=self.metal, facet=self.surface_type, target_site_num=target_site_num, priority=3)
                     fwopt2 = optimize_firework(os.path.join(self.path,"Adsorbates",adsname,str(prefix),"weakopt_"+str(prefix)+".xyz"),
-                        self.software,str(prefix),
+                        self.software,self.machine,str(prefix),
                         opt_method="QuasiNewton",socket=self.socket,software_kwargs=software_kwargs,
                         run_kwargs={"fmax" : self.fmaxopt, "steps" : 70},parents=[fwopt],constraints=constraints,
                         ignore_errors=True, metal=self.metal, facet=self.surface_type, target_site_num=target_site_num, priority=3, fmaxhard=self.fmaxopthard,
@@ -405,6 +405,7 @@ class Pynta:
                     optfws2.append(fwopt2)
 
                 vib_obj_dict = {"software": self.software, "label": adsname, "software_kwargs": software_kwargs,
+                    "machine": self.machine, "constraints": ["freeze up to "+str(self.nslab)]}
                     "machine": self.machine, "constraints": ["freeze up to "+str(self.nslab)]}
 
                 cfw = collect_firework(xyzs,True,["vibrations_firework"],[vib_obj_dict],["vib.json"],[],parents=optfws2,label=adsname)
@@ -453,10 +454,12 @@ class Pynta:
                     xyzs.append(xyz)
                     fwopt = optimize_firework(init_path,
                         self.software,self.machine,"weakopt_"+str(prefix),
+                        self.software,self.machine,"weakopt_"+str(prefix),
                         opt_method="MDMin",opt_kwargs={'dt': 0.05},socket=self.socket,software_kwargs=software_kwargs,
                         run_kwargs={"fmax" : 0.5, "steps" : 70},parents=[],constraints=constraints,
                         ignore_errors=True, metal=self.metal, facet=self.surface_type, target_site_num=target_site_num, priority=3)
                     fwopt2 = optimize_firework(os.path.join(self.path,"Adsorbates",ad,str(prefix),"weakopt_"+str(prefix)+".xyz"),
+                        self.software,self.machine,str(prefix),
                         self.software,self.machine,str(prefix),
                         opt_method="QuasiNewton",socket=self.socket,software_kwargs=software_kwargs,
                         run_kwargs={"fmax" : self.fmaxopt, "steps" : 70},parents=[fwopt],constraints=constraints,
@@ -466,6 +469,7 @@ class Pynta:
                     optfws2.append(fwopt2)
 
                 vib_obj_dict = {"software": self.software, "label": ad, "software_kwargs": software_kwargs,
+                    "machine": self.machine, "constraints": ["freeze up to "+str(self.nslab)]}
                     "machine": self.machine, "constraints": ["freeze up to "+str(self.nslab)]}
 
                 cfw = collect_firework(xyzs,True,["vibrations_firework"],[vib_obj_dict],["vib.json"],[True,False],parents=optfws2,label=ad,allow_fizzled_parents=False)
@@ -480,19 +484,16 @@ class Pynta:
         Note the vibrational and IRC calculations are launched at the same time
         """
         if self.software != "XTB":
-            opt_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":self.software_kwargs_TS,
+            opt_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":self.software_kwargs_TS,"machine": self.machine,
                 "run_kwargs": {"fmax" : self.fmaxopt, "steps" : 70},"constraints": ["freeze up to {}".format(self.freeze_ind)],"sella":True,"order":1,}
         else:
-            opt_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":self.software_kwargs_TS,
+            opt_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":self.software_kwargs_TS,"machine": self.machine,
                 "run_kwargs": {"fmax" : 0.02, "steps" : 70},"constraints": ["freeze up to "+str(self.nslab)],"sella":True,"order":1,}
         
         vib_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":self.software_kwargs,
-                "constraints": ["freeze up to "+str(self.nslab)]}
-
-        #logging.info
-        logger.info(f"================= IRC mode is: {self.irc_mode} =======================")
-        #pass through 
-        
+                "machine": self.machine, "constraints": ["freeze up to "+str(self.nslab)]}
+        IRC_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":self.software_kwargs,
+                "machine": self.machine, "run_kwargs": {"fmax" : self.fmaxirc, "steps" : 70},"constraints":["freeze up to "+str(self.nslab)]}
         for i,rxn in enumerate(self.rxns_dict):
             #if irc_mode is "fixed" freeze all slab and conduct MolecularTSEstimate. 
             if self.irc_mode == "fixed":
@@ -511,14 +512,16 @@ class Pynta:
             ts_path = os.path.join(self.path,"TS"+str(i))
             os.makedirs(ts_path)
             ts_task = MolecularTSEstimate({"rxn": rxn,"ts_path": ts_path,"slab_path": self.slab_path,"adsorbates_path": os.path.join(self.path,"Adsorbates"),
-                    "rxns_file": self.rxns_file,"path": self.path,"metal": self.metal,"facet": self.surface_type, "sites": self.sites, "site_adjacency": {str(k):v for k,v in self.site_adjacency.items()},
-                    "out_path": ts_path, "irc_mode": self.irc_mode,
+                "rxns_file": self.rxns_file,"path": self.path,"metal": self.metal,"facet": self.surface_type, "out_path": ts_path, "machine": self.machine,
+                "spawn_jobs": True, "opt_obj_dict": opt_obj_dict, "vib_obj_dict": vib_obj_dict,
+                    "IRC_obj_dict": IRC_obj_dict, "nprocs": 48, "name_to_adjlist_dict": self.name_to_adjlist_dict,
+                    "rxns_file": self.rxns_file,"path": self.path,"metal": self.metal,"facet": self.surface_type, "out_path": ts_path, "irc_mode": self.irc_mode,
                     "spawn_jobs": True, "opt_obj_dict": opt_obj_dict, "vib_obj_dict": vib_obj_dict, "IRC_obj_dict": IRC_obj_dict,
                     "nprocs": 48, "name_to_adjlist_dict": self.name_to_adjlist_dict,
                     "gratom_to_molecule_atom_maps":{sm: {str(k):v for k,v in d.items()} for sm,d in self.gratom_to_molecule_atom_maps.items()},
                     "gratom_to_molecule_surface_atom_maps":{sm: {str(k):v for k,v in d.items()} for sm,d in self.gratom_to_molecule_surface_atom_maps.items()},
                     "nslab":self.nslab,"Eharmtol":self.Eharmtol,"Eharmfiltertol":self.Eharmfiltertol,"Ntsmin":self.Ntsmin,
-                    "max_num_hfsp_opts":self.max_num_hfsp_opts, "surrogate_metal":self.surrogate_metal})
+                    "max_num_hfsp_opts":self.max_num_hfsp_opts, "surrogate_metal":self.surrogate_metal, "acat_tol": self.acat_tol, "emt_metal": self.emt_metal})
             reactants = rxn["reactant_names"]
             products = rxn["product_names"]
             parents = []
@@ -532,23 +535,6 @@ class Pynta:
         """
         Call appropriate rapidfire function
         """
-        if self.machine == "alcf":
-            print("You are using alcf machine: if you want to restart, run pyn.reset(wfid='1')")
-            if self.queue:
-                rapidfirequeue(self.launchpad,self.fworker,self.qadapter,njobs_queue=self.njobs_queue,nlaunches="infinite")
-            elif not self.queue and (self.num_jobs == 1 or single_job):
-                rapidfire(self.launchpad,self.fworker,nlaunches="infinite")
-            else:
-                listfworkers = createFWorkers(self.num_jobs)
-                launch_multiprocess2(self.launchpad,listfworkers,"INFO",0,self.num_jobs,5)
-        else:
-            print("machine choice is not alcf: check your Fireworks Workflow id before restart Pynta")
-            if self.queue:
-                rapidfirequeue(self.launchpad,self.fworker,self.qadapter,njobs_queue=self.njobs_queue,nlaunches="infinite")
-            elif not self.queue and (self.num_jobs == 1 or single_job):
-                rapidfire(self.launchpad,self.fworker,nlaunches="infinite")
-            else:
-                launch_multiprocess(self.launchpad,self.fworker,"INFO","infinite",self.num_jobs,5)
         if self.machine == "alcf":
             print("You are using alcf machine: if you want to restart, run pyn.reset(wfid='1')")
             if self.queue:
@@ -652,6 +638,19 @@ class Pynta:
                             '{{pynta.tasks.MolecularVibrationsTask}}',
                             '{{pynta.tasks.MolecularIRC}}']
 
+                #if nameTask in nameTasks:
+                #    opt_method = newd['_tasks'][0]['opt_method'] if 'opt_method' in newd['_tasks'][0] else None
+
+                #    if self.software == "Espresso" or self.software == "PWDFT":
+                #        print(" Change: ", newd['_tasks'][0]['software_kwargs']['command'], end='')
+                #        node = MapTaskToNodes()
+                #        newcommand = node.getCommand()
+                #        newd['_tasks'][0]['software_kwargs']['command'] = newcommand
+                #        print(" by: ", newcommand)
+                # Here we work with reset the optimization task
+                # We load the trajectory file and save this structure in the
+                # tree of each uncompleted task
+
                 if 'opt' in task_name:
                     dirs = wf_launchers[task_name]
                     if dirs != []:
@@ -684,219 +683,3 @@ class Pynta:
 
 
         self.launch()
-
-class CoverageDependence:
-    def __init__(self,path,metal,surface_type,repeats,pynta_run_directory,software,software_kwargs,label,sites,site_adjacency,coad_stable_sites,adsorbates=[],transition_states=dict(),coadsorbates=[],
-                 max_dist=3.0,frozen_layers=2,fmaxopt=0.05,Ncalc_per_iter=6,TS_opt_software_kwargs=None,launchpad_path=None,
-                 fworker_path=None,queue=False,njobs_queue=0,reset_launchpad=False,queue_adapter_path=None,
-                 num_jobs=25,surrogate_metal=None,concern_energy_tol=None,max_iters=np.inf):
-        self.path = path
-        self.metal = metal
-        self.repeats = repeats
-        self.nslab = np.product(repeats)
-        self.pynta_run_directory = pynta_run_directory
-        self.pairs_directory = os.path.join(self.path,"pairs")
-        self.slab_path = os.path.join(self.pynta_run_directory,"slab.xyz")
-        self.adsorbates_path = os.path.join(self.pynta_run_directory,"Adsorbates")
-        self.coad_stable_sites = coad_stable_sites
-        self.software = software
-        self.software_kwargs = software_kwargs
-        self.surface_type = surface_type
-        self.facet = metal + surface_type
-        self.sites = sites
-        self.site_adjacency = site_adjacency
-        self.Ncalc_per_iter = Ncalc_per_iter
-        self.software_kwargs_TS = deepcopy(software_kwargs)
-        self.concern_energy_tol = concern_energy_tol
-        if TS_opt_software_kwargs:
-            for key,val in TS_opt_software_kwargs.items():
-                self.software_kwargs_TS[key] = val
-        
-        if adsorbates != []:
-            raise ValueError("Not implemented yet")
-        self.adsorbates = adsorbates
-        self.transition_states = transition_states
-        self.coadsorbates = coadsorbates
-        self.max_dist = max_dist
-        self.frozen_layers = frozen_layers
-        self.layers = self.repeats[2]
-        self.freeze_ind = int((self.nslab/self.layers)*self.frozen_layers)
-        self.fmaxopt = fmaxopt
-        self.label = label
-        self.max_iters = max_iters
-        
-        if launchpad_path:
-            launchpad = LaunchPad.from_file(launchpad_path)
-        else:
-            launchpad = LaunchPad()
-
-        if reset_launchpad:
-            launchpad.reset('', require_password=False)
-        self.launchpad = launchpad
-        
-        self.fworker_path = fworker_path
-        if fworker_path:
-            self.fworker = FWorker.from_file(fworker_path)
-        else:
-            self.fworker = FWorker()
-            
-        self.queue = queue
-        self.njobs_queue = njobs_queue
-        self.reset_launchpad = reset_launchpad
-        if queue:
-            self.qadapter = load_object_from_file(queue_adapter_path)
-        self.num_jobs = num_jobs
-        
-        if surrogate_metal is None:
-            self.surrogate_metal = metal
-        else:
-            self.surrogate_metal = surrogate_metal 
-            
-        self.pairs_fws = []
-        self.fws = []
-        
-    def setup_pairs_calculations(self):
-        tsdirs = [os.path.join(self.pynta_run_directory,t,ind) for t,ind in self.transition_states.items()]
-        outdirs_ad,outdirs_ts = setup_pair_opts_for_rxns(self.path,tsdirs,self.coadsorbates,self.surrogate_metal,self.surface_type,max_dist=self.max_dist)
-        
-        for d in outdirs_ad:
-            fwopt = optimize_firework(d,
-                            self.software,"weakopt",
-                            opt_method="MDMin",opt_kwargs={'dt': 0.05,"trajectory": "weakopt.traj"},software_kwargs=self.software_kwargs,order=0,
-                            run_kwargs={"fmax" : 0.5, "steps" : 30},parents=[],
-                              constraints=["freeze up to {}".format(self.freeze_ind)],
-                            ignore_errors=True, metal=self.metal, facet=self.surface_type, priority=3)
-            fwopt2 = optimize_firework(os.path.join(os.path.split(d)[0],"weakopt.xyz"),
-                            self.software,"out",
-                            opt_method="QuasiNewton",opt_kwargs={"trajectory": "out.traj"},software_kwargs=self.software_kwargs,order=0,
-                            run_kwargs={"fmax" : self.fmaxopt, "steps" : 70},parents=[fwopt],
-                              constraints=["freeze up to {}".format(self.freeze_ind)],
-                            ignore_errors=True, metal=self.metal, facet=self.surface_type, priority=2)
-        
-            fwvib = vibrations_firework(os.path.join(os.path.split(d)[0],"out.xyz"),
-                                        self.software,"vib",software_kwargs=self.software_kwargs,parents=[fwopt2],
-                                        constraints=["freeze up to "+str(self.nslab)])
-            self.pairs_fws.append(fwopt)
-            self.pairs_fws.append(fwopt2)
-            self.pairs_fws.append(fwvib)
-        
-        for d in outdirs_ts:
-            fwopt = optimize_firework(d,
-                            self.software,"out", sella=True, 
-                            opt_kwargs={"trajectory": "out.traj"},software_kwargs=self.software_kwargs_TS,
-                            order=1,
-                            run_kwargs={"fmax" : self.fmaxopt, "steps" : 70},parents=[],
-                              constraints=["freeze up to {}".format(self.freeze_ind)],
-                            ignore_errors=True, metal=self.metal, facet=self.surface_type, priority=3)
-            
-            fwvib = vibrations_firework(os.path.join(os.path.split(d)[0],"out.xyz"),
-                                        self.software,"vib",software_kwargs=self.software_kwargs,parents=[fwopt],
-                                        constraints=["freeze up to "+str(self.nslab)])
-            self.pairs_fws.append(fwopt)
-            self.pairs_fws.append(fwvib)
-            
-        self.fws.extend(self.pairs_fws)
-    
-    def setup_active_learning_loop(self):
-        admol_name_path_dict = {k: os.path.join(self.pynta_run_directory,k,v,"opt.xyz") for k,v in self.transition_states.items()}
-        admol_name_structure_dict = dict()
-        ads = self.adsorbates
-        allowed_structure_site_structures = generate_allowed_structure_site_structures(os.path.join(self.pynta_run_directory,"Adsorbates"),self.sites,self.site_adjacency,self.nslab,max_dist=np.inf)
-
-        for ts in self.transition_states.keys():
-            info_path = os.path.join(self.pynta_run_directory,ts,"info.json")
-            with open(info_path,'r') as f:
-                info = json.load(f)
-            reactants = Molecule().from_adjacency_list(info["reactants"])
-            products = Molecule().from_adjacency_list(info["products"])
-            keep_binding_vdW_bonds_in_reactants=False
-            keep_vdW_surface_bonds_in_reactants=False
-            mol = reactants
-            for bd in mol.get_all_edges():
-                if bd.order == 0:
-                    if bd.atom1.is_surface_site() or bd.atom2.is_surface_site():
-                        keep_binding_vdW_bonds_in_reactants = True
-                        m = mol.copy(deep=True)
-                        b = m.get_bond(m.atoms[mol.atoms.index(bd.atom1)],m.atoms[mol.atoms.index(bd.atom2)])
-                        m.remove_bond(b)
-                        out = m.split()
-                        if len(out) == 1: #vdW bond is not only thing connecting adsorbate to surface
-                            keep_vdW_surface_bonds_in_reactants = True
-            keep_binding_vdW_bonds_in_products=False
-            keep_vdW_surface_bonds_in_products=False
-            mol = products
-            for bd in mol.get_all_edges():
-                if bd.order == 0:
-                    if bd.atom1.is_surface_site() or bd.atom2.is_surface_site():
-                        keep_binding_vdW_bonds_in_products = True
-                        m = mol.copy(deep=True)
-                        b = m.get_bond(m.atoms[mol.atoms.index(bd.atom1)],m.atoms[mol.atoms.index(bd.atom2)])
-                        m.remove_bond(b)
-                        out = m.split()
-                        if len(out) == 1: #vdW bond is not only thing connecting adsorbate to surface
-                            keep_vdW_surface_bonds_in_products = True
-            
-            keep_binding_vdW_bonds = keep_binding_vdW_bonds_in_reactants and keep_binding_vdW_bonds_in_products
-            keep_vdW_surface_bonds = keep_vdW_surface_bonds_in_reactants and keep_vdW_surface_bonds_in_products
-            
-            atoms = read(admol_name_path_dict[ts])
-            st,_,_ = generate_TS_2D(atoms, info_path,  self.metal, self.surface_type, self.sites, self.site_adjacency, self.nslab,
-                     max_dist=np.inf, allowed_structure_site_structures=allowed_structure_site_structures,
-                     keep_binding_vdW_bonds=keep_binding_vdW_bonds,keep_vdW_surface_bonds=keep_vdW_surface_bonds)
-            admol_name_structure_dict[ts] = st
-            with open(info_path,"r") as f:
-                info = json.load(f)
-                for name in info["species_names"]+info["reverse_names"]:
-                    if name not in ads:
-                        ads.append(name)
-        
-        for ad in ads:
-            p = os.path.join(self.pynta_run_directory,"Adsorbates",ad)
-            with open(os.path.join(p,"info.json")) as f:
-                info = json.load(f)
-                
-            mol = Molecule().from_adjacency_list(info["adjlist"])
-            
-            if mol.contains_surface_site():
-                keep_binding_vdW_bonds=False 
-                keep_vdW_surface_bonds=False
-                for bd in mol.get_all_edges():
-                    if bd.order == 0:
-                        if bd.atom1.is_surface_site() or bd.atom2.is_surface_site():
-                            keep_binding_vdW_bonds = True
-                            m = mol.copy(deep=True)
-                            b = m.get_bond(m.atoms[mol.atoms.index(bd.atom1)],m.atoms[mol.atoms.index(bd.atom2)])
-                            m.remove_bond(b)
-                            out = m.split()
-                            if len(out) == 1: #vdW bond is not only thing connecting adsorbate to surface
-                                keep_vdW_surface_bonds = True
-                        
-                ad_xyz = get_best_adsorbate_xyz(p,self.sites,self.nslab)
-                admol_name_path_dict[ad] = ad_xyz 
-                atoms = read(ad_xyz)
-                st,_,_ = generate_adsorbate_2D(atoms, self.sites, self.site_adjacency, self.nslab, max_dist=np.inf, allowed_structure_site_structures=allowed_structure_site_structures,
-                                               keep_binding_vdW_bonds=keep_binding_vdW_bonds,keep_vdW_surface_bonds=keep_vdW_surface_bonds)
-                admol_name_structure_dict[ad] = st
-                
-        calculation_directories = [] #identify pairs directories
-        for p1 in os.listdir(os.path.join(self.path,"pairs")):
-            for p2 in os.listdir(os.path.join(self.path,"pairs",p1)):
-                calculation_directories.append(os.path.join(self.path,"pairs",p1,p2))
-        
-        
-        fw = train_covdep_model_firework(self.path,admol_name_path_dict,admol_name_structure_dict,self.sites,self.site_adjacency,
-                                self.pynta_run_directory, self.metal, self.surface_type, self.slab_path, calculation_directories, self.coadsorbates[0], 
-                                self.coad_stable_sites, self.software, self.software_kwargs, self.software_kwargs_TS, self.freeze_ind, self.fmaxopt,
-                                parents=self.fws, max_iters=self.max_iters,
-                                Ncalc_per_iter=self.Ncalc_per_iter,iter=0,concern_energy_tol=self.concern_energy_tol,ignore_errors=True)
-
-        self.fws.append(fw)
-        
-        
-    def execute(self,run_pairs=True,run_active_learning=False):
-        if run_pairs:
-            self.setup_pairs_calculations()
-        if run_active_learning:
-            self.setup_active_learning_loop()
-        wf = Workflow(self.fws, name=self.label)
-        self.launchpad.add_wf(wf)
