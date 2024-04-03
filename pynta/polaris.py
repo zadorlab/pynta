@@ -1,8 +1,4 @@
 # Map the FW-task on polaris single-queue allocation
-<<<<<<< HEAD
-# Polaris Mapping designed by RHE
-=======
->>>>>>> 14ee869 (polaris mapping info added in polaris.py)
 
 """ Polaris Mapping """
 
