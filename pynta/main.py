@@ -54,6 +54,8 @@ class Pynta:
         surrogate_metal=None):
 
         self.surface_type = surface_type
+        self.pickled = pickled
+
         if launchpad_path:
             launchpad = LaunchPad.from_file(launchpad_path)
         else:
