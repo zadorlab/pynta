@@ -57,7 +57,6 @@ class Pynta:
         surrogate_metal=None,sites=None,site_adjacency=None):
 
         self.surface_type = surface_type
-
         if launchpad_path:
             launchpad = LaunchPad.from_file(launchpad_path)
         else:
