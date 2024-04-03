@@ -496,7 +496,7 @@ class Pynta:
                     "gratom_to_molecule_atom_maps":{sm: {str(k):v for k,v in d.items()} for sm,d in self.gratom_to_molecule_atom_maps.items()},
                     "gratom_to_molecule_surface_atom_maps":{sm: {str(k):v for k,v in d.items()} for sm,d in self.gratom_to_molecule_surface_atom_maps.items()},
                     "nslab":self.nslab,"Eharmtol":self.Eharmtol,"Eharmfiltertol":self.Eharmfiltertol,"Ntsmin":self.Ntsmin,
-                    "max_num_hfsp_opts":self.max_num_hfsp_opts, "acat_tol": self.acat_tol, "emt_metal": self.emt_metal})
+                    "max_num_hfsp_opts":self.max_num_hfsp_opts})
             reactants = rxn["reactant_names"]
             products = rxn["product_names"]
             parents = []
