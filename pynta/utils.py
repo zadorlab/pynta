@@ -358,3 +358,54 @@ def construct_constraint(d):
     constructor = getattr(ase.constraints,constraint_dict["type"])
     del constraint_dict["type"]
     return constructor(**constraint_dict)
+
+def copyDataAndSave(origin, destination, file):
+    '''
+		Function to copy a file from a origin subdirectory to a destination subdirectory.
+        If the file already exists, a "_BK" string is added to the name that it corresponds
+        to a backup copy. This function needs another function 'check_copy', which exchanges
+        the files, so that the most current file always does not have the _BK string,
+        in this way the files are not affected when rerun the workflow.
+
+        Parameters
+        ___________
+        origin: str
+        destination: str
+        file : str
+
+    '''
+    src = os.path.join(origin, file)
+    dst = os.path.join(destination, file)
+
+    count = 1
+
+    while os.path.exists(dst):
+        base, ext = os.path.splitext(file)
+        new_name = f'{base}_BK{count}{ext}'
+        dst = os.path.join(destination, new_name)
+        count += 1
+
+    shutil.copy(src, dst)
+
+    check_copy(file, destination)
+
+def check_copy(file2cpy, subdir):
+    files = os.listdir(subdir)
+
+    file_maxval = None
+    number_maxval = -1
+
+    for file in files:
+        if file.startswith(file2cpy) and "_BK" in file:
+            num = int(file.split("_BK")[1].split(".")[0])
+            if num > number_maxval:
+                number_maxval = num
+                file_maxval = file
+
+    if file_maxval:
+        file_origin = os.path.join(subdir, file2cpy)
+        file_bk = os.path.join(subdir, file_maxval)
+
+        os.rename(file_origin, file_origin + "_tmp")
+        os.rename(file_bk, file_origin)
+        os.rename(file_origin + "_tmp", file_bk)
