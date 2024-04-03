@@ -1,6 +1,7 @@
 import shutil
 import os
 import ase
+import sys
 from ase.utils.structure_comparator import SymmetryEquivalenceCheck
 from ase.io import write, read
 import ase.constraints
