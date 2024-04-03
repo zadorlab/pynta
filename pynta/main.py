@@ -197,12 +197,34 @@ class Pynta:
         else:
             assert self.site_adjacency is not None 
             
-        unique_site_lists,unique_site_pairs_lists,single_site_bond_params_lists,double_site_bond_params_lists = generate_unique_placements(full_slab,self.sites)
+            unique_site_lists,unique_site_pairs_lists,single_site_bond_params_lists,double_site_bond_params_lists = generate_unique_placements(full_slab,self.sites)
 
-        self.single_site_bond_params_lists = single_site_bond_params_lists
-        self.single_sites_lists = unique_site_lists
-        self.double_site_bond_params_lists = double_site_bond_params_lists
-        self.double_sites_lists = unique_site_pairs_lists
+            self.single_site_bond_params_lists = single_site_bond_params_lists
+            self.single_sites_lists = unique_site_lists
+            self.double_site_bond_params_lists = double_site_bond_params_lists
+            self.double_sites_lists = unique_site_pairs_lists
+
+            my_dictionary_to_pickled  = {'cas' : cas,
+                                        'single_site_bond_params_list': single_site_bond_params_lists,
+                                        'single_sites_lists': unique_site_lists,
+                                        'double_site_bond_params_lists': double_site_bond_params_lists,
+                                        'double_sites_lists_full': unique_site_pairs_lists}
+
+            print("Save as a pickle")
+            with open('analize_slab.pickle', 'wb') as myfile:
+                pickle.dump(my_dictionary_to_pickled, myfile)
+
+        else :
+            with open('analize_slab.pickle', 'rb') as myfile:
+                my_dict = pickle.load(myfile)
+
+            print("Load from a pickle")
+
+            self.cas = my_dict['cas']
+            self.single_site_bond_params_lists = my_dict['single_site_bond_params_list']
+            self.single_sites_lists = my_dict['unique_site_lists']
+            self.double_site_bond_params_lists = my_dict['double_site_bond_params_lists']
+            self.double_sites_lists = my_dict['unique_site_pairs_lists']
 
     def generate_mol_dict(self):
         """
