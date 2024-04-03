@@ -1,4 +1,5 @@
 # Map the FW-task on polaris single-queue allocation
+# Polaris Mapping designed by RHE
 
 """ Polaris Mapping """
 
