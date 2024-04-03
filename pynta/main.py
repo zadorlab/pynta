@@ -29,11 +29,14 @@ from pynta.polaris import createFWorkers
 from pynta.utils import copyDataAndSave
 from pynta.multi_launcher import launch_multiprocess2
 import json
-
 #logger
 logger = logging.getLogger(__name__)
 logging.basicConfig(filename='pynta.log', level=logging.INFO)
 
+
+#logger
+logger = logging.getLogger(__name__)
+logging.basicConfig(filename='pynta.log', level=logging.INFO)
 
 class Pynta:
     def __init__(self,path,rxns_file,surface_type,metal,label,launchpad_path=None,fworker_path=None,
@@ -80,6 +83,8 @@ class Pynta:
             self.surrogate_metal = surrogate_metal
         self.adsorbate_fw_dict = dict()
         self.software_kwargs = software_kwargs
+        self.machine = machine #need to specify 'alcf' or other machine of choice
+        self.irc_mode = irc_mode
 
         if software.lower() == 'vasp':
             self.pbc = (True,True,True)
@@ -407,6 +412,7 @@ class Pynta:
 
                 vib_obj_dict = {"software": self.software, "label": adsname, "software_kwargs": software_kwargs,
                     "machine": self.machine, "constraints": ["freeze up to "+str(self.nslab)]}
+                    "machine": self.machine, "constraints": ["freeze up to "+str(self.nslab)]}
 
                 cfw = collect_firework(xyzs,True,["vibrations_firework"],[vib_obj_dict],["vib.json"],[],parents=optfws2,label=adsname)
                 self.adsorbate_fw_dict[adsname] = optfws2
@@ -454,10 +460,12 @@ class Pynta:
                     xyzs.append(xyz)
                     fwopt = optimize_firework(init_path,
                         self.software,self.machine,"weakopt_"+str(prefix),
+                        self.software,self.machine,"weakopt_"+str(prefix),
                         opt_method="MDMin",opt_kwargs={'dt': 0.05},socket=self.socket,software_kwargs=software_kwargs,
                         run_kwargs={"fmax" : 0.5, "steps" : 70},parents=[],constraints=constraints,
                         ignore_errors=True, metal=self.metal, facet=self.surface_type, target_site_num=target_site_num, priority=3)
                     fwopt2 = optimize_firework(os.path.join(self.path,"Adsorbates",ad,str(prefix),"weakopt_"+str(prefix)+".xyz"),
+                        self.software,self.machine,str(prefix),
                         self.software,self.machine,str(prefix),
                         opt_method="QuasiNewton",socket=self.socket,software_kwargs=software_kwargs,
                         run_kwargs={"fmax" : self.fmaxopt, "steps" : 70},parents=[fwopt],constraints=constraints,
@@ -467,6 +475,7 @@ class Pynta:
                     optfws2.append(fwopt2)
 
                 vib_obj_dict = {"software": self.software, "label": ad, "software_kwargs": software_kwargs,
+                    "machine": self.machine, "constraints": ["freeze up to "+str(self.nslab)]}
                     "machine": self.machine, "constraints": ["freeze up to "+str(self.nslab)]}
 
                 cfw = collect_firework(xyzs,True,["vibrations_firework"],[vib_obj_dict],["vib.json"],[True,False],parents=optfws2,label=ad,allow_fizzled_parents=False)
@@ -489,9 +498,9 @@ class Pynta:
         
         
         vib_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":self.software_kwargs,
-                "constraints": ["freeze up to "+str(self.nslab)]}
+            "machine": self.machine, "constraints": ["freeze up to "+str(self.nslab)]}
         IRC_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":self.software_kwargs,
-                "run_kwargs": {"fmax" : self.fmaxirc, "steps" : 70},"constraints":["freeze up to "+str(self.nslab)]}
+                "machine": self.machine, "run_kwargs": {"fmax" : self.fmaxirc, "steps" : 70},"constraints":["freeze up to "+str(self.nslab)]}
         for i,rxn in enumerate(self.rxns_dict):
             #if irc_mode is "fixed" freeze all slab and conduct MolecularTSEstimate. 
             if self.irc_mode == "fixed":
@@ -524,7 +533,7 @@ class Pynta:
             ts_path = os.path.join(self.path,"TS"+str(i))
             os.makedirs(ts_path)
             ts_task = MolecularTSEstimate({"rxn": rxn,"ts_path": ts_path,"slab_path": self.slab_path,"adsorbates_path": os.path.join(self.path,"Adsorbates"),
-                "rxns_file": self.rxns_file,"path": self.path,"metal": self.metal,"facet": self.surface_type, "out_path": ts_path,
+                "rxns_file": self.rxns_file,"path": self.path,"metal": self.metal,"facet": self.surface_type, "out_path": ts_path, "machine": self.machine,
                 "spawn_jobs": True, "opt_obj_dict": opt_obj_dict, "vib_obj_dict": vib_obj_dict,
                     "IRC_obj_dict": IRC_obj_dict, "nprocs": 48, "name_to_adjlist_dict": self.name_to_adjlist_dict,
                     "rxns_file": self.rxns_file,"path": self.path,"metal": self.metal,"facet": self.surface_type, "out_path": ts_path, "irc_mode": self.irc_mode,
@@ -649,6 +658,19 @@ class Pynta:
                 nameTasks = ['{{pynta.tasks.MolecularOptimizationTask}}',
                             '{{pynta.tasks.MolecularVibrationsTask}}',
                             '{{pynta.tasks.MolecularIRC}}']
+
+                #if nameTask in nameTasks:
+                #    opt_method = newd['_tasks'][0]['opt_method'] if 'opt_method' in newd['_tasks'][0] else None
+
+                #    if self.software == "Espresso" or self.software == "PWDFT":
+                #        print(" Change: ", newd['_tasks'][0]['software_kwargs']['command'], end='')
+                #        node = MapTaskToNodes()
+                #        newcommand = node.getCommand()
+                #        newd['_tasks'][0]['software_kwargs']['command'] = newcommand
+                #        print(" by: ", newcommand)
+                # Here we work with reset the optimization task
+                # We load the trajectory file and save this structure in the
+                # tree of each uncompleted task
 
                 if 'opt' in task_name:
                     dirs = wf_launchers[task_name]
