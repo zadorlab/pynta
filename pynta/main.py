@@ -502,7 +502,7 @@ class Pynta:
         # if irc_mode = "skip" : do not conduct IRC
             else:
                 print("Skip IRC: IRC is not conducted") 
-                ts_task = MolecularTSEstimate({"rxn": rxn,"ts_path": ts_path,"slab_path": self.slab_path,"adsorbates_path": os.path.join(self.path,"Adsorbates"),
+                ts_task = MolecularTSEstimate_noIRC({"rxn": rxn,"ts_path": ts_path,"slab_path": self.slab_path,"adsorbates_path": os.path.join(self.path,"Adsorbates"),
                             "rxns_file": self.rxns_file,"path": self.path,"metal": self.metal,"facet": self.surface_type, "out_path": ts_path,
                             "spawn_jobs": True, "opt_obj_dict": opt_obj_dict, "vib_obj_dict": vib_obj_dict,
                             "nprocs": 48, "name_to_adjlist_dict": self.name_to_adjlist_dict,
