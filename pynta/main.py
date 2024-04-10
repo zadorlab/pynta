@@ -456,12 +456,13 @@ class Pynta:
             IRC_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":self.software_kwargs,
                 "run_kwargs": {"fmax" : self.fmaxopt, "steps" : 70},"constraints": ["freeze up to {}".format(self.freeze_ind)]}
         # if irc_mode = "relaxed" : freeze half of the slab
-        if self.irc_mode == "relaxed":
+        elif self.irc_mode == "relaxed":
             IRC_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":self.software_kwargs,
                 "run_kwargs": {"fmax" : self.fmaxirc, "steps" : 70},"constraints":["freeze up to "+str(self.nslab)]}
         # if irc_mode = "skip" : do not conduct IRC
-        if self.irc_mode == "skip":
+        else:
             print("Skip IRC: IRC is not conducted")
+            pass
          
         print(f"irc_mode is: {self.irc_mode}, IRC_obj_dict: {IRC_obj_dict}")
 
