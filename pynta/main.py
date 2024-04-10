@@ -462,7 +462,8 @@ class Pynta:
         # if irc_mode = "skip" : do not conduct IRC
         if self.irc_mode == "skip":
             print("Skip IRC: IRC is not conducted")
-            
+         
+        print(f"irc_mode is: {self.irc_mode}, IRC_obj_dict: {IRC_obj_dict}")
 
         for i,rxn in enumerate(self.rxns_dict):
             ts_path = os.path.join(self.path,"TS"+str(i))
