@@ -628,6 +628,166 @@ class MolecularTSEstimate(FiretaskBase):
         else:
             return FWAction()
 
+
+@explicit_serialize
+class MolecularTSEstimate_noIRC(FiretaskBase):
+    required_params = ["rxn","ts_path","slab_path","adsorbates_path","rxns_file","path","metal","facet",
+                        "name_to_adjlist_dict", "gratom_to_molecule_atom_maps",
+                        "gratom_to_molecule_surface_atom_maps","opt_obj_dict",
+                                "vib_obj_dict","nslab","Eharmtol","Eharmfiltertol","Ntsmin","max_num_hfsp_opts"]
+    optional_params = ["out_path","spawn_jobs","nprocs",]
+    def run_task(self, fw_spec):
+        gratom_to_molecule_atom_maps = {sm: {int(k):v for k,v in d.items()} for sm,d in self["gratom_to_molecule_atom_maps"].items()}
+        gratom_to_molecule_surface_atom_maps = {sm: {int(k):v for k,v in d.items()} for sm,d in self["gratom_to_molecule_surface_atom_maps"].items()}
+        out_path = self["out_path"] if "out_path" in self.keys() else ts_path
+        spawn_jobs = self["spawn_jobs"] if "spawn_jobs" in self.keys() else False
+        nprocs = self["nprocs"] if "nprocs" in self.keys() else 1
+
+        ts_path = self["ts_path"]
+        rxn = self["rxn"]
+        index = rxn["index"]
+        metal = self["metal"]
+        facet = self["facet"]
+        nslab = self["nslab"]
+        Eharmtol = self["Eharmtol"]
+        Eharmfiltertol = self["Eharmfiltertol"]
+        Ntsmin = self["Ntsmin"]
+        max_num_hfsp_opts = self["max_num_hfsp_opts"]
+        slab_path = self["slab_path"]
+        slab = read(slab_path)
+
+        cas = SlabAdsorptionSites(slab,facet,allow_6fold=False,composition_effect=False,
+                            label_sites=True,
+                            surrogate_metal=metal)
+
+        adsorbates_path = self["adsorbates_path"]
+
+
+        reactants = Molecule().from_adjacency_list(rxn["reactant"])
+        reactants.multiplicity = reactants.get_radical_count() + 1
+        products = Molecule().from_adjacency_list(rxn["product"])
+        products.multiplicity = products.get_radical_count() + 1
+
+        reactant_names = rxn["reactant_names"]
+        product_names = rxn["product_names"]
+        rxn_name = rxn["reaction"]
+
+        mol_dict = {name: Molecule().from_adjacency_list(adj.replace("multiplicity -187","")) for name,adj in self["name_to_adjlist_dict"].items()}
+
+        for sm,mol in mol_dict.items():
+            mol.multiplicity = mol.get_radical_count() + 1
+
+        reactant_mols = [mol_dict[name] for name in reactant_names]
+        product_mols = [mol_dict[name] for name in product_names]
+
+        adsorbates = get_unique_optimized_adsorbates(rxn,adsorbates_path,mol_dict,cas,gratom_to_molecule_surface_atom_maps,nslab)
+
+        forward,species_names = determine_TS_construction(reactant_names,
+                    reactant_mols,product_names,product_mols)
+
+        ordered_adsorbates = [adsorbates[name] for name in species_names]
+
+        rnum_surf_sites = [len(mol.get_surface_sites()) for i,mol in enumerate(reactant_mols)]
+        pnum_surf_sites = [len(mol.get_surface_sites()) for i,mol in enumerate(product_mols)]
+
+        ts_dict = {"forward": forward, "name": rxn_name, "reactants": reactants.to_adjacency_list(), "products": products.to_adjacency_list(),
+            "species_names": species_names, "nslab": nslab}
+
+        if forward:
+            num_surf_sites = rnum_surf_sites
+            reverse_names = product_names
+        else:
+            temp = products
+            products = reactants
+            reactants = temp
+            num_surf_sites = pnum_surf_sites
+            reverse_names = reactant_names
+
+        mols = [mol_dict[name] for name in species_names]
+        ts_dict["mols"] = [mol.to_adjacency_list() for mol in mols]
+        ts_dict["ads_sizes"] = [ads_size(mol) for mol in mols]
+        template_mol_map = get_template_mol_map(reactants,mols)
+        ts_dict["template_mol_map"] = template_mol_map
+        ts_dict["reverse_names"] = reverse_names
+        ts_dict["molecule_to_atom_maps"] = [{value:key for key,value in gratom_to_molecule_atom_maps[name].items()} for name in species_names]
+
+        with open(os.path.join(ts_path,"info.json"),'w') as f:
+            json.dump(ts_dict,f)
+
+        molecule_to_atom_maps = [{value:key for key,value in gratom_to_molecule_atom_maps[name].items()} for name in species_names]
+        template_to_ase = {i:get_ase_index(i,template_mol_map,molecule_to_atom_maps,
+                    nslab,[ads_size(mol) for mol in mols]) for i in range(len(reactants.atoms))}
+        ase_to_mol_num = {}
+        for tind,aind in template_to_ase.items():
+            if aind:
+                for i,mol_map in enumerate(template_mol_map):
+                    if tind in mol_map.keys():
+                        ase_to_mol_num[aind] = i
+                        break
+
+        tsstructs = get_unique_TS_structs(adsorbates,species_names,slab,cas,nslab,num_surf_sites,mol_dict,
+                                 gratom_to_molecule_atom_maps,gratom_to_molecule_surface_atom_maps,
+                                 facet,metal)
+
+        print("number of TS guesses pre-empty-sites:")
+        print(len(tsstructs))
+
+        tsstructs_out,constraint_lists,atom_bond_potential_lists,site_bond_potential_lists,site_bond_dict_list = generate_constraints_harmonic_parameters(
+                                            tsstructs,adsorbates,slab,reactants,
+                                             products,rxn["reaction_family"],template_reversed=(not forward),
+                                            ordered_names=species_names,reverse_names=reverse_names,
+                                            mol_dict=mol_dict,gratom_to_molecule_atom_maps=gratom_to_molecule_atom_maps,
+                                            gratom_to_molecule_surface_atom_maps=gratom_to_molecule_surface_atom_maps,
+                                            nslab=nslab,facet=facet,metal=metal,cas=cas)
+
+
+        out_tsstructs,new_atom_bond_potential_lists,new_site_bond_potential_lists,new_constraint_lists = get_surface_forming_bond_pairings(
+                            tsstructs_out,atom_bond_potential_lists,site_bond_potential_lists,constraint_lists,site_bond_dict_list,cas)
+
+        print("number of TS guesses with empty sites:")
+        print(len(out_tsstructs))
+
+        if max_num_hfsp_opts:
+            inds = index_site_bond_potential_lists_by_site_distances(new_site_bond_potential_lists)[:max_num_hfsp_opts].tolist()
+            out_tsstructs = [out_tsstructs[ind] for ind in inds]
+            new_atom_bond_potential_lists = [new_atom_bond_potential_lists[ind] for ind in inds]
+            new_site_bond_potential_lists = [new_site_bond_potential_lists[ind] for ind in inds]
+            new_constraint_lists = [new_constraint_lists[ind] for ind in inds]
+            print("number of TS guesses after filtering by max distance between sites")
+            print(len(out_tsstructs))
+
+        inputs = [ (out_tsstructs[j],new_atom_bond_potential_lists[j],new_site_bond_potential_lists[j],nslab,new_constraint_lists[j],ts_path,j,molecule_to_atom_maps,ase_to_mol_num) for j in range(len(out_tsstructs))]
+
+        #with mp.Pool(nprocs) as pool:
+        #    outputs = pool.map(map_harmonically_forced_xtb,inputs)
+        outputs = list(map(map_harmonically_forced_xtb,inputs))
+
+        xyzs = [output[2] for output in outputs if output[0]]
+        Es = [output[1] for output in outputs if output[0]]
+
+        xyzs,Es = filter_nonunique_TS_guess_indices(xyzs,Es) #remove identical guesses (that will just get filtered out later in the collect resulting in less guesses)
+
+        Einds = np.argsort(np.array(Es))
+        Emin = np.min(np.array(Es))
+        xyzsout = []
+        for Eind in Einds:
+            if Es[Eind]/Emin < Eharmtol: #include all TSs with energy close to Emin
+                xyzsout.append(xyzs[Eind])
+            elif Es[Eind]/Emin > Eharmfiltertol: #if the energy is much larger than Emin skip it
+                continue
+            elif len(xyzsout) < Ntsmin: #if the energy isn't similar, but isn't much larger include the smallest until Ntsmin is reached
+                xyzsout.append(xyzs[Eind])
+
+        if spawn_jobs:
+            ctask = MolecularCollect({"xyzs":xyzsout,"check_symm":True,"fw_generators": ["optimize_firework",["vibrations_firework","IRC_firework","IRC_firework"]],
+                "fw_generator_dicts": [self["opt_obj_dict"],[self["vib_obj_dict"]]],
+                    "out_names": ["opt.xyz",["vib.json","irc_forward.traj","irc_reverse.traj"]],"future_check_symms": [True,False], "label": "TS"+str(index)+"_"+rxn_name})
+            cfw = Firework([ctask],name="TS"+str(index)+"_"+rxn_name+"_collect",spec={"_allow_fizzled_parents": True, "_priority": 5})
+            newwf = Workflow([cfw],name='rxn_'+str(index)+str(rxn_name))
+            return FWAction(detours=newwf) #using detour allows us to inherit children from the original collect to the subsequent collects
+        else:
+            return FWAction()
+
 def collect_firework(xyzs,check_symm,fw_generators,fw_generator_dicts,out_names,future_check_symms,parents=[],label="",allow_fizzled_parents=False):
     task = MolecularCollect({"xyzs": xyzs, "check_symm": check_symm, "fw_generators": fw_generators,
         "fw_generator_dicts": fw_generator_dicts, "out_names": out_names, "future_check_symms": future_check_symms, "label": label})
@@ -726,10 +886,10 @@ class MolecularTSNudge(FiretaskBase):
         else:
             return FWAction()
 
-def IRC_firework(xyz,label,out_path=None,spawn_jobs=False,software=None,
+def IRC_firework(xyz,label,out_path=None,spawn_jobs=False,software=None,irc_mode,
         socket=False,software_kwargs={},opt_kwargs={},run_kwargs={},constraints=[],parents=[],ignore_errors=False,forward=True):
         if out_path is None: out_path = os.path.join(directory,label+"_irc.traj")
-        t1 = MolecularIRC(xyz=xyz,label=label,software=software,
+        t1 = MolecularIRC(xyz=xyz,label=label,software=software,irc_mode=irc_mode,
             socket=socket,software_kwargs=software_kwargs,opt_kwargs=opt_kwargs,run_kwargs=run_kwargs,
             constraints=constraints,ignore_errors=ignore_errors,forward=forward)
         t2 = FileTransferTask({'files': [{'src': label+'_irc.traj', 'dest': out_path}], 'mode': 'copy', 'ignore_errors' : ignore_errors})
@@ -738,7 +898,7 @@ def IRC_firework(xyz,label,out_path=None,spawn_jobs=False,software=None,
 
 @explicit_serialize
 class MolecularIRC(FiretaskBase):
-    required_params = ["xyz","label"]
+    required_params = ["xyz","label","irc_mode"]
     optional_params = ["software","socket",
             "software_kwargs", "opt_kwargs", "run_kwargs", "constraints", "ignore_errors", "forward"]
     def run_task(self, fw_spec):
