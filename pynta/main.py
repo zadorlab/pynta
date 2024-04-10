@@ -33,6 +33,7 @@ class Pynta:
                             }, },
         software_kwargs_gas=None,
         TS_opt_software_kwargs=None,
+        irc_mode=None, #choose irc mode: 'skip', 'relaxed', 'fixed'
         lattice_opt_software_kwargs={'kpts': (25,25,25), 'ecutwfc': 70, 'degauss':0.02, 'mixing_mode': 'plain'},
         reset_launchpad=False,queue_adapter_path=None,num_jobs=25,max_num_hfsp_opts=None,#max_num_hfsp_opts is mostly for fast testing
         Eharmtol=3.0,Eharmfiltertol=30.0,Ntsmin=5,frozen_layers=2,fmaxopt=0.05,fmaxirc=0.1,fmaxopthard=0.05):
@@ -59,6 +60,7 @@ class Pynta:
         self.metal = metal
         self.adsorbate_fw_dict = dict()
         self.software_kwargs = software_kwargs
+        self.irc_mode = irc_mode
 
         if software.lower() == 'vasp':
             self.pbc = (True,True,True)
@@ -449,8 +451,19 @@ class Pynta:
                 "run_kwargs": {"fmax" : 0.02, "steps" : 70},"constraints": ["freeze up to "+str(self.nslab)],"sella":True,"order":1,}
         vib_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":self.software_kwargs,
                 "constraints": ["freeze up to "+str(self.nslab)]}
-        IRC_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":self.software_kwargs,
+        # if irc_mode = "fixed" : freeze all the slab
+        if self.irc_mode == "fixed":
+            IRC_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":self.software_kwargs,
+                "run_kwargs": {"fmax" : self.fmaxopt, "steps" : 70},"constraints": ["freeze up to {}".format(self.freeze_ind)]}
+        # if irc_mode = "relaxed" : freeze half of the slab
+        if self.irc_mode == "relaxed":
+            IRC_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":self.software_kwargs,
                 "run_kwargs": {"fmax" : self.fmaxirc, "steps" : 70},"constraints":["freeze up to "+str(self.nslab)]}
+        # if irc_mode = "skip" : do not conduct IRC
+        if self.irc_mode == "skip":
+            print("Skip IRC: IRC is not conducted")
+            
+
         for i,rxn in enumerate(self.rxns_dict):
             ts_path = os.path.join(self.path,"TS"+str(i))
             os.makedirs(ts_path)
