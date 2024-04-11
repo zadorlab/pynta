@@ -442,6 +442,10 @@ class Pynta:
         Sets up fireworks to generate and filter a set of TS estimates, optimize each unique TS estimate,
         and run vibrational and IRC calculations on the each unique final transition state
         Note the vibrational and IRC calculations are launched at the same time
+
+        If irc_mode is "fixed", entire slab layers are fixed. 
+        If irc_mode is "relaxed", bottom half of slab layers are fixed and top half of slab layers are relaxed.
+        If irc_mode is not "fixed" nor "relaxed", IRC is not calculated
         """
         if self.software != "XTB":
             opt_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":self.software_kwargs_TS,
@@ -452,7 +456,7 @@ class Pynta:
         vib_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":self.software_kwargs,
                 "constraints": ["freeze up to "+str(self.nslab)]}
 
-        print(f"irc_mode is: {self.irc_mode}")
+        print(f"================= IRC mode is: {self.irc_mode} =======================")
 
         for i,rxn in enumerate(self.rxns_dict):
             ts_path = os.path.join(self.path,"TS"+str(i))
@@ -518,8 +522,6 @@ class Pynta:
                         parents.extend(self.adsorbate_fw_dict[m])
                 fw = Firework([ts_task],parents=parents,name="TS"+str(i)+"est",spec={"_allow_fizzled_parents": True,"_priority": 10})
                 self.fws.append(fw)
-
-        print(f"irc_mode is: {self.irc_mode}")
 
     def launch(self,single_job=False):
         """
