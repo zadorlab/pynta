@@ -463,6 +463,9 @@ class Pynta:
             os.makedirs(ts_path)
             #if irc_mode is "fixed" freeze all slab and conduct MolecularTSEstimate. 
             if self.irc_mode == "fixed":
+                print("Entire slab layers are frozen")
+                print(f"======================================================================")
+
                 IRC_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":self.software_kwargs,
                     "run_kwargs": {"fmax" : self.fmaxopt, "steps" : 70},"constraints": ["freeze up to {}".format(self.freeze_ind)]}
 
@@ -484,6 +487,8 @@ class Pynta:
                 self.fws.append(fw)
 
             elif self.irc_mode == "relaxed":
+                print("Top half of the slab is relaxed")
+                print(f"======================================================================")
                 IRC_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":self.software_kwargs,
                 "run_kwargs": {"fmax" : self.fmaxopt, "steps" : 70},"constraints": ["freeze up to {}".format(self.freeze_ind)]}
 
@@ -505,7 +510,8 @@ class Pynta:
                 self.fws.append(fw)
         # if irc_mode = "skip" : do not conduct IRC
             else:
-                print("Skip IRC: IRC is not conducted") 
+                print("Skip IRC: IRC is not conducted")
+                print(f"======================================================================")
                 ts_task = MolecularTSEstimate_noIRC({"rxn": rxn,"ts_path": ts_path,"slab_path": self.slab_path,"adsorbates_path": os.path.join(self.path,"Adsorbates"),
                             "rxns_file": self.rxns_file,"path": self.path,"metal": self.metal,"facet": self.surface_type, "out_path": ts_path,
                             "spawn_jobs": True, "opt_obj_dict": opt_obj_dict, "vib_obj_dict": vib_obj_dict,
