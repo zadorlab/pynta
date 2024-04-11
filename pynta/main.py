@@ -519,7 +519,7 @@ class Pynta:
                 fw = Firework([ts_task],parents=parents,name="TS"+str(i)+"est",spec={"_allow_fizzled_parents": True,"_priority": 10})
                 self.fws.append(fw)
 
-        print(f"irc_mode is: {self.irc_mode}, IRC_obj_dict: {IRC_obj_dict}")
+        print(f"irc_mode is: {self.irc_mode}")
 
     def launch(self,single_job=False):
         """
