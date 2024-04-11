@@ -779,7 +779,7 @@ class MolecularTSEstimate_noIRC(FiretaskBase):
                 xyzsout.append(xyzs[Eind])
 
         if spawn_jobs:
-            ctask = MolecularCollect({"xyzs":xyzsout,"check_symm":True,"fw_generators": ["optimize_firework",["vibrations_firework","IRC_firework","IRC_firework"]],
+            ctask = MolecularCollect({"xyzs":xyzsout,"check_symm":True,"fw_generators": ["optimize_firework",["vibrations_firework"]],
                 "fw_generator_dicts": [self["opt_obj_dict"],[self["vib_obj_dict"]]],
                     "out_names": ["opt.xyz",["vib.json","irc_forward.traj","irc_reverse.traj"]],"future_check_symms": [True,False], "label": "TS"+str(index)+"_"+rxn_name})
             cfw = Firework([ctask],name="TS"+str(index)+"_"+rxn_name+"_collect",spec={"_allow_fizzled_parents": True, "_priority": 5})
@@ -886,10 +886,10 @@ class MolecularTSNudge(FiretaskBase):
         else:
             return FWAction()
 
-def IRC_firework(xyz,label,out_path=None,spawn_jobs=False,software=None,irc_mode,
+def IRC_firework(xyz,label,out_path=None,spawn_jobs=False,software=None,
         socket=False,software_kwargs={},opt_kwargs={},run_kwargs={},constraints=[],parents=[],ignore_errors=False,forward=True):
         if out_path is None: out_path = os.path.join(directory,label+"_irc.traj")
-        t1 = MolecularIRC(xyz=xyz,label=label,software=software,irc_mode=irc_mode,
+        t1 = MolecularIRC(xyz=xyz,label=label,software=software,
             socket=socket,software_kwargs=software_kwargs,opt_kwargs=opt_kwargs,run_kwargs=run_kwargs,
             constraints=constraints,ignore_errors=ignore_errors,forward=forward)
         t2 = FileTransferTask({'files': [{'src': label+'_irc.traj', 'dest': out_path}], 'mode': 'copy', 'ignore_errors' : ignore_errors})
@@ -898,7 +898,7 @@ def IRC_firework(xyz,label,out_path=None,spawn_jobs=False,software=None,irc_mode
 
 @explicit_serialize
 class MolecularIRC(FiretaskBase):
-    required_params = ["xyz","label","irc_mode"]
+    required_params = ["xyz","label"]
     optional_params = ["software","socket",
             "software_kwargs", "opt_kwargs", "run_kwargs", "constraints", "ignore_errors", "forward"]
     def run_task(self, fw_spec):
