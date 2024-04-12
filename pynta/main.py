@@ -470,45 +470,11 @@ class Pynta:
                 IRC_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":self.software_kwargs,
                     "run_kwargs": {"fmax" : self.fmaxopt, "steps" : 70},"constraints": ["freeze up to "+str(self.nslab)]}
 
-                ts_task = MolecularTSEstimate({"rxn": rxn,"ts_path": ts_path,"slab_path": self.slab_path,"adsorbates_path": os.path.join(self.path,"Adsorbates"),
-                            "rxns_file": self.rxns_file,"path": self.path,"metal": self.metal,"facet": self.surface_type, "out_path": ts_path,
-                            "spawn_jobs": True, "opt_obj_dict": opt_obj_dict, "vib_obj_dict": vib_obj_dict,
-                            "IRC_obj_dict": IRC_obj_dict, "nprocs": 48, "name_to_adjlist_dict": self.name_to_adjlist_dict,
-                            "gratom_to_molecule_atom_maps":{sm: {str(k):v for k,v in d.items()} for sm,d in self.gratom_to_molecule_atom_maps.items()},
-                            "gratom_to_molecule_surface_atom_maps":{sm: {str(k):v for k,v in d.items()} for sm,d in self.gratom_to_molecule_surface_atom_maps.items()},
-                            "nslab":self.nslab,"Eharmtol":self.Eharmtol,"Eharmfiltertol":self.Eharmfiltertol,"Ntsmin":self.Ntsmin,
-                            "max_num_hfsp_opts":self.max_num_hfsp_opts})
-                reactants = rxn["reactant_names"]
-                products = rxn["product_names"]
-                parents = []
-                if not adsorbates_finished:
-                    for m in reactants+products:
-                        parents.extend(self.adsorbate_fw_dict[m])
-                fw = Firework([ts_task],parents=parents,name="TS"+str(i)+"est",spec={"_allow_fizzled_parents": True,"_priority": 10})
-                self.fws.append(fw)
-
             elif self.irc_mode == "relaxed":
                 print("Top half of the slab is relaxed")
                 print(f"======================================================================")
                 IRC_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":self.software_kwargs,
                 "run_kwargs": {"fmax" : self.fmaxopt, "steps" : 70},"constraints": ["freeze up to {}".format(self.freeze_ind)]}
-
-                ts_task = MolecularTSEstimate({"rxn": rxn,"ts_path": ts_path,"slab_path": self.slab_path,"adsorbates_path": os.path.join(self.path,"Adsorbates"),
-                            "rxns_file": self.rxns_file,"path": self.path,"metal": self.metal,"facet": self.surface_type, "out_path": ts_path,
-                            "spawn_jobs": True, "opt_obj_dict": opt_obj_dict, "vib_obj_dict": vib_obj_dict,
-                            "IRC_obj_dict": IRC_obj_dict, "nprocs": 48, "name_to_adjlist_dict": self.name_to_adjlist_dict,
-                            "gratom_to_molecule_atom_maps":{sm: {str(k):v for k,v in d.items()} for sm,d in self.gratom_to_molecule_atom_maps.items()},
-                            "gratom_to_molecule_surface_atom_maps":{sm: {str(k):v for k,v in d.items()} for sm,d in self.gratom_to_molecule_surface_atom_maps.items()},
-                            "nslab":self.nslab,"Eharmtol":self.Eharmtol,"Eharmfiltertol":self.Eharmfiltertol,"Ntsmin":self.Ntsmin,
-                            "max_num_hfsp_opts":self.max_num_hfsp_opts})
-                reactants = rxn["reactant_names"]
-                products = rxn["product_names"]
-                parents = []
-                if not adsorbates_finished:
-                    for m in reactants+products:
-                        parents.extend(self.adsorbate_fw_dict[m])
-                fw = Firework([ts_task],parents=parents,name="TS"+str(i)+"est",spec={"_allow_fizzled_parents": True,"_priority": 10})
-                self.fws.append(fw)
         # if irc_mode = "skip" : do not conduct IRC
             else:
                 print("Skip IRC: IRC is not conducted")
