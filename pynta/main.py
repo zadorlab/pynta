@@ -478,13 +478,13 @@ class Pynta:
                 print("==Entire slab layers are frozen==")
                 logging.info("Entire slab layers are frozen")
                 IRC_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":self.software_kwargs,
-                    "run_kwargs": {"fmax" : self.fmaxopt, "steps" : 70},"constraints": ["freeze up to "+str(self.nslab)], irc_mode}
+                    "run_kwargs": {"fmax" : self.fmaxopt, "steps" : 70},"constraints": ["freeze up to "+str(self.nslab)], "irc_mode":self.irc_mode}
 
             elif self.irc_mode == "relaxed":
                 print("==Top half of the slab is relaxed==")
                 logger.info("==Top half of the slab is relaxed==")
                 IRC_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":self.software_kwargs,
-                "run_kwargs": {"fmax" : self.fmaxopt, "steps" : 70},"constraints": ["freeze up to {}".format(self.freeze_ind)],irc_mode}
+                "run_kwargs": {"fmax" : self.fmaxopt, "steps" : 70},"constraints": ["freeze up to {}".format(self.freeze_ind)],"irc_mode":self.irc_mode}
         # if irc_mode = "skip" : do not conduct IRC
             else:
                 print("==Skip IRC: IRC is not conducted==")
