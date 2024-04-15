@@ -487,7 +487,6 @@ class Pynta:
             else:
                 print("==Skip IRC: IRC is not conducted==")
                 logger.info("==Skip IRC: IRC is not conducted==")
-                IRC_obj_dict = {}
 
             ts_path = os.path.join(self.path,"TS"+str(i))
             os.makedirs(ts_path)
@@ -502,7 +501,6 @@ class Pynta:
             reactants = rxn["reactant_names"]
             products = rxn["product_names"]
             parents = []
-            
             if not adsorbates_finished:
                 for m in reactants+products:
                     parents.extend(self.adsorbate_fw_dict[m])
