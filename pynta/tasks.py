@@ -616,7 +616,8 @@ class MolecularTSEstimate(FiretaskBase):
                 xyzsout.append(xyzs[Eind])
 
         if spawn_jobs:
-            if self.[irc_mode] == "skip":
+            print(irc_mode)
+            if irc_mode == "skip":
                 ctask = MolecularCollect({"xyzs":xyzsout,"check_symm":True,"fw_generators": ["optimize_firework",["vibrations_firework"]],
                         "fw_generator_dicts": [self["opt_obj_dict"],[self["vib_obj_dict"]]],
                         "out_names": ["opt.xyz",["vib.json"]],"future_check_symms": [True,False], "label": "TS"+str(index)+"_"+rxn_name})
@@ -638,6 +639,11 @@ class MolecularTSEstimate(FiretaskBase):
                 return FWAction(detours=newwf) #using detour allows us to inherit children from the original collect to the subsequent collects
         else:
             return FWAction()
+            
+def collect_firework(xyzs,check_symm,fw_generators,fw_generator_dicts,out_names,future_check_symms,parents=[],label="",allow_fizzled_parents=False):
+    task = MolecularCollect({"xyzs": xyzs, "check_symm": check_symm, "fw_generators": fw_generators,
+        "fw_generator_dicts": fw_generator_dicts, "out_names": out_names, "future_check_symms": future_check_symms, "label": label})
+    return Firework([task],parents=parents,name=label+"collect",spec={"_allow_fizzled_parents": allow_fizzled_parents,"_priority": 5})
 
 def collect_firework(xyzs,check_symm,fw_generators,fw_generator_dicts,out_names,future_check_symms,parents=[],label="",allow_fizzled_parents=False):
     task = MolecularCollect({"xyzs": xyzs, "check_symm": check_symm, "fw_generators": fw_generators,
