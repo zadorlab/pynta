@@ -616,8 +616,15 @@ class MolecularTSEstimate(FiretaskBase):
                 xyzsout.append(xyzs[Eind])
 
         if spawn_jobs:
-            print(irc_mode)
-            if irc_mode == "relaxed" or irc_mode == "fixed":
+            if self.[irc_mode] == "skip":
+                ctask = MolecularCollect({"xyzs":xyzsout,"check_symm":True,"fw_generators": ["optimize_firework",["vibrations_firework"]],
+                        "fw_generator_dicts": [self["opt_obj_dict"],[self["vib_obj_dict"]]],
+                        "out_names": ["opt.xyz",["vib.json"]],"future_check_symms": [True,False], "label": "TS"+str(index)+"_"+rxn_name})
+                cfw = Firework([ctask],name="TS"+str(index)+"_"+rxn_name+"_collect",spec={"_allow_fizzled_parents": True, "_priority": 5})
+                newwf = Workflow([cfw],name='rxn_'+str(index)+str(rxn_name))
+                return FWAction(detours=newwf) #using detour allows us to inherit children from the original collect to the subsequent collects
+
+            else:
                 irc_obj_dict_forward = deepcopy(self["IRC_obj_dict"])
                 irc_obj_dict_forward["forward"] = True
                 irc_obj_dict_reverse = deepcopy(self["IRC_obj_dict"])
@@ -626,15 +633,6 @@ class MolecularTSEstimate(FiretaskBase):
                 ctask = MolecularCollect({"xyzs":xyzsout,"check_symm":True,"fw_generators": ["optimize_firework",["vibrations_firework","IRC_firework","IRC_firework"]],
                     "fw_generator_dicts": [self["opt_obj_dict"],[self["vib_obj_dict"],irc_obj_dict_forward,irc_obj_dict_reverse]],
                     "out_names": ["opt.xyz",["vib.json","irc_forward.traj","irc_reverse.traj"]],"future_check_symms": [True,False], "label": "TS"+str(index)+"_"+rxn_name})
-                cfw = Firework([ctask],name="TS"+str(index)+"_"+rxn_name+"_collect",spec={"_allow_fizzled_parents": True, "_priority": 5})
-                newwf = Workflow([cfw],name='rxn_'+str(index)+str(rxn_name))
-                return FWAction(detours=newwf) #using detour allows us to inherit children from the original collect to the subsequent collects
-                
-            #if irc_mode == "skip":
-            else:
-                ctask = MolecularCollect({"xyzs":xyzsout,"check_symm":True,"fw_generators": ["optimize_firework",["vibrations_firework"]],
-                        "fw_generator_dicts": [self["opt_obj_dict"],[self["vib_obj_dict"]]],
-                        "out_names": ["opt.xyz",["vib.json"]],"future_check_symms": [True,False], "label": "TS"+str(index)+"_"+rxn_name})
                 cfw = Firework([ctask],name="TS"+str(index)+"_"+rxn_name+"_collect",spec={"_allow_fizzled_parents": True, "_priority": 5})
                 newwf = Workflow([cfw],name='rxn_'+str(index)+str(rxn_name))
                 return FWAction(detours=newwf) #using detour allows us to inherit children from the original collect to the subsequent collects
