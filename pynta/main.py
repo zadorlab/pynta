@@ -466,6 +466,7 @@ class Pynta:
                 "constraints": ["freeze up to "+str(self.nslab)]}
 
         #logging.info
+        print(f"================= IRC mode is: {self.irc_mode} =======================")
         logger.info(f"================= IRC mode is: {self.irc_mode} =======================")
         #pass through 
         
@@ -474,17 +475,20 @@ class Pynta:
             os.makedirs(ts_path)
             #if irc_mode is "fixed" freeze all slab and conduct MolecularTSEstimate. 
             if self.irc_mode == "fixed":
+                print("==Entire slab layers are frozen==")
                 logging.info("Entire slab layers are frozen")
                 IRC_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":self.software_kwargs,
-                    "run_kwargs": {"fmax" : self.fmaxopt, "steps" : 70},"constraints": ["freeze up to "+str(self.nslab)]}
+                    "run_kwargs": {"fmax" : self.fmaxopt, "steps" : 70},"constraints": ["freeze up to "+str(self.nslab)], irc_mode}
 
             elif self.irc_mode == "relaxed":
-                logger.info("Top half of the slab is relaxed")
+                print("==Top half of the slab is relaxed==")
+                logger.info("==Top half of the slab is relaxed==")
                 IRC_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":self.software_kwargs,
-                "run_kwargs": {"fmax" : self.fmaxopt, "steps" : 70},"constraints": ["freeze up to {}".format(self.freeze_ind)]}
+                "run_kwargs": {"fmax" : self.fmaxopt, "steps" : 70},"constraints": ["freeze up to {}".format(self.freeze_ind)],irc_mode}
         # if irc_mode = "skip" : do not conduct IRC
             else:
-                logger.info("Skip IRC: IRC is not conducted")
+                print("==Skip IRC: IRC is not conducted==")
+                logger.info("==Skip IRC: IRC is not conducted==")
                 pass
 
             reactants = rxn["reactant_names"]
