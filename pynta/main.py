@@ -471,31 +471,30 @@ class Pynta:
         #pass through 
         
         for i,rxn in enumerate(self.rxns_dict):
-            ts_path = os.path.join(self.path,"TS"+str(i))
-            os.makedirs(ts_path)
             #if irc_mode is "fixed" freeze all slab and conduct MolecularTSEstimate. 
             if self.irc_mode == "fixed":
                 print("==Entire slab layers are frozen==")
                 logging.info("Entire slab layers are frozen")
                 IRC_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":self.software_kwargs,
-                    "run_kwargs": {"fmax" : self.fmaxopt, "steps" : 70},"constraints": ["freeze up to "+str(self.nslab)], "irc_mode":self.irc_mode}
+                    "run_kwargs": {"fmax" : self.fmaxopt, "steps" : 70},"constraints": ["freeze up to "+str(self.nslab)]}
 
             elif self.irc_mode == "relaxed":
                 print("==Top half of the slab is relaxed==")
                 logger.info("==Top half of the slab is relaxed==")
                 IRC_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":self.software_kwargs,
-                "run_kwargs": {"fmax" : self.fmaxopt, "steps" : 70},"constraints": ["freeze up to {}".format(self.freeze_ind)],"irc_mode":self.irc_mode}
+                    "run_kwargs": {"fmax" : self.fmaxopt, "steps" : 70},"constraints": ["freeze up to {}".format(self.freeze_ind)]}
         # if irc_mode = "skip" : do not conduct IRC
             else:
                 print("==Skip IRC: IRC is not conducted==")
                 logger.info("==Skip IRC: IRC is not conducted==")
-                pass
+                IRC_obj_dict = {}
+
             ts_path = os.path.join(self.path,"TS"+str(i))
             os.makedirs(ts_path)
             ts_task = MolecularTSEstimate({"rxn": rxn,"ts_path": ts_path,"slab_path": self.slab_path,"adsorbates_path": os.path.join(self.path,"Adsorbates"),
-                "rxns_file": self.rxns_file,"path": self.path,"metal": self.metal,"facet": self.surface_type, "out_path": ts_path, "irc_mode": self.irc_mode,
-                "spawn_jobs": True, "opt_obj_dict": opt_obj_dict, "vib_obj_dict": vib_obj_dict,
-                    "IRC_obj_dict": IRC_obj_dict, "nprocs": 48, "name_to_adjlist_dict": self.name_to_adjlist_dict,
+                    "rxns_file": self.rxns_file,"path": self.path,"metal": self.metal,"facet": self.surface_type, "out_path": ts_path, "irc_mode": self.irc_mode,
+                    "spawn_jobs": True, "opt_obj_dict": opt_obj_dict, "vib_obj_dict": vib_obj_dict, "IRC_obj_dict": IRC_obj_dict,
+                    "nprocs": 48, "name_to_adjlist_dict": self.name_to_adjlist_dict,
                     "gratom_to_molecule_atom_maps":{sm: {str(k):v for k,v in d.items()} for sm,d in self.gratom_to_molecule_atom_maps.items()},
                     "gratom_to_molecule_surface_atom_maps":{sm: {str(k):v for k,v in d.items()} for sm,d in self.gratom_to_molecule_surface_atom_maps.items()},
                     "nslab":self.nslab,"Eharmtol":self.Eharmtol,"Eharmfiltertol":self.Eharmfiltertol,"Ntsmin":self.Ntsmin,
@@ -503,6 +502,7 @@ class Pynta:
             reactants = rxn["reactant_names"]
             products = rxn["product_names"]
             parents = []
+            
             if not adsorbates_finished:
                 for m in reactants+products:
                     parents.extend(self.adsorbate_fw_dict[m])
