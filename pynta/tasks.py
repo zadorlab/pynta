@@ -615,7 +615,8 @@ class MolecularTSEstimate(FiretaskBase):
                 xyzsout.append(xyzs[Eind])
 
         if spawn_jobs:
-            if self.[irc_mode] == "skip":
+            print(irc_mode)
+            if irc_mode == "skip":
                 ctask = MolecularCollect({"xyzs":xyzsout,"check_symm":True,"fw_generators": ["optimize_firework",["vibrations_firework"]],
                         "fw_generator_dicts": [self["opt_obj_dict"],[self["vib_obj_dict"]]],
                         "out_names": ["opt.xyz",["vib.json"]],"future_check_symms": [True,False], "label": "TS"+str(index)+"_"+rxn_name})
