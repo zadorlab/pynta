@@ -22,6 +22,11 @@ from fireworks.core.fworker import FWorker
 import fireworks.fw_config
 import logging
 
+#logger
+logger = logging.getLogger(__name__)
+logging.basicConfig(filename='pynta.log', encoding='utf-8', level=logging.INFO)
+
+
 class Pynta:
     def __init__(self,path,rxns_file,surface_type,metal,label,launchpad_path=None,fworker_path=None,
         vacuum=8.0,repeats=(3,3,4),slab_path=None,software="Espresso", pbc=(True,True,False),socket=False,queue=False,njobs_queue=0,a=None,
@@ -118,6 +123,8 @@ class Pynta:
         self.fmaxirc = fmaxirc
         self.fmaxopthard = fmaxopthard
 
+        logger.info('Pynta class is initiated')
+
     def generate_slab(self,skip_launch=False):
         """
         generates and optimizes a small scale slab that can be scaled to a large slab as needed
@@ -131,6 +138,7 @@ class Pynta:
             self.a = a
         else:
             a = self.a
+        logger.info('Construct slab with optimal lattice constant')
         #construct slab with optimial lattice constant
         slab = slab_type(self.metal,self.repeats,a,self.vacuum)
         slab.pbc = self.pbc
@@ -458,7 +466,7 @@ class Pynta:
                 "constraints": ["freeze up to "+str(self.nslab)]}
 
         #logging.info
-        print(f"================= IRC mode is: {self.irc_mode} =======================")
+        logger.info(f"================= IRC mode is: {self.irc_mode} =======================")
         #pass through 
         
         for i,rxn in enumerate(self.rxns_dict):
@@ -466,21 +474,17 @@ class Pynta:
             os.makedirs(ts_path)
             #if irc_mode is "fixed" freeze all slab and conduct MolecularTSEstimate. 
             if self.irc_mode == "fixed":
-                print("Entire slab layers are frozen")
-                print(f"======================================================================")
-
+                logging.info("Entire slab layers are frozen")
                 IRC_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":self.software_kwargs,
                     "run_kwargs": {"fmax" : self.fmaxopt, "steps" : 70},"constraints": ["freeze up to "+str(self.nslab)]}
 
             elif self.irc_mode == "relaxed":
-                print("Top half of the slab is relaxed")
-                print(f"======================================================================")
+                logger.info("Top half of the slab is relaxed")
                 IRC_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":self.software_kwargs,
                 "run_kwargs": {"fmax" : self.fmaxopt, "steps" : 70},"constraints": ["freeze up to {}".format(self.freeze_ind)]}
         # if irc_mode = "skip" : do not conduct IRC
             else:
-                print("Skip IRC: IRC is not conducted")
-                print(f"======================================================================")
+                logger.info("Skip IRC: IRC is not conducted")
                 pass
 
             reactants = rxn["reactant_names"]
