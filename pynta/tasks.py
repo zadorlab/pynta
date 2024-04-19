@@ -470,7 +470,7 @@ class MolecularTSEstimate(FiretaskBase):
                         "name_to_adjlist_dict", "gratom_to_molecule_atom_maps",
                         "gratom_to_molecule_surface_atom_maps","irc_mode",
                         "vib_obj_dict","opt_obj_dict","nslab","Eharmtol","Eharmfiltertol","Ntsmin","max_num_hfsp_opts"]
-    optional_params = ["out_path","spawn_jobs","nprocs"]
+    optional_params = ["out_path","spawn_jobs","nprocs","IRC_obj_dict"]
     def run_task(self, fw_spec):
         gratom_to_molecule_atom_maps = {sm: {int(k):v for k,v in d.items()} for sm,d in self["gratom_to_molecule_atom_maps"].items()}
         gratom_to_molecule_surface_atom_maps = {sm: {int(k):v for k,v in d.items()} for sm,d in self["gratom_to_molecule_surface_atom_maps"].items()}
