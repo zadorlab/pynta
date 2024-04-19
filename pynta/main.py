@@ -466,7 +466,7 @@ class Pynta:
                 "constraints": ["freeze up to "+str(self.nslab)]}
 
         #logging.info
-          logger.info(f"================= IRC mode is: {self.irc_mode} =======================")
+        logger.info(f"================= IRC mode is: {self.irc_mode} =======================")
         #pass through 
         
         for i,rxn in enumerate(self.rxns_dict):
