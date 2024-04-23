@@ -1,26 +1,40 @@
-name: pynta_env
+name: pynta_ocp
 channels:
   - defaults
   - mjohnson541
   - conda-forge
+  - pytorch
+  - pyg
 dependencies:
-  - python =3.8
+  - python =3.9
   - matplotlib
-  - spglib
-  - ase >=3.22.1
+  - ase =3.22.1
   - scipy >=1.1.0
   - numpy
   - pyyaml
   - sella >=2.2.1
   - sphinx
-  - anaconda::glpk
   - fireworks
-  - jax <=0.2.28
   - xtb >=6.4.1
   - xtb-python >=20.2
   - rmgmolecule
   - acat
-  - libffi <=3.3
   - nose
   - coverage
-  - liblapack !=3.9.0
+  - black=22.3.0
+  - e3nn=0.4.4
+  - orjson
+  - pip
+  - pre-commit=2.10.*
+  - pyg=2.2.0
+  - pymatgen=2023.5.10
+  - pytorch=1.13.1=py3.9_cpu_0
+  - pyyaml
+  - tensorboard
+  - tqdm
+  - pytest
+  - python-lmdb
+  - submitit
+  - syrupy=3.0.6
+  - wandb
+  - numba 
