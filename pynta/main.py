@@ -132,6 +132,8 @@ class Pynta:
         #construct slab with optimial lattice constant
         slab = slab_type(self.metal,self.repeats,a,self.vacuum)
         slab.pbc = self.pbc
+        if self.software.lower() == 'vasp' or self.software.lower() == 'dp' or self.software.lower()=='ocp': 
+            slab.pbc = (True, True, True) #vasp, deepMDkit, and ocp needs all x,y,z defined for pbc
         write(os.path.join(self.path,"slab_init.xyz"),slab)
         self.slab_path = os.path.join(self.path,"slab.xyz")
         if self.software != "XTB":
@@ -252,7 +254,9 @@ class Pynta:
             ads,mol_to_atoms_map = get_adsorbate(mol)
             if len(surf_sites) == 0:
                 if not skip_structs:
-                    ads.pbc = self.pbc
+                    ads.pbc = (True,True,False) # default pbc boundary for adsorbates
+                    if self.software.lower() == 'vasp' or self.software.lower() == 'dp': #ocp doesn't have to be in this if statement?
+                        ads.pbc = (True, True, True) 
                     ads.center(vacuum=10)
                     structures[sm] = [ads]
                 gratom_to_molecule_atom_maps[sm] = {val:key for key,val in mol_to_atoms_map.items()}
