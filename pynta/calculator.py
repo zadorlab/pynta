@@ -15,6 +15,9 @@ import copy
 from copy import deepcopy
 import itertools
 from pynta.utils import *
+#from deepmd.calculator import DP
+from ocpmodels.common.relaxation.ase_utils import OCPCalculator
+from ase.visualize import view
 
 def get_energy_atom_bond(atoms,ind1,ind2,k,deq):
     bd,d = get_distances([atoms.positions[ind1]], [atoms.positions[ind2]], cell=atoms.cell, pbc=atoms.pbc)
@@ -140,6 +143,37 @@ def run_harmonically_forced_xtb(atoms,atom_bond_potentials,site_bond_potentials,
     Eharm,Fharm = atoms.calc.get_energy_forces()
 
     return atoms,Eharm,Fharm
+
+class HarmonicallyForcedOCP(OCPCalculator):
+    def __init__(self, config_yml, checkpoint_path,trainer, cutoff, max_neighbors, cpu, seed,  atom_bond_potentials, site_bond_potentials):
+       super().__init__(config_yml, checkpoint_path,trainer,cutoff,max_neighbors, cpu, seed)
+       self.parameters["site_bond_potentials"] = site_bond_potentials
+       self.parameters["atom_bond_potentials"] = atom_bond_potentials 
+       print(self.parameters) 
+    def get_energy_forces(self):
+        energy = 0.0
+        forces = np.zeros(self.atoms.positions.shape)
+        if hasattr(self.parameters,"atom_bond_potentials"):
+            for atom_bond_potential in self.parameters.atom_bond_potentials:
+                E,F = get_energy_forces_atom_bond(self.atoms,**atom_bond_potential)
+                energy += E
+                forces += F
+
+        if hasattr(self.parameters,"site_bond_potentials"):
+            for site_bond_potential in self.parameters.site_bond_potentials:
+                E,F = get_energy_forces_site_bond(self.atoms,**site_bond_potential)
+                energy += E
+                print(energy)
+                forces += F
+                print(forces)
+        print(f"energy = {energy} and forces = {forces}")
+        return energy[0][0],forces
+
+    def calculate(self, atoms=None, properties=None, system_changes=calculator.all_changes):
+        OCPCalculator.calculate(self,atoms=atoms,properties=properties,system_changes=system_changes)
+        energy,forces = self.get_energy_forces()
+        self.results["energy"] += energy
+        self.results["forces"] += forces
 
 def run_harmonically_forced_xtb_no_pbc(atoms,atom_bond_potentials,site_bond_potentials,nslab,
                                molecule_to_atom_maps,ase_to_mol_num=None,
