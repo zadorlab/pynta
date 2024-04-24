@@ -766,3 +766,22 @@ def get_best_reaction_adsorbate_geometries(admol,admol_neighbors,nslab2D,adsorba
         reverse_geoms.append(best)
     
     return forward_geoms,reverse_geoms
+
+def ase_to_template_index(aseind, template_mol_map_invert, molecule_to_atom_maps_invert, ads_sizes, nslab=None, ):
+    if nslab:
+        aseind = aseind - nslab
+        
+    #go to molind
+    n = 0
+    for i,d in enumerate(molecule_to_atom_maps_invert):
+        if aseind > n + len(d) - 1:
+            n += ads_sizes[i]
+            continue
+        else:
+            molnum = i
+            molind = molecule_to_atom_maps_invert[molnum][aseind-n]
+            break
+    else:
+        raise ValueError
+    
+    return template_mol_map_invert[molnum][molind]
