@@ -31,6 +31,80 @@ def sites_match(site1,site2,slab,tol=0.5):
         return False
     else:
         return True
+    
+def get_occupied_sites(struct,sites,nslab,allowed_site_dict=dict(),site_bond_cutoff=2.5,
+                       site_bond_disruption_cutoff=0.5):
+    """determine what sites are occupied by what atoms
+
+    Args:
+        struct (ase.Atoms): Atoms object for the structure
+        sites (list): list of site dictionaries
+        nslab (int): number of atoms in the surface
+        allowed_site_dict (dict, optional): dictionary mapping atom index to a list of allowed (site,morphology) for that atom
+        site_bond_cutoff (float, optional): _description_. Defaults to 2.5.
+
+    Raises:
+        ValueError: _description_
+
+    Returns:
+        _type_: _description_
+    """
+    occ_sites = []
+    for i in range(nslab,len(struct)):
+        pos = struct.positions[i]
+        if i in allowed_site_dict.keys():
+            allowed_sites = allowed_site_dict[i]
+        else:
+            allowed_sites = None
+        siteout = None
+        mindist = None
+        for site in sites:
+            if allowed_sites and (site["site"],site["morphology"]) not in allowed_sites: #skip disallowed sites
+                continue
+            v,dist = get_distances([site["position"]], [pos], cell=struct.cell, pbc=struct.pbc)
+            if siteout is None:
+                siteout = site
+                mindist = dist
+                n = v
+            else:
+                if dist < mindist:
+                    mindist = dist
+                    siteout = site
+                    n = v
+        
+        if mindist is None:
+            #print(i)
+            #view(struct)
+            raise ValueError
+        
+        if mindist < site_bond_cutoff:
+            mindn = None
+            for j in range(nslab,len(struct)): #check for site bond disruption by other adsorbed atoms
+                if i == j:
+                    continue
+                else:
+                    AB,ABdist = get_distances([struct.positions[j]], [pos], cell=struct.cell, pbc=struct.pbc)
+                    x = np.dot(AB[0,0,:],n[0,0,:])
+                    if x < 0: #this means our target atom is closer than the other atom, which is okay (for this atom)
+                        continue
+                    dn = np.linalg.norm(AB[0,0,:] - x/mindist**2*n[0,0,:])
+                    if mindn is None:
+                        mindn = dn
+                    elif dn < mindn:
+                        mindn = dn
+                    
+                
+            if mindn is None or mindn > site_bond_disruption_cutoff:
+                s = deepcopy(siteout)
+                s["normal"] = n
+                s["bonding_index"] = i
+                s["bond_length"] = mindist
+                occ_sites.append(s)
+    
+    return occ_sites
+
+class SiteOccupationException(Exception):
+    pass
 
 def get_unique_sym(geoms):
     ''' Check for the symmetry equivalent structures in the given files
