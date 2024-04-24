@@ -836,3 +836,22 @@ def remove_slab(mol,remove_slab_bonds=False,update_atomtypes=True):
     m.update_connectivity_values()
     
     return m
+
+def pluck_subgraph(mol,atom):
+    subgraph_atoms = []
+    new_subgraph_atoms = [atom]
+    while new_subgraph_atoms != []:
+        temp = []
+        subgraph_atoms.extend(new_subgraph_atoms)
+        for a in new_subgraph_atoms:
+            for a2 in a.bonds.keys():
+                if a2 not in subgraph_atoms:
+                    temp.append(a2)
+        new_subgraph_atoms = temp
+    
+    inds = [mol.atoms.index(a) for a in subgraph_atoms]
+    struct = Molecule(atoms=subgraph_atoms)
+    struct.update_atomtypes()
+    struct.update_connectivity_values()
+    return struct,inds
+                    
