@@ -686,6 +686,128 @@ def get_coadsorbate_information(coadnames,ads_dir,neighbor_sites,sites,site_adja
         coad_to_stable_neighbor_sites[coadname] = stable_neighbor_sites
 
     return coad_to_stable_neighbor_sites, coad_site_stable_parameters,coad_atom_to_molecule_surface_atom_map,infocoad_dict,stable_neighbor_sites_total,coads_dict,coad2Ds
+
+def generate_coadsorbed_xyzs(outdir,ad_xyzs,ts_xyzs,slabxyz,pairsdir,ads_dir,
+                             coadnames,metal,facet,sites,site_adjacency,max_dist=3.0):
+    slab = read(slabxyz)
+    nslab = len(slab)
+
+    unstable_pairs = get_unstable_pairs(pairsdir,ads_dir,sites,site_adjacency,nslab,max_dist=None)
+    
+    ad_dict = dict()
+    ad_admol_dict = dict()
+    ad_neighbor_sites_2D_dict = dict()
+    ad_ninds_dict = dict()
+    ad_neighbor_sites_dict = dict()
+    ad_actual_occ_dict = dict()
+    ad_aseinds_dict = dict()
+    
+    for ad_xyz in ad_xyzs:
+        ad,admol,neighbor_sites_2D,ninds,actual_occ,neighbor_sites,aseinds,slab,nslab = get_adsorbate_ts_information(ad_xyz,slabxyz,False,metal,facet,sites,site_adjacency,max_dist=max_dist)
+        ad_dict[ad_xyz] = ad
+        ad_admol_dict[ad_xyz] = admol
+        ad_neighbor_sites_2D_dict[ad_xyz] = neighbor_sites_2D
+        ad_ninds_dict[ad_xyz] = ninds
+        ad_neighbor_sites_dict[ad_xyz] = neighbor_sites
+        ad_actual_occ_dict[ad_xyz] = actual_occ
+        ad_aseinds_dict[ad_xyz] = aseinds
+        
+    ts_dict = dict()
+    ts_admol_dict = dict()
+    ts_neighbor_sites_2D_dict = dict()
+    ts_ninds_dict = dict()
+    ts_neighbor_sites_dict = dict()
+    ts_actual_occ_dict = dict()
+    ts_aseinds_dict = dict()
+    ts_xyz = None
+    for ts_xyz in ts_xyzs:
+        ad,admol,neighbor_sites_2D,ninds,actual_occ,neighbor_sites,aseinds,slab,nslab = get_adsorbate_ts_information(ts_xyz,slabxyz,True,metal,facet,sites,site_adjacency,max_dist=max_dist)
+        ts_dict[ts_xyz] = ad
+        ts_admol_dict[ts_xyz] = admol
+        ts_neighbor_sites_2D_dict[ts_xyz] = neighbor_sites_2D
+        ts_ninds_dict[ts_xyz] = ninds
+        ts_neighbor_sites_dict[ts_xyz] = neighbor_sites
+        ts_actual_occ_dict[ts_xyz] = actual_occ
+        ts_aseinds_dict[ts_xyz] = aseinds
+
+    
+    outatoms = []
+    outmol2Dsts = []
+    outmol2Dsad = []
+    outxyzsts = []
+    outxyzsad = []
+    
+    for coadname in coadnames:
+        for j,ts_xyz in enumerate(ts_xyzs):
+            ts_name = "TS" + str(j)
+            print(ts_name)
+            if not os.path.exists(os.path.join(outdir,ts_name)):
+                os.makedirs(os.path.join(outdir,ts_name))
+            shutil.copyfile(os.path.join(os.path.split(os.path.split(ts_xyz)[0])[0],"info.json"),
+                            os.path.join(outdir,ts_name,"info.json"))
+            coad_to_stable_neighbor_sites,coad_site_stable_parameters,coad_atom_to_molecule_surface_atom_map,infocoad_dict,stable_neighbor_sites_total,coads_dict,coad2Ds = get_coadsorbate_information(coadnames,
+                                                                        ads_dir,ts_neighbor_sites_dict[ts_xyz],sites,site_adjacency,nslab,slab)
+            atoms,mol2Ds = generate_coadsorbed_geoms(ts_dict[ts_xyz],
+                                                          ts_admol_dict[ts_xyz],
+                                                          ts_neighbor_sites_2D_dict[ts_xyz],ts_ninds_dict[ts_xyz],
+                                                          ts_actual_occ_dict[ts_xyz],ts_neighbor_sites_dict[ts_xyz],
+                               ts_aseinds_dict[ts_xyz],slab,nslab,True,ads_dir,unstable_pairs,coadname,
+                               metal,facet,sites,site_adjacency,coad_to_stable_neighbor_sites, coad_site_stable_parameters,
+                               coad_atom_to_molecule_surface_atom_map,infocoad_dict,
+                               stable_neighbor_sites_total,coads_dict,coad2Ds,max_dist=max_dist)
+            for i,mol2D in enumerate(mol2Ds): #check if we already have it
+                for mol2Dout in outmol2Dsts:
+                    if mol2Dout.is_isomorphic(mol2D,save_order=True):
+                        break
+                else:
+                    outatoms.append(atoms[i])
+                    outmol2Dsts.append(mol2Ds[i])
+                    if not os.path.exists(os.path.join(outdir,ts_name,coadname,str(i))):
+                        os.makedirs(os.path.join(outdir,ts_name,coadname,str(i)))
+                    with open(os.path.join(outdir,ts_name,coadname,str(i),"info.json"),"w") as f:
+                        d = {"adjlist": mol2D.to_adjacency_list(),
+                            "xyz": ts_xyz}
+                        json.dump(d,f)
+                    write(os.path.join(outdir,ts_name,coadname,str(i),"init.xyz"),atoms[i])
+                    outxyzsts.append(os.path.join(outdir,ts_name,coadname,str(i),"init.xyz"))
+        
+        for j,ad_xyz in enumerate(ad_xyzs):
+            with open(os.path.join(os.path.split(os.path.split(ad_xyz)[0])[0],"info.json"),"r") as f:
+                info = json.load(f)
+            ad_name = info["name"]
+            print(ad_name)
+            if not os.path.exists(os.path.join(outdir,ad_name)):
+                os.makedirs(os.path.join(outdir,ad_name))
+            shutil.copyfile(os.path.join(os.path.split(os.path.split(ad_xyz)[0])[0],"info.json"),
+                                         os.path.join(outdir,ad_name,"info.json"))
+            coad_to_stable_neighbor_sites,coad_site_stable_parameters,coad_atom_to_molecule_surface_atom_map,infocoad_dict,stable_neighbor_sites_total,coads_dict,coad2Ds = get_coadsorbate_information(coadnames,
+                                                                        ads_dir,ad_neighbor_sites_dict[ad_xyz],sites,site_adjacency,nslab,slab)
+            atoms,mol2Ds = generate_coadsorbed_geoms(ad_dict[ad_xyz],
+                                                          ad_admol_dict[ad_xyz],
+                                                          ad_neighbor_sites_2D_dict[ad_xyz],ad_ninds_dict[ad_xyz],
+                                                          ad_actual_occ_dict[ad_xyz],ad_neighbor_sites_dict[ad_xyz],
+                               ad_aseinds_dict[ad_xyz],slab,nslab,False,ads_dir,unstable_pairs,coadname,
+                               metal,facet,sites,site_adjacency,coad_to_stable_neighbor_sites, coad_site_stable_parameters,
+                               coad_atom_to_molecule_surface_atom_map,infocoad_dict,
+                               stable_neighbor_sites_total,coads_dict,coad2Ds,max_dist=max_dist)
+            for i,mol2D in enumerate(mol2Ds): #check if we already have it
+                for mol2Dout in outmol2Dsad:
+                    if mol2Dout.is_isomorphic(mol2D):
+                        break
+                else:
+                    outatoms.append(atoms[i])
+                    outmol2Dsad.append(mol2Ds[i])
+                    if not os.path.exists(os.path.join(outdir,ad_name,coadname,str(i))):
+                        os.makedirs(os.path.join(outdir,ad_name,coadname,str(i)))
+                    with open(os.path.join(outdir,ad_name,coadname,str(i),"info.json"),"w") as f:
+                        d = {"adjlist": mol2D.to_adjacency_list(),
+                            "xyz": ad_xyz}
+                        json.dump(d,f)
+                    write(os.path.join(outdir,ad_name,coadname,str(i),"init.xyz"),atoms[i])
+                    outxyzsad.append(os.path.join(outdir,ad_name,coadname,str(i),"init.xyz"))
+        
+    return outatoms,outmol2Dsad,outmol2Dsts,outxyzsad,outxyzsts
+
 def generate_coadsorbed_geoms(ad,admol,neighbor_sites_2D,ninds,actual_occ,neighbor_sites,
                                aseinds,slab,nslab,is_ts,ads_dir,unstable_pairs,coadname,
                                metal,facet,sites,site_adjacency,coad_to_stable_neighbor_sites, coad_site_stable_parameters,
