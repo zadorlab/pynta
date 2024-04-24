@@ -444,3 +444,70 @@ def generate_pair_geometries(adpath1,adpath2,slabpath,metal,facet,adinfo1=None,a
     
 
     return adpairs,pairmols
+
+def get_unique_site_inds(sites,slab,fixed_point=None,tol=0.15):
+    fingerprints = []
+    for k,site in enumerate(sites):
+        if fixed_point is None:
+            fingerprints.append((site["morphology"],site["site"]))
+        else:
+            bd,d = get_distances([site["position"]], [fixed_point], cell=slab.cell, pbc=(True,True,False))
+            xydist = np.linalg.norm(bd[0][0][:2])
+            zdist = bd[0][0][2]
+            fingerprints.append((site["morphology"],site["site"],xydist,zdist,))
+    
+    unique_sites = []
+    unique_inds = []
+    for i,f in enumerate(fingerprints):
+        boo = False
+        for uf in unique_sites:  
+            if fingerprints_match(f,uf,tol=tol):
+                boo = True
+                break
+        if boo:
+            continue
+        else:
+            unique_sites.append(f)
+            unique_inds.append(i)
+
+    return unique_inds
+
+def fingerprints_match(f1,f2,tol=0.15):
+    for i in range(len(f1)):
+        if isinstance(f1[i],str) or isinstance(f1[i],frozenset):
+            if f1[i] != f2[i]:
+                return False
+        elif isinstance(f1[i],float):
+            if abs(f1[i] - f2[i]) > tol:
+                return False
+        else:
+            raise ValueError
+    else:
+        return True
+
+def get_unique_site_pair_inds(site_pairs,slab,tol=0.15):
+    fingerprints = []
+    for k,sites in enumerate(site_pairs):
+        site1 = sites[0]
+        site2 = sites[1]
+        bd,d = get_distances([site1["position"]], [site2["position"]], cell=slab.cell, pbc=(True,True,False))
+        xydist = np.linalg.norm(bd[0][0][:2])
+        zdist = bd[0][0][2]
+        fingerprints.append((frozenset([(site1["morphology"],site1["site"]),(site2["morphology"],site2["site"])]),
+                             xydist,zdist,))
+    
+    unique_sites = []
+    unique_inds = []
+    for i,f in enumerate(fingerprints):
+        boo = False
+        for uf in unique_sites:  
+            if fingerprints_match(f,uf,tol=tol):
+                boo = True
+                break
+        if boo:
+            continue
+        else:
+            unique_sites.append(f)
+            unique_inds.append(i)
+
+    return unique_inds
