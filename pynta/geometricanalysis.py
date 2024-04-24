@@ -123,3 +123,73 @@ def generate_adsorbate_molecule(adslab, sites, site_adjacency, nslab, max_dist=N
         fullmol.add_bond(Bond(fullmol.atoms[site_index],fullmol.atoms[adind],0))
     
     return fullmol,neighbor_sites,ninds
+
+def fix_bond_orders(mol,allow_failure=False,cleanup_surface_bonds=True):
+    atom_order = ["C","Si","N","P","O","S","F","Cl","Br","I","Li","H"]#["H","Li","I","Br","Cl","F","S","O","P","N","Si","C"]#["C","Si","N","P","O","S","F","Cl","Br","I","Li","H"]
+    for target in atom_order:
+        for a in mol.atoms:
+            if a.symbol == target:
+                fix_atom(mol,a,allow_failure=allow_failure,cleanup_surface_bonds=cleanup_surface_bonds)
+    return None
+
+def get_octet_deviation(atom):
+    if atom.symbol in ["Li","H"]:
+        return 2 - (atom.lone_pairs*2 + 2*sum(x.order for x in atom.bonds.values() if x.order >= 0.5))
+    else:
+        return 8 - (atom.lone_pairs*2 + 2*sum(x.order for x in atom.bonds.values() if x.order >= 0.5))
+    
+
+def choose_bond_to_fix(symbols,octets,orders,bonded_to_surface):
+    atom_order = [["X"],["C","Si"],["N","P"],["O","S"]]
+    priority = []
+    for i in range(len(symbols)):
+        sym = symbols[i]
+        if (sym != "X" and octets[i] <= 0) or orders[i] == "R":
+            priority.append(0)
+        else:
+            for j,atoms in enumerate(atom_order):
+                if sym in atoms:
+                    if not bonded_to_surface[i]:
+                        priority.append(j+11)
+                    else:
+                        priority.append(j+1)
+    return np.argmax(priority),np.max(priority)
+
+class TooManyElectronsException(Exception):
+    pass
+
+def fix_atom(mol,atom,allow_failure=False,cleanup_surface_bonds=True):
+    delta = get_octet_deviation(atom)
+    
+    if delta < 0: #too many electrons
+        logging.error(mol.to_adjacency_list())
+        raise TooManyElectronsException("Cannot solve problem of too many electrons not counting surface bonds and all ad bonds are 1")
+    elif delta > 0: #too few electrons
+        atoms = [k for k,v in atom.bonds.items()]
+        symbols = [k.symbol for k in atoms]
+        octets = [get_octet_deviation(k) for k in atoms]
+        orders = [v.get_order_str() for k,v in atom.bonds.items()]
+        bonded_to_surface = [a.is_bonded_to_surface() for a in atoms]
+        deviation = True
+        while delta > 0:
+            ind,val = choose_bond_to_fix(symbols,octets,orders,bonded_to_surface)
+            if val == 0:
+                if allow_failure:
+                    break
+                else:
+                    raise ValueError("Could not fix bonds")
+            bd = atom.bonds[atoms[ind]]
+            bd.increment_order()
+            delta -= 2
+            octets[ind] -= 2
+        
+    #at end clean up improper surface bonds
+    if cleanup_surface_bonds:
+        to_remove = []
+        for k,v in atom.bonds.items():
+            if k.symbol == 'X' and v.order == 0:    
+                to_remove.append(v)
+        
+        for v in to_remove:
+            mol.remove_bond(v)
+        
