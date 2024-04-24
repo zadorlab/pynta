@@ -585,3 +585,184 @@ def generate_allowed_structure_site_structures(adsorbate_dir,sites,site_adjacenc
         allowed_structure_site_structures.append(mols)
         
     return allowed_structure_site_structures
+
+def get_best_adsorbate_geometries(adsorbate_path,aseinds,siteinfo,sites,site_adjacency,imag_freq_max=150.0):
+    """
+    load the adsorbates geometries find the best matching unique optimized
+    adsorbate structures for each species
+    siteinfo = [("ontop","terrace"),("edge","terrace")]
+    aseinds = [37,38]
+    """
+    info_path = os.path.join(adsorbate_path,"info.json")
+    with open(info_path,"r") as f:
+        info = json.load(f)
+    nslab = info["nslab"]
+    atom_to_molecule_surface_atom_map = {int(k):int(v) for k,v in info["gratom_to_molecule_surface_atom_map"].items()}
+    mol = Molecule().from_adjacency_list(info["adjlist"])
+    prefixes = os.listdir(adsorbate_path)
+    if len(prefixes) == 2: #includes info.json
+        return read(os.path.join(adsorbate_path,"0","0.xyz"))
+    geoms = []
+    bestxyz = None
+    best = None
+    best_fingerprint = None
+    best_score = None
+    best_energy = None
+    target_fingerprint = [d for x in siteinfo for d in x]
+    for prefix in prefixes:
+        if prefix == "info.json":
+            continue
+        path = os.path.join(adsorbate_path,prefix,prefix+".xyz")
+        freq_path = os.path.join(adsorbate_path,prefix,"vib.json_vib.json")
+        if os.path.exists(path) and os.path.exists(freq_path):
+            with open(freq_path,"r") as f:
+                freq_dict = json.load(f)
+            freq = np.complex128(freq_dict["frequencies"][0])
+            if (np.isreal(freq) or freq.imag < imag_freq_max):
+                geoms.append(path)
+                
+    xyzs = geoms
+    
+    adsorbates = []
+    for xyz in xyzs:
+        geo = read(xyz)
+        occ = get_occupied_sites(geo,sites,nslab)
+        required_surface_inds = set([ind+nslab for ind in atom_to_molecule_surface_atom_map.keys()])
+        found_surface_inds = set([site["bonding_index"] for site in occ])
+        if len(occ) >= len(mol.get_adatoms()) and required_surface_inds.issubset(found_surface_inds):
+            if best is None:
+                best = geo
+                bestxyz = xyz
+                best_energy = geo.get_potential_energy()
+                assert len(siteinfo) <= len(occ)
+                for slist in itertools.permutations(occ,r=len(siteinfo)):
+                    sinfo = [(site["site"],site["morphology"]) for site in slist]
+                    fingerprint = [d for x in sinfo for d in x]
+                    if best_fingerprint is None:
+                        best_fingerprint = fingerprint
+                        best_score = np.equal(np.array(best_fingerprint),np.array(target_fingerprint)).sum()
+                    else:
+                        score = np.equal(np.array(fingerprint),np.array(target_fingerprint)).sum()
+                        if score > best_score:
+                            best_fingerprint = fingerprint
+                            best_score = score
+                                  
+            else:
+                for slist in itertools.permutations(occ,r=len(siteinfo)):
+                    sinfo = [(site["site"],site["morphology"]) for site in slist]
+                    fingerprint = [d for x in sinfo for d in x]
+                    score = np.equal(np.array(fingerprint),np.array(target_fingerprint)).sum()
+                    if score > best_score or score == best_score and geo.get_potential_energy() < best_energy:
+                        best = geo
+                        bestxyz = xyz
+                        best_energy = geo.get_potential_energy()
+                        best_fingerprint = fingerprint
+                        best_score = score
+    
+    return best,bestxyz
+
+def get_best_reaction_adsorbate_geometries(admol,admol_neighbors,nslab2D,adsorbates_path,info,sites,
+                                           site_adjacency,imag_freq_max=150.0,
+                                           assume_reactant_product_templates_same_order=False):
+
+    assert assume_reactant_product_templates_same_order #otherwise tricky to get formed bonds
+    
+    #get reverse template map
+    if info["forward"]:
+        template = Molecule().from_adjacency_list(info["reactants"])
+        rev_template = Molecule().from_adjacency_list(info["products"])
+    else:
+        template = Molecule().from_adjacency_list(info["products"])
+        rev_template = Molecule().from_adjacency_list(info["reactants"])
+    
+    broken_bonds,formed_bonds = get_broken_formed_bonds(template,rev_template)
+    
+    rev_mols = []
+    for n in info["reverse_names"]:
+        molinfo_path = os.path.join(adsorbates_path,n,"info.json")
+        with open(molinfo_path,"r") as f:
+            molinfo = json.load(f)
+        mol = Molecule().from_adjacency_list(molinfo["adjlist"])
+        rev_mols.append(mol)
+    
+    
+    rev_ads_sizes = [ads_size(m) for m in rev_mols]
+    molecule_to_atom_rev_maps = []
+    for m in rev_mols:
+        ads,mol_to_atoms_map = get_adsorbate(mol)
+        molecule_to_atom_rev_maps.append(mol_to_atoms_map)
+    molecule_to_atom_rev_maps_invert = [{int(v):int(k) for k,v in x.items()} for x in molecule_to_atom_rev_maps]
+    
+    template_rev_mol_map = get_template_mol_map(rev_template,rev_mols)
+    
+    template_rev_mol_map = get_template_mol_map(rev_template,rev_mols)
+    template_rev_mol_map_invert = [{int(v):int(k) for k,v in x.items()} for x in template_rev_mol_map]
+    template_mol_map = [{int(k):int(v) for k,v in x.items()} for x in info["template_mol_map"]]
+    template_mol_map_invert = [{int(v):int(k) for k,v in x.items()} for x in info["template_mol_map"]]
+    molecule_to_atom_maps = [{int(k):int(v) for k,v in x.items()} for x in info["molecule_to_atom_maps"]]
+    molecule_to_atom_maps_invert = [{int(v):int(k) for k,v in x.items()} for x in info["molecule_to_atom_maps"]]
+    ads_sizes = info["ads_sizes"]
+    nslab = info["nslab"]
+    mols = [Molecule().from_adjacency_list(x) for x in info["mols"]]
+    
+    #map adsorbed atoms on admol to templates
+    adatoms = [a for a in admol.get_adatoms() if not a.is_surface_site()]
+    adinds = [admol.atoms.index(adatom) - nslab2D for adatom in adatoms] #aseinds
+    template_adinds = [ase_to_template_index(a,template_mol_map_invert,molecule_to_atom_maps_invert,
+                                             ads_sizes) for a in adinds]
+    forward_geoms = []
+    for i,ad in enumerate(info["species_names"]):
+        tempinds = [k for k in template_adinds if k in template_mol_map[i].keys()] 
+        aseinds = [get_ase_index(k,template_mol_map,molecule_to_atom_maps,info["nslab"],ads_sizes) for k in tempinds]
+        siteinfo = []
+        for j,a in enumerate(adatoms):
+            for bd in admol.get_bonds(a).values():
+                if bd.atom1.is_surface_site():
+                    ind = admol.atoms.index(bd.atom1)
+                    indad = admol.atoms.index(bd.atom2)
+                    break
+                elif bd.atom2.is_surface_site():
+                    ind = admol.atoms.index(bd.atom2)
+                    indad = admol.atoms.index(bd.atom1)
+                    break
+            indtmp = ase_to_template_index(indad-nslab2D,template_mol_map_invert, 
+                                           molecule_to_atom_maps_invert, ads_sizes)
+            molind,mind = get_mol_index(indtmp,template_mol_map)
+            
+            if molind == i and mols[i].atoms[mind].is_bonded_to_surface():
+                site = admol_neighbors[ind]
+                siteinfo.append((site["site"],site["morphology"]))
+        
+        best = get_best_adsorbate_geometries(os.path.join(adsorbates_path,ad),aseinds,siteinfo,sites,site_adjacency,
+                                             imag_freq_max=imag_freq_max)[0]
+        forward_geoms.append(best)
+        
+    reverse_geoms = []  
+    for j,ad in enumerate(info["reverse_names"]):
+        tempinds = [k for k in template_adinds if k in template_rev_mol_map[j].keys()] 
+        aseinds = [get_ase_index(k,template_mol_map,molecule_to_atom_maps,info["nslab"],ads_sizes) for k in tempinds]
+        siteinfo = []
+        for i,a in enumerate(adatoms):
+            for bd in admol.get_bonds(a).values():
+                if bd.atom1.is_surface_site():
+                    ind = admol.atoms.index(bd.atom1)
+                    indad = admol.atoms.index(bd.atom2)
+                    break
+                elif bd.atom2.is_surface_site():
+                    ind = admol.atoms.index(bd.atom2)
+                    indad = admol.atoms.index(bd.atom1)
+                    break
+            #assuming rev and forward template indices are the same
+            indtmp = ase_to_template_index(indad-nslab2D,template_mol_map_invert, 
+                                           molecule_to_atom_maps_invert, ads_sizes)
+
+            molind,mind = get_mol_index(indtmp,template_rev_mol_map)
+            if molind == j and rev_mols[j].atoms[mind].is_bonded_to_surface():
+                site = admol_neighbors[ind]
+                siteinfo.append((site["site"],site["morphology"]))
+
+        best = get_best_adsorbate_geometries(os.path.join(adsorbates_path,ad),aseinds,siteinfo,sites,site_adjacency,
+                                             imag_freq_max=imag_freq_max)[0]
+        reverse_geoms.append(best)
+    
+    return forward_geoms,reverse_geoms
