@@ -4,11 +4,33 @@ import ase
 from ase.utils.structure_comparator import SymmetryEquivalenceCheck
 from ase.io import write, read
 import ase.constraints
+from ase.geometry import get_distances
 from copy import deepcopy
 from importlib import import_module
 import numpy as np
 import copy
 
+def sites_match(site1,site2,slab,tol=0.5):
+    """determine if two sites match
+
+    Args:
+        site1 (dict): site dictionary for first site
+        site2 (dict): site dictionary for second site
+        slab (ase.Atoms): the ase.Atoms object for the slab the sites are on
+        tol (float, optional): Distance tolerance defaults to 0.5 Angstroms.
+
+    Returns:
+        _type_: _description_
+    """
+    v,dist = get_distances([site1["position"]], [site2["position"]], cell=slab.cell, pbc=slab.pbc)
+    if dist > tol:
+        return False
+    elif site1["site"] != site2["site"]:
+        return False
+    elif site1["morphology"] != site2["morphology"]:
+        return False
+    else:
+        return True
 
 def get_unique_sym(geoms):
     ''' Check for the symmetry equivalent structures in the given files
