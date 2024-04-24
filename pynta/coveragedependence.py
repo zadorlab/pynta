@@ -964,3 +964,49 @@ def add_coadsorbate_2D(mol2D,site,coad2D,slab,neighbor_sites_2D,site_2D_inds):
     mol2D.update_atomtypes()
     mol2D.update_connectivity_values()
     return mol2D
+
+def configuration_is_valid(mol2D,admol,is_ts,unstable_pairs):
+    unstable_ind_pairs = set()
+    if is_ts:
+        admol_splits = split_ts_to_reactants(admol,tagatoms=False)
+        for asplit in admol_splits:
+            snum = len([a for a in asplit.atoms if a.is_surface_site()])
+            for unstable_pair in unstable_pairs:
+                iso = asplit.find_subgraph_isomorphisms(unstable_pair,save_order=True)
+                if iso:
+                    inds = []
+                    for a in iso[0].keys():
+                        assert a in asplit.atoms
+                        if a.is_bonded_to_surface() and not a.is_surface_site():
+                            inds.append(asplit.atoms.index(a)-snum)
+                    unstable_ind_pairs.add(frozenset(inds)) #groups of atom inds that if they are in a isomorphism indicate to allow anything for that ts split
+
+    struct = mol2D
+    if is_ts:
+        structspl = split_ts_to_reactants(struct,tagatoms=False)
+    else:
+        structspl = [struct]
+    
+    validity_judgements = []
+    failed = False
+    for st in structspl:
+        snum = len([a for a in st.atoms if a.is_surface_site()])
+        failed = False
+        for unstable_pair in unstable_pairs:
+            iso = st.find_subgraph_isomorphisms(unstable_pair,save_order=True)
+
+            if iso:
+                inds = []
+                for a in iso[0].keys():
+                    if a.is_bonded_to_surface() and not a.is_surface_site():
+                        inds.append(st.atoms.index(a)-snum)
+                if frozenset(inds) in unstable_ind_pairs:
+                    pass
+                else:
+                    failed = True
+        if not failed:
+            validity_judgements.append(True)
+        else:
+            validity_judgements.append(False)
+
+    return all(validity_judgements)
