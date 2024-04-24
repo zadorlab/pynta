@@ -686,3 +686,79 @@ def get_coadsorbate_information(coadnames,ads_dir,neighbor_sites,sites,site_adja
         coad_to_stable_neighbor_sites[coadname] = stable_neighbor_sites
 
     return coad_to_stable_neighbor_sites, coad_site_stable_parameters,coad_atom_to_molecule_surface_atom_map,infocoad_dict,stable_neighbor_sites_total,coads_dict,coad2Ds
+def generate_coadsorbed_geoms(ad,admol,neighbor_sites_2D,ninds,actual_occ,neighbor_sites,
+                               aseinds,slab,nslab,is_ts,ads_dir,unstable_pairs,coadname,
+                               metal,facet,sites,site_adjacency,coad_to_stable_neighbor_sites, coad_site_stable_parameters,
+                               coad_atom_to_molecule_surface_atom_map,infocoad_dict,
+                               stable_neighbor_sites_total,coads_dict,coad2Ds,max_dist=3.0):
+    
+    logging.error("stable neighbor sites: {}".format(len(stable_neighbor_sites_total)))
+    
+    coads = coads_dict[coadname]
+    atom_to_molecule_surface_atom_map = coad_atom_to_molecule_surface_atom_map[coadname]
+    infocoad = infocoad_dict[coadname]
+    coad2D = coad2Ds[coadname]
+    site_stable_parameters = coad_site_stable_parameters[coadname]
+    coad_occ_dict = {coads.index(coad): get_occupied_sites(coad,sites,nslab) for coad in coads}
+    coad_height_map = {coads.index(coad): list(get_bond_lengths_sites(Molecule().from_adjacency_list(infocoad["adjlist"]),
+                                                                       coad,
+                                         {int(x):y for x,y in infocoad["atom_to_molecule_atom_map"].items()},
+                                        {int(x):y for x,y in infocoad["gratom_to_molecule_surface_atom_map"].items()},
+                                                                       infocoad["nslab"],sites,site_adjacency,
+                                                                facet=facet,metal=metal)[2].values())[0] for coad in coads}
+    outgeoms = [ad]
+    outmol2Ds = [admol]
+    geo_fails = 0
+    mol2D_fails = 0
+    config_fails = 0
+    site_fails = 0
+    unique_fails = 0
+    for i,site in enumerate(stable_neighbor_sites_total):
+        logging.error("doing site {}".format(i))
+        newoutgeoms = []
+        newoutmol2Ds = []
+        site_2D_inds = [i for i,x in enumerate(neighbor_sites_2D) if sites_match(site,x,slab)]
+        if not site_2D_inds:
+            site_fails += 1
+            continue
+        
+        for j,geo in enumerate(outgeoms):
+            mol2D = outmol2Ds[j]
+            geo = deepcopy(geo)
+            geo,coad2D = add_coadsorbate_3D(geo,site,ad,coads,site_stable_parameters,
+                        atom_to_molecule_surface_atom_map,infocoad,coad_occ_dict,coad_height_map,coad2D,
+                       metal,facet,sites,site_adjacency,nslab)
+            if geo is None:
+                geo_fails += 1
+                continue
+            mol2D = mol2D.copy(deep=True)
+            try:
+                mol2D = add_coadsorbate_2D(mol2D,site,coad2D,slab,neighbor_sites_2D,site_2D_inds)
+            except Exception as e:
+                print(mol2D.to_adjacency_list())
+                print(site)
+                print(site_2D_inds)
+                raise e
+            
+            if mol2D is None:
+                mol2D_fails += 1
+                continue
+            
+            if configuration_is_valid(mol2D,admol,is_ts,unstable_pairs):
+                for m in outmol2Ds:
+                    if mol2D.is_isomorphic(m,save_order=True):
+                        unique_fails += 1
+                        break
+                else:
+                    assert len(geo) - nslab == len(mol2D.atoms) - len([a for a in mol2D.atoms if a.is_surface_site()])
+                    newoutgeoms.append(geo)
+                    newoutmol2Ds.append(mol2D)
+
+        outgeoms.extend(newoutgeoms)
+        outmol2Ds.extend(newoutmol2Ds)
+        logging.error("added so far: {}".format(len(outgeoms)))
+    
+    
+    outgeoms.remove(ad) #do not include the configuration with no coadsorbates in output
+    outmol2Ds.remove(admol)
+    return outgeoms,outmol2Ds
