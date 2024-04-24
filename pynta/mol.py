@@ -909,3 +909,34 @@ def find_shortest_paths(start, end, path=None):
             paths = newpaths
     
     return None
+
+def split_adsorbed_structures(admol,clear_site_info=True):
+    m = admol.copy(deep=True)
+    atoms_to_remove = []
+    for i,at in enumerate(m.atoms):
+        if at.is_surface_site():
+            bdict = m.get_bonds(at)
+            if len(bdict) > 0:
+                for a,b in bdict.items():
+                    if not a.is_surface_site():
+                        break
+                else:
+                    atoms_to_remove.append(at)
+            else:
+                atoms_to_remove.append(at)
+    
+    for at in atoms_to_remove:
+        m.remove_atom(at)
+    
+    if clear_site_info:
+        for at in m.atoms:
+            if at.is_surface_site():
+                at.site = ""
+                at.morphology = ""
+    split_structs = m.split()
+    for s in split_structs:
+        s.update(sort_atoms=False)
+        s.update_connectivity_values()
+        s.multiplicity = 1
+    
+    return split_structs
