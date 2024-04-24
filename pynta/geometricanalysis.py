@@ -193,3 +193,68 @@ def fix_atom(mol,atom,allow_failure=False,cleanup_surface_bonds=True):
         for v in to_remove:
             mol.remove_bond(v)
         
+def generate_adsorbate_2D(atoms, sites, site_adjacency, nslab, max_dist=3.0, cut_multidentate_off_num=None, allowed_structure_site_structures=None):
+    admol,neighbor_sites,ninds = generate_adsorbate_molecule(atoms, sites, site_adjacency, nslab, max_dist=max_dist)
+    
+    if cut_multidentate_off_num:
+        bds_to_remove = []
+        for i in range(len(admol.atoms)-cut_multidentate_off_num,len(admol.atoms)):
+            if admol.atoms[i].is_bonded_to_surface():         
+                for a,b in admol.atoms[i].edges.items():
+                    if not a.is_surface_site() and (a.is_bonded_to_surface() or admol.atoms.index(a) < len(admol.atoms)-cut_multidentate_off_num):
+                        if b not in bds_to_remove:
+                            bds_to_remove.append(b)
+        for b in bds_to_remove:
+            admol.remove_bond(b)
+    
+    fix_bond_orders(admol)
+    
+    if allowed_structure_site_structures: #we are going to analyze the initial occupational analysis and update it based on expectations
+        allowed_site_dict = dict()
+        slabless = remove_slab(admol)
+        for site_structs in allowed_structure_site_structures:
+            struct = generate_without_site_info(site_structs[0])
+            grp_struct = struct.to_group()
+            mappings = slabless.find_subgraph_isomorphisms(grp_struct,save_order=True)
+            considered_sites = []
+            for mapping in mappings:
+                atouts = [at for at in mapping.keys() if at.is_surface_site()]
+                if set(atouts) in considered_sites:
+                    continue
+                else:
+                    considered_sites.append(set(atouts))
+                
+                subgraph,inds = pluck_subgraph(slabless,atouts[0])
+                for site_struct in site_structs:
+                    if subgraph.is_isomorphic(site_struct,save_order=True):
+                        break
+                else:
+                    for atout in atouts:
+                        adatom = [a for a in atout.bonds.keys() if not a.is_surface_site()][0]
+                        ind = slabless.atoms.index(adatom) - len([a for a in slabless.atoms if a.is_surface_site()])
+                        struct_ind = [grp_struct.atoms.index(a) for aout,a in mapping.items() if aout==atout][0]
+                        sitetype = [(site_struct.atoms[struct_ind].site,site_struct.atoms[struct_ind].morphology) for site_struct in site_structs]
+                        if ind+nslab in allowed_site_dict.keys():
+                            allowed_site_dict[ind+nslab].extend(sitetype)
+                        else:
+                            allowed_site_dict[ind+nslab] = sitetype
+
+        admol,neighbor_sites,ninds = generate_adsorbate_molecule(atoms, sites, site_adjacency, nslab, max_dist=max_dist, allowed_site_dict=allowed_site_dict)
+
+        if cut_multidentate_off_num:
+            bds_to_remove = []
+            for i in range(len(admol.atoms)-cut_multidentate_off_num,len(admol.atoms)):
+                if admol.atoms[i].is_bonded_to_surface():         
+                    for a,b in admol.atoms[i].edges.items():
+                        if not a.is_surface_site() and (a.is_bonded_to_surface() or admol.atoms.index(a) < len(admol.atoms)-cut_multidentate_off_num):
+                            if b not in bds_to_remove:
+                                bds_to_remove.append(b)
+            for b in bds_to_remove:
+                admol.remove_bond(b)
+            
+        fix_bond_orders(admol)
+    
+    admol.update_atomtypes()
+    admol.update_connectivity_values()
+    
+    return admol,neighbor_sites,ninds
