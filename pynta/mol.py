@@ -814,3 +814,25 @@ def get_name(mol):
         return mol.to_smiles()
     except:
         return mol.to_adjacency_list().replace("\n"," ")[:-1]
+
+
+def remove_slab(mol,remove_slab_bonds=False,update_atomtypes=True):
+    m = mol.copy(deep=True)
+    for site in m.get_surface_sites():
+        for a in site.bonds.keys():
+            if not a.is_surface_site():
+                break
+        else:
+            m.remove_atom(site)
+            
+    if remove_slab_bonds:
+        bonds_to_remove = []
+        for bd in m.get_all_edges():
+            if bd.atom1.is_surface_site() and bd.atom2.is_surface_site():
+                m.remove_bond(bd)
+    
+    if update_atomtypes:           
+        m.update_atomtypes()
+    m.update_connectivity_values()
+    
+    return m
