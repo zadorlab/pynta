@@ -258,3 +258,257 @@ def generate_adsorbate_2D(atoms, sites, site_adjacency, nslab, max_dist=3.0, cut
     admol.update_connectivity_values()
     
     return admol,neighbor_sites,ninds
+
+def generate_TS_2D(atoms, info_path,  metal, facet, sites, site_adjacency, nslab, imag_freq_path=None,
+                     max_dist=3.0, cut_multidentate_off_num=None, allowed_structure_site_structures=None,
+                     site_bond_cutoff=3.0):
+
+    admol,neighbor_sites,ninds = generate_adsorbate_molecule(atoms, sites, site_adjacency, 
+                                                             nslab, max_dist=max_dist) 
+
+    if cut_multidentate_off_num:
+        bds_to_remove = []
+        for i in range(len(admol.atoms)-cut_multidentate_off_num,len(admol.atoms)):
+            if admol.atoms[i].is_bonded_to_surface():         
+                for a,b in admol.atoms[i].edges.items():
+                    if not a.is_surface_site() and (a.is_bonded_to_surface() or admol.atoms.index(a) < len(admol.atoms)-cut_multidentate_off_num):
+                        if b not in bds_to_remove:
+                            bds_to_remove.append(b)
+        for b in bds_to_remove:
+            admol.remove_bond(b)
+    
+    with open(info_path) as f:
+        info = json.load(f)
+    
+    occ = get_occupied_sites(atoms,sites,nslab,site_bond_cutoff=site_bond_cutoff)
+    
+    template_mol_map = [{int(k):v for k,v in x.items()}  for x in info["template_mol_map"]]
+    molecule_to_atom_maps = [{int(k):v for k,v in x.items()}  for x in info["molecule_to_atom_maps"]]
+    broken_bonds,formed_bonds = get_broken_formed_bonds(Molecule().from_adjacency_list(info["reactants"]),
+                                                        Molecule().from_adjacency_list(info["products"]))
+    rbonds = broken_bonds | formed_bonds
+    if info["forward"]:
+        template = Molecule().from_adjacency_list(info["reactants"])
+    else:
+        template = Molecule().from_adjacency_list(info["products"])
+    
+    for bd in rbonds:
+        inds2D = []
+        for label in bd:
+            a = template.get_labeled_atoms(label)[0]
+            aind = template.atoms.index(a)
+            aseind = get_ase_index(aind,template_mol_map,molecule_to_atom_maps,nslab,info["ads_sizes"])
+            if aseind:
+                inds2D.append(aseind - nslab + len(neighbor_sites))
+
+        if len(inds2D) == 1:
+            i = inds2D[0]
+            for batom in admol.atoms[i].bonds.keys(): #try to find a surface bond
+                if batom.is_surface_site():
+                    inds2D.append(admol.atoms.index(batom))
+                    break
+            else: #didn't find surface bond, need to identify the site
+                pos = None
+                for site in occ:
+                    if site['bonding_index'] == i - len(neighbor_sites) + nslab:
+                        pos = site["position"]
+                        break
+                else:
+                    logging.error("couldn't find right site bond")
+                    logging.error(admol.to_adjacency_list())
+                    logging.error(i - len(neighbor_sites))
+                    raise SiteOccupationException
+                for j,s in enumerate(neighbor_sites):
+                    if (s["position"] == pos).all():
+                        inds2D.append(j)
+                        break
+                else:
+                    raise IndexError("could not find matching site")
+
+        if admol.has_bond(admol.atoms[inds2D[0]],admol.atoms[inds2D[1]]):
+            b = admol.get_bond(admol.atoms[inds2D[0]],admol.atoms[inds2D[1]])
+            if b.get_order_str() != "R":
+                b.set_order_str("R")
+            else: 
+                b.set_order_str("S") #this ensures the the split_ts leaves this bond connected 
+        else:
+            admol.add_bond(Bond(admol.atoms[inds2D[0]],admol.atoms[inds2D[1]],"R"))
+
+    fix_bond_orders(admol,allow_failure=True)
+
+    
+    if allowed_structure_site_structures: #we are going to analyze the initial occupational analysis and update it based on expectations
+        allowed_site_dicts = []
+        restricted_inds = set()
+        rs = split_ts_to_reactants(admol) #get reactants/products
+        for r in rs:
+            allowed_site_dict = dict()
+            slabless = remove_slab(r) #take the individual component
+            for site_structs in allowed_structure_site_structures:
+                struct = generate_without_site_info(site_structs[0])
+                grp_struct = struct.to_group() #known stable adsorbates
+                mappings = slabless.find_subgraph_isomorphisms(grp_struct,save_order=True) #try to find mappings to known stable structures 
+                for mapping in mappings: #go through each mapping
+                    atouts = [at for at in mapping.keys() if at.is_surface_site()]
+                    subgraph,inds = pluck_subgraph(slabless,atouts[0]) #extract the matching subgraph
+                    for site_struct in site_structs: #go through the known stable structures
+                        if subgraph.is_isomorphic(site_struct,save_order=True):
+                            break
+                    else:
+                        
+                        for atout in atouts:
+                            adatom = [a for a in atout.bonds.keys() if not a.is_surface_site()][0]
+                            ind = slabless.atoms.index(adatom) - len([a for a in slabless.atoms if a.is_surface_site()])
+                            struct_ind = [grp_struct.atoms.index(a) for aout,a in mapping.items() if aout==atout][0]
+                            assert site_structs[0].atoms[struct_ind].is_surface_site()
+                            sitetype = [(site_struct.atoms[struct_ind].site,site_struct.atoms[struct_ind].morphology) for site_struct in site_structs]
+                            if ind+nslab in allowed_site_dict.keys():
+                                allowed_site_dict[ind+nslab].extend(sitetype)
+                            else:
+                                allowed_site_dict[ind+nslab] = sitetype
+
+            allowed_site_dicts.append(allowed_site_dict)
+            restricted_inds |= set(allowed_site_dict.keys())
+            
+        allowed_site_dict = dict()
+        for ind in restricted_inds:
+            for d in allowed_site_dicts:
+                if ind in d.keys():
+                    if ind not in allowed_site_dict.keys():
+                        allowed_site_dict[ind] = set(d[ind])
+                    else:
+                        allowed_site_dict[ind] &= set(d[ind])
+
+        allowed_site_dict = {k: list(v) for k,v in allowed_site_dict.items()}
+    else:
+        allowed_site_dict = dict()
+
+    admol,neighbor_sites,ninds = generate_adsorbate_molecule(atoms, sites, site_adjacency, 
+                                                             nslab, max_dist=max_dist, allowed_site_dict=allowed_site_dict) 
+
+    if cut_multidentate_off_num:
+        bds_to_remove = []
+        for i in range(len(admol.atoms)-cut_multidentate_off_num,len(admol.atoms)):
+            if admol.atoms[i].is_bonded_to_surface():         
+                for a,b in admol.atoms[i].edges.items():
+                    if not a.is_surface_site() and (a.is_bonded_to_surface() or admol.atoms.index(a) < len(admol.atoms)-cut_multidentate_off_num):
+                        if b not in bds_to_remove:
+                            bds_to_remove.append(b)
+        for b in bds_to_remove:
+            admol.remove_bond(b)
+
+    for bd in rbonds:
+        inds2D = []
+        for label in bd:
+            a = template.get_labeled_atoms(label)[0]
+            aind = template.atoms.index(a)
+            aseind = get_ase_index(aind,template_mol_map,molecule_to_atom_maps,nslab,info["ads_sizes"])
+            if aseind:
+                inds2D.append(aseind - nslab + len(neighbor_sites))
+
+        if len(inds2D) == 1:
+            i = inds2D[0]
+            for batom in admol.atoms[i].bonds.keys(): #try to find a surface bond
+                if batom.is_surface_site():
+                    inds2D.append(admol.atoms.index(batom))
+                    break
+            else: #didn't find surface bond, need to identify the site
+                pos = None
+                for site in occ:
+                    if site['bonding_index'] == i - len(neighbor_sites) + nslab:
+                        pos = site["position"]
+                        break
+                else:
+                    raise ValueError("didn't find occupied site")
+                for j,s in enumerate(neighbor_sites):
+                    if (s["position"] == pos).all():
+                        inds2D.append(j)
+                        break
+                else:
+                    raise IndexError("could not find matching site")
+
+        if admol.has_bond(admol.atoms[inds2D[0]],admol.atoms[inds2D[1]]):
+            b = admol.get_bond(admol.atoms[inds2D[0]],admol.atoms[inds2D[1]])
+            if b.get_order_str() != "R":
+                b.set_order_str("R")
+            else: #diffusion on surface results in two R bonds to different sites
+                if imag_freq_path is None:
+                    logging.warning("Could not resolve diffusion type R-bonds due to lack of imaginary frequency info")
+                    continue
+                if admol.atoms[inds2D[0]].is_surface_site():
+                    site_atom_center = admol.atoms[inds2D[0]]
+                    Ratom = admol.atoms[inds2D[1]]
+                    if allowed_structure_site_structures:
+                        valid_sites = allowed_site_dict[inds2D[1] - len(neighbor_sites) + nslab]
+                else:
+                    site_atom_center = admol.atoms[inds2D[1]]
+                    Ratom = admol.atoms[inds2D[0]]
+                    if allowed_structure_site_structures:
+                        valid_sites = allowed_site_dict[inds2D[0] - len(neighbor_sites) + nslab]
+                site_center_ind = admol.atoms.index(site_atom_center)
+                
+                #get imaginary frequency motion
+                tr_ts = Trajectory(imag_freq_path)
+                v_ts,_ = get_distances(tr_ts[15].positions[admol.atoms.index(Ratom) - len(neighbor_sites) + nslab], tr_ts[16].positions[admol.atoms.index(Ratom) - len(neighbor_sites) + nslab], cell=atoms.cell, pbc=atoms.pbc)
+                v_ts = v_ts[0,0,:]
+                v_ts /= np.linalg.norm(v_ts)
+                #position of atom
+                target_pos = atoms.positions[admol.atoms.index(Ratom) - len(neighbor_sites) + nslab]
+                site_pair = None
+                best_metric = None
+                iters = 1
+                for i,site1 in enumerate(neighbor_sites):
+                    pos1 = site1["position"]
+                    site1_id = (site1["site"],site1["morphology"])
+                    for j in range(i):
+                        site2 = neighbor_sites[j]
+                        if i == j:
+                            continue
+                        site2_id = (site2["site"],site2["morphology"])
+                        pos2 = site2["position"]
+                        v,dist = get_distances([pos1],[pos2],cell=atoms.cell,pbc=atoms.pbc)
+                        dist = dist[0][0]
+                        v = v[0,0,:]
+                        v /= np.linalg.norm(v)
+                        motion_alignment = abs(np.dot(v_ts,v))
+                        v1t,dist1t = get_distances([pos1],[target_pos],cell=atoms.cell,pbc=atoms.pbc)
+                        dist1t = dist1t[0][0]
+                        v1t = v1t[0,0,:]
+                        v2t,dist2t = get_distances([pos2],[target_pos],cell=atoms.cell,pbc=atoms.pbc)
+                        v2t = v2t[0,0,:]
+                        dist2t = dist2t[0][0]
+                        halfwayness = np.linalg.norm(v1t+v2t)/(dist2t+dist1t)
+                        dist_site = max(dist1t,dist2t)
+                        if not np.isnan(motion_alignment) and motion_alignment > 0.95 and dist < 3.0 and dist_site < 2.0 and (allowed_structure_site_structures and site1_id in valid_sites and site2_id in valid_sites):
+                            iters += 1
+                            metric = 1.0 / (halfwayness*dist_site)
+                            if site_pair is None:
+                                site_pair = [i,j]
+                                best_metric = metric
+                            elif metric > best_metric:
+                                site_pair = [i,j]
+                                best_metric = metric
+                if site_pair is None:
+                    raise ValueError("Imaginary frequency doesn't mean minimal constraints for proper TS motion")
+                admol.remove_bond(b)
+                admol.add_bond(Bond(admol.atoms[site_pair[0]],Ratom,"R"))
+                admol.add_bond(Bond(admol.atoms[site_pair[1]],Ratom,"R")) 
+        else:
+            admol.add_bond(Bond(admol.atoms[inds2D[0]],admol.atoms[inds2D[1]],"R"))
+
+    fix_bond_orders(admol,allow_failure=True) #Reaction bonds prevent proper octet completion
+    
+    #remove surface bonds that abused for octet completion in reactions
+    for atom in admol.atoms:
+        surfbds = [bd for at,bd in atom.bonds.items() if at.is_surface_site() and bd.get_order_str() != 'R']
+        if len(surfbds) == 1:
+            Nrxnbd = len([bd for at,bd in atom.bonds.items() if bd.get_order_str() == 'R' and not at.is_surface_site()])
+            if Nrxnbd >= 2 and abs(Nrxnbd/2 - surfbds[0].order) < 1e-3:
+                admol.remove_edge(surfbds[0])
+        
+    admol.update_atomtypes()
+    admol.update_connectivity_values()
+    for i in range(len(neighbor_sites)):
+        assert neighbor_sites[i]["site"] == admol.atoms[i].site
+        assert neighbor_sites[i]["morphology"] == admol.atoms[i].morphology
+    return admol,neighbor_sites,ninds
