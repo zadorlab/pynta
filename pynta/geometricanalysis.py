@@ -557,3 +557,31 @@ def split_ts_to_reactants(ts2d,tagatoms=False):
     
     return rs
       
+def generate_allowed_structure_site_structures(adsorbate_dir,sites,site_adjacency,nslab,max_dist=3.0,cut_multidentate_off_num=None):
+    allowed_structure_site_structures = []
+    for ad in os.listdir(adsorbate_dir):
+        if not os.path.isdir(os.path.join(adsorbate_dir,ad)):
+            continue
+        with open(os.path.join(adsorbate_dir,ad,"info.json"),'r') as f:
+            info = json.load(f)
+            target_mol = Molecule().from_adjacency_list(info["adjlist"])
+            atom_to_molecule_surface_atom_map = {int(k): int(v) for k,v in info["gratom_to_molecule_surface_atom_map"].items()}
+        if not target_mol.contains_surface_site():
+            continue
+        geoms = get_adsorbate_geometries(os.path.join(adsorbate_dir,ad),target_mol,sites,atom_to_molecule_surface_atom_map,nslab)
+        mols = []
+        for geom in geoms:
+            admol,neighbor_sites,ninds = generate_adsorbate_2D(geom, sites, site_adjacency, nslab, max_dist=max_dist, cut_multidentate_off_num=cut_multidentate_off_num)
+            m = remove_slab(admol)
+            if not generate_without_site_info(m).is_isomorphic(target_mol,save_order=True): #geom didn't optimize to target
+                continue
+            for mol in mols:
+                if mol.is_isomorphic(m,save_order=True):
+                    break
+            else:
+                m.update_atomtypes()
+                m.update_connectivity_values()
+                mols.append(m)
+        allowed_structure_site_structures.append(mols)
+        
+    return allowed_structure_site_structures
