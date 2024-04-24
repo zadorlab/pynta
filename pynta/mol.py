@@ -854,6 +854,14 @@ def pluck_subgraph(mol,atom):
     struct.update_atomtypes()
     struct.update_connectivity_values()
     return struct,inds
+    
+def generate_without_site_info(m):
+    mol = m.copy(deep=True)
+    for a in mol.atoms:
+        if a.is_surface_site():
+            a.site = ""
+            a.morphology = ""
+    return mol
 
     
 
