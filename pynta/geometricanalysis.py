@@ -512,3 +512,10 @@ def generate_TS_2D(atoms, info_path,  metal, facet, sites, site_adjacency, nslab
         assert neighbor_sites[i]["site"] == admol.atoms[i].site
         assert neighbor_sites[i]["morphology"] == admol.atoms[i].morphology
     return admol,neighbor_sites,ninds
+
+def tagsites(atoms,sites):
+    aview = deepcopy(atoms)
+    anames = ['He','Ne','Ar','Kr','Xe','Rn']
+    for i,site in enumerate(sites):
+        add_adsorbate_to_site(aview,Atoms(anames[i], [(0, 0, 0)]), 0, sites[i], height=1.0)
+    return aview
