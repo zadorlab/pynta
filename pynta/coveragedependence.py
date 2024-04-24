@@ -787,3 +787,58 @@ def add_coadsorbate_3D(geo,site,ad,coads,site_stable_parameters,
             return geo,coad2D
     else:
         return None,None
+
+def add_coadsorbate_2D(mol2D,site,coad2D,slab,neighbor_sites_2D,site_2D_inds):
+    if site_2D_inds:
+        ind2D = site_2D_inds[0]
+    else:
+        return None
+    siteatom = mol2D.atoms[ind2D]
+    assert siteatom.site == site["site"]
+    for a in siteatom.edges.keys():
+        if not a.is_surface_site():
+            return None
+    c = coad2D.get_desorbed_molecules()[0]
+    mol2D = mol2D.merge(c)
+    ldict = mol2D.get_all_labeled_atoms()
+    label = list(ldict.keys())[0]
+    catom = list(ldict.values())[0]
+    catom.label = ''
+    if label == "*1":
+        bd = Bond(siteatom,catom,order=1)
+        catom.radical_electrons -= 1
+    elif label == "*2":
+        bd = Bond(siteatom,catom,order=2)
+        if catom.radical_electrons >= 2:
+            catom.radical_electrons -= 2
+        else:
+            catom.lone_pairs -= 1
+    elif label == "*3":
+        bd = Bond(siteatom,catom,order=3)
+        if catom.radical_electrons >= 3:
+            catom.radical_electrons -= 3
+        elif catom.radical_electrons == 1:
+            catom.radical_electrons = 0
+            catom.lone_pairs -= 1
+        elif catom.radical_electrons == 2:
+            catom.radical_electrons = 1
+            catom.lone_pairs -= 1
+    elif label == "*4":
+        bd = Bond(siteatom,catom,order=4)
+        if catom.radical_electrons >= 4:
+            catom.radical_electrons -= 4
+        elif catom.radical_electrons == 1:
+            catom.lone_pairs -= 2
+        elif catom.radical_electrons == 2:
+            catom.radical_electrons = 0
+            catom.lone_pairs -= 1
+        elif catom.radical_electrons == 3:
+            catom.radical_electrons = 1
+            catom.lone_pairs -= 1
+    else:
+        raise ValueError
+    mol2D.add_bond(bd)
+    mol2D.multiplicity = mol2D.get_radical_count() + 1
+    mol2D.update_atomtypes()
+    mol2D.update_connectivity_values()
+    return mol2D
