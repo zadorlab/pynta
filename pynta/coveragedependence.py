@@ -1010,3 +1010,34 @@ def configuration_is_valid(mol2D,admol,is_ts,unstable_pairs):
             validity_judgements.append(False)
 
     return all(validity_judgements)
+
+def get_best_adsorbate_xyz(adsorbate_path,sites,nslab):
+    """
+    load the adsorbates associated with the reaction and find the unique optimized
+    adsorbate structures for each species
+    returns a dictionary mapping each adsorbate name to a list of ase.Atoms objects
+    """
+    prefixes = os.listdir(adsorbate_path)
+    with open(os.path.join(adsorbate_path,"info.json"),"r") as f:
+        info = json.load(f)
+    ase_to_mol_surface_atom_map = {int(k):int(v) for k,v in info["gratom_to_molecule_surface_atom_map"].items()}
+    mol = Molecule().from_adjacency_list(info["adjlist"])
+    geoms = []
+    for prefix in prefixes:
+        path = os.path.join(adsorbate_path,prefix,prefix+".xyz")
+        if os.path.exists(path):
+            geoms.append(path)
+    xyzs = get_unique_sym(geoms)
+    adsorbate = None
+    min_energy = np.inf
+    for xyz in xyzs:
+        geo = read(xyz)
+        occ = get_occupied_sites(geo,sites,nslab)
+        required_surface_inds = set([ind+nslab for ind in ase_to_mol_surface_atom_map.keys()])
+        found_surface_inds = set([site["bonding_index"] for site in occ])
+        if len(occ) >= len(mol.get_adatoms()) and required_surface_inds.issubset(found_surface_inds):
+            if geo.get_potential_energy() < min_energy:
+                adsorbate = xyz
+                min_energy = geo.get_potential_energy()
+
+    return adsorbate
