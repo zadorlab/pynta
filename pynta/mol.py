@@ -1,4 +1,4 @@
-from molecule.molecule import Molecule
+from molecule.molecule import Molecule,Atom,Bond
 from ase.io import read, write
 from ase.data import covalent_radii
 from ase import Atoms
@@ -13,12 +13,14 @@ from acat.utilities import (custom_warning,
                          get_rodrigues_rotation_matrix,
                          get_angle_between,
                          get_rejection_between)
-from pynta.utils import get_unique_sym_struct_index_clusters, get_unique_sym, get_unique_sym_structs, get_unique_sym_struct_indices
+from pynta.utils import get_unique_sym_struct_index_clusters, get_unique_sym, get_unique_sym_structs, get_unique_sym_struct_indices, get_occupied_sites
 from pynta.calculator import run_harmonically_forced_xtb
 from rdkit import Chem
 from copy import deepcopy
 import numpy as np
 import random
+import itertools
+
 
 def get_desorbed_with_map(mol):
     molcopy = mol.copy(deep=True)
@@ -748,7 +750,7 @@ def get_ase_index(ind,template_mol_map,molecule_to_gratom_maps,nslab,ads_sizes):
     else:
         return None #surface site
 
-def get_bond_lengths_sites(mol,ads,atom_map,surf_atom_map,nslab,facet="fcc111",metal="Cu",cas=None):
+def get_bond_lengths_sites(mol,ads,atom_map,surf_atom_map,nslab,sites,site_adjacency,facet="fcc111",metal="Cu",):
     """
     gets bond lengths and site information indexed to the Molecule object atoms
     bond lengths is a matrix with the distances between all atoms that share bonds
@@ -757,20 +759,15 @@ def get_bond_lengths_sites(mol,ads,atom_map,surf_atom_map,nslab,facet="fcc111",m
     rev_atom_map = {value: key for key,value in atom_map.items()} #map from mol to ads
     rev_surf_atom_map = { value: key for key,value in surf_atom_map.items()}
 
-    if cas is None:
-        cas = SlabAdsorptionSites(ads,facet,allow_6fold=False,composition_effect=False,
-                            label_sites=True,
-                            surrogate_metal=metal)
-    adcov = SlabAdsorbateCoverage(ads,adsorption_sites=cas)
-    occ = adcov.get_sites(occupied_only=True)
+    occ = get_occupied_sites(ads,sites,nslab)
     surface_dict = [{"atom_index":x["bonding_index"]-nslab, "site":x["site"],
                        "bond_length":x["bond_length"], "position":x["position"]} for x in occ]
 
     if len(occ) < len(surf_atom_map): #number of sites on geometry disagrees with surf_atom_map
-        print("occupational analysis in get_bond_lengths_sites failed")
-        print(mol.to_adjacency_list())
-        print("expected {} sites".format(len(surf_atom_map)))
-        print("found {} sites".format(len(occ)))
+#         print("occupational analysis in get_bond_lengths_sites failed")
+#         print(mol.to_adjacency_list())
+#         print("expected {} sites".format(len(surf_atom_map)))
+#         print("found {} sites".format(len(occ)))
         return None,None,None
 
     if mol.contains_surface_site():
