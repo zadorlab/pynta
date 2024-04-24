@@ -785,3 +785,144 @@ def ase_to_template_index(aseind, template_mol_map_invert, molecule_to_atom_maps
         raise ValueError
     
     return template_mol_map_invert[molnum][molind]
+
+def get_bond_factors(ts_path,adsorbates_path,metal,facet,sites,site_adjacency,max_dist=3.0,imag_freq_max=150.0):
+    
+    info_path = os.path.join(os.path.split(os.path.split(ts_path)[0])[0],"info.json")
+    with open(info_path,"r") as f:
+        info = json.load(f)
+    
+    template_mol_map = [{int(k):v for k,v in x.items()}  for x in info["template_mol_map"]]
+    molecule_to_atom_maps = [{int(k):v for k,v in x.items()}  for x in info["molecule_to_atom_maps"]]
+    broken_bonds,formed_bonds = get_broken_formed_bonds(Molecule().from_adjacency_list(info["reactants"]),
+                                                        Molecule().from_adjacency_list(info["products"]))
+    rbonds = broken_bonds | formed_bonds
+    nslab = info["nslab"]
+    
+    atms = read(ts_path)
+    
+    admol,neighbor_sites,ninds = generate_TS_2D(atms, info_path, metal, facet, sites, site_adjacency, 
+                                                nslab, max_dist=max_dist)
+        
+    occ = get_occupied_sites(atms,sites,nslab)
+    occ_bd_lengths = {site["bonding_index"]:site['bond_length'] for site in occ}
+    
+    reactants,products = get_best_reaction_adsorbate_geometries(admol,neighbor_sites,len([a for a in admol.atoms if a.is_surface_site()]),
+                                                adsorbates_path,info,sites,site_adjacency,
+                                                                imag_freq_max=imag_freq_max,
+                                               assume_reactant_product_templates_same_order=True)
+
+    if info["forward"]:
+        template = Molecule().from_adjacency_list(info["reactants"])
+        rev_template = Molecule().from_adjacency_list(info["products"])
+    else:
+        template = Molecule().from_adjacency_list(info["products"])
+        rev_template = Molecule().from_adjacency_list(info["reactants"])
+
+    rev_mols = []
+    molecule_to_atom_rev_maps = []
+    for n in info["reverse_names"]:
+        molinfo_path = os.path.join(adsorbates_path,n,"info.json")
+        with open(molinfo_path,"r") as f:
+            molinfo = json.load(f)
+        mol = Molecule().from_adjacency_list(molinfo["adjlist"])
+        rev_mols.append(mol)
+        molecule_to_atom_rev_maps.append({int(v):int(k) for k,v in molinfo["atom_to_molecule_atom_map"].items()})
+
+    template_rev_mol_map = get_template_mol_map(rev_template,rev_mols)
+    rev_ads_sizes = [ads_size(mol) for mol in rev_mols]
+
+    template_mol_map_invert = [{int(v):int(k) for k,v in x.items()} for x in info["template_mol_map"]]
+    molecule_to_atom_maps_invert = [{int(v):int(k) for k,v in x.items()} for x in info["molecule_to_atom_maps"]]
+    ads_sizes = info["ads_sizes"]
+    mols = [Molecule().from_adjacency_list(x) for x in info["mols"]]
+    
+    adjlist_to_length = dict()
+    adjlist_to_well_length = dict()
+    
+    for bd in rbonds:
+        aseinds = []
+        inds2D = []
+            
+        for label in bd:
+            a = template.get_labeled_atoms(label)[0]
+            aind = template.atoms.index(a)
+            aseind = get_ase_index(aind,template_mol_map,molecule_to_atom_maps,nslab,info["ads_sizes"])
+            if aseind:
+                aseinds.append(aseind)
+                inds2D.append(aseind - nslab + len(neighbor_sites))
+
+        if len(inds2D) == 1:
+            i = inds2D[0]
+            for batom in admol.atoms[i].bonds.keys(): #try to find a surface bond
+                if batom.is_surface_site():
+                    inds2D.append(admol.atoms.index(batom))
+                    break
+            else: #didn't find surface bond, need to identify the site
+                pos = None
+                for site in occ:
+                    if site['bonding_index'] == i - len(neighbor_sites) + nslab:
+                        pos = site["position"]
+                        break
+                else:
+                    logging.error(admol.to_adjacency_list())
+                    raise SiteOccupationException
+                for j,s in enumerate(neighbor_sites):
+                    if (s["position"] == pos).all():
+                        inds2D.append(j)
+                        break
+        
+        m = admol.copy(deep=True)
+        for i in inds2D:
+            m.atoms[i].label = "*"
+        
+        templateinds = [ase_to_template_index(aind, template_mol_map_invert, molecule_to_atom_maps_invert, ads_sizes, nslab) for aind in aseinds]
+        if len(templateinds) == 2:
+            forward = template.has_bond(template.atoms[templateinds[0]],template.atoms[templateinds[1]])
+        else:
+            forward = template.atoms[templateinds[0]].is_bonded_to_surface()
+
+        if len(aseinds) == 2:
+            L = atms.get_distance(aseinds[0],aseinds[1],mic=True)
+            if forward:
+                molind = get_mol_index(templateinds[0],template_mol_map)[0]
+                aind1 = get_ase_index(templateinds[0],template_mol_map,molecule_to_atom_maps,nslab,ads_sizes)
+                aind2 = get_ase_index(templateinds[1],template_mol_map,molecule_to_atom_maps,nslab,ads_sizes)
+                if mols[molind].contains_surface_site():
+                    Lwell = reactants[molind].get_distance(aind1,aind2,mic=True)
+                else:
+                    Lwell = reactants[molind].get_distance(aind1-nslab,aind2-nslab,mic=True)
+            else:
+                molind,mind = get_mol_index(templateinds[0],template_rev_mol_map)
+                aind1 = get_ase_index(templateinds[0],template_rev_mol_map,molecule_to_atom_rev_maps,nslab,rev_ads_sizes)
+                aind2 = get_ase_index(templateinds[1],template_rev_mol_map,molecule_to_atom_rev_maps,nslab,rev_ads_sizes)                
+                if rev_mols[molind].contains_surface_site():
+                    Lwell = products[molind].get_distance(aind1,aind2,mic=True)
+                else:
+                    Lwell = products[molind].get_distance(aind1-nslab,aind2-nslab,mic=True)
+
+        elif len(aseinds) == 1:
+            L = occ_bd_lengths[aseinds[0]]
+            if forward:
+                molind,mind = get_mol_index(templateinds[0],template_mol_map)
+                aind1 = molecule_to_atom_maps[molind][mind]+nslab
+                mocc = get_occupied_sites(reactants[molind],sites,nslab)
+                mocc_bd_lengths = {site["bonding_index"]:site['bond_length'] for site in mocc}
+                Lwell = mocc_bd_lengths[aind1]
+            else:
+                molind,mind = get_mol_index(templateinds[0],template_rev_mol_map)
+                aind1 = molecule_to_atom_maps[molind][mind]+nslab
+                mocc = get_occupied_sites(products[molind],sites,nslab)
+                mocc_bd_lengths = {site["bonding_index"]:site['bond_length'] for site in mocc}
+                Lwell = mocc_bd_lengths[aind1]
+                
+        if Lwell > 2.0:
+            assert False
+        adjlist_to_length[m.to_adjacency_list()] = L
+        adjlist_to_well_length[m.to_adjacency_list()] = Lwell
+    
+    adjlist_to_bond_factor = dict()
+    for k in adjlist_to_length.keys():
+        adjlist_to_bond_factor[k] = adjlist_to_length[k]/adjlist_to_well_length[k]
+    
+    return adjlist_to_bond_factor,adjlist_to_length,adjlist_to_well_length
