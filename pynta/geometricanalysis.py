@@ -1012,3 +1012,8 @@ def get_lowest_adsorbate_energies(adsorbates_path):
                 ad_energy_dict[mol] = E
         
     return ad_energy_dict
+
+def extract_pair_graph(atoms,sites,site_adjacency,nslab,max_dist,cut_multidentate_off_num=None,allowed_structure_site_structures=None):
+    admol,neighbor_sites,ninds = generate_adsorbate_2D(atoms, sites, site_adjacency, nslab, 
+                                                       max_dist=max_dist,cut_multidentate_off_num=cut_multidentate_off_num,allowed_structure_site_structures=allowed_structure_site_structures)
+    return reduce_graph_to_pairs(admol)
