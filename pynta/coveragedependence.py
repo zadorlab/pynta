@@ -160,3 +160,287 @@ def copy_stable_pairs(pairsdir,sites,site_adjacency,nslab,max_dist=3.0):
 
 
     return None
+
+def generate_pair_geometries(adpath1,adpath2,slabpath,metal,facet,adinfo1=None,adinfo2=None,
+                             max_dist=3.0,imag_freq_max=150.0,symmetric=None):
+    """
+    adpath1 can be bidentate
+    adpath2 must be monodentate
+    """
+    #slab information
+    slab = read(slabpath)
+    nslab = len(slab)
+    cas = SlabAdsorptionSites(slab,facet,allow_6fold=False,composition_effect=False,
+                            label_sites=True,
+                            surrogate_metal=metal)
+    sites = cas.get_sites()
+    site_adjacency = cas.get_neighbor_site_list()
+    
+    if symmetric is None:
+        symmetric = adpath1 == adpath2
+    
+    #extract information about adsorbates and valid adsorbate geometries
+    if os.path.isfile(adpath1):
+        raise ValueError
+    else:
+        if adinfo1 is None:
+            adinfo1 = os.path.join(adpath1,"info.json")
+        
+        with open(adinfo1,"r") as f:
+            info1 = json.load(f)
+        
+        mol1 = Molecule().from_adjacency_list(info1["adjlist"])
+        atom_to_molecule_surface_atom_map1 = { int(key):int(val) for key,val in info1["gratom_to_molecule_surface_atom_map"].items()}
+        ad1s = get_unique_adsorbate_geometries(adpath1,mol1,cas,atom_to_molecule_surface_atom_map1,
+                                    nslab,imag_freq_max=imag_freq_max)
+        ad12Ds = []
+        ad12Dneighbors = []
+        ad12Dninds = []
+        for a in ad1s:
+            admol,neighbor_sites,ninds = generate_adsorbate_2D(a, sites, site_adjacency, nslab, max_dist=max_dist)
+            ad12Ds.append(admol)
+            ad12Dneighbors.append(neighbor_sites)
+            ad12Dninds.append(ninds)
+        
+        aseinds1 = [x+nslab for x in atom_to_molecule_surface_atom_map1.keys()]
+        
+    if os.path.isfile(adpath2):
+        raise ValueError
+    else:
+        if adinfo2 is None:
+            adinfo2 = os.path.join(adpath2,"info.json")
+        
+        with open(adinfo2,"r") as f:
+            info2 = json.load(f)
+        
+        mol2 = Molecule().from_adjacency_list(info2["adjlist"])
+        assert len(mol2.get_adatoms()) == 1
+        atom_to_molecule_surface_atom_map2 = { int(key):int(val) for key,val in info2["gratom_to_molecule_surface_atom_map"].items()}
+        ad2s = get_unique_adsorbate_geometries(adpath2,mol2,cas,atom_to_molecule_surface_atom_map2,
+                                    nslab,imag_freq_max=imag_freq_max)
+    
+
+    #generate pairs
+    pairs = []
+    ad1_to_ad1_sites = dict()
+    ad1_to_ad2_sites = dict()
+    ad1_to_ad2_heights = dict()
+    ad1_to_actual_occ = dict()
+    for j,ad1 in enumerate(ad1s):
+        ad1_to_ad2_sites[j] = dict()
+        ad1_to_ad2_heights[j] = dict()
+        occ = get_occupied_sites(ad1,sites,nslab)
+        actual_occ = []
+        for site in occ:
+            if site["bonding_index"] in aseinds1:
+                actual_occ.append(site)
+        
+        if len(actual_occ) == 0:
+#             print(adinfo1)
+#             print(aseinds1)
+#             print(atom_to_molecule_surface_atom_map1)
+#             print(mol1.to_adjacency_list())
+#             print(occ)
+#             print(j)
+            raise ValueError
+        
+        ad1_to_ad1_sites[j] = [x for x in actual_occ]
+        
+        neighbor_sites = []
+        
+        for site in sites:
+            if any(sites_match(site,s,slab) for s in actual_occ):
+                continue
+            for occ_site in actual_occ:
+                bd,dist = get_distances([site["position"]], [occ_site["position"]], cell=slab.cell, pbc=slab.pbc)
+                v = np.linalg.norm(bd[:2])
+                if v < max_dist:
+                    neighbor_sites.append(site)
+                    break
+        
+        
+        stable_neighbor_sites = []
+        heights = []
+        for site in neighbor_sites:
+            for i,ad2 in enumerate(ad2s):
+                if i not in ad1_to_ad2_sites[j].keys():
+                    ad1_to_ad2_sites[j][i] = []
+                    ad1_to_ad2_heights[j][i] = []
+        
+                cas = SlabAdsorptionSites(ad2,facet,allow_6fold=False,composition_effect=False,
+                                    label_sites=True,
+                                    surrogate_metal=metal)
+                sites2 = cas.get_sites()
+                occ = get_occupied_sites(ad2,sites2,nslab)
+                occsite = None
+                
+                for s in occ:
+                    if (s['bonding_index'] - nslab) in atom_to_molecule_surface_atom_map2.keys():
+                        occsite = s
+                        break
+                else:
+#                     print(occ)
+#                     print(atom_to_molecule_surface_atom_map2.keys())
+#                     print(s['bonding_index'])
+                    raise ValueError
+
+                if occsite["site"] == site["site"] and occsite["morphology"] == site["morphology"]:
+                    ad1_to_ad2_sites[j][i].append(site)
+                    ad1_to_ad2_heights[j][i].append(occsite["bond_length"])
+                    stable_neighbor_sites.append(site)
+                    heights.append(occsite["bond_length"])
+                    break
+
+    
+    adpairs = []
+    pairmols = []
+    
+    if not symmetric:
+        for j in range(len(ad1s)):
+            ad1_sites = ad1_to_ad1_sites[j]
+            
+            ad2_sites = []
+            ad2_geoms = []
+            heights = []
+            for i,sites in ad1_to_ad2_sites[j].items():
+                for k,site in enumerate(sites):
+                    heights.append(ad1_to_ad2_heights[j][i][k])
+                    ad2_sites.append(ad1_to_ad2_sites[j][i][k])
+                    ad2_geoms.append(ad2s[i])
+
+
+            inds = get_unique_site_inds(ad2_sites,slab,fixed_point=ad1_sites[0]["position"])
+
+            for i in inds:
+#                 if any(sites_match(ad2_sites[i],s,slab) for s in ad1_to_ad1_sites[j]):
+#                     continue
+                
+                ad = deepcopy(ad1s[j])
+                surf_ind = list(atom_to_molecule_surface_atom_map2.keys())[0]
+                add_adsorbate_to_site(ad, ad2_geoms[i][nslab:], surf_ind, ad2_sites[i], height=heights[i])
+                nsites = ad12Dneighbors[j]
+                ind = [k for k,x in enumerate(nsites) if sites_match(ad2_sites[i],x,slab)][0]
+                amol = deepcopy(ad12Ds[j])
+                satom = amol.atoms[ind]
+                m2 = deepcopy(mol2)
+                admol2 = m2.get_desorbed_molecules()[0]
+                label_atom_dict = admol2.get_all_labeled_atoms()
+                for label,at in label_atom_dict.items(): #one iteration only
+                    amol = amol.merge(admol2)
+                    if label == "*1":
+                        at.decrement_radical()
+                        order = 1
+                    elif label == "*2":
+                        at.decrement_radical()
+                        at.decrement_radical()
+                        order = 2
+                    elif label == "*3":
+                        at.decrement_radical()
+                        at.decrement_lone_pairs()
+                        order = 3
+                    elif label == "*4":
+                        at.decrement_radical()
+                        at.decrement_radical()
+                        at.decrement_lone_pairs()
+                        order = 4
+                    else:
+                        raise ValueError(label)
+                    try:
+                        bd = Bond(satom,at,order=order)
+                    except:
+#                         print(ad12Ds[j].to_adjacency_list())
+#                         print(mol2.to_adjacency_list())
+#                         print(amol.to_adjacency_list())
+#                         print(satom)
+#                         print(at)
+#                         print(order)
+                        raise ValueError
+                    amol.add_bond(bd)
+                    amol.clear_labeled_atoms()
+                    if amol.multiplicity == -187: #handle surface molecules
+                        amol.multiplicity = amol.get_radical_count() + 1
+                adpairs.append(ad)
+                pairmols.append(amol)
+    else: #symmetric case, monodentate-monodentate since ad2 must be monodentate
+        ad2_site_pairs = []
+        ad2_geoms = []
+        heights = []
+        ad1_inds = []
+        for j in range(len(ad1s)):
+            ad1_sites = ad1_to_ad1_sites[j]
+            
+            for i,sites in ad1_to_ad2_sites[j].items():
+                for k,site in enumerate(sites):
+                    heights.append(ad1_to_ad2_heights[j][i][k])
+                    ad2_site_pairs.append((ad1_sites[0],site))
+                    ad2_geoms.append(ad2s[i])
+                    ad1_inds.append(j)
+
+        inds = get_unique_site_pair_inds(ad2_site_pairs,slab)
+
+        for i in inds:
+#             if any(sites_match(ad2_site_pairs[i][1],s,slab) for s in ad1_to_ad1_sites[j]):
+#                 print("matched")
+#                 continue
+            ad = deepcopy(ad1s[ad1_inds[i]])
+            surf_ind = list(atom_to_molecule_surface_atom_map2.keys())[0]
+            add_adsorbate_to_site(ad, ad2_geoms[i][nslab:], surf_ind, ad2_site_pairs[i][1], 
+                                  height=heights[i])
+            nsites = ad12Dneighbors[ad1_inds[i]]
+            try:
+                ind = [k for k,x in enumerate(nsites) if sites_match(ad2_site_pairs[i][1],x,slab)][0]
+            except Exception as e:
+#                 print("site")
+#                 print(ad2_site_pairs[i][1])
+#                 print("occ")
+#                 print(ad1_to_ad1_sites[j])
+#                 print("nsites")
+#                 print(nsites)
+#                 bd,dist = get_distances([ad2_site_pairs[i][1]["position"]], [ad1_to_ad1_sites[j][0]["position"]], cell=slab.cell, pbc=slab.pbc)
+#                 print(bd)
+#                 print(dist)
+                raise e
+            amol = deepcopy(ad12Ds[j])
+            satom = amol.atoms[ind]
+            m2 = deepcopy(mol2)
+            admol2 = m2.get_desorbed_molecules()[0]
+            label_atom_dict = admol2.get_all_labeled_atoms()
+            for label,at in label_atom_dict.items(): #one iteration only
+                amol = amol.merge(admol2)
+                if label == "*1":
+                    at.decrement_radical()
+                    order = 1
+                elif label == "*2":
+                    at.decrement_radical()
+                    at.decrement_radical()
+                    order = 2
+                elif label == "*3":
+                    at.decrement_radical()
+                    at.decrement_lone_pairs()
+                    order = 3
+                elif label == "*4":
+                    at.decrement_radical()
+                    at.decrement_radical()
+                    at.decrement_lone_pairs()
+                    order = 4
+                else:
+                    raise ValueError(label)
+                try:
+                    bd = Bond(satom,at,order=order)
+                except:
+#                     print(ad12Ds[j].to_adjacency_list())
+#                     print(mol2.to_adjacency_list())
+#                     print(amol.to_adjacency_list())
+#                     print(satom)
+#                     print(at)
+#                     print(order)
+                    raise ValueError
+                amol.add_bond(bd)
+                amol.clear_labeled_atoms()
+                if amol.multiplicity == -187: #handle surface molecules
+                    amol.multiplicity = amol.get_radical_count() + 1
+            adpairs.append(ad)
+            pairmols.append(amol)
+    
+
+    return adpairs,pairmols
