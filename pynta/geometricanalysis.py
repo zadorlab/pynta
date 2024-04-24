@@ -519,3 +519,41 @@ def tagsites(atoms,sites):
     for i,site in enumerate(sites):
         add_adsorbate_to_site(aview,Atoms(anames[i], [(0, 0, 0)]), 0, sites[i], height=1.0)
     return aview
+
+def split_ts_to_reactants(ts2d,tagatoms=False):
+    rs = []
+    rbondnum = 0
+    for bd in ts2d.get_all_edges():
+        if bd.is_reaction_bond():
+            rbondnum += 1
+    
+    combs = list(itertools.product([0,1],repeat=rbondnum))
+
+    for comb in combs:
+        r = deepcopy(ts2d)
+        iters = 0
+        for i,bd in enumerate(r.get_all_edges()):
+            if bd.is_reaction_bond():
+                if tagatoms:
+                    if not bd.atom1.is_surface_site() and bd.atom1.is_bonded_to_surface():
+                        bd.atom1.label = "*"
+                    if not bd.atom2.is_surface_site() and bd.atom2.is_bonded_to_surface():
+                        bd.atom2.label = "*"
+                    
+                if comb[iters] == 0:
+                    r.remove_bond(bd)
+                else:
+                    bd.set_order_str('S')
+                iters += 1
+            else:
+                bd.set_order_str('S')
+        try:
+            fix_bond_orders(r)
+            r.update(sort_atoms=False)
+            r.update_connectivity_values()
+            rs.append(r)
+        except (TooManyElectronsException,ValueError):
+            pass
+    
+    return rs
+      
