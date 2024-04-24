@@ -511,3 +511,48 @@ def get_unique_site_pair_inds(site_pairs,slab,tol=0.15):
             unique_inds.append(i)
 
     return unique_inds
+
+def setup_pair_opts_for_rxns(targetdir,tsdirs,coadnames,metal,facet,max_dist=3.0,imag_freq_max=150.0):
+    pairdir = os.path.join(targetdir,"pairs")
+    addir = os.path.join(os.path.split(tsdirs[0])[0],"Adsorbates")
+    slabpath = os.path.join(os.path.split(tsdirs[0])[0],"slab.xyz")
+    if not os.path.exists(pairdir):
+        os.makedirs(pairdir)
+    
+    ads = set()  
+    
+    for tsdir in tsdirs:
+        with open(os.path.join(tsdir,"info.json"),"r") as f:
+            info = json.load(f)
+        for molname in info["species_names"]+info["reverse_names"]:
+            with open(os.path.join(addir,molname,"info.json"),"r") as f:
+                molinfo = json.load(f)
+            m = Molecule().from_adjacency_list(molinfo["adjlist"])
+            if m.contains_surface_site():
+                ads.add(molname)
+    
+    combs = []
+    for adname in ads:
+        for coadname in coadnames:
+            tp = (adname,coadname)
+            revtp = (coadname,adname)
+            if (revtp not in combs) and (tp not in combs):
+                combs.append(tp)
+                
+    outdirs = []
+    for s in combs:
+        name = "_".join(s)
+        namedir = os.path.join(pairdir,name)
+        if not os.path.exists(namedir):
+            os.makedirs(namedir)
+            ds = [os.path.join(addir,x) for x in s]
+            pairs,pairmols = generate_pair_geometries(ds[0],ds[1],slabpath,metal,facet,
+                                 max_dist=max_dist,imag_freq_max=imag_freq_max)
+            for i,pair in enumerate(pairs):
+                os.makedirs(os.path.join(namedir,str(i)))
+                write(os.path.join(namedir,str(i),"init.xyz"), pair)
+                moldict = {"adjlist": pairmols[i].to_adjacency_list()}
+                with open(os.path.join(namedir,str(i),"info.json"),'w') as f:
+                    json.dump(moldict,f)
+                outdirs.append(os.path.join(namedir,str(i),"init.xyz"))
+    return outdirs
