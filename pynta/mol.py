@@ -863,6 +863,9 @@ def generate_without_site_info(m):
             a.morphology = ""
     return mol
 
+class FindingPathError(Exception):
+    pass
+
 def reduce_graph_to_pairs(admol):
     adatoms = [a for a in admol.atoms if a.is_bonded_to_surface() and not a.is_surface_site()]
     surface_save = set()
@@ -886,3 +889,23 @@ def reduce_graph_to_pairs(admol):
     admol.update_connectivity_values()
     
     return admol
+
+def find_shortest_paths(start, end, path=None):
+    paths = [[start]]
+    outpaths = []
+    while paths != []:
+        newpaths = []
+        for path in paths:
+            for node in path[-1].edges.keys():
+                if node in path:
+                    continue
+                elif node is end:
+                    outpaths.append(path[:]+[node])
+                elif outpaths == []:
+                    newpaths.append(path[:]+[node])
+        if outpaths:
+            return outpaths
+        else:
+            paths = newpaths
+    
+    return None
