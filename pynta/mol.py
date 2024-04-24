@@ -854,4 +854,6 @@ def pluck_subgraph(mol,atom):
     struct.update_atomtypes()
     struct.update_connectivity_values()
     return struct,inds
-                    
+
+    
+
