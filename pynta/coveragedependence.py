@@ -762,3 +762,28 @@ def generate_coadsorbed_geoms(ad,admol,neighbor_sites_2D,ninds,actual_occ,neighb
     outgeoms.remove(ad) #do not include the configuration with no coadsorbates in output
     outmol2Ds.remove(admol)
     return outgeoms,outmol2Ds
+
+
+def add_coadsorbate_3D(geo,site,ad,coads,site_stable_parameters,
+                        atom_to_molecule_surface_atom_map,infocoad,coad_occ_dict,coad_height_map,coad2D,
+                       metal,facet,sites,site_adjacency,nslab):
+    if (site["site"],site["morphology"]) not in site_stable_parameters:
+        return None
+    for i,coad in enumerate(coads):
+        #occ = get_occupied_sites(coad,sites,nslab)
+        occ = coad_occ_dict[i]
+        occsite = None
+        for s in occ:
+            if (s['bonding_index'] - nslab) in atom_to_molecule_surface_atom_map.keys():
+                occsite = s
+                break
+        else:
+            raise ValueError
+        if occsite["site"] == site["site"] and occsite["morphology"] == site["morphology"]:
+            #assert len(mol2D.get_all_labeled_atoms()) == 0, mol2D.to_adjacency_list()
+            surf_ind = list(atom_to_molecule_surface_atom_map.keys())[0]
+            h = coad_height_map[i]
+            add_adsorbate_to_site(geo, coad[nslab:], surf_ind, site, height=h)
+            return geo,coad2D
+    else:
+        return None,None
