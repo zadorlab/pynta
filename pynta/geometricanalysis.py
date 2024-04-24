@@ -926,3 +926,89 @@ def get_bond_factors(ts_path,adsorbates_path,metal,facet,sites,site_adjacency,ma
         adjlist_to_bond_factor[k] = adjlist_to_length[k]/adjlist_to_well_length[k]
     
     return adjlist_to_bond_factor,adjlist_to_length,adjlist_to_well_length
+
+def get_unique_adsorbate_geometries(adsorbate_path,mol,sites,site_adjacency,atom_to_molecule_surface_atom_map,
+                                    nslab,imag_freq_max=150.0):
+    """
+    load the adsorbates associated with the reaction and find the unique optimized
+    adsorbate structures for each species
+    returns a dictionary mapping each adsorbate name to a list of ase.Atoms objects
+    """
+    prefixes = os.listdir(adsorbate_path)
+    geoms = []
+    for prefix in prefixes:
+        if prefix == "info.json":
+            continue
+        path = os.path.join(adsorbate_path,prefix,prefix+".xyz")
+        freq_path = os.path.join(adsorbate_path,prefix,"vib.json_vib.json")
+        if os.path.exists(path) and os.path.exists(freq_path):
+            with open(freq_path,"r") as f:
+                freq_dict = json.load(f)
+            freq = np.complex128(freq_dict["frequencies"][0])
+            if (np.isreal(freq) or freq.imag < imag_freq_max):
+                geoms.append(path)
+                
+    xyzs = get_unique_sym(geoms)
+    adsorbates = []
+    for xyz in xyzs:
+        geo = read(xyz)
+        occ = get_occupied_sites(geo,sites,nslab)
+        required_surface_inds = set([ind+nslab for ind in atom_to_molecule_surface_atom_map.keys()])
+        found_surface_inds = set([site["bonding_index"] for site in occ])
+        if len(occ) >= len(mol.get_adatoms()) and required_surface_inds.issubset(found_surface_inds):
+            adsorbates.append(geo)
+
+    return adsorbates
+
+def get_adsorbate_geometries(adsorbate_path,mol,sites,atom_to_molecule_surface_atom_map,
+                                    nslab,imag_freq_max=150.0):
+    """
+    load the adsorbates associated with the reaction and find the unique optimized
+    adsorbate structures for each species
+    returns a dictionary mapping each adsorbate name to a list of ase.Atoms objects
+    """
+    prefixes = os.listdir(adsorbate_path)
+    geoms = []
+    for prefix in prefixes:
+        if prefix == "info.json":
+            continue
+        path = os.path.join(adsorbate_path,prefix,prefix+".xyz")
+        freq_path = os.path.join(adsorbate_path,prefix,"vib.json_vib.json")
+        if os.path.exists(path) and os.path.exists(freq_path):
+            with open(freq_path,"r") as f:
+                freq_dict = json.load(f)
+            freq = np.complex128(freq_dict["frequencies"][0])
+            if (np.isreal(freq) or freq.imag < imag_freq_max):
+                geoms.append(path)
+                
+    xyzs = get_unique_sym(geoms)
+    adsorbates = []
+    for xyz in xyzs:
+        geo = read(xyz)
+        occ = get_occupied_sites(geo,sites,nslab)
+        required_surface_inds = set([ind+nslab for ind in atom_to_molecule_surface_atom_map.keys()])
+        found_surface_inds = set([site["bonding_index"] for site in occ])
+        if len(occ) >= len(mol.get_adatoms()) and required_surface_inds.issubset(found_surface_inds):
+            adsorbates.append(geo)
+
+    return adsorbates
+
+def get_lowest_adsorbate_energies(adsorbates_path):
+    """
+    load the adsorbates geometries find the lowest energy correct structure and the 2D representation
+    """
+    ad_energy_dict = dict()
+    for ad in os.listdir(adsorbates_path):
+        path = os.path.join(adsorbates_path,ad)
+        if not os.path.isdir(path):
+            continue
+        with open(os.path.join(path,"info.json"),"r") as f:
+            info = json.load(f)
+            mol = Molecule().from_adjacency_list(info["adjlist"])
+        Es = get_adsorbate_energies(path)[0]
+        ad_energy_dict[mol] = np.inf
+        for E in Es.values():
+            if E < ad_energy_dict[mol]:
+                ad_energy_dict[mol] = E
+        
+    return ad_energy_dict
