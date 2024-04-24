@@ -556,3 +556,133 @@ def setup_pair_opts_for_rxns(targetdir,tsdirs,coadnames,metal,facet,max_dist=3.0
                     json.dump(moldict,f)
                 outdirs.append(os.path.join(namedir,str(i),"init.xyz"))
     return outdirs
+
+def get_adsorbate_ts_information(xyz,slabxyz,is_ts,
+                               metal,facet,sites,site_adjacency,max_dist=3.0):
+    slab = read(slabxyz)
+    
+        
+    if is_ts:
+        ad = read(xyz)
+        xyzinfo = os.path.join(os.path.split(xyz)[0],"..","info.json")
+        with open(xyzinfo,"r") as f:
+            info = json.load(f)
+
+        reactants = Molecule().from_adjacency_list(info["reactants"])
+        products = Molecule().from_adjacency_list(info["products"])
+        template_mol_map = [{ int(key):int(val) for key,val in x.items()} for x in info["template_mol_map"]]
+        molecule_to_atom_maps = [{ int(key):int(val) for key,val in x.items()} for x in info["molecule_to_atom_maps"]]
+        ads_sizes = info["ads_sizes"]
+        nslab = info["nslab"]
+        forward = info["forward"]
+
+        broken_bonds,formed_bonds = get_broken_formed_bonds(reactants,products)
+
+        extra_bonds = formed_bonds if forward else broken_bonds
+        template = reactants if forward else products
+        adatoms = template.get_adatoms()
+        adinds = []
+        for ind,atom in enumerate(template.atoms):
+            if atom.is_surface_site():
+                if len(atom.bonds) == 0:
+                    s = [bd for bd in extra_bonds if atom.label in bd]
+                    if len(s) > 0:
+                        labels = list(s[0])
+                        labels.remove(atom.label)
+                        alabel = labels[0]
+                        a = template.get_labeled_atoms(alabel)[0]
+                        adinds.append(template.atoms.index(a))
+                else:
+                    a = list(atom.bonds.keys())[0]
+                    adinds.append(template.atoms.index(a))
+
+        aseinds = []
+        for ind in adinds:
+            aseind = get_ase_index(ind,template_mol_map,molecule_to_atom_maps,nslab,ads_sizes)
+            aseinds.append(aseind)
+            
+        
+    else:
+        ad = read(xyz)
+        with open(os.path.join(os.path.split(os.path.split(xyz)[0])[0],"info.json"),"r") as f:
+            info = json.load(f)
+        
+        mol2D = Molecule().from_adjacency_list(info["adjlist"])
+        atom_to_molecule_surface_map = { int(key):int(val) for key,val in info["gratom_to_molecule_surface_atom_map"].items()}
+        nslab = info["nslab"]
+        aseinds = [x+nslab for x in atom_to_molecule_surface_map.keys()]
+        
+    occ = get_occupied_sites(ad,sites,nslab)
+    
+    
+    actual_occ = []
+    for site in occ:
+        if site["bonding_index"] in aseinds:
+            actual_occ.append(site)
+
+    neighbor_sites = []
+
+    for site in sites:
+        if any(sites_match(site,s,slab) for s in actual_occ):
+            continue
+        for occ_site in actual_occ:
+            v,dist = get_distances([site["position"]], [occ_site["position"]], cell=slab.cell, pbc=slab.pbc)
+            if np.linalg.norm(v[:2]) < max_dist:
+                neighbor_sites.append(site)
+                break
+    
+    if is_ts:
+        admol,neighbor_sites_2D,ninds = generate_TS_2D(ad, xyzinfo, metal, facet, sites, site_adjacency, nslab, max_dist=None)
+    else:
+        admol,neighbor_sites_2D,ninds = generate_adsorbate_2D(ad, sites, site_adjacency, nslab, max_dist=None)
+    
+    return ad,admol,neighbor_sites_2D,ninds,actual_occ,neighbor_sites,aseinds,slab,nslab
+
+def get_coadsorbate_information(coadnames,ads_dir,neighbor_sites,sites,site_adjacency,nslab,slab):
+    coad_to_stable_neighbor_sites = dict()
+    coad_site_stable_parameters = {name:[] for name in coadnames}
+    coad_atom_to_molecule_surface_atom_map = dict()
+    infocoad_dict = dict()
+    stable_neighbor_sites_total = []
+    coads_dict = dict()
+    coad2Ds = dict()
+    for coadname in coadnames:
+        coaddir = os.path.join(ads_dir,coadname)
+        with open(os.path.join(coaddir,"info.json"),"r") as f:
+            infocoad = json.load(f)
+
+        coad2D = Molecule().from_adjacency_list(infocoad["adjlist"])
+        coad2Ds[coadname] = coad2D
+        atom_to_molecule_surface_atom_map = {int(key):int(val) for key,val in infocoad["gratom_to_molecule_surface_atom_map"].items()}
+        coads = get_unique_adsorbate_geometries(coaddir,Molecule().from_adjacency_list(infocoad["adjlist"]),
+                               sites,site_adjacency,atom_to_molecule_surface_atom_map,
+                               nslab)
+        atom_to_molecule_surface_atom_map = {int(key):int(val) for key,val in infocoad["gratom_to_molecule_surface_atom_map"].items()}
+        coad_atom_to_molecule_surface_atom_map[coadname] = atom_to_molecule_surface_atom_map
+        coads_dict[coadname] = coads
+        infocoad_dict[coadname] = infocoad
+        stable_neighbor_sites = []
+
+        for site in neighbor_sites:
+
+            for coad in coads:
+                occ = get_occupied_sites(coad,sites,nslab)
+                occsite = None
+                for s in occ:
+                    if (s['bonding_index'] - nslab) in atom_to_molecule_surface_atom_map.keys():
+                        occsite = s
+                        break
+                else:
+                    raise ValueError
+
+                if occsite["site"] == site["site"] and occsite["morphology"] == site["morphology"]:
+                    stable_neighbor_sites.append(site)
+                    if not any(sites_match(s,site,slab) for s in stable_neighbor_sites_total):
+                        stable_neighbor_sites_total.append(site)
+                    if not (site["site"],site["morphology"]) in coad_site_stable_parameters[coadname]:
+                        coad_site_stable_parameters[coadname].append((site["site"],site["morphology"]))
+                    break
+
+        coad_to_stable_neighbor_sites[coadname] = stable_neighbor_sites
+
+    return coad_to_stable_neighbor_sites, coad_site_stable_parameters,coad_atom_to_molecule_surface_atom_map,infocoad_dict,stable_neighbor_sites_total,coads_dict,coad2Ds
