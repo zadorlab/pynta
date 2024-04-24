@@ -863,5 +863,26 @@ def generate_without_site_info(m):
             a.morphology = ""
     return mol
 
+def reduce_graph_to_pairs(admol):
+    adatoms = [a for a in admol.atoms if a.is_bonded_to_surface() and not a.is_surface_site()]
+    surface_save = set()
+    for i,a1 in enumerate(adatoms):
+        for a2 in adatoms[i+1:]:
+            paths = find_shortest_paths(a1,a2)
+            if paths is None: #separation between pair is so large the generated site graphs don't connect
+                raise FindingPathError
+            for path in paths:
+                surface_save = surface_save | set([a for a in path if a.is_surface_site()])
     
+    atoms_to_remove = []
+    for i,a in enumerate(admol.atoms):
+        if a.is_surface_site() and not (a in surface_save):
+            atoms_to_remove.append(a)
+    
+    for a in atoms_to_remove:
+        admol.remove_atom(a)
 
+    admol.update_atomtypes()
+    admol.update_connectivity_values()
+    
+    return admol
