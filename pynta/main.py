@@ -146,8 +146,6 @@ class Pynta:
 
         logger.info('Pynta class is initiated')
 
-        logger.info('Pynta class is initiated')
-
     def generate_slab(self,skip_launch=False):
         """
         generates and optimizes a small scale slab that can be scaled to a large slab as needed
@@ -554,7 +552,7 @@ class Pynta:
             ts_path = os.path.join(self.path,"TS"+str(i))
             os.makedirs(ts_path)
             ts_task = MolecularTSEstimate({"rxn": rxn,"ts_path": ts_path,"slab_path": self.slab_path,"adsorbates_path": os.path.join(self.path,"Adsorbates"),
-                "rxns_file": self.rxns_file,"path": self.path,"metal": self.metal,"facet": self.surface_type, "out_path": ts_path, "machine": self.machine,
+                "rxns_file": self.rxns_file,"path": self.path,"metal": self.metal,"facet": self.surface_type, "out_path": ts_path,
                 "spawn_jobs": True, "opt_obj_dict": opt_obj_dict, "vib_obj_dict": vib_obj_dict,
                     "IRC_obj_dict": IRC_obj_dict, "nprocs": 48, "name_to_adjlist_dict": self.name_to_adjlist_dict,
                     "rxns_file": self.rxns_file,"path": self.path,"metal": self.metal,"facet": self.surface_type, "out_path": ts_path, "irc_mode": self.irc_mode,
