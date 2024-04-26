@@ -256,6 +256,7 @@ An example python script for calling Pynta is available below.
                             }, },
         software_kwargs_gas=None,
         TS_opt_software_kwargs=None,
+        irc_mode="fixed",
         lattice_opt_software_kwargs={'kpts': (25,25,25), 'ecutwfc': 70, 'degauss':0.02, 'mixing_mode': 'plain'},
         reset_launchpad=False,queue_adapter_path=None,num_jobs=25,
         Eharmtol=3.0,Eharmfiltertol=30.0,Ntsmin=5,frozen_layers=2)
@@ -308,6 +309,14 @@ specified in terms of what `ASE <https://wiki.fysik.dtu.dk/ase/>`_ expects.
 **software_kwargs_gas**: this is a dictionary of keyword arguments that should be different from software_kwargs when running gas phase calculations
 
 **TS_opt_software_kwargs**: this is a dictionary of keyword arguments that should be different from software_kwargs when running saddle point optimizations
+
+**irc_mode**: mode to run IRC calculations. 
+
+If irc_mode is "fixed", entire slab layers are fixed. 
+
+If irc_mode is "relaxed", bottom half of slab layers are fixed and top half of slab layers are relaxed.
+
+If irc_mode is not "fixed" nor "relaxed", IRC is not calculated.
 
 **lattice_opt_software_kwargs**: this is a dictionary of keyword arguments that should be different from software_kwargs when optimizing the lattice constant
 
