@@ -22,6 +22,11 @@ from fireworks.core.fworker import FWorker
 import fireworks.fw_config
 import logging
 
+#logger
+logger = logging.getLogger(__name__)
+logging.basicConfig(filename='pynta.log', level=logging.INFO)
+
+
 class Pynta:
     def __init__(self,path,rxns_file,surface_type,metal,label,launchpad_path=None,fworker_path=None,
         vacuum=8.0,repeats=(3,3,4),slab_path=None,software="Espresso", pbc=(True,True,False),socket=False,queue=False,njobs_queue=0,a=None,
@@ -33,6 +38,7 @@ class Pynta:
                             }, },
         software_kwargs_gas=None,
         TS_opt_software_kwargs=None,
+        irc_mode="fixed", #choose irc mode: 'skip', 'relaxed', 'fixed'
         lattice_opt_software_kwargs={'kpts': (25,25,25), 'ecutwfc': 70, 'degauss':0.02, 'mixing_mode': 'plain'},
         reset_launchpad=False,queue_adapter_path=None,num_jobs=25,max_num_hfsp_opts=None,#max_num_hfsp_opts is mostly for fast testing
         Eharmtol=3.0,Eharmfiltertol=30.0,Ntsmin=5,frozen_layers=2,fmaxopt=0.05,fmaxirc=0.1,fmaxopthard=0.05):
@@ -59,6 +65,7 @@ class Pynta:
         self.metal = metal
         self.adsorbate_fw_dict = dict()
         self.software_kwargs = software_kwargs
+        self.irc_mode = irc_mode
 
         if software.lower() == 'vasp':
             self.pbc = (True,True,True)
@@ -116,6 +123,8 @@ class Pynta:
         self.fmaxirc = fmaxirc
         self.fmaxopthard = fmaxopthard
 
+        logger.info('Pynta class is initiated')
+
     def generate_slab(self,skip_launch=False):
         """
         generates and optimizes a small scale slab that can be scaled to a large slab as needed
@@ -129,6 +138,7 @@ class Pynta:
             self.a = a
         else:
             a = self.a
+        logger.info('Construct slab with optimal lattice constant')
         #construct slab with optimial lattice constant
         slab = slab_type(self.metal,self.repeats,a,self.vacuum)
         slab.pbc = self.pbc
@@ -447,17 +457,35 @@ class Pynta:
         else:
             opt_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":self.software_kwargs_TS,
                 "run_kwargs": {"fmax" : 0.02, "steps" : 70},"constraints": ["freeze up to "+str(self.nslab)],"sella":True,"order":1,}
+        
         vib_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":self.software_kwargs,
                 "constraints": ["freeze up to "+str(self.nslab)]}
-        IRC_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":self.software_kwargs,
-                "run_kwargs": {"fmax" : self.fmaxirc, "steps" : 70},"constraints":["freeze up to "+str(self.nslab)]}
+
+        #logging.info
+        logger.info(f"================= IRC mode is: {self.irc_mode} =======================")
+        #pass through 
+        
         for i,rxn in enumerate(self.rxns_dict):
+            #if irc_mode is "fixed" freeze all slab and conduct MolecularTSEstimate. 
+            if self.irc_mode == "fixed":
+                IRC_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":self.software_kwargs,
+                    "run_kwargs": {"fmax" : self.fmaxopt, "steps" : 70},"constraints": ["freeze up to "+str(self.nslab)]}
+
+            elif self.irc_mode == "relaxed":
+                IRC_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":self.software_kwargs,
+                    "run_kwargs": {"fmax" : self.fmaxopt, "steps" : 70},"constraints": ["freeze up to {}".format(self.freeze_ind)]}
+        # if irc_mode = "skip" : do not conduct IRC
+            else:
+                logger.info("Skip IRC: IRC is not conducted")
+                IRC_obj_dict = {}
+                pass
+
             ts_path = os.path.join(self.path,"TS"+str(i))
             os.makedirs(ts_path)
             ts_task = MolecularTSEstimate({"rxn": rxn,"ts_path": ts_path,"slab_path": self.slab_path,"adsorbates_path": os.path.join(self.path,"Adsorbates"),
-                "rxns_file": self.rxns_file,"path": self.path,"metal": self.metal,"facet": self.surface_type, "out_path": ts_path,
-                "spawn_jobs": True, "opt_obj_dict": opt_obj_dict, "vib_obj_dict": vib_obj_dict,
-                    "IRC_obj_dict": IRC_obj_dict, "nprocs": 48, "name_to_adjlist_dict": self.name_to_adjlist_dict,
+                    "rxns_file": self.rxns_file,"path": self.path,"metal": self.metal,"facet": self.surface_type, "out_path": ts_path, "irc_mode": self.irc_mode,
+                    "spawn_jobs": True, "opt_obj_dict": opt_obj_dict, "vib_obj_dict": vib_obj_dict, "IRC_obj_dict": IRC_obj_dict,
+                    "nprocs": 48, "name_to_adjlist_dict": self.name_to_adjlist_dict,
                     "gratom_to_molecule_atom_maps":{sm: {str(k):v for k,v in d.items()} for sm,d in self.gratom_to_molecule_atom_maps.items()},
                     "gratom_to_molecule_surface_atom_maps":{sm: {str(k):v for k,v in d.items()} for sm,d in self.gratom_to_molecule_surface_atom_maps.items()},
                     "nslab":self.nslab,"Eharmtol":self.Eharmtol,"Eharmfiltertol":self.Eharmfiltertol,"Ntsmin":self.Ntsmin,
