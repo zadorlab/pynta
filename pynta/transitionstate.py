@@ -168,6 +168,8 @@ def get_unique_TS_structs(adsorbates,species_names,slab,cas,nslab,num_surf_sites
     Generate unique initial structures for TS guess generation
     """
     tsstructs = []
+    slab_sites = cas.get_sites()
+    site_adjacency = cas.get_neighbor_site_list()
     ordered_adsorbates = [adsorbates[name] for name in species_names]
     for adss in itertools.product(*ordered_adsorbates):
         if num_surf_sites[0] > 0:
@@ -184,7 +186,7 @@ def get_unique_TS_structs(adsorbates,species_names,slab,cas,nslab,num_surf_sites
                 ad = adss[1][nslab:]
                 bondlengths1,sites1,site_lengths1 = get_bond_lengths_sites(mol_dict[name],adss[1],gratom_to_molecule_atom_maps[name],
                                                                         gratom_to_molecule_surface_atom_maps[name],nslab,
-                                                                        facet=facet,metal=metal,cas=cas)
+                                                                        slab_sites,site_adjacency,facet=facet,metal=metal)
                 sitetype1 = list(sites1.values())[0]
                 height1 = list(site_lengths1.values())[0]
                 surf_ind1 = list(gratom_to_molecule_surface_atom_maps[name].keys())[0]
@@ -201,7 +203,7 @@ def get_unique_TS_structs(adsorbates,species_names,slab,cas,nslab,num_surf_sites
                                 ad2 = adss[2][nslab:]
                                 bondlengths2,sites2,site_lengths2 = get_bond_lengths_sites(mol_dict[name2],adss[2],gratom_to_molecule_atom_maps[name2],
                                                                         gratom_to_molecule_surface_atom_maps[name2],nslab,
-                                                                        facet=facet,metal=metal,cas=cas)
+                                                                        slab_sites,site_adjacency,facet=facet,metal=metal)
                                 sitetype2 = list(sites2.values())[0]
                                 height2 = list(site_lengths2.values())[0]
                                 surf_ind2 = list(gratom_to_molecule_surface_atom_maps[name2].keys())[0]
@@ -263,6 +265,8 @@ def generate_constraints_harmonic_parameters(tsstructs,adsorbates,slab,forward_t
     site_bond_potential_lists = []
     site_bond_dict_list = []
     out_structs = []
+    slab_sites = cas.get_sites()
+    site_adjacency = cas.get_neighbor_site_list()
     
     nodes_file = os.path.join(os.path.split(pynta.models.__file__)[0],"TS_tree_nodes.json")
     nodes = read_nodes(nodes_file)
@@ -286,7 +290,7 @@ def generate_constraints_harmonic_parameters(tsstructs,adsorbates,slab,forward_t
             bondlengths,sites,site_lengths = get_bond_lengths_sites(mol_dict[name],ads,
                                                                 gratom_to_molecule_atom_maps[name],
                                                                 gratom_to_molecule_surface_atom_maps[name],
-                                                                nslab,facet=facet,metal=metal,cas=cas)
+                                                                nslab,slab_sites,site_adjacency,facet=facet,metal=metal)
             bdlength_list.append(bondlengths)
             sites_list.append(sites)
             site_lengths_list.append(site_lengths)
@@ -312,7 +316,7 @@ def generate_constraints_harmonic_parameters(tsstructs,adsorbates,slab,forward_t
             bondlengths,sites,site_lengths = get_bond_lengths_sites(mol_dict[name],ads,
                                                                 gratom_to_molecule_atom_maps[name],
                                                                 gratom_to_molecule_surface_atom_maps[name],
-                                                                nslab,facet=facet,metal=metal,cas=cas)
+                                                                nslab,slab_sites,site_adjacency,facet=facet,metal=metal)
             bdlength_list.append(bondlengths)
             sites_list.append(sites)
             site_lengths_list.append(site_lengths)
