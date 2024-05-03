@@ -348,37 +348,79 @@ def add_sella_constraint(cons,d):
     constructor(**constraint_dict)
     return
 
-def get_lattice_parameter(metal,surface_type,software,software_kwargs,da=0.1,options={"xatol":1e-4},a0=None):
+def get_lattice_parameters(metal,surface_type,software,software_kwargs,da=0.1,a0=None):
     soft = name_to_ase_software(software)(**software_kwargs)
-    def f(a):
-        slab = bulk(metal,surface_type[:3],a=a)
-        slab.calc = soft
-        slab.pbc = (True, True, True)
-        return slab.get_potential_energy()
-    if a0 is None:
-        a0 = reference_states[chemical_symbols.index(metal)]['a']
-    avals = np.arange(a0-da,a0+da,0.01)
-    outavals = []
-    Evals = []
-    print("a,E")
-    for a in avals:
-        try:
-            E = f(a)
-            outavals.append(a)
-            Evals.append(E)
-            print((a,E))
-        except:
-            pass
-    print("a values:")
-    print(outavals)
-    print("E values:")
-    print(Evals)
-    inds = np.argsort(np.array(Evals))[:7]
-    p = np.polyfit(np.array(outavals)[inds],np.array(Evals)[inds],2)
-    a = -p[1]/(2.0*p[0])
-    print("ASE reference a: {}".format(a0))
-    print("Interpolated a: {}".format(a))
-    out = opt.minimize_scalar(f,method='bounded',bounds=(a-0.01,a+0.01),options=options)
-    print(out)
-    print("Optimized a: {}".format(out.x))
-    return out.x
+    if surface_type != "hcp0001":
+        options={"xatol":1e-4}
+        def f(a):
+            slab = bulk(metal,surface_type[:3],a=a)
+            slab.calc = soft
+            slab.pbc = (True, True, True)
+            return slab.get_potential_energy()
+        if a0 is None:
+            a0 = reference_states[chemical_symbols.index(metal)]['a']
+        avals = np.arange(a0-da,a0+da,0.01)
+        outavals = []
+        Evals = []
+        print("a,E")
+        for a in avals:
+            try:
+                E = f(a)
+                outavals.append(a)
+                Evals.append(E)
+                print((a,E))
+            except:
+                pass
+        print("a values:")
+        print(outavals)
+        print("E values:")
+        print(Evals)
+        inds = np.argsort(np.array(Evals))[:7]
+        p = np.polyfit(np.array(outavals)[inds],np.array(Evals)[inds],2)
+        a = -p[1]/(2.0*p[0])
+        print("ASE reference a: {}".format(a0))
+        print("Interpolated a: {}".format(a))
+        out = opt.minimize_scalar(f,method='bounded',bounds=(a-0.01,a+0.01),options=options)
+        print(out)
+        print("Optimized a: {}".format(out.x))
+        return out.x
+    else:
+        options={"gtol":1e-10,'xrtol':0.0001}
+        def f(a):
+            slab = bulk(metal,surface_type[:3],a=a[0],c=a[1])
+            slab.calc = soft
+            slab.pbc = (True, True, True)
+            return slab.get_potential_energy()
+        if a0 is None:
+            a0 = reference_states[chemical_symbols.index(metal)]['a']
+        cpera = reference_states[chemical_symbols.index(metal)]['c/a']
+        c0 = cpera * a0
+        print("ASE Reference a,c: {}".format((a0,c0)))
+        
+        dx = 0.01
+        avals = a0 * np.linspace(1 - dx, 1 + dx, 3)
+        cvals = c0 * np.linspace(1 - dx, 1 + dx, 3)
+        A = np.zeros((9,6))
+        Evals = np.zeros(9)
+        iter = 0
+        for a in avals:
+            for c in cvals:
+                A[iter,:] = np.array([1.0,a,c,a**2,a*c,c**2]) 
+                Evals[iter] = f([a,c])
+                iter += 1
+        
+        p = np.linalg.lstsq(A,Evals)[0]
+        
+        p1 = p[1:3]
+        p2 = np.array([(2 * p[3], p[4]),
+               (p[4], 2 * p[5])])
+        a02, c02 = np.linalg.solve(p2.T, -p1)
+        
+        init_guess = [a02,c02]
+        
+        print("Interpolated a,c: {}".format((a02,c02)))
+        
+        out = opt.minimize(f,x0=init_guess,method="BFGS",options=options)
+        print(out)
+        print("Optimized a,c: {}".format(out.x))
+        return out.x
