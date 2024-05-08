@@ -21,6 +21,13 @@ from fireworks.core.rocket_launcher import rapidfire
 from fireworks.core.fworker import FWorker
 import fireworks.fw_config
 import logging
+#restart RHE
+import pickle
+import time
+from pynta.polaris import createFWorkers
+from pynta.utils import copyDataAndSave
+from pynta.multi_launcher import launch_multiprocess2
+import json
 
 #logger
 logger = logging.getLogger(__name__)
@@ -571,6 +578,68 @@ class Pynta:
 
         wf = Workflow(self.fws, name=self.label)
         self.launchpad.add_wf(wf)
+
+
+        self.launch()
+
+#restart option: RHE + KSA
+    def restart(self,wfid):
+
+        id_number = int(wfid)
+        # Get the information of the workflow
+        wf1 = self.launchpad.get_wf_summary_dict(id_number, mode='more')
+
+        # Save the states of the workflow
+        wf_states = wf1['states']
+
+        # Save the launcher directories
+        wf_launchers = wf1['launch_dirs']
+
+        # In this bucle-for the tasks that are not completed, change the status
+        # We need the number of the task(id)
+
+        for task_name, task_state in wf_states.items():
+            if task_state != 'COMPLETED':
+                # Here we will change  the map - node
+                task_id = int(task_name.split('--')[-1])
+                d = self.launchpad.get_fw_dict_by_id(task_id)
+                newd = deepcopy(d['spec'])
+
+                nameTask = newd['_tasks'][0]['_fw_name']
+
+                nameTasks = ['{{pynta.tasks.MolecularOptimizationTask}}',
+                            '{{pynta.tasks.MolecularVibrationsTask}}',
+                            '{{pynta.tasks.MolecularIRC}}']
+
+                if 'opt' in task_name:
+                    dirs = wf_launchers[task_name]
+                    if dirs != []:
+                        src = dirs[0]
+                        print(' Name task {0:^20s} {1:^12s} {2}'.format(task_name, task_state, src))
+                        file_traj = [name for name in os.listdir(src) if name.endswith(".traj")]
+                        if len(file_traj) > 1:
+                            file_traj = file_traj[0]
+                            base, ext = os.path.splitext(file_traj)
+
+                            with open (os.path.join(src, "FW.json")) as file:
+                                filejson = json.load(file)
+
+                            if opt_method == 'QuasiNewton':
+                                namexyz = f'weakopt_{base}.xyz'
+                            else:
+                                namexyz = f'{base}_init.xyz'
+
+                            atoms = read(os.path.join(src, file_traj), index=-1)
+                            dst = os.path.dirname(filejson['spec']['_tasks'][0]['xyz'])
+
+                            write(f'{src}/{namexyz}', atoms, format='xyz')
+
+                            copyDataAndSave(src, dst, namexyz)
+                            copyDataAndSave(src, dst, f'{base}.traj')
+
+                # Keep on with the task_state != 'COMPLETED'
+                self.launchpad.rerun_fw(task_id)
+                self.launchpad.update_spec([task_id], newd)
 
 
         self.launch()
