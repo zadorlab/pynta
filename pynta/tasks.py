@@ -58,7 +58,7 @@ class DoNothingTask(FiretaskBase):
 
 def optimize_firework(xyz,software,label,opt_method=None,sella=None,socket=False,order=0,software_kwargs={},opt_kwargs={},
                       run_kwargs={},constraints=[],parents=[],out_path=None,time_limit_hrs=np.inf,fmaxhard=0.0,ignore_errors=False,
-                      target_site_num=None,metal=None,facet=None,priority=1,allow_fizzled_parents=False):
+                      target_site_num=None,metal=None,facet=None,priority=1,allow_fizzled_parents=False,launch_dir=None):
     d = {"xyz" : xyz, "software" : software,"label" : label}
     if opt_method: d["opt_method"] = opt_method
     if software_kwargs: d["software_kwargs"] = software_kwargs
@@ -79,6 +79,7 @@ def optimize_firework(xyz,software,label,opt_method=None,sella=None,socket=False
     t1 = MolecularOptimizationTask(d)
     directory = os.path.dirname(xyz)
     if out_path is None: out_path = os.path.join(directory,label+".xyz")
+    if launch_dir is None: launch_dir = os.path.join(directory)
     t2 = FileTransferTask({'files': [{'src': label+'.xyz', 'dest': out_path}, {'src': label+'.traj', 'dest': os.path.join(directory,label+".traj")}],
             'mode': 'copy', 'ignore_errors' : ignore_errors})
     return Firework([t1,t2],parents=parents,name=label+"opt",spec={"_allow_fizzled_parents": allow_fizzled_parents,"_priority": priority})
