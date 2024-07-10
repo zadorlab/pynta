@@ -8,6 +8,7 @@ from pynta.utils import get_unique_sym, get_occupied_sites, sites_match
 from pynta.mol import *
 from pynta.geometricanalysis import *
 from pynta.tasks import *
+from pynta.main import *
 from fireworks import LaunchPad, Workflow
 from fireworks.queue.queue_launcher import rapidfire as rapidfirequeue
 from fireworks.features.multi_launcher import launch_multiprocess
@@ -191,7 +192,7 @@ def generate_pair_geometries(adpath1,adpath2,slabpath,metal,facet,adinfo1=None,a
         
         mol1 = Molecule().from_adjacency_list(info1["adjlist"])
         atom_to_molecule_surface_atom_map1 = { int(key):int(val) for key,val in info1["gratom_to_molecule_surface_atom_map"].items()}
-        ad1s = get_unique_adsorbate_geometries(adpath1,mol1,cas,atom_to_molecule_surface_atom_map1,
+        ad1s = get_unique_adsorbate_geometries(adpath1,mol1,sites,site_adjacency,atom_to_molecule_surface_atom_map1,
                                     nslab,imag_freq_max=imag_freq_max)
         ad12Ds = []
         ad12Dneighbors = []
@@ -216,7 +217,7 @@ def generate_pair_geometries(adpath1,adpath2,slabpath,metal,facet,adinfo1=None,a
         mol2 = Molecule().from_adjacency_list(info2["adjlist"])
         assert len(mol2.get_adatoms()) == 1
         atom_to_molecule_surface_atom_map2 = { int(key):int(val) for key,val in info2["gratom_to_molecule_surface_atom_map"].items()}
-        ad2s = get_unique_adsorbate_geometries(adpath2,mol2,cas,atom_to_molecule_surface_atom_map2,
+        ad2s = get_unique_adsorbate_geometries(adpath2,mol2,sites,site_adjacency,atom_to_molecule_surface_atom_map2,
                                     nslab,imag_freq_max=imag_freq_max)
     
 
@@ -514,11 +515,13 @@ def get_unique_site_pair_inds(site_pairs,slab,tol=0.15):
 
 def setup_pair_opts_for_rxns(targetdir,tsdirs,coadnames,metal,facet,max_dist=3.0,imag_freq_max=150.0):
     pairdir = os.path.join(targetdir,"pairs")
+    print('pairdir',pairdir)
     addir = os.path.join(os.path.split(tsdirs[0])[0],"Adsorbates")
+    print('addir',addir)
     slabpath = os.path.join(os.path.split(tsdirs[0])[0],"slab.xyz")
     if not os.path.exists(pairdir):
         os.makedirs(pairdir)
-    
+    #if pairdir exists, complain
     ads = set()  
     
     for tsdir in tsdirs:
@@ -540,9 +543,11 @@ def setup_pair_opts_for_rxns(targetdir,tsdirs,coadnames,metal,facet,max_dist=3.0
                 combs.append(tp)
                 
     outdirs = []
+
     for s in combs:
         name = "_".join(s)
         namedir = os.path.join(pairdir,name)
+        print('namedir',namedir)
         if not os.path.exists(namedir):
             os.makedirs(namedir)
             ds = [os.path.join(addir,x) for x in s]
@@ -555,6 +560,7 @@ def setup_pair_opts_for_rxns(targetdir,tsdirs,coadnames,metal,facet,max_dist=3.0
                 with open(os.path.join(namedir,str(i),"info.json"),'w') as f:
                     json.dump(moldict,f)
                 outdirs.append(os.path.join(namedir,str(i),"init.xyz"))
+                print('outdirs',outdirs)
     return outdirs
 
 def get_adsorbate_ts_information(xyz,slabxyz,is_ts,
@@ -1043,7 +1049,7 @@ def get_best_adsorbate_xyz(adsorbate_path,sites,nslab):
     return adsorbate
 
 class CoverageDependence:
-    def __init__(self,path,metal,surface_type,repeats,pynta_run_directory,software,software_kwargs,label,sites,site_adjacency,adsorbates=[],transition_states=dict(),coadsorbates=[],
+    def __init__(self,path,metal,nslab,surrogate_metal,surface_type,repeats,pynta_run_directory,software,software_kwargs,label,sites,site_adjacency,adsorbates=[],transition_states=dict(),coadsorbates=[],
                 max_dist=3.0,frozen_layers=2,fmaxopt=0.05,TS_opt_software_kwargs=None,launchpad_path=None,
                  fworker_path=None,queue=False,njobs_queue=0,reset_launchpad=False,queue_adapter_path=None,
                  num_jobs=25):
@@ -1061,6 +1067,8 @@ class CoverageDependence:
         self.facet = metal + surface_type
         self.sites = sites
         self.site_adjacency = site_adjacency
+        self.surrogate_metal = surrogate_metal
+        #self.nslab = nslab
         
         self.software_kwargs_TS = deepcopy(software_kwargs)
         if TS_opt_software_kwargs:
@@ -1093,22 +1101,32 @@ class CoverageDependence:
             self.fworker = FWorker.from_file(fworker_path)
         else:
             self.fworker = FWorker()
-            
+
         self.queue = queue
+        self.fworker = None
+        self.qadapter = None
+        if fworker_path:
+            self.fworker = FWorker.from_file(fworker_path)
+        else:
+            self.fworker = FWorker()
+
         self.njobs_queue = njobs_queue
-        self.reset_launchpad = reset_launchpad
+        self.num_jobs = num_jobs
+
         if queue:
             self.qadapter = load_object_from_file(queue_adapter_path)
-        self.num_jobs = num_jobs
-        
+
+        self.reset_launchpad = reset_launchpad  
         self.pairs_fws = []
         self.fws = []
         
     def setup_pairs_calculations(self):
-        tsdirs = [os.path.join(self.pynta_run_directory,t) for t in self.transition_states.keys()]
+        tsdirs = [os.path.join(self.pynta_run_directory,t) for t in self.transition_states.keys()] #transition state folder (e.g.TS0) and subfolder (e.g. 76)
         outdirs = setup_pair_opts_for_rxns(self.path,tsdirs,self.coadsorbates,self.surrogate_metal,self.surface_type,max_dist=self.max_dist)
-        
+        print(outdirs)
+
         for d in outdirs:
+
             fwopt = optimize_firework(d,
                             self.software,"weakopt",
                             opt_method="MDMin",opt_kwargs={'dt': 0.05,"trajectory": "weakopt.traj"},software_kwargs=self.software_kwargs,order=0,
@@ -1121,11 +1139,10 @@ class CoverageDependence:
                             run_kwargs={"fmax" : self.fmaxopt, "steps" : 70},parents=[fwopt],
                               constraints=["freeze up to {}".format(self.freeze_ind)],
                             ignore_errors=True, metal=self.metal, facet=self.surface_type, priority=-1)
-        
-        
+                                
             self.pairs_fws.append(fwopt)
             self.pairs_fws.append(fwopt2)
-        
+
         self.fws.extend(self.pairs_fws)
     
     def setup_sample_calculations(self):
@@ -1183,10 +1200,26 @@ class CoverageDependence:
             self.fws.append(fwopt)
             self.fws.append(fwvib)
         
+    def launch(self,single_job=False):
+        """
+        Call appropriate rapidfire function
+        """
+        if self.queue:
+            rapidfirequeue(self.launchpad,self.fworker,self.qadapter,njobs_queue=self.njobs_queue,nlaunches="infinite")
+        elif not self.queue and (self.num_jobs == 1 or single_job):
+            rapidfire(self.launchpad,self.fworker,nlaunches="infinite")
+        else:
+            launch_multiprocess(self.launchpad,self.fworker,"INFO","infinite",self.num_jobs,5)
+
     def execute(self,run_pairs=True,run_samples=False):
         if run_pairs:
             self.setup_pairs_calculations()
         if run_samples:
             self.setup_sample_calculations()
-        #wf = Workflow(self.fws, name=self.label)
-        #self.launchpad.add_wf(wf)
+        """
+        generate and launch a Pynta Fireworks Workflow
+        """
+        wf = Workflow(self.fws, name=self.label)
+        self.launchpad.add_wf(wf)
+
+        self.launch()
