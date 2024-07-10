@@ -22,7 +22,7 @@ import itertools
 from pynta.calculator import HarmonicallyForcedXTB
 from pynta.mol import *
 from copy import deepcopy
-from pysidt import *
+#from pysidt import *
 import pynta.models
 
 def get_unique_optimized_adsorbates(rxn,adsorbates_path,mol_dict,cas,gratom_to_molecule_surface_atom_maps,nslab):
