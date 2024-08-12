@@ -12,6 +12,10 @@ import ase.units
 from molecule.molecule import Molecule
 from acat.adsorption_sites import SlabAdsorptionSites
 from molecule.thermo import Wilhoit
+#ase database
+from ase.db import connect
+import re
+from collections import namedtuple
 
 eV_to_Jmol = 9.648328e4
 
@@ -388,3 +392,88 @@ def get_enthalpy_reaction(rnasas,pnasas,T,dT=0.01):
     for th in pnasas:
         dG += th.get_enthalpy(T)
     return dG
+
+#write adsorbate db
+def write_adsorbate_db(path,functional,pseudo,freqs):
+    db_name = 'adsorbates.db'
+    db = connect(db_name)
+    
+    for ind, value_list in freqs.items():
+        atoms = read(os.path.join(path,str(ind),str(ind)+".xyz"))
+        freqs = {ind: value_list}
+        str_freqs = f"'{freqs}'"
+    #create a db with adsorbate info
+        db.write(atoms, name='file', functional = functional, pseudo = pseudo, frequency= str_freqs, description = 'structure from xyz file')
+
+#update slab info to adsorbate.db
+def write_slab_db(path,functional,pseudo,lattice_constant,facet):
+    db_name = 'adsorbates.db'
+    db = connect(db_name)
+    #
+    slab = read(os.path.join(os.path.split(path)[0],"slab.xyz"))
+    db.write(slab, name='file', functional = functional, pseudo = pseudo, facet=facet, lattice_constant= lattice_constant, description = 'structure from xyz file')
+
+#write TS geometry only db    
+def write_ts_db(path,functional,pseudo,freqs):
+    db_name = 'TS_geometry.db'
+    db = connect(db_name)
+
+    for ind, value_list in freqs.items():
+        atoms = read(os.path.join(path,str(ind)+"/opt.xyz"))
+        freqs = {ind: value_list}
+        str_freqs = f"'{freqs}'"
+    #create a db with slab info
+        db.write(atoms, name='file', functional = functional, pseudo = pseudo, frequency= str_freqs, description = 'structure from xyz file')
+
+# Preparation for rate.db 
+# Function to parse SurfaceArrhenius object
+def parse_surface_arrhenius(surface_obj):
+    # Define the SurfaceArrhenius named tuple for the example
+    SurfaceArrhenius = namedtuple('SurfaceArrhenius', ['A', 'n', 'Ea', 'T0', 'Tmin', 'Tmax', 'comment'])
+    # Extract dA, dn, dEa from the comment
+    comment_pattern = re.compile(
+        r"Fitted to \d+ data points; dA = \*\|/ ([\d.]+), dn = \+\|- ([\d.]+), dEa = \+\|- ([\d.]+) kJ/mol"
+    )
+
+    comment_match = comment_pattern.search(surface_obj.comment)
+    if comment_match:
+        dA = float(comment_match.group(1))
+        dn = float(comment_match.group(2))
+        dEa = float(comment_match.group(3))
+    else:
+        dA = dn = dEa = None
+
+    return {
+        'A': surface_obj.A,
+        'n': surface_obj.n,
+        'Ea': surface_obj.Ea,
+        'T0': surface_obj.T0,
+        'Tmin': surface_obj.Tmin,
+        'Tmax': surface_obj.Tmax,
+    #    'comment': surface_obj.comment,
+        'dA': dA,
+        'dn': dn,
+        'dEa': dEa
+    }
+
+# Function to parse all SurfaceArrhenius objects in the dictionary
+def parse_all_surface_arrhenius(rate_coeff):
+    rate_data = {}
+    for ind, surface_obj in rate_coeff.items():
+        rate_data[ind] = parse_surface_arrhenius(surface_obj)
+    return rate_data
+
+# Function to save the parsed data into a variable
+# Write rate.db for rate coefficient info
+def write_rate_db(path,rate_data):
+    db_name = 'rate_coeff.db'
+    db = connect(db_name)
+    for ind, values in rate_data.items():
+        atoms = read(os.path.join(path,str(ind)+"/opt.xyz"))
+        str_prefactor = f"'{values['A']}'"
+        str_n_number = f"'{values['n']}'"
+        str_Ea_value = f"'{values['Ea']}'"
+        str_dA_value = f"'{values['dA']}'"
+        str_dn_value = f"'{values['dn']}'"
+        str_dEa_value = f"'{values['dEa']}'"        
+        db.write(atoms, prefactor = str_prefactor, n = str_n_number, Ea = str_Ea_value, dA = str_dA_value, dn = str_dn_value, dEa = str_dEa_value)
