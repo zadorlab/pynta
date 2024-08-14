@@ -213,6 +213,12 @@ def name_to_ase_software(software_name):
     elif software_name == "PWDFT":
         module = import_module("pynta.ase_pwdft.pwdft")
         return getattr(module, software_name)
+    elif software_name == "ALMACE":
+        module = import_module("pynta.wrapper_almace")
+        return getattr(module,"wrapperALMACE")
+    elif software_name == "MACE":
+        module = import_module("pynta.wrapper_mace")
+        return getattr(module,"wrapperMACE")
     else:
         module = import_module("ase.calculators."+software_name.lower())
         return getattr(module, software_name)

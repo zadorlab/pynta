@@ -549,9 +549,10 @@ class Pynta:
         """
         if self.queue:
             rapidfirequeue(self.launchpad,self.fworker,self.qadapter,njobs_queue=self.njobs_queue,nlaunches="infinite")
-        elif not self.queue and (self.num_jobs == 1 or single_job):
-            rapidfire(self.launchpad,self.fworker,nlaunches="infinite")
+        #elif not self.queue and (self.num_jobs == 1 or single_job):
+        #    rapidfire(self.launchpad,self.fworker,nlaunches="infinite")
         else:
+            print(" my own multilauncher")
             listfworkers = createFWorkers(self.num_jobs)
             launch_multiprocess2(self.launchpad,listfworkers,"INFO",0,self.num_jobs,5)
 
@@ -613,6 +614,7 @@ class Pynta:
 
 #restart option: RHE
     def reset(self):
+        print(" >> Restarting ")
         # Get the information of the workflow
         wf1 = self.launchpad.get_wf_summary_dict(1, mode='more')
 
@@ -638,6 +640,8 @@ class Pynta:
                             '{{pynta.tasks.MolecularVibrationsTask}}',
                             '{{pynta.tasks.MolecularIRC}}']
 
+                print('TaskID:{2:5d} Name task {0:^20s} {1:^12s}'.format(task_name, task_state, task_id))
+
                 #if nameTask in nameTasks:
                 #    opt_method = newd['_tasks'][0]['opt_method'] if 'opt_method' in newd['_tasks'][0] else None
 
@@ -651,35 +655,55 @@ class Pynta:
                 # We load the trajectory file and save this structure in the
                 # tree of each uncompleted task
 
-                if 'opt' in task_name:
-                    dirs = wf_launchers[task_name]
-                    if dirs != []:
-                        src = dirs[0]
-                        print(' Name task {0:^20s} {1:^12s} {2}'.format(task_name, task_state, src))
-                        file_traj = [name for name in os.listdir(src) if name.endswith(".traj")]
-                        if len(file_traj) > 1:
-                            file_traj = file_traj[0]
-                            base, ext = os.path.splitext(file_traj)
+                #if 'opt' in task_name:
+                #    dirs = wf_launchers[task_name]
+                #    if dirs != []:
+                #        src = dirs[0]
+                #        print(' Name task {0:^20s} {1:^12s} {2}'.format(task_name, task_state, src))
+                #        file_traj = [name for name in os.listdir(src) if name.endswith(".traj")]
+                #        if len(file_traj) > 1:
+                #            file_traj = file_traj[0]
+                #            base, ext = os.path.splitext(file_traj)
 
-                            with open (os.path.join(src, "FW.json")) as file:
-                                filejson = json.load(file)
+                #            with open (os.path.join(src, "FW.json")) as file:
+                #                filejson = json.load(file)
 
-                            if opt_method == 'QuasiNewton':
-                                namexyz = f'weakopt_{base}.xyz'
-                            else:
-                                namexyz = f'{base}_init.xyz'
+                #            if opt_method == 'QuasiNewton':
+                #                namexyz = f'weakopt_{base}.xyz'
+                #            else:
+                #                namexyz = f'{base}_init.xyz'
 
-                            atoms = read(os.path.join(src, file_traj), index=-1)
-                            dst = os.path.dirname(filejson['spec']['_tasks'][0]['xyz'])
+                #            atoms = read(os.path.join(src, file_traj), index=-1)
+                #            dst = os.path.dirname(filejson['spec']['_tasks'][0]['xyz'])
 
-                            write(f'{src}/{namexyz}', atoms, format='xyz')
+                #            write(f'{src}/{namexyz}', atoms, format='xyz')
 
-                            copyDataAndSave(src, dst, namexyz)
-                            copyDataAndSave(src, dst, f'{base}.traj')
+                #            copyDataAndSave(src, dst, namexyz)
+                #            copyDataAndSave(src, dst, f'{base}.traj')
 
                 # Keep on with the task_state != 'COMPLETED'
                 self.launchpad.rerun_fw(task_id)
                 self.launchpad.update_spec([task_id], newd)
+            else:
+                task_id = int(task_name.split('--')[-1])
+                if task_id in [3, 5, 7, 9, 12, 14, 16, 18]:
+                    d = self.launchpad.get_fw_dict_by_id(task_id)
+                    newd = deepcopy(d['spec'])
+                    from pprint import pprint
+                    nameTask = newd['_tasks'][0]['_fw_name']
+                    print("  TASKID ",task_id)
+                    pprint(newd)
+
+                    nameTasks = ['{{pynta.tasks.MolecularOptimizationTask}}',
+                                '{{pynta.tasks.MolecularVibrationsTask}}',
+                                '{{pynta.tasks.MolecularIRC}}']
+
+                    print('TaskID:{2:5d} Name task {0:^20s} {1:^12s}'.format(task_name, task_state, task_id))
+
+                    self.launchpad.rerun_fw(task_id)
+                    self.launchpad.update_spec([task_id], newd)
+
+
 
 
         self.launch()

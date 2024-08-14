@@ -1,4 +1,5 @@
 from xtb.ase.calculator import XTB
+from pynta.wrapper_almace import wrapperALMACE
 import numpy as np
 import ase
 from ase.atoms import Atoms
@@ -66,7 +67,33 @@ def get_energy_forces_site_bond(atoms,ind,site_pos,k,deq):
     energy = k*(d-deq)**2
     return energy,k*forces
 
-class HarmonicallyForcedXTB(XTB):
+class HarmonicallyForcedXTB(wrapperALMACE):
+    def get_energy_forces(self):
+        energy = 0.0
+        forces = np.zeros(self.atoms.positions.shape)
+        if hasattr(self.parameters,"atom_bond_potentials"):
+            for atom_bond_potential in self.parameters.atom_bond_potentials:
+                E,F = get_energy_forces_atom_bond(self.atoms,**atom_bond_potential)
+                energy += E
+                forces += F
+
+        if hasattr(self.parameters,"site_bond_potentials"):
+            for site_bond_potential in self.parameters.site_bond_potentials:
+                E,F = get_energy_forces_site_bond(self.atoms,**site_bond_potential)
+                energy += E
+                forces += F
+
+        return energy[0][0],forces
+
+    def calculate(self, atoms=None, properties=None, system_changes=calculator.all_changes):
+        wrapperALMACE.calculate(self,atoms=atoms,properties=properties,system_changes=system_changes)
+        energy,forces = self.get_energy_forces()
+        self.results["energy"] += energy
+        self.results["free_energy"] += energy
+        self.results["forces"] += forces
+
+
+class HarmonicallyForcedXTB2(XTB):
     def get_energy_forces(self):
         energy = 0.0
         forces = np.zeros(self.atoms.positions.shape)
@@ -119,9 +146,9 @@ def run_harmonically_forced_xtb(atoms,atom_bond_potentials,site_bond_potentials,
             out_constraints.append(FixAtoms(
                 indices=list(range(n))
                 ))
-            
+
     atoms.set_constraint(out_constraints)
-    
+
     hfxtb = HarmonicallyForcedXTB(method="GFN1-xTB",
                               atom_bond_potentials=atom_bond_potentials,
                              site_bond_potentials=site_bond_potentials)
@@ -258,7 +285,7 @@ def run_harmonically_forced_xtb_no_pbc(atoms,atom_bond_potentials,site_bond_pote
             if "a2" in c:
                 c["a2"] += new_nslab-nslab
             new_constraints.append(c)
-    
+
     out_constraints = []
     for c in new_constraints:
         if isinstance(c,dict):
@@ -282,7 +309,7 @@ def run_harmonically_forced_xtb_no_pbc(atoms,atom_bond_potentials,site_bond_pote
             out_constraints.append(FixAtoms(
                 indices=list(range(n))
                 ))
-    
+
     hfxtb = HarmonicallyForcedXTB(method="GFN1-xTB",
                                   atom_bond_potentials=new_atom_bond_potentials,
                                  site_bond_potentials=new_site_potentials)

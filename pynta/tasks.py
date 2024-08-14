@@ -65,6 +65,7 @@ def optimize_firework(xyz,software,label,opt_method=None,sella=None,socket=False
     if opt_method: d["opt_method"] = opt_method
     if software_kwargs: d["software_kwargs"] = software_kwargs
     if opt_kwargs: d["opt_kwargs"] = opt_kwargs
+    print("opt kwargs", opt_kwargs)
     if run_kwargs: d["run_kwargs"] = run_kwargs
     if constraints: d["constraints"] = constraints
     sella = True if sella or (sella is None and order != 0) else False
@@ -80,9 +81,16 @@ def optimize_firework(xyz,software,label,opt_method=None,sella=None,socket=False
     d["facet"] = facet
     t1 = MolecularOptimizationTask(d)
     directory = os.path.dirname(xyz)
+    subname = directory.split('/')
     if out_path is None: out_path = os.path.join(directory,label+".xyz")
     t2 = FileTransferTask({'files': [{'src': label+'.xyz', 'dest': out_path}, {'src': label+'.traj', 'dest': os.path.join(directory,label+".traj")}],
             'mode': 'copy', 'ignore_errors' : ignore_errors})
+    if software == 'ALMACE' and opt_method == 'MDMin':
+        storage = d['software_kwargs']['storage']
+        t2 = FileTransferTask({'files': [{'src': label+'.xyz', 'dest': out_path}, {'src': label+'.traj', 'dest': os.path.join(directory,label+".traj")},
+                                        {'src':label+'.traj', 'dest':os.path.join(storage,subname[-2]+'_'+label+'.traj')},
+                                        ],
+                                'mode': 'copy', 'ignore_errors' : ignore_errors})
     return Firework([t1,t2],parents=parents,name=label+"opt",spec={"_allow_fizzled_parents": allow_fizzled_parents,"_priority": priority})
 
 @explicit_serialize
@@ -96,6 +104,14 @@ class MolecularOptimizationTask(OptimizationTask):
         # Mapping nodes to fworkers
         if self["software"] == "Espresso" or self["software"] == "PWDFT":
             software_kwargs["command"] = createCommand(fw_spec["_fw_env"]["host"], self["software"])
+
+        if self["software"] == "MACE" :
+            software_kwargs["host"] = fw_spec["_fw_env"]["host"] # RHE
+
+        if self["software"] == "ALMACE" :
+            software_kwargs["host"] = fw_spec["_fw_env"]["host"] # RHE
+            software_kwargs['sub_software_kwargs']['command'] = createCommand(fw_spec['_fw_env']['host'], software_kwargs['sub_software'])
+            software_kwargs['opt_method'] = name_to_ase_opt(self["opt_method"]) if "opt_method" in self.keys() else BFGS
 
         socket = self["socket"] if "socket" in self.keys() else False
         if socket:
@@ -121,6 +137,7 @@ class MolecularOptimizationTask(OptimizationTask):
         label = self["label"]
         xyz = self['xyz']
         suffix = os.path.split(xyz)[-1].split(".")[-1]
+        print("\033[31m xyz: {0}\033[0m".format(xyz))
 
         try:
             if suffix == "xyz":
@@ -312,6 +329,10 @@ class MolecularOptimizationFailTask(OptimizationTask):
         # Mapping nodes to fworkers
         if self["software"] == "Espresso" or self["software"] == "PWDFT":
             software_kwargs["command"] = createCommand(fw_spec["_fw_env"]["host"], self["software"])
+
+        if self["software"] == "MACE" :
+            software_kwargs["host"] = fw_spec["_fw_env"]["host"]
+
         software = name_to_ase_software(self["software"])(**software_kwargs)
 
         opt_kwargs = deepcopy(self["opt_kwargs"]) if "opt_kwargs" in self.keys() else dict()
@@ -360,6 +381,10 @@ class MolecularEnergyTask(EnergyTask):
         if self["software"] == "Espresso" or self["software"] == "PWDFT":
             software_kwargs["command"] = createCommand(fw_spec["_fw_env"]["host"], self["software"])
 
+        if self["software"] == "MACE" :
+            software_kwargs["host"] = fw_spec["_fw_env"]["host"]
+
+
         try:
             sp = read(xyz)
             sp.calc = software(**software_kwargs)
@@ -405,6 +430,15 @@ class MolecularVibrationsTask(VibrationTask):
         # Mapping nodes to fworkers
         if self["software"] == "Espresso" or self["software"] == "PWDFT":
             software_kwargs["command"] = createCommand(fw_spec["_fw_env"]["host"], self["software"])
+
+        if self["software"] == "MACE" :
+            software_kwargs["host"] = fw_spec["_fw_env"]["host"]
+
+        if self["software"] == "ALMACE" :
+            software_kwargs["host"] = fw_spec["_fw_env"]["host"] # RHE
+            software_kwargs['opt_method'] = name_to_ase_opt(self["opt_method"]) if "opt_method" in self.keys() else BFGS #RHE
+            software_kwargs['sub_software_kwargs']['command'] = createCommand(fw_spec['_fw_env']['host'], software_kwargs['sub_software'])
+
         software = name_to_ase_software(self["software"])(**software_kwargs)
         ignore_errors = deepcopy(self["ignore_errors"]) if "ignore_errors" in self.keys() else False
         socket = self["socket"] if "socket" in self.keys() else False
@@ -516,7 +550,7 @@ class MolecularTSEstimate(FiretaskBase):
 
         cas = SlabAdsorptionSites(slab,facet,allow_6fold=False,composition_effect=False,
                             label_sites=True,tol=0.5,
-                        surrogate_metal='Pt')
+                        surrogate_metal=metal)
 
         adsorbates_path = self["adsorbates_path"]
 
@@ -781,6 +815,14 @@ class MolecularIRC(FiretaskBase):
         # Mapping nodes to fworkers
         if self["software"] == "Espresso" or self["software"] == "PWDFT":
             software_kwargs["command"] = createCommand(fw_spec["_fw_env"]["host"], self["software"])
+
+        if self["software"] == "MACE" :
+            software_kwargs["host"] = fw_spec["_fw_env"]["host"]
+
+        if self["software"] == "ALMACE" :
+            software_kwargs["host"] = fw_spec["_fw_env"]["host"] # RHE
+            software_kwargs['sub_software_kwargs']['command'] = createCommand(fw_spec['_fw_env']['host'], software_kwargs['sub_software'])
+
         socket = self["socket"] if "socket" in self.keys() else False
         if socket:
             unixsocket = "ase_"+self["software"].lower()+"_"+self["label"]+"_"+self["xyz"].replace("/","_").replace(".","_")
