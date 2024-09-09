@@ -479,7 +479,7 @@ def generate_TS_2D(atoms, info_path,  metal, facet, sites, site_adjacency, nslab
                         dist2t = dist2t[0][0]
                         halfwayness = np.linalg.norm(v1t+v2t)/(dist2t+dist1t)
                         dist_site = max(dist1t,dist2t)
-                        if not np.isnan(motion_alignment) and motion_alignment > 0.95 and dist < 3.0 and dist_site < 2.0 and (allowed_structure_site_structures and site1_id in valid_sites and site2_id in valid_sites):
+                        if not np.isnan(motion_alignment) and motion_alignment > 0.95 and dist < 3.0 and dist_site < 2.0 and (not allowed_structure_site_structures or (site1_id in valid_sites and site2_id in valid_sites)):
                             iters += 1
                             metric = 1.0 / (halfwayness*dist_site)
                             if site_pair is None:
@@ -582,7 +582,8 @@ def generate_allowed_structure_site_structures(adsorbate_dir,sites,site_adjacenc
                 m.update_atomtypes()
                 m.update_connectivity_values()
                 mols.append(m)
-        allowed_structure_site_structures.append(mols)
+        if mols:
+            allowed_structure_site_structures.append(mols)
         
     return allowed_structure_site_structures
 
@@ -601,7 +602,7 @@ def get_best_adsorbate_geometries(adsorbate_path,aseinds,siteinfo,sites,site_adj
     mol = Molecule().from_adjacency_list(info["adjlist"])
     prefixes = os.listdir(adsorbate_path)
     if len(prefixes) == 2: #includes info.json
-        return read(os.path.join(adsorbate_path,"0","0.xyz"))
+        return read(os.path.join(adsorbate_path,"0","0.xyz")),os.path.join(adsorbate_path,"0","0.xyz")
     geoms = []
     bestxyz = None
     best = None
@@ -706,7 +707,7 @@ def get_best_reaction_adsorbate_geometries(admol,admol_neighbors,nslab2D,adsorba
     mols = [Molecule().from_adjacency_list(x) for x in info["mols"]]
     
     #map adsorbed atoms on admol to templates
-    adatoms = [a for a in admol.get_adatoms() if not a.is_surface_site()]
+    adatoms = np.unique(np.array([a for a in admol.get_adatoms() if not a.is_surface_site()])).tolist()
     adinds = [admol.atoms.index(adatom) - nslab2D for adatom in adatoms] #aseinds
     template_adinds = [ase_to_template_index(a,template_mol_map_invert,molecule_to_atom_maps_invert,
                                              ads_sizes) for a in adinds]

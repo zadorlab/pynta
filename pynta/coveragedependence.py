@@ -25,7 +25,7 @@ import logging
 def get_unstable_pairs(pairsdir,adsorbate_dir,sites,site_adjacency,nslab,max_dist=3.0,show=False):
     out_pairs = []
     coadname_dict = {"O=[Pt]": 1, "N#[Pt]": 1, "O[Pt]": 2, "[Pt]": 1}
-    allowed_structure_site_structure_map = generate_allowed_structure_site_structure_map(adsorbate_dir,sites,site_adjacency,nslab,max_dist=max_dist,cut_coads_off_num=None)
+    allowed_structure_site_structure_map = generate_allowed_structure_site_structures(adsorbate_dir,sites,site_adjacency,nslab,max_dist=max_dist,cut_multidentate_off_num=None)
     if show:
         config_show = []
     for pair in os.listdir(pairsdir):
@@ -59,7 +59,7 @@ def get_unstable_pairs(pairsdir,adsorbate_dir,sites,site_adjacency,nslab,max_dis
 #                         raise e
                 
                 g = extract_pair_graph(init,sites,site_adjacency,nslab,max_dist=max_dist,
-                                       cut_coads_off_num=coadname_dict[coadname],allowed_structure_site_structure_map=allowed_structure_site_structure_map)
+                                       cut_multidentate_off_num=coadname_dict[coadname],allowed_structure_site_structures=allowed_structure_site_structure_map)
                     
                 
                 #g.update(sort_atoms=False)
@@ -72,7 +72,7 @@ def get_unstable_pairs(pairsdir,adsorbate_dir,sites,site_adjacency,nslab,max_dis
                 else:
                     final = read(outpath)
                     try:
-                        gout = extract_pair_graph(final,sites,site_adjacency,nslab,max_dist=max_dist,allowed_structure_site_structure_map=allowed_structure_site_structure_map)
+                        gout = extract_pair_graph(final,sites,site_adjacency,nslab,max_dist=max_dist,allowed_structure_site_structures=allowed_structure_site_structure_map)
                         if len(gout.atoms) != len(g.atoms):
                             out_pairs.append(g.to_group())
                             if show:
@@ -191,7 +191,7 @@ def generate_pair_geometries(adpath1,adpath2,slabpath,metal,facet,adinfo1=None,a
         
         mol1 = Molecule().from_adjacency_list(info1["adjlist"])
         atom_to_molecule_surface_atom_map1 = { int(key):int(val) for key,val in info1["gratom_to_molecule_surface_atom_map"].items()}
-        ad1s = get_unique_adsorbate_geometries(adpath1,mol1,cas,atom_to_molecule_surface_atom_map1,
+        ad1s = get_unique_adsorbate_geometries(adpath1,mol1,sites,site_adjacency,atom_to_molecule_surface_atom_map1,
                                     nslab,imag_freq_max=imag_freq_max)
         ad12Ds = []
         ad12Dneighbors = []
@@ -216,7 +216,7 @@ def generate_pair_geometries(adpath1,adpath2,slabpath,metal,facet,adinfo1=None,a
         mol2 = Molecule().from_adjacency_list(info2["adjlist"])
         assert len(mol2.get_adatoms()) == 1
         atom_to_molecule_surface_atom_map2 = { int(key):int(val) for key,val in info2["gratom_to_molecule_surface_atom_map"].items()}
-        ad2s = get_unique_adsorbate_geometries(adpath2,mol2,cas,atom_to_molecule_surface_atom_map2,
+        ad2s = get_unique_adsorbate_geometries(adpath2,mol2,sites,site_adjacency,atom_to_molecule_surface_atom_map2,
                                     nslab,imag_freq_max=imag_freq_max)
     
 
