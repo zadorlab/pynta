@@ -1,6 +1,5 @@
 name: pynta_env
 channels:
-  - defaults
   - mjohnson541
   - conda-forge
 dependencies:
@@ -13,7 +12,7 @@ dependencies:
   - pyyaml
   - sella >=2.2.1
   - sphinx
-  - anaconda::glpk
+  - glpk
   - fireworks
   - jax <=0.2.28
   - xtb >=6.4.1
