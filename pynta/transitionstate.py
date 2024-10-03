@@ -570,6 +570,10 @@ def estimate_deq_k(sidt,labels,dwell,forward_template,reverse_template,template_
             a.label = ''
     
     v = sidt.evaluate(mol)
+    
+    if isinstance(v,Rule):
+        v = v.value
+    
     if any([a.is_surface_site() for a in mol.get_labeled_atoms('*')]):
         return dwell*(v-1.0),100.0
     else:
