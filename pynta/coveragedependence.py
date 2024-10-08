@@ -176,19 +176,42 @@ def generate_pair_geometries(adpath1,adpath2,slabpath,metal,facet,adinfo1=None,a
     sites = cas.get_sites()
     site_adjacency = cas.get_neighbor_site_list()
     
+    adsorbate_dir = os.path.split(adpath2)[0]
+    allowed_structure_site_structures = generate_allowed_structure_site_structures(adsorbate_dir,sites,site_adjacency,nslab,max_dist=max_dist)
+
     if symmetric is None:
         symmetric = adpath1 == adpath2
     
     #extract information about adsorbates and valid adsorbate geometries
-    if os.path.isfile(adpath1):
-        raise ValueError
+    if os.path.isfile(os.path.join(adpath1,"opt.xyz")): #TS
+        is_ts = True
+        if adinfo1 is None:
+            adinfo1 = os.path.join(os.path.split(adpath1)[0],"info.json")
+        
+        with open(adinfo1,"r") as f:
+            info1 = json.load(f)
+        
+        admol1,neighbor_sites1,ninds1 = generate_TS_2D(read(os.path.join(adpath1,"opt.xyz")), adinfo1, metal, facet, sites, site_adjacency, nslab, max_dist=np.inf,
+                                                    imag_freq_path=os.path.join(adpath1,"vib.json_vib.json"),
+                                                    allowed_structure_site_structures=allowed_structure_site_structures,
+        )
+        
+        aseinds1 = []
+        for i,at in enumerate(admol1.atoms):
+            if (not at.is_surface_site()) and at.is_bonded_to_surface():
+                aseinds1.append(i-len(neighbor_sites1)+nslab)
+        ad1s = [read(os.path.join(adpath1,"opt.xyz"))]
+        ad12Ds = [admol1]
+        ad12Dneighbors = [neighbor_sites1]
+        ad12Dninds = [ninds1]
     else:
+        is_ts = False
         if adinfo1 is None:
             adinfo1 = os.path.join(adpath1,"info.json")
         
         with open(adinfo1,"r") as f:
             info1 = json.load(f)
-        
+
         mol1 = Molecule().from_adjacency_list(info1["adjlist"])
         atom_to_molecule_surface_atom_map1 = { int(key):int(val) for key,val in info1["gratom_to_molecule_surface_atom_map"].items()}
         ad1s = get_unique_adsorbate_geometries(adpath1,mol1,sites,site_adjacency,atom_to_molecule_surface_atom_map1,
@@ -197,10 +220,10 @@ def generate_pair_geometries(adpath1,adpath2,slabpath,metal,facet,adinfo1=None,a
         ad12Dneighbors = []
         ad12Dninds = []
         for a in ad1s:
-            admol,neighbor_sites,ninds = generate_adsorbate_2D(a, sites, site_adjacency, nslab, max_dist=max_dist)
-            ad12Ds.append(admol)
-            ad12Dneighbors.append(neighbor_sites)
-            ad12Dninds.append(ninds)
+            admol1,neighbor_sites1,ninds1 = generate_adsorbate_2D(a, sites, site_adjacency, nslab, max_dist=np.inf)
+            ad12Ds.append(admol1)
+            ad12Dneighbors.append(neighbor_sites1)
+            ad12Dninds.append(ninds1)
         
         aseinds1 = [x+nslab for x in atom_to_molecule_surface_atom_map1.keys()]
         
@@ -226,7 +249,9 @@ def generate_pair_geometries(adpath1,adpath2,slabpath,metal,facet,adinfo1=None,a
     ad1_to_ad2_sites = dict()
     ad1_to_ad2_heights = dict()
     ad1_to_actual_occ = dict()
+    #go through all adsorbate 1 configurations
     for j,ad1 in enumerate(ad1s):
+        #find occupied sites
         ad1_to_ad2_sites[j] = dict()
         ad1_to_ad2_heights[j] = dict()
         occ = get_occupied_sites(ad1,sites,nslab)
@@ -246,6 +271,7 @@ def generate_pair_geometries(adpath1,adpath2,slabpath,metal,facet,adinfo1=None,a
         
         ad1_to_ad1_sites[j] = [x for x in actual_occ]
         
+        #find all sites to be resolved with pairs
         neighbor_sites = []
         
         for site in sites:
@@ -258,7 +284,7 @@ def generate_pair_geometries(adpath1,adpath2,slabpath,metal,facet,adinfo1=None,a
                     neighbor_sites.append(site)
                     break
         
-        
+        #estimate heights for all placements
         stable_neighbor_sites = []
         heights = []
         for site in neighbor_sites:
@@ -359,8 +385,12 @@ def generate_pair_geometries(adpath1,adpath2,slabpath,metal,facet,adinfo1=None,a
                     amol.clear_labeled_atoms()
                     if amol.multiplicity == -187: #handle surface molecules
                         amol.multiplicity = amol.get_radical_count() + 1
-                adpairs.append(ad)
-                pairmols.append(amol)
+                for pmol in pairmols:
+                    if pmol.is_isomorphic(amol,save_order=True): #duplicate
+                        break
+                else:
+                    adpairs.append(ad)
+                    pairmols.append(amol)
     else: #symmetric case, monodentate-monodentate since ad2 must be monodentate
         ad2_site_pairs = []
         ad2_geoms = []
@@ -439,8 +469,12 @@ def generate_pair_geometries(adpath1,adpath2,slabpath,metal,facet,adinfo1=None,a
                 amol.clear_labeled_atoms()
                 if amol.multiplicity == -187: #handle surface molecules
                     amol.multiplicity = amol.get_radical_count() + 1
-            adpairs.append(ad)
-            pairmols.append(amol)
+            for pmol in pairmols:
+                if pmol.is_isomorphic(amol,save_order=True): #duplicate
+                    break
+            else:
+                adpairs.append(ad)
+                pairmols.append(amol)
     
 
     return adpairs,pairmols
@@ -514,15 +548,19 @@ def get_unique_site_pair_inds(site_pairs,slab,tol=0.15):
 
 def setup_pair_opts_for_rxns(targetdir,tsdirs,coadnames,metal,facet,max_dist=3.0,imag_freq_max=150.0):
     pairdir = os.path.join(targetdir,"pairs")
-    addir = os.path.join(os.path.split(tsdirs[0])[0],"Adsorbates")
-    slabpath = os.path.join(os.path.split(tsdirs[0])[0],"slab.xyz")
+    addir = os.path.join(os.path.split(os.path.split(tsdirs[0])[0])[0],"Adsorbates")
+    slabpath = os.path.join(os.path.split(os.path.split(tsdirs[0])[0])[0],"slab.xyz")
     if not os.path.exists(pairdir):
         os.makedirs(pairdir)
     
     ads = set()  
-    
+    combs = []
     for tsdir in tsdirs:
-        with open(os.path.join(tsdir,"info.json"),"r") as f:
+        for coadname in coadnames:
+            tp = (tsdir,coadname)
+            combs.append(tp)
+        
+        with open(os.path.join(os.path.split(tsdir)[0],"info.json"),"r") as f:
             info = json.load(f)
         for molname in info["species_names"]+info["reverse_names"]:
             with open(os.path.join(addir,molname,"info.json"),"r") as f:
@@ -531,7 +569,7 @@ def setup_pair_opts_for_rxns(targetdir,tsdirs,coadnames,metal,facet,max_dist=3.0
             if m.contains_surface_site():
                 ads.add(molname)
     
-    combs = []
+    
     for adname in ads:
         for coadname in coadnames:
             tp = (adname,coadname)
@@ -539,23 +577,41 @@ def setup_pair_opts_for_rxns(targetdir,tsdirs,coadnames,metal,facet,max_dist=3.0
             if (revtp not in combs) and (tp not in combs):
                 combs.append(tp)
                 
-    outdirs = []
+    outdirs_ad = []
+    outdirs_ts = []
     for s in combs:
-        name = "_".join(s)
+        if os.path.exists(s[0]):
+            is_ts = True
+        else: 
+            is_ts = False
+        if not is_ts:
+            name = "_".join(s)
+        else:
+            name = "_".join([os.path.split(os.path.split(s[0])[0])[1],s[1]])
         namedir = os.path.join(pairdir,name)
         if not os.path.exists(namedir):
             os.makedirs(namedir)
-            ds = [os.path.join(addir,x) for x in s]
+            if not is_ts:
+                ds = [os.path.join(addir,x) for x in s]
+            else:
+                ds = [s[0],os.path.join(addir,s[1])]
             pairs,pairmols = generate_pair_geometries(ds[0],ds[1],slabpath,metal,facet,
                                  max_dist=max_dist,imag_freq_max=imag_freq_max)
             for i,pair in enumerate(pairs):
                 os.makedirs(os.path.join(namedir,str(i)))
                 write(os.path.join(namedir,str(i),"init.xyz"), pair)
-                moldict = {"adjlist": pairmols[i].to_adjacency_list()}
+                if not is_ts:
+                    moldict = {"adjlist": pairmols[i].to_adjacency_list()}
+                else:
+                    moldict = {"adjlist": pairmols[i].to_adjacency_list(),"tsdir": s[0]}
                 with open(os.path.join(namedir,str(i),"info.json"),'w') as f:
                     json.dump(moldict,f)
-                outdirs.append(os.path.join(namedir,str(i),"init.xyz"))
-    return outdirs
+                if not is_ts:
+                    outdirs_ad.append(os.path.join(namedir,str(i),"init.xyz"))
+                else:
+                    outdirs_ts.append(os.path.join(namedir,str(i),"init.xyz"))
+                    
+    return outdirs_ad,outdirs_ts
 
 def get_adsorbate_ts_information(xyz,slabxyz,is_ts,
                                metal,facet,sites,site_adjacency,max_dist=3.0):
@@ -1046,7 +1102,7 @@ class CoverageDependence:
     def __init__(self,path,metal,surface_type,repeats,pynta_run_directory,software,software_kwargs,label,sites,site_adjacency,adsorbates=[],transition_states=dict(),coadsorbates=[],
                 max_dist=3.0,frozen_layers=2,fmaxopt=0.05,TS_opt_software_kwargs=None,launchpad_path=None,
                  fworker_path=None,queue=False,njobs_queue=0,reset_launchpad=False,queue_adapter_path=None,
-                 num_jobs=25):
+                 num_jobs=25,surrogate_metal=None):
         self.path = path
         self.metal = metal
         self.repeats = repeats
@@ -1101,6 +1157,11 @@ class CoverageDependence:
             self.qadapter = load_object_from_file(queue_adapter_path)
         self.num_jobs = num_jobs
         
+        if surrogate_metal is None:
+            self.surrogate_metal = metal
+        else:
+            self.surrogate_metal = surrogate_metal 
+            
         self.pairs_fws = []
         self.fws = []
         
