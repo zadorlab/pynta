@@ -1166,27 +1166,45 @@ class CoverageDependence:
         self.fws = []
         
     def setup_pairs_calculations(self):
-        tsdirs = [os.path.join(self.pynta_run_directory,t) for t in self.transition_states.keys()]
-        outdirs = setup_pair_opts_for_rxns(self.path,tsdirs,self.coadsorbates,self.surrogate_metal,self.surface_type,max_dist=self.max_dist)
+        tsdirs = [os.path.join(self.pynta_run_directory,t,ind) for t,ind in self.transition_states.items()]
+        outdirs_ad,outdirs_ts = setup_pair_opts_for_rxns(self.path,tsdirs,self.coadsorbates,self.surrogate_metal,self.surface_type,max_dist=self.max_dist)
         
-        for d in outdirs:
+        for d in outdirs_ad:
             fwopt = optimize_firework(d,
                             self.software,"weakopt",
                             opt_method="MDMin",opt_kwargs={'dt': 0.05,"trajectory": "weakopt.traj"},software_kwargs=self.software_kwargs,order=0,
                             run_kwargs={"fmax" : 0.5, "steps" : 30},parents=[],
                               constraints=["freeze up to {}".format(self.freeze_ind)],
-                            ignore_errors=True, metal=self.metal, facet=self.surface_type, priority=-1)
+                            ignore_errors=True, metal=self.metal, facet=self.surface_type, priority=3)
             fwopt2 = optimize_firework(os.path.join(os.path.split(d)[0],"weakopt.xyz"),
                             self.software,"out",
                             opt_method="QuasiNewton",opt_kwargs={"trajectory": "out.traj"},software_kwargs=self.software_kwargs,order=0,
                             run_kwargs={"fmax" : self.fmaxopt, "steps" : 70},parents=[fwopt],
                               constraints=["freeze up to {}".format(self.freeze_ind)],
-                            ignore_errors=True, metal=self.metal, facet=self.surface_type, priority=-1)
+                            ignore_errors=True, metal=self.metal, facet=self.surface_type, priority=2)
         
-        
+            fwvib = vibrations_firework(os.path.join(os.path.split(d)[0],"out.xyz"),
+                                        self.software,"vib",software_kwargs=self.software_kwargs,parents=[fwopt2],
+                                        constraints=["freeze up to "+str(self.nslab)])
             self.pairs_fws.append(fwopt)
             self.pairs_fws.append(fwopt2)
+            self.pairs_fws.append(fwvib)
         
+        for d in outdirs_ts:
+            fwopt = optimize_firework(d,
+                            self.software,"out", sella=True, 
+                            opt_kwargs={"trajectory": "out.traj"},software_kwargs=self.software_kwargs_TS,
+                            order=1,
+                            run_kwargs={"fmax" : self.fmaxopt, "steps" : 70},parents=[],
+                              constraints=["freeze up to {}".format(self.freeze_ind)],
+                            ignore_errors=True, metal=self.metal, facet=self.surface_type, priority=3)
+            
+            fwvib = vibrations_firework(os.path.join(os.path.split(d)[0],"out.xyz"),
+                                        self.software,"vib",software_kwargs=self.software_kwargs,parents=[fwopt],
+                                        constraints=["freeze up to "+str(self.nslab)])
+            self.pairs_fws.append(fwopt)
+            self.pairs_fws.append(fwvib)
+            
         self.fws.extend(self.pairs_fws)
     
     def setup_sample_calculations(self):
