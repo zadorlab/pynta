@@ -948,11 +948,26 @@ def get_unique_adsorbate_geometries(adsorbate_path,mol,sites,site_adjacency,atom
             freq = np.complex128(freq_dict["frequencies"][0])
             if (np.isreal(freq) or freq.imag < imag_freq_max):
                 geoms.append(path)
-                
-    xyzs = get_unique_sym(geoms)
+    
+    ase_atoms = [read(geom) for geom in geoms]
+    mols = [generate_adsorbate_2D(geom, sites, site_adjacency, nslab, max_dist=np.inf)[0] for geom in ase_atoms]
+    filtered_mols = []
+    filtered_geoms = []
+    filtered_energies = []
+    for j,m in enumerate(mols):
+        for i,fm in enumerate(filtered_mols):
+            if fm.is_isomorphic(m,save_order=True):
+                if filtered_energies[i] > ase_atoms[j].get_potential_energy():
+                    filtered_mols[i] = m 
+                    filtered_geoms[i] = ase_atoms[j]
+                    filtered_energies[i] = ase_atoms[j].get_potential_energy()
+        else:
+            filtered_mols.append(m)
+            filtered_geoms.append(ase_atoms[j])
+            filtered_energies.append(ase_atoms[j].get_potential_energy())
+            
     adsorbates = []
-    for xyz in xyzs:
-        geo = read(xyz)
+    for j,geo in enumerate(filtered_geoms):
         occ = get_occupied_sites(geo,sites,nslab)
         required_surface_inds = set([ind+nslab for ind in atom_to_molecule_surface_atom_map.keys()])
         found_surface_inds = set([site["bonding_index"] for site in occ])
