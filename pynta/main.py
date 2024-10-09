@@ -1,5 +1,6 @@
 from pynta.tasks import *
 from pynta.mol import get_adsorbate, generate_unique_site_additions, generate_adsorbate_guesses, get_name,generate_unique_placements
+from pynta.coveragedependence import *
 from molecule.molecule import Molecule
 import ase.build
 from ase.io import read, write
@@ -577,3 +578,175 @@ class Pynta:
 
 
         self.launch()
+
+class CoverageDependence:
+    def __init__(self,path,metal,surface_type,repeats,pynta_run_directory,software,software_kwargs,label,sites,site_adjacency,adsorbates=[],transition_states=dict(),coadsorbates=[],
+                max_dist=3.0,frozen_layers=2,fmaxopt=0.05,TS_opt_software_kwargs=None,launchpad_path=None,
+                 fworker_path=None,queue=False,njobs_queue=0,reset_launchpad=False,queue_adapter_path=None,
+                 num_jobs=25,surrogate_metal=None):
+        self.path = path
+        self.metal = metal
+        self.repeats = repeats
+        self.nslab = np.product(repeats)
+        self.pynta_run_directory = pynta_run_directory
+        self.pairs_directory = os.path.join(self.path,"pairs")
+        self.slab_path = os.path.join(self.pynta_run_directory,"slab.xyz")
+        self.adsorbates_path = os.path.join(self.pynta_run_directory,"Adsorbates")
+        self.software = software
+        self.software_kwargs = software_kwargs
+        self.surface_type = surface_type
+        self.facet = metal + surface_type
+        self.sites = sites
+        self.site_adjacency = site_adjacency
+        
+        self.software_kwargs_TS = deepcopy(software_kwargs)
+        if TS_opt_software_kwargs:
+            for key,val in TS_opt_software_kwargs.items():
+                self.software_kwargs_TS[key] = val
+        
+        if adsorbates != []:
+            raise ValueError("Not implemented yet")
+        self.adsorbates = adsorbates
+        self.transition_states = transition_states
+        self.coadsorbates = coadsorbates
+        self.max_dist = max_dist
+        self.frozen_layers = frozen_layers
+        self.layers = self.repeats[2]
+        self.freeze_ind = int((self.nslab/self.layers)*self.frozen_layers)
+        self.fmaxopt = fmaxopt
+        self.label = label
+        
+        if launchpad_path:
+            launchpad = LaunchPad.from_file(launchpad_path)
+        else:
+            launchpad = LaunchPad()
+
+        if reset_launchpad:
+            launchpad.reset('', require_password=False)
+        self.launchpad = launchpad
+        
+        self.fworker_path = fworker_path
+        if fworker_path:
+            self.fworker = FWorker.from_file(fworker_path)
+        else:
+            self.fworker = FWorker()
+            
+        self.queue = queue
+        self.njobs_queue = njobs_queue
+        self.reset_launchpad = reset_launchpad
+        if queue:
+            self.qadapter = load_object_from_file(queue_adapter_path)
+        self.num_jobs = num_jobs
+        
+        if surrogate_metal is None:
+            self.surrogate_metal = metal
+        else:
+            self.surrogate_metal = surrogate_metal 
+            
+        self.pairs_fws = []
+        self.fws = []
+        
+    def setup_pairs_calculations(self):
+        tsdirs = [os.path.join(self.pynta_run_directory,t,ind) for t,ind in self.transition_states.items()]
+        outdirs_ad,outdirs_ts = setup_pair_opts_for_rxns(self.path,tsdirs,self.coadsorbates,self.surrogate_metal,self.surface_type,max_dist=self.max_dist)
+        
+        for d in outdirs_ad:
+            fwopt = optimize_firework(d,
+                            self.software,"weakopt",
+                            opt_method="MDMin",opt_kwargs={'dt': 0.05,"trajectory": "weakopt.traj"},software_kwargs=self.software_kwargs,order=0,
+                            run_kwargs={"fmax" : 0.5, "steps" : 30},parents=[],
+                              constraints=["freeze up to {}".format(self.freeze_ind)],
+                            ignore_errors=True, metal=self.metal, facet=self.surface_type, priority=3)
+            fwopt2 = optimize_firework(os.path.join(os.path.split(d)[0],"weakopt.xyz"),
+                            self.software,"out",
+                            opt_method="QuasiNewton",opt_kwargs={"trajectory": "out.traj"},software_kwargs=self.software_kwargs,order=0,
+                            run_kwargs={"fmax" : self.fmaxopt, "steps" : 70},parents=[fwopt],
+                              constraints=["freeze up to {}".format(self.freeze_ind)],
+                            ignore_errors=True, metal=self.metal, facet=self.surface_type, priority=2)
+        
+            fwvib = vibrations_firework(os.path.join(os.path.split(d)[0],"out.xyz"),
+                                        self.software,"vib",software_kwargs=self.software_kwargs,parents=[fwopt2],
+                                        constraints=["freeze up to "+str(self.nslab)])
+            self.pairs_fws.append(fwopt)
+            self.pairs_fws.append(fwopt2)
+            self.pairs_fws.append(fwvib)
+        
+        for d in outdirs_ts:
+            fwopt = optimize_firework(d,
+                            self.software,"out", sella=True, 
+                            opt_kwargs={"trajectory": "out.traj"},software_kwargs=self.software_kwargs_TS,
+                            order=1,
+                            run_kwargs={"fmax" : self.fmaxopt, "steps" : 70},parents=[],
+                              constraints=["freeze up to {}".format(self.freeze_ind)],
+                            ignore_errors=True, metal=self.metal, facet=self.surface_type, priority=3)
+            
+            fwvib = vibrations_firework(os.path.join(os.path.split(d)[0],"out.xyz"),
+                                        self.software,"vib",software_kwargs=self.software_kwargs,parents=[fwopt],
+                                        constraints=["freeze up to "+str(self.nslab)])
+            self.pairs_fws.append(fwopt)
+            self.pairs_fws.append(fwvib)
+            
+        self.fws.extend(self.pairs_fws)
+    
+    def setup_sample_calculations(self):
+        ts_xyzs = [os.path.join(self.pynta_run_directory,k,v,"opt.xyz") for k,v in self.transition_states.items()]
+        ads = self.adsorbates
+        for ts in self.transition_states.keys():
+            with open(os.path.join(self.pynta_run_directory,ts,"info.json"),"r") as f:
+                info = json.load(f)
+                for name in info["species_names"]+info["reverse_names"]:
+                    if name not in ads:
+                        ads.append(name)
+        
+        ad_xyzs = []
+        for ad in ads:
+            p = os.path.join(self.pynta_run_directory,"Adsorbates",ad)
+            with open(os.path.join(p,"info.json")) as f:
+                info = json.load(f)
+            mol = Molecule().from_adjacency_list(info["adjlist"])
+            if mol.contains_surface_site():
+                ad_xyz = get_best_adsorbate_xyz(p,self.sites,self.nslab)
+                ad_xyzs.append(ad_xyz)
+
+        outatoms,outmol2Dsad,outmol2Dsts,outxyzsad,outxyzsts=generate_coadsorbed_xyzs(self.path,ad_xyzs,ts_xyzs,
+                            self.slab_path,self.pairs_directory,self.adsorbates_path,
+                             self.coadsorbates,self.metal,self.surface_type,self.sites,self.site_adjacency,max_dist=self.max_dist)
+        
+        for xyzad in outxyzsad:
+            fwopt = optimize_firework(xyzad,
+                            self.software,"weakopt",
+                            opt_method="MDMin",opt_kwargs={'dt': 0.05,"trajectory": "weakopt.traj"},software_kwargs=self.software_kwargs,order=0,
+                            run_kwargs={"fmax" : 0.5, "steps" : 30},parents=[],
+                              constraints=["freeze up to {}".format(self.freeze_ind)],
+                            ignore_errors=True, metal=self.metal, facet=self.surface_type, priority=-1)
+            fwopt2 = optimize_firework(os.path.join(os.path.split(xyzad)[0],"weakopt.xyz"),
+                            self.software,"out",
+                            opt_method="QuasiNewton",opt_kwargs={"trajectory": "out.traj"},software_kwargs=self.software_kwargs,order=0,
+                            run_kwargs={"fmax" : self.fmaxopt, "steps" : 70},parents=[fwopt],
+                              constraints=["freeze up to {}".format(self.freeze_ind)],
+                            ignore_errors=True, metal=self.metal, facet=self.surface_type, priority=-1)
+            fwvib = vibrations_firework(os.path.join(os.path.split(xyzad)[0],"out.xyz"),self.software,"outvib",
+                                software_kwargs=self.software_kwargs,
+                                parents=[fwopt2],constraints=["freeze up to {}".format(self.nslab)],socket=False,ignore_errors=True)
+            self.fws.append(fwopt)
+            self.fws.append(fwopt2)
+            self.fws.append(fwvib)
+        for xyzts in outxyzsts:
+            fwopt = optimize_firework(xyzts,
+                            self.software,"out",
+                            opt_kwargs={"trajectory": "out.traj"},software_kwargs=self.software_kwargs_TS,order=1,
+                            run_kwargs={"fmax" : self.fmaxopt, "steps" : 70},parents=[],
+                              constraints=["freeze up to {}".format(self.freeze_ind)],
+                            ignore_errors=True, metal=self.metal, facet=self.surface_type, sella=True, priority=-1)
+            fwvib = vibrations_firework(os.path.join(os.path.split(xyzad)[0],"out.xyz"),self.software,"outvib",
+                                parents=[fwopt],constraints=["freeze up to {}".format(self.nslab)],socket=False,ignore_errors=True)
+            self.fws.append(fwopt)
+            self.fws.append(fwvib)
+        
+    def execute(self,run_pairs=True,run_samples=False):
+        if run_pairs:
+            self.setup_pairs_calculations()
+        if run_samples:
+            self.setup_sample_calculations()
+        #wf = Workflow(self.fws, name=self.label)
+        #self.launchpad.add_wf(wf)
