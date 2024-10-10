@@ -1385,3 +1385,93 @@ def train_sidt_cov_dep_classifier(datums,r_site=None,
         tree.generate_tree(data=train_sample,validation_set=val,max_nodes=node_min)
 
     return tree
+
+def add_ad_to_site(admol,coad,site):
+    at = [a for a in coad.atoms if a.is_bonded_to_surface()][0]
+    bd = [bd for a,bd in at.bonds.items() if a.is_surface_site()][0]
+    order = bd.order
+    atind = coad.atoms.index(at)
+    
+    c = coad.copy(deep=True)
+    for a in c.atoms:
+        if a.is_surface_site():
+            c.remove_atom(a)
+            
+    sind = admol.atoms.index(site)
+    admol_length = len(admol.atoms)
+    
+    admolout = admol.copy(deep=True).merge(c)
+    snew = admolout.atoms[sind]
+    atnew = admolout.atoms[len(admol.atoms)+atind]
+    assert site.site == snew.site and site.morphology == snew.morphology
+    assert atnew.element == at.element
+    
+    bd = Bond(atnew,snew,order=order)
+    admolout.add_bond(bd)
+    
+    admolout.clear_labeled_atoms()
+    admolout.multiplicity=1
+    admolout.update(sort_atoms=False)
+    admolout.update_connectivity_values()
+    return admolout
+    
+def get_configurations(admol, coad, coad_stable_sites, tree_interaction_classifier=None, coadmol_stability_dict=None, unstable_groups=None,
+                       tree_interaction_regressor=None, tree_atom_regressor=None, coadmol_E_dict=None, energy_tol=None):
+    empty_sites = [a for a in admol.atoms if a.is_surface_site() and a.site in coad_stable_sites and not any([not a2.is_surface_site() for a2 in a.bonds.keys()])]
+    print("empty sites")
+    print(len(empty_sites))
+    empty_site_inds = [admol.atoms.index(s) for s in empty_sites]
+    outmols = [admol]
+    outmols_split = [[admol]]
+    lowest_energy_surface_bond_dict = dict()
+    print(len(outmols))
+    for i in range(len(empty_sites)):
+        newoutmols = []
+        for m in outmols_split[i]: #all configurations with a fixed number of co-adsorbates (highest number hit yet)
+            for sind in empty_site_inds:
+                if any(not a.is_surface_site() for a in m.atoms[sind].bonds.keys()): #site is already occupied 
+                    continue
+                
+                outmol = add_ad_to_site(m,coad,m.atoms[sind])
+    
+                if (tree_interaction_classifier and not tree_interaction_classifier.evaluate(outmol)) or \
+                    (coadmol_stability_dict and not get_atom_center_stability(outmol,coadmol_stability_dict)): #unstable configuration
+                    continue
+
+                if unstable_groups:
+                    is_unstable = False
+                    for grp in unstable_groups:
+                        if outmol.is_subgraph_isomorphic(grp,save_order=True):
+                            is_unstable = True 
+                            break
+                    if is_unstable:
+                        continue
+                    
+                for mol in newoutmols:
+                    if outmol.is_isomorphic(mol,save_order=True):
+                        break
+                else:
+                    if energy_tol: #skip configurations that are more than energy_tol higher than the lowest energy configuraiton for a given coverage found
+                        if tree_atom_regressor is not None:
+                            E = tree_atom_regressor.evaluate(m) + tree_interaction_regressor.evaluate(m)
+                        elif coadmol_E_dict is not None:
+                            E = get_atom_centered_correction(m,coadmol_E_dict) + tree_interaction_regressor.evaluate(m)
+                        else:
+                            raise ValueError
+    
+                        Nsurfbonds = len([b for b in m.get_all_edges() if (b.atom1.is_surface_site() and not b.atom2.is_surface_site()) or (b.atom2.is_surface_site() and not b.atom1.is_surface_site())])
+                        if Nsurfbonds not in lowest_energy_surface_bond_dict.keys() or lowest_energy_surface_bond_dict[Nsurfbonds] > E:
+                            lowest_energy_surface_bond_dict[Nsurfbonds] = E
+                            newoutmols.append(outmol)
+                        elif lowest_energy_surface_bond_dict[Nsurfbonds] + energy_tol < E:
+                            pass #don't add configuration
+                        else:
+                            newoutmols.append(outmol)
+                    else:
+                        newoutmols.append(outmol)
+                        
+        outmols.extend(newoutmols)
+        outmols_split.append(newoutmols)
+        print(len(outmols))
+
+    return outmols
