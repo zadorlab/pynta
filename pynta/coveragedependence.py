@@ -1101,3 +1101,116 @@ def get_best_adsorbate_xyz(adsorbate_path,sites,nslab):
                 min_energy = geo.get_potential_energy()
 
     return adsorbate
+
+def adsorbate_interaction_decomposition(mol):
+    surface_bonded_inds = []
+    for i,at in enumerate(mol.atoms):
+        if at.is_bonded_to_surface() and not at.is_surface_site():
+            surface_bonded_inds.append(i)
+    
+    structs = []
+    for i,indi in enumerate(surface_bonded_inds):
+        for j,indj in enumerate(surface_bonded_inds):
+            if i > j:
+                st = mol.copy(deep=True)
+                st.atoms[indi].label = "*"
+                st.atoms[indj].label = "*"
+                structs.append(st)
+    
+    return structs
+
+def adsorbate_triad_interaction_decomposition(mol):
+    surface_bonded_inds = []
+    for i,at in enumerate(mol.atoms):
+        if at.is_bonded_to_surface() and not at.is_surface_site():
+            surface_bonded_inds.append(i)
+    
+    structs = []
+    for i,indi in enumerate(surface_bonded_inds):
+        for j,indj in enumerate(surface_bonded_inds):
+            for k,indk in enumerate(surface_bonded_inds):
+                if i > j and j > k:
+                    st = mol.copy(deep=True)
+                    st.atoms[indi].label = "*"
+                    st.atoms[indj].label = "*"
+                    st.atoms[indk].label = "*"
+                    structs.append(st)
+    
+    return structs
+    
+def adsorbate_site_decomposition(mol):
+    surface_bonded_inds = []
+    for i,at in enumerate(mol.atoms):
+        if at.is_bonded_to_surface() and not at.is_surface_site():
+            surface_bonded_inds.append(i)
+    
+    structs = []
+    for i,indi in enumerate(surface_bonded_inds):
+        st = mol.copy(deep=True)
+        st.atoms[indi].label = "*"
+        structs.append(st)
+    
+    return structs
+
+def get_adsorbed_atom_pairs(length=7, r_bonds=None):
+    """
+    length is number of site atoms between adsorbates
+    """
+    if r_bonds is None:
+        r_bonds = [1, 2, 3, 0.05]
+    groups = []
+    for j in range(2,length+1):
+        g = Group().from_adjacency_list("""1 * R u0 px cx""")
+        a2 = g.atoms[0]
+        for i in range(j):
+            a = GroupAtom(atomtype=["X"],radical_electrons=[0],lone_pairs=[0],charge=[0])
+            if i == 0:
+                b = GroupBond(a2, a, order=r_bonds)
+            else:
+                b = GroupBond(a2, a, order=["S"])
+            g.add_atom(a)
+            g.add_bond(b)
+            a2 = a
+        a = GroupAtom(atomtype=["R"], label="*", radical_electrons=[0])
+        b = GroupBond(a2, a, order=r_bonds)
+        g.add_atom(a)
+        g.add_bond(b)
+        groups.append(g)
+
+    return groups
+
+import itertools
+def get_adsorbed_atom_groups(Nad=3, length=7, r_bonds=None):
+    """
+    length is number of site atoms between adsorbates
+    """
+    assert Nad == 3, "Doesn't work for Nad=2 and the combination ordering seems to matter for Nad > 3, so only Nad=3"
+    if r_bonds is None:
+        r_bonds = [1, 2, 3, 0.05]
+    groups = []
+    lengths = list(range(2,length+1))
+    for comb in itertools.combinations(lengths,Nad):
+        g = Group().from_adjacency_list("""1 * R u0 px cx""")
+        a2 = g.atoms[0]
+        for k,j in enumerate(comb):
+            for i in range(j):
+                a = GroupAtom(atomtype=["X"],radical_electrons=[0],lone_pairs=[0],charge=[0])
+                if i == 0:
+                    b = GroupBond(a2, a, order=r_bonds)
+                else:
+                    b = GroupBond(a2, a, order=["S"])
+                g.add_atom(a)
+                g.add_bond(b)
+                a2 = a
+            if k+1 < len(comb):
+                a = GroupAtom(atomtype=["R"], label="*", radical_electrons=[0])
+                b = GroupBond(a2, a, order=r_bonds)
+                g.add_atom(a)
+                g.add_bond(b)
+            else:
+                b = GroupBond(g.atoms[1],a2, order=["S"])
+                g.add_bond(b)
+        
+        groups.append(g)
+
+    return groups
