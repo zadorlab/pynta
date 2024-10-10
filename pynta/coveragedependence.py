@@ -3,11 +3,15 @@ from molecule.exceptions import AtomTypeError
 from ase.io import read, write
 from ase.geometry import get_distances
 from ase.visualize import view
+from ase.neighborlist import natural_cutoffs
 from acat.adsorption_sites import SlabAdsorptionSites
 from pynta.utils import get_unique_sym, get_occupied_sites, sites_match
 from pynta.mol import *
 from pynta.geometricanalysis import *
 from pynta.tasks import *
+from pysidt import *
+from pysidt.extensions import split_mols
+from pysidt.sidt import *
 from fireworks import LaunchPad, Workflow
 from fireworks.queue.queue_launcher import rapidfire as rapidfirequeue
 from fireworks.features.multi_launcher import launch_multiprocess
