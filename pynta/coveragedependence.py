@@ -1235,3 +1235,153 @@ def get_atom_center_stability(m,coadmol_stability_dict):
                     return False
 
     return True
+
+def break_train_val_test(datums,test_fract=0.1,val_fract=0.1):
+    ds = datums[:]
+    N = len(datums)
+    Ntest = round(N*test_fract)
+    Nval = round(N*val_fract)
+    np.random.shuffle(ds)
+    test = ds[:Ntest]
+    val = ds[Ntest:Ntest+Nval]
+    train = ds[Nval+Ntest:]
+    return train,val,test
+    
+def train_sidt_cov_dep_regressor(pairs_datums,sampling_datums,r_site=None,
+                                r_atoms=None,node_fract_training=0.7):
+
+    if r_site is None:
+        r_site = ["","ontop","bridge","hcp","fcc"]
+
+    if r_atoms is None:
+        r_atoms = ["C","O","N","H","X"]
+
+    root_node = Node(group=None,name="Root",depth=0)
+    
+    root_pair = Group().from_adjacency_list("""
+    1 * R u0 px cx {2,[S,D,T,Q,R]}
+    2   X u0 p0 c0 {1,[S,D,T,Q,R]}
+    3 * R u0 px cx {4,[S,D,T,Q,R]}
+    4   X u0 p0 c0 {3,[S,D,T,Q,R]}
+    """)
+    
+    root_triad = Group().from_adjacency_list("""
+    1 * R u0 px cx {2,[S,D,T,Q,R]}
+    2   X u0 p0 c0 {1,[S,D,T,Q,R]}
+    3 * R u0 px cx {4,[S,D,T,Q,R]}
+    4   X u0 p0 c0 {3,[S,D,T,Q,R]}
+    5 * R u0 px cx {6,[S,D,T,Q,R]}
+    6   X u0 p0 c0 {5,[S,D,T,Q,R]}
+    """)
+
+    root_pair_node = Node(group=root_pair,name="Root_Pair",parent=root_node,depth=1)
+    root_triad_node = Node(group=root_triad,name="Root_Triad",parent=root_node,depth=1)
+    root_node.children.extend([root_pair_node,root_triad_node])
+
+    pair_nodes = []
+    initial_root_splits = get_adsorbed_atom_pairs(length=7,r_bonds=[1,2,3,0.05])
+    for i,g in enumerate(initial_root_splits):
+        n = Node(group=g,name=root_pair_node.name+"_"+str(i),parent=root_pair_node,depth=2)
+        pair_nodes.append(n)
+        root_pair_node.children.append(n)
+
+    triad_nodes = []
+    initial_root_splits = get_adsorbed_atom_groups(Nad=3,length=7,r_bonds=[1,2,3,0.05])
+    for i,g in enumerate(initial_root_splits):
+        n = Node(group=g,name=root_triad_node.name+"_"+str(i),parent=root_triad_node,depth=2)
+        triad_nodes.append(n)
+        root_triad_node.children.append(n)
+
+    nodes = {n.name:n for n in [root_node,root_pair_node,root_triad_node]+pair_nodes+triad_nodes}
+    
+    node_len = len(nodes)
+    
+    tree = MultiEvalSubgraphIsomorphicDecisionTreeRegressor([adsorbate_interaction_decomposition,adsorbate_triad_interaction_decomposition],
+                                                   nodes=nodes,
+                                                   r=[ATOMTYPES[x] for x in r_atoms],
+                                                   r_bonds=[1,2,3,0.05],
+                                                             r_un=[0],
+                                                   r_site=["","ontop","bridge","hcp","fcc"],
+                                                   max_structures_to_generate_extensions=100,
+                                                   fract_nodes_expand_per_iter=0.025,
+                                                   iter_max=2,
+                                                   iter_item_cap=100,
+                                                  )
+    
+    #tree.generate_tree(data=pairs_datums,max_nodes=len(pairs_datums)-1)
+    #tree.clear_data()
+    tree.generate_tree(data=pairs_datums+sampling_datums,
+                       max_nodes=node_len+(len(pairs_datums)+len(sampling_datums))*node_fract_training)
+    #tree.regularize(data=pairs_datums+sampling_datums,check_data=True)
+    
+    return tree
+
+def train_sidt_cov_dep_classifier(datums,r_site=None,
+                                r_atoms=None,node_fract_training=0.5,node_min=50):
+
+    if r_site is None:
+        r_site = ["","ontop","bridge","hcp","fcc"]
+
+    if r_atoms is None:
+        r_atoms = ["C","O","N","H","X"]
+    
+    root_node = Node(group=None,name="Root",depth=0)
+    
+    root_pair = Group().from_adjacency_list("""
+    1 * R u0 px cx {2,[S,D,T,Q,R]}
+    2   X u0 p0 c0 {1,[S,D,T,Q,R]}
+    3 * R u0 px cx {4,[S,D,T,Q,R]}
+    4   X u0 p0 c0 {3,[S,D,T,Q,R]}
+    """)
+    
+    root_triad = Group().from_adjacency_list("""
+    1 * R u0 px cx {2,[S,D,T,Q,R]}
+    2   X u0 p0 c0 {1,[S,D,T,Q,R]}
+    3 * R u0 px cx {4,[S,D,T,Q,R]}
+    4   X u0 p0 c0 {3,[S,D,T,Q,R]}
+    5 * R u0 px cx {6,[S,D,T,Q,R]}
+    6   X u0 p0 c0 {5,[S,D,T,Q,R]}
+    """)
+
+    root_pair_node = Node(group=root_pair,name="Root_Pair",parent=root_node,depth=1)
+    root_triad_node = Node(group=root_triad,name="Root_Triad",parent=root_node,depth=1)
+    root_node.children.extend([root_pair_node,root_triad_node])
+
+    pair_nodes = []
+    initial_root_splits = get_adsorbed_atom_pairs(length=7,r_bonds=[1,2,3,0.05])
+    for i,g in enumerate(initial_root_splits):
+        n = Node(group=g,name=root_pair_node.name+"_"+str(i),parent=root_pair_node,depth=2)
+        pair_nodes.append(n)
+        root_pair_node.children.append(n)
+
+    triad_nodes = []
+    initial_root_splits = get_adsorbed_atom_groups(Nad=3,length=7,r_bonds=[1,2,3,0.05])
+    for i,g in enumerate(initial_root_splits):
+        n = Node(group=g,name=root_triad_node.name+"_"+str(i),parent=root_triad_node,depth=2)
+        triad_nodes.append(n)
+        root_triad_node.children.append(n)
+
+    nodes = {n.name:n for n in [root_node,root_pair_node,root_triad_node]+pair_nodes+triad_nodes}
+    
+    node_len = len(nodes)
+
+    tree = MultiEvalSubgraphIsomorphicDecisionTreeBinaryClassifier([adsorbate_interaction_decomposition,adsorbate_triad_interaction_decomposition],
+                                                                   nodes=nodes,
+                                               r=[ATOMTYPES[x] for x in r_atoms],
+                                               r_bonds=[1,2,3,0.05],
+                                                         r_un=[0],
+                                               r_site=r_site,
+                                                iter_max=2,
+                                                iter_item_cap=100,
+                                                max_structures_to_generate_extensions=100,
+                                              )
+
+    train_sample,val,test = break_train_val_test(datums,test_fract=0.0,val_fract=0.1)
+
+    if len(train_sample)*node_fract_training > node_min:
+        tree.generate_tree(data=train_sample,validation_set=val,max_nodes=len(train_sample)*node_fract_training,
+                       postpruning_based_on_val=True)
+    else:
+        tree.generate_tree(data=train_sample,validation_set=val,max_nodes=node_min)
+
+    return tree
