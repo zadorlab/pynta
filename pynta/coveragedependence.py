@@ -1475,3 +1475,115 @@ def get_configurations(admol, coad, coad_stable_sites, tree_interaction_classifi
         print(len(outmols))
 
     return outmols
+
+def check_stable(config,stability_datums):
+    for d in stability_datums:
+        if d.value == False and config.is_isomorphic(d.mol,save_order=True):
+            return False
+    else:
+        return True
+
+def evaluate_from_datums(config,energy_datums):
+    for d in energy_datums:
+        if config.is_isomorphic(d.mol,save_order=True):
+            return d.value
+    else:
+        return None
+
+def get_cov_energies_configs_concern_tree(tree_interaction_regressor, configs, coad_stable_sites, Ncoad_isolated, concern_energy_tol, tree_atom_regressor=None, coadmol_E_dict=None, 
+                     stability_datums=None):
+    Ncoad_energy_dict = dict()
+    Ncoad_config_dict = dict()
+    config_to_Eunctr = dict()
+    configs_of_concern = {}
+    Nempty = len([a for a in configs[0].atoms if a.is_surface_site() and a.site in coad_stable_sites])
+    for m in configs:
+        Ncoad = len([a for a in m.atoms if a.is_surface_site() and any(not a2.is_surface_site() for a2 in a.bonds.keys())]) - Ncoad_isolated
+
+        if stability_datums:
+            stable = check_stable(m,stability_datums)
+        else:
+            stable = True
+            
+        if not stable:
+            continue
+            
+        if tree_atom_regressor is not None:
+            Einteraction,std,tr = tree_interaction_regressor.evaluate(m,trace=True, estimate_uncertainty=True)
+            E = tree_atom_regressor.evaluate(m) + Einteraction
+        elif coadmol_E_dict is not None:
+            Einteraction,std,tr = tree_interaction_regressor.evaluate(m,trace=True, estimate_uncertainty=True)
+            E = get_atom_centered_correction(m,coadmol_E_dict) + Einteraction
+        else:
+            raise ValueError
+        
+        config_to_Eunctr[m] = (E,std,tr)
+        
+        if Ncoad not in Ncoad_energy_dict.keys():
+            Ncoad_energy_dict[Ncoad] = E
+            Ncoad_config_dict[Ncoad] = m.to_adjacency_list()
+        elif E < Ncoad_energy_dict[Ncoad]:
+            Ncoad_energy_dict[Ncoad] = E
+            Ncoad_config_dict[Ncoad] = m.to_adjacency_list()
+        elif E == Ncoad_energy_dict[Ncoad]:
+            if isinstance(Ncoad_config_dict[Ncoad],list):
+                Ncoad_config_dict[Ncoad].append(m.to_adjacency_list())
+            else:
+                Ncoad_config_dict[Ncoad] = [Ncoad_config_dict[Ncoad], m.to_adjacency_list()]
+    
+    for m in config_to_Eunctr.keys():
+        Ncoad = len([a for a in m.atoms if a.is_surface_site() and any(not a2.is_surface_site() for a2 in a.bonds.keys())]) - Ncoad_isolated
+        E,std,tr = config_to_Eunctr[m]
+        if stable and (concern_energy_tol is None or (Ncoad_energy_dict[Ncoad] + concern_energy_tol > E)):
+            configs_of_concern[m] = (E,tr,std)
+    
+    return Ncoad_energy_dict,Ncoad_config_dict,configs_of_concern
+    
+def get_cov_energies(tree_interaction_regressor, configs, coad_stable_sites, Ncoad_isolated, tree_atom_regressor=None, coadmol_E_dict=None, 
+                     stability_datums=None):
+    Ncoad_energy_dict = dict()
+    Ncoad_config_dict = dict()
+    Nempty = len([a for a in configs[0].atoms if a.is_surface_site() and a.site in coad_stable_sites])
+    for m in configs:
+        Ncoad = len([a for a in m.atoms if a.is_surface_site() and any(not a2.is_surface_site() for a2 in a.bonds.keys())]) - Ncoad_isolated
+
+        if tree_atom_regressor is not None:
+            E = tree_atom_regressor.evaluate(m) + tree_interaction_regressor.evaluate(m)
+        elif coadmol_E_dict is not None:
+            E = get_atom_centered_correction(m,coadmol_E_dict) + tree_interaction_regressor.evaluate(m)
+        else:
+            raise ValueError
+        if Ncoad not in Ncoad_energy_dict.keys():
+            if (not stability_datums) or check_stable(m,stability_datums):
+                Ncoad_energy_dict[Ncoad] = E
+                Ncoad_config_dict[Ncoad] = m.to_adjacency_list()
+        elif E < Ncoad_energy_dict[Ncoad]:
+            if (not stability_datums) or check_stable(m,stability_datums):
+                Ncoad_energy_dict[Ncoad] = E
+                Ncoad_config_dict[Ncoad] = m.to_adjacency_list()
+        elif E == Ncoad_energy_dict[Ncoad]:
+            if (not stability_datums) or check_stable(m,stability_datums):
+                if isinstance(Ncoad_config_dict[Ncoad],list):
+                    Ncoad_config_dict[Ncoad].append(m.to_adjacency_list())
+                else:
+                    Ncoad_config_dict[Ncoad] = [Ncoad_config_dict[Ncoad], m.to_adjacency_list()]
+    return Ncoad_energy_dict,Ncoad_config_dict
+
+def get_configs_of_concern(tree_interaction_regressor,configs,coad_stable_sites,Ncoad_energy_dict,Nocc_isolated,concern_energy_tol,tree_atom_regressor=None,
+                           coadmol_E_dict=None):
+    configs_of_concern = {}
+    Nempty = len([a for a in configs[0].atoms if a.is_surface_site() and a.site in coad_stable_sites])
+    for m in configs:
+        Ncoad = len([a for a in m.atoms if a.is_surface_site() and any(not a2.is_surface_site() for a2 in a.bonds.keys())]) - Nocc_isolated
+        if tree_atom_regressor is not None:
+            Einteraction,std,tr = tree_interaction_regressor.evaluate(m,trace=True, estimate_uncertainty=True)
+            E = tree_atom_regressor.evaluate(m) + Einteraction
+        elif coadmol_E_dict is not None:
+            Einteraction,std,tr = tree_interaction_regressor.evaluate(m,trace=True, estimate_uncertainty=True)
+            E = get_atom_centered_correction(m,coadmol_E_dict) + Einteraction
+        else:
+            raise ValueError
+        if Ncoad_energy_dict[Ncoad] + concern_energy_tol > E:
+            configs_of_concern[m] = (E,tr,std)
+        
+    return configs_of_concern
