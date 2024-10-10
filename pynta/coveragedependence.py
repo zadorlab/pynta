@@ -1587,3 +1587,308 @@ def get_configs_of_concern(tree_interaction_regressor,configs,coad_stable_sites,
             configs_of_concern[m] = (E,tr,std)
         
     return configs_of_concern
+
+def load_coverage_delta(d,ad_energy_dict,slab,metal,facet,sites,site_adjacency,ts_pynta_dir=None,allowed_structure_site_structures=None,
+                       out_file_name="out",vib_file_name="vib",is_ad=None):
+
+    try:
+        info = json.load(open(os.path.join(d,"info.json")))
+    except:
+        info = None
+
+    if is_ad is None:
+        is_ts =  "xyz" in info.keys() and os.path.split(os.path.split(os.path.split(info["xyz"])[0])[0])[1][:2] == "TS"
+    else:
+        is_ts = not is_ad
+    
+    atoms = read(os.path.join(d,out_file_name+".xyz"))
+    
+    if not is_ts:
+        try:
+            admol,neighbor_sites,ninds = generate_adsorbate_2D(atoms, sites, site_adjacency, len(slab), max_dist=np.inf, cut_multidentate_off_num=None, allowed_structure_site_structures=allowed_structure_site_structures)
+        except (SiteOccupationException,TooManyElectronsException,ValueError) as e:
+            return None,None,None,None
+
+        logging.error(admol.to_adjacency_list())
+        split_structs = split_adsorbed_structures(admol)
+        try:
+            vibdata = get_vibdata(os.path.join(d,out_file_name+".xyz"),os.path.join(d,vib_file_name+".json"),len(slab))
+
+            Ecad = atoms.get_potential_energy() - slab.get_potential_energy() + vibdata.get_zero_point_energy()
+    
+            Esep = 0.0
+            for split_struct in split_structs:
+                # if not split_struct.contains_surface_site(): #if gas phase species don't extract
+                #     return None,None,None,None
+                for ad,E in ad_energy_dict.items():
+                    if split_struct.is_isomorphic(ad,save_order=True):
+                        Esep += E
+                        break
+                else:
+                    logging.error("no matching adsorbate for {}".format(split_struct.to_smiles()))
+                    return None,None,None,None
+            
+            dE = Ecad - Esep
+        except:
+            dE = None
+    else:
+        if ts_pynta_dir is None:
+            xyz = info["xyz"]
+            ts_path = os.path.split(os.path.split(info["xyz"])[0])[0]
+        else:
+            ts_path = os.path.join(ts_pynta_dir,os.path.split(os.path.split(os.path.split(info["xyz"])[0])[0])[1])
+            xyz = os.path.join(ts_path,os.path.split(os.path.split(info["xyz"])[0])[1],os.path.split(info["xyz"])[1])
+        
+        ts_info_path = os.path.join(ts_path,"info.json")
+
+        try:
+            admol,neighbor_sites,ninds = generate_TS_2D(atoms, ts_info_path, metal, facet, sites, site_adjacency, len(slab), imag_freq_path=os.path.join(d,"vib.0.traj"), max_dist=np.inf, allowed_structure_site_structures=allowed_structure_site_structures)
+        except (SiteOccupationException,TooManyElectronsException, ValueError) as e:
+            return None,None,None,None
+        vibdata = get_vibdata(os.path.join(d,"out.xyz"),os.path.join(d,"vib.json"),len(slab))
+        Ecad = atoms.get_potential_energy() - slab.get_potential_energy() + vibdata.get_zero_point_energy()
+        
+        
+        ts = read(xyz)
+        ts_vibdata = get_vibdata(xyz,os.path.join(os.path.split(xyz)[0],"vib.json_vib.json"),len(slab))
+        Ets = ts.get_potential_energy() - slab.get_potential_energy()  + ts_vibdata.get_zero_point_energy()
+        
+        num_ts_atoms = len(ts) - len(slab)
+        
+        coatoms = atoms.copy()
+        for i in range(num_ts_atoms): #remove ts atoms before we identify coadsorbates
+            coatoms.pop(len(slab))
+        try:
+            coadmol,coneighbor_sites,coninds = generate_adsorbate_2D(coatoms, sites, site_adjacency, len(slab), max_dist=np.inf, cut_multidentate_off_num=None)
+        except (SiteOccupationException,TooManyElectronsException,ValueError) as e:
+            return None,None,None,None
+            
+        split_structs = split_adsorbed_structures(coadmol)
+        Esep = Ets
+        for split_struct in split_structs:
+            for ad,E in ad_energy_dict.items():
+                if split_struct.is_isomorphic(ad):
+                    Esep += E
+                    break
+            else:
+                logging.error("no matching adsorbate for {}".format(split_struct.to_smiles()))
+                return None,None,None,None
+                
+        dE = Ecad - Esep
+    
+    return admol,neighbor_sites,ninds,dE
+
+
+
+def check_TS_coadsorbate_disruption(atoms,admol,nslab3D,nslab2D,ntsatoms,mult=1.3):
+    ad = atoms[nslab3D:]
+    cutoffs = natural_cutoffs(ad,mult=mult)
+    adanalysis = Analysis(ad,cutoffs=cutoffs)
+    adadj = adanalysis.adjacency_matrix[0]
+    for i in range(nslab2D+ntsatoms,len(admol.atoms)):
+        at = admol.atoms[i]
+        ind = i - nslab2D
+        if adadj[ind,:ntsatoms].sum() > 0 or adadj[:ntsatoms,ind].sum() > 0 :
+            for k in range(ntsatoms):
+                if (not adadj[ind,k]) and (not adadj[k,ind]):
+                    continue
+                else:
+                    at = admol.atoms[nslab2D+k]
+                    for bd in admol.get_bonds(at).values():
+                        if bd.get_order_str() == 'R':
+                            return True
+                        
+    return False
+    
+def tagsites(atoms,sites):
+    aview = deepcopy(atoms)
+    anames = ['He','Ne','Ar','Kr','Xe','Rn']
+    for i,site in enumerate(sites):
+        add_adsorbate_to_site(aview,Atoms(anames[i], [(0, 0, 0)]), 0, sites[i], height=1.0)
+    return aview
+
+def extract_sample(d,ad_energy_dict,slab,metal,facet,sites,site_adjacency,pynta_dir,max_dist=3.0,rxn_alignment_min=0.7,
+                   coad_disruption_tol=1.1,out_file_name="out",init_file_name="init",vib_file_name="vib",is_ad=None,
+                  use_allowed_site_structures=True):
+    out_dict = dict()
+    
+    atoms_init = read(os.path.join(d,init_file_name+".xyz"))
+    atoms = read(os.path.join(d,out_file_name+".xyz"))
+    
+    if len(atoms_init) < len(slab): #gas phase
+        return None
+    #view(atoms_init)
+    #view(atoms)
+    try:
+        vibdata = get_vibdata(os.path.join(d,out_file_name+".xyz"),os.path.join(d,vib_file_name+".json"),len(slab))
+    except:
+        vibdata = None
+
+    try:
+        with open(os.path.join(d,"info.json"),'r') as f:
+            info = json.load(f)
+    except:
+        info = None
+        
+    if is_ad is None:
+        is_ad = os.path.split(os.path.split(os.path.split(os.path.split(info['xyz'])[0])[0])[0])[1] == 'Adsorbates'
+
+    if is_ad and info:
+        orig_xyz = os.path.join(pynta_dir,os.sep.join(os.path.normpath(info['xyz']).split(os.sep)[-4:]))
+    else:
+        orig_xyz = os.path.join(pynta_dir,os.sep.join(os.path.normpath(info['xyz']).split(os.sep)[-3:]))
+            
+    if info:
+        with open(os.path.join(os.path.split(os.path.split(orig_xyz)[0])[0],"info.json"),'r') as f:
+            info_clean = json.load(f)
+    if orig_xyz:
+        if not is_ad:
+            reactants_clean = Molecule().from_adjacency_list(info_clean["reactants"])
+            cut_multidentate_off_num = len(atoms) - nslab - len([a for a in reactants_clean.atoms if not a.is_surface_site()])
+        else:
+            ad_clean = Molecule().from_adjacency_list(info_clean["adjlist"])
+            cut_multidentate_off_num = len(atoms) - nslab - len([a for a in ad_clean.atoms if not a.is_surface_site()])
+    else:
+        cut_multidentate_off_num = None
+
+    if use_allowed_site_structures:
+        allowed_structure_site_structures = generate_allowed_structure_site_structures(os.path.join(pynta_dir,"Adsorbates"),
+                                                                                         sites,site_adjacency,nslab,max_dist=max_dist,
+                                                                                                 cut_multidentate_off_num=None)
+    else:
+        allowed_structure_site_structures = None
+    
+    admol,neighbor_sites,ninds,dE = load_coverage_delta(d,ad_energy_dict,slab,metal,facet,sites,site_adjacency,
+                                            ts_pynta_dir=pynta_dir,allowed_structure_site_structures=allowed_structure_site_structures,
+                                                       out_file_name=out_file_name,vib_file_name=vib_file_name,is_ad=is_ad)
+    
+    
+    if is_ad:
+        try:
+            admol_init,neighbor_sites_init,ninds_init = generate_adsorbate_2D(atoms_init, sites, site_adjacency, nslab, 
+                     max_dist=None, cut_multidentate_off_num=cut_multidentate_off_num, allowed_structure_site_structures=allowed_structure_site_structures)
+        except TooManyElectronsException:
+            admol_init = None
+            neighbor_sites_init = None
+            ninds_init = None
+            
+        if info:
+            admol_info = Molecule().from_adjacency_list(info["adjlist"],check_consistency=False)
+            
+        valid = admol is not None #and len(admol.split()) == 1
+
+    else:
+        valid = True
+        info_path = os.path.join(os.path.split(os.path.split(orig_xyz)[0])[0],"info.json")
+        imag_freq_path = os.path.join(os.path.split(orig_xyz)[0],"vib.0.traj")
+
+        try:
+            admol_init,neighbor_sites_init,ninds_init = generate_TS_2D(atoms_init, info_path, metal, facet, sites, site_adjacency, nslab, 
+                     imag_freq_path=imag_freq_path, max_dist=None, cut_multidentate_off_num=cut_multidentate_off_num, 
+                                                                   allowed_structure_site_structures=allowed_structure_site_structures)
+        except TooManyElectronsException as e:
+            valid = False
+            admol_init = None
+        except SiteOccupationException as e:
+            logging.error("raised SiteOccupationException on init structure")
+            valid = False
+            admol_init = None
+
+        admol_info = Molecule().from_adjacency_list(info["adjlist"],check_consistency=False)
+        
+        if valid:
+            valid = not (admol is None)
+            if not valid:
+                logging.error("TS admol has disconnected graph")
+
+        if valid:
+            #convert TS path
+            ts_path = "/".join(["/Users","mjohns9","Runs","pynta"]+orig_xyz.split("/")[5:])
+            
+            vibdata_ts = get_vibdata(ts_path,os.path.join(os.path.split(ts_path)[0],"vib.json_vib.json"),len(slab))
+            with open(os.path.join(os.path.split(os.path.split(ts_path)[0])[0],"info.json"),'r') as f:
+                ts_info = json.load(f)
+        
+            nslab3D = ts_info["nslab"]
+            ntsatoms = len([a for a in Molecule().from_adjacency_list(ts_info['reactants']).atoms if not a.is_surface_site()])
+            nslab2D = len(ninds)
+     
+            coad_disrupt = check_TS_coadsorbate_disruption(atoms,admol,nslab3D,nslab2D,ntsatoms,mult=coad_disruption_tol)
+            
+            tr_sample = Trajectory(os.path.join(d,"vib.0.traj"))
+
+            #view(tr_sample)
+            tr_ts = Trajectory(os.path.join(os.path.split(ts_path)[0],"vib.0.traj"))
+            v_ts = tr_ts[15].positions[nslab:] - tr_ts[16].positions[nslab:]
+            v_ts /= np.linalg.norm(v_ts)
+            v_sample = tr_sample[15].positions[nslab:] - tr_sample[16].positions[nslab:]
+            v_sample /= np.linalg.norm(v_sample)
+            v_prod = np.abs(np.sum(v_sample[:len(v_ts)]*v_ts))
+
+            logging.error(f"rxn alignment: {v_prod}")
+            logging.error(f"coad_distrupt: {coad_disrupt}")
+            logging.error(f"admol split: {len(admol.split())}")
+            logging.error(admol.to_adjacency_list())
+            if len(admol.split()) > 1 or v_prod < rxn_alignment_min or coad_disrupt:
+                valid = False
+            else:
+                valid = True
+
+    out_dict["valid"] = valid
+    out_dict["dE"] = dE
+    if admol is None or admol_init is None:
+        out_dict["isomorphic"] = False
+    else:
+        out_dict["isomorphic"] = admol.is_isomorphic(admol_init,save_order=True)
+    if admol:
+        out_dict["out"] = admol.to_adjacency_list()
+    else:
+        out_dict["out"] = None
+    if info:
+        out_dict["init_info"] = admol_info.to_adjacency_list()
+    if admol_init:
+        out_dict["init_extracted"] = admol_init.to_adjacency_list()
+    else:
+        out_dict["init_extracted"] = None
+    out_dict['orig_xyz'] = orig_xyz
+    out_dict['sample_dir'] = d
+    return out_dict
+
+def process_calculation(d,ad_energy_dict,slab,metal,facet,sites,site_adjacency,pynta_dir,coadmol_E_dict,max_dist=3.0,rxn_alignment_min=0.7,
+                    coad_disruption_tol=1.1,out_file_name="out",init_file_name="init",vib_file_name="vib",is_ad=None):
+    
+    datums_stability = []
+    datum_E = None
+    
+    outdict = extract_sample(d,ad_energy_dict,slab,metal,facet,sites,site_adjacency,pynta_dir,max_dist=max_dist,rxn_alignment_min=rxn_alignment_min,
+                    coad_disruption_tol=coad_disruption_tol,
+                    out_file_name=out_file_name,init_file_name=init_file_name,vib_file_name=vib_file_name,is_ad=is_ad)
+    
+    mol_init = Molecule().from_adjacency_list(outdict["init_extracted"],check_consistency=False)
+    
+    if not outdict["isomorphic"]:
+        datums_stability.append(Datum(mol_init,False))
+
+    if outdict["out"] is not None:
+        mol_out = Molecule().from_adjacency_list(d["out"],check_consistency=False)
+        
+        if len(mol_out.split()) == 1: #ignore if desorbed species
+            if d["valid"] and d["dE"] is not None: #there is an energy value
+                skip = False
+                for at in mol_out.atoms:
+                    n = 0
+                    if at.is_surface_site():
+                        for k,v in mol_out.get_edges(at).items():
+                            if not k.is_surface_site():
+                                n += 1
+                    if n > 1:
+                        skip = True
+                if not skip:
+                    try:
+                        datum_E = Datum(mol_out,d["dE"]*96.48530749925793*1000.0 - get_atom_centered_correction(mol_out,coadmol_E_dict)) #eV to J/mol
+                        datums_stability.append(Datum(mol_out,True))
+                    except KeyError:
+                        pass
+                    
+    
+    return datum_E,datums_stability
