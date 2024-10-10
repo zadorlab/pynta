@@ -1214,3 +1214,24 @@ def get_adsorbed_atom_groups(Nad=3, length=7, r_bonds=None):
         groups.append(g)
 
     return groups
+
+def get_atom_centered_correction(m,coadmol_E_dict):
+    out_structs = split_adsorbed_structures(m,clear_site_info=False)
+    correction = 0.0
+    minE = min(coadmol_E_dict.values())
+    for struct in out_structs:
+        for coadmol,E in coadmol_E_dict.items():
+            if struct.is_isomorphic(coadmol,save_order=True):
+                correction += E - minE
+                break
+    return correction
+
+def get_atom_center_stability(m,coadmol_stability_dict):
+    out_structs = split_adsorbed_structures(m,clear_site_info=False)
+    for struct in out_structs:
+        for coadmol,v in coadmol_stability_dict.items():
+            if struct.is_isomorphic(coadmol,save_order=True):
+                if not v:
+                    return False
+
+    return True
