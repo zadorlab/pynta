@@ -910,21 +910,42 @@ def find_shortest_paths(start, end, path=None):
     
     return None
 
-def split_adsorbed_structures(admol,clear_site_info=True):
+def split_adsorbed_structures(admol,clear_site_info=True,adsorption_info=False,atoms_to_skip=None):
+    """_summary_
+
+    Args:
+        admol (_type_): a Molecule object resolving a slab
+        clear_site_info (bool, optional): clears site identify information. Defaults to True.
+        adsorption_info (bool, optional): also returns the map from atom to index for admol for each surface site structures are split off from. Defaults to False.
+        atoms_to_skip (_type_, optional): list of atoms in admol to not include in the split structures. Defaults to None.
+
+    Returns:
+        _type_: _description_
+    """
     m = admol.copy(deep=True)
-    atoms_to_remove = []
+    
+    if atoms_to_skip is None:
+        atoms_to_remove = []
+        skip_atoms = []
+    else:
+        skip_atoms = [m.atoms[admol.atoms.index(a)] for a in atoms_to_skip]
+        atoms_to_remove = skip_atoms[:]
+    
     for i,at in enumerate(m.atoms):
         if at.is_surface_site():
             bdict = m.get_bonds(at)
             if len(bdict) > 0:
                 for a,b in bdict.items():
-                    if not a.is_surface_site():
+                    if not a.is_surface_site() and (a not in skip_atoms):
                         break
                 else:
                     atoms_to_remove.append(at)
             else:
                 atoms_to_remove.append(at)
-    
+
+    if adsorption_info:
+        adsorbed_atom_dict = {at: i for i,at in enumerate(m.atoms) if at.is_surface_site() and at not in atoms_to_remove}
+
     for at in atoms_to_remove:
         m.remove_atom(at)
     
@@ -938,5 +959,8 @@ def split_adsorbed_structures(admol,clear_site_info=True):
         s.update(sort_atoms=False)
         s.update_connectivity_values()
         s.multiplicity = 1
-    
-    return split_structs
+
+    if adsorption_info:
+        return split_structs,adsorbed_atom_dict
+    else:
+        return split_structs
