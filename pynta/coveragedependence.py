@@ -1892,3 +1892,70 @@ def process_calculation(d,ad_energy_dict,slab,metal,facet,sites,site_adjacency,p
                     
     
     return datum_E,datums_stability
+
+def get_configs_for_calculation(configs_of_concern,configs,computed_configs,tree_regressor,Ncalc_per_iter):
+    
+    group_to_occurence = dict()
+    for m,v in configs_of_concern.items():
+        grps = v[1]
+        for grp in grps:
+            if grp in group_to_occurence:
+                group_to_occurence[grp] += 1
+            else:
+                group_to_occurence[grp] = 1
+                    
+    
+    concern_groups = list(group_to_occurence.keys()) #selected ordering
+    
+    logging.info("found {} total configurations of concern".format(len(configs_of_concern)))
+        
+    group_to_weight = np.array([group_to_occurence[g]*tree_regressor.node_uncertainties[g] for g in concern_groups])
+    
+    config_to_group_fract = dict()
+    for config in configs_of_concern.keys():
+        E,tr,std = configs_of_concern[config]
+        config_group_unc = np.array([tr.count(g)*tree_regressor.node_uncertainties[g] for g in concern_groups])
+        
+        config_to_group_fract[config] = config_group_unc/config_group_unc.sum()
+
+    logging.info("identifying new configurations to calculate")
+    start = time.time()
+    configs_for_calculation = []
+    group_fract_for_calculation = []
+    maxval = 0.0
+    shuffled_configs = configs[:] #list(configs_of_concern.keys())
+    np.random.shuffle(shuffled_configs)
+    
+    for config in shuffled_configs:
+        if config not in config_to_group_fract.keys():
+            logging.error("config not in config_to_group_fract")
+            continue
+        for c in computed_configs:
+            if config is c:
+                break
+        else:
+            if len(configs_for_calculation) < Ncalc_per_iter:
+                configs_for_calculation.append(config)
+                group_fract = config_to_group_fract[config]
+                group_fract_for_calculation.append(group_fract)
+                maxval = np.linalg.norm(sum(group_fract_for_calculation) * group_to_weight, ord=1)
+            else:
+                group_fract = config_to_group_fract[config]
+                g_old_sum = sum(group_fract_for_calculation)
+                maxarglocal = None
+                maxvallocal = maxval
+                for i in range(Ncalc_per_iter):
+                    val = np.linalg.norm((g_old_sum - group_fract_for_calculation[i] + group_fract) * group_to_weight, ord=1)
+                    if val > maxvallocal:
+                        maxarglocal = i
+                        maxvallocal = val
+                        
+                if maxarglocal is not None:
+                    group_fract_for_calculation[maxarglocal] = group_fract
+                    configs_for_calculation[maxarglocal] = config
+                    maxval = maxvallocal
+    
+    end = time.time()
+    logging.info("identified configs to calculate in {} sec".format(end-start))
+    
+    return configs_for_calculation
