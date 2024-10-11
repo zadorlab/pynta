@@ -1934,16 +1934,29 @@ def process_calculation(d,ad_energy_dict,slab,metal,facet,sites,site_adjacency,p
     
     return datum_E,datums_stability
 
-def get_configs_for_calculation(configs_of_concern,configs,computed_configs,tree_regressor,Ncalc_per_iter):
+def get_configs_for_calculation(configs_of_concern_by_admol,configs,computed_configs,tree_regressor,Ncalc_per_iter):
     
     group_to_occurence = dict()
-    for m,v in configs_of_concern.items():
-        grps = v[1]
-        for grp in grps:
+    configs_of_concern = dict()
+    for admol in configs_of_concern_by_admol.keys():
+        configs_of_concern_admol = configs_of_concern_by_admol[admol]
+        group_to_occurence_admol = dict()
+        N = 0 #number of group contributions associated with given admol
+        for m,v in configs_of_concern_admol.items():
+            configs_of_concern[m] = v
+            grps = v[1]
+            for grp in grps:
+                if grp in group_to_occurence_admol:
+                    group_to_occurence_admol[grp] += 1
+                    N += 1
+                else:
+                    group_to_occurence_admol[grp] = 1
+                    N += 1
+        for g,v in group_to_occurence_admol.items():
             if grp in group_to_occurence:
-                group_to_occurence[grp] += 1
+                group_to_occurence[grp] += v/N
             else:
-                group_to_occurence[grp] = 1
+                group_to_occurence[grp] = v/N 
                     
     
     concern_groups = list(group_to_occurence.keys()) #selected ordering
