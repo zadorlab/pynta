@@ -916,6 +916,69 @@ class MolecularHFSP(OptimizationTask):
         
         return FWAction(stored_data={"error": errors,"converged": converged})
 
+def calculate_configruation_energies_firework(admol_name,tree_file,configs_file,coad_stable_sites,Ncoad_isolated,
+                                              coadmol_E_dict,concern_energy_tol=None,out_path=None,parents=[],iter=0,ignore_errors=False):
+    d = {"admol_name": admol_name,"tree_file": tree_file,"configs_file": configs_file,
+         "coad_stable_sites": coad_stable_sites,"Ncoad_isolated": Ncoad_isolated,"coadmol_E_dict": coadmol_E_dict, 
+         "concern_energy_tol": concern_energy_tol}
+    t1 = CalculateConfigurationEnergiesTask(d)
+    if out_path is None: 
+        out_path_energy = os.path.join(os.path.split(tree_file)[0],"Ncoad_energy_"+admol_name+".json")
+        out_path_config = os.path.join(os.path.split(tree_file)[0],"Ncoad_config_"+admol_name+".json")
+        out_path_concern = os.path.join(os.path.split(tree_file)[0],"configs_of_concern_"+admol_name+".json")
+    else:
+        out_path_energy = os.path.join(out_path,"Ncoad_energy_"+admol_name+".json")
+        out_path_config = os.path.join(out_path,"Ncoad_config_"+admol_name+".json")
+        out_path_concern = os.path.join(out_path,"configs_of_concern_"+admol_name+".json")
+    t2 = FileTransferTask({'files': [{'src': "Ncoad_energy_"+admol_name+".json", 'dest': out_path_energy},
+                                     {'src': "Ncoad_config_"+admol_name+".json", 'dest': out_path_config},
+                                     {'src': "configs_of_concern_"+admol_name+".json", 'dest': out_path_concern}], 'mode': 'copy', 'ignore_errors': ignore_errors})
+    return Firework([t1,t2],parents=parents,name=admol_name+"_energies"+str(iter))
+
+@explicit_serialize
+class CalculateConfigurationEnergiesTask:
+    required_params = ["admol_name","tree_file","configs_file","coad_stable_sites","Ncoad_isolated","coadmol_E_dict"]
+    optional_params = ["concern_energy_tol"]
+    def run_task(self, fw_spec):
+        admol_name = self['admol_name']
+        tree_file = self["tree_file"]
+        configs_file = self["configs_file"]
+        coad_stable_sites = self["coad_stable_sites"]
+        Ncoad_isolated = self["Ncoad_isolated"]
+        coadmol_E_dict = {Molecule().from_adjacency_list(k):v for k,v in self["coadmol_E_dict"].items()}
+        concern_energy_tol = self["concern_energy_tol"] if "concern_energy_tol" in self.keys() else None
+        try:
+            nodes = read_nodes(tree_file)
+            root = [n for n in nodes if n.parent is None][0]
+            if len(root.children) == 1: #pairwise only tree
+                tree = MultiEvalSubgraphIsomorphicDecisionTreeRegressor([adsorbate_interaction_decomposition],
+                                                        nodes=nodes)
+            elif len(root.children) == 2:
+                tree = MultiEvalSubgraphIsomorphicDecisionTreeRegressor([adsorbate_interaction_decomposition,adsorbate_triad_interaction_decomposition],
+                                                        nodes=nodes)
+            else:
+                raise ValueError
+            
+            with open(configs_file,'r') as f:
+                configs = [Molecule().from_adjacency_list(m,check_consistency=False) for m in json.load(f)]
+            
+            Ncoad_energy_dict,Ncoad_config_dict,configs_of_concern_admol = get_cov_energies_configs_concern_tree(tree, configs, coad_stable_sites, Ncoad_isolated, concern_energy_tol, 
+                                                coadmol_E_dict=coadmol_E_dict)
+            with open("Ncoad_energy_"+admol_name+".json",'w') as f:
+                json.dump(Ncoad_energy_dict,f)
+            with open("Ncoad_config_"+admol_name+".json",'w') as f:
+                json.dump(Ncoad_config_dict,f)
+            with open("configs_of_concern_"+admol_name+".json"),'w') as f:
+                json.dump({k.to_adjacency_list():v for k,v in configs_of_concern_admol.items()},f)
+                
+        except Exception as e:
+            if not ignore_errors:
+                raise e
+            else:
+                return FWAction(stored_data={"error": e}, exit=True)
+
+        return FWAction()
+
 def map_harmonically_forced_xtb(input):
     tsstruct,atom_bond_potentials,site_bond_potentials,nslab,constraints,ts_path,j,molecule_to_atom_maps,ase_to_mol_num = input
     os.makedirs(os.path.join(ts_path,str(j)))
