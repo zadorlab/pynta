@@ -1151,7 +1151,7 @@ def select_calculations_firework(path,admol_name_path_dict,admol_name_structure_
                        "software_kwargs": software_kwargs, "software_kwargs_TS": software_kwargs_TS, "freeze_ind": freeze_ind, 
                        "fmaxopt": fmaxopt, "concern_energy_tol": concern_energy_tol, "ignore_errors": ignore_errors}
     t1 = SelectCalculationsTask(d)
-    return Firework([t1],parents=parents,name="Training Model "+str(iter),spec={"_priority": 4})
+    return Firework([t1],parents=parents,name="Selecting Calculations "+str(iter),spec={"_priority": 4})
 
 @explicit_serialize
 class SelectCalculationsTask(FiretaskBase):
@@ -1189,7 +1189,7 @@ class SelectCalculationsTask(FiretaskBase):
         fmaxopt = self["fmaxopt"]
         max_iters = self["max_iters"]
         
-        if iters == max_iters: #terminate
+        if iter == max_iters: #terminate
             return FWAction()
         
         coad = admol_name_structure_dict[coadname]
