@@ -873,7 +873,7 @@ def reduce_graph_to_pairs(admol):
         for a2 in adatoms[i+1:]:
             paths = find_shortest_paths(a1,a2)
             if paths is None: #separation between pair is so large the generated site graphs don't connect
-                raise FindingPathError
+                raise FindingPathError(admol.to_adjacency_list())
             for path in paths:
                 surface_save = surface_save | set([a for a in path if a.is_surface_site()])
     
