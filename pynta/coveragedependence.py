@@ -1773,7 +1773,6 @@ def extract_sample(d,ad_energy_dict,slab,metal,facet,sites,site_adjacency,pynta_
     atoms_init = read(os.path.join(d,init_file_name+".xyz"))
     if not os.path.exists(os.path.join(d,out_file_name+".xyz")):
         atoms = None
-        admol = None
     else:
         atoms = read(os.path.join(d,out_file_name+".xyz"))
 
@@ -1801,7 +1800,18 @@ def extract_sample(d,ad_energy_dict,slab,metal,facet,sites,site_adjacency,pynta_
         orig_xyz = os.path.join(pynta_dir,os.sep.join(os.path.normpath(info['xyz']).split(os.sep)[-4:]))
     else:
         orig_xyz = os.path.join(pynta_dir,os.sep.join(os.path.normpath(info['xyz']).split(os.sep)[-3:]))
-            
+    
+    if atoms is None:
+        out_dict["isomorphic"] = False 
+        out_dict["init_info"] = info["adjlist"]
+        out_dict["out"] = None 
+        out_dict["init_extracted"] = None 
+        out_dict["sample_dir"] = d
+        out_dict["orig_xyz"] = orig_xyz
+        out_dict["valid"] = False
+        out_dict["dE"] = None
+        return out_dict
+        
     if info:
         with open(os.path.join(os.path.split(os.path.split(orig_xyz)[0])[0],"info.json"),'r') as f:
             info_clean = json.load(f)
