@@ -987,7 +987,7 @@ def train_covdep_model_firework(path,admol_name_path_dict,admol_name_structure_d
                                 pynta_dir, metal, facet, slab_path, calculation_directories, coadname,
                                 coad_stable_sites, software, software_kwargs, software_kwargs_TS, freeze_ind, fmaxopt, parents=[],Ncalc_per_iter=6,iter=0,concern_energy_tol=None,ignore_errors=False):
     d = {"path": path, "admol_name_path_dict": admol_name_path_dict, "admol_name_structure_dict": {k : v.to_adjacency_list() for k,v in admol_name_structure_dict.items()},
-         "sites": sites, "site_adjacency": site_adjacency, "pynta_dir": pynta_dir, "metal": metal, "facet": facet, "slab_path": slab_path,
+         "sites": sites, "site_adjacency": {str(k):v for k,v in site_adjacency.items()}, "pynta_dir": pynta_dir, "metal": metal, "facet": facet, "slab_path": slab_path,
          "calculation_directories": calculation_directories, "coadname": coadname, "coad_stable_sites": coad_stable_sites,
         "Ncalc_per_iter": Ncalc_per_iter, "iter": iter, "software": software, "software_kwargs": software_kwargs, "software_kwargs_TS": software_kwargs_TS, "freeze_ind": freeze_ind, 
         "fmaxopt": fmaxopt, "concern_energy_tol": concern_energy_tol, "ignore_errors": ignore_errors}
@@ -1005,7 +1005,7 @@ class TrainCovdepModelTask(FiretaskBase):
         admol_name_path_dict = self["admol_name_path_dict"]
         admol_name_structure_dict = {k: Molecule().from_adjacency_list(v,check_consistency=False) for k,v in admol_name_structure_dict.items()}
         sites = self["sites"]
-        site_adjacency = self["site_adjacency"]
+        site_adjacency = {int(k):v for k,v in self["site_adjacency"].items()}
         pynta_dir = self["pynta_dir"]
         metal = self["metal"]
         facet = self["facet"]
@@ -1137,7 +1137,7 @@ def select_calculations_firework(path,admol_name_path_dict,admol_name_structure_
                                 pynta_dir, metal, facet, slab_path, calculation_directories, coadname,
                                 coad_stable_sites, software, software_kwargs, software_kwargs_TS, freeze_ind, fmaxopt, parents=[],Ncalc_per_iter=6,iter=0,concern_energy_tol=None,ignore_errors=False):
     d = {"path": path,"admol_name_path_dict": admol_name_path_dict,"admol_name_structure_dict": {k:v.to_adjacency_list() for k,v in admol_name_structure_dict.items()},
-         "sites": sites, "site_adjacency": site_adjacency, "pynta_dir": pynta_dir, "metal": metal, "facet": facet, "slab_path": slab_path,
+         "sites": sites, "site_adjacency": {str(k): v for k,v in site_adjacency.items()}, "pynta_dir": pynta_dir, "metal": metal, "facet": facet, "slab_path": slab_path,
          "calculation_directories": calculation_directories, "coadname": coadname, "coad_stable_sites": coad_stable_sites,
          "Ncalc_per_iter": Ncalc_per_iter, "software": software,
                        "software_kwargs": software_kwargs, "software_kwargs_TS": software_kwargs_TS, "freeze_ind": freeze_ind, 
@@ -1156,7 +1156,7 @@ class SelectCalculationsTask(FiretaskBase):
         admol_name_path_dict = self["admol_name_path_dict"]
         admol_name_structure_dict = {k: Molecule().from_adjacency_list(v,check_consistency=False) for k,v in admol_name_structure_dict.items()}
         sites = self["sites"]
-        site_adjacency = self["site_adjacency"]
+        site_adjacency = {int(k):v for k,v in self["site_adjacency"].items()}
         pynta_dir = self["pynta_dir"]
         metal = self["metal"]
         facet = self["facet"]
