@@ -1053,8 +1053,7 @@ class TrainCovdepModelTask(FiretaskBase):
                 coadmol_stability_dict[out_struct_init] = False
     
         if not os.path.exists(os.path.join(path,"Configurations")):
-            info_paths = {admol_name: os.path.join(os.path.split(os.path.split(p)[0])[0],"info.json") for adname,p in admol_name_path_dict.items()}
-            get_unstable_pairs(pairsdir,adsorbate_dir,sites,site_adjacency,nslab,max_dist=3.0,show=False)
+            info_paths = {adname: os.path.join(os.path.split(os.path.split(p)[0])[0],"info.json") for adname,p in admol_name_path_dict.items()}
             unstable_pairs = get_unstable_pairs(os.path.join(path,'pairs'),
                                 os.path.join(pynta_dir,"Adsorbates"),
                                 sites,site_adjacency,nslab,max_dist=np.inf,show=False, infopath_dict=info_paths)
