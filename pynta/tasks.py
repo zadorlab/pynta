@@ -983,6 +983,156 @@ class CalculateConfigurationEnergiesTask(FiretaskBase):
 
         return FWAction()
 
+def train_covdep_model_firework(path,admol_name_path_dict,admol_name_structure_dict,sites,site_adjacency,
+                                pynta_dir, metal, facet, slab_path, calculation_directories, coadname,
+                                coad_stable_sites, software, software_kwargs, software_kwargs_TS, freeze_ind, fmaxopt, parents=[],Ncalc_per_iter=6,iter=0,concern_energy_tol=None,ignore_errors=False):
+    d = {"path": path, "admol_name_path_dict": admol_name_path_dict, "admol_name_structure_dict": {k : v.to_adjacency_list() for k,v in admol_name_structure_dict.items()},
+         "sites": sites, "site_adjacency": site_adjacency, "pynta_dir": pynta_dir, "metal": metal, "facet": facet, "slab_path": slab_path,
+         "calculation_directories": calculation_directories, "coadname": coadname, "coad_stable_sites": coad_stable_sites,
+        "Ncalc_per_iter": Ncalc_per_iter, "iter": iter, "software": software, "software_kwargs": software_kwargs, "software_kwargs_TS": software_kwargs_TS, "freeze_ind": freeze_ind, 
+        "fmaxopt": fmaxopt, "concern_energy_tol": concern_energy_tol, "ignore_errors": ignore_errors}
+    t1 = TrainCovdepModelTask(d)
+    return Firework([t1],parents=parents,name="Training Model "+str(iter),spec={"_allow_fizzled_parents":True, "_priority": 4})
+
+@explicit_serialize
+class TrainCovdepModelTask(FiretaskBase):
+    required_params = ["path","admol_name_path_dict","admol_name_structure_dict","sites","site_adjacency", "pynta_dir", "metal", "facet",
+                       "slab_path", "calculation_directories", "coadname", "coad_stable_sites", "Ncalc_per_iter", "iter", "software",
+                       "software_kwargs", "software_kwargs_TS", "freeze_ind", "fmaxopt"]
+    optional_params = ["concern_energy_tol","ignore_errors"]
+    def run_task(self, fw_spec):
+        path = self["path"]
+        admol_name_path_dict = self["admol_name_path_dict"]
+        admol_name_structure_dict = {k: Molecule().from_adjacency_list(v,check_consistency=False) for k,v in admol_name_structure_dict.items()}
+        sites = self["sites"]
+        site_adjacency = self["site_adjacency"]
+        pynta_dir = self["pynta_dir"]
+        metal = self["metal"]
+        facet = self["facet"]
+        slab_path = self["slab_path"]
+        calculation_directories = self["calculation_directories"]
+        coadname  = self["coadname"]
+        Ncalc_per_iter = self["Ncalc_per_iter"]
+        iter = self["iter"]
+        coad_stable_sites = self["coad_stable_sites"]
+        concern_energy_tol = self["concern_energy_tol"] if "concern_energy_tol" in self.keys() else None
+        ignore_errors = self["ignore_errors"] if "ignore_errors" in self.keys() else False
+        software_kwargs = self["software_kwargs"]
+        software = self["software"]
+        freeze_ind = self["freeze_ind"]
+        software_kwargs_TS = self["software_kwargs_TS"]
+        fmaxopt = self["fmaxopt"]
+        
+        coad = admol_name_structure_dict[coadname]
+        
+        coad_ad_path = admol_name_path_dict[coadmol]
+        
+        slab = read(slab_path)
+        nslab = len(nslab)
+        ad_energy_dict = get_lowest_adsorbate_energies(os.path.join(pynta_dir,"Adsorbates"))
+        Es = get_adsorbate_energies(coad_ad_path)[0]
+        coadmol_E_dict = dict()
+        coadmol_stability_dict = dict()
+        for p in os.listdir(coad_ad_path):
+            if p == "info.json":
+                continue
+            admol_init,neighbor_sites_init,ninds_init = generate_adsorbate_2D(read(os.path.join(coad_path,p,p+"_init.xyz")),sites,site_adjacency,nslab,max_dist=np.inf)
+            admol,neighbor_sites,ninds = generate_adsorbate_2D(read(os.path.join(coad_path,p,p+".xyz")),sites,site_adjacency,nslab,max_dist=np.inf)
+            out_struct = split_adsorbed_structures(admol,clear_site_info=False)[0]
+            out_struct_init = split_adsorbed_structures(admol_init,clear_site_info=False)[0]
+            coadmol_E_dict[out_struct] = Es[p] 
+            if admol_init.is_isomorphic(admol,save_order=True):
+                coadmol_stability_dict[out_struct_init] = True
+            else:
+                coadmol_stability_dict[out_struct_init] = False
+         
+        try:
+            if not os.path.exists(os.path.join(path,"Configurations")):
+                unstable_pairs = get_unstable_pairs(os.path.join(path,'pairs'),
+                                    os.path.join(pynta_dir,"Adsorbates"),
+                                    sites,site_adjacency,nslab,max_dist=np.inf,show=False)
+                
+                os.makedirs(os.path.join(path,"Configurations"))
+                for admol_name,admol in admol_name_structure_dict.items():
+                    configs = get_configurations(admol, coad, coad_stable_sites,  coadmol_stability_dict=coadmol_stability_dict, unstable_groups=unstable_pairs,
+                        coadmol_E_dict=coadmol_E_dict)
+                    
+                    with open(os.path.join(path,"Configurations",admol_name+".json"),'w') as f:
+                        json.dump([x.to_adjacency_list() for x in configs],f)
+            
+            if iter > 1:
+                with open(os.path.join(path,"pairs_datums.json"),'r') as f:
+                    pairs_datums = [Datum(mol=k.to_adjacency_list(), value=v) for k,v in json.load(f)]
+                with open(os.path.join(path,"Iterations",iter-1,"cumulative_sample_datums.json"),'r') as f:
+                    old_sample_datums = [Datum(mol=k.to_adjacency_list(), value=v) for k,v in json.load(f)]
+            elif iter == 1:
+                with open(os.path.join(path,"pairs_datums.json"),'r') as f:
+                    pairs_datums = [Datum(mol=k.to_adjacency_list(), value=v) for k,v in json.load(f)]
+                old_sample_datums = [] 
+            
+            if iter == 0:
+                computed_configs = []
+            else:
+                with open(os.path.join(path,"Iterations",str(iter-1),"computed_configurations.json"),'r') as f:
+                    computed_configs = [Molecule().from_adjacency_list(x,check_consistency=False) for x in json.load(f)]
+            
+            new_datums_E = []
+            new_computed_configs = []
+            for d in calculation_directories:
+                with open(os.path.join(d,"info.json"),'r') as f:
+                    info = json.load(f)
+                init_config = Molecule().from_adjacency_list(info['adjlist'],check_consistency=False)
+                new_computed_configs.append(init_config)
+                datum_E,datums_stability = process_calculation(d,ad_energy_dict,slab,metal,facet,sites,site_adjacency,pynta_dir,coadmol_E_dict,max_dist=3.0,rxn_alignment_min=0.7,
+                    coad_disruption_tol=1.1,out_file_name="out",init_file_name="init",vib_file_name="vib",is_ad=None)
+                new_datums_E.append(datum_E)
+                if not datum_E.mol.is_isomorphic(init_config,save_order=True):
+                    new_computed_configs.append(datum_E.mol)
+            
+            with open(os.path.join(path,"Iterations",str(iter),"computed_configurations.json"),'w') as f:
+                json.dump([x.to_adjacency_list() for x in computed_configs+new_computed_configs])
+            
+            if iter == 0:
+                pairs_datums = new_datums_E 
+                with open(os.path.join(path,"pairs_datums.json"),'r') as f:
+                   json.dump({d.mol.to_adjacency_list(): d.value for d in pairs_datums},f)
+                sampling_datums = []
+            else:
+                sampling_datums = old_sample_datums + new_datums_E
+                with open(os.path.join(path,"Iterations",iter,"cumulative_sample_datums.json"),'r') as f:
+                    json.dump({d.mol.to_adjacency_list(): d.value for d in sampling_datums},f)
+                
+            Nconfigs = len(admol_name_structure_dict)
+            Ncoads = 1
+            tree = train_sidt_cov_dep_regressor(pairs_datums,sampling_datums,Nconfigs,Ncoads,r_site=None,
+                                r_atoms=None,node_fract_training=0.9)
+            
+            tree_file = os.path.join(path,"Iterations",str(iter),"regressor.json")
+            write_nodes(tree,tree_file)
+            
+            config_E_fws = []
+            for admol_name in admol_name_path_dict.keys():
+                st = admol_name_structure_dict[admol_name]
+                Nocc_isolated = len([a for a in st.atoms if a.is_surface_site() and any(not a2.is_surface_site() for a2 in a.bonds.keys())])
+                fw = calculate_configruation_energies_firework(admol_name,tree_file,path,coad_stable_sites,Nocc_isolated,
+                                              coadmol_E_dict,concern_energy_tol=concern_energy_tol,parents=[],iter=iter,ignore_errors=ignore_errors)
+                config_E_fws.append(fw)
+            
+            scfw = select_calculations_firework(path,admol_name_path_dict,admol_name_structure_dict,sites,site_adjacency,
+                                pynta_dir, metal, facet, slab_path, calculation_directories, coadname,
+                                coad_stable_sites, software, software_kwargs, software_kwargs_TS, freeze_ind, fmaxopt, parents=config_E_fws,Ncalc_per_iter=Ncalc_per_iter,iter=iter,
+                                concern_energy_tol=concern_energy_tol,ignore_errors=ignore_errors) 
+            
+            newwf = Workflow(config_E_fws+[scfw],name="Select Calculations "+str(iter))
+                
+        except Exception as e:
+            if not ignore_errors:
+                raise e
+            else:
+                return FWAction(stored_data={"error": e}, exit=True)
+        
+        return FWAction(detours=newwf)
+
 def map_harmonically_forced_xtb(input):
     tsstruct,atom_bond_potentials,site_bond_potentials,nslab,constraints,ts_path,j,molecule_to_atom_maps,ase_to_mol_num = input
     os.makedirs(os.path.join(ts_path,str(j)))
