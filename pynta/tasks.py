@@ -1054,9 +1054,10 @@ class TrainCovdepModelTask(FiretaskBase):
     
         if not os.path.exists(os.path.join(path,"Configurations")):
             info_paths = {adname: os.path.join(os.path.split(os.path.split(p)[0])[0],"info.json") for adname,p in admol_name_path_dict.items()}
+            imag_freq_paths = {adname: os.path.join(os.path.split(p)[0],"vib.json_vib.json") for adname,p in admol_name_path_dict.items()}
             unstable_pairs = get_unstable_pairs(os.path.join(path,'pairs'),
                                 os.path.join(pynta_dir,"Adsorbates"),
-                                sites,site_adjacency,nslab,max_dist=np.inf,show=False, infopath_dict=info_paths)
+                                sites,site_adjacency,nslab,max_dist=np.inf,show=False, infopath_dict=info_paths, imag_freq_path_dict=imag_freq_paths)
             
             os.makedirs(os.path.join(path,"Configurations"))
             for admol_name,admol in admol_name_structure_dict.items():
