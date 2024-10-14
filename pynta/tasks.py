@@ -1229,7 +1229,6 @@ class SelectCalculationsTask(FiretaskBase):
         nodes = read_nodes(os.path.join(path,"Iterations",str(iter),"regressor.json"))
         tree = MultiEvalSubgraphIsomorphicDecisionTreeRegressor([adsorbate_interaction_decomposition,adsorbate_triad_interaction_decomposition],
                                             nodes=nodes)
-        tree.estimate_uncertainty()
         
         #load computed configs
         with open(os.path.join(path,"Iterations",str(iter),"computed_configurations.json"),'r') as f:
