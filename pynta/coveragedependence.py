@@ -5,7 +5,7 @@ from ase.geometry import get_distances
 from ase.visualize import view
 from ase.neighborlist import natural_cutoffs
 from acat.adsorption_sites import SlabAdsorptionSites
-from pynta.utils import get_unique_sym, get_occupied_sites, sites_match
+from pynta.utils import get_unique_sym, get_occupied_sites, sites_match, SiteOccupationException
 from pynta.mol import *
 from pynta.geometricanalysis import *
 from pynta.tasks import *
@@ -26,7 +26,8 @@ import os
 import itertools 
 import logging
 
-def get_unstable_pairs(pairsdir,adsorbate_dir,sites,site_adjacency,nslab,max_dist=3.0,show=False,infopath_dict=None,metal=None,facet=None):
+def get_unstable_pairs(pairsdir,adsorbate_dir,sites,site_adjacency,nslab,max_dist=3.0,show=False,metal=None,facet=None,
+                       infopath_dict=None,imag_freq_path_dict=None):
     out_pairs = []
     coadname_dict = {"O=[Pt]": 1, "N#[Pt]": 1, "O[Pt]": 2, "[Pt]": 1}
     allowed_structure_site_structure_map = generate_allowed_structure_site_structures(adsorbate_dir,sites,site_adjacency,nslab,max_dist=max_dist,cut_multidentate_off_num=None)
@@ -37,6 +38,14 @@ def get_unstable_pairs(pairsdir,adsorbate_dir,sites,site_adjacency,nslab,max_dis
             continue
         adname = pair.split("_")[0]
         coadname = pair.split("_")[1]
+        if infopath_dict:
+            info_path = infopath_dict[adname]
+        else:
+            info_path = None
+        if imag_freq_path_dict:
+            imag_freq_path = imag_freq_path_dict[adname]
+        else:
+            imag_freq_path = None
         for num in os.listdir(os.path.join(pairsdir,pair)):
             p = os.path.join(pairsdir,pair,num) 
             if num.isdigit() and os.path.isdir(p):
@@ -66,7 +75,7 @@ def get_unstable_pairs(pairsdir,adsorbate_dir,sites,site_adjacency,nslab,max_dis
                 g = extract_pair_graph(init,sites,site_adjacency,nslab,max_dist=max_dist,
                                        cut_multidentate_off_num=coadname_dict[coadname],
                                        allowed_structure_site_structures=allowed_structure_site_structure_map,
-                                       is_ts=is_ts,metal=metal,facet=facet,info_path=infopath_dict[adname])
+                                       is_ts=is_ts,metal=metal,facet=facet,info_path=info_path,imag_freq_path=imag_freq_path)
                     
                 
                 #g.update(sort_atoms=False)
@@ -81,7 +90,7 @@ def get_unstable_pairs(pairsdir,adsorbate_dir,sites,site_adjacency,nslab,max_dis
                     try:
                         gout = extract_pair_graph(final,sites,site_adjacency,nslab,max_dist=max_dist,
                                                   allowed_structure_site_structures=allowed_structure_site_structure_map,is_ts=is_ts,
-                                                  metal=metal,facet=facet,info_path=infopath_dict[adname])
+                                                  metal=metal,facet=facet,info_path=info_path,imag_freq_path=imag_freq_path)
                         if len(gout.atoms) != len(g.atoms):
                             out_pairs.append(g.to_group())
                             if show:
@@ -89,7 +98,7 @@ def get_unstable_pairs(pairsdir,adsorbate_dir,sites,site_adjacency,nslab,max_dis
                                 config_show.append(final)
                             continue
                         #gout.update(sort_atoms=False)
-                    except FindingPathError:
+                    except (FindingPathError, SiteOccupationException):
                         continue
                     
                     if not gout.is_isomorphic(g,save_order=True,strict=False):
