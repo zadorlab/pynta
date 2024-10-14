@@ -1531,7 +1531,7 @@ def evaluate_from_datums(config,energy_datums):
     else:
         return None
 
-def get_cov_energies_configs_concern_tree(tree_interaction_regressor, configs, coad_stable_sites, Ncoad_isolated, concern_energy_tol, tree_atom_regressor=None, coadmol_E_dict=None, 
+def get_cov_energies_configs_concern_tree(tree_interaction_regressor, configs, coad_stable_sites, Ncoad_isolated, concern_energy_tol=None, tree_atom_regressor=None, coadmol_E_dict=None, 
                      stability_datums=None):
     Ncoad_energy_dict = dict()
     Ncoad_config_dict = dict()
@@ -1575,7 +1575,7 @@ def get_cov_energies_configs_concern_tree(tree_interaction_regressor, configs, c
     for m in config_to_Eunctr.keys():
         Ncoad = len([a for a in m.atoms if a.is_surface_site() and any(not a2.is_surface_site() for a2 in a.bonds.keys())]) - Ncoad_isolated
         E,std,tr = config_to_Eunctr[m]
-        if stable and (concern_energy_tol is None or (Ncoad_energy_dict[Ncoad] + concern_energy_tol > E)):
+        if ((concern_energy_tol is None) or (Ncoad_energy_dict[Ncoad] + concern_energy_tol > E)):
             configs_of_concern[m] = (E,tr,std)
     
     return Ncoad_energy_dict,Ncoad_config_dict,configs_of_concern
