@@ -1703,7 +1703,7 @@ def load_coverage_delta(d,ad_energy_dict,slab,metal,facet,sites,site_adjacency,t
             admol,neighbor_sites,ninds = generate_TS_2D(atoms, ts_info_path, metal, facet, sites, site_adjacency, len(slab), imag_freq_path=os.path.join(d,"vib.0.traj"), max_dist=np.inf, allowed_structure_site_structures=allowed_structure_site_structures)
         except (SiteOccupationException,TooManyElectronsException, ValueError) as e:
             return None,None,None,None
-        vibdata = get_vibdata(os.path.join(d,"out.xyz"),os.path.join(d,"vib.json"),len(slab))
+        vibdata = get_vibdata(os.path.join(d,out_file_name+".xyz"),os.path.join(d,vib_file_name+".json"),len(slab))
         Ecad = atoms.get_potential_energy() - slab.get_potential_energy() + vibdata.get_zero_point_energy()
         
         
