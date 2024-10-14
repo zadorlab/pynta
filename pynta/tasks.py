@@ -1027,7 +1027,7 @@ class TrainCovdepModelTask(FiretaskBase):
         coad = admol_name_structure_dict[coadname]
         
         coad_path = os.path.join(pynta_dir,"Adsorbates",coadname)
-        
+        allowed_structure_site_structures = generate_allowed_structure_site_structures(os.path.join(pynta_dir,"Adsorbates"),sites,site_adjacency,nslab,max_dist=np.inf)
         slab = read(slab_path)
         nslab = len(slab)
         ad_energy_dict = get_lowest_adsorbate_energies(os.path.join(pynta_dir,"Adsorbates"))
@@ -1037,8 +1037,8 @@ class TrainCovdepModelTask(FiretaskBase):
         for p in os.listdir(coad_path):
             if p == "info.json":
                 continue
-            admol_init,neighbor_sites_init,ninds_init = generate_adsorbate_2D(read(os.path.join(coad_path,p,p+"_init.xyz")),sites,site_adjacency,nslab,max_dist=np.inf)
-            admol,neighbor_sites,ninds = generate_adsorbate_2D(read(os.path.join(coad_path,p,p+".xyz")),sites,site_adjacency,nslab,max_dist=np.inf)
+            admol_init,neighbor_sites_init,ninds_init = generate_adsorbate_2D(read(os.path.join(coad_path,p,p+"_init.xyz")),sites,site_adjacency,nslab,max_dist=np.inf,allowed_structure_site_structures=allowed_structure_site_structures)
+            admol,neighbor_sites,ninds = generate_adsorbate_2D(read(os.path.join(coad_path,p,p+".xyz")),sites,site_adjacency,nslab,max_dist=np.inf,allowed_structure_site_structures=allowed_structure_site_structures)
             out_struct = split_adsorbed_structures(admol,clear_site_info=False)[0]
             out_struct_init = split_adsorbed_structures(admol_init,clear_site_info=False)[0]
             coadmol_E_dict[out_struct] = Es[p] 
