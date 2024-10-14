@@ -1465,7 +1465,10 @@ def add_ad_to_site(admol,coad,site):
     
     admolout.clear_labeled_atoms()
     admolout.multiplicity=1
-    admolout.update(sort_atoms=False)
+    try:
+        admolout.update(sort_atoms=False)
+    except Exception as e:
+        raise ValueError((e,admol.to_adjacency_list(),coad.to_adjacency_list(),admolout.to_adjacency_list()))
     admolout.update_connectivity_values()
     
     return admolout
