@@ -985,11 +985,11 @@ class CalculateConfigurationEnergiesTask(FiretaskBase):
 
 def train_covdep_model_firework(path,admol_name_path_dict,admol_name_structure_dict,sites,site_adjacency,
                                 pynta_dir, metal, facet, slab_path, calculation_directories, coadname,
-                                coad_stable_sites, software, software_kwargs, software_kwargs_TS, freeze_ind, fmaxopt,  parents=[],Ncalc_per_iter=6,iter=0,concern_energy_tol=None,ignore_errors=False):
+                                coad_stable_sites, software, software_kwargs, software_kwargs_TS, freeze_ind, fmaxopt,  parents=[],Ncalc_per_iter=6,iter=0,max_iters=6,concern_energy_tol=None,ignore_errors=False):
     d = {"path": path, "admol_name_path_dict": admol_name_path_dict, "admol_name_structure_dict": {k : v.to_adjacency_list() for k,v in admol_name_structure_dict.items()},
          "sites": sites, "site_adjacency": {str(k):v for k,v in site_adjacency.items()}, "pynta_dir": pynta_dir, "metal": metal, "facet": facet, "slab_path": slab_path,
          "calculation_directories": calculation_directories, "coadname": coadname, "coad_stable_sites": coad_stable_sites, 
-        "Ncalc_per_iter": Ncalc_per_iter, "iter": iter, "software": software, "software_kwargs": software_kwargs, "software_kwargs_TS": software_kwargs_TS, "freeze_ind": freeze_ind, 
+        "Ncalc_per_iter": Ncalc_per_iter, "iter": iter, "max_iters": max_iters, "software": software, "software_kwargs": software_kwargs, "software_kwargs_TS": software_kwargs_TS, "freeze_ind": freeze_ind, 
         "fmaxopt": fmaxopt, "concern_energy_tol": concern_energy_tol, "ignore_errors": ignore_errors}
     t1 = TrainCovdepModelTask(d)
     return Firework([t1],parents=parents,name="Training Model "+str(iter),spec={"_allow_fizzled_parents":True, "_priority": 4})
@@ -997,7 +997,7 @@ def train_covdep_model_firework(path,admol_name_path_dict,admol_name_structure_d
 @explicit_serialize
 class TrainCovdepModelTask(FiretaskBase):
     required_params = ["path","admol_name_path_dict","admol_name_structure_dict","sites","site_adjacency", "pynta_dir", "metal", "facet",
-                       "slab_path", "calculation_directories", "coadname", "coad_stable_sites", "Ncalc_per_iter", "iter", "software", 
+                       "slab_path", "calculation_directories", "coadname", "coad_stable_sites", "Ncalc_per_iter", "iter", "max_iters", "software", 
                        "software_kwargs", "software_kwargs_TS", "freeze_ind", "fmaxopt"]
     optional_params = ["concern_energy_tol","ignore_errors"]
     def run_task(self, fw_spec):
@@ -1027,7 +1027,7 @@ class TrainCovdepModelTask(FiretaskBase):
         freeze_ind = self["freeze_ind"]
         software_kwargs_TS = self["software_kwargs_TS"]
         fmaxopt = self["fmaxopt"]
-        
+        max_iters = self["max_iters"]
         
         coad = admol_name_structure_dict[coadname]
         coad_simple = remove_slab(coad)
@@ -1135,7 +1135,7 @@ class TrainCovdepModelTask(FiretaskBase):
         scfw = select_calculations_firework(path,admol_name_path_dict,admol_name_structure_dict,sites,site_adjacency,
                             pynta_dir, metal, facet, slab_path, calculation_directories, coadname,
                             coad_stable_sites, software, software_kwargs, software_kwargs_TS, freeze_ind, fmaxopt, parents=config_E_fws,Ncalc_per_iter=Ncalc_per_iter,iter=iter,
-                            concern_energy_tol=concern_energy_tol,ignore_errors=ignore_errors) 
+                            max_iters=max_iters,concern_energy_tol=concern_energy_tol,ignore_errors=ignore_errors) 
         
         newwf = Workflow(config_E_fws+[scfw],name="Select Calculations "+str(iter))
         
@@ -1143,20 +1143,20 @@ class TrainCovdepModelTask(FiretaskBase):
 
 def select_calculations_firework(path,admol_name_path_dict,admol_name_structure_dict,sites,site_adjacency,
                                 pynta_dir, metal, facet, slab_path, calculation_directories, coadname,
-                                coad_stable_sites, software, software_kwargs, software_kwargs_TS, freeze_ind, fmaxopt, parents=[],Ncalc_per_iter=6,iter=0,concern_energy_tol=None,ignore_errors=False):
+                                coad_stable_sites, software, software_kwargs, software_kwargs_TS, freeze_ind, fmaxopt, parents=[],Ncalc_per_iter=6,iter=0,max_iters=6,concern_energy_tol=None,ignore_errors=False):
     d = {"path": path,"admol_name_path_dict": admol_name_path_dict,"admol_name_structure_dict": {k:v.to_adjacency_list() for k,v in admol_name_structure_dict.items()},
          "sites": sites, "site_adjacency": {str(k): v for k,v in site_adjacency.items()}, "pynta_dir": pynta_dir, "metal": metal, "facet": facet, "slab_path": slab_path,
          "calculation_directories": calculation_directories, "coadname": coadname, "coad_stable_sites": coad_stable_sites, 
-         "Ncalc_per_iter": Ncalc_per_iter, "software": software,
+         "Ncalc_per_iter": Ncalc_per_iter, "software": software, "iter": iter, "max_iters": max_iters,
                        "software_kwargs": software_kwargs, "software_kwargs_TS": software_kwargs_TS, "freeze_ind": freeze_ind, 
                        "fmaxopt": fmaxopt, "concern_energy_tol": concern_energy_tol, "ignore_errors": ignore_errors}
-    t1 = TrainCovdepModelTask(d)
+    t1 = SelectCalculationsTask(d)
     return Firework([t1],parents=parents,name="Training Model "+str(iter),spec={"_priority": 4})
 
 @explicit_serialize
 class SelectCalculationsTask(FiretaskBase):
     required_params = ["path","admol_name_path_dict","admol_name_structure_dict","sites","site_adjacency", "pynta_dir", "metal", "facet",
-                       "slab_path", "calculation_directories", "coadname", "coad_stable_sites", "iter", "software",
+                       "slab_path", "calculation_directories", "coadname", "coad_stable_sites", "iter", "software", "max_iters",
                        "software_kwargs", "software_kwargs_TS", "freeze_ind", "fmaxopt"]
     optional_params = ["concern_energy_tol","ignore_errors"]
     def run_task(self, fw_spec):
@@ -1187,6 +1187,10 @@ class SelectCalculationsTask(FiretaskBase):
         freeze_ind = self["freeze_ind"]
         software_kwargs_TS = self["software_kwargs_TS"]
         fmaxopt = self["fmaxopt"]
+        max_iters = self["max_iters"]
+        
+        if iters == max_iters: #terminate
+            return FWAction()
         
         coad = admol_name_structure_dict[coadname]
         
@@ -1284,7 +1288,7 @@ class SelectCalculationsTask(FiretaskBase):
         tfw = train_covdep_model_firework(path,admol_name_path_dict,admol_name_structure_dict,sites,site_adjacency,
                             pynta_dir, metal, facet, slab_path, calculation_directories, coadname,
                             coad_stable_sites, software, software_kwargs, software_kwargs_TS, freeze_ind, fmaxopt, parents=sample_fws,
-                            Ncalc_per_iter=Ncalc_per_iter,iter=iter+1,concern_energy_tol=concern_energy_tol,ignore_errors=ignore_errors)
+                            Ncalc_per_iter=Ncalc_per_iter,iter=iter+1,max_iters=max_iters,concern_energy_tol=concern_energy_tol,ignore_errors=ignore_errors)
         newwf = Workflow(fws+[tfw],name="Train Iteration "+str(iter+1))
         
         return FWAction(detours=newwf)

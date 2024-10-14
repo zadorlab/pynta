@@ -583,7 +583,7 @@ class CoverageDependence:
     def __init__(self,path,metal,surface_type,repeats,pynta_run_directory,software,software_kwargs,label,sites,site_adjacency,coad_stable_sites,adsorbates=[],transition_states=dict(),coadsorbates=[],
                  max_dist=3.0,frozen_layers=2,fmaxopt=0.05,Ncalc_per_iter=6,TS_opt_software_kwargs=None,launchpad_path=None,
                  fworker_path=None,queue=False,njobs_queue=0,reset_launchpad=False,queue_adapter_path=None,
-                 num_jobs=25,surrogate_metal=None,concern_energy_tol=None):
+                 num_jobs=25,surrogate_metal=None,concern_energy_tol=None,max_iters=np.inf):
         self.path = path
         self.metal = metal
         self.repeats = repeats
@@ -617,6 +617,7 @@ class CoverageDependence:
         self.freeze_ind = int((self.nslab/self.layers)*self.frozen_layers)
         self.fmaxopt = fmaxopt
         self.label = label
+        self.max_iters = max_iters
         
         if launchpad_path:
             launchpad = LaunchPad.from_file(launchpad_path)
@@ -729,7 +730,7 @@ class CoverageDependence:
         fw = train_covdep_model_firework(self.path,admol_name_path_dict,admol_name_structure_dict,self.sites,self.site_adjacency,
                                 self.pynta_run_directory, self.metal, self.surface_type, self.slab_path, calculation_directories, self.coadsorbates[0], 
                                 self.coad_stable_sites, self.software, self.software_kwargs, self.software_kwargs_TS, self.freeze_ind, self.fmaxopt,
-                                parents=self.fws, 
+                                parents=self.fws, max_iters=self.max_iters,
                                 Ncalc_per_iter=self.Ncalc_per_iter,iter=0,concern_energy_tol=self.concern_energy_tol,ignore_errors=True)
 
         self.fws.append(fw)
