@@ -1003,7 +1003,7 @@ class TrainCovdepModelTask(FiretaskBase):
     def run_task(self, fw_spec):
         path = self["path"]
         admol_name_path_dict = self["admol_name_path_dict"]
-        admol_name_structure_dict = {k: Molecule().from_adjacency_list(v,check_consistency=False) for k,v in admol_name_structure_dict.items()}
+        admol_name_structure_dict = {k: Molecule().from_adjacency_list(v,check_consistency=False) for k,v in self["admol_name_structure_dict"].items()}
         sites = self["sites"]
         site_adjacency = {int(k):v for k,v in self["site_adjacency"].items()}
         pynta_dir = self["pynta_dir"]
@@ -1154,7 +1154,7 @@ class SelectCalculationsTask(FiretaskBase):
     def run_task(self, fw_spec):
         path = self["path"]
         admol_name_path_dict = self["admol_name_path_dict"]
-        admol_name_structure_dict = {k: Molecule().from_adjacency_list(v,check_consistency=False) for k,v in admol_name_structure_dict.items()}
+        admol_name_structure_dict = {k: Molecule().from_adjacency_list(v,check_consistency=False) for k,v in self["admol_name_structure_dict"].items()}
         sites = self["sites"]
         site_adjacency = {int(k):v for k,v in self["site_adjacency"].items()}
         pynta_dir = self["pynta_dir"]
