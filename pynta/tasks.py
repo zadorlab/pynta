@@ -953,7 +953,7 @@ class CalculateConfigurationEnergiesTask(FiretaskBase):
         
         try:
             nodes = read_nodes(tree_file)
-            root = [n for n in nodes if n.parent is None][0]
+            root = [n for n in nodes.values() if n.parent is None][0]
             if len(root.children) == 1: #pairwise only tree
                 tree = MultiEvalSubgraphIsomorphicDecisionTreeRegressor([adsorbate_interaction_decomposition],
                                                         nodes=nodes)
