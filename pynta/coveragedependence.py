@@ -1771,17 +1771,22 @@ def extract_sample(d,ad_energy_dict,slab,metal,facet,sites,site_adjacency,pynta_
     out_dict = dict()
     
     atoms_init = read(os.path.join(d,init_file_name+".xyz"))
-    atoms = read(os.path.join(d,out_file_name+".xyz"))
+    if not os.path.exists(os.path.join(d,out_file_name+".xyz")):
+        atoms = None
+        admol = None
+    else:
+        atoms = read(os.path.join(d,out_file_name+".xyz"))
+
     nslab = len(slab)
     
     if len(atoms_init) < len(slab): #gas phase
         return None
     #view(atoms_init)
     #view(atoms)
-    try:
-        vibdata = get_vibdata(os.path.join(d,out_file_name+".xyz"),os.path.join(d,vib_file_name+".json"),len(slab))
-    except:
-        vibdata = None
+    # try:
+    #     vibdata = get_vibdata(os.path.join(d,out_file_name+".xyz"),os.path.join(d,vib_file_name+".json"),len(slab))
+    # except:
+    #     vibdata = None
 
     try:
         with open(os.path.join(d,"info.json"),'r') as f:
