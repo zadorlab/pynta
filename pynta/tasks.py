@@ -1029,7 +1029,7 @@ class TrainCovdepModelTask(FiretaskBase):
         coad_path = os.path.join(pynta_dir,"Adsorbates",coadname)
         
         slab = read(slab_path)
-        nslab = len(nslab)
+        nslab = len(slab)
         ad_energy_dict = get_lowest_adsorbate_energies(os.path.join(pynta_dir,"Adsorbates"))
         Es = get_adsorbate_energies(coad_path)[0]
         coadmol_E_dict = dict()
