@@ -26,7 +26,7 @@ import os
 import itertools 
 import logging
 
-def get_unstable_pairs(pairsdir,adsorbate_dir,sites,site_adjacency,nslab,max_dist=3.0,show=False):
+def get_unstable_pairs(pairsdir,adsorbate_dir,sites,site_adjacency,nslab,max_dist=3.0,show=False,infopath_dict=None,metal=None,facet=None):
     out_pairs = []
     coadname_dict = {"O=[Pt]": 1, "N#[Pt]": 1, "O[Pt]": 2, "[Pt]": 1}
     allowed_structure_site_structure_map = generate_allowed_structure_site_structures(adsorbate_dir,sites,site_adjacency,nslab,max_dist=max_dist,cut_multidentate_off_num=None)
@@ -35,6 +35,7 @@ def get_unstable_pairs(pairsdir,adsorbate_dir,sites,site_adjacency,nslab,max_dis
     for pair in os.listdir(pairsdir):
         if not "_" in pair or pair[0] == ".":
             continue
+        adname = pair.split("_")[0]
         coadname = pair.split("_")[1]
         for num in os.listdir(os.path.join(pairsdir,pair)):
             p = os.path.join(pairsdir,pair,num) 
@@ -43,7 +44,7 @@ def get_unstable_pairs(pairsdir,adsorbate_dir,sites,site_adjacency,nslab,max_dis
                 with open(os.path.join(p,"info.json"),'r') as f:
                     initinfo = json.load(f)
                 try:
-                    m = Molecule().from_adjacency_list(initinfo["adjlist"])
+                    m = Molecule().from_adjacency_list(initinfo["adjlist"],check_consistency=False)
                     #m.update(sort_atoms=False)
                 except AtomTypeError:
                     m = Molecule().from_adjacency_list(initinfo["adjlist"],raise_atomtype_exception=False,
@@ -61,9 +62,11 @@ def get_unstable_pairs(pairsdir,adsorbate_dir,sites,site_adjacency,nslab,max_dis
 #                     except Exception as e:
 #                         print(m.to_adjacency_list())
 #                         raise e
-                
+                is_ts = any(bd.get_order_str() == "R" for bd in m.get_all_edges())
                 g = extract_pair_graph(init,sites,site_adjacency,nslab,max_dist=max_dist,
-                                       cut_multidentate_off_num=coadname_dict[coadname],allowed_structure_site_structures=allowed_structure_site_structure_map)
+                                       cut_multidentate_off_num=coadname_dict[coadname],
+                                       allowed_structure_site_structures=allowed_structure_site_structure_map,
+                                       is_ts=is_ts,metal=metal,facet=facet,info_path=infopath_dict[adname])
                     
                 
                 #g.update(sort_atoms=False)
@@ -76,7 +79,9 @@ def get_unstable_pairs(pairsdir,adsorbate_dir,sites,site_adjacency,nslab,max_dis
                 else:
                     final = read(outpath)
                     try:
-                        gout = extract_pair_graph(final,sites,site_adjacency,nslab,max_dist=max_dist,allowed_structure_site_structures=allowed_structure_site_structure_map)
+                        gout = extract_pair_graph(final,sites,site_adjacency,nslab,max_dist=max_dist,
+                                                  allowed_structure_site_structures=allowed_structure_site_structure_map,is_ts=is_ts,
+                                                  metal=metal,facet=facet,info_path=infopath_dict[adname])
                         if len(gout.atoms) != len(g.atoms):
                             out_pairs.append(g.to_group())
                             if show:
