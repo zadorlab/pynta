@@ -2049,12 +2049,12 @@ def get_configs_for_calculation(configs_of_concern_by_admol,computed_configs,tre
     
     logging.info("found {} total configurations of concern".format(len(configs_of_concern)))
         
-    group_to_weight = np.array([group_to_occurence[g]*tree_regressor.node_uncertainties[g] for g in concern_groups])
+    group_to_weight = np.array([group_to_occurence[g]*tree_regressor.nodes[g].rule.uncertainty for g in concern_groups])
     
     config_to_group_fract = dict()
     for config in configs_of_concern.keys():
         E,tr,std = configs_of_concern[config]
-        config_group_unc = np.array([tr.count(g)*tree_regressor.node_uncertainties[g] for g in concern_groups])
+        config_group_unc = np.array([tr.count(g)*tree_regressor.nodes[g].rule.uncertainty for g in concern_groups])
         
         config_to_group_fract[config] = config_group_unc/config_group_unc.sum()
 
