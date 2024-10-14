@@ -1934,7 +1934,7 @@ def process_calculation(d,ad_energy_dict,slab,metal,facet,sites,site_adjacency,p
     
     return datum_E,datums_stability
 
-def get_configs_for_calculation(configs_of_concern_by_admol,configs,computed_configs,tree_regressor,Ncalc_per_iter):
+def get_configs_for_calculation(configs_of_concern_by_admol,computed_configs,tree_regressor,Ncalc_per_iter):
     
     group_to_occurence = dict()
     configs_of_concern = dict()
@@ -1977,7 +1977,7 @@ def get_configs_for_calculation(configs_of_concern_by_admol,configs,computed_con
     configs_for_calculation = []
     group_fract_for_calculation = []
     maxval = 0.0
-    shuffled_configs = configs[:] #list(configs_of_concern.keys())
+    shuffled_configs = list(configs_of_concern.keys())
     np.random.shuffle(shuffled_configs)
     
     for config in shuffled_configs:
@@ -2009,10 +2009,19 @@ def get_configs_for_calculation(configs_of_concern_by_admol,configs,computed_con
                     configs_for_calculation[maxarglocal] = config
                     maxval = maxvallocal
     
+    config_for_calculation_to_admol = dict()
+    for config in configs_for_calculation:
+        for admol,admol_configs in configs_of_concern_by_admol.items():
+            if config in admol_configs:
+                config_for_calculation_to_admol[config] = admol 
+                break 
+        else:
+            raise ValueError
+    
     end = time.time()
     logging.info("identified configs to calculate in {} sec".format(end-start))
     
-    return configs_for_calculation
+    return configs_for_calculation,config_for_calculation_to_admol
 
 def mol_to_atoms(admol,slab,sites,metal,partial_atoms=None,partial_admol=None):
     """Generate a 3D initial guess for a given 2D admol configuration
