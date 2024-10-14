@@ -1025,15 +1025,15 @@ class TrainCovdepModelTask(FiretaskBase):
         
         coad = admol_name_structure_dict[coadname]
         
-        coad_ad_path = admol_name_path_dict[coadmol]
+        coad_path = os.path.join(pynta_dir,"Adsorbates",coadname)
         
         slab = read(slab_path)
         nslab = len(nslab)
         ad_energy_dict = get_lowest_adsorbate_energies(os.path.join(pynta_dir,"Adsorbates"))
-        Es = get_adsorbate_energies(coad_ad_path)[0]
+        Es = get_adsorbate_energies(coad_path)[0]
         coadmol_E_dict = dict()
         coadmol_stability_dict = dict()
-        for p in os.listdir(coad_ad_path):
+        for p in os.listdir(coad_path):
             if p == "info.json":
                 continue
             admol_init,neighbor_sites_init,ninds_init = generate_adsorbate_2D(read(os.path.join(coad_path,p,p+"_init.xyz")),sites,site_adjacency,nslab,max_dist=np.inf)
@@ -1176,15 +1176,15 @@ class SelectCalculationsTask(FiretaskBase):
         
         coad = admol_name_structure_dict[coadname]
         
-        coad_ad_path = admol_name_path_dict[coadmol]
+        coad_path = os.path.join(pynta_dir,"Adsorbates",coadname)
         
         slab = read(slab_path)
         nslab = len(nslab)
         ad_energy_dict = get_lowest_adsorbate_energies(os.path.join(pynta_dir,"Adsorbates"))
-        Es = get_adsorbate_energies(coad_ad_path)[0]
+        Es = get_adsorbate_energies(coad_path)[0]
         coadmol_E_dict = dict()
         coadmol_stability_dict = dict()
-        for p in os.listdir(coad_ad_path):
+        for p in os.listdir(coad_path):
             if p == "info.json":
                 continue
             admol_init,neighbor_sites_init,ninds_init = generate_adsorbate_2D(read(os.path.join(coad_path,p,p+"_init.xyz")),sites,site_adjacency,nslab,max_dist=np.inf)
