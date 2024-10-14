@@ -2046,8 +2046,6 @@ def get_configs_for_calculation(configs_of_concern_by_admol,computed_configs,tre
                     
     
     concern_groups = list(group_to_occurence.keys()) #selected ordering
-    
-    logging.info("found {} total configurations of concern".format(len(configs_of_concern)))
         
     group_to_weight = np.array([group_to_occurence[g]*tree_regressor.nodes[g].rule.uncertainty for g in concern_groups])
     
@@ -2058,8 +2056,6 @@ def get_configs_for_calculation(configs_of_concern_by_admol,computed_configs,tre
         
         config_to_group_fract[config] = config_group_unc/config_group_unc.sum()
 
-    logging.info("identifying new configurations to calculate")
-    start = time.time()
     configs_for_calculation = []
     group_fract_for_calculation = []
     maxval = 0.0
@@ -2103,9 +2099,6 @@ def get_configs_for_calculation(configs_of_concern_by_admol,computed_configs,tre
                 break 
         else:
             raise ValueError
-    
-    end = time.time()
-    logging.info("identified configs to calculate in {} sec".format(end-start))
     
     return configs_for_calculation,config_for_calculation_to_admol
 
