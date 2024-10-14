@@ -1442,16 +1442,15 @@ def train_sidt_cov_dep_classifier(datums,r_site=None,
     return tree
 
 def add_ad_to_site(admol,coad,site):
-    at = [a for a in coad.atoms if a.is_bonded_to_surface()][0]
+    c = coad.copy(deep=True)
+    at = [a for a in c.atoms if a.is_bonded_to_surface()][0]
     bd = [bd for a,bd in at.bonds.items() if a.is_surface_site()][0]
     order = bd.order
-    atind = coad.atoms.index(at)
-    
-    c = coad.copy(deep=True)
     for a in c.atoms:
         if a.is_surface_site():
             c.remove_atom(a)
-            
+    
+    atind = c.atoms.index(at)
     sind = admol.atoms.index(site)
     admol_length = len(admol.atoms)
     
@@ -1466,11 +1465,9 @@ def add_ad_to_site(admol,coad,site):
     
     admolout.clear_labeled_atoms()
     admolout.multiplicity=1
-    try:
-        admolout.update(sort_atoms=False)
-    except Exception as e:
-        raise ValueError((e,admol.to_adjacency_list(),coad.to_adjacency_list(),admolout.to_adjacency_list(),sind))
+    admolout.update(sort_atoms=False)
     admolout.update_connectivity_values()
+    
     return admolout
     
 def get_configurations(admol, coad, coad_stable_sites, tree_interaction_classifier=None, coadmol_stability_dict=None, unstable_groups=None,
