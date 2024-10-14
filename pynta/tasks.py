@@ -1095,8 +1095,9 @@ class TrainCovdepModelTask(FiretaskBase):
             new_computed_configs.append(init_config)
             datum_E,datums_stability = process_calculation(d,ad_energy_dict,slab,metal,facet,sites,site_adjacency,pynta_dir,coadmol_E_dict,max_dist=3.0,rxn_alignment_min=0.7,
                 coad_disruption_tol=1.1,out_file_name="out",init_file_name="init",vib_file_name="vib_vib",is_ad=None)
-            new_datums_E.append(datum_E)
-            if not datum_E.mol.is_isomorphic(init_config,save_order=True):
+            if datum_E:
+                new_datums_E.append(datum_E)
+            if datum_E and not datum_E.mol.is_isomorphic(init_config,save_order=True):
                 new_computed_configs.append(datum_E.mol)
         
         with open(os.path.join(path,"Iterations",str(iter),"computed_configurations.json"),'w') as f:

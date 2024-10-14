@@ -1862,7 +1862,7 @@ def extract_sample(d,ad_energy_dict,slab,metal,facet,sites,site_adjacency,pynta_
 
         if valid:
             #convert TS path
-            ts_path = "/".join(["/Users","mjohns9","Runs","pynta"]+orig_xyz.split("/")[5:])
+            ts_path = os.path.join(pynta_dir, os.path.split(os.path.split(os.path.split(orig_xyz)[0])[0])[1], os.path.split(os.path.split(orig_xyz)[0])[1], os.path.split(orig_xyz)[1])
             
             vibdata_ts = get_vibdata(ts_path,os.path.join(os.path.split(ts_path)[0],"vib.json_vib.json"),len(slab))
             with open(os.path.join(os.path.split(os.path.split(ts_path)[0])[0],"info.json"),'r') as f:
@@ -1929,10 +1929,10 @@ def process_calculation(d,ad_energy_dict,slab,metal,facet,sites,site_adjacency,p
         datums_stability.append(Datum(mol_init,False))
 
     if outdict["out"] is not None:
-        mol_out = Molecule().from_adjacency_list(d["out"],check_consistency=False)
+        mol_out = Molecule().from_adjacency_list(outdict["out"],check_consistency=False)
         
         if len(mol_out.split()) == 1: #ignore if desorbed species
-            if d["valid"] and d["dE"] is not None: #there is an energy value
+            if outdict["valid"] and outdict["dE"] is not None: #there is an energy value
                 skip = False
                 for at in mol_out.atoms:
                     n = 0
@@ -1944,7 +1944,7 @@ def process_calculation(d,ad_energy_dict,slab,metal,facet,sites,site_adjacency,p
                         skip = True
                 if not skip:
                     try:
-                        datum_E = Datum(mol_out,d["dE"]*96.48530749925793*1000.0 - get_atom_centered_correction(mol_out,coadmol_E_dict)) #eV to J/mol
+                        datum_E = Datum(mol_out,outdict["dE"]*96.48530749925793*1000.0 - get_atom_centered_correction(mol_out,coadmol_E_dict)) #eV to J/mol
                         datums_stability.append(Datum(mol_out,True))
                     except KeyError:
                         pass
