@@ -1040,7 +1040,7 @@ class TrainCovdepModelTask(FiretaskBase):
         coadmol_E_dict = dict()
         coadmol_stability_dict = dict()
         for p in os.listdir(coad_path):
-            if p == "info.json":
+            if p == "info.json" or (p not in Es.keys())::
                 continue
             admol_init,neighbor_sites_init,ninds_init = generate_adsorbate_2D(read(os.path.join(coad_path,p,p+"_init.xyz")),sites,site_adjacency,nslab,max_dist=np.inf,allowed_structure_site_structures=allowed_structure_site_structures)
             admol,neighbor_sites,ninds = generate_adsorbate_2D(read(os.path.join(coad_path,p,p+".xyz")),sites,site_adjacency,nslab,max_dist=np.inf,allowed_structure_site_structures=allowed_structure_site_structures)
@@ -1191,7 +1191,7 @@ class SelectCalculationsTask(FiretaskBase):
         coadmol_E_dict = dict()
         coadmol_stability_dict = dict()
         for p in os.listdir(coad_path):
-            if p == "info.json":
+            if p == "info.json" or (p not in Es.keys()):
                 continue
             admol_init,neighbor_sites_init,ninds_init = generate_adsorbate_2D(read(os.path.join(coad_path,p,p+"_init.xyz")),sites,site_adjacency,nslab,max_dist=np.inf)
             admol,neighbor_sites,ninds = generate_adsorbate_2D(read(os.path.join(coad_path,p,p+".xyz")),sites,site_adjacency,nslab,max_dist=np.inf)
