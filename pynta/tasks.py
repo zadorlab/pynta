@@ -1133,6 +1133,151 @@ class TrainCovdepModelTask(FiretaskBase):
         
         return FWAction(detours=newwf)
 
+def select_calculations_firework(path,admol_name_path_dict,admol_name_structure_dict,sites,site_adjacency,
+                                pynta_dir, metal, facet, slab_path, calculation_directories, coadname,
+                                coad_stable_sites, software, software_kwargs, software_kwargs_TS, freeze_ind, fmaxopt, parents=[],Ncalc_per_iter=6,iter=0,concern_energy_tol=None,ignore_errors=False):
+    d = {"path": path,"admol_name_path_dict": admol_name_path_dict,"admol_name_structure_dict": {k:v.to_adjacency_list() for k,v in admol_name_structure_dict.items()},
+         "sites": sites, "site_adjacency": site_adjacency, "pynta_dir": pynta_dir, "metal": metal, "facet": facet, "slab_path": slab_path,
+         "calculation_directories": calculation_directories, "coadname": coadname, "coad_stable_sites": coad_stable_sites,
+         "Ncalc_per_iter": Ncalc_per_iter, "software": software,
+                       "software_kwargs": software_kwargs, "software_kwargs_TS": software_kwargs_TS, "freeze_ind": freeze_ind, 
+                       "fmaxopt": fmaxopt, "concern_energy_tol": concern_energy_tol, "ignore_errors": ignore_errors}
+    t1 = TrainCovdepModelTask(d)
+    return Firework([t1],parents=parents,name="Training Model "+str(iter),spec={"_priority": 4})
+
+@explicit_serialize
+class SelectCalculationsTask(FiretaskBase):
+    required_params = ["path","admol_name_path_dict","admol_name_structure_dict","sites","site_adjacency", "pynta_dir", "metal", "facet",
+                       "slab_path", "calculation_directories", "coadname", "coad_stable_sites", "iter", "software",
+                       "software_kwargs", "software_kwargs_TS", "freeze_ind", "fmaxopt"]
+    optional_params = ["concern_energy_tol","ignore_errors"]
+    def run_task(self, fw_spec):
+        path = self["path"]
+        admol_name_path_dict = self["admol_name_path_dict"]
+        admol_name_structure_dict = {k: Molecule().from_adjacency_list(v,check_consistency=False) for k,v in admol_name_structure_dict.items()}
+        sites = self["sites"]
+        site_adjacency = self["site_adjacency"]
+        pynta_dir = self["pynta_dir"]
+        metal = self["metal"]
+        facet = self["facet"]
+        slab_path = self["slab_path"]
+        calculation_directories = self["calculation_directories"]
+        coadname  = self["coadname"]
+        Ncalc_per_iter = self["Ncalc_per_iter"]
+        iter = self["iter"]
+        coad_stable_sites = self["coad_stable_sites"]
+        concern_energy_tol = self["concern_energy_tol"] if "concern_energy_tol" in self.keys() else None
+        ignore_errors = self["ignore_errors"] if "ignore_errors" in self.keys() else False
+        software_kwargs = self["software_kwargs"]
+        software = self["software"]
+        freeze_ind = self["freeze_ind"]
+        software_kwargs_TS = self["software_kwargs_TS"]
+        fmaxopt = self["fmaxopt"]
+        
+        coad = admol_name_structure_dict[coadname]
+        
+        coad_ad_path = admol_name_path_dict[coadmol]
+        
+        slab = read(slab_path)
+        nslab = len(nslab)
+        ad_energy_dict = get_lowest_adsorbate_energies(os.path.join(pynta_dir,"Adsorbates"))
+        Es = get_adsorbate_energies(coad_ad_path)[0]
+        coadmol_E_dict = dict()
+        coadmol_stability_dict = dict()
+        for p in os.listdir(coad_ad_path):
+            if p == "info.json":
+                continue
+            admol_init,neighbor_sites_init,ninds_init = generate_adsorbate_2D(read(os.path.join(coad_path,p,p+"_init.xyz")),sites,site_adjacency,nslab,max_dist=np.inf)
+            admol,neighbor_sites,ninds = generate_adsorbate_2D(read(os.path.join(coad_path,p,p+".xyz")),sites,site_adjacency,nslab,max_dist=np.inf)
+            out_struct = split_adsorbed_structures(admol,clear_site_info=False)[0]
+            out_struct_init = split_adsorbed_structures(admol_init,clear_site_info=False)[0]
+            coadmol_E_dict[out_struct] = Es[p] 
+            if admol_init.is_isomorphic(admol,save_order=True):
+                coadmol_stability_dict[out_struct_init] = True
+            else:
+                coadmol_stability_dict[out_struct_init] = False
+                
+        try:
+            #load configurations
+            configs_of_concern_by_admol = dict()
+            for admol_name,st in admol_name_structure_dict.keys():
+                config_path = os.path.join(path,"Configurations",admol_name+".json")
+                with open(config_path,'r') as f:
+                    configs_of_concern_by_admol[st] = [Molecule().from_adjacency_list(x,check_consistency=False) for x in json.load(f)]
+            #load tree
+            nodes = read_nodes(os.path.join(path,"Iterations",str(iter),"regressor.json"))
+            tree = MultiEvalSubgraphIsomorphicDecisionTreeRegressor([adsorbate_interaction_decomposition,adsorbate_triad_interaction_decomposition],
+                                               nodes=nodes)
+            tree.estimate_uncertainty()
+            
+            #load computed configs
+            with open(os.path.join(path,"Iterations",str(iter),"computed_configurations.json"),'r') as f:
+                computed_configs = [Molecule().from_adjacency_list(x,check_consistency=False) for x in json.load(f)]
+            
+            configs_for_calculation,config_for_calculation_to_admol = get_configs_for_calculation(configs_of_concern_by_admol,computed_configs,tree,Ncalc_per_iter)
+
+            os.makedirs(os.path.join(path,"Iterations",str(iter),"Samples"))
+            
+            sample_fws = []
+            for i,config in enumerate(configs_for_calculation):
+                partial_admol = config_for_calculation_to_admol[config]
+                admol_name = [k for k,v in admol_name_structure_dict.items() if v is partial_admol][0]
+                admol_path = admol_name_path_dict[admol_name]
+                partial_atoms = read(admol_path)
+                init_atoms = mol_to_atoms(admol,slab,sites,metal,partial_atoms=partial_atoms,partial_admol=partial_admol)
+                os.makedirs(os.path.join(path,"Iterations",str(iter),"Samples",str(i)))
+                init_path = os.path.join(path,"Iterations",str(iter),"Samples",str(i),"init.xyz")
+                write(init_path,init_atoms)
+                json_out = {"adjlist": config.to_adjacency_list(), "isolated_xyz": admol_path}
+                with open(os.path.join(os.path.split(init_path)[0],'info.json'),'w') as f:
+                    json.dump(json_out)
+                
+                if not any(bd.get_order_str() == 'R' for bd in config.get_all_edges()):
+                    fwopt = optimize_firework(init_path,
+                            software,"weakopt",
+                            opt_method="MDMin",opt_kwargs={'dt': 0.05,"trajectory": "weakopt.traj"},software_kwargs=software_kwargs,order=0,
+                            run_kwargs={"fmax" : 0.5, "steps" : 30},parents=[],
+                              constraints=["freeze up to {}".format(freeze_ind)],
+                            ignore_errors=True, metal=metal, facet=facet, priority=3)
+                    fwopt2 = optimize_firework(os.path.join(os.path.split(init_path)[0],"weakopt.xyz"),
+                                    software,"out",
+                                    opt_method="QuasiNewton",opt_kwargs={"trajectory": "out.traj"},software_kwargs=software_kwargs,order=0,
+                                    run_kwargs={"fmax" : fmaxopt, "steps" : 70},parents=[fwopt],
+                                    constraints=["freeze up to {}".format(freeze_ind)],
+                                    ignore_errors=True, metal=metal, facet=surface_type, priority=2)
+                
+                    fwvib = vibrations_firework(os.path.join(os.path.split(d)[0],"out.xyz"),
+                                                software,"vib",software_kwargs=software_kwargs,parents=[fwopt2],
+                                                constraints=["freeze up to "+str(nslab)])
+                    sample_fws.extend([fwopt,fwopt2,fwvib])
+                else:
+                    fwopt = optimize_firework(init_path,
+                            software,"out", sella=True, 
+                            opt_kwargs={"trajectory": "out.traj"},software_kwargs=software_kwargs_TS,
+                            order=1,
+                            run_kwargs={"fmax" : fmaxopt, "steps" : 70},parents=[],
+                              constraints=["freeze up to {}".format(freeze_ind)],
+                            ignore_errors=True, metal=metal, facet=facet, priority=3)
+            
+                    fwvib = vibrations_firework(os.path.join(os.path.split(init_path)[0],"out.xyz"),
+                                                software,"vib",software_kwargs=software_kwargs,parents=[fwopt],
+                                                constraints=["freeze up to "+str(nslab)])
+                    sample_fws.extend([fwopt,fwvib])
+                
+            tfw = train_covdep_model_firework(path,admol_name_path_dict,admol_name_structure_dict,sites,site_adjacency,
+                                pynta_dir, metal, facet, slab_path, calculation_directories, coadname,
+                                coad_stable_sites, software, software_kwargs, software_kwargs_TS, freeze_ind, fmaxopt, parents=sample_fws,
+                                Ncalc_per_iter=Ncalc_per_iter,iter=iter+1,concern_energy_tol=concern_energy_tol,ignore_errors=ignore_errors)
+            newwf = Workflow(fws+[tfw],name="Train Iteration "+str(iter+1))
+            
+        except Exception as e:
+            if not ignore_errors:
+                raise e
+            else:
+                return FWAction(stored_data={"error": e}, exit=True)
+        
+        return FWAction(detours=newwf)
+        
 def map_harmonically_forced_xtb(input):
     tsstruct,atom_bond_potentials,site_bond_potentials,nslab,constraints,ts_path,j,molecule_to_atom_maps,ase_to_mol_num = input
     os.makedirs(os.path.join(ts_path,str(j)))
