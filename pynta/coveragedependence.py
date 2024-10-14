@@ -1,5 +1,4 @@
-from molecule.molecule import Molecule,Atom,Bond
-from molecule.group import Group, GroupAtom, GroupBond
+from molecule.molecule import Molecule,Atom,Bond,Group,GroupAtom,GroupBond
 from molecule.exceptions import AtomTypeError
 from ase.io import read, write
 from ase.geometry import get_distances
