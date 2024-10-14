@@ -1104,7 +1104,7 @@ class TrainCovdepModelTask(FiretaskBase):
             os.makedirs(os.path.join(path,"Iterations",str(iter)))
         
         with open(os.path.join(path,"Iterations",str(iter),"computed_configurations.json"),'w') as f:
-            json.dump([x.to_adjacency_list() for x in computed_configs+new_computed_configs])
+            json.dump([x.to_adjacency_list() for x in computed_configs+new_computed_configs],f)
         
         if iter == 0:
             pairs_datums = new_datums_E
