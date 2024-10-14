@@ -1929,10 +1929,10 @@ def process_calculation(d,ad_energy_dict,slab,metal,facet,sites,site_adjacency,p
         datums_stability.append(Datum(mol_init,False))
 
     if outdict["out"] is not None:
-        mol_out = Molecule().from_adjacency_list(d["out"],check_consistency=False)
+        mol_out = Molecule().from_adjacency_list(outdict["out"],check_consistency=False)
         
         if len(mol_out.split()) == 1: #ignore if desorbed species
-            if d["valid"] and d["dE"] is not None: #there is an energy value
+            if outdict["valid"] and outdict["dE"] is not None: #there is an energy value
                 skip = False
                 for at in mol_out.atoms:
                     n = 0
@@ -1944,7 +1944,7 @@ def process_calculation(d,ad_energy_dict,slab,metal,facet,sites,site_adjacency,p
                         skip = True
                 if not skip:
                     try:
-                        datum_E = Datum(mol_out,d["dE"]*96.48530749925793*1000.0 - get_atom_centered_correction(mol_out,coadmol_E_dict)) #eV to J/mol
+                        datum_E = Datum(mol_out,outdict["dE"]*96.48530749925793*1000.0 - get_atom_centered_correction(mol_out,coadmol_E_dict)) #eV to J/mol
                         datums_stability.append(Datum(mol_out,True))
                     except KeyError:
                         pass
