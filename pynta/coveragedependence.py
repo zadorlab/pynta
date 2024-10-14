@@ -1862,7 +1862,7 @@ def extract_sample(d,ad_energy_dict,slab,metal,facet,sites,site_adjacency,pynta_
 
         if valid:
             #convert TS path
-            ts_path = "/".join(["/Users","mjohns9","Runs","pynta"]+orig_xyz.split("/")[5:])
+            ts_path = os.path.join(os.split(pynta_dir), "/".join(orig_xyz.split("/")[5:])
             
             vibdata_ts = get_vibdata(ts_path,os.path.join(os.path.split(ts_path)[0],"vib.json_vib.json"),len(slab))
             with open(os.path.join(os.path.split(os.path.split(ts_path)[0])[0],"info.json"),'r') as f:
