@@ -1129,7 +1129,7 @@ class TrainCovdepModelTask(FiretaskBase):
             st = admol_name_structure_dict[admol_name]
             Nocc_isolated = len([a for a in st.atoms if a.is_surface_site() and any(not a2.is_surface_site() for a2 in a.bonds.keys())])
             fw = calculate_configruation_energies_firework(admol_name,tree_file,path,coad_stable_sites,Nocc_isolated,
-                                            coadmol_E_dict,concern_energy_tol=concern_energy_tol,parents=[],iter=iter,ignore_errors=ignore_errors)
+                                            {k.to_adjacency_list(): v for k,v in coadmol_E_dict.items()},concern_energy_tol=concern_energy_tol,parents=[],iter=iter,ignore_errors=ignore_errors)
             config_E_fws.append(fw)
         
         scfw = select_calculations_firework(path,admol_name_path_dict,admol_name_structure_dict,sites,site_adjacency,
