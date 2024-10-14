@@ -1221,7 +1221,7 @@ class SelectCalculationsTask(FiretaskBase):
         
         #load configurations
         configs_of_concern_by_admol = dict()
-        for admol_name,st in admol_name_structure_dict.keys():
+        for admol_name,st in admol_name_structure_dict.items():
             config_path = os.path.join(path,"Configurations",admol_name+".json")
             with open(config_path,'r') as f:
                 configs_of_concern_by_admol[st] = [Molecule().from_adjacency_list(x,check_consistency=False) for x in json.load(f)]
