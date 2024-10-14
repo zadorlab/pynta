@@ -1163,11 +1163,13 @@ class SelectCalculationsTask(FiretaskBase):
         admol_name_path_dict = self["admol_name_path_dict"]
         admol_name_structure_dict = {k: Molecule().from_adjacency_list(v,check_consistency=False) for k,v in self["admol_name_structure_dict"].items()}
         sites = []
+        sites = []
         for site in self["sites"]:
             site["normal"] = np.array(site["normal"])
             site["position"] = np.array(site["position"])
+            site["indices"] = tuple(site["indices"])
             sites.append(site)
-        site_adjacency = {int(k):v for k,v in self["site_adjacency"].items()}
+        site_adjacency = {int(k):[int(x) for x in v] for k,v in self["site_adjacency"].items()}
         pynta_dir = self["pynta_dir"]
         metal = self["metal"]
         facet = self["facet"]
