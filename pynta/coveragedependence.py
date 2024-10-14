@@ -1260,7 +1260,57 @@ def break_train_val_test(datums,test_fract=0.1,val_fract=0.1):
     val = ds[Ntest:Ntest+Nval]
     train = ds[Nval+Ntest:]
     return train,val,test
+
+def split_triad(tagged_grp):
+    labeled_atoms = tagged_grp.get_labeled_atoms("*")
     
+    pair_atoms_inds = []
+    a = labeled_atoms[0]
+    path = [a]
+    notatom = None
+    c = 0
+    while c < 3:
+        if len(path) == 1:
+            anew = list(path[-1].bonds.keys())[0]
+        elif len(path[-1].bonds) == 3 and len(path) > 2:
+            anew = [x for x in path[-1].bonds.keys() if not x.is_surface_site()][0]
+        elif len(path[-1].bonds) == 3:
+            ats = list(path[-1].bonds.keys())
+            for a in ats:
+                if a not in path and a is not notatom:
+                    anew = a
+                    break
+            else:
+                raise ValueError
+        elif len(path[-1].bonds) == 2:
+            ats = list(path[-1].bonds.keys())
+            if ats[0] in path:
+                anew = ats[1]
+            else:
+                anew = ats[0]
+        path.append(anew)
+        
+        if not anew.is_surface_site():
+            pair_atoms_inds.append([tagged_grp.atoms.index(a) for a in path])
+            c += 1
+            notatom = path[-3]
+            path = path[-2:][::-1]
+            
+    out_pairs = []
+    for pair_inds in pair_atoms_inds:
+        g = tagged_grp.copy(deep=True)
+        ats = [g.atoms[ind] for ind in pair_inds]
+        atom_to_remove = []
+        for a in g.atoms:
+            if a not in ats:
+                atom_to_remove.append(a)
+        for a in atom_to_remove:
+            g.remove_atom(a)
+        g.update()
+        out_pairs.append(g)
+        
+    return out_pairs
+
 def train_sidt_cov_dep_regressor(pairs_datums,sampling_datums,Nconfigs,Ncoads,r_site=None,
                                 r_atoms=None,node_fract_training=0.9):
 
