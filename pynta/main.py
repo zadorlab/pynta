@@ -728,7 +728,7 @@ class CoverageDependence:
         
         fw = train_covdep_model_firework(self.path,admol_name_path_dict,admol_name_structure_dict,self.sites,self.site_adjacency,
                                 self.pynta_run_directory, self.metal, self.surface_type, self.slab_path, calculation_directories, self.coadsorbates[0], 
-                                self.coad_stable_sites, self.software, self.software_kwargs, self.software_kwargs_TS, self.freeze_ind, self.fmaxopt, 
+                                self.coad_stable_sites, self.software, self.software_kwargs, self.software_kwargs_TS, self.freeze_ind, self.fmaxopt, nslab=self.nslab,
                                 parents=self.fws, 
                                 Ncalc_per_iter=self.Ncalc_per_iter,iter=0,concern_energy_tol=self.concern_energy_tol,ignore_errors=True)
 
