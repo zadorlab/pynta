@@ -1100,17 +1100,20 @@ class TrainCovdepModelTask(FiretaskBase):
             if datum_E and not datum_E.mol.is_isomorphic(init_config,save_order=True):
                 new_computed_configs.append(datum_E.mol)
         
+        if not os.path.exists(os.path.join(path,"Iterations",str(iter))):
+            os.makedirs(os.path.join(path,"Iterations",str(iter)))
+        
         with open(os.path.join(path,"Iterations",str(iter),"computed_configurations.json"),'w') as f:
             json.dump([x.to_adjacency_list() for x in computed_configs+new_computed_configs])
         
         if iter == 0:
-            pairs_datums = new_datums_E 
-            with open(os.path.join(path,"pairs_datums.json"),'r') as f:
+            pairs_datums = new_datums_E
+            with open(os.path.join(path,"pairs_datums.json"),'w') as f:
                 json.dump({d.mol.to_adjacency_list(): d.value for d in pairs_datums},f)
             sampling_datums = []
         else:
             sampling_datums = old_sample_datums + new_datums_E
-            with open(os.path.join(path,"Iterations",iter,"cumulative_sample_datums.json"),'r') as f:
+            with open(os.path.join(path,"Iterations",iter,"cumulative_sample_datums.json"),'w') as f:
                 json.dump({d.mol.to_adjacency_list(): d.value for d in sampling_datums},f)
             
         Nconfigs = len(admol_name_structure_dict)
