@@ -1030,6 +1030,7 @@ class TrainCovdepModelTask(FiretaskBase):
         
         
         coad = admol_name_structure_dict[coadname]
+        coad_simple = remove_slab(coad)
         
         coad_path = os.path.join(pynta_dir,"Adsorbates",coadname)
         slab = read(slab_path)
@@ -1062,7 +1063,7 @@ class TrainCovdepModelTask(FiretaskBase):
             
             os.makedirs(os.path.join(path,"Configurations"))
             for admol_name,admol in admol_name_structure_dict.items():
-                configs = get_configurations(admol, coad, coad_stable_sites,  coadmol_stability_dict=coadmol_stability_dict, unstable_groups=unstable_pairs,
+                configs = get_configurations(admol, coad_simple, coad_stable_sites,  coadmol_stability_dict=coadmol_stability_dict, unstable_groups=unstable_pairs,
                     coadmol_E_dict=coadmol_E_dict)
                 
                 with open(os.path.join(path,"Configurations",admol_name+".json"),'w') as f:
