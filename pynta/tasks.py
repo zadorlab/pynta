@@ -1004,7 +1004,11 @@ class TrainCovdepModelTask(FiretaskBase):
         path = self["path"]
         admol_name_path_dict = self["admol_name_path_dict"]
         admol_name_structure_dict = {k: Molecule().from_adjacency_list(v,check_consistency=False) for k,v in self["admol_name_structure_dict"].items()}
-        sites = self["sites"]
+        sites = []
+        for site in self["sites"]:
+            site["normal"] = np.array(site["normal"])
+            site["position"] = np.array(site["position"])
+            sites.append(site)
         site_adjacency = {int(k):v for k,v in self["site_adjacency"].items()}
         pynta_dir = self["pynta_dir"]
         metal = self["metal"]
@@ -1023,31 +1027,31 @@ class TrainCovdepModelTask(FiretaskBase):
         software_kwargs_TS = self["software_kwargs_TS"]
         fmaxopt = self["fmaxopt"]
         
-        coad = admol_name_structure_dict[coadname]
-        
-        coad_path = os.path.join(pynta_dir,"Adsorbates",coadname)
-        slab = read(slab_path)
-        nslab = len(slab)
-        allowed_structure_site_structures = generate_allowed_structure_site_structures(os.path.join(pynta_dir,"Adsorbates"),sites,site_adjacency,nslab,max_dist=np.inf)
-        
-        ad_energy_dict = get_lowest_adsorbate_energies(os.path.join(pynta_dir,"Adsorbates"))
-        Es = get_adsorbate_energies(coad_path)[0]
-        coadmol_E_dict = dict()
-        coadmol_stability_dict = dict()
-        for p in os.listdir(coad_path):
-            if p == "info.json":
-                continue
-            admol_init,neighbor_sites_init,ninds_init = generate_adsorbate_2D(read(os.path.join(coad_path,p,p+"_init.xyz")),sites,site_adjacency,nslab,max_dist=np.inf,allowed_structure_site_structures=allowed_structure_site_structures)
-            admol,neighbor_sites,ninds = generate_adsorbate_2D(read(os.path.join(coad_path,p,p+".xyz")),sites,site_adjacency,nslab,max_dist=np.inf,allowed_structure_site_structures=allowed_structure_site_structures)
-            out_struct = split_adsorbed_structures(admol,clear_site_info=False)[0]
-            out_struct_init = split_adsorbed_structures(admol_init,clear_site_info=False)[0]
-            coadmol_E_dict[out_struct] = Es[p] 
-            if admol_init.is_isomorphic(admol,save_order=True):
-                coadmol_stability_dict[out_struct_init] = True
-            else:
-                coadmol_stability_dict[out_struct_init] = False
-         
         try:
+            coad = admol_name_structure_dict[coadname]
+            
+            coad_path = os.path.join(pynta_dir,"Adsorbates",coadname)
+            slab = read(slab_path)
+            nslab = len(slab)
+            allowed_structure_site_structures = generate_allowed_structure_site_structures(os.path.join(pynta_dir,"Adsorbates"),sites,site_adjacency,nslab,max_dist=np.inf)
+            
+            ad_energy_dict = get_lowest_adsorbate_energies(os.path.join(pynta_dir,"Adsorbates"))
+            Es = get_adsorbate_energies(coad_path)[0]
+            coadmol_E_dict = dict()
+            coadmol_stability_dict = dict()
+            for p in os.listdir(coad_path):
+                if p == "info.json":
+                    continue
+                admol_init,neighbor_sites_init,ninds_init = generate_adsorbate_2D(read(os.path.join(coad_path,p,p+"_init.xyz")),sites,site_adjacency,nslab,max_dist=np.inf,allowed_structure_site_structures=allowed_structure_site_structures)
+                admol,neighbor_sites,ninds = generate_adsorbate_2D(read(os.path.join(coad_path,p,p+".xyz")),sites,site_adjacency,nslab,max_dist=np.inf,allowed_structure_site_structures=allowed_structure_site_structures)
+                out_struct = split_adsorbed_structures(admol,clear_site_info=False)[0]
+                out_struct_init = split_adsorbed_structures(admol_init,clear_site_info=False)[0]
+                coadmol_E_dict[out_struct] = Es[p] 
+                if admol_init.is_isomorphic(admol,save_order=True):
+                    coadmol_stability_dict[out_struct_init] = True
+                else:
+                    coadmol_stability_dict[out_struct_init] = False
+        
             if not os.path.exists(os.path.join(path,"Configurations")):
                 unstable_pairs = get_unstable_pairs(os.path.join(path,'pairs'),
                                     os.path.join(pynta_dir,"Adsorbates"),
@@ -1156,7 +1160,11 @@ class SelectCalculationsTask(FiretaskBase):
         path = self["path"]
         admol_name_path_dict = self["admol_name_path_dict"]
         admol_name_structure_dict = {k: Molecule().from_adjacency_list(v,check_consistency=False) for k,v in self["admol_name_structure_dict"].items()}
-        sites = self["sites"]
+        sites = []
+        for site in self["sites"]:
+            site["normal"] = np.array(site["normal"])
+            site["position"] = np.array(site["position"])
+            sites.append(site)
         site_adjacency = {int(k):v for k,v in self["site_adjacency"].items()}
         pynta_dir = self["pynta_dir"]
         metal = self["metal"]
@@ -1181,26 +1189,27 @@ class SelectCalculationsTask(FiretaskBase):
         
         slab = read(slab_path)
         nslab = len(slab)
-        allowed_structure_site_structures = generate_allowed_structure_site_structures(os.path.join(pynta_dir,"Adsorbates"),sites,site_adjacency,nslab,max_dist=np.inf)
-        
-        ad_energy_dict = get_lowest_adsorbate_energies(os.path.join(pynta_dir,"Adsorbates"))
-        Es = get_adsorbate_energies(coad_path)[0]
-        coadmol_E_dict = dict()
-        coadmol_stability_dict = dict()
-        for p in os.listdir(coad_path):
-            if p == "info.json":
-                continue
-            admol_init,neighbor_sites_init,ninds_init = generate_adsorbate_2D(read(os.path.join(coad_path,p,p+"_init.xyz")),sites,site_adjacency,nslab,max_dist=np.inf)
-            admol,neighbor_sites,ninds = generate_adsorbate_2D(read(os.path.join(coad_path,p,p+".xyz")),sites,site_adjacency,nslab,max_dist=np.inf)
-            out_struct = split_adsorbed_structures(admol,clear_site_info=False)[0]
-            out_struct_init = split_adsorbed_structures(admol_init,clear_site_info=False)[0]
-            coadmol_E_dict[out_struct] = Es[p] 
-            if admol_init.is_isomorphic(admol,save_order=True):
-                coadmol_stability_dict[out_struct_init] = True
-            else:
-                coadmol_stability_dict[out_struct_init] = False
-                
         try:
+            allowed_structure_site_structures = generate_allowed_structure_site_structures(os.path.join(pynta_dir,"Adsorbates"),sites,site_adjacency,nslab,max_dist=np.inf)
+            
+            ad_energy_dict = get_lowest_adsorbate_energies(os.path.join(pynta_dir,"Adsorbates"))
+            Es = get_adsorbate_energies(coad_path)[0]
+            coadmol_E_dict = dict()
+            coadmol_stability_dict = dict()
+            for p in os.listdir(coad_path):
+                if p == "info.json":
+                    continue
+                admol_init,neighbor_sites_init,ninds_init = generate_adsorbate_2D(read(os.path.join(coad_path,p,p+"_init.xyz")),sites,site_adjacency,nslab,max_dist=np.inf)
+                admol,neighbor_sites,ninds = generate_adsorbate_2D(read(os.path.join(coad_path,p,p+".xyz")),sites,site_adjacency,nslab,max_dist=np.inf)
+                out_struct = split_adsorbed_structures(admol,clear_site_info=False)[0]
+                out_struct_init = split_adsorbed_structures(admol_init,clear_site_info=False)[0]
+                coadmol_E_dict[out_struct] = Es[p] 
+                if admol_init.is_isomorphic(admol,save_order=True):
+                    coadmol_stability_dict[out_struct_init] = True
+                else:
+                    coadmol_stability_dict[out_struct_init] = False
+                    
+            
             #load configurations
             configs_of_concern_by_admol = dict()
             for admol_name,st in admol_name_structure_dict.keys():
