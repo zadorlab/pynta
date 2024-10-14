@@ -20,6 +20,8 @@ from pynta.transitionstate import get_unique_optimized_adsorbates,determine_TS_c
 from pynta.utils import *
 from pynta.calculator import run_harmonically_forced_xtb, add_sella_constraint
 from pynta.mol import *
+from pynta.coveragedependence import *
+from pynta.geometricanalysis import *
 from xtb.ase.calculator import XTB
 import numpy as np
 import multiprocessing as mp
@@ -916,10 +918,10 @@ class MolecularHFSP(OptimizationTask):
         
         return FWAction(stored_data={"error": errors,"converged": converged})
 
-def calculate_configruation_energies_firework(admol_name,tree_file,configs_file,coad_stable_sites,Ncoad_isolated,
+def calculate_configruation_energies_firework(admol_name,tree_file,path,coad_stable_sites,Nocc_isolated,
                                               coadmol_E_dict,concern_energy_tol=None,out_path=None,parents=[],iter=0,ignore_errors=False):
-    d = {"admol_name": admol_name,"tree_file": tree_file,"configs_file": configs_file,
-         "coad_stable_sites": coad_stable_sites,"Ncoad_isolated": Ncoad_isolated,"coadmol_E_dict": coadmol_E_dict, 
+    d = {"admol_name": admol_name,"tree_file": tree_file,"path": path,
+         "coad_stable_sites": coad_stable_sites,"Nocc_isolated": Nocc_isolated,"coadmol_E_dict": coadmol_E_dict, 
          "concern_energy_tol": concern_energy_tol}
     t1 = CalculateConfigurationEnergiesTask(d)
     if out_path is None: 
@@ -936,17 +938,19 @@ def calculate_configruation_energies_firework(admol_name,tree_file,configs_file,
     return Firework([t1,t2],parents=parents,name=admol_name+"_energies"+str(iter))
 
 @explicit_serialize
-class CalculateConfigurationEnergiesTask:
-    required_params = ["admol_name","tree_file","configs_file","coad_stable_sites","Ncoad_isolated","coadmol_E_dict"]
-    optional_params = ["concern_energy_tol"]
+class CalculateConfigurationEnergiesTask(FiretaskBase):
+    required_params = ["admol_name","tree_file","path","coad_stable_sites","Nocc_isolated","coadmol_E_dict"]
+    optional_params = ["concern_energy_tol","ignore_errors"]
     def run_task(self, fw_spec):
         admol_name = self['admol_name']
         tree_file = self["tree_file"]
-        configs_file = self["configs_file"]
+        path= self["path"]
         coad_stable_sites = self["coad_stable_sites"]
-        Ncoad_isolated = self["Ncoad_isolated"]
+        Nocc_isolated = self["Nocc_isolated"]
         coadmol_E_dict = {Molecule().from_adjacency_list(k):v for k,v in self["coadmol_E_dict"].items()}
         concern_energy_tol = self["concern_energy_tol"] if "concern_energy_tol" in self.keys() else None
+        ignore_errors = self["ignore_errors"] if "ignore_errors" in self.keys() else False
+        
         try:
             nodes = read_nodes(tree_file)
             root = [n for n in nodes if n.parent is None][0]
@@ -959,16 +963,16 @@ class CalculateConfigurationEnergiesTask:
             else:
                 raise ValueError
             
-            with open(configs_file,'r') as f:
+            with open(os.path.join(path,"Configurations",admol_name+".json"),'r') as f:
                 configs = [Molecule().from_adjacency_list(m,check_consistency=False) for m in json.load(f)]
             
-            Ncoad_energy_dict,Ncoad_config_dict,configs_of_concern_admol = get_cov_energies_configs_concern_tree(tree, configs, coad_stable_sites, Ncoad_isolated, concern_energy_tol, 
+            Ncoad_energy_dict,Ncoad_config_dict,configs_of_concern_admol = get_cov_energies_configs_concern_tree(tree, configs, coad_stable_sites, Nocc_isolated, concern_energy_tol, 
                                                 coadmol_E_dict=coadmol_E_dict)
             with open("Ncoad_energy_"+admol_name+".json",'w') as f:
                 json.dump(Ncoad_energy_dict,f)
             with open("Ncoad_config_"+admol_name+".json",'w') as f:
                 json.dump(Ncoad_config_dict,f)
-            with open("configs_of_concern_"+admol_name+".json"),'w') as f:
+            with open("configs_of_concern_"+admol_name+".json",'w') as f:
                 json.dump({k.to_adjacency_list():v for k,v in configs_of_concern_admol.items()},f)
                 
         except Exception as e:
