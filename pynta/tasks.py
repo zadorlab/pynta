@@ -1009,8 +1009,8 @@ class TrainCovdepModelTask(FiretaskBase):
             site["normal"] = np.array(site["normal"])
             site["position"] = np.array(site["position"])
             sites.append(site)
-        site_adjacency = {int(k):v for k,v in self["site_adjacency"].items()}
-        raise ValueError(site_adjacency)
+        raise ValueError(sites)
+        site_adjacency = {int(k):[int(x) for x in v] for k,v in self["site_adjacency"].items()}
         pynta_dir = self["pynta_dir"]
         metal = self["metal"]
         facet = self["facet"]
