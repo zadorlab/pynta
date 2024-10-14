@@ -1010,6 +1010,7 @@ class TrainCovdepModelTask(FiretaskBase):
             site["position"] = np.array(site["position"])
             sites.append(site)
         site_adjacency = {int(k):v for k,v in self["site_adjacency"].items()}
+        raise ValueError(site_adjacency)
         pynta_dir = self["pynta_dir"]
         metal = self["metal"]
         facet = self["facet"]
@@ -1057,7 +1058,7 @@ class TrainCovdepModelTask(FiretaskBase):
             imag_freq_paths = {adname: os.path.join(os.path.split(p)[0],"vib.json_vib.json") for adname,p in admol_name_path_dict.items()}
             unstable_pairs = get_unstable_pairs(os.path.join(path,'pairs'),
                                 os.path.join(pynta_dir,"Adsorbates"),
-                                sites,site_adjacency,nslab,max_dist=np.inf,show=False, infopath_dict=info_paths, imag_freq_path_dict=imag_freq_paths)
+                                sites,site_adjacency,nslab,max_dist=np.inf,show=False, infopath_dict=info_paths, imag_freq_path=imag_freq_paths)
             
             os.makedirs(os.path.join(path,"Configurations"))
             for admol_name,admol in admol_name_structure_dict.items():
