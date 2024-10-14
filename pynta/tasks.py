@@ -985,10 +985,10 @@ class CalculateConfigurationEnergiesTask(FiretaskBase):
 
 def train_covdep_model_firework(path,admol_name_path_dict,admol_name_structure_dict,sites,site_adjacency,
                                 pynta_dir, metal, facet, slab_path, calculation_directories, coadname,
-                                coad_stable_sites, software, software_kwargs, software_kwargs_TS, freeze_ind, fmaxopt, nslab, parents=[],Ncalc_per_iter=6,iter=0,concern_energy_tol=None,ignore_errors=False):
+                                coad_stable_sites, software, software_kwargs, software_kwargs_TS, freeze_ind, fmaxopt,  parents=[],Ncalc_per_iter=6,iter=0,concern_energy_tol=None,ignore_errors=False):
     d = {"path": path, "admol_name_path_dict": admol_name_path_dict, "admol_name_structure_dict": {k : v.to_adjacency_list() for k,v in admol_name_structure_dict.items()},
          "sites": sites, "site_adjacency": {str(k):v for k,v in site_adjacency.items()}, "pynta_dir": pynta_dir, "metal": metal, "facet": facet, "slab_path": slab_path,
-         "calculation_directories": calculation_directories, "coadname": coadname, "coad_stable_sites": coad_stable_sites, "nslab": nslab,
+         "calculation_directories": calculation_directories, "coadname": coadname, "coad_stable_sites": coad_stable_sites, 
         "Ncalc_per_iter": Ncalc_per_iter, "iter": iter, "software": software, "software_kwargs": software_kwargs, "software_kwargs_TS": software_kwargs_TS, "freeze_ind": freeze_ind, 
         "fmaxopt": fmaxopt, "concern_energy_tol": concern_energy_tol, "ignore_errors": ignore_errors}
     t1 = TrainCovdepModelTask(d)
@@ -997,7 +997,7 @@ def train_covdep_model_firework(path,admol_name_path_dict,admol_name_structure_d
 @explicit_serialize
 class TrainCovdepModelTask(FiretaskBase):
     required_params = ["path","admol_name_path_dict","admol_name_structure_dict","sites","site_adjacency", "pynta_dir", "metal", "facet",
-                       "slab_path", "calculation_directories", "coadname", "coad_stable_sites", "Ncalc_per_iter", "iter", "software", "nslab", 
+                       "slab_path", "calculation_directories", "coadname", "coad_stable_sites", "Ncalc_per_iter", "iter", "software", 
                        "software_kwargs", "software_kwargs_TS", "freeze_ind", "fmaxopt"]
     optional_params = ["concern_energy_tol","ignore_errors"]
     def run_task(self, fw_spec):
@@ -1009,7 +1009,6 @@ class TrainCovdepModelTask(FiretaskBase):
         pynta_dir = self["pynta_dir"]
         metal = self["metal"]
         facet = self["facet"]
-        nslab = self["nslab"]
         slab_path = self["slab_path"]
         calculation_directories = self["calculation_directories"]
         coadname  = self["coadname"]
@@ -1027,9 +1026,10 @@ class TrainCovdepModelTask(FiretaskBase):
         coad = admol_name_structure_dict[coadname]
         
         coad_path = os.path.join(pynta_dir,"Adsorbates",coadname)
-        allowed_structure_site_structures = generate_allowed_structure_site_structures(os.path.join(pynta_dir,"Adsorbates"),sites,site_adjacency,nslab,max_dist=np.inf)
         slab = read(slab_path)
         nslab = len(slab)
+        allowed_structure_site_structures = generate_allowed_structure_site_structures(os.path.join(pynta_dir,"Adsorbates"),sites,site_adjacency,nslab,max_dist=np.inf)
+        
         ad_energy_dict = get_lowest_adsorbate_energies(os.path.join(pynta_dir,"Adsorbates"))
         Es = get_adsorbate_energies(coad_path)[0]
         coadmol_E_dict = dict()
@@ -1136,10 +1136,10 @@ class TrainCovdepModelTask(FiretaskBase):
 
 def select_calculations_firework(path,admol_name_path_dict,admol_name_structure_dict,sites,site_adjacency,
                                 pynta_dir, metal, facet, slab_path, calculation_directories, coadname,
-                                coad_stable_sites, software, software_kwargs, software_kwargs_TS, freeze_ind, fmaxopt, nslab, parents=[],Ncalc_per_iter=6,iter=0,concern_energy_tol=None,ignore_errors=False):
+                                coad_stable_sites, software, software_kwargs, software_kwargs_TS, freeze_ind, fmaxopt, parents=[],Ncalc_per_iter=6,iter=0,concern_energy_tol=None,ignore_errors=False):
     d = {"path": path,"admol_name_path_dict": admol_name_path_dict,"admol_name_structure_dict": {k:v.to_adjacency_list() for k,v in admol_name_structure_dict.items()},
          "sites": sites, "site_adjacency": {str(k): v for k,v in site_adjacency.items()}, "pynta_dir": pynta_dir, "metal": metal, "facet": facet, "slab_path": slab_path,
-         "calculation_directories": calculation_directories, "coadname": coadname, "coad_stable_sites": coad_stable_sites, "nslab": nslab,
+         "calculation_directories": calculation_directories, "coadname": coadname, "coad_stable_sites": coad_stable_sites, 
          "Ncalc_per_iter": Ncalc_per_iter, "software": software,
                        "software_kwargs": software_kwargs, "software_kwargs_TS": software_kwargs_TS, "freeze_ind": freeze_ind, 
                        "fmaxopt": fmaxopt, "concern_energy_tol": concern_energy_tol, "ignore_errors": ignore_errors}
@@ -1149,7 +1149,7 @@ def select_calculations_firework(path,admol_name_path_dict,admol_name_structure_
 @explicit_serialize
 class SelectCalculationsTask(FiretaskBase):
     required_params = ["path","admol_name_path_dict","admol_name_structure_dict","sites","site_adjacency", "pynta_dir", "metal", "facet",
-                       "slab_path", "calculation_directories", "coadname", "coad_stable_sites", "iter", "software", "nslab",
+                       "slab_path", "calculation_directories", "coadname", "coad_stable_sites", "iter", "software",
                        "software_kwargs", "software_kwargs_TS", "freeze_ind", "fmaxopt"]
     optional_params = ["concern_energy_tol","ignore_errors"]
     def run_task(self, fw_spec):
@@ -1161,7 +1161,6 @@ class SelectCalculationsTask(FiretaskBase):
         pynta_dir = self["pynta_dir"]
         metal = self["metal"]
         facet = self["facet"]
-        nslab = self["nslab"]
         slab_path = self["slab_path"]
         calculation_directories = self["calculation_directories"]
         coadname  = self["coadname"]
@@ -1181,7 +1180,9 @@ class SelectCalculationsTask(FiretaskBase):
         coad_path = os.path.join(pynta_dir,"Adsorbates",coadname)
         
         slab = read(slab_path)
-        nslab = len(nslab)
+        nslab = len(slab)
+        allowed_structure_site_structures = generate_allowed_structure_site_structures(os.path.join(pynta_dir,"Adsorbates"),sites,site_adjacency,nslab,max_dist=np.inf)
+        
         ad_energy_dict = get_lowest_adsorbate_energies(os.path.join(pynta_dir,"Adsorbates"))
         Es = get_adsorbate_energies(coad_path)[0]
         coadmol_E_dict = dict()
