@@ -1938,7 +1938,10 @@ def process_calculation(d,ad_energy_dict,slab,metal,facet,sites,site_adjacency,p
                     coad_disruption_tol=coad_disruption_tol,
                     out_file_name=out_file_name,init_file_name=init_file_name,vib_file_name=vib_file_name,is_ad=is_ad)
     
-    mol_init = Molecule().from_adjacency_list(outdict["init_extracted"],check_consistency=False)
+    if outdict["init_extracted"]:
+        mol_init = Molecule().from_adjacency_list(outdict["init_extracted"],check_consistency=False)
+    else:
+        mol_init = Molecule().from_adjacency_list(outdict["init_info"],check_consistency=False)
     
     if not outdict["isomorphic"]:
         datums_stability.append(Datum(mol_init,False))
