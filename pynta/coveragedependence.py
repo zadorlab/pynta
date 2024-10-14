@@ -1772,6 +1772,7 @@ def extract_sample(d,ad_energy_dict,slab,metal,facet,sites,site_adjacency,pynta_
     
     atoms_init = read(os.path.join(d,init_file_name+".xyz"))
     atoms = read(os.path.join(d,out_file_name+".xyz"))
+    nslab = len(slab)
     
     if len(atoms_init) < len(slab): #gas phase
         return None
