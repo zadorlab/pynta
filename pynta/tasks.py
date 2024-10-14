@@ -1091,9 +1091,9 @@ class TrainCovdepModelTask(FiretaskBase):
             with open(os.path.join(d,"info.json"),'r') as f:
                 info = json.load(f)
             adjlist = info['adjlist']
-            adjlist.replace('+3','0')
-            adjlist.replace('+2','0')
-            adjlist.replace('+1','0')
+            adjlist = adjlist.replace('+3','0')
+            adjlist = adjlist.replace('+2','0')
+            adjlist = adjlist.replace('+1','0')
             init_config = Molecule().from_adjacency_list(adjlist,check_consistency=False)
             new_computed_configs.append(init_config)
             datum_E,datums_stability = process_calculation(d,ad_energy_dict,slab,metal,facet,sites,site_adjacency,pynta_dir,coadmol_E_dict,max_dist=3.0,rxn_alignment_min=0.7,
