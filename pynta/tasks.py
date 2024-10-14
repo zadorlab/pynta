@@ -1224,7 +1224,7 @@ class SelectCalculationsTask(FiretaskBase):
         for admol_name,st in admol_name_structure_dict.items():
             config_path = os.path.join(path,"Configurations",admol_name+".json")
             with open(config_path,'r') as f:
-                configs_of_concern_by_admol[st] = [Molecule().from_adjacency_list(x,check_consistency=False) for x in json.load(f)]
+                configs_of_concern_by_admol[st] = {Molecule().from_adjacency_list(k,check_consistency=False): v for k,v in json.load(f).items()}
         #load tree
         nodes = read_nodes(os.path.join(path,"Iterations",str(iter),"regressor.json"))
         tree = MultiEvalSubgraphIsomorphicDecisionTreeRegressor([adsorbate_interaction_decomposition,adsorbate_triad_interaction_decomposition],
