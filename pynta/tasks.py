@@ -130,6 +130,7 @@ class MolecularOptimizationTask(OptimizationTask):
                 raise e
             else:
                 errors.append(e)
+                return FWAction(stored_data={"error": errors,"converged": False})
 
         if socket and os.path.exists(socket_address):
             os.unlink(socket_address)
