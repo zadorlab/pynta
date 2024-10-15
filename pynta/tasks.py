@@ -973,7 +973,7 @@ class CalculateConfigurationEnergiesTask(FiretaskBase):
             with open("Ncoad_config_"+admol_name+".json",'w') as f:
                 json.dump(Ncoad_config_dict,f)
             with open("configs_of_concern_"+admol_name+".json",'w') as f:
-                json.dump([tuple(v[0].to_adjacency_list(),v[1],v[2],v[3]) for v in configs_of_concern_admol.values()],f)
+                json.dump([tuple([v[0].to_adjacency_list(),v[1],v[2],v[3]]) for v in configs_of_concern_admol.values()],f)
                 
         except Exception as e:
             if not ignore_errors:

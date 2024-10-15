@@ -2025,7 +2025,7 @@ def get_configs_for_calculation(configs_of_concern_by_admol,computed_configs,tre
     group_to_occurence = dict()
     configs_of_concern = []
     for admol_name in configs_of_concern_by_admol.keys():
-        configs_of_concern_admol = configs_of_concern_by_admol[admol]
+        configs_of_concern_admol = configs_of_concern_by_admol[admol_name]
         group_to_occurence_admol = dict()
         N = 0 #number of group contributions associated with given admol
         for v in configs_of_concern_admol:
