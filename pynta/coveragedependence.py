@@ -2126,7 +2126,14 @@ def mol_to_atoms(admol,slab,sites,metal,partial_atoms=None,partial_admol=None):
     if partial_atoms and partial_admol:
         atoms = deepcopy(partial_atoms)
         gpartial_admol = partial_admol.to_group()
-        subisos = admol.find_subgraph_isomorphisms(gpartial_admol,sort_atoms=False)
+        admol_atom_order = admol.atoms[:]
+        gpartial_admol_order = gpartial_admol.atoms[:]
+        try:
+            subisos = admol.find_subgraph_isomorphisms(gpartial_admol,save_order=True)
+        except ValueError:
+            subisos = admol.find_subgraph_isomorphisms(gpartial_admol)
+            admol.atoms = admol_atom_order
+            gpartial_admol.atoms = gpartial_admol_order
         if len(subisos) == 0:
             raise ValueError("partial_admol is not subgraph isomorphic to admol: {0}, {1}".format(gpartial_admol.to_adjacency_list(),admol.to_adjacency_list()))
         subiso = subisos[0]
