@@ -1258,7 +1258,7 @@ class SelectCalculationsTask(FiretaskBase):
             calculation_directories.append(os.path.split(init_path)[0])
             json_out = {"adjlist": config.to_adjacency_list(), "isolated_xyz": admol_path}
             with open(os.path.join(os.path.split(init_path)[0],'info.json'),'w') as f:
-                json.dump(json_out)
+                json.dump(json_out,f)
             
             if not any(bd.get_order_str() == 'R' for bd in config.get_all_edges()):
                 fwopt = optimize_firework(init_path,
@@ -1272,9 +1272,9 @@ class SelectCalculationsTask(FiretaskBase):
                                 opt_method="QuasiNewton",opt_kwargs={"trajectory": "out.traj"},software_kwargs=software_kwargs,order=0,
                                 run_kwargs={"fmax" : fmaxopt, "steps" : 70},parents=[fwopt],
                                 constraints=["freeze up to {}".format(freeze_ind)],
-                                ignore_errors=True, metal=metal, facet=surface_type, priority=2)
+                                ignore_errors=True, metal=metal, facet=facet, priority=2)
             
-                fwvib = vibrations_firework(os.path.join(os.path.split(d)[0],"out.xyz"),
+                fwvib = vibrations_firework(os.path.join(os.path.split(init_path)[0],"out.xyz"),
                                             software,"vib",software_kwargs=software_kwargs,parents=[fwopt2],
                                             constraints=["freeze up to "+str(nslab)])
                 sample_fws.extend([fwopt,fwopt2,fwvib])
