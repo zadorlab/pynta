@@ -1242,6 +1242,7 @@ class SelectCalculationsTask(FiretaskBase):
         sample_fws = []
         calculation_directories = []
         for i,config in enumerate(configs_for_calculation):
+            assert config.atoms[1].site == "bridge"
             adname = None
             for admol_name,config_list in admol_to_config_for_calculation.items():
                 if config in config_list:
@@ -1249,7 +1250,10 @@ class SelectCalculationsTask(FiretaskBase):
                     break
             else:
                 raise ValueError
+            assert config.atoms[1].site == "bridge"
+            
             partial_admol = admol_name_structure_dict[adname]
+            assert partial_admol.atoms[1].site == "bridge"
             admol_path = admol_name_path_dict[adname]
             partial_atoms = read(admol_path)
             init_atoms = mol_to_atoms(config,slab,sites,metal,partial_atoms=partial_atoms,partial_admol=partial_admol)
