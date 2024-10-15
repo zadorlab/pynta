@@ -1236,12 +1236,15 @@ class SelectCalculationsTask(FiretaskBase):
         
         configs_for_calculation,config_for_calculation_to_admol = get_configs_for_calculation(configs_of_concern_by_admol,computed_configs,tree,Ncalc_per_iter)
 
+        for k,v in config_for_calculation_to_admol:
+            assert k.is_subgraph_isomorphic(v.to_group(),save_order=True)
         os.makedirs(os.path.join(path,"Iterations",str(iter),"Samples"))
         
         sample_fws = []
         calculation_directories = []
         for i,config in enumerate(configs_for_calculation):
             partial_admol = config_for_calculation_to_admol[config]
+            assert config.is_subgraph_isomorphic(partial_admol.to_group(),save_order=True)
             admol_name = [k for k,v in admol_name_structure_dict.items() if v is partial_admol][0]
             admol_path = admol_name_path_dict[admol_name]
             partial_atoms = read(admol_path)
