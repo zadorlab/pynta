@@ -1237,7 +1237,7 @@ class SelectCalculationsTask(FiretaskBase):
         configs_for_calculation,admol_to_config_for_calculation= get_configs_for_calculation(configs_of_concern_by_admol,computed_configs,tree,Ncalc_per_iter)
 
         os.makedirs(os.path.join(path,"Iterations",str(iter),"Samples"))
-        
+        assert len(configs_for_calculation) > 0, configs_for_calculation
         sample_fws = []
         calculation_directories = []
         for i,config in enumerate(configs_for_calculation):
@@ -1294,7 +1294,7 @@ class SelectCalculationsTask(FiretaskBase):
                             pynta_dir, metal, facet, slab_path, calculation_directories, coadname,
                             coad_stable_sites, software, software_kwargs, software_kwargs_TS, freeze_ind, fmaxopt, parents=sample_fws,
                             Ncalc_per_iter=Ncalc_per_iter,iter=iter+1,max_iters=max_iters,concern_energy_tol=concern_energy_tol,ignore_errors=ignore_errors)
-        newwf = Workflow(fws+[tfw],name="Train Iteration "+str(iter+1))
+        newwf = Workflow(sample_fws+[tfw],name="Train Iteration "+str(iter+1))
         
         return FWAction(detours=newwf)
         
