@@ -2078,7 +2078,7 @@ def get_configs_for_calculation(configs_of_concern_by_admol,computed_configs,tre
                 group_fract_for_calculation.append(group_fract)
                 maxval = np.linalg.norm(sum(group_fract_for_calculation) * group_to_weight, ord=1)
             else:
-                group_fract = config_to_group_fract[config]
+                group_fract = config_to_group_fract[j]
                 g_old_sum = sum(group_fract_for_calculation)
                 maxarglocal = None
                 maxvallocal = maxval
