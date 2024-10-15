@@ -2064,7 +2064,8 @@ def get_configs_for_calculation(configs_of_concern_by_admol,computed_configs,tre
     np.random.shuffle(shuffled_configs)
     
     for config in shuffled_configs:
-        if config not in config_to_group_fract.keys():
+        ind = config_list.index(config)
+        if ind not in config_to_group_fract.keys():
             logging.error("config not in config_to_group_fract")
             continue
         for c in computed_configs:
@@ -2073,7 +2074,6 @@ def get_configs_for_calculation(configs_of_concern_by_admol,computed_configs,tre
         else:
             if len(configs_for_calculation) < Ncalc_per_iter:
                 configs_for_calculation.append(config)
-                ind = config_list.index(config)
                 group_fract = config_to_group_fract[ind]
                 group_fract_for_calculation.append(group_fract)
                 maxval = np.linalg.norm(sum(group_fract_for_calculation) * group_to_weight, ord=1)
