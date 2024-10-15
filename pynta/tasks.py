@@ -1257,7 +1257,7 @@ class SelectCalculationsTask(FiretaskBase):
             init_path = os.path.join(path,"Iterations",str(iter),"Samples",str(i),"init.xyz")
             write(init_path,init_atoms)
             calculation_directories.append(os.path.split(init_path)[0])
-            json_out = {"adjlist": config.to_adjacency_list(), "isolated_xyz": admol_path}
+            json_out = {"adjlist": config.to_adjacency_list(), "xyz": admol_path}
             with open(os.path.join(os.path.split(init_path)[0],'info.json'),'w') as f:
                 json.dump(json_out,f)
             
