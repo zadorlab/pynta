@@ -2136,7 +2136,7 @@ def mol_to_atoms(admol,slab,sites,metal,partial_atoms=None,partial_admol=None):
         admol.atoms = admol_atom_order[:]
         admol.update(sort_atoms=False,raise_atomtype_exception=False)
         admol.update_connectivity_values()
-        gpartial_admol = gpartial_admol_atom_order[:]
+        gpartial_admol.atoms = gpartial_admol_atom_order[:]
         gpartial_admol.update()
         if len(subisos) == 0:
             raise ValueError("partial_admol is not subgraph isomorphic to admol: {0}, {1}".format(gpartial_admol.to_adjacency_list(),admol.to_adjacency_list()))
