@@ -1071,7 +1071,7 @@ class TrainCovdepModelTask(FiretaskBase):
         
         if iter > 1:
             with open(os.path.join(path,"pairs_datums.json"),'r') as f:
-                pairs_datums = [Datum(mol=Molecule().from_adjacency_list(d["mol"],check_consistency=False), value=d["value"]) for din json.load(f)]
+                pairs_datums = [Datum(mol=Molecule().from_adjacency_list(d["mol"],check_consistency=False), value=d["value"]) for d in json.load(f)]
             with open(os.path.join(path,"Iterations",iter-1,"cumulative_sample_datums.json"),'r') as f:
                 old_sample_datums = [Datum(mol=Molecule().from_adjacency_list(d["mol"],check_consistency=False), value=d["value"]) for d in json.load(f)]
         elif iter == 1:
