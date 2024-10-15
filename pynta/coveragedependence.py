@@ -2096,7 +2096,6 @@ def get_configs_for_calculation(configs_of_concern_by_admol,computed_configs,tre
         for admol,admol_configs in configs_of_concern_by_admol.items():
             if config in admol_configs.keys():
                 config_for_calculation_to_admol[config] = admol 
-                assert config.is_subgraph_isomorphic(admol.to_group(),save_order=True), (config.to_adjacency_list(),admol.to_adjacency_list())
                 break 
         else:
             raise ValueError
@@ -2122,7 +2121,6 @@ def mol_to_atoms(admol,slab,sites,metal,partial_atoms=None,partial_admol=None):
         _type_: Atoms object corresponding to the admol 2D configuration
     """
     if partial_atoms and partial_admol:
-        assert admol.is_subgraph_isomorphic(partial_admol.to_group(),save_order=True)
         atoms = deepcopy(partial_atoms)
         gpartial_admol = partial_admol.to_group()
         subisos = admol.find_subgraph_isomorphisms(gpartial_admol,save_order=True)
