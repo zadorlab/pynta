@@ -2155,7 +2155,7 @@ def mol_to_atoms(admol,slab,sites,metal,partial_atoms=None,partial_admol=None):
         ad_sites = []
         for a,sind in adsorbed_atom_dict.items():
             if a in st.atoms:
-                assert sites[sind]["site"] == a.site
+                assert sites[sind]["site"] == a.site, (admol.to_adjacency_list(),partial_admol.to_adjacency_list())
                 atom_surf_inds.append(mol_to_atoms_map[adatom_molind])
                 ad_sites.append(sites[sind])
         atoms,_,_ = place_adsorbate(ad,atoms,atom_surf_inds,ad_sites,metal)
