@@ -1245,7 +1245,7 @@ class SelectCalculationsTask(FiretaskBase):
             assert config.atoms[1].site == "bridge"
             adname = None
             for admol_name,config_list in admol_to_config_for_calculation.items():
-                if config in config_list:
+                if any(x is config for x in config_list):
                     adname = admol_name
                     break
             else:
