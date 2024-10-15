@@ -1605,7 +1605,7 @@ def get_cov_energies_configs_concern_tree(tree_interaction_regressor, configs, c
     config_to_Eunctr = dict()
     configs_of_concern = {}
     Nempty = len([a for a in configs[0].atoms if a.is_surface_site() and a.site in coad_stable_sites])
-    for m in configs:
+    for i,m in enumerate(configs):
         Ncoad = len([a for a in m.atoms if a.is_surface_site() and any(not a2.is_surface_site() for a2 in a.bonds.keys())]) - Ncoad_isolated
 
         if stability_datums:
@@ -1625,7 +1625,7 @@ def get_cov_energies_configs_concern_tree(tree_interaction_regressor, configs, c
         else:
             raise ValueError
         
-        config_to_Eunctr[m] = (E,std,tr)
+        config_to_Eunctr[i] = (m,E,std,tr)
         
         if Ncoad not in Ncoad_energy_dict.keys():
             Ncoad_energy_dict[Ncoad] = E
@@ -1639,11 +1639,11 @@ def get_cov_energies_configs_concern_tree(tree_interaction_regressor, configs, c
             else:
                 Ncoad_config_dict[Ncoad] = [Ncoad_config_dict[Ncoad], m.to_adjacency_list()]
     
-    for m in config_to_Eunctr.keys():
+    for i in config_to_Eunctr.keys():
         Ncoad = len([a for a in m.atoms if a.is_surface_site() and any(not a2.is_surface_site() for a2 in a.bonds.keys())]) - Ncoad_isolated
-        E,std,tr = config_to_Eunctr[m]
+        m,E,std,tr = config_to_Eunctr[i]
         if ((concern_energy_tol is None) or (Ncoad_energy_dict[Ncoad] + concern_energy_tol > E)):
-            configs_of_concern[m] = (E,tr,std)
+            configs_of_concern[i] = (m,E,tr,std)
     
     return Ncoad_energy_dict,Ncoad_config_dict,configs_of_concern
     
@@ -2023,14 +2023,14 @@ def process_calculation(d,ad_energy_dict,slab,metal,facet,sites,site_adjacency,p
 def get_configs_for_calculation(configs_of_concern_by_admol,computed_configs,tree_regressor,Ncalc_per_iter):
     
     group_to_occurence = dict()
-    configs_of_concern = dict()
-    for admol in configs_of_concern_by_admol.keys():
+    configs_of_concern = []
+    for admol_name in configs_of_concern_by_admol.keys():
         configs_of_concern_admol = configs_of_concern_by_admol[admol]
         group_to_occurence_admol = dict()
         N = 0 #number of group contributions associated with given admol
-        for m,v in configs_of_concern_admol.items():
-            configs_of_concern[m] = v
-            grps = v[1]
+        for v in configs_of_concern_admol:
+            configs_of_concern.append(v)
+            grps = v[2]
             for grp in grps:
                 if grp in group_to_occurence_admol:
                     group_to_occurence_admol[grp] += 1
@@ -2038,11 +2038,11 @@ def get_configs_for_calculation(configs_of_concern_by_admol,computed_configs,tre
                 else:
                     group_to_occurence_admol[grp] = 1
                     N += 1
-        for g,v in group_to_occurence_admol.items():
+        for g,n in group_to_occurence_admol.items():
             if grp in group_to_occurence:
-                group_to_occurence[grp] += v/N
+                group_to_occurence[grp] += n/N
             else:
-                group_to_occurence[grp] = v/N 
+                group_to_occurence[grp] = n/N 
                     
     
     concern_groups = list(group_to_occurence.keys()) #selected ordering
@@ -2050,16 +2050,17 @@ def get_configs_for_calculation(configs_of_concern_by_admol,computed_configs,tre
     group_to_weight = np.array([group_to_occurence[g]*tree_regressor.nodes[g].rule.uncertainty for g in concern_groups])
     
     config_to_group_fract = dict()
-    for config in configs_of_concern.keys():
-        E,tr,std = configs_of_concern[config]
+    for j,v in enumerate(configs_of_concern):
+        config,E,tr,std = v
         config_group_unc = np.array([tr.count(g)*tree_regressor.nodes[g].rule.uncertainty for g in concern_groups])
         
-        config_to_group_fract[config] = config_group_unc/config_group_unc.sum()
+        config_to_group_fract[j] = config_group_unc/config_group_unc.sum()
 
     configs_for_calculation = []
     group_fract_for_calculation = []
     maxval = 0.0
-    shuffled_configs = list(configs_of_concern.keys())
+    config_list = [x[0] for x in configs_of_concern]
+    shuffled_configs = config_list[:]
     np.random.shuffle(shuffled_configs)
     
     for config in shuffled_configs:
@@ -2067,12 +2068,13 @@ def get_configs_for_calculation(configs_of_concern_by_admol,computed_configs,tre
             logging.error("config not in config_to_group_fract")
             continue
         for c in computed_configs:
-            if config is c:
+            if config.is_isomorphic(c,save_order=True):
                 break
         else:
             if len(configs_for_calculation) < Ncalc_per_iter:
                 configs_for_calculation.append(config)
-                group_fract = config_to_group_fract[config]
+                ind = config_list.index(config)
+                group_fract = config_to_group_fract[ind]
                 group_fract_for_calculation.append(group_fract)
                 maxval = np.linalg.norm(sum(group_fract_for_calculation) * group_to_weight, ord=1)
             else:
@@ -2091,16 +2093,19 @@ def get_configs_for_calculation(configs_of_concern_by_admol,computed_configs,tre
                     configs_for_calculation[maxarglocal] = config
                     maxval = maxvallocal
     
-    config_for_calculation_to_admol = dict()
+    admol_to_config_for_calculation = dict()
     for config in configs_for_calculation:
-        for admol,admol_configs in configs_of_concern_by_admol.items():
-            if config in admol_configs.keys():
-                config_for_calculation_to_admol[config] = admol 
-                break 
+        for admol_name,v in configs_of_concern_by_admol.items():
+            if config in [x[0] for x in v]:
+                if admol_name in admol_to_config_for_calculation.keys():
+                    admol_to_config_for_calculation[admol_name].append(config)
+                else:
+                    admol_to_config_for_calculation[admol_name] = [config]
+                break
         else:
             raise ValueError
     
-    return configs_for_calculation,config_for_calculation_to_admol
+    return configs_for_calculation,admol_to_config_for_calculation
 
 def mol_to_atoms(admol,slab,sites,metal,partial_atoms=None,partial_admol=None):
     """Generate a 3D initial guess for a given 2D admol configuration
