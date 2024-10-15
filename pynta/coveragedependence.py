@@ -2130,7 +2130,10 @@ def mol_to_atoms(admol,slab,sites,metal,partial_atoms=None,partial_admol=None):
         gpartial_admol = partial_admol.to_group()
         admol.update(sort_atoms=False,raise_atomtype_exception=False)
         admol.update_connectivity_values()
-        subisos = admol.find_subgraph_isomorphisms(gpartial_admol,save_order=True)
+        try:
+            subisos = admol.find_subgraph_isomorphisms(gpartial_admol,save_order=True)
+        except ValueError:
+            subisos = admol.find_subgraph_isomorphisms(gpartial_admol,save_order=True)
         if len(subisos) == 0:
             raise ValueError("partial_admol is not subgraph isomorphic to admol: {0}, {1}".format(gpartial_admol.to_adjacency_list(),admol.to_adjacency_list()))
         subiso = subisos[0]
