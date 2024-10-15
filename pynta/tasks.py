@@ -1258,7 +1258,7 @@ class SelectCalculationsTask(FiretaskBase):
             calculation_directories.append(os.path.split(init_path)[0])
             json_out = {"adjlist": config.to_adjacency_list(), "isolated_xyz": admol_path}
             with open(os.path.join(os.path.split(init_path)[0],'info.json'),'w') as f:
-                json.dump(json_out)
+                json.dump(json_out,f)
             
             if not any(bd.get_order_str() == 'R' for bd in config.get_all_edges()):
                 fwopt = optimize_firework(init_path,
