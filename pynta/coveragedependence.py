@@ -2122,6 +2122,7 @@ def mol_to_atoms(admol,slab,sites,metal,partial_atoms=None,partial_admol=None):
         _type_: Atoms object corresponding to the admol 2D configuration
     """
     if partial_atoms and partial_admol:
+        assert admol.is_subgraph_isomorphic(partial_admol.to_group(),save_order=True)
         atoms = deepcopy(partial_atoms)
         gpartial_admol = partial_admol.to_group()
         subisos = admol.find_subgraph_isomorphisms(gpartial_admol,save_order=True)
