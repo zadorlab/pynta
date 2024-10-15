@@ -2021,7 +2021,6 @@ def process_calculation(d,ad_energy_dict,slab,metal,facet,sites,site_adjacency,p
     return datum_E,datums_stability
 
 def get_configs_for_calculation(configs_of_concern_by_admol,computed_configs,tree_regressor,Ncalc_per_iter):
-    
     group_to_occurence = dict()
     configs_of_concern = []
     for admol_name in configs_of_concern_by_admol.keys():
@@ -2044,7 +2043,6 @@ def get_configs_for_calculation(configs_of_concern_by_admol,computed_configs,tre
             else:
                 group_to_occurence[grp] = n/N 
                     
-    
     concern_groups = list(group_to_occurence.keys()) #selected ordering
         
     group_to_weight = np.array([group_to_occurence[g]*tree_regressor.nodes[g].rule.uncertainty for g in concern_groups])
@@ -2055,16 +2053,16 @@ def get_configs_for_calculation(configs_of_concern_by_admol,computed_configs,tre
         config_group_unc = np.array([tr.count(g)*tree_regressor.nodes[g].rule.uncertainty for g in concern_groups])
         
         config_to_group_fract[j] = config_group_unc/config_group_unc.sum()
-
+    
     configs_for_calculation = []
     group_fract_for_calculation = []
     maxval = 0.0
     config_list = [x[0] for x in configs_of_concern]
     shuffled_configs = config_list[:]
     np.random.shuffle(shuffled_configs)
-    
+
     for config in shuffled_configs:
-        ind = config_list.index(config)
+        ind = [i for i,c in enumerate(config_list) if c is config][0]
         if ind not in config_to_group_fract.keys():
             logging.error("config not in config_to_group_fract")
             continue
@@ -2073,7 +2071,7 @@ def get_configs_for_calculation(configs_of_concern_by_admol,computed_configs,tre
                 break
         else:
             if len(configs_for_calculation) < Ncalc_per_iter:
-                configs_for_calculation.append(config)
+                configs_for_calculation = configs_for_calculation + [config]
                 group_fract = config_to_group_fract[ind]
                 group_fract_for_calculation.append(group_fract)
                 maxval = np.linalg.norm(sum(group_fract_for_calculation) * group_to_weight, ord=1)
@@ -2092,11 +2090,11 @@ def get_configs_for_calculation(configs_of_concern_by_admol,computed_configs,tre
                     group_fract_for_calculation[maxarglocal] = group_fract
                     configs_for_calculation[maxarglocal] = config
                     maxval = maxvallocal
-    
+        
     admol_to_config_for_calculation = dict()
     for config in configs_for_calculation:
         for admol_name,v in configs_of_concern_by_admol.items():
-            if config in [x[0] for x in v]:
+            if any(x[0] is config for x in v):
                 if admol_name in admol_to_config_for_calculation.keys():
                     admol_to_config_for_calculation[admol_name].append(config)
                 else:
@@ -2104,7 +2102,7 @@ def get_configs_for_calculation(configs_of_concern_by_admol,computed_configs,tre
                 break
         else:
             raise ValueError
-    
+
     return configs_for_calculation,admol_to_config_for_calculation
 
 def mol_to_atoms(admol,slab,sites,metal,partial_atoms=None,partial_admol=None):
