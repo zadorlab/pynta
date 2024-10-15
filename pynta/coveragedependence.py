@@ -2094,7 +2094,7 @@ def get_configs_for_calculation(configs_of_concern_by_admol,computed_configs,tre
     config_for_calculation_to_admol = dict()
     for config in configs_for_calculation:
         for admol,admol_configs in configs_of_concern_by_admol.items():
-            if config in admol_configs:
+            if config in admol_configs.keys():
                 config_for_calculation_to_admol[config] = admol 
                 break 
         else:
