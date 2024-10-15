@@ -973,7 +973,7 @@ class CalculateConfigurationEnergiesTask(FiretaskBase):
             with open("Ncoad_config_"+admol_name+".json",'w') as f:
                 json.dump(Ncoad_config_dict,f)
             with open("configs_of_concern_"+admol_name+".json",'w') as f:
-                json.dump({k.to_adjacency_list():v for k,v in configs_of_concern_admol.items()},f)
+                json.dump([tuple(v[0].to_adjacency_list(),v[1],v[2],v[3]) for v in configs_of_concern_admol.values()],f)
                 
         except Exception as e:
             if not ignore_errors:
@@ -1071,12 +1071,12 @@ class TrainCovdepModelTask(FiretaskBase):
         
         if iter > 1:
             with open(os.path.join(path,"pairs_datums.json"),'r') as f:
-                pairs_datums = [Datum(mol=k.to_adjacency_list(), value=v) for k,v in json.load(f)]
+                pairs_datums = [Datum(mol=Molecule().from_adjacency_list(d["mol"],check_consistency=False), value=d["value"]) for din json.load(f)]
             with open(os.path.join(path,"Iterations",iter-1,"cumulative_sample_datums.json"),'r') as f:
-                old_sample_datums = [Datum(mol=k.to_adjacency_list(), value=v) for k,v in json.load(f)]
+                old_sample_datums = [Datum(mol=Molecule().from_adjacency_list(d["mol"],check_consistency=False), value=d["value"]) for d in json.load(f)]
         elif iter == 1:
             with open(os.path.join(path,"pairs_datums.json"),'r') as f:
-                pairs_datums = [Datum(mol=k.to_adjacency_list(), value=v) for k,v in json.load(f)]
+                pairs_datums = [Datum(mol=Molecule().from_adjacency_list(d["mol"],check_consistency=False), value=d["value"]) for d in json.load(f)]
             old_sample_datums = [] 
         
         if iter == 0:
@@ -1109,12 +1109,12 @@ class TrainCovdepModelTask(FiretaskBase):
         if iter == 0:
             pairs_datums = new_datums_E
             with open(os.path.join(path,"pairs_datums.json"),'w') as f:
-                json.dump({d.mol.to_adjacency_list(): d.value for d in pairs_datums},f)
+                json.dump([{"mol": d.mol.to_adjacency_list(),"value": d.value} for d in pairs_datums],f)
             sampling_datums = []
         else:
             sampling_datums = old_sample_datums + new_datums_E
             with open(os.path.join(path,"Iterations",iter,"cumulative_sample_datums.json"),'w') as f:
-                json.dump({d.mol.to_adjacency_list(): d.value for d in sampling_datums},f)
+                json.dump([{"mol": d.mol.to_adjacency_list(),"value": d.value}for d in sampling_datums],f)
             
         Nconfigs = len(admol_name_structure_dict)
         Ncoads = 1
@@ -1224,7 +1224,7 @@ class SelectCalculationsTask(FiretaskBase):
         for admol_name,st in admol_name_structure_dict.items():
             config_path = os.path.join(path,"Iterations",str(iter),"configs_of_concern_"+admol_name+".json")
             with open(config_path,'r') as f:
-                configs_of_concern_by_admol[st] = {Molecule().from_adjacency_list(k,check_consistency=False): v for k,v in json.load(f).items()}
+                configs_of_concern_by_admol[admol_name] = [(Molecule().from_adjacency_list(k[0],check_consistency=False),k[1],k[2],k[3]) for k in json.load(f)]
         #load tree
         nodes = read_nodes(os.path.join(path,"Iterations",str(iter),"regressor.json"))
         tree = MultiEvalSubgraphIsomorphicDecisionTreeRegressor([adsorbate_interaction_decomposition,adsorbate_triad_interaction_decomposition],
@@ -1234,21 +1234,22 @@ class SelectCalculationsTask(FiretaskBase):
         with open(os.path.join(path,"Iterations",str(iter),"computed_configurations.json"),'r') as f:
             computed_configs = [Molecule().from_adjacency_list(x,check_consistency=False) for x in json.load(f)]
         
-        configs_for_calculation,config_for_calculation_to_admol = get_configs_for_calculation(configs_of_concern_by_admol,computed_configs,tree,Ncalc_per_iter)
+        configs_for_calculation,admol_to_config_for_calculation= get_configs_for_calculation(configs_of_concern_by_admol,computed_configs,tree,Ncalc_per_iter)
 
         os.makedirs(os.path.join(path,"Iterations",str(iter),"Samples"))
         
         sample_fws = []
         calculation_directories = []
         for i,config in enumerate(configs_for_calculation):
-            partial_admol = config_for_calculation_to_admol[config]
-            admol_name = [k for k,v in admol_name_structure_dict.items() if v is partial_admol][0]
-            admol_path = admol_name_path_dict[admol_name]
+            adname = None
+            for admol_name,config_list in admol_to_config_for_calculation.items():
+                if config in config_list:
+                    adname = admol_name
+                    break
+            partial_admol = admol_name_structure_dict[adname]
+            admol_path = admol_name_path_dict[adname]
             partial_atoms = read(admol_path)
-            try:
-                init_atoms = mol_to_atoms(config,slab,sites,metal,partial_atoms=partial_atoms,partial_admol=partial_admol)
-            except:
-                raise ValueError((config.to_adjacency_list(),partial_admol.to_adjacency_list()))
+            init_atoms = mol_to_atoms(config,slab,sites,metal,partial_atoms=partial_atoms,partial_admol=partial_admol)
             os.makedirs(os.path.join(path,"Iterations",str(iter),"Samples",str(i)))
             init_path = os.path.join(path,"Iterations",str(iter),"Samples",str(i),"init.xyz")
             write(init_path,init_atoms)
