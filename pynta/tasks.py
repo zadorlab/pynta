@@ -1274,7 +1274,7 @@ class SelectCalculationsTask(FiretaskBase):
                                 constraints=["freeze up to {}".format(freeze_ind)],
                                 ignore_errors=True, metal=metal, facet=facet, priority=2)
             
-                fwvib = vibrations_firework(os.path.join(os.path.split(d)[0],"out.xyz"),
+                fwvib = vibrations_firework(os.path.join(os.path.split(init_path)[0],"out.xyz"),
                                             software,"vib",software_kwargs=software_kwargs,parents=[fwopt2],
                                             constraints=["freeze up to "+str(nslab)])
                 sample_fws.extend([fwopt,fwopt2,fwvib])
