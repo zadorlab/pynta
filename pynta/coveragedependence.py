@@ -2125,7 +2125,7 @@ def mol_to_atoms(admol,slab,sites,metal,partial_atoms=None,partial_admol=None):
         gpartial_admol = partial_admol.to_group()
         subisos = admol.find_subgraph_isomorphisms(gpartial_admol,save_order=True)
         if len(subisos) == 0:
-            raise ValueError("partial_admol is not subgraph isomorphic to admol")
+            raise ValueError("partial_admol is not subgraph isomorphic to admol: {0}, {1}".format(gpartial_admol.to_adjacency_list(),admol.to_adjacency_list()))
         subiso = subisos[0]
         atoms_in_partial = [a for a in subiso.keys() if not a.is_surface_site()]
         split_structs,adsorbed_atom_dict = split_adsorbed_structures(admol,clear_site_info=False,adsorption_info=True,atoms_to_skip=atoms_in_partial)
