@@ -1775,7 +1775,7 @@ def load_coverage_delta(d,ad_energy_dict,slab,metal,facet,sites,site_adjacency,t
         Esep = Ets
         for split_struct in split_structs:
             for ad,E in ad_energy_dict.items():
-                if split_struct.is_isomorphic(ad):
+                if split_struct.is_isomorphic(ad,save_order=True):
                     Esep += E
                     break
             else:
