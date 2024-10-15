@@ -1073,7 +1073,7 @@ class TrainCovdepModelTask(FiretaskBase):
         if iter > 1:
             with open(os.path.join(path,"pairs_datums.json"),'r') as f:
                 pairs_datums = [Datum(mol=Molecule().from_adjacency_list(d["mol"],check_consistency=False), value=d["value"]) for d in json.load(f)]
-            with open(os.path.join(path,"Iterations",iter-1,"cumulative_sample_datums.json"),'r') as f:
+            with open(os.path.join(path,"Iterations",str(iter-1),"cumulative_sample_datums.json"),'r') as f:
                 old_sample_datums = [Datum(mol=Molecule().from_adjacency_list(d["mol"],check_consistency=False), value=d["value"]) for d in json.load(f)]
         elif iter == 1:
             with open(os.path.join(path,"pairs_datums.json"),'r') as f:
@@ -1114,7 +1114,7 @@ class TrainCovdepModelTask(FiretaskBase):
             sampling_datums = []
         else:
             sampling_datums = old_sample_datums + new_datums_E
-            with open(os.path.join(path,"Iterations",iter,"cumulative_sample_datums.json"),'w') as f:
+            with open(os.path.join(path,"Iterations",str(iter),"cumulative_sample_datums.json"),'w') as f:
                 json.dump([{"mol": d.mol.to_adjacency_list(),"value": d.value}for d in sampling_datums],f)
             
         Nconfigs = len(admol_name_structure_dict)
@@ -1136,7 +1136,7 @@ class TrainCovdepModelTask(FiretaskBase):
         scfw = select_calculations_firework(path,admol_name_path_dict,admol_name_structure_dict,sites,site_adjacency,
                             pynta_dir, metal, facet, slab_path, calculation_directories, coadname,
                             coad_stable_sites, software, software_kwargs, software_kwargs_TS, freeze_ind, fmaxopt, parents=config_E_fws,Ncalc_per_iter=Ncalc_per_iter,iter=iter,
-                            max_iters=max_iters,concern_energy_tol=concern_energy_tol,ignore_errors=ignore_errors) 
+                            max_iters=max_iters,concern_energy_tol=concern_energy_tol,ignore_errors=ignore_errors)
         
         newwf = Workflow(config_E_fws+[scfw],name="Select Calculations "+str(iter))
         
