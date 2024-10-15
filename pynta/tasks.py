@@ -1246,6 +1246,8 @@ class SelectCalculationsTask(FiretaskBase):
                 if config in config_list:
                     adname = admol_name
                     break
+            else:
+                raise ValueError
             partial_admol = admol_name_structure_dict[adname]
             admol_path = admol_name_path_dict[adname]
             partial_atoms = read(admol_path)
