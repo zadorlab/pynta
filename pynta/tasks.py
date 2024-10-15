@@ -1245,7 +1245,10 @@ class SelectCalculationsTask(FiretaskBase):
             admol_name = [k for k,v in admol_name_structure_dict.items() if v is partial_admol][0]
             admol_path = admol_name_path_dict[admol_name]
             partial_atoms = read(admol_path)
-            init_atoms = mol_to_atoms(admol,slab,sites,metal,partial_atoms=partial_atoms,partial_admol=partial_admol)
+            try:
+                init_atoms = mol_to_atoms(admol,slab,sites,metal,partial_atoms=partial_atoms,partial_admol=partial_admol)
+            except Exception as e:
+                raise ValueError((e,config.to_adjacency_list(),partial_admol.to_adjacency_list()))
             os.makedirs(os.path.join(path,"Iterations",str(iter),"Samples",str(i)))
             init_path = os.path.join(path,"Iterations",str(iter),"Samples",str(i),"init.xyz")
             write(init_path,init_atoms)
