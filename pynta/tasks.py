@@ -1236,7 +1236,7 @@ class SelectCalculationsTask(FiretaskBase):
         
         configs_for_calculation,config_for_calculation_to_admol = get_configs_for_calculation(configs_of_concern_by_admol,computed_configs,tree,Ncalc_per_iter)
 
-        for k,v in config_for_calculation_to_admol:
+        for k,v in config_for_calculation_to_admol.items():
             assert k.is_subgraph_isomorphic(v.to_group(),save_order=True)
         os.makedirs(os.path.join(path,"Iterations",str(iter),"Samples"))
         
