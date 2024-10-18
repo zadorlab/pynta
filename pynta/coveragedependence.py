@@ -2029,28 +2029,27 @@ def extract_sample(d,ad_energy_dict,slab,metal,facet,sites,site_adjacency,pynta_
             nslab3D = ts_info["nslab"]
             ntsatoms = len([a for a in Molecule().from_adjacency_list(ts_info['reactants']).atoms if not a.is_surface_site()])
             nslab2D = len(ninds)
-     
-            coad_disrupt = check_TS_coadsorbate_disruption(atoms,admol,nslab3D,nslab2D,ntsatoms,mult=coad_disruption_tol)
-            
-            tr_sample = Trajectory(os.path.join(d,"vib.0.traj"))
 
-            #view(tr_sample)
-            tr_ts = Trajectory(os.path.join(os.path.split(ts_path)[0],"vib.0.traj"))
-            v_ts = tr_ts[15].positions[nslab:] - tr_ts[16].positions[nslab:]
-            v_ts /= np.linalg.norm(v_ts)
-            v_sample = tr_sample[15].positions[nslab:] - tr_sample[16].positions[nslab:]
-            v_sample /= np.linalg.norm(v_sample)
-            v_prod = np.abs(np.sum(v_sample[:len(v_ts)]*v_ts))
+            if os.path.exists(os.path.join(d,vib_file_name+".json")):
+                coad_disrupt = check_TS_coadsorbate_disruption(atoms,admol,nslab3D,nslab2D,ntsatoms,mult=coad_disruption_tol)
+                tr_sample = Trajectory(os.path.join(d,"vib.0.traj"))
 
-            logging.error(f"rxn alignment: {v_prod}")
-            logging.error(f"coad_distrupt: {coad_disrupt}")
-            logging.error(f"admol split: {len(admol.split())}")
-            logging.error(admol.to_adjacency_list())
-            if len(admol.split()) > 1 or v_prod < rxn_alignment_min or coad_disrupt:
-                valid = False
+                #view(tr_sample)
+                tr_ts = Trajectory(os.path.join(os.path.split(ts_path)[0],"vib.0.traj"))
+                v_ts = tr_ts[15].positions[nslab:] - tr_ts[16].positions[nslab:]
+                v_ts /= np.linalg.norm(v_ts)
+                v_sample = tr_sample[15].positions[nslab:] - tr_sample[16].positions[nslab:]
+                v_sample /= np.linalg.norm(v_sample)
+                v_prod = np.abs(np.sum(v_sample[:len(v_ts)]*v_ts))
+
+                if len(admol.split()) > 1 or v_prod < rxn_alignment_min or coad_disrupt:
+                    valid = False
+                else:
+                    valid = True
             else:
-                valid = True
-
+                coad_disrupt = None
+                valid = None
+            
     out_dict["valid"] = valid
     out_dict["dE"] = dE
     if admol is None or admol_init is None:
@@ -2086,7 +2085,7 @@ def process_calculation(d,ad_energy_dict,slab,metal,facet,sites,site_adjacency,p
     else:
         mol_init = Molecule().from_adjacency_list(outdict["init_info"],check_consistency=False)
     
-    if not outdict["isomorphic"]:
+    if (outdict["valid"] is not None) and (not outdict["isomorphic"]):
         datums_stability.append(Datum(mol_init,False))
 
     if outdict["out"] is not None:
