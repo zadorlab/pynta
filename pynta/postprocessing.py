@@ -414,16 +414,17 @@ def write_min_en_species_db(
         slab = read(slab_path)
 
         try:
-            with open(os.path.join(ad_path, "info.json")) as f:
+            with open(os.path.join(path_to_ad, "info.json")) as f:
                 info = json.load(f)
         except:
-            print(f"No information for {ad_path}")
+            print(f"No information for {path_to_ad}")
             continue
 
         adj_list = info['adjlist']
         gasphase = len(info["gratom_to_molecule_surface_atom_map"]) == 0
         spin = (Molecule().from_adjacency_list(info["adjlist"]).multiplicity - 1.0) / 2.0
         name = info["name"]
+        os.chdir(path_to_ad)
         ad_configs = [dir for dir in filter(os.path.isdir, os.listdir(path_to_ad))]
 
         # Setting up empty dictionaries to collect information for each config
@@ -454,12 +455,11 @@ def write_min_en_species_db(
             freq_dict[config] = freqs
             DFT_en_dict[config] = energy
             ad_dict[config] = energy + zpe
-            if not gasphase:
-                min_E_config = min(ad_dict, key=ad_dict.get)
-                atoms = atoms_dict[min_E_config]
-                data = {}
-                data['frequencies'] = freq_dict[min_E_config]
-                db.write(atoms, name=name, adj_list=adj_list, spin=spin, gasphase=gasphase, data=data)
+        min_E_config = min(ad_dict, key=ad_dict.get)
+        atoms = atoms_dict[min_E_config]
+        data = {}
+        data['frequencies'] = freq_dict[min_E_config]
+        db.write(atoms, name=name, adj_list=adj_list, spin=spin, gasphase=gasphase, data=data)
 
 
 
