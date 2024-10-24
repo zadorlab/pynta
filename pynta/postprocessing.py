@@ -408,6 +408,7 @@ def write_min_en_species_db(
     '''
     os.chdir(ad_path)
     ad_dirs = [dir for dir in filter(os.path.isdir, os.listdir(ad_path))]
+    db = connect('min_E_ads.db')
     for ad in ad_dirs:
         path_to_ad = os.path.join(ad_path, ad)
         slab = read(slab_path)
