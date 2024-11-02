@@ -9,6 +9,7 @@ from pynta.utils import get_unique_sym, get_occupied_sites, sites_match, SiteOcc
 from pynta.mol import *
 from pynta.geometricanalysis import *
 from pynta.tasks import *
+from pynta.postprocessing import get_adsorbate_energies
 from pysidt import *
 from pysidt.extensions import split_mols
 from pysidt.sidt import *
@@ -1104,15 +1105,17 @@ def get_best_adsorbate_xyz(adsorbate_path,sites,nslab):
     xyzs = get_unique_sym(geoms)
     adsorbate = None
     min_energy = np.inf
+    Es,_,freq = get_adsorbate_energies(adsorbate_path)
     for xyz in xyzs:
         geo = read(xyz)
+        strind = os.path.split(xyz)[1].split(".")[0]
         occ = get_occupied_sites(geo,sites,nslab)
         required_surface_inds = set([ind+nslab for ind in ase_to_mol_surface_atom_map.keys()])
         found_surface_inds = set([site["bonding_index"] for site in occ])
         if len(occ) >= len(mol.get_adatoms()) and required_surface_inds.issubset(found_surface_inds):
-            if geo.get_potential_energy() < min_energy:
+            if Es[strind] < min_energy:
                 adsorbate = xyz
-                min_energy = geo.get_potential_energy()
+                min_energy = Es[strind]
 
     return adsorbate
 
