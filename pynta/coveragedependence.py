@@ -2266,6 +2266,5 @@ def mol_to_atoms(admol,slab,sites,metal,partial_atoms=None,partial_admol=None):
                 atom_surf_inds.append(mol_to_atoms_map[adatom_molind])
                 ad_sites.append(sites[sind])
         atoms,_,_ = place_adsorbate(ad,atoms,atom_surf_inds,ad_sites,metal)
-    assert admol.atoms[1].site == "bridge"
-    assert partial_admol.atoms[1].site == "bridge"
+
     return atoms
