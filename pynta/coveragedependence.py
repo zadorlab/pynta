@@ -2257,8 +2257,7 @@ def mol_to_atoms(admol,slab,sites,metal,partial_atoms=None,partial_admol=None):
             ad.rotate(rot_vec,[0.0,0.0,1.0]) #rotate bonds toward the +z-axis
         else:
             adatom_molind = st.atoms.index([a for a in st.atoms if not a.is_surface_site()][0])
-        assert admol.atoms[1].site == "bridge"
-        assert partial_admol.atoms[1].site == "bridge"
+
         atom_surf_inds = []
         ad_sites = []
         for a,sind in adsorbed_atom_dict.items():
