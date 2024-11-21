@@ -1242,7 +1242,6 @@ class SelectCalculationsTask(FiretaskBase):
         sample_fws = []
         calculation_directories = []
         for i,config in enumerate(configs_for_calculation):
-            assert config.atoms[1].site == "bridge"
             adname = None
             for admol_name,config_list in admol_to_config_for_calculation.items():
                 if any(x is config for x in config_list):
