@@ -2249,6 +2249,8 @@ def mol_to_atoms(admol,slab,sites,metal,partial_atoms=None,partial_admol=None):
         raise ValueError("Must include both partial_atoms, partial_admol to start from partial")
     
     for st in split_structs:
+        if len(st.atoms) == 0:
+            continue
         ad,mol_to_atoms_map = get_adsorbate(st)
         
         if len(st.atoms) > 2: #not atomic adsorbate
