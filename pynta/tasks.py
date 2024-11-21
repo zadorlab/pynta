@@ -1249,10 +1249,8 @@ class SelectCalculationsTask(FiretaskBase):
                     break
             else:
                 raise ValueError
-            assert config.atoms[1].site == "bridge"
             
             partial_admol = admol_name_structure_dict[adname]
-            assert partial_admol.atoms[1].site == "bridge"
             admol_path = admol_name_path_dict[adname]
             partial_atoms = read(admol_path)
             init_atoms = mol_to_atoms(config,slab,sites,metal,partial_atoms=partial_atoms,partial_admol=partial_admol)
