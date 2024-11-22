@@ -1,0 +1,7 @@
+name: mace_env
+channels:
+  - conda-forge
+dependencies:
+  - ase
+  - pymace
+  - numpy
