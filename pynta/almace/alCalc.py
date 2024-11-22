@@ -3,8 +3,6 @@ import datetime
 from ase.io import read, write
 import os
 from mace.calculators.mace import MACECalculator
-#from IPython.core.debugger import Pdb
-from ase.calculators.calculator import Calculator, all_changes
 
 import argparse
 import sys
@@ -17,11 +15,24 @@ from uuid import uuid4
 
 import mace.cli.run_train
 
+def name_to_ase_software(software_name):
+    """
+    go from software_name to the associated
+    ASE calculator constructor
+    """
+    if software_name == "XTB":
+        module = import_module("xtb.ase.calculator")
+        return getattr(module, software_name)
+    else:
+        module = import_module("ase.calculators."+software_name.lower())
+        return getattr(module, software_name)
+
 class AlMaceCalculator(MACECalculator):
     def __init__(
         self,
         AL_dir,
-        dft_calculator,
+        dft_calculator_name,
+        dft_calculator_kwargs,
         mlff_parameters,
         force_al_threshold,
         rel_force_al_threshold,
@@ -33,6 +44,7 @@ class AlMaceCalculator(MACECalculator):
         history=False,
         reuse_checkpoints=True,
         storage = None,
+        min_data_to_train = 0, 
         **kwargs,
     ):
         """Initialize the AL-MACE calculator with given parameters."""
@@ -92,7 +104,7 @@ class AlMaceCalculator(MACECalculator):
         self.dir_initial_working = os.getcwd()
 
         # other inputs
-        self.dft_calculator = dft_calculator
+        self.dft_calculator = name_to_ase_software(dft_calculator_name)(**dft_calculator_kwargs)
         self.mlff_parameters = mlff_parameters
         self.mlff_train_cmd = mlff_train_cmd
 
@@ -100,11 +112,13 @@ class AlMaceCalculator(MACECalculator):
         self.force_al_threshold = force_al_threshold
         self.rel_froce_al_threshold = rel_force_al_threshold
         self.num_committes = num_committes
-
+        self.min_data_to_train = min_data_to_train
+        
         self.time_format = "%Y%m%d%H%M%S"
         # set to early time
         self.timestamp_fail = datetime.datetime.min.strftime(self.time_format)
         self.timestamp_train = self.timestamp_fail
+        
         print(self.timestamp_fail)
 
 
@@ -184,6 +198,17 @@ class AlMaceCalculator(MACECalculator):
         if self.history:
             self.at_history.append(atoms.copy())
             self.at_history = self.at_history[-10:] # keep memory low
+        
+        Ndata = len(os.listdir(self.storage))
+        
+        if Ndata < self.min_data_to_train:
+            new_at = self.calculate_dft(atoms)
+            self.logger.info(f'Running DFT')
+            self.create_new_training(new_at)
+            self.results["forces"] = new_at.arrays["forces"]
+            self.results["energy"] = new_at.info["energy"]
+            return 
+        
         self.mace.calculate(atoms)
         self.results = self.mace.results
 
@@ -204,7 +229,7 @@ class AlMaceCalculator(MACECalculator):
         self.logger.debug(f'Max force error: {np.round(np.max(force_std),4)} Rel_force: {np.round(np.max(force_std / fnorm), 4)}')
 
         self.logger.debug(f'Force std: {np.max(force_std)}')
-
+        
 
         if np.max(force_std) > self.force_al_threshold or np.max(force_std / fnorm) > self.rel_froce_al_threshold:
             self.logger.info(f'AL threshold exceeded: {np.max(force_std)} > {self.force_al_threshold} ')
