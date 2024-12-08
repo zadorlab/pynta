@@ -341,9 +341,16 @@ def get_site_density(slab,metal,facet):
 
 def get_cp(th,T,dT=0.01):
     if isinstance(th,HarmonicThermo):
-        return ((th.get_helmholtz_energy(T+dT,verbose=False) + (T+dT)*th.get_entropy(T+dT,verbose=False)) - (th.get_helmholtz_energy(T-dT,verbose=False) + (T-dT)*th.get_entropy(T-dT,verbose=False)))/(2*dT)
+        # The following is the approximate derivative using the finite difference method to obtain cp
+        return ((th.get_helmholtz_energy(T+dT,verbose=False) +
+                 (T+dT)*th.get_entropy(T+dT,verbose=False)) -
+                (th.get_helmholtz_energy(T-dT,verbose=False) +
+                 (T-dT)*th.get_entropy(T-dT,verbose=False)))/(2*dT)
     elif isinstance(th,IdealGasThermo):
-        return ((th.get_enthalpy(T+dT,verbose=False) + (T+dT)*th.get_entropy(T+dT,pressure=1.0e5,verbose=False)) - (th.get_enthalpy(T-dT,verbose=False) + (T-dT)*th.get_entropy(T-dT,pressure=1.0e5,verbose=False)))/(2*dT)
+        return ((th.get_enthalpy(T+dT,verbose=False) +
+                 (T+dT)*th.get_entropy(T+dT,pressure=1.0e5,verbose=False)) -
+                (th.get_enthalpy(T-dT,verbose=False) +
+                 (T-dT)*th.get_entropy(T-dT,pressure=1.0e5,verbose=False)))/(2*dT)
 
 def get_nasa_for_species(th,dT=0.01):
     
@@ -460,7 +467,6 @@ def write_min_en_species_db(
         data = {}
         data['frequencies'] = freq_dict[min_E_config]
         db.write(atoms, name=name, adj_list=adj_list, spin=spin, gasphase=gasphase, data=data)
-
 
 
 
