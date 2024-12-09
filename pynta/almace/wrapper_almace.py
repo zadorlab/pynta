@@ -6,7 +6,7 @@ class WrapperALMACE(Calculator):
     implemented_properties = ['energy', 'forces']
 
     def __init__(self, **kwargs):
-        super().__init__(self, **kwargs)
+        Calculator.__init__(self, **kwargs)
 
         if 'python_mace' in kwargs:
             self.python_mace = kwargs['python_mace']
