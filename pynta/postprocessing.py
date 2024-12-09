@@ -569,6 +569,8 @@ class thermo:
         dT = 10.0  # temperature increment
         self.temperature = np.append(temperature, np.arange(T_low, T_high + dT, dT))
 
+        self.cat_element = cat_element
+
         def compute_heat_of_formation(self):
             '''asdfas'''
             # What do we do for other atomic adsorbed species?
@@ -718,6 +720,7 @@ class thermo:
             return
 
         def fit_NASA(self):
+            '''I have not yet check the math on all this stuff from Goldsmith group'''
             R = self.R
             heat_capacity = self.Cp
             reference_enthalpy = self.H[0]
@@ -832,8 +835,7 @@ class thermo:
             rmg_line += "\t\t Tmin = (%.1F, 'K'),\n" % (298.0)
             rmg_line += "\t\t Tmax = (%.1F, 'K'),\n" % (max(temperature))
             rmg_line += "\t),\n"
-            # SHINAE CHANGE TO PT
-            rmg_line += '\tmetal = "Ag",\n'
+            rmg_line += f'\tmetal = {self.cat_element},\n'
             rmg_line += '\tfacet = "111",\n'
 
             self.thermo_lines = rmg_line
@@ -842,6 +844,8 @@ class thermo:
             self.a_high = a_high
 
             return
+
+        
 
 
 
