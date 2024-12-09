@@ -667,6 +667,55 @@ class thermo:
             return
 
 
+        # subroutine for the vibrational mode
+        def get_vibrational_thermo(self):
+            units = 1.0
+            units *= self.h * self.c / self.kB * self.invcm_to_invm  # K * cm
+            amu = self.amu
+            kB = self.kB
+            h = self.h
+            P_ref = self.P_ref
+            mass = float(self.adsorbate_mass)
+
+            # initialize the arrays for the partition function, entropy, enthalpy,
+            # and heat capacity.
+            Q_vib = np.ones(len(self.temperature))
+            S_vib = np.zeros(len(self.temperature))
+            dH_vib = np.zeros(len(self.temperature))
+            Cv_vib = np.zeros(len(self.temperature))
+
+            for (t, temp) in enumerate(temperature):
+                for (n, nu) in enumerate(self.data['frequencies']):
+                    if self.twoD_gas == True and n <= 1:  # skip the first two if we do 2D gas
+                        # do nothing!
+                        Q_vib[t] *= 1.0
+                        S_vib[t] += 0.0
+                        dH_vib[t] += 0.0
+                        Cv_vib[t] += 0.0
+                    else:
+                        # where did these equations come from
+                        x = nu * units / temp  # cm^-1 * K cm / K = dimensionless
+                        # I think this is to collect the ZPE
+                        Q_vib[t] *= 1.0 / (1.0 - np.exp(- x))
+                        # This one I found in thermochem source
+                        S_vib[t] += -np.log(1.0 - np.exp(- x)) + x * np.exp(- x) / (1.0 - np.exp(- x))
+                        # This one I also found
+                        dH_vib[t] += x * np.exp(- x) / (1.0 - np.exp(- x))
+                        # Where is this from?
+                        Cv_vib[t] += x ** 2.0 * np.exp(- x) / (1.0 - np.exp(- x)) ** 2.0
+                S_vib[t] *= self.R
+                dH_vib[t] *= self.R * temp
+                Cv_vib[t] *= self.R
+
+            # add the results to the thermo object
+            self.Q_vib = Q_vib
+            self.S_vib = S_vib
+            self.dH_vib = dH_vib
+            self.Cv_vib = Cv_vib  # NOTE: the correction from Cv to Cp is handled in the translation partition function.
+            # if the molecule is tightly bound and thus the 2D-gas is not used,
+            # then we assume that Cp=Cv for the adsorbate.
+
+            return
 
 
 
