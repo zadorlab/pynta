@@ -16,7 +16,7 @@ class WrapperALMACE(Calculator):
         self.kwargs = kwargs 
         
     def calculate(self, atoms, properties, system_changes):
-        super().calculate(self, atoms, properties, system_changes)
+        Calculator.calculate(self, atoms, properties, system_changes)
         
         write(atoms,"init_temp.xyz")
         
