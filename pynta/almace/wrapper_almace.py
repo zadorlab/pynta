@@ -18,7 +18,7 @@ class WrapperALMACE(Calculator):
     def calculate(self, atoms, properties, system_changes):
         Calculator.calculate(self, atoms, properties, system_changes)
         
-        write(atoms,"init_temp.xyz")
+        write("init_temp.xyz", atoms)
         
         python_script = f"""from alCalc import AlMaceCalculator
         from ase.io import read, write
