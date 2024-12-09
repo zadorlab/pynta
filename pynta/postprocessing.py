@@ -845,7 +845,31 @@ class thermo:
 
             return
 
-        
+        # Print output in cti format
+        def format_RMG_output(self, index):
+            line = '\n'
+            line += 'entry(\n    index = %s,\n' % (index)
+            line += f'    label = "{self.name}",\n'
+            line += '    molecule = \n"""\n%s\n""",\n' % (self.adjacency_list)
+            # line += '\tatoms = "'
+            # for element in molecule.composition:
+            #    if molecule.composition[element] > 0:
+            #        line += " %s:%d" % (element, molecule.composition[element])
+            # line += '",\n'
+            # line += "\tsize = %d,\n" % (molecule.site_occupation_number)
+            line += self.thermo_lines
+            line += '    longDesc = u"""Calculated by x at x University using statistical mechanics (file: compute_NASA_for_Pt-adsorbates.ipynb). \n'
+            line += "                   Based on DFT calculations by x at x.\n"
+            if self.twoD_gas:
+                line += '\n            The two lowest frequencies, %.1F and %.1F %s, where replaced by the 2D gas model.' % (
+                    self.frequencies[0], self.frequencies[1], self.frequencies_units.replace("'", ""))
+            line += '""",\n\t)\n'
+
+            self.species_lines = line
+
+            return
+
+
 
 
 
