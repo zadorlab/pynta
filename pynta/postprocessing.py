@@ -563,7 +563,51 @@ class thermo:
         if self.data['frequencies'][1] < self.cutoff_frequency:
             self.twoD_gas = True
 
-        
+        def compute_heat_of_formation(self):
+            '''asdfas'''
+            # What do we do for other atomic adsorbed species?
+            # I don't think we need the following, since the gas phase energy cancels out anyways
+
+            # Atomic hydrogen
+            '''if self.name == '[Pt]':
+                self.energy_gas = (self.DFT_energy_gas + self.ZPE_energy_gas + self.dHrxnatct[
+                    'H2-2H'] / self.eV_to_kJpermole) / 2
+            # Atomic oxygen
+            elif self.name == 'O=[Pt]':
+                self.energy_gas = (self.DFT_energy_gas + self.ZPE_energy_gas + self.dHrxnatct[
+                    'O2-2O'] / self.eV_to_kJpermole) / 2
+            #Atomic nitrogen
+            elif self.name == 'N#[Pt]':
+                self.energy_gas = (self.DFT_energy_gas + self.ZPE_energy_gas + self.dHrxnatct[
+                    'N2-2N'] / self.eV_to_kJpermole) / 2
+            else:
+                self.energy_gas = self.DFT_energy_gas + self.ZPE_energy_gas'''
+            self.energy = self.DFT_energy + self.ZPE_energy
+
+            self.dHrxndftgas = (self.energy_gas - self.composition['C'] * self.Eref['CH4']
+                                - self.composition['O'] * self.Eref['H2O']
+                                - self.composition['N'] * self.Eref['NH3']
+                                - (self.composition['H'] / 2 - 2 * self.composition['C'] - self.composition[
+                        'O'] - 3 / 2 * self.composition['N']) * self.Eref['H2'])
+            self.dHfgas = (self.composition['C'] * self.dHfatct['CH4']
+                           + self.composition['O'] * self.dHfatct['H2O']
+                           + self.composition['N'] * self.dHfatct['NH3']
+                           + (self.composition['H'] / 2 - 2 * self.composition['C'] - self.composition[
+                        'O'] - 3 / 2 * self.composition['N']) * self.dHfatct['H2']
+                           + self.dHrxndftgas * self.eV_to_kJpermole)
+
+            self.dHads = self.energy - self.energy_gas - self.Eslab
+            self.heat_of_formation_0K = self.dHfgas + self.dHads * self.eV_to_kJpermole
+            self.heat_of_formation_0K_units = 'kJ/mol'
+            print(f"heat of formation adsorbate= {self.heat_of_formation_0K:.4} kJ/mol")
+            print(f"heat of formation precursor= {self.dHfgas:.4} kJ/mol")
+            print(f"heat of reaction precursor= {self.dHrxndftgas:.4} eV")
+            print(f"DFT binding energy= {self.dHads:.4} eV")
+            print(f"molecular mass= {self.molecular_mass:.4} g/mol")
+
+            return
+
+
 
 
 
