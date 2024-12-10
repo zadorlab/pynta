@@ -3,6 +3,7 @@ import datetime
 from ase.io import read, write
 import os
 from mace.calculators.mace import MACECalculator
+from pynta.utils import import_module
 
 import argparse
 import sys
