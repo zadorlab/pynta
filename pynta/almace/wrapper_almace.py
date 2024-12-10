@@ -22,13 +22,13 @@ class WrapperALMACE(Calculator):
         write("init_temp.xyz", atoms)
         
         python_script = f"""from alCalc import AlMaceCalculator
-        from ase.io import read, write
-        atoms = read("init_temp.xyz")
-        calc = AlMaceCalculator(**{self.kwargs})
-        atoms.calc = calc
-        atoms.get_potential_energy()
-        atoms.get_forces()
-        write("out.xyz", atoms)
+from ase.io import read, write
+atoms = read("init_temp.xyz")
+calc = AlMaceCalculator(**{self.kwargs})
+atoms.calc = calc
+atoms.get_potential_energy()
+atoms.get_forces()
+write("out.xyz", atoms)
         """
         
         with open("temp_script.py",'w') as f:
