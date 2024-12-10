@@ -122,52 +122,6 @@ class AlMaceCalculator(MACECalculator):
         
         print(self.timestamp_fail)
 
-
-       #''' if len(self.get_fname_mlffs()) < self.num_committes and initial_atom is not None:
-       # #if initial_atom is not None:
-       #     self.logger.info('Using initial atom')
-       #     self.initial_atom = initial_atom.copy()
-       #     self.logger.info(f'Initial atom: {self.initial_atom}')
-       #     #self.calculate_dft(self.initial_atom)
-       #     #print('We are Running DFT (espresso)')
-       #     #self.logger.info(f'Running DFT')
-       #     self.create_new_training(self.initial_atom)
-       #     self.timestamp_train = datetime.datetime.now().strftime(self.time_format)
-       #     self.logger.info(f'Training Force Field: {self.timestamp_train}')
-       #     #self.update_mlffs()
-       #     mace_fnames = self.update_mlffs()
-       # else:
-       #     mace_fnames = self.update_mlffs()
-       # '''
-        #if initial_atom is not None:
-        if len(self.get_fname_mlffs()) > 0:
-            mace_fnames = self.update_mlffs()
-        elif initial_atom is not None:
-            self.logger.info('Using initial atom')
-            self.initial_atom = initial_atom.copy()
-            self.logger.info(f'Initial atom: {self.initial_atom}')
-            #self.calculate_dft(self.initial_atom)
-            #print('We are Running DFT (espresso)')
-            #self.logger.info(f'Running DFT')
-            self.create_new_training(self.initial_atom)
-            self.timestamp_train = datetime.datetime.now().strftime(self.time_format)
-            self.logger.info(f'Training Force Field: {self.timestamp_train}')
-            #self.update_mlffs()
-            mace_fnames = self.update_mlffs()
-        else:
-            self.logger.info('Using initial atom')
-            self.initial_atom = initial_atom.copy()
-            self.logger.info(f'Initial atom: {self.initial_atom}')
-            self.calculate_dft(self.initial_atom)
-            print('We are Running DFT (espresso)')
-            self.logger.info(f'Running DFT')
-            self.create_new_training(self.initial_atom)
-            self.timestamp_train = datetime.datetime.now().strftime(self.time_format)
-            self.logger.info(f'Training Force Field: {self.timestamp_train}')
-            #self.update_mlffs()
-            mace_fnames = self.update_mlffs()
-
-
         if len(self.get_fname_mlffs()) < self.num_committes and initial_atom is None:
             self.logger.info(
                 f'Not enough MLFFs to run committee: {len(self.get_fname_mlffs())} < {self.num_committes}'
@@ -176,8 +130,8 @@ class AlMaceCalculator(MACECalculator):
                 f'Make sure the initial model directory ({initial}) has sufficient amount of models.' + 'Or make sure you supply an initial traning set to initial_atom',
                 )
 
-
-        #mace_fnames = self.update_mlffs()
+        mace_fnames = self.update_mlffs()
+        
         super().__init__(mace_fnames, **kwargs)
 
     def get_fname_mlffs(self, current=True):
