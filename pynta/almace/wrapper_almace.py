@@ -1,6 +1,7 @@
 from ase.calculators.calculator import Calculator
 from ase.io import write, read
 import subprocess
+import os
 
 class WrapperALMACE(Calculator):
     implemented_properties = ['energy', 'forces']
@@ -39,6 +40,8 @@ class WrapperALMACE(Calculator):
         out_atoms = read("out.xyz")
         self.results['energy'] = out_atoms.info['energy']
         self.results['forces'] = out_atoms.arrays['forces']
+        os.remove("init_temp.xyz")
+        os.remove("temp_script.py")
         
         return 
     
