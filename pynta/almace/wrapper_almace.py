@@ -21,7 +21,7 @@ class WrapperALMACE(Calculator):
         
         write("init_temp.xyz", atoms)
         
-        python_script = f"""from alCalc import AlMaceCalculator
+        python_script = f"""from pynta.almace.alCalc import AlMaceCalculator
 from ase.io import read, write
 atoms = read("init_temp.xyz")
 calc = AlMaceCalculator(**{self.kwargs})
