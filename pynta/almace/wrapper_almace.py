@@ -27,7 +27,7 @@ class WrapperALMACE(Calculator):
         atoms.calc = calc
         atoms.get_potential_energy()
         atoms.get_forces()
-        write(atoms,"out.xyz")
+        write("out.xyz", atoms)
         """
         
         with open("temp_script.py",'w') as f:
