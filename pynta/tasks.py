@@ -1220,12 +1220,17 @@ class SelectCalculationsTask(FiretaskBase):
                 coadmol_stability_dict[out_struct_init] = False
                 
         
-        #load configurations
+        #load configurations and Ncoad_energies
         configs_of_concern_by_admol = dict()
+        Ncoad_energy_by_admol = dict()
         for admol_name,st in admol_name_structure_dict.items():
             config_path = os.path.join(path,"Iterations",str(iter),"configs_of_concern_"+admol_name+".json")
             with open(config_path,'r') as f:
                 configs_of_concern_by_admol[admol_name] = [(Molecule().from_adjacency_list(k[0],check_consistency=False),k[1],k[2],k[3]) for k in json.load(f)]
+            Ncoad_energy_path = os.path.join(path,"Iterations",str(iter),"Ncoad_energy_"+admol_name+".json")
+            with open(Ncoad_energy_path,'w') as f:
+                Ncoad_energy_by_admol[admol_name] = json.load(f)
+            
         #load tree
         nodes = read_nodes(os.path.join(path,"Iterations",str(iter),"regressor.json"))
         tree = MultiEvalSubgraphIsomorphicDecisionTreeRegressor([adsorbate_interaction_decomposition,adsorbate_triad_interaction_decomposition],
@@ -1235,7 +1240,7 @@ class SelectCalculationsTask(FiretaskBase):
         with open(os.path.join(path,"Iterations",str(iter),"computed_configurations.json"),'r') as f:
             computed_configs = [Molecule().from_adjacency_list(x,check_consistency=False) for x in json.load(f)]
         
-        configs_for_calculation,admol_to_config_for_calculation= get_configs_for_calculation(configs_of_concern_by_admol,computed_configs,tree,Ncalc_per_iter)
+        configs_for_calculation,admol_to_config_for_calculation= get_configs_for_calculation(configs_of_concern_by_admol,Ncoad_energy_by_admol,admol_name_structure_dict,computed_configs,tree,Ncalc_per_iter)
 
         os.makedirs(os.path.join(path,"Iterations",str(iter),"Samples"))
         assert len(configs_for_calculation) > 0, configs_for_calculation
