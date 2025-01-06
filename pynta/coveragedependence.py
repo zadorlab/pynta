@@ -1119,7 +1119,7 @@ def get_best_adsorbate_xyz(adsorbate_path,sites,nslab):
 
     return adsorbate
 
-def adsorbate_interaction_decomposition(mol):
+def adsorbate_interaction_decomposition(mol,local_radius=5):
     surface_bonded_inds = []
     for i,at in enumerate(mol.atoms):
         if at.is_bonded_to_surface() and not at.is_surface_site():
@@ -1132,26 +1132,35 @@ def adsorbate_interaction_decomposition(mol):
                 st = mol.copy(deep=True)
                 st.atoms[indi].label = "*"
                 st.atoms[indj].label = "*"
-                structs.append(st)
-    
-    return structs
-
-def adsorbate_triad_interaction_decomposition(mol):
-    surface_bonded_inds = []
-    for i,at in enumerate(mol.atoms):
-        if at.is_bonded_to_surface() and not at.is_surface_site():
-            surface_bonded_inds.append(i)
-    
-    structs = []
-    for i,indi in enumerate(surface_bonded_inds):
-        for j,indj in enumerate(surface_bonded_inds):
-            for k,indk in enumerate(surface_bonded_inds):
-                if i > j and j > k:
-                    st = mol.copy(deep=True)
-                    st.atoms[indi].label = "*"
-                    st.atoms[indj].label = "*"
-                    st.atoms[indk].label = "*"
-                    structs.append(st)
+                paths = find_shortest_paths_sites(st.atoms[indi],st.atoms[indj])
+                ad_atoms_i,ad_surf_sites_i = find_adsorbate_atoms_surface_sites(st.atoms[indi],st)
+                ad_atoms_j,ad_surf_sites_j = find_adsorbate_atoms_surface_sites(st.atoms[indj],st)
+                if st.atoms[indi] in ad_atoms_j: #i & j are part of same adsorbate/TS structure
+                    continue
+                for p in paths:
+                    for a in p:
+                        if a.is_surface_site():
+                            a.label = "*"
+                            
+                for ind in [indi,indj]:
+                    for a in st.atoms:
+                        if a.is_surface_site() and len(find_shortest_paths_sites(st.atoms[indi],a)[0]) - 2 <= local_radius:
+                            a.label = "*"
+                
+                ats_to_delete = [a for a in st.atoms if a.is_surface_site() and a.label != "*" and a not in ad_surf_sites_i and a not in ad_surf_sites_j]
+                for a in ats_to_delete:
+                    st.remove_atom(a)
+                try:
+                    stout = [x for x in st.split() if x.contains_surface_site()][0]
+                except IndexError as e:
+                    print(mol.to_adjacency_list())
+                    print(st.to_adjacency_list())
+                    raise e
+                for a in stout.atoms:
+                    if a.is_surface_site():
+                        a.label = ""
+                
+                structs.append(stout)
     
     return structs
     
