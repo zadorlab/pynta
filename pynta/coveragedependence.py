@@ -1332,6 +1332,7 @@ def is_descendent_of_or_is(node,ancestor_node):
             n = n.parent
     return False
 
+#currently not used anymore as the default algorithm is sufficient for pair-wise decompositions
 class CoverageDependenceRegressor(MultiEvalSubgraphIsomorphicDecisionTreeRegressor):
     def fit_rule(self, alpha=0.1):
         max_depth = max([node.depth for node in self.nodes.values()])
