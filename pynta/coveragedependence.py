@@ -1413,16 +1413,14 @@ class CoverageDependenceRegressor(MultiEvalSubgraphIsomorphicDecisionTreeRegress
             
         logging.info("# nodes: {}".format(len(self.nodes)))
         
-def train_sidt_cov_dep_regressor(pairs_datums,sampling_datums,Nconfigs,Ncoads,r_site=None,
-                                r_atoms=None,node_fract_training=0.9):
+def train_sidt_cov_dep_regressor(pairs_datums,sampling_datums,r_site=None,
+                                r_atoms=None,node_fract_training=0.7):
 
     if r_site is None:
         r_site = ["","ontop","bridge","hcp","fcc"]
 
     if r_atoms is None:
         r_atoms = ["C","O","N","H","X"]
-
-    root_node = Node(group=None,name="Root",depth=0)
     
     root_pair = Group().from_adjacency_list("""
     1 * R u0 px cx {2,[S,D,T,Q,R]}
@@ -1430,19 +1428,8 @@ def train_sidt_cov_dep_regressor(pairs_datums,sampling_datums,Nconfigs,Ncoads,r_
     3 * R u0 px cx {4,[S,D,T,Q,R]}
     4   X u0 p0 c0 {3,[S,D,T,Q,R]}
     """)
-    
-    root_triad = Group().from_adjacency_list("""
-    1 * R u0 px cx {2,[S,D,T,Q,R]}
-    2   X u0 p0 c0 {1,[S,D,T,Q,R]}
-    3 * R u0 px cx {4,[S,D,T,Q,R]}
-    4   X u0 p0 c0 {3,[S,D,T,Q,R]}
-    5 * R u0 px cx {6,[S,D,T,Q,R]}
-    6   X u0 p0 c0 {5,[S,D,T,Q,R]}
-    """)
 
-    root_pair_node = Node(group=root_pair,name="Root_Pair",parent=root_node,depth=1)
-    root_triad_node = Node(group=root_triad,name="Root_Triad",parent=root_node,depth=1)
-    root_node.children.extend([root_pair_node])
+    root_pair_node = Node(group=root_pair,name="Root",parent=None,depth=0)
 
     pair_nodes = []
     initial_pair_root_splits = get_adsorbed_atom_pairs(length=7,r_bonds=[1,2,3,0.05])
@@ -1451,33 +1438,15 @@ def train_sidt_cov_dep_regressor(pairs_datums,sampling_datums,Nconfigs,Ncoads,r_
         gcleared.clear_labeled_atoms()
         for d in pairs_datums+sampling_datums:
             if d.mol.is_subgraph_isomorphic(gcleared,save_order=True): #only add if the group exists
-                n = Node(group=g,name=root_pair_node.name+"_"+str(i),parent=root_pair_node,depth=2)
+                n = Node(group=g,name=root_pair_node.name+"_"+str(i),parent=root_pair_node,depth=1)
                 pair_nodes.append(n)
                 root_pair_node.children.append(n)
                 break
-    
 
-    triad_nodes = []
-    initial_triad_root_splits = get_adsorbed_atom_groups(Nad=3,length=7,r_bonds=[1,2,3,0.05])
-    for i,g in enumerate(initial_triad_root_splits):
-        boo = True
-        for triad_pair in split_triad(g):
-            for pair_n in pair_nodes:
-                if pair_n.group.is_isomorphic(triad_pair,save_order=True):
-                    break
-            else:
-                boo = False
-        if boo:
-            n = Node(group=g,name=root_triad_node.name+"_"+str(i),parent=root_triad_node,depth=2)
-            triad_nodes.append(n)
-            root_triad_node.children.append(n)
+    pairnodes = {n.name:n for n in [root_pair_node]+pair_nodes}
 
-
-    pairnodes = {n.name:n for n in [root_node,root_pair_node]+pair_nodes}
-
-    Npairnodes = (Nconfigs*Ncoads + Ncoads*(Ncoads-1)/2 + Ncoads)*len(root_pair_node.children) + 2 + len(root_pair_node.children)
     Nfullnodes = (len(pairs_datums)+len(sampling_datums))*node_fract_training
-    logging.info("Training Initially on Pair Decomposition")
+
     treepair = MultiEvalSubgraphIsomorphicDecisionTreeRegressor([adsorbate_interaction_decomposition],
                                                    nodes=pairnodes,
                                                    r=[ATOMTYPES[x] for x in r_atoms],
@@ -1489,39 +1458,10 @@ def train_sidt_cov_dep_regressor(pairs_datums,sampling_datums,Nconfigs,Ncoads,r_
                                                    iter_max=2,
                                                    iter_item_cap=100,
                                                   )
-
+        
+    treepair.generate_tree(data=pairs_datums+sampling_datums,max_nodes=Nfullnodes)
     
-        
-    treepair.generate_tree(data=pairs_datums+sampling_datums,max_nodes=Npairnodes)
-
-    if Nfullnodes > len(treepair.nodes):
-        logging.info("adding Triad decomposition")
-        nodes = {k:v for k,v in treepair.nodes.items()}
-
-        nodes[root_triad_node.name] = root_triad_node
-        nodes["Root"].children.append(root_triad_node)
-        for n in root_triad_node.children:
-            nodes[n.name] = n
-        
-        tree = CoverageDependenceRegressor([adsorbate_interaction_decomposition,adsorbate_triad_interaction_decomposition],
-                                                       nodes=nodes,
-                                                       r=[ATOMTYPES[x] for x in r_atoms],
-                                                       r_bonds=[1,2,3,0.05],
-                                                                 r_un=[0],
-                                                       r_site=["","ontop","bridge","hcp","fcc"],
-                                                       max_structures_to_generate_extensions=100,
-                                                       fract_nodes_expand_per_iter=0.025,
-                                                       iter_max=2,
-                                                       iter_item_cap=100,
-                                                      )
-        
-        tree.generate_tree(data=pairs_datums+sampling_datums,
-                           max_nodes=Nfullnodes)
-        
-        return tree
-    else:
-        logging.info("skipping Triad decomposition")
-        return treepair
+    return treepair
 
 def train_sidt_cov_dep_classifier(datums,r_site=None,
                                 r_atoms=None,node_fract_training=0.5,node_min=50):
