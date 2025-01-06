@@ -910,6 +910,49 @@ def find_shortest_paths(start, end, path=None):
     
     return None
 
+def find_shortest_paths_sites(start, end, path=None):
+    paths = [[start]]
+    outpaths = []
+    while paths != []:
+        newpaths = []
+        for path in paths:
+            for node in path[-1].edges.keys():
+                if node in path:
+                    continue
+                elif node is end:
+                    outpaths.append(path[:]+[node])
+                elif outpaths == [] and node.is_surface_site():
+                    newpaths.append(path[:]+[node])
+        if outpaths:
+            return outpaths
+        else:
+            paths = newpaths
+    
+    return None
+    
+def find_adsorbate_atoms_surface_sites(atom,mol):
+    """
+    one atom of the associated adsorbate on the surface Molecule object mol
+    returns all of the surface atoms bonded to adsorbate
+    """
+    atsout = [atom]
+    ats = [atom]
+    surf_sites = []
+    while ats != []:
+        new_ats = []
+        for a in ats:
+            for a2 in atom.edges.keys():
+                if a2 in atsout:
+                    continue
+                elif a2.is_surface_site() and a2 not in surf_sites:
+                    surf_sites.append(a2)
+                elif not a2.is_surface_site():
+                    new_ats.append(a2)
+                    atsout.append(a2)
+        ats = new_ats
+
+    return atsout,surf_sites
+
 def split_adsorbed_structures(admol,clear_site_info=True,adsorption_info=False,atoms_to_skip=None):
     """_summary_
 
