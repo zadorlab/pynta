@@ -1119,8 +1119,8 @@ class TrainCovdepModelTask(FiretaskBase):
             
         Nconfigs = len(admol_name_structure_dict)
         Ncoads = 1
-        tree = train_sidt_cov_dep_regressor(pairs_datums,sampling_datums,Nconfigs,Ncoads,r_site=None,
-                            r_atoms=None,node_fract_training=0.9)
+        tree = train_sidt_cov_dep_regressor(pairs_datums,sampling_datums,r_site=None,
+                            r_atoms=None,node_fract_training=0.7)
         
         tree_file = os.path.join(path,"Iterations",str(iter),"regressor.json")
         write_nodes(tree,tree_file)
