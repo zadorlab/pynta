@@ -2115,22 +2115,30 @@ def process_calculation(d,ad_energy_dict,slab,metal,facet,sites,site_adjacency,p
     
     return datum_E,datums_stability
 
-def get_configs_for_calculation(configs_of_concern_by_admol,computed_configs,tree_regressor,Ncalc_per_iter):
+def get_configs_for_calculation(configs_of_concern_by_admol,Ncoad_energy_by_admol,admol_name_structure_dict,
+                                computed_configs,tree_regressor,Ncalc_per_iter,T=np.inf,calculation_selection_iterations=10):
     group_to_occurence = dict()
     configs_of_concern = []
     for admol_name in configs_of_concern_by_admol.keys():
+        admol = admol_name_structure_dict[admol_name]
+        Nocc_isolated = len([a for a in admol.atoms if a.is_surface_site() and any(not a2.is_surface_site() for a2 in a.bonds.keys())])
         configs_of_concern_admol = configs_of_concern_by_admol[admol_name]
         group_to_occurence_admol = dict()
         N = 0 #number of group contributions associated with given admol
         for v in configs_of_concern_admol:
-            configs_of_concern.append(v)
+            m = v[0]
+            E = v[1]
+            sigma = v[3]
             grps = v[2]
+            Nocc = len([a for a in m.atoms if a.is_surface_site() and any(not a2.is_surface_site() for a2 in a.bonds.keys())])
+            configs_of_concern.append(v)
+            Emin = Ncoad_energy_by_admol[admol_name][Nocc-Nocc_isolated]
             for grp in grps:
                 if grp in group_to_occurence_admol:
-                    group_to_occurence_admol[grp] += 1
+                    group_to_occurence_admol[grp] += np.exp(-(E-Emin)/(8.314*T))
                     N += 1
                 else:
-                    group_to_occurence_admol[grp] = 1
+                    group_to_occurence_admol[grp] = np.exp(-(E-Emin)/(8.314*T))
                     N += 1
         for g,n in group_to_occurence_admol.items():
             if grp in group_to_occurence:
@@ -2146,45 +2154,50 @@ def get_configs_for_calculation(configs_of_concern_by_admol,computed_configs,tre
     for j,v in enumerate(configs_of_concern):
         config,E,tr,std = v
         config_group_unc = np.array([tr.count(g)*tree_regressor.nodes[g].rule.uncertainty for g in concern_groups])
-        
-        config_to_group_fract[j] = config_group_unc/config_group_unc.sum()
+        s = config_group_unc.sum()
+        if s == 0:
+            config_to_group_fract[j] = config_group_unc
+        else:
+            config_to_group_fract[j] = config_group_unc/s
+            
     
     configs_for_calculation = []
     group_fract_for_calculation = []
     maxval = 0.0
     config_list = [x[0] for x in configs_of_concern]
-    shuffled_configs = config_list[:]
-    np.random.shuffle(shuffled_configs)
+    #sort lower numbers of coadsorbates first, larger numbers of coadsorbates later
+    sorted_config_list = sorted(config_list[:], key = lambda x: len([bd for bd in x.get_all_edges() if (bd.atom1.is_surface_site() and not bd.atom2.is_surface_site()) or (bd.atom2.is_surface_site() and not bd.atom1.is_surface_site())]))
 
-    for config in shuffled_configs:
-        ind = [i for i,c in enumerate(config_list) if c is config][0]
-        if ind not in config_to_group_fract.keys():
-            logging.error("config not in config_to_group_fract")
-            continue
-        for c in computed_configs:
-            if config.is_isomorphic(c,save_order=True):
-                break
-        else:
-            if len(configs_for_calculation) < Ncalc_per_iter:
-                configs_for_calculation = configs_for_calculation + [config]
-                group_fract = config_to_group_fract[ind]
-                group_fract_for_calculation.append(group_fract)
-                maxval = np.linalg.norm(sum(group_fract_for_calculation) * group_to_weight, ord=1)
+    for q in range(calculation_selection_iterations): #loop the greedy optimization a number of times to get close to local min
+        for config in sorted_config_list:
+            ind = [i for i,c in enumerate(config_list) if c is config][0]
+            if ind not in config_to_group_fract.keys():
+                logging.error("config not in config_to_group_fract")
+                continue
+            for c in computed_configs:
+                if config.is_isomorphic(c,save_order=True):
+                    break
             else:
-                group_fract = config_to_group_fract[j]
-                g_old_sum = sum(group_fract_for_calculation)
-                maxarglocal = None
-                maxvallocal = maxval
-                for i in range(Ncalc_per_iter):
-                    val = np.linalg.norm((g_old_sum - group_fract_for_calculation[i] + group_fract) * group_to_weight, ord=1)
-                    if val > maxvallocal:
-                        maxarglocal = i
-                        maxvallocal = val
-                        
-                if maxarglocal is not None:
-                    group_fract_for_calculation[maxarglocal] = group_fract
-                    configs_for_calculation[maxarglocal] = config
-                    maxval = maxvallocal
+                if len(configs_for_calculation) < Ncalc_per_iter:
+                    configs_for_calculation = configs_for_calculation + [config]
+                    group_fract = config_to_group_fract[ind]
+                    group_fract_for_calculation.append(group_fract)
+                    maxval = np.linalg.norm(sum(group_fract_for_calculation) * group_to_weight, ord=1)
+                else:
+                    group_fract = config_to_group_fract[j]
+                    g_old_sum = sum(group_fract_for_calculation)
+                    maxarglocal = None
+                    maxvallocal = maxval
+                    for i in range(Ncalc_per_iter):
+                        val = np.linalg.norm((g_old_sum - group_fract_for_calculation[i] + group_fract) * group_to_weight, ord=1)
+                        if val > maxvallocal:
+                            maxarglocal = i
+                            maxvallocal = val
+                            
+                    if maxarglocal is not None:
+                        group_fract_for_calculation[maxarglocal] = group_fract
+                        configs_for_calculation[maxarglocal] = config
+                        maxval = maxvallocal
         
     admol_to_config_for_calculation = dict()
     for config in configs_for_calculation:
