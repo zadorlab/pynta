@@ -234,7 +234,8 @@ def fix_atom(mol,atom,allow_failure=False,cleanup_surface_bonds=True):
         for v in to_remove:
             mol.remove_bond(v)
         
-def generate_adsorbate_2D(atoms, sites, site_adjacency, nslab, max_dist=3.0, cut_multidentate_off_num=None, allowed_structure_site_structures=None):
+def generate_adsorbate_2D(atoms, sites, site_adjacency, nslab, max_dist=3.0, cut_multidentate_off_num=None, allowed_structure_site_structures=None,
+                          keep_binding_vdW_bonds=False, keep_vdW_surface_bonds=False):
     admol,neighbor_sites,ninds = generate_adsorbate_molecule(atoms, sites, site_adjacency, nslab, max_dist=max_dist)
     
     if cut_multidentate_off_num:
@@ -248,7 +249,7 @@ def generate_adsorbate_2D(atoms, sites, site_adjacency, nslab, max_dist=3.0, cut
         for b in bds_to_remove:
             admol.remove_bond(b)
     
-    fix_bond_orders(admol)
+    fix_bond_orders(admol,keep_binding_vdW_bonds=keep_binding_vdW_bonds,keep_vdW_surface_bonds=keep_vdW_surface_bonds)
     
     if allowed_structure_site_structures: #we are going to analyze the initial occupational analysis and update it based on expectations
         allowed_site_dict = dict()
@@ -293,7 +294,7 @@ def generate_adsorbate_2D(atoms, sites, site_adjacency, nslab, max_dist=3.0, cut
             for b in bds_to_remove:
                 admol.remove_bond(b)
             
-        fix_bond_orders(admol)
+        fix_bond_orders(admol,keep_binding_vdW_bonds=keep_binding_vdW_bonds,keep_vdW_surface_bonds=keep_vdW_surface_bonds)
     
     admol.update_atomtypes()
     admol.update_connectivity_values()
@@ -302,7 +303,7 @@ def generate_adsorbate_2D(atoms, sites, site_adjacency, nslab, max_dist=3.0, cut
 
 def generate_TS_2D(atoms, info_path,  metal, facet, sites, site_adjacency, nslab, imag_freq_path=None,
                      max_dist=3.0, cut_multidentate_off_num=None, allowed_structure_site_structures=None,
-                     site_bond_cutoff=3.0):
+                     site_bond_cutoff=3.0,keep_binding_vdW_bonds=False,keep_vdW_surface_bonds=False):
 
     admol,neighbor_sites,ninds = generate_adsorbate_molecule(atoms, sites, site_adjacency, 
                                                              nslab, max_dist=max_dist) 
@@ -375,7 +376,7 @@ def generate_TS_2D(atoms, info_path,  metal, facet, sites, site_adjacency, nslab
         else:
             admol.add_bond(Bond(admol.atoms[inds2D[0]],admol.atoms[inds2D[1]],"R"))
 
-    fix_bond_orders(admol,allow_failure=True)
+    fix_bond_orders(admol,allow_failure=True,keep_binding_vdW_bonds=keep_binding_vdW_bonds,keep_vdW_surface_bonds=keep_vdW_surface_bonds)
 
     
     if allowed_structure_site_structures: #we are going to analyze the initial occupational analysis and update it based on expectations
@@ -537,7 +538,7 @@ def generate_TS_2D(atoms, info_path,  metal, facet, sites, site_adjacency, nslab
         else:
             admol.add_bond(Bond(admol.atoms[inds2D[0]],admol.atoms[inds2D[1]],"R"))
 
-    fix_bond_orders(admol,allow_failure=True) #Reaction bonds prevent proper octet completion
+    fix_bond_orders(admol,allow_failure=True,keep_binding_vdW_bonds=keep_binding_vdW_bonds,keep_vdW_surface_bonds=keep_vdW_surface_bonds) #Reaction bonds prevent proper octet completion
     
     #remove surface bonds that abused for octet completion in reactions
     for atom in admol.atoms:
@@ -561,7 +562,7 @@ def tagsites(atoms,sites):
         add_adsorbate_to_site(aview,Atoms(anames[i], [(0, 0, 0)]), 0, sites[i], height=1.0)
     return aview
 
-def split_ts_to_reactants(ts2d,tagatoms=False):
+def split_ts_to_reactants(ts2d,tagatoms=False,keep_binding_vdW_bonds=False,keep_vdW_surface_bonds=False):
     rs = []
     rbondnum = 0
     for bd in ts2d.get_all_edges():
@@ -589,7 +590,7 @@ def split_ts_to_reactants(ts2d,tagatoms=False):
             else:
                 bd.set_order_str('S')
         try:
-            fix_bond_orders(r)
+            fix_bond_orders(r,keep_binding_vdW_bonds=keep_binding_vdW_bonds,keep_vdW_surface_bonds=keep_vdW_surface_bonds)
             r.update(sort_atoms=False)
             r.update_connectivity_values()
             rs.append(r)
