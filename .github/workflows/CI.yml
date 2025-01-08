@@ -16,10 +16,10 @@ jobs:
         shell: bash -l {0}
     steps:
       - uses: actions/checkout@v2
-      - uses: conda-incubator/setup-miniconda@v2
+      - uses: conda-incubator/setup-miniconda@v3
         with:
           python-version: 3.8
-          miniforge-variant: Mambaforge
+          miniforge-variant: Miniforge3
           channels: defaults,mjohnson541,conda-forge
           channel-priority: true
           activate-environment: pynta_env

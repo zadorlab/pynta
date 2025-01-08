@@ -1,4 +1,4 @@
-from molecule.molecule import Molecule
+from molecule.molecule import Molecule,Atom,Bond
 from ase.io import read, write
 from ase.data import covalent_radii
 from ase import Atoms
@@ -13,12 +13,14 @@ from acat.utilities import (custom_warning,
                          get_rodrigues_rotation_matrix,
                          get_angle_between,
                          get_rejection_between)
-from pynta.utils import get_unique_sym_struct_index_clusters, get_unique_sym, get_unique_sym_structs, get_unique_sym_struct_indices
+from pynta.utils import get_unique_sym_struct_index_clusters, get_unique_sym, get_unique_sym_structs, get_unique_sym_struct_indices, get_occupied_sites
 from pynta.calculator import run_harmonically_forced_xtb
 from rdkit import Chem
 from copy import deepcopy
 import numpy as np
 import random
+import itertools
+
 
 def get_desorbed_with_map(mol):
     molcopy = mol.copy(deep=True)
@@ -748,7 +750,7 @@ def get_ase_index(ind,template_mol_map,molecule_to_gratom_maps,nslab,ads_sizes):
     else:
         return None #surface site
 
-def get_bond_lengths_sites(mol,ads,atom_map,surf_atom_map,nslab,facet="fcc111",metal="Cu",cas=None):
+def get_bond_lengths_sites(mol,ads,atom_map,surf_atom_map,nslab,sites,site_adjacency,facet="fcc111",metal="Cu",):
     """
     gets bond lengths and site information indexed to the Molecule object atoms
     bond lengths is a matrix with the distances between all atoms that share bonds
@@ -757,20 +759,15 @@ def get_bond_lengths_sites(mol,ads,atom_map,surf_atom_map,nslab,facet="fcc111",m
     rev_atom_map = {value: key for key,value in atom_map.items()} #map from mol to ads
     rev_surf_atom_map = { value: key for key,value in surf_atom_map.items()}
 
-    if cas is None:
-        cas = SlabAdsorptionSites(ads,facet,allow_6fold=False,composition_effect=False,
-                            label_sites=True,
-                            surrogate_metal=metal)
-    adcov = SlabAdsorbateCoverage(ads,adsorption_sites=cas)
-    occ = adcov.get_sites(occupied_only=True)
+    occ = get_occupied_sites(ads,sites,nslab)
     surface_dict = [{"atom_index":x["bonding_index"]-nslab, "site":x["site"],
                        "bond_length":x["bond_length"], "position":x["position"]} for x in occ]
 
     if len(occ) < len(surf_atom_map): #number of sites on geometry disagrees with surf_atom_map
-        print("occupational analysis in get_bond_lengths_sites failed")
-        print(mol.to_adjacency_list())
-        print("expected {} sites".format(len(surf_atom_map)))
-        print("found {} sites".format(len(occ)))
+#         print("occupational analysis in get_bond_lengths_sites failed")
+#         print(mol.to_adjacency_list())
+#         print("expected {} sites".format(len(surf_atom_map)))
+#         print("found {} sites".format(len(occ)))
         return None,None,None
 
     if mol.contains_surface_site():
@@ -817,3 +814,204 @@ def get_name(mol):
         return mol.to_smiles()
     except:
         return mol.to_adjacency_list().replace("\n"," ")[:-1]
+
+
+def remove_slab(mol,remove_slab_bonds=False,update_atomtypes=True):
+    m = mol.copy(deep=True)
+    for site in m.get_surface_sites():
+        for a in site.bonds.keys():
+            if not a.is_surface_site():
+                break
+        else:
+            m.remove_atom(site)
+            
+    if remove_slab_bonds:
+        bonds_to_remove = []
+        for bd in m.get_all_edges():
+            if bd.atom1.is_surface_site() and bd.atom2.is_surface_site():
+                m.remove_bond(bd)
+    
+    if update_atomtypes:           
+        m.update_atomtypes()
+    m.update_connectivity_values()
+    
+    return m
+
+def pluck_subgraph(mol,atom):
+    subgraph_atoms = []
+    new_subgraph_atoms = [atom]
+    while new_subgraph_atoms != []:
+        temp = []
+        subgraph_atoms.extend(new_subgraph_atoms)
+        for a in new_subgraph_atoms:
+            for a2 in a.bonds.keys():
+                if a2 not in subgraph_atoms:
+                    temp.append(a2)
+        new_subgraph_atoms = temp
+    
+    inds = [mol.atoms.index(a) for a in subgraph_atoms]
+    struct = Molecule(atoms=subgraph_atoms)
+    struct.update_atomtypes()
+    struct.update_connectivity_values()
+    return struct,inds
+    
+def generate_without_site_info(m):
+    mol = m.copy(deep=True)
+    for a in mol.atoms:
+        if a.is_surface_site():
+            a.site = ""
+            a.morphology = ""
+    return mol
+
+class FindingPathError(Exception):
+    pass
+
+def reduce_graph_to_pairs(admol):
+    adatoms = [a for a in admol.atoms if a.is_bonded_to_surface() and not a.is_surface_site()]
+    surface_save = set()
+    for i,a1 in enumerate(adatoms):
+        for a2 in adatoms[i+1:]:
+            paths = find_shortest_paths(a1,a2)
+            if paths is None: #separation between pair is so large the generated site graphs don't connect
+                raise FindingPathError(admol.to_adjacency_list())
+            for path in paths:
+                surface_save = surface_save | set([a for a in path if a.is_surface_site()])
+    
+    atoms_to_remove = []
+    for i,a in enumerate(admol.atoms):
+        if a.is_surface_site() and not (a in surface_save):
+            atoms_to_remove.append(a)
+    
+    for a in atoms_to_remove:
+        admol.remove_atom(a)
+
+    admol.update_atomtypes()
+    admol.update_connectivity_values()
+    
+    return admol
+
+def find_shortest_paths(start, end, path=None):
+    paths = [[start]]
+    outpaths = []
+    while paths != []:
+        newpaths = []
+        for path in paths:
+            for node in path[-1].edges.keys():
+                if node in path:
+                    continue
+                elif node is end:
+                    outpaths.append(path[:]+[node])
+                elif outpaths == []:
+                    newpaths.append(path[:]+[node])
+        if outpaths:
+            return outpaths
+        else:
+            paths = newpaths
+    
+    return None
+
+def find_shortest_paths_sites(start, end, path=None):
+    paths = [[start]]
+    outpaths = []
+    while paths != []:
+        newpaths = []
+        for path in paths:
+            for node in path[-1].edges.keys():
+                if node in path:
+                    continue
+                elif node is end:
+                    outpaths.append(path[:]+[node])
+                elif outpaths == [] and node.is_surface_site():
+                    newpaths.append(path[:]+[node])
+        if outpaths:
+            return outpaths
+        else:
+            paths = newpaths
+    
+    return None
+    
+def find_adsorbate_atoms_surface_sites(atom,mol):
+    """
+    one atom of the associated adsorbate on the surface Molecule object mol
+    returns all of the surface atoms bonded to adsorbate
+    """
+    atsout = [atom]
+    ats = [atom]
+    surf_sites = []
+    while ats != []:
+        new_ats = []
+        for a in ats:
+            for a2 in atom.edges.keys():
+                if a2 in atsout:
+                    continue
+                elif a2.is_surface_site() and a2 not in surf_sites:
+                    surf_sites.append(a2)
+                elif not a2.is_surface_site():
+                    new_ats.append(a2)
+                    atsout.append(a2)
+        ats = new_ats
+
+    return atsout,surf_sites
+
+def split_adsorbed_structures(admol,clear_site_info=True,adsorption_info=False,atoms_to_skip=None,
+                              atom_mapping=False):
+    """_summary_
+
+    Args:
+        admol (_type_): a Molecule object resolving a slab
+        clear_site_info (bool, optional): clears site identify information. Defaults to True.
+        adsorption_info (bool, optional): also returns the map from atom to index for admol for each surface site structures are split off from. Defaults to False.
+        atoms_to_skip (_type_, optional): list of atoms in admol to not include in the split structures. Defaults to None.
+
+    Returns:
+        _type_: _description_
+    """
+    m = admol.copy(deep=True)
+    
+    if atoms_to_skip is None:
+        atoms_to_remove = []
+        skip_atoms = []
+    else:
+        skip_atoms = [m.atoms[admol.atoms.index(a)] for a in atoms_to_skip]
+        atoms_to_remove = skip_atoms[:]
+    
+    for i,at in enumerate(m.atoms):
+        if at.is_surface_site():
+            bdict = m.get_bonds(at)
+            if len(bdict) > 0:
+                for a,b in bdict.items():
+                    if not a.is_surface_site() and (a not in skip_atoms):
+                        break
+                else:
+                    atoms_to_remove.append(at)
+            else:
+                atoms_to_remove.append(at)
+
+    if adsorption_info:
+        adsorbed_atom_dict = {at: i for i,at in enumerate(m.atoms) if at.is_surface_site() and at not in atoms_to_remove}
+
+    if atom_mapping:
+        mapping = {at: i for i,at in enumerate(m.atoms) if at not in atoms_to_remove}
+    
+    for at in atoms_to_remove:
+        m.remove_atom(at)
+    
+    if clear_site_info:
+        for at in m.atoms:
+            if at.is_surface_site():
+                at.site = ""
+                at.morphology = ""
+    split_structs = m.split()
+    for s in split_structs:
+        s.update(sort_atoms=False)
+        s.update_connectivity_values()
+        s.multiplicity = 1
+
+    if atom_mapping and not adsorption_info:
+        return split_structs,mapping 
+    elif atom_mapping and adsorption_info:
+        return split_structs,adsorption_info,mapping 
+    elif not atom_mapping and adsorption_info:
+        return split_structs,adsorbed_atom_dict
+    else:
+        return split_structs

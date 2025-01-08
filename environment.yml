@@ -25,3 +25,4 @@ dependencies:
   - coverage
   - liblapack !=3.9.0
   - pysidt
+  - ruamel.yaml < 0.18
