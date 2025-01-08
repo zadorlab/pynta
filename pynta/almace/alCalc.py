@@ -131,7 +131,7 @@ class AlMaceCalculator(MACECalculator):
                 f'Make sure the initial model directory ({initial}) has sufficient amount of models.' + 'Or make sure you supply an initial traning set to initial_atom',
                 )
 
-        mace_fnames = self.update_mlffs()
+        mace_fnames = sorted(self.get_fname_mlffs())[-self.num_committes:]
         
         super().__init__(mace_fnames, **kwargs)
 
@@ -286,7 +286,7 @@ class AlMaceCalculator(MACECalculator):
     def update_mlffs(self):
         """Update MLFF models based on new training data."""
         for seed in range(self.num_committes):
-            if len(self.get_fname_mlffs()) < self.num_committes and self.current_train_fname is not None:
+            if len(self.get_fname_mlffs()) < self.num_committes:
                 self.train_mace(
                     self.current_train_fname.replace('.xyz', f'_{seed}.xyz'),
                     self.current_train_fname.replace('.xyz', f'_{seed}_val.xyz'),
