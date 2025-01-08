@@ -953,7 +953,8 @@ def find_adsorbate_atoms_surface_sites(atom,mol):
 
     return atsout,surf_sites
 
-def split_adsorbed_structures(admol,clear_site_info=True,adsorption_info=False,atoms_to_skip=None):
+def split_adsorbed_structures(admol,clear_site_info=True,adsorption_info=False,atoms_to_skip=None,
+                              atom_mapping=False):
     """_summary_
 
     Args:
@@ -989,6 +990,9 @@ def split_adsorbed_structures(admol,clear_site_info=True,adsorption_info=False,a
     if adsorption_info:
         adsorbed_atom_dict = {at: i for i,at in enumerate(m.atoms) if at.is_surface_site() and at not in atoms_to_remove}
 
+    if atom_mapping:
+        mapping = {at: i for i,at in enumerate(m.atoms) if at not in atoms_to_remove}
+    
     for at in atoms_to_remove:
         m.remove_atom(at)
     
@@ -1003,7 +1007,11 @@ def split_adsorbed_structures(admol,clear_site_info=True,adsorption_info=False,a
         s.update_connectivity_values()
         s.multiplicity = 1
 
-    if adsorption_info:
+    if atom_mapping and not adsorption_info:
+        return split_structs,mapping 
+    elif atom_mapping and adsorption_info:
+        return split_structs,adsorption_info,mapping 
+    elif not atom_mapping and adsorption_info:
         return split_structs,adsorbed_atom_dict
     else:
         return split_structs
