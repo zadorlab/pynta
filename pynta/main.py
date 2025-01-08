@@ -699,9 +699,26 @@ class CoverageDependence:
 
         for ts in self.transition_states.keys():
             info_path = os.path.join(self.pynta_run_directory,ts,"info.json")
+            with open(info_path) as f:
+                info = json.load(f)
+            mol = Molecule().from_adjacency_list(info["adjlist"])
+            keep_binding_vdW_bonds=False 
+            keep_vdW_surface_bonds=False
+            for bd in mol.get_all_edges():
+                if bd.order == 0:
+                    if bd.atom1.is_surface_site() or bd.atom2.is_surface_site():
+                        keep_binding_vdW_bonds = True
+                        m = mol.copy(deep=True)
+                        b = m.get_bond(m.atoms(mol.atoms.index(bd.atom1)),m.atoms[mol.atoms.index(bd.atom2)])
+                        m.remove_bond(b)
+                        out = m.split()
+                        if len(out) == 1: #vdW bond is not only thing connecting adsorbate to surface
+                            keep_vdW_surface_bonds = True
+                        
             atoms = read(admol_name_path_dict[ts])
             st,_,_ = generate_TS_2D(atoms, info_path,  self.metal, self.surface_type, self.sites, self.site_adjacency, self.nslab,
-                     max_dist=np.inf, allowed_structure_site_structures=allowed_structure_site_structures)
+                     max_dist=np.inf, allowed_structure_site_structures=allowed_structure_site_structures,
+                     keep_binding_vdW_bonds=keep_binding_vdW_bonds,keep_vdW_surface_bonds=keep_vdW_surface_bonds)
             admol_name_structure_dict[ts] = st
             with open(info_path,"r") as f:
                 info = json.load(f)
@@ -713,12 +730,28 @@ class CoverageDependence:
             p = os.path.join(self.pynta_run_directory,"Adsorbates",ad)
             with open(os.path.join(p,"info.json")) as f:
                 info = json.load(f)
+                
             mol = Molecule().from_adjacency_list(info["adjlist"])
+            
             if mol.contains_surface_site():
+                keep_binding_vdW_bonds=False 
+                keep_vdW_surface_bonds=False
+                for bd in mol.get_all_edges():
+                    if bd.order == 0:
+                        if bd.atom1.is_surface_site() or bd.atom2.is_surface_site():
+                            keep_binding_vdW_bonds = True
+                            m = mol.copy(deep=True)
+                            b = m.get_bond(m.atoms(mol.atoms.index(bd.atom1)),m.atoms[mol.atoms.index(bd.atom2)])
+                            m.remove_bond(b)
+                            out = m.split()
+                            if len(out) == 1: #vdW bond is not only thing connecting adsorbate to surface
+                                keep_vdW_surface_bonds = True
+                        
                 ad_xyz = get_best_adsorbate_xyz(p,self.sites,self.nslab)
                 admol_name_path_dict[ad] = ad_xyz 
                 atoms = read(ad_xyz)
-                st,_,_ = generate_adsorbate_2D(atoms, self.sites, self.site_adjacency, self.nslab, max_dist=np.inf, allowed_structure_site_structures=allowed_structure_site_structures)
+                st,_,_ = generate_adsorbate_2D(atoms, self.sites, self.site_adjacency, self.nslab, max_dist=np.inf, allowed_structure_site_structures=allowed_structure_site_structures,
+                                               keep_binding_vdW_bonds=keep_binding_vdW_bonds,keep_vdW_surface_bonds=keep_vdW_surface_bonds)
                 admol_name_structure_dict[ad] = st
                 
         calculation_directories = [] #identify pairs directories

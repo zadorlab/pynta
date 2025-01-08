@@ -1739,7 +1739,7 @@ def get_configs_of_concern(tree_interaction_regressor,configs,coad_stable_sites,
     return configs_of_concern
 
 def load_coverage_delta(d,ad_energy_dict,slab,metal,facet,sites,site_adjacency,ts_pynta_dir=None,allowed_structure_site_structures=None,
-                       out_file_name="out",vib_file_name="vib",is_ad=None):
+                       out_file_name="out",vib_file_name="vib",is_ad=None,keep_binding_vdW_bonds=False,keep_vdW_surface_bonds=False):
 
     try:
         info = json.load(open(os.path.join(d,"info.json")))
@@ -1755,7 +1755,9 @@ def load_coverage_delta(d,ad_energy_dict,slab,metal,facet,sites,site_adjacency,t
     
     if not is_ts:
         try:
-            admol,neighbor_sites,ninds = generate_adsorbate_2D(atoms, sites, site_adjacency, len(slab), max_dist=np.inf, cut_multidentate_off_num=None, allowed_structure_site_structures=allowed_structure_site_structures)
+            admol,neighbor_sites,ninds = generate_adsorbate_2D(atoms, sites, site_adjacency, len(slab), max_dist=np.inf, cut_multidentate_off_num=None, 
+                                                               allowed_structure_site_structures=allowed_structure_site_structures,
+                                                               keep_binding_vdW_bonds=keep_binding_vdW_bonds,keep_vdW_surface_bonds=keep_vdW_surface_bonds)
         except (SiteOccupationException,TooManyElectronsException,ValueError) as e:
             return None,None,None,None
 
@@ -1792,7 +1794,9 @@ def load_coverage_delta(d,ad_energy_dict,slab,metal,facet,sites,site_adjacency,t
         ts_info_path = os.path.join(ts_path,"info.json")
 
         try:
-            admol,neighbor_sites,ninds = generate_TS_2D(atoms, ts_info_path, metal, facet, sites, site_adjacency, len(slab), imag_freq_path=os.path.join(d,"vib.0.traj"), max_dist=np.inf, allowed_structure_site_structures=allowed_structure_site_structures)
+            admol,neighbor_sites,ninds = generate_TS_2D(atoms, ts_info_path, metal, facet, sites, site_adjacency, len(slab), imag_freq_path=os.path.join(d,"vib.0.traj"), 
+                                                        max_dist=np.inf, allowed_structure_site_structures=allowed_structure_site_structures,
+                                                        keep_binding_vdW_bonds=keep_binding_vdW_bonds,keep_vdW_surface_bonds=keep_vdW_surface_bonds)
         except (SiteOccupationException,TooManyElectronsException, ValueError) as e:
             return None,None,None,None
         try:
@@ -1882,11 +1886,24 @@ def extract_sample(d,ad_energy_dict,slab,metal,facet,sites,site_adjacency,pynta_
     #     vibdata = get_vibdata(os.path.join(d,out_file_name+".xyz"),os.path.join(d,vib_file_name+".json"),len(slab))
     # except:
     #     vibdata = None
-
+    keep_binding_vdW_bonds=False 
+    keep_vdW_surface_bonds=False
+    
     try:
         with open(os.path.join(d,"info.json"),'r') as f:
             info = json.load(f)
-    except:
+            mol = Molecule().from_adjacency_list(info["adjlist"])
+            for bd in mol.get_all_edges():
+                if bd.order == 0:
+                    if bd.atom1.is_surface_site() or bd.atom2.is_surface_site():
+                        keep_binding_vdW_bonds = True
+                        m = mol.copy(deep=True)
+                        b = m.get_bond(m.atoms[mol.atoms.index(bd.atom1)],m.atoms[mol.atoms.index(bd.atom2)])
+                        m.remove_bond(b)
+                        out = m.split()
+                        if len(out) == 1: #vdW bond is not only thing connecting adsorbate to surface
+                            keep_vdW_surface_bonds = True
+    except FileNotFoundError:
         info = None
         
     if is_ad is None:
@@ -1930,13 +1947,15 @@ def extract_sample(d,ad_energy_dict,slab,metal,facet,sites,site_adjacency,pynta_
     
     admol,neighbor_sites,ninds,dE = load_coverage_delta(d,ad_energy_dict,slab,metal,facet,sites,site_adjacency,
                                             ts_pynta_dir=pynta_dir,allowed_structure_site_structures=allowed_structure_site_structures,
-                                                       out_file_name=out_file_name,vib_file_name=vib_file_name,is_ad=is_ad)
+                                                       out_file_name=out_file_name,vib_file_name=vib_file_name,is_ad=is_ad,
+                                                       keep_binding_vdW_bonds=keep_binding_vdW_bonds,keep_vdW_surface_bonds=keep_vdW_surface_bonds)
     
     
     if is_ad:
         try:
             admol_init,neighbor_sites_init,ninds_init = generate_adsorbate_2D(atoms_init, sites, site_adjacency, nslab, 
-                     max_dist=None, cut_multidentate_off_num=cut_multidentate_off_num, allowed_structure_site_structures=allowed_structure_site_structures)
+                     max_dist=None, cut_multidentate_off_num=cut_multidentate_off_num, allowed_structure_site_structures=allowed_structure_site_structures,
+                     keep_binding_vdW_bonds=keep_binding_vdW_bonds,keep_vdW_surface_bonds=keep_vdW_surface_bonds)
         except TooManyElectronsException:
             admol_init = None
             neighbor_sites_init = None
@@ -1955,7 +1974,8 @@ def extract_sample(d,ad_energy_dict,slab,metal,facet,sites,site_adjacency,pynta_
         try:
             admol_init,neighbor_sites_init,ninds_init = generate_TS_2D(atoms_init, info_path, metal, facet, sites, site_adjacency, nslab, 
                      imag_freq_path=imag_freq_path, max_dist=None, cut_multidentate_off_num=cut_multidentate_off_num, 
-                                                                   allowed_structure_site_structures=allowed_structure_site_structures)
+                                                                   allowed_structure_site_structures=allowed_structure_site_structures,
+                                                                   keep_binding_vdW_bonds=keep_binding_vdW_bonds,keep_vdW_surface_bonds=keep_vdW_surface_bonds)
         except TooManyElectronsException as e:
             valid = False
             admol_init = None
