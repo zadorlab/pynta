@@ -124,12 +124,53 @@ def generate_adsorbate_molecule(adslab, sites, site_adjacency, nslab, max_dist=N
     
     return fullmol,neighbor_sites,ninds
 
-def fix_bond_orders(mol,allow_failure=False,cleanup_surface_bonds=True):
+def fix_bond_orders(mol,allow_failure=False,keep_binding_vdW_bonds=False,keep_vdW_surface_bonds=False):
     atom_order = ["C","Si","N","P","O","S","F","Cl","Br","I","Li","H"]#["H","Li","I","Br","Cl","F","S","O","P","N","Si","C"]#["C","Si","N","P","O","S","F","Cl","Br","I","Li","H"]
     for target in atom_order:
         for a in mol.atoms:
             if a.symbol == target:
-                fix_atom(mol,a,allow_failure=allow_failure,cleanup_surface_bonds=cleanup_surface_bonds)
+                if keep_vdW_surface_bonds or keep_binding_vdW_bonds:
+                    fix_atom(mol,a,allow_failure=allow_failure,cleanup_surface_bonds=False)
+                else:
+                    fix_atom(mol,a,allow_failure=allow_failure,cleanup_surface_bonds=True)
+    
+    if keep_vdW_surface_bonds:
+        vdW_bonds = []
+        for bd in mol.get_all_edges():
+            if bd.order == 0:
+                if not bd.atom1.is_surface_bond() and not bd.atom2.is_surface_bond():
+                    vdW_bonds.append(bd)
+        for bd in vdW_bonds:
+            mol.remove_bond(bd)
+            
+    elif keep_binding_vdW_bonds:
+        mtest = mol.copy(deep=True)
+        
+        vdW_bonds = []
+        for bd in mtest.get_all_edges():
+            if bd.order == 0:
+                vdW_bonds.append(bd)
+        for bd in vdW_bonds:
+            mtest.remove_bond(bd)
+            
+        split_structs,atom_mapping = split_adsorbed_structures(mtest,clear_site_info=True,atom_mapping=True)
+        
+        gas_cluster_inds = []
+        for sstruct in split_structs:
+            if not any(a.is_surface_site() for a in sstruct.atoms): #nominal gas phase construct
+                gas_cluster_inds.extend([atom_mapping[a] for a in sstruct.atoms])
+        
+        bd_to_remove = []
+        for bd in mol.get_all_edges():
+            if bd.order == 0:
+                if (bd.atom1.is_surface_site() and mol.atoms.index(bd.atom2) in gas_cluster_inds) or (bd.atom2.is_surface_site() and mol.atoms.index(bd.atom1) in gas_cluster_inds):
+                    pass
+                else:
+                    bd_to_remove.append(bd)
+        
+        for bd in bd_to_remove:
+            mol.remove_bond(bd)
+    
     return None
 
 def get_octet_deviation(atom):
