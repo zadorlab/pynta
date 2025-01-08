@@ -119,6 +119,7 @@ class AlMaceCalculator(MACECalculator):
         # set to early time
         self.timestamp_fail = datetime.datetime.min.strftime(self.time_format)
         self.timestamp_train = self.timestamp_fail
+        self.current_train_fname = None
         
         print(self.timestamp_fail)
 
@@ -285,7 +286,7 @@ class AlMaceCalculator(MACECalculator):
     def update_mlffs(self):
         """Update MLFF models based on new training data."""
         for seed in range(self.num_committes):
-            if len(self.get_fname_mlffs()) < self.num_committes:
+            if len(self.get_fname_mlffs()) < self.num_committes and self.current_train_fname is not None:
                 self.train_mace(
                     self.current_train_fname.replace('.xyz', f'_{seed}.xyz'),
                     self.current_train_fname.replace('.xyz', f'_{seed}_val.xyz'),
