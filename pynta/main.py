@@ -711,7 +711,7 @@ class CoverageDependence:
                     if bd.atom1.is_surface_site() or bd.atom2.is_surface_site():
                         keep_binding_vdW_bonds_in_reactants = True
                         m = mol.copy(deep=True)
-                        b = m.get_bond(m.atoms(mol.atoms.index(bd.atom1)),m.atoms[mol.atoms.index(bd.atom2)])
+                        b = m.get_bond(m.atoms[mol.atoms.index(bd.atom1)],m.atoms[mol.atoms.index(bd.atom2)])
                         m.remove_bond(b)
                         out = m.split()
                         if len(out) == 1: #vdW bond is not only thing connecting adsorbate to surface
@@ -724,7 +724,7 @@ class CoverageDependence:
                     if bd.atom1.is_surface_site() or bd.atom2.is_surface_site():
                         keep_binding_vdW_bonds_in_products = True
                         m = mol.copy(deep=True)
-                        b = m.get_bond(m.atoms(mol.atoms.index(bd.atom1)),m.atoms[mol.atoms.index(bd.atom2)])
+                        b = m.get_bond(m.atoms[mol.atoms.index(bd.atom1)],m.atoms[mol.atoms.index(bd.atom2)])
                         m.remove_bond(b)
                         out = m.split()
                         if len(out) == 1: #vdW bond is not only thing connecting adsorbate to surface
@@ -759,7 +759,7 @@ class CoverageDependence:
                         if bd.atom1.is_surface_site() or bd.atom2.is_surface_site():
                             keep_binding_vdW_bonds = True
                             m = mol.copy(deep=True)
-                            b = m.get_bond(m.atoms(mol.atoms.index(bd.atom1)),m.atoms[mol.atoms.index(bd.atom2)])
+                            b = m.get_bond(m.atoms[mol.atoms.index(bd.atom1)],m.atoms[mol.atoms.index(bd.atom2)])
                             m.remove_bond(b)
                             out = m.split()
                             if len(out) == 1: #vdW bond is not only thing connecting adsorbate to surface
