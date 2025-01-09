@@ -1221,7 +1221,7 @@ class SelectCalculationsTask(FiretaskBase):
             with open(config_path,'r') as f:
                 configs_of_concern_by_admol[admol_name] = [(Molecule().from_adjacency_list(k[0],check_consistency=False),k[1],k[2],k[3]) for k in json.load(f)]
             Ncoad_energy_path = os.path.join(path,"Iterations",str(iter),"Ncoad_energy_"+admol_name+".json")
-            with open(Ncoad_energy_path,'w') as f:
+            with open(Ncoad_energy_path,'r') as f:
                 Ncoad_energy_by_admol[admol_name] = json.load(f)
             
         #load tree
