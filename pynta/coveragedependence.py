@@ -1892,7 +1892,7 @@ def extract_sample(d,ad_energy_dict,slab,metal,facet,sites,site_adjacency,pynta_
     try:
         with open(os.path.join(d,"info.json"),'r') as f:
             info = json.load(f)
-            mol = Molecule().from_adjacency_list(info["adjlist"])
+            mol = Molecule().from_adjacency_list(info["adjlist"],check_consistency=False)
             for bd in mol.get_all_edges():
                 if bd.order == 0:
                     if bd.atom1.is_surface_site() or bd.atom2.is_surface_site():
