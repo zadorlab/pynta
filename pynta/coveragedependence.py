@@ -1423,16 +1423,16 @@ def train_sidt_cov_dep_regressor(pairs_datums,sampling_datums,r_site=None,
         r_atoms = ["C","O","N","H","X"]
     
     root_pair = Group().from_adjacency_list("""
-    1 * R u0 px cx {2,[S,D,T,Q,R]}
-    2   X u0 p0 c0 {1,[S,D,T,Q,R]}
-    3 * R u0 px cx {4,[S,D,T,Q,R]}
-    4   X u0 p0 c0 {3,[S,D,T,Q,R]}
+    1 * R u0 px cx {2,[S,D,T,Q,R,vdW]}
+    2   X u0 p0 c0 {1,[S,D,T,Q,R,vdW]}
+    3 * R u0 px cx {4,[S,D,T,Q,R,vdW]}
+    4   X u0 p0 c0 {3,[S,D,T,Q,R,vdW]}
     """)
 
     root_pair_node = Node(group=root_pair,name="Root",parent=None,depth=0)
 
     pair_nodes = []
-    initial_pair_root_splits = get_adsorbed_atom_pairs(length=7,r_bonds=[1,2,3,0.05])
+    initial_pair_root_splits = get_adsorbed_atom_pairs(length=7,r_bonds=[1,2,3,0.05,0])
     for i,g in enumerate(initial_pair_root_splits):
         gcleared = g.copy(deep=True)
         gcleared.clear_labeled_atoms()
