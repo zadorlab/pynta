@@ -2102,10 +2102,7 @@ def get_configs_for_calculation(configs_of_concern_by_admol,Ncoad_energy_by_admo
             grps = v[2]
             Nocc = len([a for a in m.atoms if a.is_surface_site() and any(not a2.is_surface_site() for a2 in a.bonds.keys())])
             configs_of_concern.append(v)
-            if Nocc-Nocc_isolated == 0:
-                Emin = 0.0
-            else:
-                Emin = Ncoad_energy_by_admol[admol_name][Nocc-Nocc_isolated]
+            Emin = Ncoad_energy_by_admol[admol_name][Nocc-Nocc_isolated]
             for grp in grps:
                 if grp in group_to_occurence_admol:
                     group_to_occurence_admol[grp] += np.exp(-(E-Emin)/(8.314*T))
