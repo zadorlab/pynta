@@ -954,15 +954,8 @@ class CalculateConfigurationEnergiesTask(FiretaskBase):
         
         try:
             nodes = read_nodes(tree_file)
-            root = [n for n in nodes.values() if n.parent is None][0]
-            if len(root.children) == 1: #pairwise only tree
-                tree = MultiEvalSubgraphIsomorphicDecisionTreeRegressor([adsorbate_interaction_decomposition],
+            tree = MultiEvalSubgraphIsomorphicDecisionTreeRegressor([adsorbate_interaction_decomposition],
                                                         nodes=nodes)
-            elif len(root.children) == 2:
-                tree = MultiEvalSubgraphIsomorphicDecisionTreeRegressor([adsorbate_interaction_decomposition,adsorbate_triad_interaction_decomposition],
-                                                        nodes=nodes)
-            else:
-                raise ValueError
             
             with open(os.path.join(path,"Configurations",admol_name+".json"),'r') as f:
                 configs = [Molecule().from_adjacency_list(m,check_consistency=False) for m in json.load(f)]
