@@ -701,20 +701,36 @@ class CoverageDependence:
             info_path = os.path.join(self.pynta_run_directory,ts,"info.json")
             reactants = Molecule().from_adjacency_list(info["reactants"])
             products = Molecule().from_adjacency_list(info["products"])
-            keep_binding_vdW_bonds=False 
-            keep_vdW_surface_bonds=False
-            for mol in [reactants,products]:
-                for bd in mol.get_all_edges():
-                    if bd.order == 0:
-                        if bd.atom1.is_surface_site() or bd.atom2.is_surface_site():
-                            keep_binding_vdW_bonds = True
-                            m = mol.copy(deep=True)
-                            b = m.get_bond(m.atoms(mol.atoms.index(bd.atom1)),m.atoms[mol.atoms.index(bd.atom2)])
-                            m.remove_bond(b)
-                            out = m.split()
-                            if len(out) == 1: #vdW bond is not only thing connecting adsorbate to surface
-                                keep_vdW_surface_bonds = True
-                            
+            keep_binding_vdW_bonds_in_reactants=False
+            keep_vdW_surface_bonds_in_reactants=False
+            mol = reactants
+            for bd in mol.get_all_edges():
+                if bd.order == 0:
+                    if bd.atom1.is_surface_site() or bd.atom2.is_surface_site():
+                        keep_binding_vdW_bonds_in_reactants = True
+                        m = mol.copy(deep=True)
+                        b = m.get_bond(m.atoms(mol.atoms.index(bd.atom1)),m.atoms[mol.atoms.index(bd.atom2)])
+                        m.remove_bond(b)
+                        out = m.split()
+                        if len(out) == 1: #vdW bond is not only thing connecting adsorbate to surface
+                            keep_vdW_surface_bonds_in_reactants = True
+            keep_binding_vdW_bonds_in_products=False
+            keep_vdW_surface_bonds_in_products=False
+            mol = products
+            for bd in mol.get_all_edges():
+                if bd.order == 0:
+                    if bd.atom1.is_surface_site() or bd.atom2.is_surface_site():
+                        keep_binding_vdW_bonds_in_products = True
+                        m = mol.copy(deep=True)
+                        b = m.get_bond(m.atoms(mol.atoms.index(bd.atom1)),m.atoms[mol.atoms.index(bd.atom2)])
+                        m.remove_bond(b)
+                        out = m.split()
+                        if len(out) == 1: #vdW bond is not only thing connecting adsorbate to surface
+                            keep_vdW_surface_bonds_in_products = True
+            
+            keep_binding_vdW_bonds = keep_binding_vdW_bonds_in_reactants and keep_binding_vdW_bonds_in_products
+            keep_vdW_surface_bonds = keep_vdW_surface_bonds_in_reactants and keep_vdW_surface_bonds_in_products
+            
             atoms = read(admol_name_path_dict[ts])
             st,_,_ = generate_TS_2D(atoms, info_path,  self.metal, self.surface_type, self.sites, self.site_adjacency, self.nslab,
                      max_dist=np.inf, allowed_structure_site_structures=allowed_structure_site_structures,
