@@ -699,6 +699,8 @@ class CoverageDependence:
 
         for ts in self.transition_states.keys():
             info_path = os.path.join(self.pynta_run_directory,ts,"info.json")
+            with open(info_path,'r') as f:
+                info = json.load(f)
             reactants = Molecule().from_adjacency_list(info["reactants"])
             products = Molecule().from_adjacency_list(info["products"])
             keep_binding_vdW_bonds_in_reactants=False
