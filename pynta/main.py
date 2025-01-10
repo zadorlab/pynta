@@ -12,7 +12,7 @@ import time
 import yaml
 from copy import deepcopy
 import numpy as np
-from pynta.calculator import get_lattice_parameter
+from pynta.calculator import get_lattice_parameter,optimize_lattice_parameter
 from fireworks import LaunchPad, Workflow
 from fireworks.queue.queue_launcher import rapidfire as rapidfirequeue
 from fireworks.features.multi_launcher import launch_multiprocess
@@ -135,7 +135,8 @@ class Pynta:
         slab_type = getattr(ase.build,self.surface_type)
         #optimize the lattice constant
         if self.a is None:
-            a = get_lattice_parameter(self.metal,self.surface_type,self.software,self.lattice_opt_software_kwargs)
+            a = optimize_lattice_parameter(self.metal,self.surface_type,self.software,self.lattice_opt_software_kwargs)
+            #a = get_lattice_parameter(self.metal,self.surface_type,self.software,self.lattice_opt_software_kwargs, a0=3.15)
             print("computed lattice constant of: {} Angstroms".format(a))
             self.a = a
         else:
@@ -641,6 +642,8 @@ class Pynta:
 
                             if opt_method == 'QuasiNewton':
                                 namexyz = f'weakopt_{base}.xyz'
+                            elif opt_method == 'sella': # if the opt_method is sella...
+                                namexyz = f'{base}.xyz'
                             else:
                                 namexyz = f'{base}_init.xyz'
 
