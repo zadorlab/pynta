@@ -708,6 +708,8 @@ class Pynta:
 
                             if opt_method == 'QuasiNewton':
                                 namexyz = f'weakopt_{base}.xyz'
+                            elif opt_method == 'sella': # if the opt_method is sella...
+                                namexyz = f'{base}.xyz'
                             else:
                                 namexyz = f'{base}_init.xyz'
 
