@@ -402,7 +402,7 @@ def generate_pair_geometries(adpath1,adpath2,slabpath,metal,facet,adinfo1=None,a
                     ad2_geoms.append(ad2s[i])
 
 
-            inds = get_unique_site_inds(ad2_sites,slab,fixed_point=ad1_sites[0]["position"])
+            inds = get_unique_site_inds(ad2_sites,slab,fixed_points=[x["position"] for x in ad1_sites])
 
             for i in inds:
 #                 if any(sites_match(ad2_sites[i],s,slab) for s in ad1_to_ad1_sites[j]):
@@ -546,16 +546,19 @@ def generate_pair_geometries(adpath1,adpath2,slabpath,metal,facet,adinfo1=None,a
 
     return adpairs,pairmols
 
-def get_unique_site_inds(sites,slab,fixed_point=None,tol=0.15):
+def get_unique_site_inds(sites,slab,fixed_points=None,tol=0.15):
     fingerprints = []
     for k,site in enumerate(sites):
-        if fixed_point is None:
+        if fixed_points is None:
             fingerprints.append((site["morphology"],site["site"]))
         else:
-            bd,d = get_distances([site["position"]], [fixed_point], cell=slab.cell, pbc=(True,True,False))
-            xydist = np.linalg.norm(bd[0][0][:2])
-            zdist = bd[0][0][2]
-            fingerprints.append((site["morphology"],site["site"],xydist,zdist,))
+            dists = [site["morphology"],site["site"]]
+            for fixed_point in fixed_points:
+                bd,d = get_distances([site["position"]], [fixed_point], cell=slab.cell, pbc=(True,True,False))
+                xydist = np.linalg.norm(bd[0][0][:2])
+                zdist = bd[0][0][2]
+                dists.extend([xydist,zdist])
+            fingerprints.append(tuple(dists))
     
     unique_sites = []
     unique_inds = []
