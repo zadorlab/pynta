@@ -209,10 +209,44 @@ def generate_pair_geometries(adpath1,adpath2,slabpath,metal,facet,adinfo1=None,a
         
         with open(adinfo1,"r") as f:
             info1 = json.load(f)
+
+        reactants = Molecule().from_adjacency_list(info1["reactants"])
+        products = Molecule().from_adjacency_list(info1["products"])
+        keep_binding_vdW_bonds_in_reactants=False
+        keep_vdW_surface_bonds_in_reactants=False
+        mol = reactants
+        for bd in mol.get_all_edges():
+            if bd.order == 0:
+                if bd.atom1.is_surface_site() or bd.atom2.is_surface_site():
+                    keep_binding_vdW_bonds_in_reactants = True
+                    m = mol.copy(deep=True)
+                    b = m.get_bond(m.atoms[mol.atoms.index(bd.atom1)],m.atoms[mol.atoms.index(bd.atom2)])
+                    m.remove_bond(b)
+                    out = m.split()
+                    if len(out) == 1: #vdW bond is not only thing connecting adsorbate to surface
+                        keep_vdW_surface_bonds_in_reactants = True
+        keep_binding_vdW_bonds_in_products=False
+        keep_vdW_surface_bonds_in_products=False
+        mol = products
+        for bd in mol.get_all_edges():
+            if bd.order == 0:
+                if bd.atom1.is_surface_site() or bd.atom2.is_surface_site():
+                    keep_binding_vdW_bonds_in_products = True
+                    m = mol.copy(deep=True)
+                    b = m.get_bond(m.atoms[mol.atoms.index(bd.atom1)],m.atoms[mol.atoms.index(bd.atom2)])
+                    m.remove_bond(b)
+                    out = m.split()
+                    if len(out) == 1: #vdW bond is not only thing connecting adsorbate to surface
+                        keep_vdW_surface_bonds_in_products = True
+        
+        keep_binding_vdW_bonds = keep_binding_vdW_bonds_in_reactants and keep_binding_vdW_bonds_in_products
+        keep_vdW_surface_bonds = keep_vdW_surface_bonds_in_reactants and keep_vdW_surface_bonds_in_products
         
         admol1,neighbor_sites1,ninds1 = generate_TS_2D(read(os.path.join(adpath1,"opt.xyz")), adinfo1, metal, facet, sites, site_adjacency, nslab, max_dist=np.inf,
                                                     imag_freq_path=os.path.join(adpath1,"vib.json_vib.json"),
                                                     allowed_structure_site_structures=allowed_structure_site_structures,
+                                                    keep_binding_vdW_bonds=keep_binding_vdW_bonds,
+                                                    keep_vdW_surface_bonds=keep_vdW_surface_bonds,
         )
         
         aseinds1 = []
@@ -230,16 +264,30 @@ def generate_pair_geometries(adpath1,adpath2,slabpath,metal,facet,adinfo1=None,a
         
         with open(adinfo1,"r") as f:
             info1 = json.load(f)
-
+        
+        keep_binding_vdW_bonds = False
+        keep_vdW_surface_bonds = False
         mol1 = Molecule().from_adjacency_list(info1["adjlist"])
-        atom_to_molecule_surface_atom_map1 = { int(key):int(val) for key,val in info1["gratom_to_molecule_surface_atom_map"].items()}
+        for bd in mol1.get_all_edges():
+            if bd.order == 0:
+                if bd.atom1.is_surface_site() or bd.atom2.is_surface_site():
+                    keep_binding_vdW_bonds = True
+                    m = mol1.copy(deep=True)
+                    b = m.get_bond(m.atoms[mol1.atoms.index(bd.atom1)],m.atoms[mol1.atoms.index(bd.atom2)])
+                    m.remove_bond(b)
+                    out = m.split()
+                    if len(out) == 1: #vdW bond is not only thing connecting adsorbate to surface
+                        keep_vdW_surface_bonds = True
+                            
+        atom_to_molecule_surface_atom_map1 = {int(key):int(val) for key,val in info1["gratom_to_molecule_surface_atom_map"].items()}
         ad1s = get_unique_adsorbate_geometries(adpath1,mol1,sites,site_adjacency,atom_to_molecule_surface_atom_map1,
                                     nslab,imag_freq_max=imag_freq_max)
         ad12Ds = []
         ad12Dneighbors = []
         ad12Dninds = []
         for a in ad1s:
-            admol1,neighbor_sites1,ninds1 = generate_adsorbate_2D(a, sites, site_adjacency, nslab, max_dist=np.inf)
+            admol1,neighbor_sites1,ninds1 = generate_adsorbate_2D(a, sites, site_adjacency, nslab, max_dist=np.inf,keep_binding_vdW_bonds=keep_binding_vdW_bonds,
+                                                                  keep_vdW_surface_bonds=keep_vdW_surface_bonds)
             ad12Ds.append(admol1)
             ad12Dneighbors.append(neighbor_sites1)
             ad12Dninds.append(ninds1)
