@@ -2206,10 +2206,15 @@ def mol_to_atoms(admol,slab,sites,metal,partial_atoms=None,partial_admol=None):
         gpartial_admol = partial_admol.to_group()
         admol_atom_order = admol.atoms[:]
         gpartial_admol_order = gpartial_admol.atoms[:]
+        initial_map = dict()
+        for i,a in enumerate(admol.atoms):
+            if a.is_surface_site():
+                assert a.site == gpartial_admol.atoms[i].site[0]
+                initial_map[a] = gpartial_admol.atoms[i]
         try:
-            subisos = admol.find_subgraph_isomorphisms(gpartial_admol,save_order=True)
+            subisos = admol.find_subgraph_isomorphisms(gpartial_admol,initial_map=initial_map,save_order=True)
         except ValueError:
-            subisos = admol.find_subgraph_isomorphisms(gpartial_admol)
+            subisos = admol.find_subgraph_isomorphisms(gpartial_admol,initial_map=initial_map)
             admol.atoms = admol_atom_order
             gpartial_admol.atoms = gpartial_admol_order
         if len(subisos) == 0:
