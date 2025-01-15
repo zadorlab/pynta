@@ -452,6 +452,8 @@ def generate_pair_geometries(adpath1,adpath2,slabpath,metal,facet,adinfo1=None,a
                     amol.clear_labeled_atoms()
                     if amol.multiplicity == -187: #handle surface molecules
                         amol.multiplicity = amol.get_radical_count() + 1
+                for at in amol.atoms:
+                    at.update_charge()
                 for pmol in pairmols:
                     if pmol.is_isomorphic(amol,save_order=True): #duplicate
                         break
@@ -536,6 +538,8 @@ def generate_pair_geometries(adpath1,adpath2,slabpath,metal,facet,adinfo1=None,a
                 amol.clear_labeled_atoms()
                 if amol.multiplicity == -187: #handle surface molecules
                     amol.multiplicity = amol.get_radical_count() + 1
+            for at in amol.atoms:
+                at.update_charge()
             for pmol in pairmols:
                 if pmol.is_isomorphic(amol,save_order=True): #duplicate
                     break
