@@ -971,7 +971,7 @@ def get_bond_factors(ts_path,adsorbates_path,metal,facet,sites,site_adjacency,ma
     return adjlist_to_bond_factor,adjlist_to_length,adjlist_to_well_length
 
 def get_unique_adsorbate_geometries(adsorbate_path,mol,sites,site_adjacency,atom_to_molecule_surface_atom_map,
-                                    nslab,imag_freq_max=150.0):
+                                    nslab,imag_freq_max=150.0,return_xyzs=False):
     """
     load the adsorbates associated with the reaction and find the unique optimized
     adsorbate structures for each species
@@ -995,6 +995,7 @@ def get_unique_adsorbate_geometries(adsorbate_path,mol,sites,site_adjacency,atom
     mols = [generate_adsorbate_2D(geom, sites, site_adjacency, nslab, max_dist=np.inf)[0] for geom in ase_atoms]
     filtered_mols = []
     filtered_geoms = []
+    filtered_xyzs = []
     filtered_energies = []
     for j,m in enumerate(mols):
         for i,fm in enumerate(filtered_mols):
@@ -1003,20 +1004,27 @@ def get_unique_adsorbate_geometries(adsorbate_path,mol,sites,site_adjacency,atom
                     filtered_mols[i] = m 
                     filtered_geoms[i] = ase_atoms[j]
                     filtered_energies[i] = ase_atoms[j].get_potential_energy()
+                    filtered_xyzs[i] = geoms[j]
         else:
             filtered_mols.append(m)
             filtered_geoms.append(ase_atoms[j])
             filtered_energies.append(ase_atoms[j].get_potential_energy())
+            filtered_xyzs.append(geoms[j])
             
     adsorbates = []
+    xyzs_out = []
     for j,geo in enumerate(filtered_geoms):
         occ = get_occupied_sites(geo,sites,nslab)
         required_surface_inds = set([ind+nslab for ind in atom_to_molecule_surface_atom_map.keys()])
         found_surface_inds = set([site["bonding_index"] for site in occ])
         if len(occ) >= len(mol.get_adatoms()) and required_surface_inds.issubset(found_surface_inds):
             adsorbates.append(geo)
-
-    return adsorbates
+            xyzs_out.append(filtered_xyzs[j])
+    
+    if not return_xyzs:
+        return adsorbates
+    else:
+        return adsorbates,xyzs_out
 
 def get_adsorbate_geometries(adsorbate_path,mol,sites,atom_to_molecule_surface_atom_map,
                                     nslab,imag_freq_max=150.0):
