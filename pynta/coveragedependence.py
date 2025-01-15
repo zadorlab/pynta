@@ -254,6 +254,7 @@ def generate_pair_geometries(adpath1,adpath2,slabpath,metal,facet,adinfo1=None,a
             if (not at.is_surface_site()) and at.is_bonded_to_surface():
                 aseinds1.append(i-len(neighbor_sites1)+nslab)
         ad1s = [read(os.path.join(adpath1,"opt.xyz"))]
+        ad1xyzs = [os.path.join(adpath1,"opt.xyz")]
         ad12Ds = [admol1]
         ad12Dneighbors = [neighbor_sites1]
         ad12Dninds = [ninds1]
@@ -280,8 +281,8 @@ def generate_pair_geometries(adpath1,adpath2,slabpath,metal,facet,adinfo1=None,a
                         keep_vdW_surface_bonds = True
                             
         atom_to_molecule_surface_atom_map1 = {int(key):int(val) for key,val in info1["gratom_to_molecule_surface_atom_map"].items()}
-        ad1s = get_unique_adsorbate_geometries(adpath1,mol1,sites,site_adjacency,atom_to_molecule_surface_atom_map1,
-                                    nslab,imag_freq_max=imag_freq_max)
+        ad1s,ad1xyzs = get_unique_adsorbate_geometries(adpath1,mol1,sites,site_adjacency,atom_to_molecule_surface_atom_map1,
+                                    nslab,imag_freq_max=imag_freq_max,return_xyzs=True)
         ad12Ds = []
         ad12Dneighbors = []
         ad12Dninds = []
@@ -387,11 +388,12 @@ def generate_pair_geometries(adpath1,adpath2,slabpath,metal,facet,adinfo1=None,a
     
     adpairs = []
     pairmols = []
+    adpairs_orig_xyzs = []
     
     if not symmetric:
         for j in range(len(ad1s)):
             ad1_sites = ad1_to_ad1_sites[j]
-            
+            ad1xyz = ad1xyzs[j]
             ad2_sites = []
             ad2_geoms = []
             heights = []
@@ -460,6 +462,7 @@ def generate_pair_geometries(adpath1,adpath2,slabpath,metal,facet,adinfo1=None,a
                 else:
                     adpairs.append(ad)
                     pairmols.append(amol)
+                    adpairs_orig_xyzs.append(ad1xyz)
     else: #symmetric case, monodentate-monodentate since ad2 must be monodentate
         ad2_site_pairs = []
         ad2_geoms = []
@@ -467,7 +470,7 @@ def generate_pair_geometries(adpath1,adpath2,slabpath,metal,facet,adinfo1=None,a
         ad1_inds = []
         for j in range(len(ad1s)):
             ad1_sites = ad1_to_ad1_sites[j]
-            
+            ad1xyz = ad1xyzs[j]
             for i,sites in ad1_to_ad2_sites[j].items():
                 for k,site in enumerate(sites):
                     heights.append(ad1_to_ad2_heights[j][i][k])
@@ -546,9 +549,9 @@ def generate_pair_geometries(adpath1,adpath2,slabpath,metal,facet,adinfo1=None,a
             else:
                 adpairs.append(ad)
                 pairmols.append(amol)
-    
+                adpairs_orig_xyzs.append(ad1xyz)
 
-    return adpairs,pairmols
+    return adpairs,pairmols,adpairs_orig_xyzs
 
 def get_unique_site_inds(sites,slab,fixed_points=None,tol=0.15):
     fingerprints = []
@@ -669,15 +672,15 @@ def setup_pair_opts_for_rxns(targetdir,tsdirs,coadnames,metal,facet,max_dist=3.0
                 ds = [os.path.join(addir,x) for x in s]
             else:
                 ds = [s[0],os.path.join(addir,s[1])]
-            pairs,pairmols = generate_pair_geometries(ds[0],ds[1],slabpath,metal,facet,
+            pairs,pairmols,pairxyzs = generate_pair_geometries(ds[0],ds[1],slabpath,metal,facet,
                                  max_dist=max_dist,imag_freq_max=imag_freq_max)
             for i,pair in enumerate(pairs):
                 os.makedirs(os.path.join(namedir,str(i)))
                 write(os.path.join(namedir,str(i),"init.xyz"), pair)
                 if not is_ts:
-                    moldict = {"adjlist": pairmols[i].to_adjacency_list()}
+                    moldict = {"adjlist": pairmols[i].to_adjacency_list(),"xyz": pairxyzs[i]}
                 else:
-                    moldict = {"adjlist": pairmols[i].to_adjacency_list(),"tsdir": s[0]}
+                    moldict = {"adjlist": pairmols[i].to_adjacency_list(),"tsdir": s[0], "xyz": pairxyzs[i]}
                 with open(os.path.join(namedir,str(i),"info.json"),'w') as f:
                     json.dump(moldict,f)
                 if not is_ts:
