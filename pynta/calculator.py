@@ -466,14 +466,15 @@ def optimize_lattice_parameter(metal,surface_type,software,software_kwargs,da=0.
         return slab.get_potential_energy()
 
     # Get the initial lattice parameter a0
-    a0 = reference_states[chemical_symbols.index(metal)]['a']
-    
+    if a0 is None:
+        a0 = reference_states[chemical_symbols.index(metal)]['a']
+            
     # Initialize the difference to a large number
     diff = float('inf')
     
     # Loop until the difference between a0 and a is less than or equal to 0.001
     iteration = 0
-    while diff > 0.001:
+    while diff > 0.009:
         # Generate a range of a values
         avals = np.arange(a0 - da, a0 + da, 0.01)
         outavals = []
