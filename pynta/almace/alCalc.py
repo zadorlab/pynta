@@ -133,8 +133,13 @@ class AlMaceCalculator(MACECalculator):
 
         mace_fnames = sorted(self.get_fname_mlffs())[-self.num_committes:]
         
-        super().__init__(mace_fnames, **kwargs)
-
+        try:
+            super().__init__(mace_fnames, **kwargs)
+        except Exception as e:
+            logging.error(f"mace_fnames: {mace_fnames}")
+            logging.error(f"kwargs: {kwargs}")
+            raise e
+    
     def get_fname_mlffs(self, current=True):
         """Get filenames of MLFF models."""
         mlff_fname_pat = os.path.join(self.dir_mlff, "{0}_{1}/*_swa.model")
