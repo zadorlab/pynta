@@ -2144,7 +2144,7 @@ def process_calculation(d,ad_energy_dict,slab,metal,facet,sites,site_adjacency,p
     return datum_E,datums_stability
 
 def get_configs_for_calculation(configs_of_concern_by_admol,Ncoad_energy_by_admol,admol_name_structure_dict,
-                                computed_configs,tree_regressor,Ncalc_per_iter,T=np.inf,calculation_selection_iterations=10):
+                                computed_configs,tree_regressor,Ncalc_per_iter,T=5000.0,calculation_selection_iterations=10):
     group_to_occurence = dict()
     configs_of_concern = []
     for admol_name in configs_of_concern_by_admol.keys():
