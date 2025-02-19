@@ -30,7 +30,6 @@ import logging
 def get_unstable_pairs(pairsdir,adsorbate_dir,sites,site_adjacency,nslab,max_dist=3.0,show=False,metal=None,facet=None,
                        infopath_dict=None,imag_freq_path_dict=None):
     out_pairs = []
-    coadname_dict = {"O=[Pt]": 1, "N#[Pt]": 1, "O[Pt]": 2, "[Pt]": 1}
     allowed_structure_site_structure_map = generate_allowed_structure_site_structures(adsorbate_dir,sites,site_adjacency,nslab,max_dist=max_dist,cut_multidentate_off_num=None)
     if show:
         config_show = []
@@ -39,6 +38,11 @@ def get_unstable_pairs(pairsdir,adsorbate_dir,sites,site_adjacency,nslab,max_dis
             continue
         adname = pair.split("_")[0]
         coadname = pair.split("_")[1]
+        info_coad_path = os.path.join(adsorbate_dir,coadname,"info.json")
+        with open(info_coad_path,'r') as f:
+            info_coad = json.load(f)
+        coad_struct = Molecule().from_adjacency_list(info_coad["adjlist"])
+        cut_multidentate_off_num = len([at for at in coad_struct.atoms if not at.is_surface_site()])
         if infopath_dict:
             info_path = infopath_dict[adname]
         else:
@@ -74,7 +78,7 @@ def get_unstable_pairs(pairsdir,adsorbate_dir,sites,site_adjacency,nslab,max_dis
 #                         raise e
                 is_ts = any(bd.get_order_str() == "R" for bd in m.get_all_edges())
                 g = extract_pair_graph(init,sites,site_adjacency,nslab,max_dist=max_dist,
-                                       cut_multidentate_off_num=coadname_dict[coadname],
+                                       cut_multidentate_off_num=cut_multidentate_off_num,
                                        allowed_structure_site_structures=allowed_structure_site_structure_map,
                                        is_ts=is_ts,metal=metal,facet=facet,info_path=info_path,imag_freq_path=imag_freq_path)
                     
