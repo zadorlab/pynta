@@ -77,11 +77,7 @@ def get_unstable_pairs(pairsdir,adsorbate_dir,sites,site_adjacency,nslab,max_dis
 #                         print(m.to_adjacency_list())
 #                         raise e
                 is_ts = any(bd.get_order_str() == "R" for bd in m.get_all_edges())
-                g = extract_pair_graph(init,sites,site_adjacency,nslab,max_dist=max_dist,
-                                       cut_multidentate_off_num=cut_multidentate_off_num,
-                                       allowed_structure_site_structures=allowed_structure_site_structure_map,
-                                       is_ts=is_ts,metal=metal,facet=facet,info_path=info_path,imag_freq_path=imag_freq_path)
-                    
+                g = reduce_graph_to_pairs(m)
                 
                 #g.update(sort_atoms=False)
                 outpath = os.path.join(p,"out.xyz")
@@ -104,6 +100,13 @@ def get_unstable_pairs(pairsdir,adsorbate_dir,sites,site_adjacency,nslab,max_dis
                             continue
                         #gout.update(sort_atoms=False)
                     except (FindingPathError, SiteOccupationException):
+                        continue
+                    except FailedFixBondsException: #Pynta is unable to understand the final structure in a resonance sense...definitely not isomorphic
+                        logging.error("Failed to fix bonds for structure: {}".format(p))
+                        out_pairs.append(g.to_group())
+                        if show:
+                            config_show.append(init)
+                            config_show.append(final)
                         continue
                     
                     if not gout.is_isomorphic(g,save_order=True,strict=False):
@@ -1820,7 +1823,7 @@ def load_coverage_delta(d,ad_energy_dict,slab,metal,facet,sites,site_adjacency,t
             admol,neighbor_sites,ninds = generate_adsorbate_2D(atoms, sites, site_adjacency, len(slab), max_dist=np.inf, cut_off_num=None, 
                                                                allowed_structure_site_structures=allowed_structure_site_structures,
                                                                keep_binding_vdW_bonds=keep_binding_vdW_bonds,keep_vdW_surface_bonds=keep_vdW_surface_bonds)
-        except (SiteOccupationException,TooManyElectronsException,ValueError) as e:
+        except (SiteOccupationException,TooManyElectronsException,ValueError,FailedFixBondsException) as e:
             return None,None,None,None
 
         logging.error(admol.to_adjacency_list())
@@ -1859,7 +1862,7 @@ def load_coverage_delta(d,ad_energy_dict,slab,metal,facet,sites,site_adjacency,t
             admol,neighbor_sites,ninds = generate_TS_2D(atoms, ts_info_path, metal, facet, sites, site_adjacency, len(slab), imag_freq_path=os.path.join(d,"vib.0.traj"), 
                                                         max_dist=np.inf, allowed_structure_site_structures=allowed_structure_site_structures,
                                                         keep_binding_vdW_bonds=keep_binding_vdW_bonds,keep_vdW_surface_bonds=keep_vdW_surface_bonds)
-        except (SiteOccupationException,TooManyElectronsException, ValueError) as e:
+        except (SiteOccupationException,TooManyElectronsException, ValueError, FailedFixBondsException) as e:
             return None,None,None,None
         try:
             vibdata = get_vibdata(os.path.join(d,out_file_name+".xyz"),os.path.join(d,vib_file_name+".json"),len(slab))
@@ -1879,8 +1882,8 @@ def load_coverage_delta(d,ad_energy_dict,slab,metal,facet,sites,site_adjacency,t
         for i in range(num_ts_atoms): #remove ts atoms before we identify coadsorbates
             coatoms.pop(len(slab))
         try:
-        except (SiteOccupationException,TooManyElectronsException,ValueError) as e:
             coadmol,coneighbor_sites,coninds = generate_adsorbate_2D(coatoms, sites, site_adjacency, len(slab), max_dist=np.inf, cut_off_num=None)
+        except (SiteOccupationException,TooManyElectronsException,ValueError,FailedFixBondsException) as e:
             return None,None,None,None
             
         split_structs = split_adsorbed_structures(coadmol)
@@ -2018,7 +2021,7 @@ def extract_sample(d,ad_energy_dict,slab,metal,facet,sites,site_adjacency,pynta_
             admol_init,neighbor_sites_init,ninds_init = generate_adsorbate_2D(atoms_init, sites, site_adjacency, nslab, 
                      max_dist=None, cut_off_num=cut_off_num, allowed_structure_site_structures=allowed_structure_site_structures,
                      keep_binding_vdW_bonds=keep_binding_vdW_bonds,keep_vdW_surface_bonds=keep_vdW_surface_bonds)
-        except TooManyElectronsException:
+        except (TooManyElectronsException,FailedFixBondsException):
             admol_init = None
             neighbor_sites_init = None
             ninds_init = None
@@ -2038,7 +2041,7 @@ def extract_sample(d,ad_energy_dict,slab,metal,facet,sites,site_adjacency,pynta_
                      imag_freq_path=imag_freq_path, max_dist=None, cut_off_num=cut_off_num, 
                                                                    allowed_structure_site_structures=allowed_structure_site_structures,
                                                                    keep_binding_vdW_bonds=keep_binding_vdW_bonds,keep_vdW_surface_bonds=keep_vdW_surface_bonds)
-        except TooManyElectronsException as e:
+        except (TooManyElectronsException,FailedFixBondsException) as e:
             valid = False
             admol_init = None
         except SiteOccupationException as e:

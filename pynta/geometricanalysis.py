@@ -199,6 +199,9 @@ def choose_bond_to_fix(symbols,octets,orders,bonded_to_surface):
 class TooManyElectronsException(Exception):
     pass
 
+class FailedFixBondsException(Exception):
+    pass 
+
 def fix_atom(mol,atom,allow_failure=False,cleanup_surface_bonds=True):
     delta = get_octet_deviation(atom)
     
@@ -218,7 +221,7 @@ def fix_atom(mol,atom,allow_failure=False,cleanup_surface_bonds=True):
                 if allow_failure:
                     break
                 else:
-                    raise ValueError("Could not fix bonds")
+                    raise FailedFixBondsException
             bd = atom.bonds[atoms[ind]]
             bd.increment_order()
             delta -= 2
@@ -590,7 +593,7 @@ def split_ts_to_reactants(ts2d,tagatoms=False,keep_binding_vdW_bonds=False,keep_
             r.update(sort_atoms=False)
             r.update_connectivity_values()
             rs.append(r)
-        except (TooManyElectronsException,ValueError):
+        except (TooManyElectronsException,ValueError,FailedFixBondsException):
             pass
     
     return rs
