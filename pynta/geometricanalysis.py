@@ -234,18 +234,17 @@ def fix_atom(mol,atom,allow_failure=False,cleanup_surface_bonds=True):
         for v in to_remove:
             mol.remove_bond(v)
         
-def generate_adsorbate_2D(atoms, sites, site_adjacency, nslab, max_dist=3.0, cut_multidentate_off_num=None, allowed_structure_site_structures=None,
+def generate_adsorbate_2D(atoms, sites, site_adjacency, nslab, max_dist=3.0, cut_off_num=None, allowed_structure_site_structures=None,
                           keep_binding_vdW_bonds=False, keep_vdW_surface_bonds=False):
     admol,neighbor_sites,ninds = generate_adsorbate_molecule(atoms, sites, site_adjacency, nslab, max_dist=max_dist)
-    
-    if cut_multidentate_off_num:
+
+    if cut_off_num:
         bds_to_remove = []
-        for i in range(len(admol.atoms)-cut_multidentate_off_num,len(admol.atoms)):
-            if admol.atoms[i].is_bonded_to_surface():         
-                for a,b in admol.atoms[i].edges.items():
-                    if not a.is_surface_site() and (a.is_bonded_to_surface() or admol.atoms.index(a) < len(admol.atoms)-cut_multidentate_off_num):
-                        if b not in bds_to_remove:
-                            bds_to_remove.append(b)
+        for i in range(len(admol.atoms)-cut_off_num,len(admol.atoms)):         
+            for a,b in admol.atoms[i].edges.items():
+                if not a.is_surface_site() and (a.is_bonded_to_surface() or admol.atoms.index(a) < len(admol.atoms)-cut_off_num):
+                    if b not in bds_to_remove:
+                        bds_to_remove.append(b)
         for b in bds_to_remove:
             admol.remove_bond(b)
     
@@ -283,14 +282,13 @@ def generate_adsorbate_2D(atoms, sites, site_adjacency, nslab, max_dist=3.0, cut
 
         admol,neighbor_sites,ninds = generate_adsorbate_molecule(atoms, sites, site_adjacency, nslab, max_dist=max_dist, allowed_site_dict=allowed_site_dict)
 
-        if cut_multidentate_off_num:
+        if cut_off_num:
             bds_to_remove = []
-            for i in range(len(admol.atoms)-cut_multidentate_off_num,len(admol.atoms)):
-                if admol.atoms[i].is_bonded_to_surface():         
-                    for a,b in admol.atoms[i].edges.items():
-                        if not a.is_surface_site() and (a.is_bonded_to_surface() or admol.atoms.index(a) < len(admol.atoms)-cut_multidentate_off_num):
-                            if b not in bds_to_remove:
-                                bds_to_remove.append(b)
+            for i in range(len(admol.atoms)-cut_off_num,len(admol.atoms)):        
+                for a,b in admol.atoms[i].edges.items():
+                    if not a.is_surface_site() and (a.is_bonded_to_surface() or admol.atoms.index(a) < len(admol.atoms)-cut_off_num):
+                        if b not in bds_to_remove:
+                            bds_to_remove.append(b)
             for b in bds_to_remove:
                 admol.remove_bond(b)
             
@@ -302,23 +300,22 @@ def generate_adsorbate_2D(atoms, sites, site_adjacency, nslab, max_dist=3.0, cut
     return admol,neighbor_sites,ninds
 
 def generate_TS_2D(atoms, info_path,  metal, facet, sites, site_adjacency, nslab, imag_freq_path=None,
-                     max_dist=3.0, cut_multidentate_off_num=None, allowed_structure_site_structures=None,
+                     max_dist=3.0, cut_off_num=None, allowed_structure_site_structures=None,
                      site_bond_cutoff=3.0,keep_binding_vdW_bonds=False,keep_vdW_surface_bonds=False):
 
     admol,neighbor_sites,ninds = generate_adsorbate_molecule(atoms, sites, site_adjacency, 
                                                              nslab, max_dist=max_dist) 
 
-    if cut_multidentate_off_num:
+    if cut_off_num:
         bds_to_remove = []
-        for i in range(len(admol.atoms)-cut_multidentate_off_num,len(admol.atoms)):
-            if admol.atoms[i].is_bonded_to_surface():         
-                for a,b in admol.atoms[i].edges.items():
-                    if not a.is_surface_site() and (a.is_bonded_to_surface() or admol.atoms.index(a) < len(admol.atoms)-cut_multidentate_off_num):
-                        if b not in bds_to_remove:
-                            bds_to_remove.append(b)
+        for i in range(len(admol.atoms)-cut_off_num,len(admol.atoms)):
+            for a,b in admol.atoms[i].edges.items():
+                if not a.is_surface_site() and (a.is_bonded_to_surface() or admol.atoms.index(a) < len(admol.atoms)-cut_off_num):
+                    if b not in bds_to_remove:
+                        bds_to_remove.append(b)
         for b in bds_to_remove:
             admol.remove_bond(b)
-    
+
     with open(info_path) as f:
         info = json.load(f)
     
@@ -428,14 +425,13 @@ def generate_TS_2D(atoms, info_path,  metal, facet, sites, site_adjacency, nslab
     admol,neighbor_sites,ninds = generate_adsorbate_molecule(atoms, sites, site_adjacency, 
                                                              nslab, max_dist=max_dist, allowed_site_dict=allowed_site_dict) 
 
-    if cut_multidentate_off_num:
+    if cut_off_num:
         bds_to_remove = []
-        for i in range(len(admol.atoms)-cut_multidentate_off_num,len(admol.atoms)):
-            if admol.atoms[i].is_bonded_to_surface():         
-                for a,b in admol.atoms[i].edges.items():
-                    if not a.is_surface_site() and (a.is_bonded_to_surface() or admol.atoms.index(a) < len(admol.atoms)-cut_multidentate_off_num):
-                        if b not in bds_to_remove:
-                            bds_to_remove.append(b)
+        for i in range(len(admol.atoms)-cut_off_num,len(admol.atoms)):  
+            for a,b in admol.atoms[i].edges.items():
+                if not a.is_surface_site() and (a.is_bonded_to_surface() or admol.atoms.index(a) < len(admol.atoms)-cut_off_num):
+                    if b not in bds_to_remove:
+                        bds_to_remove.append(b)
         for b in bds_to_remove:
             admol.remove_bond(b)
 
@@ -599,7 +595,7 @@ def split_ts_to_reactants(ts2d,tagatoms=False,keep_binding_vdW_bonds=False,keep_
     
     return rs
       
-def generate_allowed_structure_site_structures(adsorbate_dir,sites,site_adjacency,nslab,max_dist=3.0,cut_multidentate_off_num=None):
+def generate_allowed_structure_site_structures(adsorbate_dir,sites,site_adjacency,nslab,max_dist=3.0,cut_off_num=None):
     allowed_structure_site_structures = []
     for ad in os.listdir(adsorbate_dir):
         if not os.path.isdir(os.path.join(adsorbate_dir,ad)):
@@ -613,7 +609,7 @@ def generate_allowed_structure_site_structures(adsorbate_dir,sites,site_adjacenc
         geoms = get_adsorbate_geometries(os.path.join(adsorbate_dir,ad),target_mol,sites,atom_to_molecule_surface_atom_map,nslab)
         mols = []
         for geom in geoms:
-            admol,neighbor_sites,ninds = generate_adsorbate_2D(geom, sites, site_adjacency, nslab, max_dist=max_dist, cut_multidentate_off_num=cut_multidentate_off_num)
+            admol,neighbor_sites,ninds = generate_adsorbate_2D(geom, sites, site_adjacency, nslab, max_dist=max_dist, cut_off_num=cut_off_num)
             m = remove_slab(admol)
             if not generate_without_site_info(m).is_isomorphic(target_mol,save_order=True): #geom didn't optimize to target
                 continue
@@ -1079,15 +1075,15 @@ def get_lowest_adsorbate_energies(adsorbates_path):
         
     return ad_energy_dict
 
-def extract_pair_graph(atoms,sites,site_adjacency,nslab,max_dist,cut_multidentate_off_num=None,allowed_structure_site_structures=None,
+def extract_pair_graph(atoms,sites,site_adjacency,nslab,max_dist,cut_off_num=None,allowed_structure_site_structures=None,
                        is_ts=False,info_path=None,metal=None,facet=None,imag_freq_path=None):
     if is_ts:
         admol,neighbor_sites,ninds = generate_TS_2D(atoms, info_path, metal, facet, sites, site_adjacency, nslab, imag_freq_path=imag_freq_path,
-                        max_dist=max_dist, cut_multidentate_off_num=cut_multidentate_off_num, allowed_structure_site_structures=allowed_structure_site_structures,
+                        max_dist=max_dist, cut_off_num=cut_off_num, allowed_structure_site_structures=allowed_structure_site_structures,
                         )
     else:
         admol,neighbor_sites,ninds = generate_adsorbate_2D(atoms, sites, site_adjacency, nslab, 
-                                                       max_dist=max_dist,cut_multidentate_off_num=cut_multidentate_off_num,allowed_structure_site_structures=allowed_structure_site_structures)
+                                                       max_dist=max_dist,cut_off_num=cut_off_num,allowed_structure_site_structures=allowed_structure_site_structures)
     return reduce_graph_to_pairs(admol)
 
 def get_adsorbate_energies(ad_path,atom_corrections=None,include_zpe=True):

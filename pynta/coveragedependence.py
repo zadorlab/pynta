@@ -30,7 +30,7 @@ import logging
 def get_unstable_pairs(pairsdir,adsorbate_dir,sites,site_adjacency,nslab,max_dist=3.0,show=False,metal=None,facet=None,
                        infopath_dict=None,imag_freq_path_dict=None):
     out_pairs = []
-    allowed_structure_site_structure_map = generate_allowed_structure_site_structures(adsorbate_dir,sites,site_adjacency,nslab,max_dist=max_dist,cut_multidentate_off_num=None)
+    allowed_structure_site_structure_map = generate_allowed_structure_site_structures(adsorbate_dir,sites,site_adjacency,nslab,max_dist=max_dist,cut_off_num=None)
     if show:
         config_show = []
     for pair in os.listdir(pairsdir):
@@ -42,7 +42,7 @@ def get_unstable_pairs(pairsdir,adsorbate_dir,sites,site_adjacency,nslab,max_dis
         with open(info_coad_path,'r') as f:
             info_coad = json.load(f)
         coad_struct = Molecule().from_adjacency_list(info_coad["adjlist"])
-        cut_multidentate_off_num = len([at for at in coad_struct.atoms if not at.is_surface_site()])
+        cut_off_num = len([at for at in coad_struct.atoms if not at.is_surface_site()])
         if infopath_dict:
             info_path = infopath_dict[adname]
         else:
@@ -1817,7 +1817,7 @@ def load_coverage_delta(d,ad_energy_dict,slab,metal,facet,sites,site_adjacency,t
     
     if not is_ts:
         try:
-            admol,neighbor_sites,ninds = generate_adsorbate_2D(atoms, sites, site_adjacency, len(slab), max_dist=np.inf, cut_multidentate_off_num=None, 
+            admol,neighbor_sites,ninds = generate_adsorbate_2D(atoms, sites, site_adjacency, len(slab), max_dist=np.inf, cut_off_num=None, 
                                                                allowed_structure_site_structures=allowed_structure_site_structures,
                                                                keep_binding_vdW_bonds=keep_binding_vdW_bonds,keep_vdW_surface_bonds=keep_vdW_surface_bonds)
         except (SiteOccupationException,TooManyElectronsException,ValueError) as e:
@@ -1879,8 +1879,8 @@ def load_coverage_delta(d,ad_energy_dict,slab,metal,facet,sites,site_adjacency,t
         for i in range(num_ts_atoms): #remove ts atoms before we identify coadsorbates
             coatoms.pop(len(slab))
         try:
-            coadmol,coneighbor_sites,coninds = generate_adsorbate_2D(coatoms, sites, site_adjacency, len(slab), max_dist=np.inf, cut_multidentate_off_num=None)
         except (SiteOccupationException,TooManyElectronsException,ValueError) as e:
+            coadmol,coneighbor_sites,coninds = generate_adsorbate_2D(coatoms, sites, site_adjacency, len(slab), max_dist=np.inf, cut_off_num=None)
             return None,None,None,None
             
         split_structs = split_adsorbed_structures(coadmol)
@@ -1993,17 +1993,17 @@ def extract_sample(d,ad_energy_dict,slab,metal,facet,sites,site_adjacency,pynta_
     if orig_xyz:
         if not is_ad:
             reactants_clean = Molecule().from_adjacency_list(info_clean["reactants"])
-            cut_multidentate_off_num = len(atoms) - nslab - len([a for a in reactants_clean.atoms if not a.is_surface_site()])
+            cut_off_num = len(atoms) - nslab - len([a for a in reactants_clean.atoms if not a.is_surface_site()])
         else:
             ad_clean = Molecule().from_adjacency_list(info_clean["adjlist"])
-            cut_multidentate_off_num = len(atoms) - nslab - len([a for a in ad_clean.atoms if not a.is_surface_site()])
+            cut_off_num = len(atoms) - nslab - len([a for a in ad_clean.atoms if not a.is_surface_site()])
     else:
-        cut_multidentate_off_num = None
+        cut_off_num = None
 
     if use_allowed_site_structures:
         allowed_structure_site_structures = generate_allowed_structure_site_structures(os.path.join(pynta_dir,"Adsorbates"),
                                                                                          sites,site_adjacency,nslab,max_dist=max_dist,
-                                                                                                 cut_multidentate_off_num=None)
+                                                                                                 cut_off_num=None)
     else:
         allowed_structure_site_structures = None
     
@@ -2016,7 +2016,7 @@ def extract_sample(d,ad_energy_dict,slab,metal,facet,sites,site_adjacency,pynta_
     if is_ad:
         try:
             admol_init,neighbor_sites_init,ninds_init = generate_adsorbate_2D(atoms_init, sites, site_adjacency, nslab, 
-                     max_dist=None, cut_multidentate_off_num=cut_multidentate_off_num, allowed_structure_site_structures=allowed_structure_site_structures,
+                     max_dist=None, cut_off_num=cut_off_num, allowed_structure_site_structures=allowed_structure_site_structures,
                      keep_binding_vdW_bonds=keep_binding_vdW_bonds,keep_vdW_surface_bonds=keep_vdW_surface_bonds)
         except TooManyElectronsException:
             admol_init = None
@@ -2035,7 +2035,7 @@ def extract_sample(d,ad_energy_dict,slab,metal,facet,sites,site_adjacency,pynta_
 
         try:
             admol_init,neighbor_sites_init,ninds_init = generate_TS_2D(atoms_init, info_path, metal, facet, sites, site_adjacency, nslab, 
-                     imag_freq_path=imag_freq_path, max_dist=None, cut_multidentate_off_num=cut_multidentate_off_num, 
+                     imag_freq_path=imag_freq_path, max_dist=None, cut_off_num=cut_off_num, 
                                                                    allowed_structure_site_structures=allowed_structure_site_structures,
                                                                    keep_binding_vdW_bonds=keep_binding_vdW_bonds,keep_vdW_surface_bonds=keep_vdW_surface_bonds)
         except TooManyElectronsException as e:
