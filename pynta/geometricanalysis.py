@@ -138,7 +138,7 @@ def fix_bond_orders(mol,allow_failure=False,keep_binding_vdW_bonds=False,keep_vd
         vdW_bonds = []
         for bd in mol.get_all_edges():
             if bd.order == 0:
-                if not bd.atom1.is_surface_bond() and not bd.atom2.is_surface_bond():
+                if not bd.atom1.is_surface_site() and not bd.atom2.is_surface_site():
                     vdW_bonds.append(bd)
         for bd in vdW_bonds:
             mol.remove_bond(bd)
