@@ -2019,9 +2019,9 @@ def extract_sample(d,ad_energy_dict,slab,metal,facet,sites,site_adjacency,pynta_
     if is_ad:
         try:
             admol_init,neighbor_sites_init,ninds_init = generate_adsorbate_2D(atoms_init, sites, site_adjacency, nslab, 
-                     max_dist=None, cut_off_num=cut_off_num, allowed_structure_site_structures=allowed_structure_site_structures,
+                     max_dist=None, allowed_structure_site_structures=allowed_structure_site_structures,
                      keep_binding_vdW_bonds=keep_binding_vdW_bonds,keep_vdW_surface_bonds=keep_vdW_surface_bonds)
-        except (TooManyElectronsException,FailedFixBondsException):
+        except (TooManyElectronsException,FailedFixBondsException,ValueError):
             admol_init = None
             neighbor_sites_init = None
             ninds_init = None
@@ -2038,10 +2038,10 @@ def extract_sample(d,ad_energy_dict,slab,metal,facet,sites,site_adjacency,pynta_
 
         try:
             admol_init,neighbor_sites_init,ninds_init = generate_TS_2D(atoms_init, info_path, metal, facet, sites, site_adjacency, nslab, 
-                     imag_freq_path=imag_freq_path, max_dist=None, cut_off_num=cut_off_num, 
-                                                                   allowed_structure_site_structures=allowed_structure_site_structures,
-                                                                   keep_binding_vdW_bonds=keep_binding_vdW_bonds,keep_vdW_surface_bonds=keep_vdW_surface_bonds)
-        except (TooManyElectronsException,FailedFixBondsException) as e:
+                     imag_freq_path=imag_freq_path, max_dist=None, 
+                    allowed_structure_site_structures=allowed_structure_site_structures,
+                    keep_binding_vdW_bonds=keep_binding_vdW_bonds,keep_vdW_surface_bonds=keep_vdW_surface_bonds)
+        except (TooManyElectronsException,FailedFixBondsException,ValueError) as e:
             valid = False
             admol_init = None
         except SiteOccupationException as e:
@@ -2090,10 +2090,10 @@ def extract_sample(d,ad_energy_dict,slab,metal,facet,sites,site_adjacency,pynta_
             
     out_dict["valid"] = valid
     out_dict["dE"] = dE
-    if admol is None or admol_init is None:
+    if admol is None or admol_info is None:
         out_dict["isomorphic"] = False
     else:
-        out_dict["isomorphic"] = admol.is_isomorphic(admol_init,save_order=True)
+        out_dict["isomorphic"] = admol.is_isomorphic(admol_info,save_order=True)
     if admol:
         out_dict["out"] = admol.to_adjacency_list()
     else:
@@ -2118,10 +2118,10 @@ def process_calculation(d,ad_energy_dict,slab,metal,facet,sites,site_adjacency,p
                     coad_disruption_tol=coad_disruption_tol,
                     out_file_name=out_file_name,init_file_name=init_file_name,vib_file_name=vib_file_name,is_ad=is_ad)
     
-    if outdict["init_extracted"]:
-        mol_init = Molecule().from_adjacency_list(outdict["init_extracted"],check_consistency=False)
-    else:
+    if outdict["init_info"]:
         mol_init = Molecule().from_adjacency_list(outdict["init_info"],check_consistency=False)
+    else:
+        mol_init = Molecule().from_adjacency_list(outdict["init_extracted"],check_consistency=False)  
     
     if (outdict["valid"] is not None) and (not outdict["isomorphic"]):
         datums_stability.append(Datum(mol_init,False))
