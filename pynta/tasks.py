@@ -22,7 +22,6 @@ from pynta.calculator import run_harmonically_forced_xtb, add_sella_constraint
 from pynta.mol import *
 from pynta.coveragedependence import *
 from pynta.geometricanalysis import *
-from xtb.ase.calculator import XTB
 import numpy as np
 import multiprocessing as mp
 import json
