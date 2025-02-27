@@ -1,4 +1,4 @@
-from xtb.ase.calculator import XTB
+from tblite.ase import TBLite
 import numpy as np
 import ase
 from ase.atoms import Atoms
@@ -66,7 +66,7 @@ def get_energy_forces_site_bond(atoms,ind,site_pos,k,deq):
     energy = k*(d-deq)**2
     return energy,k*forces
 
-class HarmonicallyForcedXTB(XTB):
+class HarmonicallyForcedXTB(TBLite):
     def get_energy_forces(self):
         energy = 0.0
         forces = np.zeros(self.atoms.positions.shape)
@@ -85,7 +85,7 @@ class HarmonicallyForcedXTB(XTB):
         return energy[0][0],forces
 
     def calculate(self, atoms=None, properties=None, system_changes=calculator.all_changes):
-        XTB.calculate(self,atoms=atoms,properties=properties,system_changes=system_changes)
+        TBLite.calculate(self,atoms=atoms,properties=properties,system_changes=system_changes)
         energy,forces = self.get_energy_forces()
         self.results["energy"] += energy
         self.results["free_energy"] += energy
@@ -124,7 +124,7 @@ def run_harmonically_forced_xtb(atoms,atom_bond_potentials,site_bond_potentials,
     
     hfxtb = HarmonicallyForcedXTB(method="GFN1-xTB",
                               atom_bond_potentials=atom_bond_potentials,
-                             site_bond_potentials=site_bond_potentials)
+                             site_bond_potentials=site_bond_potentials,verbosity=0)
 
     atoms.calc = hfxtb
 
@@ -285,7 +285,7 @@ def run_harmonically_forced_xtb_no_pbc(atoms,atom_bond_potentials,site_bond_pote
     
     hfxtb = HarmonicallyForcedXTB(method="GFN1-xTB",
                                   atom_bond_potentials=new_atom_bond_potentials,
-                                 site_bond_potentials=new_site_potentials)
+                                 site_bond_potentials=new_site_potentials,verbosity=0)
     bigad.set_constraint(out_constraints)
     bigad.calc = hfxtb
 

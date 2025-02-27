@@ -12,6 +12,7 @@ import ase.units
 from molecule.molecule import Molecule
 from acat.adsorption_sites import SlabAdsorptionSites
 from molecule.thermo import Wilhoit
+from pynta.geometricanalysis import get_adsorbate_energies, get_vibdata
 
 eV_to_Jmol = 9.648328e4
 
@@ -192,78 +193,6 @@ def fit_rate_coefficient(thermoRs,thermoTS,dE,rnum,s0,Ts=None):
 
     return arr
 
-def get_adsorbate_energies(ad_path,atom_corrections=None,include_zpe=True):
-    """
-    get ZPE corrected adsorbate energies
-    """
-    dirs = os.listdir(ad_path)
-    slab = read(os.path.join(os.path.split(os.path.split(ad_path)[0])[0],"slab.xyz"))
-    Eslab = slab.get_potential_energy()
-    with open(os.path.join(ad_path,"info.json")) as f:
-        info = json.load(f)
-
-    m = Molecule().from_adjacency_list(info["adjlist"])
-    if atom_corrections:
-        AEC = 0.0
-        for atom in m.atoms:
-            s = str(atom.element)
-            if not "X" in s:
-                AEC += atom_corrections[s]
-    else: #if no corrections don't add a correction
-        AEC = 0.0
-    
-    gasphase = len(info["gratom_to_molecule_surface_atom_map"]) == 0
-    spin = (Molecule().from_adjacency_list(info["adjlist"]).multiplicity - 1.0)/2.0
-    Es = dict()
-    thermos = dict()
-    fs = dict()
-    for d in dirs:
-        if d == "info.json":
-            continue
-        optdir = os.path.join(ad_path,d,d+".xyz")
-        freqdir = os.path.join(ad_path,d,"vib.json_vib.json")
-        if not (os.path.exists(optdir) and os.path.exists(freqdir)):
-            continue
-        sp = read(optdir)
-        E = sp.get_potential_energy()
-        if gasphase:
-            vibdata = get_vibdata(optdir,freqdir,0)
-        else:
-            vibdata = get_vibdata(optdir,freqdir,len(slab))
-
-        freqs = vibdata.get_frequencies().tolist()
-        fs[d] = freqs
-
-        ZPE = vibdata.get_zero_point_energy()
-
-        if not gasphase:
-
-            if include_zpe:
-                Es[d] = E + ZPE - Eslab - AEC
-            else:
-                Es[d] = E - Eslab - AEC
-            thermos[d] = HarmonicThermo(np.array([x for x in np.real(vibdata.get_energies()) if x > 0.0]),potentialenergy=E-Eslab-AEC)
-        else:
-            if len(sp) == 1:
-                geometry = 'monatomic'
-            elif any([ I < 1.0e-3 for I in sp.get_moments_of_inertia()]):
-                geometry = "linear"
-            else:
-                geometry = "nonlinear"
-
-            if include_zpe:
-                Es[d] = E + ZPE - AEC
-            else:
-                Es[d] = E - AEC
-
-            thermos[d] = IdealGasThermo(np.real(vibdata.get_energies()),geometry,
-                                        potentialenergy=E - AEC,atoms=sp,symmetrynumber=1,
-                                        natoms=len(sp),spin=spin)
-
-    return Es,thermos,fs
-
-
-
 def get_reactant_products_energy(ts_path,reactants,products):
     path = os.path.split(ts_path)[0]
     ads_path = os.path.join(path,"Adsorbates")
@@ -302,17 +231,7 @@ def get_reactant_products_energy(ts_path,reactants,products):
         pthermos.append(pthermo[ind])
     return rE,pE,rthermos,pthermos
 
-def get_vibdata(dopt,dvib,nslab):
-    xyz = read(dopt)
-    inds = range(nslab,len(xyz))
-    with open(dvib,'r') as f:
-        out = json.load(f)
-    sh = (len(inds),3,len(inds),3)
-    H = np.asarray(out["hessian"])
-    if H.shape != sh:
-        H = H.reshape(sh)
-    vib = VibrationsData(xyz,H,inds)
-    return vib
+
 
 def get_animated_mode(dopt,dvib,nslab,n=0):
 

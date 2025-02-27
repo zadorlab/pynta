@@ -2,7 +2,7 @@ import unittest
 from nose.plugins.attrib import attr
 import os
 import shutil
-from pynta.main import *
+from pynta.main import Pynta
 from pynta.utils import clean_pynta_path
 from fireworks import LaunchPad, Workflow
 from fireworks.core.rocket_launcher import rapidfire, launch_rocket
@@ -51,8 +51,8 @@ class MainTest(unittest.TestCase):
                 software="XTB",
                 surface_type="fcc111",metal="Cu",socket=False,queue=False,a=3.61,
                 repeats=(3,3,4),label=name,num_jobs=1,max_num_hfsp_opts=2,
-                software_kwargs={"method": "GFN1-xTB"},
-                software_kwargs_gas={"method": "GFN1-xTB"},
+                software_kwargs={"method": "GFN1-xTB","verbosity":0},
+                software_kwargs_gas={"method": "GFN1-xTB","verbosity":0},
                TS_opt_software_kwargs={},
                lattice_opt_software_kwargs={},
                slab_path=os.path.join(self.path,"slab.xyz"),
