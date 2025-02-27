@@ -2,7 +2,7 @@ import unittest
 from nose.plugins.attrib import attr
 import os
 import shutil
-from pynta.main import *
+from pynta.main import Pynta
 from pynta.utils import clean_pynta_path
 from fireworks import LaunchPad, Workflow
 from fireworks.core.rocket_launcher import rapidfire, launch_rocket
