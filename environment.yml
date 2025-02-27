@@ -1,4 +1,4 @@
-name: pynta_env
+name: pynta_env_test
 channels:
   - defaults
   - mjohnson541
@@ -13,16 +13,12 @@ dependencies:
   - pyyaml
   - sella >=2.2.1
   - sphinx
-  - anaconda::glpk
   - fireworks
-  - jax <=0.2.28
-  - xtb >=6.4.1
-  - xtb-python >=20.2
+  - tblite
+  - tblite-python
   - rmgmolecule
   - acat
-  - libffi <=3.3
   - nose
   - coverage
   - liblapack !=3.9.0
   - pysidt >=1
-  - ruamel.yaml < 0.18
