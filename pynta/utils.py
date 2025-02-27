@@ -309,8 +309,8 @@ def name_to_ase_software(software_name):
     ASE calculator constructor
     """
     if software_name == "XTB":
-        module = import_module("xtb.ase.calculator")
-        return getattr(module, software_name)
+        module = import_module("tblite.ase")
+        return getattr(module, "TBLite")
     else:
         module = import_module("ase.calculators."+software_name.lower())
         return getattr(module, software_name)
