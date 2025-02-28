@@ -351,7 +351,7 @@ def add_sella_constraint(cons,d):
 def get_lattice_parameter(metal,surface_type,software,software_kwargs,da=0.1,options={"xatol":1e-4},a0=None):
     soft = name_to_ase_software(software)(**software_kwargs)
     def f(a):
-        slab = bulk(metal,surface_type[:3],a=a, cube=True) #create orthorhomic cell (two atom)
+        slab = bulk(metal,surface_type[:3],a=a, cubic=True) #create orthorhomic cell (two atom)
         slab.calc = soft
         slab.pbc = (True, True, True)
         return slab.get_potential_energy()
