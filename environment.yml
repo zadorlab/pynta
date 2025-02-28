@@ -1,4 +1,4 @@
-name: pynta_env_test
+name: pynta_env
 channels:
   - defaults
   - mjohnson541
