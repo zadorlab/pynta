@@ -9,7 +9,7 @@ from copy import deepcopy
 from importlib import import_module
 import numpy as np
 import copy
-
+from pwdft import PWDFT
 
 def get_unique_sym(geoms):
     ''' Check for the symmetry equivalent structures in the given files
