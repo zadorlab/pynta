@@ -29,9 +29,20 @@ from pynta.utils import copyDataAndSave
 from pynta.multi_launcher import launch_multiprocess2
 import json
 
+#logger
+logger = logging.getLogger(__name__)
+logging.basicConfig(filename='pynta.log', level=logging.INFO)
+
+
+#logger
+logger = logging.getLogger(__name__)
+logging.basicConfig(filename='pynta.log', level=logging.INFO)
+
+
 class Pynta:
     def __init__(self,path,rxns_file,surface_type,metal,label,launchpad_path=None,fworker_path=None,
         vacuum=8.0,repeats=(3,3,4),slab_path=None,software="Espresso", pbc=(True,True,False),socket=False,queue=False,njobs_queue=0,a=None,
+        machine=None,
         machine=None,
         software_kwargs={'kpts': (3, 3, 1), 'tprnfor': True, 'occupations': 'smearing',
                             'smearing':  'marzari-vanderbilt',
@@ -41,6 +52,7 @@ class Pynta:
                             }, },
         software_kwargs_gas=None,
         TS_opt_software_kwargs=None,
+        irc_mode="fixed", #choose irc mode: 'skip', 'relaxed', 'fixed'
         lattice_opt_software_kwargs={'kpts': (25,25,25), 'ecutwfc': 70, 'degauss':0.02, 'mixing_mode': 'plain'},
         reset_launchpad=False,queue_adapter_path=None,num_jobs=25,max_num_hfsp_opts=None,#max_num_hfsp_opts is mostly for fast testing
         Eharmtol=3.0,Eharmfiltertol=30.0,Ntsmin=5,frozen_layers=2,fmaxopt=0.05,fmaxirc=0.1,fmaxopthard=0.05,pickled=0):
@@ -60,6 +72,7 @@ class Pynta:
         self.vacuum = vacuum
         self.a = a
         self.pbc = pbc
+        self.c = c
         self.software = software
         self.socket = socket
         self.repeats = repeats
@@ -70,6 +83,7 @@ class Pynta:
         self.adsorbate_fw_dict = dict()
         self.software_kwargs = software_kwargs
         self.machine = machine #need to specify 'alcf' or other machine of choice
+        self.irc_mode = irc_mode
 
         if software.lower() == 'vasp':
             self.pbc = (True,True,True)
@@ -127,6 +141,8 @@ class Pynta:
         self.fmaxirc = fmaxirc
         self.fmaxopthard = fmaxopthard
 
+        logger.info('Pynta class is initiated')
+
     def generate_slab(self,skip_launch=False):
         """
         generates and optimizes a small scale slab that can be scaled to a large slab as needed
@@ -141,12 +157,17 @@ class Pynta:
             self.a = a
         else:
             a = self.a
+        logger.info('Construct slab with optimal lattice constant')
         #construct slab with optimial lattice constant
-        slab = slab_type(self.metal,self.repeats,a,self.vacuum)
+        if self.c:
+            slab = slab_type(symbol=self.metal,size=self.repeats,a=self.a,vacuum=self.vacuum,c=self.c)
+        else:
+            slab = slab_type(symbol=self.metal,size=self.repeats,a=self.a,vacuum=self.vacuum)
         slab.pbc = self.pbc
         write(os.path.join(self.path,"slab_init.xyz"),slab)
         self.slab_path = os.path.join(self.path,"slab.xyz")
         if self.software != "XTB":
+            fwslab = optimize_firework(os.path.join(self.path,"slab_init.xyz"),self.software,self.machine,"slab",
             fwslab = optimize_firework(os.path.join(self.path,"slab_init.xyz"),self.software,self.machine,"slab",
                 opt_method="BFGSLineSearch",socket=self.socket,software_kwargs=self.software_kwargs,
                 run_kwargs={"fmax" : self.fmaxopt},out_path=os.path.join(self.path,"slab.xyz"),constraints=["freeze up to {}".format(self.freeze_ind)],priority=1000)
@@ -389,10 +410,12 @@ class Pynta:
                     xyzs.append(xyz)
                     fwopt = optimize_firework(os.path.join(self.path,"Adsorbates",adsname,str(prefix),str(prefix)+"_init.xyz"),
                         self.software,self.machine,"weakopt_"+str(prefix),
+                        self.software,self.machine,"weakopt_"+str(prefix),
                         opt_method="MDMin",opt_kwargs={'dt': 0.05},socket=self.socket,software_kwargs=software_kwargs,
                         run_kwargs={"fmax" : 0.5, "steps" : 70},parents=[],constraints=constraints,
                         ignore_errors=True, metal=self.metal, facet=self.surface_type, target_site_num=target_site_num, priority=3)
                     fwopt2 = optimize_firework(os.path.join(self.path,"Adsorbates",adsname,str(prefix),"weakopt_"+str(prefix)+".xyz"),
+                        self.software,self.machine,str(prefix),
                         self.software,self.machine,str(prefix),
                         opt_method="QuasiNewton",socket=self.socket,software_kwargs=software_kwargs,
                         run_kwargs={"fmax" : self.fmaxopt, "steps" : 70},parents=[fwopt],constraints=constraints,
@@ -403,6 +426,7 @@ class Pynta:
                     optfws2.append(fwopt2)
 
                 vib_obj_dict = {"software": self.software, "label": adsname, "software_kwargs": software_kwargs,
+                    "machine": self.machine, "constraints": ["freeze up to "+str(self.nslab)]}
                     "machine": self.machine, "constraints": ["freeze up to "+str(self.nslab)]}
 
                 cfw = collect_firework(xyzs,True,["vibrations_firework"],[vib_obj_dict],["vib.json"],[],parents=optfws2,label=adsname)
@@ -451,10 +475,12 @@ class Pynta:
                     xyzs.append(xyz)
                     fwopt = optimize_firework(init_path,
                         self.software,self.machine,"weakopt_"+str(prefix),
+                        self.software,self.machine,"weakopt_"+str(prefix),
                         opt_method="MDMin",opt_kwargs={'dt': 0.05},socket=self.socket,software_kwargs=software_kwargs,
                         run_kwargs={"fmax" : 0.5, "steps" : 70},parents=[],constraints=constraints,
                         ignore_errors=True, metal=self.metal, facet=self.surface_type, target_site_num=target_site_num, priority=3)
                     fwopt2 = optimize_firework(os.path.join(self.path,"Adsorbates",ad,str(prefix),"weakopt_"+str(prefix)+".xyz"),
+                        self.software,self.machine,str(prefix),
                         self.software,self.machine,str(prefix),
                         opt_method="QuasiNewton",socket=self.socket,software_kwargs=software_kwargs,
                         run_kwargs={"fmax" : self.fmaxopt, "steps" : 70},parents=[fwopt],constraints=constraints,
@@ -464,6 +490,7 @@ class Pynta:
                     optfws2.append(fwopt2)
 
                 vib_obj_dict = {"software": self.software, "label": ad, "software_kwargs": software_kwargs,
+                    "machine": self.machine, "constraints": ["freeze up to "+str(self.nslab)]}
                     "machine": self.machine, "constraints": ["freeze up to "+str(self.nslab)]}
 
                 cfw = collect_firework(xyzs,True,["vibrations_firework"],[vib_obj_dict],["vib.json"],[True,False],parents=optfws2,label=ad,allow_fizzled_parents=False)
@@ -479,25 +506,48 @@ class Pynta:
         """
         if self.software != "XTB":
             opt_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":self.software_kwargs_TS,"machine": self.machine,
+            opt_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":self.software_kwargs_TS,"machine": self.machine,
                 "run_kwargs": {"fmax" : self.fmaxopt, "steps" : 70},"constraints": ["freeze up to {}".format(self.freeze_ind)],"sella":True,"order":1,}
         else:
             opt_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":self.software_kwargs_TS,"machine": self.machine,
+            opt_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":self.software_kwargs_TS,"machine": self.machine,
                 "run_kwargs": {"fmax" : 0.02, "steps" : 70},"constraints": ["freeze up to "+str(self.nslab)],"sella":True,"order":1,}
+        
+        
+
+        #logging.info
+        logger.info(f"================= IRC mode is: {self.irc_mode} =======================")
+        #pass through 
+        
         vib_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":self.software_kwargs,
-                "machine": self.machine, "constraints": ["freeze up to "+str(self.nslab)]}
+            "machine": self.machine, "constraints": ["freeze up to "+str(self.nslab)]}
         IRC_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":self.software_kwargs,
                 "machine": self.machine, "run_kwargs": {"fmax" : self.fmaxirc, "steps" : 70},"constraints":["freeze up to "+str(self.nslab)]}
         for i,rxn in enumerate(self.rxns_dict):
+            #if irc_mode is "fixed" freeze all slab and conduct MolecularTSEstimate. 
+            if self.irc_mode == "fixed":
+                IRC_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":self.software_kwargs,
+                    "run_kwargs": {"fmax" : self.fmaxopt, "steps" : 70},"constraints": ["freeze up to "+str(self.nslab)]}
+
+            elif self.irc_mode == "relaxed":
+                IRC_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":self.software_kwargs,
+                    "run_kwargs": {"fmax" : self.fmaxopt, "steps" : 70},"constraints": ["freeze up to {}".format(self.freeze_ind)]}
+        # if irc_mode = "skip" : do not conduct IRC
+            else:
+                logger.info("Skip IRC: IRC is not conducted")
+                IRC_obj_dict = {}
+                pass
+
             ts_path = os.path.join(self.path,"TS"+str(i))
             os.makedirs(ts_path)
             ts_task = MolecularTSEstimate({"rxn": rxn,"ts_path": ts_path,"slab_path": self.slab_path,"adsorbates_path": os.path.join(self.path,"Adsorbates"),
-                "rxns_file": self.rxns_file,"path": self.path,"metal": self.metal,"facet": self.surface_type, "out_path": ts_path, "machine": self.machine,
-                "spawn_jobs": True, "opt_obj_dict": opt_obj_dict, "vib_obj_dict": vib_obj_dict,
-                    "IRC_obj_dict": IRC_obj_dict, "nprocs": 48, "name_to_adjlist_dict": self.name_to_adjlist_dict,
+                    "rxns_file": self.rxns_file,"path": self.path,"metal": self.metal,"facet": self.surface_type, "out_path": ts_path, "machine": self.machine, "irc_mode": self.irc_mode,
+                    "spawn_jobs": True, "opt_obj_dict": opt_obj_dict, "vib_obj_dict": vib_obj_dict, "IRC_obj_dict": IRC_obj_dict,
+                    "nprocs": 48, "name_to_adjlist_dict": self.name_to_adjlist_dict,
                     "gratom_to_molecule_atom_maps":{sm: {str(k):v for k,v in d.items()} for sm,d in self.gratom_to_molecule_atom_maps.items()},
                     "gratom_to_molecule_surface_atom_maps":{sm: {str(k):v for k,v in d.items()} for sm,d in self.gratom_to_molecule_surface_atom_maps.items()},
                     "nslab":self.nslab,"Eharmtol":self.Eharmtol,"Eharmfiltertol":self.Eharmfiltertol,"Ntsmin":self.Ntsmin,
-                    "max_num_hfsp_opts":self.max_num_hfsp_opts})
+                    "max_num_hfsp_opts":self.max_num_hfsp_opts, "acat_tol": self.acat_tol, "emt_metal": self.emt_metal})
             reactants = rxn["reactant_names"]
             products = rxn["product_names"]
             parents = []
@@ -511,6 +561,23 @@ class Pynta:
         """
         Call appropriate rapidfire function
         """
+        if self.machine == "alcf":
+            print("You are using alcf machine: if you want to restart, run pyn.reset(wfid='1')")
+            if self.queue:
+                rapidfirequeue(self.launchpad,self.fworker,self.qadapter,njobs_queue=self.njobs_queue,nlaunches="infinite")
+            elif not self.queue and (self.num_jobs == 1 or single_job):
+                rapidfire(self.launchpad,self.fworker,nlaunches="infinite")
+            else:
+                listfworkers = createFWorkers(self.num_jobs)
+                launch_multiprocess2(self.launchpad,listfworkers,"INFO",0,self.num_jobs,5)
+        else:
+            print("machine choice is not alcf: check your Fireworks Workflow id before restart Pynta")
+            if self.queue:
+                rapidfirequeue(self.launchpad,self.fworker,self.qadapter,njobs_queue=self.njobs_queue,nlaunches="infinite")
+            elif not self.queue and (self.num_jobs == 1 or single_job):
+                rapidfire(self.launchpad,self.fworker,nlaunches="infinite")
+            else:
+                launch_multiprocess(self.launchpad,self.fworker,"INFO","infinite",self.num_jobs,5)
         if self.machine == "alcf":
             print("You are using alcf machine: if you want to restart, run pyn.reset(wfid='1')")
             if self.queue:
@@ -642,8 +709,6 @@ class Pynta:
 
                             if opt_method == 'QuasiNewton':
                                 namexyz = f'weakopt_{base}.xyz'
-                            elif opt_method == 'sella': # if the opt_method is sella...
-                                namexyz = f'{base}.xyz'
                             else:
                                 namexyz = f'{base}_init.xyz'
 
