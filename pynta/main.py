@@ -35,10 +35,13 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(filename='pynta.log', level=logging.INFO)
 
 
+#logger
+logger = logging.getLogger(__name__)
+logging.basicConfig(filename='pynta.log', level=logging.INFO)
+
 class Pynta:
     def __init__(self,path,rxns_file,surface_type,metal,label,launchpad_path=None,fworker_path=None,
         vacuum=8.0,repeats=(3,3,4),slab_path=None,software="Espresso", pbc=(True,True,False),socket=False,queue=False,njobs_queue=0,a=None,
-        machine=None,
         machine=None,
         software_kwargs={'kpts': (3, 3, 1), 'tprnfor': True, 'occupations': 'smearing',
                             'smearing':  'marzari-vanderbilt',
@@ -51,11 +54,9 @@ class Pynta:
         irc_mode="fixed", #choose irc mode: 'skip', 'relaxed', 'fixed'
         lattice_opt_software_kwargs={'kpts': (25,25,25), 'ecutwfc': 70, 'degauss':0.02, 'mixing_mode': 'plain'},
         reset_launchpad=False,queue_adapter_path=None,num_jobs=25,max_num_hfsp_opts=None,#max_num_hfsp_opts is mostly for fast testing
-        Eharmtol=3.0,Eharmfiltertol=30.0,Ntsmin=5,frozen_layers=2,fmaxopt=0.05,fmaxirc=0.1,fmaxopthard=0.05,c=None,
-        surrogate_metal=None):
+        Eharmtol=3.0,Eharmfiltertol=30.0,Ntsmin=5,frozen_layers=2,fmaxopt=0.05,fmaxirc=0.1,fmaxopthard=0.05):
 
         self.surface_type = surface_type
-        self.pickled = pickled
 
         if launchpad_path:
             launchpad = LaunchPad.from_file(launchpad_path)
@@ -187,43 +188,19 @@ class Pynta:
             write(self.slab_path,slab)
 
     def analyze_slab(self):
-        #pickle info RHE
-        if self.pickled == 0:
-            full_slab = self.slab
-            cas = SlabAdsorptionSites(full_slab, self.surface_type,allow_6fold=False,composition_effect=False,
+        full_slab = self.slab
+        cas = SlabAdsorptionSites(full_slab, self.surface_type,allow_6fold=False,composition_effect=False,
                         label_sites=True,
                         surrogate_metal=self.surrogate_metal)
 
-            self.cas = cas
+        self.cas = cas
 
-            unique_site_lists,unique_site_pairs_lists,single_site_bond_params_lists,double_site_bond_params_lists = generate_unique_placements(full_slab,cas)
+        unique_site_lists,unique_site_pairs_lists,single_site_bond_params_lists,double_site_bond_params_lists = generate_unique_placements(full_slab,cas)
 
-            self.single_site_bond_params_lists = single_site_bond_params_lists
-            self.single_sites_lists = unique_site_lists
-            self.double_site_bond_params_lists = double_site_bond_params_lists
-            self.double_sites_lists = unique_site_pairs_lists
-
-            my_dictionary_to_pickled  = {'cas' : cas,
-                                        'single_site_bond_params_list': single_site_bond_params_lists,
-                                        'single_sites_lists': unique_site_lists,
-                                        'double_site_bond_params_lists': double_site_bond_params_lists,
-                                        'double_sites_lists_full': unique_site_pairs_lists}
-
-            print("Save as a pickle")
-            with open('analize_slab.pickle', 'wb') as myfile:
-                pickle.dump(my_dictionary_to_pickled, myfile)
-
-        else :
-            with open('analize_slab.pickle', 'rb') as myfile:
-                my_dict = pickle.load(myfile)
-
-            print("Load from a pickle")
-
-            self.cas = my_dict['cas']
-            self.single_site_bond_params_lists = my_dict['single_site_bond_params_list']
-            self.single_sites_lists = my_dict['unique_site_lists']
-            self.double_site_bond_params_lists = my_dict['double_site_bond_params_lists']
-            self.double_sites_lists = my_dict['unique_site_pairs_lists']
+        self.single_site_bond_params_lists = single_site_bond_params_lists
+        self.single_sites_lists = unique_site_lists
+        self.double_site_bond_params_lists = double_site_bond_params_lists
+        self.double_sites_lists = unique_site_pairs_lists
 
     def generate_mol_dict(self):
         """
@@ -430,7 +407,6 @@ class Pynta:
 
                 vib_obj_dict = {"software": self.software, "label": adsname, "software_kwargs": software_kwargs,
                     "machine": self.machine, "constraints": ["freeze up to "+str(self.nslab)]}
-                    "machine": self.machine, "constraints": ["freeze up to "+str(self.nslab)]}
 
                 cfw = collect_firework(xyzs,True,["vibrations_firework"],[vib_obj_dict],["vib.json"],[],parents=optfws2,label=adsname)
                 self.adsorbate_fw_dict[adsname] = optfws2
@@ -478,12 +454,10 @@ class Pynta:
                     xyzs.append(xyz)
                     fwopt = optimize_firework(init_path,
                         self.software,self.machine,"weakopt_"+str(prefix),
-                        self.software,self.machine,"weakopt_"+str(prefix),
                         opt_method="MDMin",opt_kwargs={'dt': 0.05},socket=self.socket,software_kwargs=software_kwargs,
                         run_kwargs={"fmax" : 0.5, "steps" : 70},parents=[],constraints=constraints,
                         ignore_errors=True, metal=self.metal, facet=self.surface_type, target_site_num=target_site_num, priority=3)
                     fwopt2 = optimize_firework(os.path.join(self.path,"Adsorbates",ad,str(prefix),"weakopt_"+str(prefix)+".xyz"),
-                        self.software,self.machine,str(prefix),
                         self.software,self.machine,str(prefix),
                         opt_method="QuasiNewton",socket=self.socket,software_kwargs=software_kwargs,
                         run_kwargs={"fmax" : self.fmaxopt, "steps" : 70},parents=[fwopt],constraints=constraints,
@@ -493,7 +467,6 @@ class Pynta:
                     optfws2.append(fwopt2)
 
                 vib_obj_dict = {"software": self.software, "label": ad, "software_kwargs": software_kwargs,
-                    "machine": self.machine, "constraints": ["freeze up to "+str(self.nslab)]}
                     "machine": self.machine, "constraints": ["freeze up to "+str(self.nslab)]}
 
                 cfw = collect_firework(xyzs,True,["vibrations_firework"],[vib_obj_dict],["vib.json"],[True,False],parents=optfws2,label=ad,allow_fizzled_parents=False)
@@ -695,19 +668,6 @@ class Pynta:
                 nameTasks = ['{{pynta.tasks.MolecularOptimizationTask}}',
                             '{{pynta.tasks.MolecularVibrationsTask}}',
                             '{{pynta.tasks.MolecularIRC}}']
-
-                #if nameTask in nameTasks:
-                #    opt_method = newd['_tasks'][0]['opt_method'] if 'opt_method' in newd['_tasks'][0] else None
-
-                #    if self.software == "Espresso" or self.software == "PWDFT":
-                #        print(" Change: ", newd['_tasks'][0]['software_kwargs']['command'], end='')
-                #        node = MapTaskToNodes()
-                #        newcommand = node.getCommand()
-                #        newd['_tasks'][0]['software_kwargs']['command'] = newcommand
-                #        print(" by: ", newcommand)
-                # Here we work with reset the optimization task
-                # We load the trajectory file and save this structure in the
-                # tree of each uncompleted task
 
                 if 'opt' in task_name:
                     dirs = wf_launchers[task_name]
