@@ -42,16 +42,9 @@ logging.basicConfig(filename='pynta.log', level=logging.INFO)
 logger = logging.getLogger(__name__)
 logging.basicConfig(filename='pynta.log', level=logging.INFO)
 
-
-#logger
-logger = logging.getLogger(__name__)
-logging.basicConfig(filename='pynta.log', level=logging.INFO)
-
-
 class Pynta:
     def __init__(self,path,rxns_file,surface_type,metal,label,launchpad_path=None,fworker_path=None,
         vacuum=8.0,repeats=(3,3,4),slab_path=None,software="Espresso", pbc=(True,True,False),socket=False,queue=False,njobs_queue=0,a=None,
-        machine=None,
         machine=None,
         software_kwargs={'kpts': (3, 3, 1), 'tprnfor': True, 'occupations': 'smearing',
                             'smearing':  'marzari-vanderbilt',
@@ -214,32 +207,10 @@ class Pynta:
             
             unique_site_lists,unique_site_pairs_lists,single_site_bond_params_lists,double_site_bond_params_lists = generate_unique_placements(full_slab,self.sites)
 
-            self.single_site_bond_params_lists = single_site_bond_params_lists
-            self.single_sites_lists = unique_site_lists
-            self.double_site_bond_params_lists = double_site_bond_params_lists
-            self.double_sites_lists = unique_site_pairs_lists
-
-            my_dictionary_to_pickled  = {'cas' : cas,
-                                        'single_site_bond_params_list': single_site_bond_params_lists,
-                                        'single_sites_lists': unique_site_lists,
-                                        'double_site_bond_params_lists': double_site_bond_params_lists,
-                                        'double_sites_lists_full': unique_site_pairs_lists}
-
-            print("Save as a pickle")
-            with open('analize_slab.pickle', 'wb') as myfile:
-                pickle.dump(my_dictionary_to_pickled, myfile)
-
-        else :
-            with open('analize_slab.pickle', 'rb') as myfile:
-                my_dict = pickle.load(myfile)
-
-            print("Load from a pickle")
-
-            self.cas = my_dict['cas']
-            self.single_site_bond_params_lists = my_dict['single_site_bond_params_list']
-            self.single_sites_lists = my_dict['unique_site_lists']
-            self.double_site_bond_params_lists = my_dict['double_site_bond_params_lists']
-            self.double_sites_lists = my_dict['unique_site_pairs_lists']
+        self.single_site_bond_params_lists = single_site_bond_params_lists
+        self.single_sites_lists = unique_site_lists
+        self.double_site_bond_params_lists = double_site_bond_params_lists
+        self.double_sites_lists = unique_site_pairs_lists
 
     def generate_mol_dict(self):
         """
@@ -492,12 +463,10 @@ class Pynta:
                     xyzs.append(xyz)
                     fwopt = optimize_firework(init_path,
                         self.software,self.machine,"weakopt_"+str(prefix),
-                        self.software,self.machine,"weakopt_"+str(prefix),
                         opt_method="MDMin",opt_kwargs={'dt': 0.05},socket=self.socket,software_kwargs=software_kwargs,
                         run_kwargs={"fmax" : 0.5, "steps" : 70},parents=[],constraints=constraints,
                         ignore_errors=True, metal=self.metal, facet=self.surface_type, target_site_num=target_site_num, priority=3)
                     fwopt2 = optimize_firework(os.path.join(self.path,"Adsorbates",ad,str(prefix),"weakopt_"+str(prefix)+".xyz"),
-                        self.software,self.machine,str(prefix),
                         self.software,self.machine,str(prefix),
                         opt_method="QuasiNewton",socket=self.socket,software_kwargs=software_kwargs,
                         run_kwargs={"fmax" : self.fmaxopt, "steps" : 70},parents=[fwopt],constraints=constraints,
@@ -710,19 +679,6 @@ class Pynta:
                 nameTasks = ['{{pynta.tasks.MolecularOptimizationTask}}',
                             '{{pynta.tasks.MolecularVibrationsTask}}',
                             '{{pynta.tasks.MolecularIRC}}']
-
-                #if nameTask in nameTasks:
-                #    opt_method = newd['_tasks'][0]['opt_method'] if 'opt_method' in newd['_tasks'][0] else None
-
-                #    if self.software == "Espresso" or self.software == "PWDFT":
-                #        print(" Change: ", newd['_tasks'][0]['software_kwargs']['command'], end='')
-                #        node = MapTaskToNodes()
-                #        newcommand = node.getCommand()
-                #        newd['_tasks'][0]['software_kwargs']['command'] = newcommand
-                #        print(" by: ", newcommand)
-                # Here we work with reset the optimization task
-                # We load the trajectory file and save this structure in the
-                # tree of each uncompleted task
 
                 if 'opt' in task_name:
                     dirs = wf_launchers[task_name]
