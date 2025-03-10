@@ -455,7 +455,8 @@ class MolecularVibrationsTask(VibrationTask):
             
             vib = Vibrations(sp,indices=indices)
             vib.run()
-
+            vib.clean(empty_files=True) #clean empty files
+            
             if socket:
                 try:
                     sp.calc.close()
