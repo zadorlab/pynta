@@ -41,7 +41,7 @@ class Pynta:
         irc_mode="fixed", #choose irc mode: 'skip', 'relaxed', 'fixed'
         lattice_opt_software_kwargs={'kpts': (25,25,25), 'ecutwfc': 70, 'degauss':0.02, 'mixing_mode': 'plain'},
         reset_launchpad=False,queue_adapter_path=None,num_jobs=25,max_num_hfsp_opts=None,#max_num_hfsp_opts is mostly for fast testing
-        Eharmtol=3.0,Eharmfiltertol=30.0,Ntsmin=5,frozen_layers=2,fmaxopt=0.05,fmaxirc=0.1,fmaxopthard=0.05,c=None):
+        Eharmtol=3.0,Eharmfiltertol=30.0,Ntsmin=5,frozen_layers=2,frozen_atom_ind=None, fmaxopt=0.05,fmaxirc=0.1,fmaxopthard=0.05,c=None):
 
         self.surface_type = surface_type
         if launchpad_path:
@@ -114,7 +114,15 @@ class Pynta:
             self.nslab = len(read(self.slab_path))
         self.layers = self.repeats[2]
         self.frozen_layers = frozen_layers
-        self.freeze_ind = int((self.nslab/self.layers)*self.frozen_layers)
+        self.frozen_atom_ind = frozen_atom_ind
+
+        # Adjust freeze_ind based on surface_type
+        if self.surface_type == 'fcc211':
+            self.freeze_ind = self.frozen_atom_ind
+        else:
+            self.freeze_ind = int((self.nslab / self.layers) * self.frozen_layers)
+            
+#        self.freeze_ind = int((self.nslab/self.layers)*self.frozen_layers)
         self.mol_dict = None
         self.Eharmtol = Eharmtol
         self.Eharmfiltertol = Eharmfiltertol
