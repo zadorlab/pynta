@@ -438,7 +438,7 @@ def generate_unique_placements(slab,sites):
 
     return unique_site_lists,unique_site_pairs_lists,single_site_bond_params_lists,double_site_bond_params_lists
 
-def generate_unique_site_additions(geo,cas,nslab,site_bond_params_list=[],sites_list=[]):
+def generate_unique_site_additions(geo,sites,slab,nslab,site_bond_params_list=[],sites_list=[]):
     nads = len(geo) - nslab
     #label sites with unique noble gas atoms
     he = Atoms('He',positions=[[0, 0, 0],])
@@ -449,9 +449,8 @@ def generate_unique_site_additions(geo,cas,nslab,site_bond_params_list=[],sites_
     rn = Atoms('Rn',positions=[[0, 0, 0],])
     site_tags = [he,ne,ar,kr,xe,rn]
     tag = site_tags[nads]
-    adcov = SlabAdsorbateCoverage(geo,adsorption_sites=cas)
-    sites = adcov.get_sites()
-    unocc = [site for site in sites if site["occupied"] == False]
+    occ = get_occupied_sites(geo,sites,nslab)
+    unocc = [site for site in sites if not any(sites_match(site,osite,slab) for osite in occ)]
 
     site_bond_params_lists = [deepcopy(site_bond_params_list) for i in range(len(unocc))]
     sites_lists = [deepcopy(sites_list) for i in range(len(unocc))]
