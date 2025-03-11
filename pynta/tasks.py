@@ -490,7 +490,7 @@ class MolecularVibrationsTask(VibrationTask):
 
 @explicit_serialize
 class MolecularTSEstimate(FiretaskBase):
-    required_params = ["rxn","ts_path","slab_path","adsorbates_path","rxns_file","path","metal","facet",
+    required_params = ["rxn","ts_path","slab_path","adsorbates_path","rxns_file","path","metal","facet","sites","site_adjacency",
                         "name_to_adjlist_dict", "gratom_to_molecule_atom_maps",
                         "gratom_to_molecule_surface_atom_maps","irc_mode",
                         "vib_obj_dict","opt_obj_dict","nslab","Eharmtol","Eharmfiltertol","Ntsmin","max_num_hfsp_opts","surrogate_metal"]
@@ -509,6 +509,12 @@ class MolecularTSEstimate(FiretaskBase):
         metal = self["metal"]
         facet = self["facet"]
         nslab = self["nslab"]
+        sites = self["sites"]
+        for s in sites:
+            s["position"] = np.array(s["position"])
+            s["normal"] = np.array(s["normal"])
+        
+        site_adjacency = {int(k):v for k,v in self["site_adjacency"].items()}
         Eharmtol = self["Eharmtol"]
         Eharmfiltertol = self["Eharmfiltertol"]
         Ntsmin = self["Ntsmin"]
@@ -517,10 +523,6 @@ class MolecularTSEstimate(FiretaskBase):
         surrogate_metal = self["surrogate_metal"]
         slab = read(slab_path)
         irc_mode = self["irc_mode"]
-
-        cas = SlabAdsorptionSites(slab,facet,allow_6fold=False,composition_effect=False,
-                            label_sites=True,
-                            surrogate_metal=surrogate_metal)
 
         adsorbates_path = self["adsorbates_path"]
 
@@ -542,7 +544,7 @@ class MolecularTSEstimate(FiretaskBase):
         reactant_mols = [mol_dict[name] for name in reactant_names]
         product_mols = [mol_dict[name] for name in product_names]
 
-        adsorbates = get_unique_optimized_adsorbates(rxn,adsorbates_path,mol_dict,cas,gratom_to_molecule_surface_atom_maps,nslab)
+        adsorbates = get_unique_optimized_adsorbates(rxn,adsorbates_path,mol_dict,gratom_to_molecule_surface_atom_maps,sites,nslab)
 
         forward,species_names = determine_TS_construction(reactant_names,
                     reactant_mols,product_names,product_mols)
@@ -587,7 +589,7 @@ class MolecularTSEstimate(FiretaskBase):
                         ase_to_mol_num[aind] = i
                         break
 
-        tsstructs = get_unique_TS_structs(adsorbates,species_names,slab,cas,nslab,num_surf_sites,mol_dict,
+        tsstructs = get_unique_TS_structs(adsorbates,species_names,slab,sites,site_adjacency,nslab,num_surf_sites,mol_dict,
                                  gratom_to_molecule_atom_maps,gratom_to_molecule_surface_atom_maps,
                                  facet,metal)
 
@@ -600,11 +602,11 @@ class MolecularTSEstimate(FiretaskBase):
                                             ordered_names=species_names,reverse_names=reverse_names,
                                             mol_dict=mol_dict,gratom_to_molecule_atom_maps=gratom_to_molecule_atom_maps,
                                             gratom_to_molecule_surface_atom_maps=gratom_to_molecule_surface_atom_maps,
-                                            nslab=nslab,facet=facet,metal=metal,cas=cas)
+                                            nslab=nslab,facet=facet,metal=metal,slab_sites=sites,site_adjacency=site_adjacency)
 
 
         out_tsstructs,new_atom_bond_potential_lists,new_site_bond_potential_lists,new_constraint_lists = get_surface_forming_bond_pairings(
-                            tsstructs_out,atom_bond_potential_lists,site_bond_potential_lists,constraint_lists,site_bond_dict_list,cas)
+                            tsstructs_out,slab,atom_bond_potential_lists,site_bond_potential_lists,constraint_lists,site_bond_dict_list,sites)
 
         print("number of TS guesses with empty sites:")
         print(len(out_tsstructs))
