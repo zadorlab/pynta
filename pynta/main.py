@@ -13,7 +13,7 @@ import time
 import yaml
 from copy import deepcopy
 import numpy as np
-from pynta.calculator import get_lattice_parameter,optimize_lattice_parameter
+from pynta.calculator import get_lattice_parameters
 from fireworks import LaunchPad, Workflow
 from fireworks.queue.queue_launcher import rapidfire as rapidfirequeue
 from fireworks.features.multi_launcher import launch_multiprocess
@@ -49,7 +49,8 @@ class Pynta:
         irc_mode="fixed", #choose irc mode: 'skip', 'relaxed', 'fixed'
         lattice_opt_software_kwargs={'kpts': (25,25,25), 'ecutwfc': 70, 'degauss':0.02, 'mixing_mode': 'plain'},
         reset_launchpad=False,queue_adapter_path=None,num_jobs=25,max_num_hfsp_opts=None,#max_num_hfsp_opts is mostly for fast testing
-        Eharmtol=3.0,Eharmfiltertol=30.0,Ntsmin=5,frozen_layers=2,fmaxopt=0.05,fmaxirc=0.1,fmaxopthard=0.05):
+        Eharmtol=3.0,Eharmfiltertol=30.0,Ntsmin=5,frozen_layers=2,fmaxopt=0.05,fmaxirc=0.1,fmaxopthard=0.05,c=None,
+        surrogate_metal=None):
 
         self.surface_type = surface_type
 
@@ -147,11 +148,14 @@ class Pynta:
         slab_type = getattr(ase.build,self.surface_type)
         #optimize the lattice constant
         if self.a is None:
-            a = get_lattice_parameter(self.metal,self.surface_type,self.software,self.lattice_opt_software_kwargs)
-            print("computed lattice constant of: {} Angstroms".format(a))
-            self.a = a
-        else:
-            a = self.a
+            a = get_lattice_parameters(self.metal,self.surface_type,self.software,self.lattice_opt_software_kwargs)
+            print("computed lattice constants of: {} Angstroms".format(a))
+            if isinstance(a,float):
+                self.a = a
+            else:
+                self.a = a[0]
+                self.c = a[1]
+
         logger.info('Construct slab with optimal lattice constant')
         #construct slab with optimial lattice constant
         if self.c:
@@ -654,3 +658,219 @@ class Pynta:
 
 
         self.launch()
+
+class CoverageDependence:
+    def __init__(self,path,metal,surface_type,repeats,pynta_run_directory,software,software_kwargs,label,sites,site_adjacency,coad_stable_sites,adsorbates=[],transition_states=dict(),coadsorbates=[],
+                 max_dist=3.0,frozen_layers=2,fmaxopt=0.05,Ncalc_per_iter=6,TS_opt_software_kwargs=None,launchpad_path=None,
+                 fworker_path=None,queue=False,njobs_queue=0,reset_launchpad=False,queue_adapter_path=None,
+                 num_jobs=25,surrogate_metal=None,concern_energy_tol=None,max_iters=np.inf):
+        self.path = path
+        self.metal = metal
+        self.repeats = repeats
+        self.nslab = np.product(repeats)
+        self.pynta_run_directory = pynta_run_directory
+        self.pairs_directory = os.path.join(self.path,"pairs")
+        self.slab_path = os.path.join(self.pynta_run_directory,"slab.xyz")
+        self.adsorbates_path = os.path.join(self.pynta_run_directory,"Adsorbates")
+        self.coad_stable_sites = coad_stable_sites
+        self.software = software
+        self.software_kwargs = software_kwargs
+        self.surface_type = surface_type
+        self.facet = metal + surface_type
+        self.sites = sites
+        self.site_adjacency = site_adjacency
+        self.Ncalc_per_iter = Ncalc_per_iter
+        self.software_kwargs_TS = deepcopy(software_kwargs)
+        self.concern_energy_tol = concern_energy_tol
+        if TS_opt_software_kwargs:
+            for key,val in TS_opt_software_kwargs.items():
+                self.software_kwargs_TS[key] = val
+        
+        if adsorbates != []:
+            raise ValueError("Not implemented yet")
+        self.adsorbates = adsorbates
+        self.transition_states = transition_states
+        self.coadsorbates = coadsorbates
+        self.max_dist = max_dist
+        self.frozen_layers = frozen_layers
+        self.layers = self.repeats[2]
+        self.freeze_ind = int((self.nslab/self.layers)*self.frozen_layers)
+        self.fmaxopt = fmaxopt
+        self.label = label
+        self.max_iters = max_iters
+        
+        if launchpad_path:
+            launchpad = LaunchPad.from_file(launchpad_path)
+        else:
+            launchpad = LaunchPad()
+
+        if reset_launchpad:
+            launchpad.reset('', require_password=False)
+        self.launchpad = launchpad
+        
+        self.fworker_path = fworker_path
+        if fworker_path:
+            self.fworker = FWorker.from_file(fworker_path)
+        else:
+            self.fworker = FWorker()
+            
+        self.queue = queue
+        self.njobs_queue = njobs_queue
+        self.reset_launchpad = reset_launchpad
+        if queue:
+            self.qadapter = load_object_from_file(queue_adapter_path)
+        self.num_jobs = num_jobs
+        
+        if surrogate_metal is None:
+            self.surrogate_metal = metal
+        else:
+            self.surrogate_metal = surrogate_metal 
+            
+        self.pairs_fws = []
+        self.fws = []
+        
+    def setup_pairs_calculations(self):
+        tsdirs = [os.path.join(self.pynta_run_directory,t,ind) for t,ind in self.transition_states.items()]
+        outdirs_ad,outdirs_ts = setup_pair_opts_for_rxns(self.path,tsdirs,self.coadsorbates,self.surrogate_metal,self.surface_type,max_dist=self.max_dist)
+        
+        for d in outdirs_ad:
+            fwopt = optimize_firework(d,
+                            self.software,"weakopt",
+                            opt_method="MDMin",opt_kwargs={'dt': 0.05,"trajectory": "weakopt.traj"},software_kwargs=self.software_kwargs,order=0,
+                            run_kwargs={"fmax" : 0.5, "steps" : 30},parents=[],
+                              constraints=["freeze up to {}".format(self.freeze_ind)],
+                            ignore_errors=True, metal=self.metal, facet=self.surface_type, priority=3)
+            fwopt2 = optimize_firework(os.path.join(os.path.split(d)[0],"weakopt.xyz"),
+                            self.software,"out",
+                            opt_method="QuasiNewton",opt_kwargs={"trajectory": "out.traj"},software_kwargs=self.software_kwargs,order=0,
+                            run_kwargs={"fmax" : self.fmaxopt, "steps" : 70},parents=[fwopt],
+                              constraints=["freeze up to {}".format(self.freeze_ind)],
+                            ignore_errors=True, metal=self.metal, facet=self.surface_type, priority=2)
+        
+            fwvib = vibrations_firework(os.path.join(os.path.split(d)[0],"out.xyz"),
+                                        self.software,"vib",software_kwargs=self.software_kwargs,parents=[fwopt2],
+                                        constraints=["freeze up to "+str(self.nslab)])
+            self.pairs_fws.append(fwopt)
+            self.pairs_fws.append(fwopt2)
+            self.pairs_fws.append(fwvib)
+        
+        for d in outdirs_ts:
+            fwopt = optimize_firework(d,
+                            self.software,"out", sella=True, 
+                            opt_kwargs={"trajectory": "out.traj"},software_kwargs=self.software_kwargs_TS,
+                            order=1,
+                            run_kwargs={"fmax" : self.fmaxopt, "steps" : 70},parents=[],
+                              constraints=["freeze up to {}".format(self.freeze_ind)],
+                            ignore_errors=True, metal=self.metal, facet=self.surface_type, priority=3)
+            
+            fwvib = vibrations_firework(os.path.join(os.path.split(d)[0],"out.xyz"),
+                                        self.software,"vib",software_kwargs=self.software_kwargs,parents=[fwopt],
+                                        constraints=["freeze up to "+str(self.nslab)])
+            self.pairs_fws.append(fwopt)
+            self.pairs_fws.append(fwvib)
+            
+        self.fws.extend(self.pairs_fws)
+    
+    def setup_active_learning_loop(self):
+        admol_name_path_dict = {k: os.path.join(self.pynta_run_directory,k,v,"opt.xyz") for k,v in self.transition_states.items()}
+        admol_name_structure_dict = dict()
+        ads = self.adsorbates
+        allowed_structure_site_structures = generate_allowed_structure_site_structures(os.path.join(self.pynta_run_directory,"Adsorbates"),self.sites,self.site_adjacency,self.nslab,max_dist=np.inf)
+
+        for ts in self.transition_states.keys():
+            info_path = os.path.join(self.pynta_run_directory,ts,"info.json")
+            with open(info_path,'r') as f:
+                info = json.load(f)
+            reactants = Molecule().from_adjacency_list(info["reactants"])
+            products = Molecule().from_adjacency_list(info["products"])
+            keep_binding_vdW_bonds_in_reactants=False
+            keep_vdW_surface_bonds_in_reactants=False
+            mol = reactants
+            for bd in mol.get_all_edges():
+                if bd.order == 0:
+                    if bd.atom1.is_surface_site() or bd.atom2.is_surface_site():
+                        keep_binding_vdW_bonds_in_reactants = True
+                        m = mol.copy(deep=True)
+                        b = m.get_bond(m.atoms[mol.atoms.index(bd.atom1)],m.atoms[mol.atoms.index(bd.atom2)])
+                        m.remove_bond(b)
+                        out = m.split()
+                        if len(out) == 1: #vdW bond is not only thing connecting adsorbate to surface
+                            keep_vdW_surface_bonds_in_reactants = True
+            keep_binding_vdW_bonds_in_products=False
+            keep_vdW_surface_bonds_in_products=False
+            mol = products
+            for bd in mol.get_all_edges():
+                if bd.order == 0:
+                    if bd.atom1.is_surface_site() or bd.atom2.is_surface_site():
+                        keep_binding_vdW_bonds_in_products = True
+                        m = mol.copy(deep=True)
+                        b = m.get_bond(m.atoms[mol.atoms.index(bd.atom1)],m.atoms[mol.atoms.index(bd.atom2)])
+                        m.remove_bond(b)
+                        out = m.split()
+                        if len(out) == 1: #vdW bond is not only thing connecting adsorbate to surface
+                            keep_vdW_surface_bonds_in_products = True
+            
+            keep_binding_vdW_bonds = keep_binding_vdW_bonds_in_reactants and keep_binding_vdW_bonds_in_products
+            keep_vdW_surface_bonds = keep_vdW_surface_bonds_in_reactants and keep_vdW_surface_bonds_in_products
+            
+            atoms = read(admol_name_path_dict[ts])
+            st,_,_ = generate_TS_2D(atoms, info_path,  self.metal, self.surface_type, self.sites, self.site_adjacency, self.nslab,
+                     max_dist=np.inf, allowed_structure_site_structures=allowed_structure_site_structures,
+                     keep_binding_vdW_bonds=keep_binding_vdW_bonds,keep_vdW_surface_bonds=keep_vdW_surface_bonds)
+            admol_name_structure_dict[ts] = st
+            with open(info_path,"r") as f:
+                info = json.load(f)
+                for name in info["species_names"]+info["reverse_names"]:
+                    if name not in ads:
+                        ads.append(name)
+        
+        for ad in ads:
+            p = os.path.join(self.pynta_run_directory,"Adsorbates",ad)
+            with open(os.path.join(p,"info.json")) as f:
+                info = json.load(f)
+                
+            mol = Molecule().from_adjacency_list(info["adjlist"])
+            
+            if mol.contains_surface_site():
+                keep_binding_vdW_bonds=False 
+                keep_vdW_surface_bonds=False
+                for bd in mol.get_all_edges():
+                    if bd.order == 0:
+                        if bd.atom1.is_surface_site() or bd.atom2.is_surface_site():
+                            keep_binding_vdW_bonds = True
+                            m = mol.copy(deep=True)
+                            b = m.get_bond(m.atoms[mol.atoms.index(bd.atom1)],m.atoms[mol.atoms.index(bd.atom2)])
+                            m.remove_bond(b)
+                            out = m.split()
+                            if len(out) == 1: #vdW bond is not only thing connecting adsorbate to surface
+                                keep_vdW_surface_bonds = True
+                        
+                ad_xyz = get_best_adsorbate_xyz(p,self.sites,self.nslab)
+                admol_name_path_dict[ad] = ad_xyz 
+                atoms = read(ad_xyz)
+                st,_,_ = generate_adsorbate_2D(atoms, self.sites, self.site_adjacency, self.nslab, max_dist=np.inf, allowed_structure_site_structures=allowed_structure_site_structures,
+                                               keep_binding_vdW_bonds=keep_binding_vdW_bonds,keep_vdW_surface_bonds=keep_vdW_surface_bonds)
+                admol_name_structure_dict[ad] = st
+                
+        calculation_directories = [] #identify pairs directories
+        for p1 in os.listdir(os.path.join(self.path,"pairs")):
+            for p2 in os.listdir(os.path.join(self.path,"pairs",p1)):
+                calculation_directories.append(os.path.join(self.path,"pairs",p1,p2))
+        
+        
+        fw = train_covdep_model_firework(self.path,admol_name_path_dict,admol_name_structure_dict,self.sites,self.site_adjacency,
+                                self.pynta_run_directory, self.metal, self.surface_type, self.slab_path, calculation_directories, self.coadsorbates[0], 
+                                self.coad_stable_sites, self.software, self.software_kwargs, self.software_kwargs_TS, self.freeze_ind, self.fmaxopt,
+                                parents=self.fws, max_iters=self.max_iters,
+                                Ncalc_per_iter=self.Ncalc_per_iter,iter=0,concern_energy_tol=self.concern_energy_tol,ignore_errors=True)
+
+        self.fws.append(fw)
+        
+        
+    def execute(self,run_pairs=True,run_active_learning=False):
+        if run_pairs:
+            self.setup_pairs_calculations()
+        if run_active_learning:
+            self.setup_active_learning_loop()
+        wf = Workflow(self.fws, name=self.label)
+        self.launchpad.add_wf(wf)
