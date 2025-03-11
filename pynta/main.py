@@ -50,7 +50,7 @@ class Pynta:
         lattice_opt_software_kwargs={'kpts': (25,25,25), 'ecutwfc': 70, 'degauss':0.02, 'mixing_mode': 'plain'},
         reset_launchpad=False,queue_adapter_path=None,num_jobs=25,max_num_hfsp_opts=None,#max_num_hfsp_opts is mostly for fast testing
         Eharmtol=3.0,Eharmfiltertol=30.0,Ntsmin=5,frozen_layers=2,fmaxopt=0.05,fmaxirc=0.1,fmaxopthard=0.05,c=None,
-        surrogate_metal=None):
+        surrogate_metal=None,sites=None,site_adjacency=None):
 
         self.surface_type = surface_type
 
@@ -138,6 +138,9 @@ class Pynta:
         self.fmaxirc = fmaxirc
         self.fmaxopthard = fmaxopthard
 
+        self.sites = sites
+        self.site_adjacency = site_adjacency
+
         logger.info('Pynta class is initiated')
 
     def generate_slab(self,skip_launch=False):
@@ -183,13 +186,18 @@ class Pynta:
 
     def analyze_slab(self):
         full_slab = self.slab
-        cas = SlabAdsorptionSites(full_slab, self.surface_type,allow_6fold=False,composition_effect=False,
-                        label_sites=True,
-                        surrogate_metal=self.surrogate_metal)
-
-        self.cas = cas
-
-        unique_site_lists,unique_site_pairs_lists,single_site_bond_params_lists,double_site_bond_params_lists = generate_unique_placements(full_slab,cas)
+        
+        if self.sites is None:
+            logging.info("Attempting to automatically detect sites based on metal and facet using ACAT")
+            cas = SlabAdsorptionSites(full_slab, self.surface_type,allow_6fold=False,composition_effect=False,
+                            label_sites=True,
+                            surrogate_metal=self.surrogate_metal)
+            self.sites = cas.get_sites()
+            self.site_adjacency = cas.get_neighbor_site_list()
+        else:
+            assert self.site_adjacency is not None 
+            
+        unique_site_lists,unique_site_pairs_lists,single_site_bond_params_lists,double_site_bond_params_lists = generate_unique_placements(full_slab,self.sites)
 
         self.single_site_bond_params_lists = single_site_bond_params_lists
         self.single_sites_lists = unique_site_lists
@@ -272,7 +280,6 @@ class Pynta:
         Generates initial guess geometries for adsorbates and gas phase species
         Generates maps connecting the molecule objects with these adsorbates
         """
-        cas = self.cas
         structures = dict()
         gratom_to_molecule_atom_maps = dict()
         gratom_to_molecule_surface_atom_maps = dict()
@@ -294,7 +301,7 @@ class Pynta:
                     if os.path.exists(os.path.join(self.path,"Adsorbates",sm)): #assume initial guesses already generated
                         structures[sm] = None
                     else:
-                        structs = generate_adsorbate_guesses(mol,ads,self.slab,cas,mol_to_atoms_map,self.metal,
+                        structs = generate_adsorbate_guesses(mol,ads,self.slab,mol_to_atoms_map,self.metal,
                                            self.single_site_bond_params_lists,self.single_sites_lists,
                                            self.double_site_bond_params_lists,self.double_sites_lists,
                                            self.Eharmtol,self.Eharmfiltertol,self.Ntsmin)
@@ -504,7 +511,8 @@ class Pynta:
             ts_path = os.path.join(self.path,"TS"+str(i))
             os.makedirs(ts_path)
             ts_task = MolecularTSEstimate({"rxn": rxn,"ts_path": ts_path,"slab_path": self.slab_path,"adsorbates_path": os.path.join(self.path,"Adsorbates"),
-                    "rxns_file": self.rxns_file,"path": self.path,"metal": self.metal,"facet": self.surface_type, "out_path": ts_path, "irc_mode": self.irc_mode,
+                    "rxns_file": self.rxns_file,"path": self.path,"metal": self.metal,"facet": self.surface_type, "sites": self.sites, "site_adjacency": {str(k):v for k,v in self.site_adjacency.items()},
+                    "out_path": ts_path, "irc_mode": self.irc_mode,
                     "spawn_jobs": True, "opt_obj_dict": opt_obj_dict, "vib_obj_dict": vib_obj_dict, "IRC_obj_dict": IRC_obj_dict,
                     "nprocs": 48, "name_to_adjlist_dict": self.name_to_adjlist_dict,
                     "gratom_to_molecule_atom_maps":{sm: {str(k):v for k,v in d.items()} for sm,d in self.gratom_to_molecule_atom_maps.items()},

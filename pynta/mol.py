@@ -69,7 +69,7 @@ def get_adsorbate(mol):
     mol_to_atoms_map = {key:desorbed_to_atoms_map[val] for key,val in mol_to_desorbed_map.items()}
     return atoms,mol_to_atoms_map
 
-def generate_adsorbate_guesses(mol,ads,full_slab,cas,mol_to_atoms_map,metal,
+def generate_adsorbate_guesses(mol,ads,full_slab,mol_to_atoms_map,metal,
                                single_site_bond_params_lists,single_sites_lists,double_site_bond_params_lists,double_sites_lists,
                                Eharmtol,Eharmfiltertol,Ntsmin):
     mol_surf_inds = [mol.atoms.index(a) for a in mol.get_adatoms()]
