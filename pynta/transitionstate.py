@@ -265,8 +265,6 @@ def generate_constraints_harmonic_parameters(tsstructs,adsorbates,slab,forward_t
     site_bond_potential_lists = []
     site_bond_dict_list = []
     out_structs = []
-    slab_sites = cas.get_sites()
-    site_adjacency = cas.get_neighbor_site_list()
     
     nodes_file = os.path.join(os.path.split(pynta.models.__file__)[0],"TS_tree_nodes.json")
     nodes = read_nodes(nodes_file)
@@ -570,7 +568,6 @@ def estimate_deq_k(sidt,labels,dwell,forward_template,reverse_template,template_
             a.label = ''
     
     v = sidt.evaluate(mol)
-    
     if any([a.is_surface_site() for a in mol.get_labeled_atoms('*')]):
         return dwell*(v-1.0),100.0
     else:
