@@ -336,11 +336,11 @@ def place_adsorbate(ads,slab,atom_surf_inds,sites,metal):
     else:
         raise ValueError
 
-def get_unique_sites(cas, unique_composition=False,
+def get_unique_sites(site_list, cell, unique_composition=False,
                          unique_subsurf=False,
                          return_signatures=False,
                          return_site_indices=False,
-                         about=None, site_list=None):
+                         about=None):
         """Function mostly copied from the ACAT software 
         Get all symmetry-inequivalent adsorption sites (one
         site for each type).
@@ -367,17 +367,10 @@ def get_unique_sites(cas, unique_composition=False,
             If specified, returns unique sites closest to
             this reference position.
 
-        """
-
-        if site_list is None:
-            sl = cas.site_list
-        else:
-            sl = site_list
+        """ 
+        sl = site_list[:]
         key_list = ['site', 'morphology']
         if unique_composition:
-            if not cas.composition_effect:
-                raise ValueError('the site list does not include '
-                                 + 'information of composition')
             key_list.append('composition')
             if unique_subsurf:
                 key_list.append('subsurf_element')
@@ -385,35 +378,32 @@ def get_unique_sites(cas, unique_composition=False,
             if unique_subsurf:
                 raise ValueError('to include the subsurface element, ' +
                                  'unique_composition also need to be set to True')
-        if return_signatures:
-            sklist = sorted([[s[k] for k in key_list] for s in sl])
-            return sorted(list(sklist for sklist, _ in groupby(sklist)))
-        else:
-            seen_tuple = []
-            uni_sites = []
-            if about is not None:
-                sl = sorted(sl, key=lambda x: get_mic(x['position'],
-                            about, cas.cell, return_squared_distance=True))
-            for i, s in enumerate(sl):
-                sig = tuple(s[k] for k in key_list)
-                if sig not in seen_tuple:
-                    seen_tuple.append(sig)
-                    if return_site_indices:
-                        s = i
-                    uni_sites.append(s)
 
-            return uni_sites
+        seen_tuple = []
+        uni_sites = []
+        if about is not None:
+            sl = sorted(sl, key=lambda x: get_mic(x['position'],
+                        about, cell, return_squared_distance=True))
+        for i, s in enumerate(sl):
+            sig = tuple(s[k] for k in key_list)
+            if sig not in seen_tuple:
+                seen_tuple.append(sig)
+                if return_site_indices:
+                    s = i
+                uni_sites.append(s)
 
-def generate_unique_placements(slab,cas):
+        return uni_sites
+
+def generate_unique_placements(slab,sites):
     nslab = len(slab)
     middle = sum(slab.cell)/2.0
 
-    unique_single_sites = get_unique_sites(cas,about=middle)
+    unique_single_sites = get_unique_sites(sites,slab.cell,about=middle)
 
     unique_site_pairs = dict() # (site1site,site1morph,),(site2site,site2morph),xydist,zdist
     for unique_site in unique_single_sites:
         uni_site_fingerprint = (unique_site["site"],unique_site["morphology"])
-        for site in cas.get_sites():
+        for site in sites:
             site_fingerprint = (site["site"],site["morphology"])
             bd,d = get_distances([unique_site["position"]], [site["position"]], cell=slab.cell, pbc=(True,True,False))
             xydist = np.linalg.norm(bd[0][0][:1])
