@@ -424,35 +424,3 @@ def get_lattice_parameters(metal,surface_type,software,software_kwargs,da=0.1,a0
         print(out)
         print("Optimized a,c: {}".format(out.x))
         return out.x
-    def f(a):
-        slab = bulk(metal,surface_type[:3],a=a)
-        slab.calc = soft
-        slab.pbc = (True, True, True)
-        return slab.get_potential_energy()
-    if a0 is None:
-        a0 = reference_states[chemical_symbols.index(metal)]['a']
-    avals = np.arange(a0-da,a0+da,0.01)
-    outavals = []
-    Evals = []
-    print("a,E")
-    for a in avals:
-        try:
-            E = f(a)
-            outavals.append(a)
-            Evals.append(E)
-            print((a,E))
-        except:
-            pass
-    print("a values:")
-    print(outavals)
-    print("E values:")
-    print(Evals)
-    inds = np.argsort(np.array(Evals))[:7]
-    p = np.polyfit(np.array(outavals)[inds],np.array(Evals)[inds],2)
-    a = -p[1]/(2.0*p[0])
-    print("ASE reference a: {}".format(a0))
-    print("Interpolated a: {}".format(a))
-    out = opt.minimize_scalar(f,method='bounded',bounds=(a-0.01,a+0.01),options=options)
-    print(out)
-    print("Optimized a: {}".format(out.x))
-    return out.x
