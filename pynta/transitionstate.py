@@ -1,5 +1,4 @@
 from molecule.molecule import Molecule, Bond
-from molecule.molecule.pathfinder import find_shortest_path
 import yaml
 from ase.io import read
 import numpy as np
@@ -9,8 +8,6 @@ import itertools
 from pynta.calculator import HarmonicallyForcedXTB
 from pynta.mol import *
 from copy import deepcopy
-from pysidt import *
-import pynta.models
 from pysidt import *
 import pynta.models
 
@@ -253,11 +250,6 @@ def generate_constraints_harmonic_parameters(tsstructs,adsorbates,slab,forward_t
     nodes = read_nodes(nodes_file)
     sidt = SubgraphIsomorphicDecisionTree(nodes=nodes)
     
-    
-    nodes_file = os.path.join(os.path.split(pynta.models.__file__)[0],"TS_tree_nodes.json")
-    nodes = read_nodes(nodes_file)
-    sidt = SubgraphIsomorphicDecisionTree(nodes=nodes)
-    
     mols = [mol_dict[name] for name in ordered_names]
     rev_mols = [mol_dict[name] for name in reverse_names]
     ads_sizes = [ads_size(mol) for mol in mols]
@@ -380,7 +372,6 @@ def generate_constraints_harmonic_parameters(tsstructs,adsorbates,slab,forward_t
                     pos[2] += dwell
                     ind = ase_ind1
                 deq,k = estimate_deq_k(sidt,labels,dwell,forward_template,reverse_template,template_name,template_reversed,broken_bonds,formed_bonds,sitetype=sitetype)
-                deq,k = estimate_deq_k(sidt,labels,dwell,forward_template,reverse_template,template_name,template_reversed,broken_bonds,formed_bonds,sitetype=sitetype)
                 if pos is not None:
                     d = {"ind":ind,"site_pos":pos,"k":k,"deq":deq}
                     site_bond_potentials.append(d)
@@ -432,7 +423,6 @@ def generate_constraints_harmonic_parameters(tsstructs,adsorbates,slab,forward_t
                 dwell = rev_mols_info[ind1_mol_r]["bondlengths"][ind1r_mol,ind2r_mol]
                 sitetype = None
                 deq,k = estimate_deq_k(sidt,labels,dwell,forward_template,reverse_template,template_name,template_reversed,broken_bonds,formed_bonds,sitetype=sitetype)
-                deq,k = estimate_deq_k(sidt,labels,dwell,forward_template,reverse_template,template_name,template_reversed,broken_bonds,formed_bonds,sitetype=sitetype)
                 d = {"ind1":ase_ind1,"ind2":ase_ind2,"k":k,"deq":deq}
                 atom_bond_potentials.append(d)
             elif ase_ind1 is None: #surface bond to ase_ind2
@@ -462,7 +452,6 @@ def generate_constraints_harmonic_parameters(tsstructs,adsorbates,slab,forward_t
                 for (mol_ind,sitetype) in site_dict.keys():
                     if mol_ind == ind1r_mol:
                         dwell = site_dict[(mol_ind,sitetype)]
-                        deq,k = estimate_deq_k(sidt,labels,dwell,forward_template,reverse_template,template_name,template_reversed,broken_bonds,formed_bonds,sitetype=sitetype)
                         deq,k = estimate_deq_k(sidt,labels,dwell,forward_template,reverse_template,template_name,template_reversed,broken_bonds,formed_bonds,sitetype=sitetype)
                         if reusing_site: #attaching to a site that was bonded to another atom
                             if reused_site_type == sitetype:
@@ -503,7 +492,6 @@ def generate_constraints_harmonic_parameters(tsstructs,adsorbates,slab,forward_t
                     if mol_ind == ind2r_mol:
                         dwell = site_dict[(mol_ind,sitetype)]
                         deq,k = estimate_deq_k(sidt,labels,dwell,forward_template,reverse_template,template_name,template_reversed,broken_bonds,formed_bonds,sitetype=sitetype)
-                        deq,k = estimate_deq_k(sidt,labels,dwell,forward_template,reverse_template,template_name,template_reversed,broken_bonds,formed_bonds,sitetype=sitetype)
                         if reusing_site: #attaching to a site that was bonded to another atom
                             if reused_site_type == sitetype:
                                 pos = deepcopy(reused_site_pos)
@@ -529,7 +517,6 @@ def generate_constraints_harmonic_parameters(tsstructs,adsorbates,slab,forward_t
     return out_structs,constraint_lists,atom_bond_potential_lists,site_bond_potential_lists,site_bond_dict_list
 
 def estimate_deq_k(sidt,labels,dwell,forward_template,reverse_template,template_name,template_reversed,
-def estimate_deq_k(sidt,labels,dwell,forward_template,reverse_template,template_name,template_reversed,
     broken_bonds,formed_bonds,sitetype=None):
     """
     Estimate the equilibrium bond length and force constant for broken/forming bonds
@@ -548,24 +535,7 @@ def estimate_deq_k(sidt,labels,dwell,forward_template,reverse_template,template_
         if mol.has_bond(a1,a2):
             bd = mol.get_bond(a1,a2)
             bd.set_order_str('R')
-    mol = deepcopy(forward_template)
-    all_labels = set()
-    for inter in interactions:
-        label_list = list(inter)
-        all_labels.add(label_list[0])
-        all_labels.add(label_list[1])
-        a1 = mol.get_labeled_atoms(label_list[0])[0]
-        a2 = mol.get_labeled_atoms(label_list[1])[0]
-        if mol.has_bond(a1,a2):
-            bd = mol.get_bond(a1,a2)
-            bd.set_order_str('R')
         else:
-            mol.add_bond(Bond(a1,a2,order='R'))
-    
-    for label in all_labels:
-        a = mol.get_labeled_atoms(label)[0]
-        if label in labels:
-            a.label = '*'
             mol.add_bond(Bond(a1,a2,order='R'))
     
     for label in all_labels:
@@ -576,6 +546,7 @@ def estimate_deq_k(sidt,labels,dwell,forward_template,reverse_template,template_
             a.label = ''
     
     v = sidt.evaluate(mol)
+    
     if any([a.is_surface_site() for a in mol.get_labeled_atoms('*')]):
         return dwell*(v-1.0),100.0
     else:

@@ -73,6 +73,7 @@ class Pynta:
         self.vacuum = vacuum
         self.a = a
         self.pbc = pbc
+        self.c = c
         self.software = software
         self.socket = socket
         self.repeats = repeats
@@ -86,7 +87,6 @@ class Pynta:
             self.surrogate_metal = surrogate_metal
         self.adsorbate_fw_dict = dict()
         self.software_kwargs = software_kwargs
-        self.machine = machine #need to specify 'alcf' or other machine of choice
         self.irc_mode = irc_mode
 
         if software.lower() == 'vasp':
@@ -165,7 +165,7 @@ class Pynta:
             else:
                 self.a = a[0]
                 self.c = a[1]
-
+        
         logger.info('Construct slab with optimal lattice constant')
         #construct slab with optimial lattice constant
         if self.c:
@@ -176,8 +176,7 @@ class Pynta:
         write(os.path.join(self.path,"slab_init.xyz"),slab)
         self.slab_path = os.path.join(self.path,"slab.xyz")
         if self.software != "XTB":
-            fwslab = optimize_firework(os.path.join(self.path,"slab_init.xyz"),self.software,self.machine,"slab",
-            fwslab = optimize_firework(os.path.join(self.path,"slab_init.xyz"),self.software,self.machine,"slab",
+            fwslab = optimize_firework(os.path.join(self.path,"slab_init.xyz"),self.software,"slab",
                 opt_method="BFGSLineSearch",socket=self.socket,software_kwargs=self.software_kwargs,
                 run_kwargs={"fmax" : self.fmaxopt},out_path=os.path.join(self.path,"slab.xyz"),constraints=["freeze up to {}".format(self.freeze_ind)],priority=1000)
             wfslab = Workflow([fwslab], name=self.label+"_slab")
