@@ -23,21 +23,11 @@ from fireworks.core.fworker import FWorker
 import fireworks.fw_config
 import logging
 #restart RHE
-import pickle
 import time
 from pynta.polaris import createFWorkers
 from pynta.utils import copyDataAndSave
 from pynta.multi_launcher import launch_multiprocess2
 import json
-#logger
-logger = logging.getLogger(__name__)
-logging.basicConfig(filename='pynta.log', level=logging.INFO)
-
-
-#logger
-logger = logging.getLogger(__name__)
-logging.basicConfig(filename='pynta.log', level=logging.INFO)
-
 #logger
 logger = logging.getLogger(__name__)
 logging.basicConfig(filename='pynta.log', level=logging.INFO)
@@ -398,12 +388,10 @@ class Pynta:
                     xyzs.append(xyz)
                     fwopt = optimize_firework(os.path.join(self.path,"Adsorbates",adsname,str(prefix),str(prefix)+"_init.xyz"),
                         self.software,self.machine,"weakopt_"+str(prefix),
-                        self.software,self.machine,"weakopt_"+str(prefix),
                         opt_method="MDMin",opt_kwargs={'dt': 0.05},socket=self.socket,software_kwargs=software_kwargs,
                         run_kwargs={"fmax" : 0.5, "steps" : 70},parents=[],constraints=constraints,
                         ignore_errors=True, metal=self.metal, facet=self.surface_type, target_site_num=target_site_num, priority=3)
                     fwopt2 = optimize_firework(os.path.join(self.path,"Adsorbates",adsname,str(prefix),"weakopt_"+str(prefix)+".xyz"),
-                        self.software,self.machine,str(prefix),
                         self.software,self.machine,str(prefix),
                         opt_method="QuasiNewton",socket=self.socket,software_kwargs=software_kwargs,
                         run_kwargs={"fmax" : self.fmaxopt, "steps" : 70},parents=[fwopt],constraints=constraints,
@@ -490,20 +478,11 @@ class Pynta:
         """
         if self.software != "XTB":
             opt_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":self.software_kwargs_TS,"machine": self.machine,
-            opt_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":self.software_kwargs_TS,"machine": self.machine,
                 "run_kwargs": {"fmax" : self.fmaxopt, "steps" : 70},"constraints": ["freeze up to {}".format(self.freeze_ind)],"sella":True,"order":1,}
         else:
             opt_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":self.software_kwargs_TS,"machine": self.machine,
-            opt_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":self.software_kwargs_TS,"machine": self.machine,
                 "run_kwargs": {"fmax" : 0.02, "steps" : 70},"constraints": ["freeze up to "+str(self.nslab)],"sella":True,"order":1,}
-
-        #logging.info
-        logger.info(f"================= IRC mode is: {self.irc_mode} =======================")
-        #pass through 
-        
-        vib_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":self.software_kwargs,
-                "constraints": ["freeze up to "+str(self.nslab)]}
-
+            
         #logging.info
         logger.info(f"================= IRC mode is: {self.irc_mode} =======================")
         #pass through 
@@ -546,23 +525,6 @@ class Pynta:
         """
         Call appropriate rapidfire function
         """
-        if self.machine == "alcf":
-            print("You are using alcf machine: if you want to restart, run pyn.reset(wfid='1')")
-            if self.queue:
-                rapidfirequeue(self.launchpad,self.fworker,self.qadapter,njobs_queue=self.njobs_queue,nlaunches="infinite")
-            elif not self.queue and (self.num_jobs == 1 or single_job):
-                rapidfire(self.launchpad,self.fworker,nlaunches="infinite")
-            else:
-                listfworkers = createFWorkers(self.num_jobs)
-                launch_multiprocess2(self.launchpad,listfworkers,"INFO",0,self.num_jobs,5)
-        else:
-            print("machine choice is not alcf: check your Fireworks Workflow id before restart Pynta")
-            if self.queue:
-                rapidfirequeue(self.launchpad,self.fworker,self.qadapter,njobs_queue=self.njobs_queue,nlaunches="infinite")
-            elif not self.queue and (self.num_jobs == 1 or single_job):
-                rapidfire(self.launchpad,self.fworker,nlaunches="infinite")
-            else:
-                launch_multiprocess(self.launchpad,self.fworker,"INFO","infinite",self.num_jobs,5)
         if self.machine == "alcf":
             print("You are using alcf machine: if you want to restart, run pyn.reset(wfid='1')")
             if self.queue:
