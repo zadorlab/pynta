@@ -194,13 +194,13 @@ class Pynta:
         else:
             assert self.site_adjacency is not None 
             
-            unique_site_lists,unique_site_pairs_lists,single_site_bond_params_lists,double_site_bond_params_lists = generate_unique_placements(full_slab,self.sites)
+        unique_site_lists,unique_site_pairs_lists,single_site_bond_params_lists,double_site_bond_params_lists = generate_unique_placements(full_slab,self.sites)
 
         self.single_site_bond_params_lists = single_site_bond_params_lists
         self.single_sites_lists = unique_site_lists
         self.double_site_bond_params_lists = double_site_bond_params_lists
         self.double_sites_lists = unique_site_pairs_lists
-
+        
     def generate_mol_dict(self):
         """
         generates all unique Molecule objects based on the reactions and generates a dictionary
