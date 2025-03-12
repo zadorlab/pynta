@@ -79,7 +79,7 @@ def optimize_firework(xyz,software,machine,label,opt_method=None,sella=None,sock
     d["target_site_num"] = target_site_num
     d["metal"] = metal
     d["facet"] = facet
-    d["machine"] = machine
+    d["machine"]= machine
     t1 = MolecularOptimizationTask(d)
     directory = os.path.dirname(xyz)
     if out_path is None: out_path = os.path.join(directory,label+".xyz")
@@ -89,9 +89,9 @@ def optimize_firework(xyz,software,machine,label,opt_method=None,sella=None,sock
 
 @explicit_serialize
 class MolecularOptimizationTask(OptimizationTask):
-    required_params = ["software","label","machine"]
+    required_params = ["software","label"]
     optional_params = ["software_kwargs","opt_method",
-        "opt_kwargs","run_kwargs", "constraints","sella","order","socket","time_limit_hrs","fmaxhard","ignore_errors","target_site_num","metal","facet"]
+        "opt_kwargs","run_kwargs", "constraints","sella","order","socket","time_limit_hrs","fmaxhard","ignore_errors","target_site_num","metal","facet","machine"]
     def run_task(self, fw_spec):
         errors = []
         software_kwargs = deepcopy(self["software_kwargs"]) if "software_kwargs" in self.keys() else dict()
@@ -119,6 +119,7 @@ class MolecularOptimizationTask(OptimizationTask):
         metal = self["metal"] if "metal" in self.keys() else None
         facet = self["facet"] if "facet" in self.keys() else None
         ignore_errors = self["ignore_errors"] if "ignore_errors" in self.keys() else False
+        machine = self["machine"] if "machine" in self.keys() else None
 
         label = self["label"]
         xyz = self['xyz']
@@ -306,10 +307,11 @@ class MolecularOptimizationTask(OptimizationTask):
 
 @explicit_serialize
 class MolecularOptimizationFailTask(OptimizationTask):
-    required_params = ["software","label","machine"]
+    required_params = ["software","label"]
     optional_params = ["software_kwargs","opt_method",
-        "opt_kwargs","run_kwargs"]
+        "opt_kwargs","run_kwargs","machine"]
     def run_task(self, fw_spec):
+        print(fw_spec)
         software_kwargs = deepcopy(self["software_kwargs"]) if "software_kwargs" in self.keys() else dict()
         # Mapping nodes to fworkers
         if self["machine"] == "alcf" and (self["software"] == "Espresso" or self["software"] == "PWDFT"):
@@ -320,13 +322,14 @@ class MolecularOptimizationFailTask(OptimizationTask):
         opt_method = name_to_ase_opt(self["opt_method"]) if "opt_method" in self.keys() else BFGS
         run_kwargs = deepcopy(self["run_kwargs"]) if "run_kwargs" in self.keys() else dict()
 
+        machine = self["machine"] if "machine" in self.keys() else None
         label = self["label"]
         xyz = self['xyz']
         sp = read(xyz)
 
         sp.calc = software
         opt = opt_method(sp,trajectory=label+".traj")
-        opt.run(fmax=0.50,steps=2)
+        opt.run(fmax=0.02,steps=2)
 
         if not opt.converged():
             fw = restart_opt_firework(self,fw_spec["_tasks"])
@@ -338,7 +341,6 @@ class MolecularOptimizationFailTask(OptimizationTask):
 
 def energy_firework(xyz,software,machine,label,software_kwargs={},parents=[],out_path=None,ignore_errors=False):
     d = {"xyz" : xyz, "software" : software, "label" : label, "machine":machine}
-
     if software_kwargs: d["software_kwargs"] = software_kwargs
     d["ignore_errors"] = ignore_errors
     d["machine"] = machine
@@ -350,8 +352,8 @@ def energy_firework(xyz,software,machine,label,software_kwargs={},parents=[],out
 
 @explicit_serialize
 class MolecularEnergyTask(EnergyTask):
-    required_params = ["software","label","machine"]
-    optional_params = ["software_kwargs","energy_kwargs","ignore_errors"]
+    required_params = ["software","label"]
+    optional_params = ["software_kwargs","energy_kwargs","ignore_errors","machine"]
     def run_task(self, fw_spec):
         xyz = self['xyz']
         software = name_to_ase_software(self["software"])
@@ -359,6 +361,7 @@ class MolecularEnergyTask(EnergyTask):
         software_kwargs = deepcopy(self["software_kwargs"]) if "software_kwargs" in self.keys() else dict()
         energy_kwargs = deepcopy(self["energy_kwargs"]) if "energy_kwargs" in self.keys() else dict()
         ignore_errors = deepcopy(self["ignore_errors"]) if "ignore_errors" in self.keys() else False
+        machine = self["machine"] if "machine" in self.keys() else None
         # Mapping nodes to fworkers
         if self["machine"] == "alcf" and (self["software"] == "Espresso" or self["software"] == "PWDFT"):
             software_kwargs["command"] = createCommand(fw_spec["_fw_env"]["host"], self["software"])
@@ -379,7 +382,6 @@ class MolecularEnergyTask(EnergyTask):
 
 def vibrations_firework(xyz,software,machine,label,software_kwargs={},parents=[],out_path=None,constraints=[],socket=False,ignore_errors=False):
     d = {"xyz" : xyz, "software" : software, "label" : label, "socket": socket, "machine":machine}
-
     if software_kwargs: d["software_kwargs"] = software_kwargs
     if constraints: d["constraints"] = constraints
     d["ignore_errors"] = ignore_errors
@@ -400,13 +402,13 @@ def vibrations_firework(xyz,software,machine,label,software_kwargs={},parents=[]
 
 @explicit_serialize
 class MolecularVibrationsTask(VibrationTask):
-    required_params = ["software","label","machine"]
-    optional_params = ["software_kwargs","constraints","ignore_errors","socket"]
+    required_params = ["software","label"]
+    optional_params = ["software_kwargs","constraints","ignore_errors","socket","machine"]
     def run_task(self, fw_spec):
         indices = None
         xyz = self['xyz']
         label = self["label"]
-        machine = self["machine"]
+        machine = self["machine"] if "machine" in self.keys() else None
         software_kwargs = deepcopy(self["software_kwargs"]) if "software_kwargs" in self.keys() else dict()
         # Mapping nodes to fworkers
         if self["machine"] == "alcf" and (self["software"] == "Espresso" or self["software"] == "PWDFT"):
@@ -457,8 +459,7 @@ class MolecularVibrationsTask(VibrationTask):
             
             vib = Vibrations(sp,indices=indices)
             vib.run()
-            vib.clean(empty_files=True) #clean empty files
-            
+
             if socket:
                 try:
                     sp.calc.close()
@@ -490,10 +491,10 @@ class MolecularVibrationsTask(VibrationTask):
 
 @explicit_serialize
 class MolecularTSEstimate(FiretaskBase):
-    required_params = ["rxn","ts_path","slab_path","adsorbates_path","rxns_file","path","metal","facet",
+    required_params = ["rxn","ts_path","slab_path","adsorbates_path","rxns_file","path","metal","facet","sites","site_adjacency",
                         "name_to_adjlist_dict", "gratom_to_molecule_atom_maps",
                         "gratom_to_molecule_surface_atom_maps","irc_mode",
-                        "vib_obj_dict","opt_obj_dict","nslab","Eharmtol","Eharmfiltertol","Ntsmin","max_num_hfsp_opts"]
+                        "vib_obj_dict","opt_obj_dict","nslab","Eharmtol","Eharmfiltertol","Ntsmin","max_num_hfsp_opts","surrogate_metal"]
     optional_params = ["out_path","spawn_jobs","nprocs","IRC_obj_dict"]
     def run_task(self, fw_spec):
         gratom_to_molecule_atom_maps = {sm: {int(k):v for k,v in d.items()} for sm,d in self["gratom_to_molecule_atom_maps"].items()}
@@ -509,6 +510,12 @@ class MolecularTSEstimate(FiretaskBase):
         metal = self["metal"]
         facet = self["facet"]
         nslab = self["nslab"]
+        sites = self["sites"]
+        for s in sites:
+            s["position"] = np.array(s["position"])
+            s["normal"] = np.array(s["normal"])
+        
+        site_adjacency = {int(k):v for k,v in self["site_adjacency"].items()}
         Eharmtol = self["Eharmtol"]
         Eharmfiltertol = self["Eharmfiltertol"]
         Ntsmin = self["Ntsmin"]
@@ -517,10 +524,6 @@ class MolecularTSEstimate(FiretaskBase):
         surrogate_metal = self["surrogate_metal"]
         slab = read(slab_path)
         irc_mode = self["irc_mode"]
-
-        cas = SlabAdsorptionSites(slab,facet,allow_6fold=False,composition_effect=False,
-                            label_sites=True,
-                            surrogate_metal=surrogate_metal)
 
         adsorbates_path = self["adsorbates_path"]
 
@@ -542,7 +545,7 @@ class MolecularTSEstimate(FiretaskBase):
         reactant_mols = [mol_dict[name] for name in reactant_names]
         product_mols = [mol_dict[name] for name in product_names]
 
-        adsorbates = get_unique_optimized_adsorbates(rxn,adsorbates_path,mol_dict,cas,gratom_to_molecule_surface_atom_maps,nslab)
+        adsorbates = get_unique_optimized_adsorbates(rxn,adsorbates_path,mol_dict,gratom_to_molecule_surface_atom_maps,sites,nslab)
 
         forward,species_names = determine_TS_construction(reactant_names,
                     reactant_mols,product_names,product_mols)
@@ -587,7 +590,7 @@ class MolecularTSEstimate(FiretaskBase):
                         ase_to_mol_num[aind] = i
                         break
 
-        tsstructs = get_unique_TS_structs(adsorbates,species_names,slab,cas,nslab,num_surf_sites,mol_dict,
+        tsstructs = get_unique_TS_structs(adsorbates,species_names,slab,sites,site_adjacency,nslab,num_surf_sites,mol_dict,
                                  gratom_to_molecule_atom_maps,gratom_to_molecule_surface_atom_maps,
                                  facet,metal)
 
@@ -600,11 +603,11 @@ class MolecularTSEstimate(FiretaskBase):
                                             ordered_names=species_names,reverse_names=reverse_names,
                                             mol_dict=mol_dict,gratom_to_molecule_atom_maps=gratom_to_molecule_atom_maps,
                                             gratom_to_molecule_surface_atom_maps=gratom_to_molecule_surface_atom_maps,
-                                            nslab=nslab,facet=facet,metal=metal,cas=cas)
+                                            nslab=nslab,facet=facet,metal=metal,slab_sites=sites,site_adjacency=site_adjacency)
 
 
         out_tsstructs,new_atom_bond_potential_lists,new_site_bond_potential_lists,new_constraint_lists = get_surface_forming_bond_pairings(
-                            tsstructs_out,atom_bond_potential_lists,site_bond_potential_lists,constraint_lists,site_bond_dict_list,cas)
+                            tsstructs_out,slab,atom_bond_potential_lists,site_bond_potential_lists,constraint_lists,site_bond_dict_list,sites)
 
         print("number of TS guesses with empty sites:")
         print(len(out_tsstructs))
@@ -765,7 +768,6 @@ class MolecularTSNudge(FiretaskBase):
 
 def IRC_firework(xyz,label,machine,out_path=None,spawn_jobs=False,software=None,
         socket=False,software_kwargs={},opt_kwargs={},run_kwargs={},constraints=[],parents=[],ignore_errors=False,forward=True):
-
         if out_path is None: out_path = os.path.join(directory,label+"_irc.traj")
 
         t1 = MolecularIRC(xyz=xyz,label=label,software=software,machine=machine,
@@ -777,12 +779,13 @@ def IRC_firework(xyz,label,machine,out_path=None,spawn_jobs=False,software=None,
 
 @explicit_serialize
 class MolecularIRC(FiretaskBase):
-    required_params = ["xyz","label","machine"]
+    required_params = ["xyz","label"]
     optional_params = ["software","socket",
-            "software_kwargs", "opt_kwargs", "run_kwargs", "constraints", "ignore_errors", "forward"]
+            "software_kwargs", "opt_kwargs", "run_kwargs", "constraints", "ignore_errors", "forward","machine"]
     def run_task(self, fw_spec):
         errors = []
         software_kwargs = deepcopy(self["software_kwargs"]) if "software_kwargs" in self.keys() else dict()
+        machine = self["machine"] if "machine" in self.keys() else None
         # Mapping nodes to fworkers
         if self["machine"] == "alcf" and (self["software"] == "Espresso" or self["software"] == "PWDFT"):
             software_kwargs["command"] = createCommand(fw_spec["_fw_env"]["host"], self["software"])
@@ -799,6 +802,7 @@ class MolecularIRC(FiretaskBase):
         run_kwargs = deepcopy(self["run_kwargs"]) if "run_kwargs" in self.keys() else dict()
         ignore_errors = self["ignore_errors"] if "ignore_errors" in self.keys() else False
         forward = self["forward"] if "forward" in self.keys() else False
+        
 
         label = self["label"]
         xyz = self['xyz']

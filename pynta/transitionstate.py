@@ -1,23 +1,9 @@
 from molecule.molecule import Molecule, Bond
-from molecule.molecule.pathfinder import find_shortest_path
 import yaml
-from ase.io import read, write
+from ase.io import read
 import numpy as np
-from ase.data import covalent_radii
-from acat.adsorption_sites import SlabAdsorptionSites
-from acat.adsorbate_coverage import SlabAdsorbateCoverage
-from acat.settings import adsorbate_molecule
-from acat.utilities import (custom_warning,
-                         is_list_or_tuple,
-                         get_close_atoms,
-                         get_rodrigues_rotation_matrix,
-                         get_angle_between,
-                         get_rejection_between)
 import os
-from pynta.utils import get_unique_sym, get_unique_sym_structs
-from ase.visualize import view
-from ase.atoms import Atoms, Atom
-from ase.geometry import get_distances
+from pynta.utils import get_unique_sym, get_unique_sym_structs, sites_match
 import itertools
 from pynta.calculator import HarmonicallyForcedXTB
 from pynta.mol import *
@@ -25,7 +11,7 @@ from copy import deepcopy
 from pysidt import *
 import pynta.models
 
-def get_unique_optimized_adsorbates(rxn,adsorbates_path,mol_dict,cas,gratom_to_molecule_surface_atom_maps,nslab):
+def get_unique_optimized_adsorbates(rxn,adsorbates_path,mol_dict,gratom_to_molecule_surface_atom_maps,sites,nslab):
     """
     load the adsorbates associated with the reaction and find the unique optimized
     adsorbate structures for each species
@@ -45,9 +31,7 @@ def get_unique_optimized_adsorbates(rxn,adsorbates_path,mol_dict,cas,gratom_to_m
         adsorbates[name] = []
         for xyz in xyzs:
             geo = read(xyz)
-            adcov = SlabAdsorbateCoverage(geo,adsorption_sites=cas)
-            sites = adcov.get_sites()
-            occ = [site for site in sites if site["occupied"]]
+            occ = get_occupied_sites(geo,sites,nslab)
             required_surface_inds = set([ind+nslab for ind in ase_to_mol_surface_atom_map.keys()])
             found_surface_inds = set([site["bonding_index"] for site in occ])
             if len(occ) >= len(mol_dict[name].get_adatoms()) and required_surface_inds.issubset(found_surface_inds):
@@ -161,22 +145,20 @@ def determine_TS_construction(reactant_names,reactant_mols,product_names,product
     return forward,ordered_reacting_species
 
 
-def get_unique_TS_structs(adsorbates,species_names,slab,cas,nslab,num_surf_sites,mol_dict,
+def get_unique_TS_structs(adsorbates,species_names,slab,slab_sites,site_adjacency,nslab,num_surf_sites,mol_dict,
                           gratom_to_molecule_atom_maps,gratom_to_molecule_surface_atom_maps,
                           facet,metal,gas_height=5.0):
     """
     Generate unique initial structures for TS guess generation
     """
     tsstructs = []
-    slab_sites = cas.get_sites()
-    site_adjacency = cas.get_neighbor_site_list()
     ordered_adsorbates = [adsorbates[name] for name in species_names]
     for adss in itertools.product(*ordered_adsorbates):
         if num_surf_sites[0] > 0:
             adslab = adss[0].copy()
         else:
             adslab = slab.copy()
-            site = cas.get_sites()[0]
+            site = slab_sites[0]
             add_adsorbate_to_site(adslab,adsorbate=adss[0],surf_ind=0,site=site,height=gas_height)
         if len(adss) == 1:
             tsstructs.append(adslab)
@@ -190,10 +172,10 @@ def get_unique_TS_structs(adsorbates,species_names,slab,cas,nslab,num_surf_sites
                 sitetype1 = list(sites1.values())[0]
                 height1 = list(site_lengths1.values())[0]
                 surf_ind1 = list(gratom_to_molecule_surface_atom_maps[name].keys())[0]
-                adcov = SlabAdsorbateCoverage(adslab,adsorption_sites=cas)
-                for site in adcov.get_sites():
+                occ = get_occupied_sites(adslab,slab_sites,nslab)
+                for site in slab_sites:
                     adslab2 = adslab.copy()
-                    if site['occupied'] == False and site["site"] == sitetype1:
+                    if not any(sites_match(site,osite,slab) for osite in occ) and site["site"] == sitetype1:
                         add_adsorbate_to_site(adslab2,adsorbate=ad,surf_ind=surf_ind1,site=site,height=height1)
                         if len(adss) == 2:
                             tsstructs.append(adslab2)
@@ -207,43 +189,41 @@ def get_unique_TS_structs(adsorbates,species_names,slab,cas,nslab,num_surf_sites
                                 sitetype2 = list(sites2.values())[0]
                                 height2 = list(site_lengths2.values())[0]
                                 surf_ind2 = list(gratom_to_molecule_surface_atom_maps[name2].keys())[0]
-                                adcov2 = SlabAdsorbateCoverage(adslab2,adsorption_sites=cas)
+                                occ2 = get_occupied_sites(adslab2,slab_sites,nslab)
                                 for site2 in adcov2.get_sites():
                                     adslab3 = adslab2.copy()
-                                    if site2['occupied'] == False and site2["site"] == sitetype2:
+                                    if not any(sites_match(site2,osite,slab) for osite in occ2) and site2["site"] == sitetype2:
                                         add_adsorbate_to_site(adslab3,adsorbate=ad2,surf_ind=surf_ind2,site=site2,height=height2)
                                         if len(adss) == 3:
                                             tsstructs.append(adslab3)
                                         else:
                                             raise ValueError("Cannot handle more than three reactants")
                             else:
-                                adcovl2 = SlabAdsorbateCoverage(adslab2,adsorption_sites=cas)
-                                sites = adcovl2.get_sites()
+                                occl2 = get_occupied_sites(adslab2,slab_sites,nslab)
                                 c = 0
-                                site = sites[c]
-                                while site["occupied"] == True:
+                                sitel2 = slab_sites[c]
+                                while any(sites_match(sitel2,osite,slab) for osite in occl2): #while occupied
                                     c += 1
-                                    site = sites[c]
-                                add_adsorbate_to_site(adslab,adsorbate=adss[2],surf_ind=0,site=site,height=gas_height)
+                                    sitel2 = slab_sites[c]
+                                add_adsorbate_to_site(adslab,adsorbate=adss[2],surf_ind=0,site=sitel2,height=gas_height)
 
             elif num_surf_sites[1] == 0:
-                adcovl1 = SlabAdsorbateCoverage(adslab,adsorption_sites=cas)
-                sites = adcovl1.get_sites()
+                occl1 = get_occupied_sites(adslab,slab_sites,nslab)
                 c = 0
-                site = sites[c]
-                while site["occupied"] == True:
+                sitel1 = slab_sites[c]
+                while any(sites_match(sitel1,osite,slab) for osite in occl1): #while occupied
                     c += 1
-                    site = sites[c]
+                    sitel1 = slab_sites[c]
 
-                add_adsorbate_to_site(adslab,adsorbate=adss[1],surf_ind=0,site=site,height=gas_height)
+                add_adsorbate_to_site(adslab,adsorbate=adss[1],surf_ind=0,site=sitel1,height=gas_height)
                 if len(adss) == 2:
                     tsstructs.append(adslab)
                 else:
                     c = 0
-                    site2 = sites[c]
-                    while site2["occupied"] == True and site2 != site:
+                    site2 = slab_sites[c]
+                    while any(sites_match(site2,osite,slab) for osite in occl1) and site2 != sitel1:
                         c += 1
-                        site2 = sites[c]
+                        site2 = slab_sites[c]
                     add_adsorbate_to_site(adslab,adsorbate=adss[2],surf_ind=0,site=site2,height=gas_height)
                     if len(adss) == 3:
                         tsstructs.append(adslab)
@@ -256,7 +236,7 @@ def get_unique_TS_structs(adsorbates,species_names,slab,cas,nslab,num_surf_sites
 def generate_constraints_harmonic_parameters(tsstructs,adsorbates,slab,forward_template,
                                              reverse_template,template_name,template_reversed,
                                             ordered_names,reverse_names,mol_dict,gratom_to_molecule_atom_maps,
-                                            gratom_to_molecule_surface_atom_maps,nslab,facet,metal,cas):
+                                            gratom_to_molecule_surface_atom_maps,nslab,facet,metal,slab_sites,site_adjacency):
     """
     Generate constraints and harmonic parameters for the harmonically forced optimization
     """
@@ -338,9 +318,8 @@ def generate_constraints_harmonic_parameters(tsstructs,adsorbates,slab,forward_t
         fixed_bond_pairs = []
         site_bond_dict = dict()
 
-        adcov = SlabAdsorbateCoverage(tsstruct,adsorption_sites=cas)
-        sites = adcov.get_sites()
-        occ = [site for site in sites if site["occupied"]]
+        occ = get_occupied_sites(tsstruct,slab_sites,nslab)
+        
         if len(occ) < len(forward_template.get_adatoms()): #if we don't identify as many occupied sites as we should skip this structure
             print("occupied not equal to forward_template")
             print("occ={0}".format(len(occ)))
@@ -350,7 +329,6 @@ def generate_constraints_harmonic_parameters(tsstructs,adsorbates,slab,forward_t
         occ_bd_lengths = {site["bonding_index"]:site['bond_length'] for site in occ}
         occ_site_types = {site["bonding_index"]:site['site'] for site in occ}
         occ_site_pos = {site["bonding_index"]:site['position'] for site in occ}
-        unocc = [site for site in sites if not site["occupied"]]
 
         for edge in forward_template.get_all_edges():
             ind1 = forward_template.atoms.index(edge.atom1)
@@ -395,7 +373,7 @@ def generate_constraints_harmonic_parameters(tsstructs,adsorbates,slab,forward_t
                     ind = ase_ind1
                 deq,k = estimate_deq_k(sidt,labels,dwell,forward_template,reverse_template,template_name,template_reversed,broken_bonds,formed_bonds,sitetype=sitetype)
                 if pos is not None:
-                    d = {"ind":ind,"site_pos":pos.tolist(),"k":k,"deq":deq}
+                    d = {"ind":ind,"site_pos":pos,"k":k,"deq":deq}
                     site_bond_potentials.append(d)
                 else:
                     d = {"ind1":ase_ind1,"ind2":ase_ind2,"k":k,"deq":deq}
@@ -410,7 +388,7 @@ def generate_constraints_harmonic_parameters(tsstructs,adsorbates,slab,forward_t
                     pos[2] += dwell #shift position up to atom position
                     ind = ase_ind2
                     deq,k = estimate_deq_k_fixed_surf_bond(labels,dwell,forward_template,reverse_template,template_name,template_reversed,broken_bonds,formed_bonds,sitetype=sitetype)
-                    d = {"ind":ind,"site_pos":pos.tolist(),"k":k,"deq":deq}
+                    d = {"ind":ind,"site_pos":pos,"k":k,"deq":deq}
                     site_bond_potentials.append(d)
                 else:
                     dwell = occ_bd_lengths[ase_ind1]
@@ -419,7 +397,7 @@ def generate_constraints_harmonic_parameters(tsstructs,adsorbates,slab,forward_t
                     pos[2] += dwell #shift position up to atom position
                     ind = ase_ind1
                     deq,k = estimate_deq_k_fixed_surf_bond(labels,dwell,forward_template,reverse_template,template_name,template_reversed,broken_bonds,formed_bonds,sitetype=sitetype)
-                    d = {"ind":ind,"site_pos":pos.tolist(),"k":k,"deq":deq}
+                    d = {"ind":ind,"site_pos":pos,"k":k,"deq":deq}
                     site_bond_potentials.append(d)
 
         for labels in formed_bonds: #bonds that form
@@ -479,7 +457,7 @@ def generate_constraints_harmonic_parameters(tsstructs,adsorbates,slab,forward_t
                             if reused_site_type == sitetype:
                                 pos = deepcopy(reused_site_pos)
                                 pos[2] += dwell
-                                d = {"ind":ase_ind2,"site_pos":pos.tolist(),"k":k,"deq":deq}
+                                d = {"ind":ase_ind2,"site_pos":pos,"k":k,"deq":deq}
                                 site_bond_potentials.append(d)
                                 if ase_ind2 in site_bond_dict.keys():
                                     del site_bond_dict[ase_ind2]
@@ -518,7 +496,7 @@ def generate_constraints_harmonic_parameters(tsstructs,adsorbates,slab,forward_t
                             if reused_site_type == sitetype:
                                 pos = deepcopy(reused_site_pos)
                                 pos[2] += dwell
-                                d = {"ind":ase_ind1,"site_pos":pos.tolist(),"k":k,"deq":deq}
+                                d = {"ind":ase_ind1,"site_pos":pos,"k":k,"deq":deq}
                                 site_bond_potentials.append(d)
                                 if ase_ind1 in site_bond_dict.keys():
                                     del site_bond_dict[ase_ind1]
@@ -568,6 +546,7 @@ def estimate_deq_k(sidt,labels,dwell,forward_template,reverse_template,template_
             a.label = ''
     
     v = sidt.evaluate(mol)
+    
     if any([a.is_surface_site() for a in mol.get_labeled_atoms('*')]):
         return dwell*(v-1.0),100.0
     else:
@@ -580,15 +559,16 @@ def estimate_deq_k_fixed_surf_bond(labels,dwell,forward_template,reverse_templat
     """
     return 0.0,100.0
 
-def get_surface_forming_bond_pairings(tsstructs,atom_bond_potential_lists,
+def get_surface_forming_bond_pairings(tsstructs,slab,atom_bond_potential_lists,
                                       site_bond_potential_lists,constraints_list,site_bond_dict_list,
-                                      cas):
+                                      slab_sites):
     """
     Identify unique site targets for the harmonically forced optimization
     """
     if len(site_bond_dict_list[0]) == 0: #no site bonds formed
         return tsstructs,atom_bond_potential_lists,site_bond_potential_lists,constraints_list
 
+    nslab = len(slab)
     adslablen = len(tsstructs[0])
 
     #label sites with unique noble gas atoms
@@ -611,8 +591,8 @@ def get_surface_forming_bond_pairings(tsstructs,atom_bond_potential_lists,
     for i,tsstruct in enumerate(tsstructs):
         atom_bond_potential_list = atom_bond_potential_lists[i]
         constraints = constraints_list[i]
-        adcov = SlabAdsorbateCoverage(tsstruct,adsorption_sites=cas)
-        unocc = [site for site in adcov.get_sites() if site["occupied"] == False]
+        occ = get_occupied_sites(tsstruct,slab_sites,nslab)
+        unocc = [site for site in slab_sites if not any(sites_match(site,osite,slab) for osite in occ)]
         site_bond_dict = site_bond_dict_list[i]
         site_bond_potential_dict = sites_to_site_bond_potentials(unocc,site_bond_dict,atm_inds)
         geoms = []
@@ -631,7 +611,7 @@ def get_surface_forming_bond_pairings(tsstructs,atom_bond_potential_lists,
                     site = sites[j]
                     add_adsorbate_to_site(geo,adsorbate=tag,surf_ind=0,site=site,height=1.5)
                     params = bond_dict[site["site"]].copy()
-                    params["site_pos"] = site["position"].tolist()
+                    params["site_pos"] = site["position"]
                     params["site_pos"][2] += params["dwell"]
                     del params["dwell"]
                     params["ind"] = atm_ind
@@ -670,7 +650,7 @@ def sites_to_site_bond_potentials(sites,site_bond_dicts,atm_inds):
             bond_dict = site_bond_dicts[atm_ind]
             if site["site"] in bond_dict.keys():
                 params = bond_dict[site["site"]].copy()
-                params["site_pos"] = site["position"].tolist()
+                params["site_pos"] = site["position"]
                 params["ind"] = atm_ind
                 params_list.append(params)
         site_bond_potentials[atm_ind] = params_list
