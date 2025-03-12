@@ -667,15 +667,15 @@ class MolecularTSEstimate(FiretaskBase):
         else:
             return FWAction()
 
-def collect_firework(xyzs,check_symm,fw_generators,fw_generator_dicts,out_names,future_check_symms,parents=[],label="",allow_fizzled_parents=False):
+def collect_firework(xyzs,machine,check_symm,fw_generators,fw_generator_dicts,out_names,future_check_symms,parents=[],label="",allow_fizzled_parents=False):
     task = MolecularCollect({"xyzs": xyzs, "check_symm": check_symm, "fw_generators": fw_generators,
-        "fw_generator_dicts": fw_generator_dicts, "out_names": out_names, "future_check_symms": future_check_symms, "label": label})
+        "fw_generator_dicts": fw_generator_dicts, "out_names": out_names, "future_check_symms": future_check_symms, "label": label, "machine": machine})
     return Firework([task],parents=parents,name=label+"collect",spec={"_allow_fizzled_parents": allow_fizzled_parents,"_priority": 5})
 
 
 @explicit_serialize
 class MolecularCollect(CollectTask):
-    required_params = ["xyzs","check_symm","fw_generators","fw_generator_dicts","out_names","future_check_symms","label"]
+    required_params = ["xyzs","check_symm","fw_generators","fw_generator_dicts","out_names","future_check_symms","label","machine"]
     def run_task(self, fw_spec):
         xyzs = [xyz for xyz in self["xyzs"] if os.path.exists(xyz)] #if the associated task errored a file may not be present
         if self["check_symm"]:
@@ -687,6 +687,7 @@ class MolecularCollect(CollectTask):
         fw_generator_dicts = self["fw_generator_dicts"]
         out_names = self["out_names"]
         future_check_symms = self["future_check_symms"]
+        machine = self["machine"]
 
         for i in range(len(fw_generators)):
             if not isinstance(fw_generators[i],list):
@@ -707,6 +708,7 @@ class MolecularCollect(CollectTask):
                 d["out_path"] = os.path.join(os.path.split(xyz)[0],out_names[0][i])
                 d["label"] = out_names[0][i]
                 d["ignore_errors"] = True
+                d["machine"] = machine
                 out_xyzs.append(d["out_path"])
                 fw = fw_generator(**d)
                 if not isinstance(fw,list):
@@ -716,7 +718,7 @@ class MolecularCollect(CollectTask):
         if len(fw_generators) > 1:
             task = MolecularCollect({"xyzs": out_xyzs,"check_symm": future_check_symms[0],
                     "fw_generators": fw_generators[1:],"fw_generator_dicts": fw_generator_dicts[1:],
-                    "out_names": out_names[1:],"future_check_symms": future_check_symms[1:],"label": self["label"]})
+                    "out_names": out_names[1:],"future_check_symms": future_check_symms[1:],"label": self["label"], "machine":machine})
             cfw = Firework([task],parents=fws,name=self["label"]+"collect",spec={"_allow_fizzled_parents":True,"_priority": 4})
             newwf = Workflow(fws+[cfw],name=self["label"]+"collect"+str(-len(self["fw_generators"])))
             return FWAction(detours=newwf) #using detour allows us to inherit children from the original collect to the subsequent collects
