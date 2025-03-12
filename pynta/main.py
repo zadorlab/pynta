@@ -135,6 +135,8 @@ class Pynta:
         self.fmaxirc = fmaxirc
         self.fmaxopthard = fmaxopthard
 
+        self.machine = machine
+
         self.sites = sites
         self.site_adjacency = site_adjacency
 
@@ -200,7 +202,7 @@ class Pynta:
         self.single_sites_lists = unique_site_lists
         self.double_site_bond_params_lists = double_site_bond_params_lists
         self.double_sites_lists = unique_site_pairs_lists
-        
+
     def generate_mol_dict(self):
         """
         generates all unique Molecule objects based on the reactions and generates a dictionary
