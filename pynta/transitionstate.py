@@ -190,7 +190,7 @@ def get_unique_TS_structs(adsorbates,species_names,slab,slab_sites,site_adjacenc
                                 height2 = list(site_lengths2.values())[0]
                                 surf_ind2 = list(gratom_to_molecule_surface_atom_maps[name2].keys())[0]
                                 occ2 = get_occupied_sites(adslab2,slab_sites,nslab)
-                                for site2 in adcov2.get_sites():
+                                for site2 in slab_sites:
                                     adslab3 = adslab2.copy()
                                     if not any(sites_match(site2,osite,slab) for osite in occ2) and site2["site"] == sitetype2:
                                         add_adsorbate_to_site(adslab3,adsorbate=ad2,surf_ind=surf_ind2,site=site2,height=height2)
