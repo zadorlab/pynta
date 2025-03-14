@@ -1,5 +1,6 @@
 from pynta.tasks import *
-from pynta.mol import get_adsorbate, generate_unique_site_additions, generate_adsorbate_guesses, get_name,generate_unique_placements
+from pynta.mol import get_adsorbate, generate_unique_site_additions, get_name,generate_unique_placements
+from pynta.adsorbate import generate_adsorbate_guesses
 from pynta.coveragedependence import *
 from molecule.molecule import Molecule
 import ase.build
