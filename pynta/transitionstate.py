@@ -263,7 +263,6 @@ def get_unique_TS_structs(adsorbates,species_names,slab,slab_sites,site_adjacenc
     
     return unique_tsstructs,unique_tsmols,neighbor_sites,ninds
 
-def generate_constraints_harmonic_parameters(tsstructs,adsorbates,slab,forward_template,
 def get_unique_TS_templates_site_pairings(tsstructs,tsmols,forward_template,reverse_template,nsites,slab,neighbor_sites,ninds,slab_sites,nslab):
     broken_bonds,formed_bonds = get_broken_formed_bonds(forward_template,reverse_template)
     template = forward_template.copy(deep=True)
@@ -350,6 +349,8 @@ def get_unique_TS_templates_site_pairings(tsstructs,tsmols,forward_template,reve
     return unique_out_tsstructs,unique_out_tsmols,unique_out_target_sites,unique_label_site_mappings
                 
         
+    
+def generate_constraints_harmonic_parameters(tsstructs,tsmols,label_site_mappings,adsorbates,slab,forward_template,
                                              reverse_template,template_name,template_reversed,
                                             ordered_names,reverse_names,mol_dict,gratom_to_molecule_atom_maps,
                                             gratom_to_molecule_surface_atom_maps,nslab,facet,metal,slab_sites,site_adjacency):
@@ -359,7 +360,6 @@ def get_unique_TS_templates_site_pairings(tsstructs,tsmols,forward_template,reve
     constraint_lists = []
     atom_bond_potential_lists = []
     site_bond_potential_lists = []
-    site_bond_dict_list = []
     out_structs = []
     
     nodes_file = os.path.join(os.path.split(pynta.models.__file__)[0],"TS_tree_nodes.json")
@@ -427,13 +427,14 @@ def get_unique_TS_templates_site_pairings(tsstructs,tsmols,forward_template,reve
         site_dict = {key: np.mean(value) for key,value in site_dict.items()}
         rev_mols_info.append({"bondlengths":ave_bdlength,"site_dict":site_dict})
 
-    for tsstruct in tsstructs:
+    for i,tsstruct in enumerate(tsstructs):
         tsstruct_valid = True
         atom_bond_potentials = []
         site_bond_potentials = []
         fixed_bond_pairs = []
-        site_bond_dict = dict()
-
+        tsmol = tsmols[i]
+        label_site_mapping = label_site_mappings[i]
+        
         occ = get_occupied_sites(tsstruct,slab_sites,nslab)
         
         if len(occ) < len(forward_template.get_adatoms()): #if we don't identify as many occupied sites as we should skip this structure
@@ -487,7 +488,7 @@ def get_unique_TS_templates_site_pairings(tsstructs,tsmols,forward_template,reve
                     pos = deepcopy(occ_site_pos[ase_ind1])
                     pos[2] += dwell
                     ind = ase_ind1
-                deq,k = estimate_deq_k(sidt,labels,dwell,forward_template,reverse_template,template_name,template_reversed,broken_bonds,formed_bonds,sitetype=sitetype)
+                deq,k = estimate_deq_k(sidt,labels,dwell,tsmol)
                 if pos is not None:
                     d = {"ind":ind,"site_pos":pos,"k":k,"deq":deq}
                     site_bond_potentials.append(d)
@@ -503,7 +504,7 @@ def get_unique_TS_templates_site_pairings(tsstructs,tsmols,forward_template,reve
                     pos = deepcopy(occ_site_pos[ase_ind2])
                     pos[2] += dwell #shift position up to atom position
                     ind = ase_ind2
-                    deq,k = estimate_deq_k_fixed_surf_bond(labels,dwell,forward_template,reverse_template,template_name,template_reversed,broken_bonds,formed_bonds,sitetype=sitetype)
+                    deq,k = estimate_deq_k_fixed_surf_bond(sidt,labels,dwell,tsmol)
                     d = {"ind":ind,"site_pos":pos,"k":k,"deq":deq}
                     site_bond_potentials.append(d)
                 else:
@@ -512,7 +513,7 @@ def get_unique_TS_templates_site_pairings(tsstructs,tsmols,forward_template,reve
                     pos = deepcopy(occ_site_pos[ase_ind1])
                     pos[2] += dwell #shift position up to atom position
                     ind = ase_ind1
-                    deq,k = estimate_deq_k_fixed_surf_bond(labels,dwell,forward_template,reverse_template,template_name,template_reversed,broken_bonds,formed_bonds,sitetype=sitetype)
+                    deq,k = estimate_deq_k_fixed_surf_bond(sidt,labels,dwell,tsmol)
                     d = {"ind":ind,"site_pos":pos,"k":k,"deq":deq}
                     site_bond_potentials.append(d)
 
@@ -538,7 +539,7 @@ def get_unique_TS_templates_site_pairings(tsstructs,tsmols,forward_template,reve
             if ase_ind1 and ase_ind2: #bond between atoms
                 dwell = rev_mols_info[ind1_mol_r]["bondlengths"][ind1r_mol,ind2r_mol]
                 sitetype = None
-                deq,k = estimate_deq_k(sidt,labels,dwell,forward_template,reverse_template,template_name,template_reversed,broken_bonds,formed_bonds,sitetype=sitetype)
+                deq,k = estimate_deq_k(sidt,labels,dwell,tsmol)
                 d = {"ind1":ase_ind1,"ind2":ase_ind2,"k":k,"deq":deq}
                 atom_bond_potentials.append(d)
             elif ase_ind1 is None: #surface bond to ase_ind2
@@ -564,21 +565,23 @@ def get_unique_TS_templates_site_pairings(tsstructs,tsmols,forward_template,reve
                     tsstruct_valid = False
                     break
 
-                site_bond_dict[ase_ind2] = dict()
                 for (mol_ind,sitetype) in site_dict.keys():
                     if mol_ind == ind1r_mol:
                         dwell = site_dict[(mol_ind,sitetype)]
-                        deq,k = estimate_deq_k(sidt,labels,dwell,forward_template,reverse_template,template_name,template_reversed,broken_bonds,formed_bonds,sitetype=sitetype)
+                        deq,k = estimate_deq_k(sidt,labels,dwell,tsmol)
                         if reusing_site: #attaching to a site that was bonded to another atom
                             if reused_site_type == sitetype:
                                 pos = deepcopy(reused_site_pos)
                                 pos[2] += dwell
                                 d = {"ind":ase_ind2,"site_pos":pos,"k":k,"deq":deq}
                                 site_bond_potentials.append(d)
-                                if ase_ind2 in site_bond_dict.keys():
-                                    del site_bond_dict[ase_ind2]
                         else: #attaching to a new empty site
-                            site_bond_dict[ase_ind2][sitetype] = {"deq":deq,"k":k,"dwell":dwell}
+                            site = label_site_mapping[labels[0]]
+                            pos = site["position"]
+                            pos[2] += dwell
+                            deq,k = estimate_deq_k_fixed_surf_bond(sidt,labels,dwell,tsmol)
+                            d = {"ind":ase_ind2,"site_pos":pos,"k":k,"deq":deq}
+                            site_bond_potentials.append(d)
 
             else:
                 site_dict = rev_mols_info[ind2_mol_r]["site_dict"]
@@ -603,21 +606,23 @@ def get_unique_TS_templates_site_pairings(tsstructs,tsmols,forward_template,reve
                     tsstruct_valid = False
                     break
 
-                site_bond_dict[ase_ind1] = dict()
                 for (mol_ind,sitetype) in site_dict.keys():
                     if mol_ind == ind2r_mol:
                         dwell = site_dict[(mol_ind,sitetype)]
-                        deq,k = estimate_deq_k(sidt,labels,dwell,forward_template,reverse_template,template_name,template_reversed,broken_bonds,formed_bonds,sitetype=sitetype)
+                        deq,k = estimate_deq_k(sidt,labels,dwell,tsmol)
                         if reusing_site: #attaching to a site that was bonded to another atom
                             if reused_site_type == sitetype:
                                 pos = deepcopy(reused_site_pos)
                                 pos[2] += dwell
                                 d = {"ind":ase_ind1,"site_pos":pos,"k":k,"deq":deq}
                                 site_bond_potentials.append(d)
-                                if ase_ind1 in site_bond_dict.keys():
-                                    del site_bond_dict[ase_ind1]
                         else:
-                            site_bond_dict[ase_ind1][sitetype] = {"deq":deq,"k":k,"dwell":dwell}
+                            site = label_site_mapping[labels[1]]
+                            pos = site["position"]
+                            pos[2] += dwell
+                            deq,k = estimate_deq_k_fixed_surf_bond(sidt,labels,dwell,tsmol)
+                            d = {"ind":ase_ind1,"site_pos":pos,"k":k,"deq":deq}
+                            site_bond_potentials.append(d)
 
         if tsstruct_valid:
             if fixed_bond_pairs:
@@ -627,10 +632,9 @@ def get_unique_TS_templates_site_pairings(tsstructs,tsmols,forward_template,reve
                 constraint_lists.append(["freeze slab"])
             atom_bond_potential_lists.append(atom_bond_potentials)
             site_bond_potential_lists.append(site_bond_potentials)
-            site_bond_dict_list.append(site_bond_dict)
             out_structs.append(tsstruct)
 
-    return out_structs,constraint_lists,atom_bond_potential_lists,site_bond_potential_lists,site_bond_dict_list
+    return out_structs,constraint_lists,atom_bond_potential_lists,site_bond_potential_lists
 
 def estimate_deq_k(sidt,labels,dwell,forward_template,reverse_template,template_name,template_reversed,
     broken_bonds,formed_bonds,sitetype=None):
