@@ -1032,3 +1032,47 @@ def get_full_mol(admol,slab_mol,site_map):
 
     mmol.multiplicity = mmol.get_radical_count() + 1
     return mmol
+
+def get_labeled_full_TS_mol(template,mol):
+    """
+    takes in a template with only the labels that participate in reactions
+    and an unlabeled slab resolved Molecule object 
+    """
+    m = mol.copy(deep=True)
+    
+    tempmol_mol_map = []
+    tempmols = [x for x in template.split() if not x.is_surface_site()]
+    tempgrps = []
+    for tempmol in tempmols:
+        if tempmol.multiplicity == -187: #handle surface molecules
+            tempmol.multiplicity = tempmol.get_radical_count() + 1
+        tempgrps.append(tempmol.to_group())
+
+    map_list = []
+    for tempgrp in tempgrps:
+        mapvs = m.find_subgraph_isomorphisms(tempgrp,save_order=True)
+        map_list.append(mapvs)
+
+    fullmaps = []
+    for pd in itertools.product(*map_list):
+        key_atoms = sum([list(x.keys()) for x in pd],[])
+        value_atoms = sum([list(x.values()) for x in pd],[])
+        if len(set(key_atoms)) == len(key_atoms) and len(set(value_atoms)) == len(value_atoms):
+            fullmaps.append({k:v for x in pd for k,v in x.items()})
+
+    unique_fullmaps = []
+    for mapm in fullmaps:
+        for map2 in unique_fullmaps:
+            if mapm == map2:
+                break
+        else:
+            unique_fullmaps.append(mapm)
+    
+    labeled_mols = []
+    for mapm in unique_fullmaps:
+        labeled_mol = m.copy(deep=True)
+        for k,v in mapm.items():
+            labeled_mol.atoms[m.atoms.index(k)].label = v.label
+        labeled_mols.append(labeled_mol)
+
+    return labeled_mols
