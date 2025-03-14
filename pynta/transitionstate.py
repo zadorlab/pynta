@@ -504,7 +504,7 @@ def generate_constraints_harmonic_parameters(tsstructs,tsmols,label_site_mapping
                     pos = deepcopy(occ_site_pos[ase_ind2])
                     pos[2] += dwell #shift position up to atom position
                     ind = ase_ind2
-                    deq,k = estimate_deq_k_fixed_surf_bond(sidt,labels,dwell,tsmol)
+                    deq,k = estimate_deq_k_fixed_surf_bond(labels,dwell,tsmol)
                     d = {"ind":ind,"site_pos":pos,"k":k,"deq":deq}
                     site_bond_potentials.append(d)
                 else:
@@ -513,7 +513,7 @@ def generate_constraints_harmonic_parameters(tsstructs,tsmols,label_site_mapping
                     pos = deepcopy(occ_site_pos[ase_ind1])
                     pos[2] += dwell #shift position up to atom position
                     ind = ase_ind1
-                    deq,k = estimate_deq_k_fixed_surf_bond(sidt,labels,dwell,tsmol)
+                    deq,k = estimate_deq_k_fixed_surf_bond(labels,dwell,tsmol)
                     d = {"ind":ind,"site_pos":pos,"k":k,"deq":deq}
                     site_bond_potentials.append(d)
 
@@ -636,44 +636,32 @@ def generate_constraints_harmonic_parameters(tsstructs,tsmols,label_site_mapping
 
     return out_structs,constraint_lists,atom_bond_potential_lists,site_bond_potential_lists
 
-def estimate_deq_k(sidt,labels,dwell,forward_template,reverse_template,template_name,template_reversed,
-    broken_bonds,formed_bonds,sitetype=None):
+def estimate_deq_k(sidt,labels,dwell,tsmol):
     """
     Estimate the equilibrium bond length and force constant for broken/forming bonds
     0--(1--2)--3
     """
-    interactions = broken_bonds | formed_bonds
-    formed = labels in formed_bonds
-    mol = deepcopy(forward_template)
-    all_labels = set()
-    for inter in interactions:
-        label_list = list(inter)
-        all_labels.add(label_list[0])
-        all_labels.add(label_list[1])
-        a1 = mol.get_labeled_atoms(label_list[0])[0]
-        a2 = mol.get_labeled_atoms(label_list[1])[0]
-        if mol.has_bond(a1,a2):
-            bd = mol.get_bond(a1,a2)
-            bd.set_order_str('R')
+    mol = tsmol.copy(deep=True)
+    
+    surface_bond = False
+    for a in mol.atoms:
+        if a.label == "":
+            continue 
+        elif a.label in labels:
+            a.label = "*"
+            if a.is_surface_site():
+                surface_bond = True
         else:
-            mol.add_bond(Bond(a1,a2,order='R'))
+            a.label = ""
     
-    for label in all_labels:
-        a = mol.get_labeled_atoms(label)[0]
-        if label in labels:
-            a.label = '*'
-        else:
-            a.label = ''
+    v = np.exp(sidt.evaluate(mol))
     
-    v = sidt.evaluate(mol)
-    
-    if any([a.is_surface_site() for a in mol.get_labeled_atoms('*')]):
+    if surface_bond:
         return dwell*(v-1.0),100.0
     else:
         return dwell*v,100.0
 
-def estimate_deq_k_fixed_surf_bond(labels,dwell,forward_template,reverse_template,template_name,template_reversed,
-    broken_bonds,formed_bonds,sitetype=None):
+def estimate_deq_k_fixed_surf_bond(labels,dwell,tsmol):
     """
     Estimate the equilibrium bond length and force constant for surface bonds
     """
