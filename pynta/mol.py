@@ -1004,3 +1004,31 @@ def split_adsorbed_structures(admol,clear_site_info=True,adsorption_info=False,a
         return split_structs,adsorbed_atom_dict
     else:
         return split_structs
+
+def get_full_mol(admol,slab_mol,site_map):
+    """
+    Generates the full Molecule adsorbate/s and slab representation from a unresolved adsorbate/s and fully resolved slab representation
+    and an atom mapping between the adsorbates/s sites and slab representation sites
+    admol is a Molecule object without the slab resolved with all adsorbates/TS bound to sites where bound to the surface
+    slab_mol is a Molecule object representing the full periodic slab
+    site_map is a dictionary mapping atoms in admol to slab_mol
+    """
+    index_map = {admol.atoms.index(k):slab_mol.atoms.index(v) for k,v in site_map.items()}
+    slabm = slab_mol.copy(deep=True)
+    admolm = admol.copy(deep=True)
+    smap = {admolm.atoms[k]:slabm.atoms[v] for k,v in index_map.items()}
+    mmol = slabm.merge(admolm)
+    for adsite,slabsite in smap.items():
+        if adsite.label:
+            slabsite.label = adsite.label
+        adatom = list(adsite.bonds.keys())[0]
+        adbd = mmol.get_bond(adsite,adatom)
+        order = adbd.order
+        mmol.add_bond(Bond(adatom,slabsite,order=order))
+        mmol.remove_bond(adbd)
+
+    for adsite in smap.keys():
+        mmol.remove_atom(adsite)
+
+    mmol.multiplicity = mmol.get_radical_count() + 1
+    return mmol
