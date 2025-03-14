@@ -128,3 +128,30 @@ def generate_adsorbate_guesses(mol,ads,full_slab,mol_to_atoms_map,metal,
 
     return xyzsout
 
+def place_adsorbate(ads,slab,atom_surf_inds,sites,admol,admol_site_indices,metal,sidt_model):
+    if len(atom_surf_inds) == 1:
+        geo = slab.copy()
+        h = estimate_surface_bond_length(admol,admol_site_indices[0],sidt_model,metal)
+        add_adsorbate_to_site(geo, ads, atom_surf_inds[0], sites[0], height=h)
+        return geo,h,None
+    elif len(atom_surf_inds) == 2:
+        geo = slab.copy()
+        h1 = estimate_surface_bond_length(admol,admol_site_indices[0],sidt_model,metal)
+        h2 = estimate_surface_bond_length(admol,admol_site_indices[1],sidt_model,metal)
+        ori = get_mic(sites[0]['position'], sites[1]['position'], geo.cell)
+        add_adsorbate_to_site(geo, deepcopy(ads), atom_surf_inds[0], sites[0], height=h1, orientation=ori)
+        if np.isnan(geo.positions).any(): #if nans just ignore orientation and let it optimize
+            geo = slab.copy()
+            add_adsorbate_to_site(geo, deepcopy(ads), atom_surf_inds[0], sites[0], height=h1, orientation=None)
+        return geo,h1,h2
+    else:
+        raise ValueError
+
+def estimate_surface_bond_length(admol,admol_site_index,sidt_model,metal):
+    m = admol.copy(deep=True)
+    site_atom = m.atoms[admol_site_index]
+    adatom = [a for a in site_atom.edges.keys() if not a.is_surface_site()][0]
+    site_atom.label = "*"
+    adatom.label = "*"
+    L = sidt_model.evaluate(m,metal)
+    return L 
