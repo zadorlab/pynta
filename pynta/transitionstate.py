@@ -264,6 +264,92 @@ def get_unique_TS_structs(adsorbates,species_names,slab,slab_sites,site_adjacenc
     return unique_tsstructs,unique_tsmols,neighbor_sites,ninds
 
 def generate_constraints_harmonic_parameters(tsstructs,adsorbates,slab,forward_template,
+def get_unique_TS_templates_site_pairings(tsstructs,tsmols,forward_template,reverse_template,nsites,slab,neighbor_sites,ninds,slab_sites,nslab):
+    broken_bonds,formed_bonds = get_broken_formed_bonds(forward_template,reverse_template)
+    template = forward_template.copy(deep=True)
+    for i,a in enumerate(template.atoms): #unlabel atoms that do not participate in reactions
+        if a.label != "":
+            for bd in broken_bonds+formed_bonds:
+                if bd.atom1.label == a.label or bd.atom2.label == a.label:
+                    break
+            else:
+                a.label = ""
+    
+    empty_site_labels = [a.label for a in template.atoms if a.is_surface_site() and all(a2.is_surface_site() for a2 in a.bonds.keys())]
+    
+    unique_tsstructs = []
+    unique_tsmols = []
+    for i,tsmol in enumerate(tsmols):
+        labeled_tsmols = get_labeled_full_TS_mol(template,tsmol)
+        for labeled_tsmol in labeled_tsmols:
+            unique_tsstructs.append(tsstructs[i].copy())
+            unique_tsmols.append(labeled_tsmol)
+    
+    out_tsstructs = []
+    out_tsmols = [] 
+    out_target_sites = [] 
+    label_site_mappings = []
+    for i,tsstruct in enumerate(unique_tsstructs):
+        occ = get_occupied_sites(tsstruct,neighbor_sites,nslab)
+        unocc = [site for site in neighbor_sites if not any(sites_match(site,osite,slab) for osite in occ)]
+        pd = [unocc for i in range(nsites)]
+        for sites in itertools.product(*pd):
+            if len(set(sites)) < len(sites): #no duplicate sites
+                continue
+            label_site_mapping = dict()
+            tsmol = unique_tsmols[i].copy(deep=True)
+            for j,s in enumerate(sites):
+                ind = neighbor_sites.index(s)
+                label = empty_site_labels[j]
+                tsmol.atoms[ind].label = label
+                label_site_mapping[label] = s 
+            
+            for bd in broken_bonds+formed_bonds: #create reaction bonds in tsmol
+                label1 = bd.atom1.label 
+                label2 = bd.atom2.label 
+                if label1 == "" or label2 == "":
+                    continue 
+                else:
+                    a1 = tsmol.get_labeled_atoms(label1)[0]
+                    a2 = tsmol.get_labeled_atoms(label2)[0]
+                    if tsmol.has_bond(a1,a2):
+                        bd = tsmol.get_bond(a1,a2)
+                        bd.set_order_str("R") 
+                    else:
+                        tsmol.add_bond(Bond(a1,a2,order="R"))
+            
+            for bd in tsmol.get_all_edges(): #Our TS representation isn't entirely unique, but the representation fix_bond_orders generates is consistent and what we train the SIDT on
+                if bd.is_reaction_bond() or (bd.atom1.is_surface_site() and bd.atom2.is_surface_site()):
+                    continue 
+                elif bd.atom1.is_surface_site() or bd.atom2.is_surface_site(): #surface to adsorbate bond
+                    bd.set_order_str("vdW")
+                else:
+                    bd.set_order_str("S")
+                
+            fix_bond_orders(tsmol,allow_failure=True,keep_binding_vdW_bonds=True,keep_vdW_surface_bonds=True)
+                            
+            out_tsstructs.append(tsstruct.copy())
+            out_tsmols.append(tsmol)
+            out_target_sites.append(sites)
+            label_site_mappings.append(label_site_mapping)
+    
+    unique_out_tsstructs = []
+    unique_out_tsmols = [] 
+    unique_out_target_sites = [] 
+    unique_label_site_mappings = []
+    for i,m in enumerate(out_tsmols):
+        for j,m2 in enumerate(unique_out_tsmols):
+            if m.is_isomorphic(m2,save_order=True):
+                break 
+        else:
+            unique_out_tsstructs.append(out_tsstructs[i])
+            unique_out_tsmols.append(out_tsmols[i])
+            unique_out_target_sites.append(out_target_sites[i])
+            unique_label_site_mappings.append(label_site_mappings[i])
+    
+    return unique_out_tsstructs,unique_out_tsmols,unique_out_target_sites,unique_label_site_mappings
+                
+        
                                              reverse_template,template_name,template_reversed,
                                             ordered_names,reverse_names,mol_dict,gratom_to_molecule_atom_maps,
                                             gratom_to_molecule_surface_atom_maps,nslab,facet,metal,slab_sites,site_adjacency):
