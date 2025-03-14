@@ -4,6 +4,7 @@ from ase.io import read
 import numpy as np
 import os
 from pynta.utils import get_unique_sym, get_unique_sym_structs, sites_match
+from pynta.geometricanalysis import *
 import itertools
 from pynta.calculator import HarmonicallyForcedXTB
 from pynta.mol import *
@@ -152,16 +153,23 @@ def get_unique_TS_structs(adsorbates,species_names,slab,slab_sites,site_adjacenc
     Generate unique initial structures for TS guess generation
     """
     tsstructs = []
+    tsmols = []
     ordered_adsorbates = [adsorbates[name] for name in species_names]
     for adss in itertools.product(*ordered_adsorbates):
         if num_surf_sites[0] > 0:
             adslab = adss[0].copy()
+            adslabmol,neighbor_sites,ninds = generate_adsorbate_2D(adss[0], slab_sites, site_adjacency, nslab, max_dist=np.inf, cut_off_num=None, allowed_structure_site_structures=None,
+                          keep_binding_vdW_bonds=True, keep_vdW_surface_bonds=False)
         else:
             adslab = slab.copy()
+            adslabmol,neighbor_sites,ninds = generate_adsorbate_2D(slab, slab_sites, site_adjacency, nslab, max_dist=np.inf, cut_off_num=None, allowed_structure_site_structures=None,
+                          keep_binding_vdW_bonds=True, keep_vdW_surface_bonds=False)
             site = slab_sites[0]
             add_adsorbate_to_site(adslab,adsorbate=adss[0],surf_ind=0,site=site,height=gas_height)
+            adslabmol = adslabmol.merge(mol_dict[species_names[0]])
         if len(adss) == 1:
             tsstructs.append(adslab)
+            tsmols.append(adslabmol)
         else:
             if num_surf_sites[1] == 1:
                 name = species_names[1]
@@ -177,8 +185,10 @@ def get_unique_TS_structs(adsorbates,species_names,slab,slab_sites,site_adjacenc
                     adslab2 = adslab.copy()
                     if not any(sites_match(site,osite,slab) for osite in occ) and site["site"] == sitetype1:
                         add_adsorbate_to_site(adslab2,adsorbate=ad,surf_ind=surf_ind1,site=site,height=height1)
+                        adslabmol2 = add_coadsorbate_2D(adslabmol,site,mol_dict[species_names[1]],slab,neighbor_sites,[i for i,a in enumerate(mol_dict[species_names[1]].atoms) if a.is_surface_site()])
                         if len(adss) == 2:
                             tsstructs.append(adslab2)
+                            tsmols.append(adslabmol2)
                         else:
                             if num_surf_sites[2] == 1:
                                 name2 = species_names[2]
@@ -194,8 +204,10 @@ def get_unique_TS_structs(adsorbates,species_names,slab,slab_sites,site_adjacenc
                                     adslab3 = adslab2.copy()
                                     if not any(sites_match(site2,osite,slab) for osite in occ2) and site2["site"] == sitetype2:
                                         add_adsorbate_to_site(adslab3,adsorbate=ad2,surf_ind=surf_ind2,site=site2,height=height2)
+                                        adslabmol3 = add_coadsorbate_2D(adslabmol2,site2,mol_dict[species_names[2]],slab,neighbor_sites,[i for i,a in enumerate(mol_dict[species_names[2]].atoms) if a.is_surface_site()])
                                         if len(adss) == 3:
                                             tsstructs.append(adslab3)
+                                            tsmols.append(adslabmol3)
                                         else:
                                             raise ValueError("Cannot handle more than three reactants")
                             else:
@@ -205,8 +217,13 @@ def get_unique_TS_structs(adsorbates,species_names,slab,slab_sites,site_adjacenc
                                 while any(sites_match(sitel2,osite,slab) for osite in occl2): #while occupied
                                     c += 1
                                     sitel2 = slab_sites[c]
-                                add_adsorbate_to_site(adslab,adsorbate=adss[2],surf_ind=0,site=sitel2,height=gas_height)
-
+                                add_adsorbate_to_site(adslab2,adsorbate=adss[2],surf_ind=0,site=sitel2,height=gas_height)
+                                adslabmol3 = adslabmol2.merge(mol_dict[species_names[2]])
+                                if len(adss) == 3:
+                                    tsstructs.append(adslab2)
+                                    tsmols.append(adslabmol3)
+                                else:
+                                    raise ValueError("Cannot handle more than three reactants")
             elif num_surf_sites[1] == 0:
                 occl1 = get_occupied_sites(adslab,slab_sites,nslab)
                 c = 0
@@ -216,8 +233,10 @@ def get_unique_TS_structs(adsorbates,species_names,slab,slab_sites,site_adjacenc
                     sitel1 = slab_sites[c]
 
                 add_adsorbate_to_site(adslab,adsorbate=adss[1],surf_ind=0,site=sitel1,height=gas_height)
+                adslabmol2 = adslabmol.merge(mol_dict[species_names[1]])
                 if len(adss) == 2:
                     tsstructs.append(adslab)
+                    tsmols.append(adslabmol2)
                 else:
                     c = 0
                     site2 = slab_sites[c]
@@ -225,13 +244,24 @@ def get_unique_TS_structs(adsorbates,species_names,slab,slab_sites,site_adjacenc
                         c += 1
                         site2 = slab_sites[c]
                     add_adsorbate_to_site(adslab,adsorbate=adss[2],surf_ind=0,site=site2,height=gas_height)
+                    adslabmol3 = adslabmol2.merge(mol_dict[species_names[2]])
                     if len(adss) == 3:
                         tsstructs.append(adslab)
+                        tsmols.append(adslabmol3)
                     else:
                         raise ValueError("Cannot handle more than three reactants")
 
-    unique_tsstructs = get_unique_sym_structs(tsstructs)
-    return unique_tsstructs
+    unique_tsstructs = []
+    unique_tsmols = []
+    for i,m1 in enumerate(tsmols):
+        for j,m2 in enumerate(unique_tsmols):
+            if m1.is_isomorphic(m2,save_order=True):
+                break 
+        else:
+            unique_tsmols.append(m1)
+            unique_tsstructs.append(tsstructs[i])
+    
+    return unique_tsstructs,unique_tsmols,neighbor_sites,ninds
 
 def generate_constraints_harmonic_parameters(tsstructs,adsorbates,slab,forward_template,
                                              reverse_template,template_name,template_reversed,
