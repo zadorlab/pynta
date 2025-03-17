@@ -269,8 +269,9 @@ def get_unique_TS_templates_site_pairings(tsstructs,tsmols,forward_template,reve
     template = forward_template.copy(deep=True)
     for i,a in enumerate(template.atoms): #unlabel atoms that do not participate in reactions
         if a.label != "":
-            for bd in broken_bonds+formed_bonds:
-                if bd.atom1.label == a.label or bd.atom2.label == a.label:
+            for bd in list(broken_bonds)+list(formed_bonds):
+                label1,label2 = list(bd)
+                if label1 == a.label or label2 == a.label:
                     break
             else:
                 a.label = ""
