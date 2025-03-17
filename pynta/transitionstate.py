@@ -571,10 +571,11 @@ def generate_constraints_harmonic_parameters(tsstructs,tsmols,label_site_mapping
                 if reusing_site and (reused_site_type not in [x[1] for x in site_dict.keys()]): #the site one of the reactants is attached to is not stable in the products
                     print("{reused_site} not in list of sites {site_list}".format(reused_site=reused_site_type,site_list=[x[1] for x in site_dict.keys()]))
                     tsstruct_valid = False
-                    break
-
+                    break                
+                
+                site = label_site_mapping[[x for x in labels if tsmol.get_labeled_atoms(x)[0].is_surface_site()][0]]
                 for (mol_ind,sitetype) in site_dict.keys():
-                    if mol_ind == ind1r_mol:
+                    if mol_ind == ind1r_mol and site["site"] == sitetype:
                         dwell = site_dict[(mol_ind,sitetype)]
                         deq,k = estimate_deq_k(sidt,labels,dwell,tsmol)
                         if reusing_site: #attaching to a site that was bonded to another atom
@@ -584,12 +585,13 @@ def generate_constraints_harmonic_parameters(tsstructs,tsmols,label_site_mapping
                                 d = {"ind":ase_ind2,"site_pos":pos,"k":k,"deq":deq}
                                 site_bond_potentials.append(d)
                         else: #attaching to a new empty site
-                            site = label_site_mapping[labels[0]]
-                            pos = site["position"]
+                            pos = deepcopy(site["position"])
                             pos[2] += dwell
-                            deq,k = estimate_deq_k_fixed_surf_bond(sidt,labels,dwell,tsmol)
                             d = {"ind":ase_ind2,"site_pos":pos,"k":k,"deq":deq}
                             site_bond_potentials.append(d)
+                        break
+                else:
+                    raise ValueError
 
             else:
                 site_dict = rev_mols_info[ind2_mol_r]["site_dict"]
@@ -613,9 +615,10 @@ def generate_constraints_harmonic_parameters(tsstructs,tsmols,label_site_mapping
                     print("{reused_site} not in list of sites {site_list}".format(reused_site=reused_site_type,site_list=[x[1] for x in site_dict.keys()]))
                     tsstruct_valid = False
                     break
-
+                
+                site = label_site_mapping[[x for x in labels if tsmol.get_labeled_atoms(x)[0].is_surface_site()][0]]
                 for (mol_ind,sitetype) in site_dict.keys():
-                    if mol_ind == ind2r_mol:
+                    if mol_ind == ind2r_mol and site["site"] == sitetype:
                         dwell = site_dict[(mol_ind,sitetype)]
                         deq,k = estimate_deq_k(sidt,labels,dwell,tsmol)
                         if reusing_site: #attaching to a site that was bonded to another atom
@@ -625,12 +628,13 @@ def generate_constraints_harmonic_parameters(tsstructs,tsmols,label_site_mapping
                                 d = {"ind":ase_ind1,"site_pos":pos,"k":k,"deq":deq}
                                 site_bond_potentials.append(d)
                         else:
-                            site = label_site_mapping[labels[1]]
-                            pos = site["position"]
+                            pos = deepcopy(site["position"])
                             pos[2] += dwell
-                            deq,k = estimate_deq_k_fixed_surf_bond(sidt,labels,dwell,tsmol)
                             d = {"ind":ase_ind1,"site_pos":pos,"k":k,"deq":deq}
                             site_bond_potentials.append(d)
+                        break
+                else:
+                    raise ValueError
 
         if tsstruct_valid:
             if fixed_bond_pairs:
