@@ -159,14 +159,14 @@ def get_unique_TS_structs(adsorbates,species_names,slab,slab_sites,site_adjacenc
     for adss in itertools.product(*ordered_adsorbates):
         if num_surf_sites[0] > 0:
             adslab = adss[0].copy()
-            adslabmol,neighbor_sites,ninds = generate_adsorbate_2D(adss[0], slab_sites, site_adjacency, nslab, max_dist=np.inf, cut_off_num=None, allowed_structure_site_structures=None,
+            adslabmol,neighbor_sites,ninds = generate_adsorbate_2D(adslab, slab_sites, site_adjacency, nslab, max_dist=np.inf, cut_off_num=None, allowed_structure_site_structures=None,
                           keep_binding_vdW_bonds=True, keep_vdW_surface_bonds=False)
         else:
             adslab = slab.copy()
-            adslabmol,neighbor_sites,ninds = generate_adsorbate_2D(slab, slab_sites, site_adjacency, nslab, max_dist=np.inf, cut_off_num=None, allowed_structure_site_structures=None,
+            adslabmol,neighbor_sites,ninds = generate_adsorbate_2D(adslab, slab_sites, site_adjacency, nslab, max_dist=np.inf, cut_off_num=None, allowed_structure_site_structures=None,
                           keep_binding_vdW_bonds=True, keep_vdW_surface_bonds=False)
             site = slab_sites[0]
-            add_adsorbate_to_site(adslab,adsorbate=adss[0],surf_ind=0,site=site,height=gas_height)
+            add_adsorbate_to_site(adslab,adsorbate=adslab,surf_ind=0,site=site,height=gas_height)
             adslabmol = adslabmol.merge(mol_dict[species_names[0]])
         if len(adss) == 1:
             tsstructs.append(adslab)
