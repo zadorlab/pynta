@@ -38,7 +38,8 @@ class MainTest(unittest.TestCase):
         returndir = os.getcwd()
         os.chdir(self.launchpath)
 
-        lpad = LaunchPad()
+        lpad_name=returndir+"/test/my_launchpad.yaml"
+        lpad = LaunchPad.from_file(lpad_name)
         wfnames = [lpad.get_wf_summary_dict(wf_id)['name'] for wf_id in lpad.get_wf_ids()]
         name = "Pynta_functional_test_"
         ind = 0
@@ -57,6 +58,7 @@ class MainTest(unittest.TestCase):
                lattice_opt_software_kwargs={},
                slab_path=os.path.join(self.path,"slab.xyz"),
                Eharmtol=1.0, Ntsmin=2,
+               launchpad_path=lpad_name
                )
 
         pyn.analyze_slab()
