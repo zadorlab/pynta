@@ -1313,8 +1313,13 @@ def map_harmonically_forced_xtb(input):
     if sp:
         if "initial_charges" in sp.arrays.keys(): #avoid bug in ase
             del sp.arrays["initial_charges"]
+        s_bond_potentials = deepcopy(site_bond_potentials)
+        for d in s_bond_potentials:
+            d["site_pos"] = d["site_pos"].tolist()
+            d["deq"] = float(d["deq"])
         with open(os.path.join(ts_path,str(j),"harm.json"),'w') as f:
-            d = {"harmonic energy": Eharm, "harmonic force": Fharm.tolist()}
+            d = {"harmonic energy": Eharm, "harmonic force": Fharm.tolist(),"atom_bond_potentials":atom_bond_potentials,
+                 "site_bond_potentials":s_bond_potentials,"molecule_to_atom_maps":molecule_to_atom_maps,"ase_to_mol_num":ase_to_mol_num}
             json.dump(d,f)
         write(os.path.join(ts_path,str(j),"xtb.xyz"),sp)
         xyz = os.path.join(ts_path,str(j),"xtb.xyz")
