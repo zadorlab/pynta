@@ -295,27 +295,33 @@ def get_unique_TS_templates_site_pairings(tsstructs,tsmols,forward_template,reve
         unocc = [site for site in neighbor_sites if not any(sites_match(site,osite,slab) for osite in occ)]
         pd = [unocc for i in range(nsites)]
         for sites in itertools.product(*pd):
-            if len(set(sites)) < len(sites): #no duplicate sites
+            unique_sites = []
+            for site in sites:
+                for site2 in unique_sites:
+                    if site == site2:
+                        break
+                else:
+                    unique_sites.append(site)
+            if len(unique_sites) < len(sites): #no duplicate sites
                 continue
             label_site_mapping = dict()
             tsmol = unique_tsmols[i].copy(deep=True)
             for j,s in enumerate(sites):
-                ind = neighbor_sites.index(s)
+                ind = [i for i,x in enumerate(neighbor_sites) if sites_match(s,x,slab)][0]
                 label = empty_site_labels[j]
                 tsmol.atoms[ind].label = label
-                label_site_mapping[label] = s 
+                label_site_mapping[label] = s
             
-            for bd in broken_bonds+formed_bonds: #create reaction bonds in tsmol
-                label1 = bd.atom1.label 
-                label2 = bd.atom2.label 
+            for bd in list(broken_bonds)+list(formed_bonds): #create reaction bonds in tsmol
+                label1,label2 = list(bd)
                 if label1 == "" or label2 == "":
                     continue 
                 else:
                     a1 = tsmol.get_labeled_atoms(label1)[0]
                     a2 = tsmol.get_labeled_atoms(label2)[0]
                     if tsmol.has_bond(a1,a2):
-                        bd = tsmol.get_bond(a1,a2)
-                        bd.set_order_str("R") 
+                        bdts = tsmol.get_bond(a1,a2)
+                        bdts.set_order_str("R")
                     else:
                         tsmol.add_bond(Bond(a1,a2,order="R"))
             
