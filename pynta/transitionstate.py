@@ -731,7 +731,7 @@ def get_surface_forming_bond_pairings(tsstructs,slab,atom_bond_potential_lists,
                     site = sites[j]
                     add_adsorbate_to_site(geo,adsorbate=tag,surf_ind=0,site=site,height=1.5)
                     params = bond_dict[site["site"]].copy()
-                    params["site_pos"] = site["position"]
+                    params["site_pos"] = deepcopy(site["position"])
                     params["site_pos"][2] += params["dwell"]
                     del params["dwell"]
                     params["ind"] = atm_ind
@@ -770,7 +770,7 @@ def sites_to_site_bond_potentials(sites,site_bond_dicts,atm_inds):
             bond_dict = site_bond_dicts[atm_ind]
             if site["site"] in bond_dict.keys():
                 params = bond_dict[site["site"]].copy()
-                params["site_pos"] = site["position"]
+                params["site_pos"] = deepcopy(site["position"])
                 params["ind"] = atm_ind
                 params_list.append(params)
         site_bond_potentials[atm_ind] = params_list
