@@ -492,7 +492,7 @@ class MolecularTSEstimate(FiretaskBase):
             s["position"] = np.array(s["position"])
             s["normal"] = np.array(s["normal"])
         
-        site_adjacency = {int(k):v for k,v in self["site_adjacency"].items()}
+        site_adjacency = {int(k):[int(x) for x in v] for k,v in self["site_adjacency"].items()}
         Eharmtol = self["Eharmtol"]
         Eharmfiltertol = self["Eharmfiltertol"]
         Ntsmin = self["Ntsmin"]
