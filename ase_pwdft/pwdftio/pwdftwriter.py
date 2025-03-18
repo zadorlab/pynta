@@ -26,14 +26,22 @@ def _get_geom(atoms, **params):
                 outpos[:, i] = scpos[:, i]
         npbc = pbc.sum()
         cellpars = atoms.cell.cellpar()
-        if npbc in [2, 3]:  # Check if npbc is either 2 or 3
-#            geom.append('  system {} units angstrom'.format(_system_type[3])) #if it is surface, follow the same input as crystal
-            geom.append('  system {} units angstrom'.format(_system_type[npbc]))
-        if npbc == 3:
-#        if npbc in [2, 3]:  # Check if npbc is either 2 or 3
+        
+        if npbc == 2:  # Check if npbc is 2
+            geom.append('  system {}'.format(_system_type[npbc]))
+            geom.append('    lat_a {:20.16e}'.format(cellpars[0]))
+            geom.append('    lat_b {:20.16e}'.format(cellpars[1]))
+            geom.append('    lat_c {:20.16e}'.format(cellpars[2]))
+            geom.append('    alpha {:20.16e}'.format(cellpars[3]))
+            geom.append('    beta {:20.16e}'.format(cellpars[4]))
+            geom.append('    gamma {:20.16e}'.format(cellpars[5]))
+        
+        elif npbc == 3:  # Check if npbc is 3
+            geom.append('  system {} units angstrom'.format(_system_type[3]))  # if it is surface, follow the same input as crystal
             geom.append('    lattice_vectors')
             for row in atoms.cell:
                 geom.append('      {:20.16e} {:20.16e} {:20.16e}'.format(*row))
+        
         else:
             if pbc[0]:
                 geom.append('    lat_a {:20.16e}'.format(cellpars[0]))
@@ -47,6 +55,7 @@ def _get_geom(atoms, **params):
                 geom.append('    beta {:20.16e}'.format(cellpars[4]))
             if pbc[1] and pbc[0]:
                 geom.append('    gamma {:20.16e}'.format(cellpars[5]))
+        
         geom.append('  end')
 
     for i, atom in enumerate(atoms):
