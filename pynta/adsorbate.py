@@ -165,5 +165,7 @@ def estimate_surface_bond_length(admol,admol_site_index,sidt_model,metal):
     adatom = [a for a in site_atom.edges.keys() if not a.is_surface_site()][0]
     site_atom.label = "*"
     adatom.label = "*"
-    L = sidt_model.evaluate(m,metal)
+    L,tr = sidt_model.evaluate(m,metal,trace=True)
+    if tr == "Root":
+        logging.warning("Estimation used SIDT Root group")
     return L 
