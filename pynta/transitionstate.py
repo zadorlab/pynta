@@ -334,7 +334,10 @@ def get_unique_TS_templates_site_pairings(tsstructs,tsmols,forward_template,reve
                     bd.set_order_str("S")
                 
             fix_bond_orders(tsmol,allow_failure=True,keep_binding_vdW_bonds=True,keep_vdW_surface_bonds=True)
-                            
+            tsmol.update_multiplicity()
+            tsmol.update_atomtypes()
+            tsmol.update_connectivity_values()
+            tsmol.identify_ring_membership()
             out_tsstructs.append(tsstruct.copy())
             out_tsmols.append(tsmol)
             out_target_sites.append(sites)
