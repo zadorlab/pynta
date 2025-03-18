@@ -669,7 +669,12 @@ def estimate_deq_k(sidt,labels,dwell,tsmol):
         else:
             a.label = ""
     
-    v = np.exp(sidt.evaluate(mol))
+    logv,tr = sidt.evaluate(mol,trace=True)
+    
+    if tr == "Root":
+        logging.warning("Bond factor estimation used Root group in SIDT")
+    
+    v = np.exp(logv)
     
     if surface_bond:
         return dwell*(v-1.0),100.0
