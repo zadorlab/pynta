@@ -297,7 +297,7 @@ class Pynta:
                         structs = generate_adsorbate_guesses(mol,ads,self.slab,mol_to_atoms_map,self.metal,
                                            self.single_site_bond_params_lists,self.single_sites_lists,
                                            self.double_site_bond_params_lists,self.double_sites_lists,
-                                           self.Eharmtol,self.Eharmfiltertol,self.Ntsmin)
+                                           self.Eharmtol,self.Eharmfiltertol,self.Ntsmin,self.sites,self.site_adjacency)
                         structures[sm] = structs
 
 
