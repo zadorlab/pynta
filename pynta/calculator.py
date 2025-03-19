@@ -383,76 +383,52 @@ def get_lattice_parameter(metal,surface_type,software,software_kwargs,da=0.1,opt
     print("Optimized a: {}".format(out.x))
     return out.x
 
-def optimize_lattice_parameter(metal,surface_type,software,software_kwargs,da=0.1,options={"xatol":1e-4},a0=None):
-    soft = name_to_ase_software(software)(**software_kwargs)
-    def f(a):
-        slab = bulk(metal, surface_type[:3], a=a, orthorhombic=True)
-        slab.calc = soft
-        slab.pbc = (True, True, True)
-        return slab.get_potential_energy()
-
-    # Get the initial lattice parameter a0
-    a0 = reference_states[chemical_symbols.index(metal)]['a']
+def optimize_lattice_parameter_with_initial(metal, surface_type, software, software_kwargs, da=0.1, options={"xatol": 1e-4},a0=None):
+    # Step 1: Run get_lattice_parameter() first
+    initial_a = get_lattice_parameter(metal, surface_type, software, software_kwargs, da, options)
     
-    # Initialize the difference to a large number
-    diff = float('inf')
-    
-    # Loop until the difference between a0 and a is less than or equal to 0.001
-    iteration = 0
-    while diff > 0.001:
-        # Generate a range of a values
-        avals = np.arange(a0 - da, a0 + da, 0.01)
-        outavals = []
-        Evals = []
+    # Step 2: Check if the last value of a is greater than out.x from get_lattice_parameter() by 0.05
+    last_a = initial_a  # last_a is the output from get_lattice_parameter
+    if last_a > initial_a + 0.05:
+        a0 = last_a  # Set a0 to the last value of a from get_lattice_parameter()
         
-        print(f"Iteration #{iteration}: a0 = {a0}")
+        # Step 3: Loop until the difference between a0 and a is less than or equal to 0.005
+        diff = float('inf')
+        iteration = 0
         
-        # Calculate potential energies for the range of a values
-        for a in avals:
-            try:
-                E = f(a)
-                outavals.append(a)
-                Evals.append(E)
-                print((a, E))
-            except Exception as e:
-                print(f"Error calculating energy for a = {a}: {e}")
-        
-        # Print a values and E values
-        print("a values:")
-        print(outavals)
-        print("E values:")
-        print(Evals)
-        
-        # Find the indices of the 7 smallest Evals
-        inds = np.argsort(np.array(Evals))[:7]
-        
-        # Fit a polynomial to the selected points and calculate the interpolated a
-        p = np.polyfit(np.array(outavals)[inds], np.array(Evals)[inds], 2)
-        a = -p[1] / (2.0 * p[0])
-        
-        # Print the initial and interpolated values
-        print(f"Initial a0: {a0}, Interpolated a: {a}")
-        
-        # Save the current a as a0 for the next iteration
-        previous_a0 = a0
-        a0 = a
-        
-        # Minimize the function within the bounds
-        out = opt.minimize_scalar(f, method='bounded', bounds=(a - 0.01, a + 0.01), options=options)
-        
-        # Print the optimization result
-        print(out)
-        print("Optimized a: {}".format(out.x))
-        
-        # Calculate the difference between the new a and the previous a
-        diff = abs(out.x - previous_a0)
-        
-        # Print the results of this iteration
-        print(f"#{iteration + 1}: a0 = {previous_a0}, a = {out.x}")
-        
-        # Increment the iteration counter
-        iteration += 1
+        while diff > 0.01:
+            print(f"Iteration #{iteration}: a0 = {a0}")
+            
+            # Call get_lattice_parameter to get the optimized value
+            out = get_lattice_parameter(metal, surface_type, software, software_kwargs, da, options, a0=a0)
+            
+            # Use out.x to get the optimized lattice parameter
+            optimized_a = out  # Assuming get_lattice_parameter returns the optimized value directly
+            
+            # Calculate the difference between the new a and the previous a
+            diff = abs(optimized_a - a0)
+            
+            # Print the results of this iteration
+            print(f"#{iteration + 1}: a0 = {a0}, optimized a = {optimized_a}")
+            
+            # Update a0 for the next iteration
+            a0 = optimized_a
+            
+            # Increment the iteration counter
+            iteration += 1
 
-    print("Converged!")
-    print(f"Final optimized a: {out.x}")
-    return out.x
+        print("Converged!")
+        print(f"Final optimized a: {optimized_a.x}")
+        return optimized_a.x
+    else:
+        # Modified else block with additional print statements
+        print("ASE reference a: {}".format(last_a))
+        print("Interpolated a: {}".format(initial_a))
+        print("No optimization needed; last_a is not greater than initial_a + 0.05.")
+        print("Optimized a: {}".format(last_a.x))  # Assuming last_a is the optimized value
+        return last_a.x
+
+
+#    print("Converged!")
+#    print(f"Final optimized a: {out.x}")
+#    return out.x
