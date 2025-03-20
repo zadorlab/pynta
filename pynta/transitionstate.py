@@ -594,7 +594,8 @@ def generate_constraints_harmonic_parameters(tsstructs,tsmols,label_site_mapping
                             site_bond_potentials.append(d)
                         break
                 else:
-                    raise ValueError
+                    tsstruct_valid = False 
+                    break
 
             else:
                 site_dict = rev_mols_info[ind2_mol_r]["site_dict"]
@@ -637,7 +638,8 @@ def generate_constraints_harmonic_parameters(tsstructs,tsmols,label_site_mapping
                             site_bond_potentials.append(d)
                         break
                 else:
-                    raise ValueError
+                    tsstruct_valid = False 
+                    break
 
         if tsstruct_valid:
             if fixed_bond_pairs:
