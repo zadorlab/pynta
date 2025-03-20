@@ -307,3 +307,83 @@ def get_enthalpy_reaction(rnasas,pnasas,T,dT=0.01):
     for th in pnasas:
         dG += th.get_enthalpy(T)
     return dG
+
+def write_min_en_species_db(
+        ad_path: str,
+        slab_path: str,
+) -> db:
+    '''
+    Generates an ase database of the minimum energy configurations for all
+    Pynta optimized adsorbates and gas-phase species.
+
+    Parameters:
+        ad_path: Absolute path to Pynta generated Adsorbates directory.
+        slab_path: Absolute path to Pynta optimized slab. ('your_path/slab.xyz')
+    Returns:
+        db: ase database
+    '''
+    os.chdir(ad_path)
+    ad_dirs = [dir for dir in filter(os.path.isdir, os.listdir(ad_path))]
+    # Removing old db
+    if os.path.exists(os.path.join(os.getcwd(), 'min_E_ads.db')):
+        os.system('rm min_E_ads.db')
+    db = connect('min_E_ads.db')
+    for ad in ad_dirs:
+        path_to_ad = os.path.join(ad_path, ad)
+        slab = read(slab_path)
+        try:
+            with open(os.path.join(path_to_ad, "info.json")) as f:
+                info = json.load(f)
+        except:
+            print(f"No information for {path_to_ad}")
+            continue
+
+        adj_list = info['adjlist']
+        gasphase = len(info["gratom_to_molecule_surface_atom_map"]) == 0
+        spin = (Molecule().from_adjacency_list(info["adjlist"]).multiplicity - 1.0) / 2.0
+        name = info["name"]
+        os.chdir(path_to_ad)
+        ad_configs = [dir for dir in filter(os.path.isdir, os.listdir(path_to_ad))]
+
+        # Setting up empty dictionaries to collect information for each config
+        ad_dict = dict()
+        DFT_en_dict = dict()
+        freq_dict = dict()
+        atoms_dict = dict()
+        for config in ad_configs:
+            optdir = os.path.join(path_to_ad, config, config + ".xyz")
+            freqdir = os.path.join(path_to_ad, config, "vib.json_vib.json")
+            if not os.path.exists(freqdir):
+                continue
+
+            atoms = read(optdir)
+            atoms_dict[config] = atoms
+            energy = atoms.get_potential_energy()
+            if gasphase:
+                vibdata = get_vibdata(optdir, freqdir, 0)
+            else:
+                vibdata = get_vibdata(optdir, freqdir, len(slab))
+            freqs = vibdata.get_frequencies().tolist()
+
+            # Handling of imaginary frequencies.
+            for index, freq in enumerate(freqs):
+                if freq.imag != 0:
+                    print(f" for {ad_path}/{ad}/{config} \n we have imaginary freq \n setting to 12cm^-1")
+                    freqs[index] = 12
+                    if freq.imag > 150:
+                        print(f"Imag. freq = {freq.imag}; consider running finer optimization")
+                else:
+                    freqs[index] = freq.real
+            zpe = vibdata.get_zero_point_energy()
+            freq_dict[config] = freqs
+            DFT_en_dict[config] = energy
+            ad_dict[config] = energy + zpe
+        if len(ad_dict) == 0:
+            continue
+        min_E_config = min(ad_dict, key=ad_dict.get)
+        atoms = atoms_dict[min_E_config]
+        data = {}
+        data['frequencies'] = freq_dict[min_E_config]
+        db.write(atoms, name=name, zpe=zpe, adj_list=adj_list, spin=spin,
+                 gasphase=gasphase, data=data, num_sites=len(info["gratom_to_molecule_surface_atom_map"]))
+        return
