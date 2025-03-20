@@ -563,3 +563,55 @@ class Thermo:
         print(f"molecular mass= {self.adsorbate_mass} {self.adsorbate_mass_units}")
 
         return
+
+    def _get_translation_thermo(self):
+        # unpack the constants (not essential, but makes it easier to read)
+        R = self.R
+        kB = self.kB
+        h = self.h
+        amu = self.amu
+        P_ref = self.P_ref
+        m = self.adsorbate_mass
+        pi = np.pi
+        area = self.unit_cell_area_per_site
+        sites = self.sites
+
+        # initialize the arrays for the partition function, entropy, enthalpy,
+        # and heat capacity.
+        Q_trans = np.ones(len(self.temperature))
+        S_trans = np.zeros(len(self.temperature))
+        dH_trans = np.zeros(len(self.temperature))
+        Cp_trans = np.zeros(len(self.temperature))
+
+        if self.twoD_gas:
+            print("switching to 2D-gas for 2 lowest modes for %s" % self.name)
+            # cycle through each temperature
+            for (i, T) in enumerate(self.temperature):
+                # partition function is: (2*pi*mass*kB*T/h**2)^(2/2) * area
+                if (1 == 0):  # 3D gas, really here just for inspiration
+                    V = kB * T / P_ref
+                    Q_trans[i] = (2 * pi * m * amu * kB * T / h ** 2) ** (1.5) * V
+                    S_trans[i] = R * (2.5 + np.log(Q_trans[i]))  #
+                    Cp_trans[i] = R * 2.5  # NOTE: Cp = Cv + R
+                    dH_trans[i] = R * 2.5 * T
+                else:  # surface
+                    if (1 == 0):  # Campbell + Arnadottir
+                        V = kB * T / P_ref
+                        Q_trans[i] = (2 * pi * m * amu * kB * T / h ** 2) ** (1.0) * V ** 0.66667
+                        S_trans[i] = R * (2.0 + np.log(Q_trans[i]))
+                        Cp_trans[i] = R * 1.66667  # NOTE: Cp = Cv + 2/3R
+                        dH_trans[i] = R * 1.66667 * T
+
+                    else:  # area is not a function of temperature (This is what we use for our calculations)
+                        Q_trans[i] = (2 * pi * m * amu * kB * T / h ** 2) * area * sites
+                        S_trans[i] = R * (2.0 + np.log(Q_trans[i]))
+                        Cp_trans[i] = R * 1.0  # NOTE: Cp = Cv
+                        dH_trans[i] = R * 1.0 * T
+
+                        # add the results to the thermo object
+        self.Q_trans = Q_trans
+        self.S_trans = S_trans
+        self.dH_trans = dH_trans
+        self.Cp_trans = Cp_trans
+
+        return
