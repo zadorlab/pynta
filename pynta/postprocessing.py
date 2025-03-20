@@ -849,3 +849,57 @@ entry(
         self.header = line
         return
 
+    def temp_corrections(self):
+        index = self.index
+        # call the subroutine for the translational and vibrational partition functions
+        self._get_translation_thermo()
+        self._get_vibrational_thermo()
+        temperature = self.temperature
+
+        # Atom corrections from Thermochemistry chapter by Ruscic and Bross
+        # Page 75 of DOI = https://doi.org/10.1016/B978-0-444-64087-1.00001-2
+        h_correction = 4.234  # kJ/mol. enthalpy_H(298) - enthalpy_H(0)
+        c_correction = 1.051  # kJ/mol. enthalpy_C(298) - enthalpy_C(0)
+        n_correction = 4.335  # kJ/mol. enthalpy_N(298) - enthalpy_N(0)
+        o_correction = 4.340  # kJ/mol. enthalpy_O(298) - enthalpy_O(0)
+
+        # Still not certain why these are needed. Need to read book
+        self.heat_of_formation_correction = 0.0
+        self.heat_of_formation_correction += self.composition['H'] * h_correction
+        self.heat_of_formation_correction += self.composition['C'] * c_correction
+        self.heat_of_formation_correction += self.composition['N'] * n_correction
+        self.heat_of_formation_correction += self.composition['O'] * o_correction
+
+        # note that the partition function is the product of the individual terms,
+        # whereas the thermodynamic properties are additive
+        self.Q = self.Q_trans * self.Q_vib
+        self.S = self.S_trans + self.S_vib
+        self.dH = self.dH_trans + self.dH_vib
+        self.Cp = self.Cp_trans + self.Cv_vib  # see comments in each section regarding Cp vs Cv
+        self.heat_of_formation_298K = self.heat_of_formation_0K + self.dH[
+            0] - self.heat_of_formation_correction
+        self.H = self.heat_of_formation_298K + self.dH - self.dH[0]
+        print(f"standard state entropy = {self.S[0]*1000} J/Mol")
+
+        # This writes H_298, S_298 and appropriate indices of Cp to file (preparation for computing adsorption corrections)
+        g = open("thermodata_adsorbates.py", 'a+')
+        g.write(
+            '[' + str(self.name) + ', Cpdata:, ' + str(self.Cp[np.where(temperature == 300)] * 239.0057)[
+                                                   1:-1] + ', ' + str(
+                self.Cp[np.where(temperature == 400)] * 239.0057)[1:-1] + ', ' + str(
+                self.Cp[np.where(temperature == 500)] * 239.0057)[1:-1] + ', ' + str(
+                self.Cp[np.where(temperature == 600)] * 239.0057)[1:-1] + ', ' + str(
+                self.Cp[np.where(temperature == 800)] * 239.0057)[1:-1] + ', ' + str(
+                self.Cp[np.where(temperature == 1000)] * 239.0057)[1:-1] + ', ' + str(
+                self.Cp[np.where(temperature == 1500)] * 239.0057)[
+                                                                                  1:-1] + ', ' + ",'cal/(mol*K)', H298, " + str(
+                self.H[0] * 0.2390057) + ", 'kcal/mol', S298, " + str(
+                self.S[0] * 239.0057) + ", 'cal/(mol*K)']")
+        g.write('\n')
+        g.close()
+
+        # now that we've computed the thermo properties, go ahead and fit them to a NASA polynomial
+        self._fit_NASA()
+        self._format_RMG_output()
+        return
+
