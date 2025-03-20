@@ -793,3 +793,20 @@ class Thermo:
         self.a_high = a_high
 
         return
+
+    def _format_RMG_output(self):
+        line = '\n'
+        line += 'entry(\n    index = %s,\n' % (self.index)
+        line += f'    label = "{self.name}",\n'
+        line += '    molecule = \n"""\n%s\n""",\n' % (self.formatted_adj_list)
+        line += self.thermo_lines
+        line += f'    longDesc = u"""Calculated by {self.author} at {self.institution} using statistical mechanics using Pynta Thermo in postprocessing. \n'
+        line += "                   These methods were based on approach by Blondal et. al in https://doi.org/10.1021/acscatal.2c03378. If you use this database in your work, please cite the publication mentioned above.\n"
+        if self.twoD_gas:
+            line += '\n            The two lowest frequencies, %.1F and %.1F %s, where replaced by the 2D gas model.' % (
+                self.freqs[0], self.freqs[1], self.frequencies_units.replace("'", ""))
+        line += '""",\n)\n'
+
+        self.species_lines = line
+
+        return
