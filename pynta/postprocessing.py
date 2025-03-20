@@ -387,3 +387,136 @@ def write_min_en_species_db(
         db.write(atoms, name=name, zpe=zpe, adj_list=adj_list, spin=spin,
                  gasphase=gasphase, data=data, num_sites=len(info["gratom_to_molecule_surface_atom_map"]))
         return
+
+class Thermo:
+    """Base class for calculating thermodynamic properties from Pynta optimized
+    adsorbates.
+
+    parameters:
+        atoms: ase atoms object
+        DFT_energy: potential_energy eV with no ZPE correction
+        ZPE_energy: ZPE energy eV
+        num_sites: 1 for monodentate, 2 for bidentate, etc
+        name: adsorbate name generated from Pynta
+        adj_list: adjency list of adsorbate
+        spin: multiplicity of adsorbate
+        freqs: vibrational frequncies cm^-1
+        dft_en_slab: energy of relaxed slab eV
+        cat_element: Atomic symbol for catalyst
+        slab_len: number of atoms in slab
+        author: Name to be used within RMG thermochemistry library
+        institution: Name of research instituion to be used in RMG library
+        index: used for labeling species in RMG library
+        sites_per_cell: We set this to 1 by default, assuming that the 2D lattice gas
+            can freely diffuse over the entire area of our unit cell.
+        dft_en_C_ref: ZPE corrected gas phase reference for carbon
+        dft_en_O_ref: ZPE corrected gas phase reference for oxygen
+        dft_en_H_ref: ZPE corrected gas phase reference for hydrogen
+        dft_en_N_ref: ZPE corrected gas phase reference for nitrogen
+        cutoff_freq: Cutoff used to determine whether to use 2D lattice gas
+
+    """
+    def __init__(self,
+                 atoms,
+                 DFT_energy,
+                 ZPE_energy,
+                 num_sites,
+                 name,
+                 adj_list,
+                 spin,
+                 freqs,
+                 dft_en_slab,
+                 cat_element,
+                 slab_len,
+                 author,
+                 institution,
+                 index,
+                 sites_per_cell=1,
+                 dft_en_C_ref=0,
+                 dft_en_O_ref=0,
+                 dft_en_H_ref=0,
+                 dft_en_N_ref=0,
+                 cutoff_freq=100):
+
+        # start by defining some physical constants
+        self.R = 8.3144621E-3  # ideal Gas constant in kJ/mol-K
+        self.kB = 1.38065e-23  # Boltzmann constant in J/K
+        self.h = 6.62607e-34  # Planck constant in J*s
+        self.c = 2.99792458e8  # speed of light in m/s
+        self.amu = 1.6605e-27  # atomic mass unit in kg
+        self.Avogadro = 6.0221E23  # mole^-1
+        self.GHz_to_Hz = 1.0E9  # convert rotational constants from GHz to Hz
+        self.invcm_to_invm = 1.0E2  # convert cm^-1 to m^-1, for frequencies
+        self.P_ref = 1.0E5  # reference pressure, 1 bar = 1E5 Pascal
+        self.hartree_to_kcalpermole = 627.5095  # convert hartree/molecule to kcal/mol
+        self.hartree_to_kJpermole = 2627.25677  # convert hartree/molecule to kJ/mol
+        self.eV_to_kJpermole = 96.485  # convert eV/molecule to kJ/mol
+
+
+        self.T_switch = 1000.0  # K, switching temperature in NASA polynomial. Default. can overwrite.
+
+        # System specific stuff
+        area = np.linalg.norm(np.cross(atoms.cell[0], atoms.cell[1]))
+        self.unit_cell_area_per_site = (area * 10 ** -20) / sites_per_cell  # m2 - using surface area per binding site
+        self.cutoff_frequency = cutoff_freq  # cm^-1
+        self.twoD_gas = False
+        self.dHfatct = {'CH4': -66.540, 'H2O': -238.903, 'H2': 0,
+                        'NH3': -38.563}  # heats of formation (0K) in kJ/mol from the ATcT database for the reference species, version 1.202
+        self.dHrxnatct = {'H2-2H': 432.0680600, 'O2-2O': 493.6871,
+                          'N2-2N': 941.165}  # Heats of the dissociation reactions in the gas phase from the ATcT database, version 1.202
+        """
+        These are the ZPE-correct DFT energies of your gas phase references
+        """
+        self.Eref = {'CH4': dft_en_C_ref, 'H2O': dft_en_O_ref, 'H2': dft_en_H_ref, 'NH3': dft_en_N_ref}  # eV
+        self.Eslab = dft_en_slab  # DFT energy of the relaxed bare slab in eV
+
+        self.sites = num_sites
+        if self.sites == 0:
+            self.gasphase = True
+        ad_atoms = atoms[slab_len:]
+        formula = ad_atoms.get_chemical_formula(mode='all')
+
+        # THE FOLLOWING DOES NOT WORK FOR BIMETALLIC OR OXIDE SURFACES
+        # THERE WILL BE MULTIPLE CATALYST ELEMENTS
+        self.composition = {'H': formula.count('H'), 'C': formula.count('C'),
+                            'N': formula.count('N'), 'O': formula.count('O'),
+                            cat_element: self.sites}
+
+        self.N_ad_atoms = len(ad_atoms)
+        print(f"number of adsorbate atoms = {self.N_ad_atoms}")
+        self.adsorbate_mass = sum(ad_atoms.get_masses())
+        self.adsorbate_mass_units = 'amu'
+
+        # Currently we don't calculate gas phase species for all intermediates
+        self.energy_gas = 0
+
+        self.DFT_energy = DFT_energy
+        self.ZPE_energy = ZPE_energy
+        self.DFT_energy_gas_units = 'eV'
+        self.DFT_energy_units = 'eV'
+        self.ZPE_energy_units = 'eV'
+
+        new_list = adj_list.replace("['", "").replace("']", "").replace(" '", "").strip().split("',")
+        self.adjacency_list = adj_list
+        self.formatted_adj_list = '\n'.join(new_list)
+
+        self.spin = spin
+        self.freqs = freqs
+        self.name = name
+
+        self.frequencies_units = 'cm-1'
+
+        if self.freqs[1] < self.cutoff_frequency:
+            self.twoD_gas = True
+
+        temperature = [298.15]  # NOTE 298.15 must be first for the NASA polynomial routine to work!
+        T_low = 300.0
+        T_high = 2000.0
+        dT = 10.0  # temperature increment
+        self.temperature = np.append(temperature, np.arange(T_low, T_high + dT, dT))
+
+        self.cat_element = cat_element
+
+        self.author = author
+        self.institution = institution
+        self.index = index
