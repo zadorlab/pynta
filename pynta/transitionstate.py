@@ -677,8 +677,10 @@ def estimate_deq_k(sidt,labels,dwell,tsmol):
     v = np.exp(logv)
     
     if surface_bond:
+        v = max(v,1.0) #don't allow surface bond stretches to be smaller than 1.0
         return dwell*(v-1.0),100.0
     else:
+        v = max(v,1.1) #require covalent bond stretches to be at least 1.1
         return dwell*v,100.0
 
 def estimate_deq_k_fixed_surf_bond(labels,dwell,tsmol):
