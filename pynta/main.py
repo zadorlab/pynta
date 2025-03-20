@@ -659,6 +659,30 @@ class Pynta:
                             copyDataAndSave(src, dst, namexyz)
                             copyDataAndSave(src, dst, f'{base}.traj')
 
+                if 'vib' in task_name:
+                    dirs = wf_launchers[task_name]
+                    if dirs != []:
+                        src = dirs[0]
+                        print(' Name task {0:^20s} {1:^12s} {2}'.format(task_name, task_state, src))
+                        
+                        # Check if there is a directory named 'vib' in the source directory
+                        dir_vib_path = os.path.join(src, 'vib')
+                        if os.path.isdir(dir_vib_path):
+                            dir_vib = dir_vib_path
+                            
+                            # List all JSON files in the dir_vib directory
+                            for filename in os.listdir(dir_vib):
+                                if filename.endswith('.json'):
+                                    file_path = os.path.join(dir_vib, filename)
+                                    
+                                    # Check if the JSON file is empty
+                                    if os.path.getsize(file_path) == 0:
+                                        print(f'Deleting empty JSON file: {file_path}')
+                                        os.remove(file_path)
+                        else:
+                            print(f'No directory named "vib" found in {src}.')
+                            print('No vibration calculations executed: Check optimization runs are finished and optimized geometries are collected.')              
+
                 # Keep on with the task_state != 'COMPLETED'
                 self.launchpad.rerun_fw(task_id)
                 self.launchpad.update_spec([task_id], newd)
