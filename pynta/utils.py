@@ -96,7 +96,6 @@ def get_occupied_sites(struct,sites,nslab,allowed_site_dict=dict(),site_bond_cut
                 
             if mindn is None or mindn > site_bond_disruption_cutoff:
                 s = deepcopy(siteout)
-                s["normal"] = n
                 s["bonding_index"] = i
                 s["bond_length"] = mindist
                 occ_sites.append(s)

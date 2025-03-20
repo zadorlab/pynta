@@ -16,7 +16,7 @@ from fireworks.queue.queue_launcher import rapidfire as rapidfirequeue
 from fireworks.utilities.fw_serializers import load_object_from_file
 from fireworks.core.fworker import FWorker
 import fireworks.fw_config
-from pynta.transitionstate import get_unique_optimized_adsorbates,determine_TS_construction,get_unique_TS_structs,generate_constraints_harmonic_parameters,get_surface_forming_bond_pairings
+from pynta.transitionstate import get_unique_optimized_adsorbates,determine_TS_construction,get_unique_TS_structs,generate_constraints_harmonic_parameters,get_unique_TS_templates_site_pairings
 from pynta.utils import *
 from pynta.calculator import run_harmonically_forced_xtb, add_sella_constraint
 from pynta.mol import *
@@ -492,7 +492,7 @@ class MolecularTSEstimate(FiretaskBase):
             s["position"] = np.array(s["position"])
             s["normal"] = np.array(s["normal"])
         
-        site_adjacency = {int(k):v for k,v in self["site_adjacency"].items()}
+        site_adjacency = {int(k):[int(x) for x in v] for k,v in self["site_adjacency"].items()}
         Eharmtol = self["Eharmtol"]
         Eharmfiltertol = self["Eharmfiltertol"]
         Ntsmin = self["Ntsmin"]
@@ -567,34 +567,36 @@ class MolecularTSEstimate(FiretaskBase):
                         ase_to_mol_num[aind] = i
                         break
 
-        tsstructs = get_unique_TS_structs(adsorbates,species_names,slab,sites,site_adjacency,nslab,num_surf_sites,mol_dict,
+        tsstructs,tsmols,neighbor_sites,ninds = get_unique_TS_structs(adsorbates,species_names,slab,sites,site_adjacency,nslab,num_surf_sites,mol_dict,
                                  gratom_to_molecule_atom_maps,gratom_to_molecule_surface_atom_maps,
                                  facet,metal)
 
-        print("number of TS guesses pre-empty-sites:")
+        print("number of TS guesses pre-empty-sites and multiple mappings:")
         print(len(tsstructs))
 
-        tsstructs_out,constraint_lists,atom_bond_potential_lists,site_bond_potential_lists,site_bond_dict_list = generate_constraints_harmonic_parameters(
-                                            tsstructs,adsorbates,slab,reactants,
+        nsites = len([a for a in reactants.atoms if a.is_surface_site() and len(a.bonds) == 0])
+        
+        unique_tsstructs,unique_tsmols,target_sites,label_site_mappings = get_unique_TS_templates_site_pairings(tsstructs,
+                                        tsmols,reactants,products,nsites,slab,neighbor_sites,ninds,sites,nslab)
+        
+        
+        tsstructs_out,constraint_lists,atom_bond_potential_lists,site_bond_potential_lists = generate_constraints_harmonic_parameters(
+                                            unique_tsstructs,unique_tsmols,label_site_mappings,adsorbates,slab,reactants,
                                              products,rxn["reaction_family"],template_reversed=(not forward),
                                             ordered_names=species_names,reverse_names=reverse_names,
                                             mol_dict=mol_dict,gratom_to_molecule_atom_maps=gratom_to_molecule_atom_maps,
                                             gratom_to_molecule_surface_atom_maps=gratom_to_molecule_surface_atom_maps,
                                             nslab=nslab,facet=facet,metal=metal,slab_sites=sites,site_adjacency=site_adjacency)
 
-
-        out_tsstructs,new_atom_bond_potential_lists,new_site_bond_potential_lists,new_constraint_lists = get_surface_forming_bond_pairings(
-                            tsstructs_out,slab,atom_bond_potential_lists,site_bond_potential_lists,constraint_lists,site_bond_dict_list,sites)
-
-        print("number of TS guesses with empty sites:")
-        print(len(out_tsstructs))
+        print("number of TS guesses with empty sites and multiple mappings:")
+        print(len(tsstructs_out))
 
         if max_num_hfsp_opts:
-            inds = index_site_bond_potential_lists_by_site_distances(new_site_bond_potential_lists)[:max_num_hfsp_opts].tolist()
-            out_tsstructs = [out_tsstructs[ind] for ind in inds]
-            new_atom_bond_potential_lists = [new_atom_bond_potential_lists[ind] for ind in inds]
-            new_site_bond_potential_lists = [new_site_bond_potential_lists[ind] for ind in inds]
-            new_constraint_lists = [new_constraint_lists[ind] for ind in inds]
+            inds = index_site_bond_potential_lists_by_site_distances(site_bond_potential_lists)[:max_num_hfsp_opts].tolist()
+            out_tsstructs = [tsstructs_out[ind] for ind in inds]
+            new_atom_bond_potential_lists = [atom_bond_potential_lists[ind] for ind in inds]
+            new_site_bond_potential_lists = [site_bond_potential_lists[ind] for ind in inds]
+            new_constraint_lists = [constraint_lists[ind] for ind in inds]
             print("number of TS guesses after filtering by max distance between sites")
             print(len(out_tsstructs))
 
@@ -1311,8 +1313,13 @@ def map_harmonically_forced_xtb(input):
     if sp:
         if "initial_charges" in sp.arrays.keys(): #avoid bug in ase
             del sp.arrays["initial_charges"]
+        s_bond_potentials = deepcopy(site_bond_potentials)
+        for d in s_bond_potentials:
+            d["site_pos"] = d["site_pos"].tolist()
+            d["deq"] = float(d["deq"])
         with open(os.path.join(ts_path,str(j),"harm.json"),'w') as f:
-            d = {"harmonic energy": Eharm, "harmonic force": Fharm.tolist()}
+            d = {"harmonic energy": Eharm, "harmonic force": Fharm.tolist(),"atom_bond_potentials":atom_bond_potentials,
+                 "site_bond_potentials":s_bond_potentials,"molecule_to_atom_maps":molecule_to_atom_maps,"ase_to_mol_num":ase_to_mol_num}
             json.dump(d,f)
         write(os.path.join(ts_path,str(j),"xtb.xyz"),sp)
         xyz = os.path.join(ts_path,str(j),"xtb.xyz")

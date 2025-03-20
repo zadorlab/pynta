@@ -1,5 +1,6 @@
 from pynta.tasks import *
-from pynta.mol import get_adsorbate, generate_unique_site_additions, generate_adsorbate_guesses, get_name,generate_unique_placements
+from pynta.mol import get_adsorbate, generate_unique_site_additions, get_name,generate_unique_placements
+from pynta.adsorbate import generate_adsorbate_guesses
 from pynta.coveragedependence import *
 from molecule.molecule import Molecule
 import ase.build
@@ -296,7 +297,7 @@ class Pynta:
                         structs = generate_adsorbate_guesses(mol,ads,self.slab,mol_to_atoms_map,self.metal,
                                            self.single_site_bond_params_lists,self.single_sites_lists,
                                            self.double_site_bond_params_lists,self.double_sites_lists,
-                                           self.Eharmtol,self.Eharmfiltertol,self.Ntsmin)
+                                           self.Eharmtol,self.Eharmfiltertol,self.Ntsmin,self.sites,self.site_adjacency)
                         structures[sm] = structs
 
 

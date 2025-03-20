@@ -4,12 +4,14 @@ from ase.io import read
 import numpy as np
 import os
 from pynta.utils import get_unique_sym, get_unique_sym_structs, sites_match
+from pynta.geometricanalysis import *
 import itertools
 from pynta.calculator import HarmonicallyForcedXTB
 from pynta.mol import *
 from copy import deepcopy
-from pysidt import *
+from pysidt.sidt import *
 import pynta.models
+import logging
 
 def get_unique_optimized_adsorbates(rxn,adsorbates_path,mol_dict,gratom_to_molecule_surface_atom_maps,sites,nslab):
     """
@@ -152,16 +154,23 @@ def get_unique_TS_structs(adsorbates,species_names,slab,slab_sites,site_adjacenc
     Generate unique initial structures for TS guess generation
     """
     tsstructs = []
+    tsmols = []
     ordered_adsorbates = [adsorbates[name] for name in species_names]
     for adss in itertools.product(*ordered_adsorbates):
         if num_surf_sites[0] > 0:
             adslab = adss[0].copy()
+            adslabmol,neighbor_sites,ninds = generate_adsorbate_2D(adslab, slab_sites, site_adjacency, nslab, max_dist=np.inf, cut_off_num=None, allowed_structure_site_structures=None,
+                          keep_binding_vdW_bonds=True, keep_vdW_surface_bonds=False)
         else:
             adslab = slab.copy()
+            adslabmol,neighbor_sites,ninds = generate_adsorbate_2D(adslab, slab_sites, site_adjacency, nslab, max_dist=np.inf, cut_off_num=None, allowed_structure_site_structures=None,
+                          keep_binding_vdW_bonds=True, keep_vdW_surface_bonds=False)
             site = slab_sites[0]
-            add_adsorbate_to_site(adslab,adsorbate=adss[0],surf_ind=0,site=site,height=gas_height)
+            add_adsorbate_to_site(adslab,adsorbate=adslab,surf_ind=0,site=site,height=gas_height)
+            adslabmol = adslabmol.merge(mol_dict[species_names[0]])
         if len(adss) == 1:
             tsstructs.append(adslab)
+            tsmols.append(adslabmol)
         else:
             if num_surf_sites[1] == 1:
                 name = species_names[1]
@@ -177,8 +186,10 @@ def get_unique_TS_structs(adsorbates,species_names,slab,slab_sites,site_adjacenc
                     adslab2 = adslab.copy()
                     if not any(sites_match(site,osite,slab) for osite in occ) and site["site"] == sitetype1:
                         add_adsorbate_to_site(adslab2,adsorbate=ad,surf_ind=surf_ind1,site=site,height=height1)
+                        adslabmol2 = add_coadsorbate_2D(adslabmol,site,mol_dict[species_names[1]],slab,neighbor_sites,[i for i,a in enumerate(mol_dict[species_names[1]].atoms) if a.is_surface_site()])
                         if len(adss) == 2:
                             tsstructs.append(adslab2)
+                            tsmols.append(adslabmol2)
                         else:
                             if num_surf_sites[2] == 1:
                                 name2 = species_names[2]
@@ -190,12 +201,14 @@ def get_unique_TS_structs(adsorbates,species_names,slab,slab_sites,site_adjacenc
                                 height2 = list(site_lengths2.values())[0]
                                 surf_ind2 = list(gratom_to_molecule_surface_atom_maps[name2].keys())[0]
                                 occ2 = get_occupied_sites(adslab2,slab_sites,nslab)
-                                for site2 in adcov2.get_sites():
+                                for site2 in slab_sites:
                                     adslab3 = adslab2.copy()
                                     if not any(sites_match(site2,osite,slab) for osite in occ2) and site2["site"] == sitetype2:
                                         add_adsorbate_to_site(adslab3,adsorbate=ad2,surf_ind=surf_ind2,site=site2,height=height2)
+                                        adslabmol3 = add_coadsorbate_2D(adslabmol2,site2,mol_dict[species_names[2]],slab,neighbor_sites,[i for i,a in enumerate(mol_dict[species_names[2]].atoms) if a.is_surface_site()])
                                         if len(adss) == 3:
                                             tsstructs.append(adslab3)
+                                            tsmols.append(adslabmol3)
                                         else:
                                             raise ValueError("Cannot handle more than three reactants")
                             else:
@@ -205,8 +218,13 @@ def get_unique_TS_structs(adsorbates,species_names,slab,slab_sites,site_adjacenc
                                 while any(sites_match(sitel2,osite,slab) for osite in occl2): #while occupied
                                     c += 1
                                     sitel2 = slab_sites[c]
-                                add_adsorbate_to_site(adslab,adsorbate=adss[2],surf_ind=0,site=sitel2,height=gas_height)
-
+                                add_adsorbate_to_site(adslab2,adsorbate=adss[2],surf_ind=0,site=sitel2,height=gas_height)
+                                adslabmol3 = adslabmol2.merge(mol_dict[species_names[2]])
+                                if len(adss) == 3:
+                                    tsstructs.append(adslab2)
+                                    tsmols.append(adslabmol3)
+                                else:
+                                    raise ValueError("Cannot handle more than three reactants")
             elif num_surf_sites[1] == 0:
                 occl1 = get_occupied_sites(adslab,slab_sites,nslab)
                 c = 0
@@ -216,8 +234,10 @@ def get_unique_TS_structs(adsorbates,species_names,slab,slab_sites,site_adjacenc
                     sitel1 = slab_sites[c]
 
                 add_adsorbate_to_site(adslab,adsorbate=adss[1],surf_ind=0,site=sitel1,height=gas_height)
+                adslabmol2 = adslabmol.merge(mol_dict[species_names[1]])
                 if len(adss) == 2:
                     tsstructs.append(adslab)
+                    tsmols.append(adslabmol2)
                 else:
                     c = 0
                     site2 = slab_sites[c]
@@ -225,15 +245,123 @@ def get_unique_TS_structs(adsorbates,species_names,slab,slab_sites,site_adjacenc
                         c += 1
                         site2 = slab_sites[c]
                     add_adsorbate_to_site(adslab,adsorbate=adss[2],surf_ind=0,site=site2,height=gas_height)
+                    adslabmol3 = adslabmol2.merge(mol_dict[species_names[2]])
                     if len(adss) == 3:
                         tsstructs.append(adslab)
+                        tsmols.append(adslabmol3)
                     else:
                         raise ValueError("Cannot handle more than three reactants")
 
-    unique_tsstructs = get_unique_sym_structs(tsstructs)
-    return unique_tsstructs
+    unique_tsstructs = []
+    unique_tsmols = []
+    for i,m1 in enumerate(tsmols):
+        for j,m2 in enumerate(unique_tsmols):
+            if m1.is_isomorphic(m2,save_order=True):
+                break 
+        else:
+            unique_tsmols.append(m1)
+            unique_tsstructs.append(tsstructs[i])
+    
+    return unique_tsstructs,unique_tsmols,neighbor_sites,ninds
 
-def generate_constraints_harmonic_parameters(tsstructs,adsorbates,slab,forward_template,
+def get_unique_TS_templates_site_pairings(tsstructs,tsmols,forward_template,reverse_template,nsites,slab,neighbor_sites,ninds,slab_sites,nslab):
+    broken_bonds,formed_bonds = get_broken_formed_bonds(forward_template,reverse_template)
+    template = forward_template.copy(deep=True)
+    for i,a in enumerate(template.atoms): #unlabel atoms that do not participate in reactions
+        if a.label != "":
+            for bd in list(broken_bonds)+list(formed_bonds):
+                label1,label2 = list(bd)
+                if label1 == a.label or label2 == a.label:
+                    break
+            else:
+                a.label = ""
+    
+    empty_site_labels = [a.label for a in template.atoms if a.is_surface_site() and all(a2.is_surface_site() for a2 in a.bonds.keys())]
+    
+    unique_tsstructs = []
+    unique_tsmols = []
+    for i,tsmol in enumerate(tsmols):
+        labeled_tsmols = get_labeled_full_TS_mol(template,tsmol)
+        for labeled_tsmol in labeled_tsmols:
+            unique_tsstructs.append(tsstructs[i].copy())
+            unique_tsmols.append(labeled_tsmol)
+    
+    out_tsstructs = []
+    out_tsmols = [] 
+    out_target_sites = [] 
+    label_site_mappings = []
+    for i,tsstruct in enumerate(unique_tsstructs):
+        occ = get_occupied_sites(tsstruct,neighbor_sites,nslab)
+        unocc = [site for site in neighbor_sites if not any(sites_match(site,osite,slab) for osite in occ)]
+        pd = [unocc for i in range(nsites)]
+        for sites in itertools.product(*pd):
+            unique_sites = []
+            for site in sites:
+                for site2 in unique_sites:
+                    if site == site2:
+                        break
+                else:
+                    unique_sites.append(site)
+            if len(unique_sites) < len(sites): #no duplicate sites
+                continue
+            label_site_mapping = dict()
+            tsmol = unique_tsmols[i].copy(deep=True)
+            for j,s in enumerate(sites):
+                ind = [i for i,x in enumerate(neighbor_sites) if sites_match(s,x,slab)][0]
+                label = empty_site_labels[j]
+                tsmol.atoms[ind].label = label
+                label_site_mapping[label] = s
+            
+            for bd in list(broken_bonds)+list(formed_bonds): #create reaction bonds in tsmol
+                label1,label2 = list(bd)
+                if label1 == "" or label2 == "":
+                    continue 
+                else:
+                    a1 = tsmol.get_labeled_atoms(label1)[0]
+                    a2 = tsmol.get_labeled_atoms(label2)[0]
+                    if tsmol.has_bond(a1,a2):
+                        bdts = tsmol.get_bond(a1,a2)
+                        bdts.set_order_str("R")
+                    else:
+                        tsmol.add_bond(Bond(a1,a2,order="R"))
+            
+            for bd in tsmol.get_all_edges(): #Our TS representation isn't entirely unique, but the representation fix_bond_orders generates is consistent and what we train the SIDT on
+                if bd.is_reaction_bond() or (bd.atom1.is_surface_site() and bd.atom2.is_surface_site()):
+                    continue 
+                elif bd.atom1.is_surface_site() or bd.atom2.is_surface_site(): #surface to adsorbate bond
+                    bd.set_order_str("vdW")
+                else:
+                    bd.set_order_str("S")
+                
+            fix_bond_orders(tsmol,allow_failure=True,keep_binding_vdW_bonds=True,keep_vdW_surface_bonds=True)
+            tsmol.update_multiplicity()
+            tsmol.update_atomtypes()
+            tsmol.update_connectivity_values()
+            tsmol.identify_ring_membership()
+            out_tsstructs.append(tsstruct.copy())
+            out_tsmols.append(tsmol)
+            out_target_sites.append(sites)
+            label_site_mappings.append(label_site_mapping)
+    
+    unique_out_tsstructs = []
+    unique_out_tsmols = [] 
+    unique_out_target_sites = [] 
+    unique_label_site_mappings = []
+    for i,m in enumerate(out_tsmols):
+        for j,m2 in enumerate(unique_out_tsmols):
+            if m.is_isomorphic(m2,save_order=True):
+                break 
+        else:
+            unique_out_tsstructs.append(out_tsstructs[i])
+            unique_out_tsmols.append(out_tsmols[i])
+            unique_out_target_sites.append(out_target_sites[i])
+            unique_label_site_mappings.append(label_site_mappings[i])
+    
+    return unique_out_tsstructs,unique_out_tsmols,unique_out_target_sites,unique_label_site_mappings
+                
+        
+    
+def generate_constraints_harmonic_parameters(tsstructs,tsmols,label_site_mappings,adsorbates,slab,forward_template,
                                              reverse_template,template_name,template_reversed,
                                             ordered_names,reverse_names,mol_dict,gratom_to_molecule_atom_maps,
                                             gratom_to_molecule_surface_atom_maps,nslab,facet,metal,slab_sites,site_adjacency):
@@ -243,7 +371,6 @@ def generate_constraints_harmonic_parameters(tsstructs,adsorbates,slab,forward_t
     constraint_lists = []
     atom_bond_potential_lists = []
     site_bond_potential_lists = []
-    site_bond_dict_list = []
     out_structs = []
     
     nodes_file = os.path.join(os.path.split(pynta.models.__file__)[0],"TS_tree_nodes.json")
@@ -311,13 +438,14 @@ def generate_constraints_harmonic_parameters(tsstructs,adsorbates,slab,forward_t
         site_dict = {key: np.mean(value) for key,value in site_dict.items()}
         rev_mols_info.append({"bondlengths":ave_bdlength,"site_dict":site_dict})
 
-    for tsstruct in tsstructs:
+    for i,tsstruct in enumerate(tsstructs):
         tsstruct_valid = True
         atom_bond_potentials = []
         site_bond_potentials = []
         fixed_bond_pairs = []
-        site_bond_dict = dict()
-
+        tsmol = tsmols[i]
+        label_site_mapping = label_site_mappings[i]
+        
         occ = get_occupied_sites(tsstruct,slab_sites,nslab)
         
         if len(occ) < len(forward_template.get_adatoms()): #if we don't identify as many occupied sites as we should skip this structure
@@ -371,7 +499,7 @@ def generate_constraints_harmonic_parameters(tsstructs,adsorbates,slab,forward_t
                     pos = deepcopy(occ_site_pos[ase_ind1])
                     pos[2] += dwell
                     ind = ase_ind1
-                deq,k = estimate_deq_k(sidt,labels,dwell,forward_template,reverse_template,template_name,template_reversed,broken_bonds,formed_bonds,sitetype=sitetype)
+                deq,k = estimate_deq_k(sidt,labels,dwell,tsmol)
                 if pos is not None:
                     d = {"ind":ind,"site_pos":pos,"k":k,"deq":deq}
                     site_bond_potentials.append(d)
@@ -387,7 +515,7 @@ def generate_constraints_harmonic_parameters(tsstructs,adsorbates,slab,forward_t
                     pos = deepcopy(occ_site_pos[ase_ind2])
                     pos[2] += dwell #shift position up to atom position
                     ind = ase_ind2
-                    deq,k = estimate_deq_k_fixed_surf_bond(labels,dwell,forward_template,reverse_template,template_name,template_reversed,broken_bonds,formed_bonds,sitetype=sitetype)
+                    deq,k = estimate_deq_k_fixed_surf_bond(labels,dwell,tsmol)
                     d = {"ind":ind,"site_pos":pos,"k":k,"deq":deq}
                     site_bond_potentials.append(d)
                 else:
@@ -396,7 +524,7 @@ def generate_constraints_harmonic_parameters(tsstructs,adsorbates,slab,forward_t
                     pos = deepcopy(occ_site_pos[ase_ind1])
                     pos[2] += dwell #shift position up to atom position
                     ind = ase_ind1
-                    deq,k = estimate_deq_k_fixed_surf_bond(labels,dwell,forward_template,reverse_template,template_name,template_reversed,broken_bonds,formed_bonds,sitetype=sitetype)
+                    deq,k = estimate_deq_k_fixed_surf_bond(labels,dwell,tsmol)
                     d = {"ind":ind,"site_pos":pos,"k":k,"deq":deq}
                     site_bond_potentials.append(d)
 
@@ -422,7 +550,7 @@ def generate_constraints_harmonic_parameters(tsstructs,adsorbates,slab,forward_t
             if ase_ind1 and ase_ind2: #bond between atoms
                 dwell = rev_mols_info[ind1_mol_r]["bondlengths"][ind1r_mol,ind2r_mol]
                 sitetype = None
-                deq,k = estimate_deq_k(sidt,labels,dwell,forward_template,reverse_template,template_name,template_reversed,broken_bonds,formed_bonds,sitetype=sitetype)
+                deq,k = estimate_deq_k(sidt,labels,dwell,tsmol)
                 d = {"ind1":ase_ind1,"ind2":ase_ind2,"k":k,"deq":deq}
                 atom_bond_potentials.append(d)
             elif ase_ind1 is None: #surface bond to ase_ind2
@@ -446,23 +574,27 @@ def generate_constraints_harmonic_parameters(tsstructs,adsorbates,slab,forward_t
                 if reusing_site and (reused_site_type not in [x[1] for x in site_dict.keys()]): #the site one of the reactants is attached to is not stable in the products
                     print("{reused_site} not in list of sites {site_list}".format(reused_site=reused_site_type,site_list=[x[1] for x in site_dict.keys()]))
                     tsstruct_valid = False
-                    break
-
-                site_bond_dict[ase_ind2] = dict()
+                    break                
+                
+                site = label_site_mapping[[x for x in labels if tsmol.get_labeled_atoms(x)[0].is_surface_site()][0]]
                 for (mol_ind,sitetype) in site_dict.keys():
-                    if mol_ind == ind1r_mol:
+                    if mol_ind == ind1r_mol and site["site"] == sitetype:
                         dwell = site_dict[(mol_ind,sitetype)]
-                        deq,k = estimate_deq_k(sidt,labels,dwell,forward_template,reverse_template,template_name,template_reversed,broken_bonds,formed_bonds,sitetype=sitetype)
+                        deq,k = estimate_deq_k(sidt,labels,dwell,tsmol)
                         if reusing_site: #attaching to a site that was bonded to another atom
                             if reused_site_type == sitetype:
                                 pos = deepcopy(reused_site_pos)
                                 pos[2] += dwell
                                 d = {"ind":ase_ind2,"site_pos":pos,"k":k,"deq":deq}
                                 site_bond_potentials.append(d)
-                                if ase_ind2 in site_bond_dict.keys():
-                                    del site_bond_dict[ase_ind2]
                         else: #attaching to a new empty site
-                            site_bond_dict[ase_ind2][sitetype] = {"deq":deq,"k":k,"dwell":dwell}
+                            pos = deepcopy(site["position"])
+                            pos[2] += dwell
+                            d = {"ind":ase_ind2,"site_pos":pos,"k":k,"deq":deq}
+                            site_bond_potentials.append(d)
+                        break
+                else:
+                    raise ValueError
 
             else:
                 site_dict = rev_mols_info[ind2_mol_r]["site_dict"]
@@ -486,22 +618,26 @@ def generate_constraints_harmonic_parameters(tsstructs,adsorbates,slab,forward_t
                     print("{reused_site} not in list of sites {site_list}".format(reused_site=reused_site_type,site_list=[x[1] for x in site_dict.keys()]))
                     tsstruct_valid = False
                     break
-
-                site_bond_dict[ase_ind1] = dict()
+                
+                site = label_site_mapping[[x for x in labels if tsmol.get_labeled_atoms(x)[0].is_surface_site()][0]]
                 for (mol_ind,sitetype) in site_dict.keys():
-                    if mol_ind == ind2r_mol:
+                    if mol_ind == ind2r_mol and site["site"] == sitetype:
                         dwell = site_dict[(mol_ind,sitetype)]
-                        deq,k = estimate_deq_k(sidt,labels,dwell,forward_template,reverse_template,template_name,template_reversed,broken_bonds,formed_bonds,sitetype=sitetype)
+                        deq,k = estimate_deq_k(sidt,labels,dwell,tsmol)
                         if reusing_site: #attaching to a site that was bonded to another atom
                             if reused_site_type == sitetype:
                                 pos = deepcopy(reused_site_pos)
                                 pos[2] += dwell
                                 d = {"ind":ase_ind1,"site_pos":pos,"k":k,"deq":deq}
                                 site_bond_potentials.append(d)
-                                if ase_ind1 in site_bond_dict.keys():
-                                    del site_bond_dict[ase_ind1]
                         else:
-                            site_bond_dict[ase_ind1][sitetype] = {"deq":deq,"k":k,"dwell":dwell}
+                            pos = deepcopy(site["position"])
+                            pos[2] += dwell
+                            d = {"ind":ase_ind1,"site_pos":pos,"k":k,"deq":deq}
+                            site_bond_potentials.append(d)
+                        break
+                else:
+                    raise ValueError
 
         if tsstruct_valid:
             if fixed_bond_pairs:
@@ -511,49 +647,41 @@ def generate_constraints_harmonic_parameters(tsstructs,adsorbates,slab,forward_t
                 constraint_lists.append(["freeze slab"])
             atom_bond_potential_lists.append(atom_bond_potentials)
             site_bond_potential_lists.append(site_bond_potentials)
-            site_bond_dict_list.append(site_bond_dict)
             out_structs.append(tsstruct)
 
-    return out_structs,constraint_lists,atom_bond_potential_lists,site_bond_potential_lists,site_bond_dict_list
+    return out_structs,constraint_lists,atom_bond_potential_lists,site_bond_potential_lists
 
-def estimate_deq_k(sidt,labels,dwell,forward_template,reverse_template,template_name,template_reversed,
-    broken_bonds,formed_bonds,sitetype=None):
+def estimate_deq_k(sidt,labels,dwell,tsmol):
     """
     Estimate the equilibrium bond length and force constant for broken/forming bonds
     0--(1--2)--3
     """
-    interactions = broken_bonds | formed_bonds
-    formed = labels in formed_bonds
-    mol = deepcopy(forward_template)
-    all_labels = set()
-    for inter in interactions:
-        label_list = list(inter)
-        all_labels.add(label_list[0])
-        all_labels.add(label_list[1])
-        a1 = mol.get_labeled_atoms(label_list[0])[0]
-        a2 = mol.get_labeled_atoms(label_list[1])[0]
-        if mol.has_bond(a1,a2):
-            bd = mol.get_bond(a1,a2)
-            bd.set_order_str('R')
+    mol = tsmol.copy(deep=True)
+    
+    surface_bond = False
+    for a in mol.atoms:
+        if a.label == "":
+            continue 
+        elif a.label in labels:
+            a.label = "*"
+            if a.is_surface_site():
+                surface_bond = True
         else:
-            mol.add_bond(Bond(a1,a2,order='R'))
+            a.label = ""
     
-    for label in all_labels:
-        a = mol.get_labeled_atoms(label)[0]
-        if label in labels:
-            a.label = '*'
-        else:
-            a.label = ''
+    logv,tr = sidt.evaluate(mol,trace=True)
     
-    v = sidt.evaluate(mol)
+    if tr == "Root":
+        logging.warning("Bond factor estimation used Root group in SIDT")
     
-    if any([a.is_surface_site() for a in mol.get_labeled_atoms('*')]):
+    v = np.exp(logv)
+    
+    if surface_bond:
         return dwell*(v-1.0),100.0
     else:
         return dwell*v,100.0
 
-def estimate_deq_k_fixed_surf_bond(labels,dwell,forward_template,reverse_template,template_name,template_reversed,
-    broken_bonds,formed_bonds,sitetype=None):
+def estimate_deq_k_fixed_surf_bond(labels,dwell,tsmol):
     """
     Estimate the equilibrium bond length and force constant for surface bonds
     """
@@ -611,7 +739,7 @@ def get_surface_forming_bond_pairings(tsstructs,slab,atom_bond_potential_lists,
                     site = sites[j]
                     add_adsorbate_to_site(geo,adsorbate=tag,surf_ind=0,site=site,height=1.5)
                     params = bond_dict[site["site"]].copy()
-                    params["site_pos"] = site["position"]
+                    params["site_pos"] = deepcopy(site["position"])
                     params["site_pos"][2] += params["dwell"]
                     del params["dwell"]
                     params["ind"] = atm_ind
@@ -650,7 +778,7 @@ def sites_to_site_bond_potentials(sites,site_bond_dicts,atm_inds):
             bond_dict = site_bond_dicts[atm_ind]
             if site["site"] in bond_dict.keys():
                 params = bond_dict[site["site"]].copy()
-                params["site_pos"] = site["position"]
+                params["site_pos"] = deepcopy(site["position"])
                 params["ind"] = atm_ind
                 params_list.append(params)
         site_bond_potentials[atm_ind] = params_list
