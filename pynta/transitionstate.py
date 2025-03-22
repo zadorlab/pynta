@@ -188,10 +188,11 @@ def get_unique_TS_structs(adsorbates,species_names,slab,slab_sites,site_adjacenc
                 occ = get_occupied_sites(adslab,slab_sites,nslab)
                 for site in slab_sites:
                     adslab2 = adslab.copy()
+                    adslabmol2 = adslabmol.copy(deep=True)
                     if not any(sites_match(site,osite,slab) for osite in occ) and site["site"] == sitetype1:
                         add_adsorbate_to_site(adslab2,adsorbate=ad,surf_ind=surf_ind1,site=site,height=height1)
                         adslabmol_ind2 = [i for i,s in enumerate(neighbor_sites) if sites_match(s,site,slab)][0]
-                        adslabmol2 = add_coadsorbate_2D(adslabmol,site,mol_dict[species_names[1]],slab,neighbor_sites,[adslabmol_ind2])
+                        adslabmol2 = add_coadsorbate_2D(adslabmol2,site,mol_dict[species_names[1]],slab,neighbor_sites,[adslabmol_ind2])
                         if len(adss) == 2:
                             tsstructs.append(adslab2)
                             tsmols.append(adslabmol2)
@@ -208,10 +209,11 @@ def get_unique_TS_structs(adsorbates,species_names,slab,slab_sites,site_adjacenc
                                 occ2 = get_occupied_sites(adslab2,slab_sites,nslab)
                                 for site2 in slab_sites:
                                     adslab3 = adslab2.copy()
+                                    adslabmol3 = adslabmol2.copy(deep=True)
                                     if not any(sites_match(site2,osite,slab) for osite in occ2) and site2["site"] == sitetype2:
                                         add_adsorbate_to_site(adslab3,adsorbate=ad2,surf_ind=surf_ind2,site=site2,height=height2)
                                         adslabmol_ind3 = [i for i,s in enumerate(neighbor_sites) if sites_match(s,site2,slab)][0]
-                                        adslabmol3 = add_coadsorbate_2D(adslabmol2,site2,mol_dict[species_names[2]],slab,neighbor_sites,[adslabmol_ind3])
+                                        adslabmol3 = add_coadsorbate_2D(adslabmol3,site2,mol_dict[species_names[2]],slab,neighbor_sites,[adslabmol_ind3])
                                         if len(adss) == 3:
                                             tsstructs.append(adslab3)
                                             tsmols.append(adslabmol3)
