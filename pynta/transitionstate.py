@@ -191,7 +191,17 @@ def get_unique_TS_structs(adsorbates,species_names,slab,slab_sites,site_adjacenc
                     if not any(sites_match(site,osite,slab) for osite in occ) and site["site"] == sitetype1:
                         add_adsorbate_to_site(adslab2,adsorbate=ad,surf_ind=surf_ind1,site=site,height=height1)
                         adslabmol_ind2 = [i for i,s in enumerate(neighbor_sites) if sites_match(s,site,slab)][0]
+                        logging.error("adslabmol:")
+                        logging.error(adslabmol.to_adjacency_list())
+                        logging.error("site")
+                        logging.error(site)
+                        logging.error("Mol")
+                        logging.error(mol_dict[species_names[1]].to_adjacency_list())
+                        logging.error("ind:")
+                        logging.error(adslabmol_ind2)
                         adslabmol2 = add_coadsorbate_2D(adslabmol,site,mol_dict[species_names[1]],slab,neighbor_sites,[adslabmol_ind2])
+                        logging.error("adslabmol2:")
+                        logging.error(adslabmol2.to_adjacency_list())
                         if len(adss) == 2:
                             tsstructs.append(adslab2)
                             tsmols.append(adslabmol2)
