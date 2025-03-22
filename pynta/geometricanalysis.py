@@ -297,8 +297,10 @@ def generate_adsorbate_2D(atoms, sites, site_adjacency, nslab, max_dist=3.0, cut
             
         fix_bond_orders(admol,keep_binding_vdW_bonds=keep_binding_vdW_bonds,keep_vdW_surface_bonds=keep_vdW_surface_bonds)
     
+    admol.update_multiplicity()
     admol.update_atomtypes()
     admol.update_connectivity_values()
+    admol.identify_ring_membership()
     
     return admol,neighbor_sites,ninds
 
@@ -547,8 +549,11 @@ def generate_TS_2D(atoms, info_path,  metal, facet, sites, site_adjacency, nslab
             if Nrxnbd >= 2 and abs(Nrxnbd/2 - surfbds[0].order) < 1e-3:
                 admol.remove_edge(surfbds[0])
         
+    admol.update_multiplicity()
     admol.update_atomtypes()
     admol.update_connectivity_values()
+    admol.identify_ring_membership()
+    
     for i in range(len(neighbor_sites)):
         assert neighbor_sites[i]["site"] == admol.atoms[i].site
         assert neighbor_sites[i]["morphology"] == admol.atoms[i].morphology
@@ -592,6 +597,7 @@ def split_ts_to_reactants(ts2d,tagatoms=False,keep_binding_vdW_bonds=False,keep_
             fix_bond_orders(r,keep_binding_vdW_bonds=keep_binding_vdW_bonds,keep_vdW_surface_bonds=keep_vdW_surface_bonds)
             r.update(sort_atoms=False)
             r.update_connectivity_values()
+            r.identify_ring_membership()
             rs.append(r)
         except (TooManyElectronsException,ValueError,FailedFixBondsException):
             pass
@@ -622,6 +628,7 @@ def generate_allowed_structure_site_structures(adsorbate_dir,sites,site_adjacenc
             else:
                 m.update_atomtypes()
                 m.update_connectivity_values()
+                m.identify_ring_membership()
                 mols.append(m)
         if mols:
             allowed_structure_site_structures.append(mols)
@@ -1248,4 +1255,5 @@ def add_coadsorbate_2D(mol2D,site,coad2D,slab,neighbor_sites_2D,site_2D_inds):
     mol2D.multiplicity = mol2D.get_radical_count() + 1
     mol2D.update_atomtypes()
     mol2D.update_connectivity_values()
+    mol2D.identify_ring_membership()
     return mol2D
