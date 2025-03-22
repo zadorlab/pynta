@@ -186,7 +186,8 @@ def get_unique_TS_structs(adsorbates,species_names,slab,slab_sites,site_adjacenc
                     adslab2 = adslab.copy()
                     if not any(sites_match(site,osite,slab) for osite in occ) and site["site"] == sitetype1:
                         add_adsorbate_to_site(adslab2,adsorbate=ad,surf_ind=surf_ind1,site=site,height=height1)
-                        adslabmol2 = add_coadsorbate_2D(adslabmol,site,mol_dict[species_names[1]],slab,neighbor_sites,[i for i,a in enumerate(mol_dict[species_names[1]].atoms) if a.is_surface_site()])
+                        adslabmol_ind2 = [i for i,s in enumerate(neighbor_sites) if sites_match(s,site,slab)][0]
+                        adslabmol2 = add_coadsorbate_2D(adslabmol,site,mol_dict[species_names[1]],slab,neighbor_sites,[adslabmol_ind2])
                         if len(adss) == 2:
                             tsstructs.append(adslab2)
                             tsmols.append(adslabmol2)
@@ -205,7 +206,8 @@ def get_unique_TS_structs(adsorbates,species_names,slab,slab_sites,site_adjacenc
                                     adslab3 = adslab2.copy()
                                     if not any(sites_match(site2,osite,slab) for osite in occ2) and site2["site"] == sitetype2:
                                         add_adsorbate_to_site(adslab3,adsorbate=ad2,surf_ind=surf_ind2,site=site2,height=height2)
-                                        adslabmol3 = add_coadsorbate_2D(adslabmol2,site2,mol_dict[species_names[2]],slab,neighbor_sites,[i for i,a in enumerate(mol_dict[species_names[2]].atoms) if a.is_surface_site()])
+                                        adslabmol_ind3 = [i for i,s in enumerate(neighbor_sites) if sites_match(s,site2,slab)][0]
+                                        adslabmol3 = add_coadsorbate_2D(adslabmol2,site2,mol_dict[species_names[2]],slab,neighbor_sites,[adslabmol_ind3])
                                         if len(adss) == 3:
                                             tsstructs.append(adslab3)
                                             tsmols.append(adslabmol3)
