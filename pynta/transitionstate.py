@@ -168,6 +168,10 @@ def get_unique_TS_structs(adsorbates,species_names,slab,slab_sites,site_adjacenc
             site = slab_sites[0]
             add_adsorbate_to_site(adslab,adsorbate=adslab,surf_ind=0,site=site,height=gas_height)
             adslabmol = adslabmol.merge(mol_dict[species_names[0]])
+            adslabmol.update_multiplicity()
+            adslabmol.update_atomtypes()
+            adslabmol.update_connectivity_values()
+            adslabmol.identify_ring_membership()
         if len(adss) == 1:
             tsstructs.append(adslab)
             tsmols.append(adslabmol)
@@ -222,6 +226,10 @@ def get_unique_TS_structs(adsorbates,species_names,slab,slab_sites,site_adjacenc
                                     sitel2 = slab_sites[c]
                                 add_adsorbate_to_site(adslab2,adsorbate=adss[2],surf_ind=0,site=sitel2,height=gas_height)
                                 adslabmol3 = adslabmol2.merge(mol_dict[species_names[2]])
+                                adslabmol3.update_multiplicity()
+                                adslabmol3.update_atomtypes()
+                                adslabmol3.update_connectivity_values()
+                                adslabmol3.identify_ring_membership()
                                 if len(adss) == 3:
                                     tsstructs.append(adslab2)
                                     tsmols.append(adslabmol3)
@@ -237,6 +245,10 @@ def get_unique_TS_structs(adsorbates,species_names,slab,slab_sites,site_adjacenc
 
                 add_adsorbate_to_site(adslab,adsorbate=adss[1],surf_ind=0,site=sitel1,height=gas_height)
                 adslabmol2 = adslabmol.merge(mol_dict[species_names[1]])
+                adslabmol2.update_multiplicity()
+                adslabmol2.update_atomtypes()
+                adslabmol2.update_connectivity_values()
+                adslabmol2.identify_ring_membership()
                 if len(adss) == 2:
                     tsstructs.append(adslab)
                     tsmols.append(adslabmol2)
@@ -248,6 +260,10 @@ def get_unique_TS_structs(adsorbates,species_names,slab,slab_sites,site_adjacenc
                         site2 = slab_sites[c]
                     add_adsorbate_to_site(adslab,adsorbate=adss[2],surf_ind=0,site=site2,height=gas_height)
                     adslabmol3 = adslabmol2.merge(mol_dict[species_names[2]])
+                    adslabmol3.update_multiplicity()
+                    adslabmol3.update_atomtypes()
+                    adslabmol3.update_connectivity_values()
+                    adslabmol3.identify_ring_membership()
                     if len(adss) == 3:
                         tsstructs.append(adslab)
                         tsmols.append(adslabmol3)
