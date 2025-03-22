@@ -284,11 +284,7 @@ def get_unique_TS_structs(adsorbates,species_names,slab,slab_sites,site_adjacenc
     unique_tsmols = []
     for i,m1 in enumerate(tsmols):
         for j,m2 in enumerate(unique_tsmols):
-            try:
-                iso = m1.is_isomorphic(m2,save_order=True)
-            except:
-                raise ValueError((m1.to_adjacency_list(),m2.to_adjacency_list()))
-            if iso:
+            if m1.is_isomorphic(m2,save_order=True):
                 break 
         else:
             unique_tsmols.append(m1)
