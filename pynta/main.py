@@ -391,12 +391,12 @@ class Pynta:
                     xyz = os.path.join(self.path,"Adsorbates",adsname,str(prefix),str(prefix)+".xyz")
                     xyzs.append(xyz)
                     fwopt = optimize_firework(os.path.join(self.path,"Adsorbates",adsname,str(prefix),str(prefix)+"_init.xyz"),
-                        self.machine,self.software,"weakopt_"+str(prefix),
+                        self.software,self.machine,"weakopt_"+str(prefix),
                         opt_method="MDMin",opt_kwargs={'dt': 0.05},socket=self.socket,software_kwargs=software_kwargs,
                         run_kwargs={"fmax" : 0.5, "steps" : 70},parents=[],constraints=constraints,
                         ignore_errors=True, metal=self.metal, facet=self.surface_type, target_site_num=target_site_num, priority=3)
                     fwopt2 = optimize_firework(os.path.join(self.path,"Adsorbates",adsname,str(prefix),"weakopt_"+str(prefix)+".xyz"),
-                        self.machine,self.software,str(prefix),
+                        self.software,self.machine,str(prefix),
                         opt_method="QuasiNewton",socket=self.socket,software_kwargs=software_kwargs,
                         run_kwargs={"fmax" : self.fmaxopt, "steps" : 70},parents=[fwopt],constraints=constraints,
                         ignore_errors=True, metal=self.metal, facet=self.surface_type, target_site_num=target_site_num, priority=3, fmaxhard=self.fmaxopthard,
@@ -406,7 +406,7 @@ class Pynta:
                     optfws2.append(fwopt2)
 
                 vib_obj_dict = {"software": self.software, "label": adsname, "software_kwargs": software_kwargs,
-                    "constraints": vib_constraints}
+                    "machine": self.machine,"constraints": vib_constraints}
 
                 cfw = collect_firework(xyzs,True,["vibrations_firework"],[vib_obj_dict],["vib.json"],[],parents=optfws2,label=adsname)
                 self.adsorbate_fw_dict[adsname] = optfws2
@@ -458,7 +458,7 @@ class Pynta:
                         run_kwargs={"fmax" : 0.5, "steps" : 70},parents=[],constraints=constraints,
                         ignore_errors=True, metal=self.metal, facet=self.surface_type, target_site_num=target_site_num, priority=3)
                     fwopt2 = optimize_firework(os.path.join(self.path,"Adsorbates",ad,str(prefix),"weakopt_"+str(prefix)+".xyz"),
-                        self.machine,self.software,str(prefix),
+                        self.software,self.machine,str(prefix),
                         opt_method="QuasiNewton",socket=self.socket,software_kwargs=software_kwargs,
                         run_kwargs={"fmax" : self.fmaxopt, "steps" : 70},parents=[fwopt],constraints=constraints,
                         ignore_errors=True, metal=self.metal, facet=self.surface_type, target_site_num=target_site_num, priority=3)
@@ -466,8 +466,8 @@ class Pynta:
                     optfws.append(fwopt2)
                     optfws2.append(fwopt2)
 
-                vib_obj_dict = {"software": self.software, "label": adsname, "software_kwargs": software_kwargs,
-                    "machine": self.machine, "constraints": ["freeze up to "+str(self.nslab)]}
+                vib_obj_dict = {"software": self.software, "label": ad, "software_kwargs": software_kwargs,
+                    "machine": self.machine,"constraints": vib_constraints}
 
                 cfw = collect_firework(xyzs,True,["vibrations_firework"],[vib_obj_dict],["vib.json"],[True,False],parents=optfws2,label=ad,allow_fizzled_parents=False)
                 self.adsorbate_fw_dict[ad] = optfws2
@@ -685,7 +685,7 @@ class Pynta:
                         else:
                             print(f'No directory named "vib" found in {src}.')
                             print('No vibration calculations executed: Check optimization runs are finished and optimized geometries are collected.')              
-                            
+
                 # Keep on with the task_state != 'COMPLETED'
                 self.launchpad.rerun_fw(task_id)
                 self.launchpad.update_spec([task_id], newd)
