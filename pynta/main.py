@@ -84,6 +84,7 @@ class Pynta:
         self.adsorbate_fw_dict = dict()
         self.software_kwargs = software_kwargs
         self.irc_mode = irc_mode
+        self.machine = machine #need to specify 'alcf' or other machine of choice
 
         self.harm_f_software = harm_f_software
         self.harm_f_software_kwargs = harm_f_software_kwargs
