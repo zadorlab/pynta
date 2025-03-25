@@ -369,6 +369,158 @@ class Pynta:
 
         self.gratom_to_molecule_atom_maps = gratom_to_molecule_atom_maps
         self.gratom_to_molecule_surface_atom_maps = gratom_to_molecule_surface_atom_maps
+        if not skip_structs:
+            self.adsorbate_structures = structures
+
+    def setup_adsorbates(self,initial_guess_finished=False):
+        """
+        Attaches each adsorbate structure to the slab and sets up fireworks to
+        first optimize each possible geometry and then run vibrational calculations on each unique final geometry
+        """
+        if not initial_guess_finished:
+            adsorbate_dict = dict()
+            for sp_symbol, adsorbate in self.adsorbate_structures.items():
+                adsorbate_dict[sp_symbol] = dict()
+                if adsorbate is not None:
+                    for prefix, structure in enumerate(adsorbate):
+                        adsorbate_dict[sp_symbol][prefix] = structure
+                else: #read from Adsorbates directory
+                    prefixes = os.listdir(os.path.join(self.path,"Adsorbates",sp_symbol))
+                    for prefix in prefixes:
+                        if prefix == "info.json":
+                            continue
+                        adsorbate_dict[sp_symbol][prefix] = read(os.path.join(self.path,"Adsorbates",sp_symbol,str(prefix),str(prefix)+"_init.xyz"))
+
+            big_slab = self.slab
+            nsmall_slab = len(self.slab)
+            for adsname,adsorbate in adsorbate_dict.items():
+                xyzs = []
+                optfws = []
+                optfws2 = []
+                mol = self.mol_dict[adsname]
+
+                #check if this adsorbate is already calculated
+                exists = False
+                for prefix,structure in adsorbate.items():
+                    if os.path.exists(os.path.join(self.path,"Adsorbates",adsname,str(prefix),str(prefix)+".xyz")):
+                        exists = True
+
+                if exists: #if this species already has a completed opt job in any prefix driectory skip it
+                    self.adsorbate_fw_dict[adsname] = []
+                    continue
+
+                for prefix,structure in adsorbate.items():
+                    if len(mol.get_surface_sites()) > 0:
+                        big_slab_ads = structure
+                        software_kwargs = deepcopy(self.software_kwargs)
+                        target_site_num = len(mol.get_surface_sites())
+                        if self.software != "XTB":
+                            constraints = ["freeze up to {}".format(self.freeze_ind)]
+                        else:
+                            constraints = ["freeze up to "+str(self.nslab)]
+                        vib_constraints = ["freeze up to "+str(self.nslab)]
+                    else: #gas phase
+                        big_slab_ads = structure
+                        target_site_num = None #no slab so can't run site analysis
+                        software_kwargs = deepcopy(self.software_kwargs_gas)
+                        constraints = []
+                        vib_constraints = []
+                        if len(big_slab_ads) == 1 and self.software == "Espresso": #monoatomic species
+                            software_kwargs["command"] = software_kwargs["command"].replace("< PREFIX.pwi > PREFIX.pwo","-ndiag 1 < PREFIX.pwi > PREFIX.pwo")
+                    try:
+                        os.makedirs(os.path.join(self.path,"Adsorbates",adsname,str(prefix)))
+                    except:
+                        pass
+                    write(os.path.join(self.path,"Adsorbates",adsname,str(prefix),str(prefix)+"_init.xyz"),big_slab_ads)
+                    sp_dict = {"name":adsname, "adjlist":mol.to_adjacency_list(),"atom_to_molecule_atom_map": self.gratom_to_molecule_atom_maps[adsname],
+                            "gratom_to_molecule_surface_atom_map": self.gratom_to_molecule_surface_atom_maps[adsname], "nslab": self.nslab}
+                    with open(os.path.join(self.path,"Adsorbates",adsname,"info.json"),'w') as f:
+                        json.dump(sp_dict,f)
+                    xyz = os.path.join(self.path,"Adsorbates",adsname,str(prefix),str(prefix)+".xyz")
+                    xyzs.append(xyz)
+                    fwopt = optimize_firework(os.path.join(self.path,"Adsorbates",adsname,str(prefix),str(prefix)+"_init.xyz"),
+                        self.software,self.machine,"weakopt_"+str(prefix),
+                        opt_method="MDMin",opt_kwargs={'dt': 0.05},socket=self.socket,software_kwargs=software_kwargs,
+                        run_kwargs={"fmax" : 0.5, "steps" : 70},parents=[],constraints=constraints,
+                        ignore_errors=True, metal=self.metal, facet=self.surface_type, target_site_num=target_site_num, priority=3)
+                    fwopt2 = optimize_firework(os.path.join(self.path,"Adsorbates",adsname,str(prefix),"weakopt_"+str(prefix)+".xyz"),
+                        self.software,self.machine,str(prefix),
+                        opt_method="QuasiNewton",socket=self.socket,software_kwargs=software_kwargs,
+                        run_kwargs={"fmax" : self.fmaxopt, "steps" : 70},parents=[fwopt],constraints=constraints,
+                        ignore_errors=True, metal=self.metal, facet=self.surface_type, target_site_num=target_site_num, priority=3, fmaxhard=self.fmaxopthard,
+                        allow_fizzled_parents=True)
+                    optfws.append(fwopt)
+                    optfws.append(fwopt2)
+                    optfws2.append(fwopt2)
+
+                vib_obj_dict = {"software": self.software, "label": adsname, "software_kwargs": software_kwargs,
+                    "machine": self.machine,"constraints": vib_constraints}
+
+                cfw = collect_firework(xyzs,True,["vibrations_firework"],[vib_obj_dict],["vib.json"],[],parents=optfws2,label=adsname)
+                self.adsorbate_fw_dict[adsname] = optfws2
+                logging.error(self.adsorbate_fw_dict.keys())
+                self.fws.extend(optfws+[cfw])
+        else:
+            ads_path = os.path.join(self.path,"Adsorbates")
+            for ad in os.listdir(ads_path):
+                xyzs = []
+                optfws = []
+                optfws2 = []
+                if ad in self.mol_dict.keys():
+                    mol = self.mol_dict[ad]
+                else:
+                    continue #the species is not in the target reactions so skip it
+                target_site_num = len(mol.get_surface_sites())
+                ad_path = os.path.join(ads_path,ad)
+                completed = False
+                for prefix in os.listdir(ad_path):
+                    if os.path.exists(os.path.join(ad_path,prefix,prefix+".xyz")):
+                        completed = True
+                if completed:
+                    self.adsorbate_fw_dict[ad] = []
+                    continue
+                for prefix in os.listdir(ad_path):
+                    if prefix.split(".")[-1] == "json":
+                        continue
+                    prefix_path = os.path.join(ad_path,prefix)
+                    if target_site_num == 0:
+                        software_kwargs = deepcopy(self.software_kwargs_gas)
+                        constraints = []
+                        vib_constraints = []
+                        if len(mol.atoms) == 1 and self.software == "Espresso": #monoatomic species
+                            software_kwargs["command"] = software_kwargs["command"].replace("< PREFIX.pwi > PREFIX.pwo","-ndiag 1 < PREFIX.pwi > PREFIX.pwo")
+                    else:
+                        software_kwargs = deepcopy(self.software_kwargs)
+                        if self.software != "XTB":
+                            constraints = ["freeze up to {}".format(self.freeze_ind)]
+                        else:
+                            constraints = ["freeze up to "+str(self.nslab)]
+                        vib_constraints = ["freeze up to "+str(self.nslab)]
+                    xyz = os.path.join(prefix_path,str(prefix)+".xyz")
+                    init_path = os.path.join(prefix_path,prefix+"_init.xyz")
+                    assert os.path.exists(init_path), init_path
+                    xyzs.append(xyz)
+                    fwopt = optimize_firework(init_path,
+                        self.software,self.machine,"weakopt_"+str(prefix),
+                        opt_method="MDMin",opt_kwargs={'dt': 0.05},socket=self.socket,software_kwargs=software_kwargs,
+                        run_kwargs={"fmax" : 0.5, "steps" : 70},parents=[],constraints=constraints,
+                        ignore_errors=True, metal=self.metal, facet=self.surface_type, target_site_num=target_site_num, priority=3)
+                    fwopt2 = optimize_firework(os.path.join(self.path,"Adsorbates",ad,str(prefix),"weakopt_"+str(prefix)+".xyz"),
+                        self.software,self.machine,str(prefix),
+                        opt_method="QuasiNewton",socket=self.socket,software_kwargs=software_kwargs,
+                        run_kwargs={"fmax" : self.fmaxopt, "steps" : 70},parents=[fwopt],constraints=constraints,
+                        ignore_errors=True, metal=self.metal, facet=self.surface_type, target_site_num=target_site_num, priority=3)
+                    optfws.append(fwopt)
+                    optfws.append(fwopt2)
+                    optfws2.append(fwopt2)
+
+                vib_obj_dict = {"software": self.software, "label": ad, "software_kwargs": software_kwargs,
+                    "machine": self.machine,"constraints": vib_constraints}
+
+                cfw = collect_firework(xyzs,True,["vibrations_firework"],[vib_obj_dict],["vib.json"],[True,False],parents=optfws2,label=ad,allow_fizzled_parents=False)
+                self.adsorbate_fw_dict[ad] = optfws2
+                logging.error(self.adsorbate_fw_dict.keys())
+                self.fws.extend(optfws+[cfw])
 
     def setup_transition_states(self,adsorbates_finished=False):
         """
@@ -480,6 +632,112 @@ class Pynta:
         if launch:
             self.launch()
 
+
+    def execute_from_initial_ad_guesses(self):
+        if self.slab_path is None: #handle slab
+            self.generate_slab()
+
+        self.analyze_slab()
+        self.generate_mol_dict()
+        self.generate_initial_adsorbate_guesses(skip_structs=True)
+
+        #adsorbate optimization
+        self.setup_adsorbates(initial_guess_finished=True)
+
+        #setup transition states
+        self.setup_transition_states()
+
+        wf = Workflow(self.fws, name=self.label)
+        self.launchpad.add_wf(wf)
+
+
+        self.launch()
+
+#restart option: RHE + KSA
+    def restart(self,wfid):
+
+        id_number = int(wfid)
+        # Get the information of the workflow
+        wf1 = self.launchpad.get_wf_summary_dict(id_number, mode='more')
+
+        # Save the states of the workflow
+        wf_states = wf1['states']
+
+        # Save the launcher directories
+        wf_launchers = wf1['launch_dirs']
+
+        # In this bucle-for the tasks that are not completed, change the status
+        # We need the number of the task(id)
+
+        for task_name, task_state in wf_states.items():
+            if task_state != 'COMPLETED':
+                # Here we will change  the map - node
+                task_id = int(task_name.split('--')[-1])
+                d = self.launchpad.get_fw_dict_by_id(task_id)
+                newd = deepcopy(d['spec'])
+
+                nameTask = newd['_tasks'][0]['_fw_name']
+
+                nameTasks = ['{{pynta.tasks.MolecularOptimizationTask}}',
+                            '{{pynta.tasks.MolecularVibrationsTask}}',
+                            '{{pynta.tasks.MolecularIRC}}']
+
+                if 'opt' in task_name:
+                    dirs = wf_launchers[task_name]
+                    if dirs != []:
+                        src = dirs[0]
+                        print(' Name task {0:^20s} {1:^12s} {2}'.format(task_name, task_state, src))
+                        file_traj = [name for name in os.listdir(src) if name.endswith(".traj")]
+                        if len(file_traj) > 1:
+                            file_traj = file_traj[0]
+                            base, ext = os.path.splitext(file_traj)
+
+                            with open (os.path.join(src, "FW.json")) as file:
+                                filejson = json.load(file)
+
+                            if opt_method == 'QuasiNewton':
+                                namexyz = f'weakopt_{base}.xyz'
+                            else:
+                                namexyz = f'{base}_init.xyz'
+
+                            atoms = read(os.path.join(src, file_traj), index=-1)
+                            dst = os.path.dirname(filejson['spec']['_tasks'][0]['xyz'])
+
+                            write(f'{src}/{namexyz}', atoms, format='xyz')
+
+                            copyDataAndSave(src, dst, namexyz)
+                            copyDataAndSave(src, dst, f'{base}.traj')
+
+                if 'vib' in task_name:
+                    dirs = wf_launchers[task_name]
+                    if dirs != []:
+                        src = dirs[0]
+                        print(' Name task {0:^20s} {1:^12s} {2}'.format(task_name, task_state, src))
+
+                        # Check if there is a directory named 'vib' in the source directory
+                        dir_vib_path = os.path.join(src, 'vib')
+                        if os.path.isdir(dir_vib_path):
+                            dir_vib = dir_vib_path
+
+                            # List all JSON files in the dir_vib directory
+                            for filename in os.listdir(dir_vib):
+                                if filename.endswith('.json'):
+                                    file_path = os.path.join(dir_vib, filename)
+
+                                    # Check if the JSON file is empty
+                                    if os.path.getsize(file_path) == 0:
+                                        print(f'Deleting empty JSON file: {file_path}')
+                                        os.remove(file_path)
+                        else:
+                            print(f'No directory named "vib" found in {src}.')
+                            print('No vibration calculations executed: Check optimization runs are finished and optimized geometries are collected.')              
+
+                # Keep on with the task_state != 'COMPLETED'
+                self.launchpad.rerun_fw(task_id)
+                self.launchpad.update_spec([task_id], newd)
+
+
+        self.launch()
 
 class CoverageDependence:
     def __init__(self,path,metal,surface_type,repeats,pynta_run_directory,software,software_kwargs,label,sites,site_adjacency,coad_stable_sites,adsorbates=[],transition_states=dict(),coadsorbates=[],
