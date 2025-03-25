@@ -62,7 +62,7 @@ class DoNothingTask(FiretaskBase):
 def optimize_firework(xyz,software,machine,label,opt_method=None,sella=None,socket=False,order=0,software_kwargs={},opt_kwargs={},
                       run_kwargs={},constraints=[],parents=[],out_path=None,time_limit_hrs=np.inf,fmaxhard=0.0,ignore_errors=False,
                       target_site_num=None,metal=None,facet=None,priority=1,allow_fizzled_parents=False):
-    d = {"xyz" : xyz, "software" : software,"label" : label,"machine":machine}
+    d = {"xyz" : xyz, "software" : software,"label" : label, "machine":machine}
     if opt_method: d["opt_method"] = opt_method
     if software_kwargs: d["software_kwargs"] = software_kwargs
     if opt_kwargs: d["opt_kwargs"] = opt_kwargs

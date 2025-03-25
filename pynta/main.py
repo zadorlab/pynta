@@ -488,7 +488,7 @@ class Pynta:
                 "run_kwargs": {"fmax" : 0.02, "steps" : 70},"constraints": ["freeze up to "+str(self.nslab)],"sella":True,"order":1,}
         
         vib_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":self.software_kwargs,
-                "constraints": ["freeze up to "+str(self.nslab)]}
+                "machine": self.machine, "constraints": ["freeze up to "+str(self.nslab)]}
 
         #logging.info
         logger.info(f"================= IRC mode is: {self.irc_mode} =======================")
