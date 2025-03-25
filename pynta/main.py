@@ -23,6 +23,12 @@ from fireworks.core.rocket_launcher import rapidfire
 from fireworks.core.fworker import FWorker
 import fireworks.fw_config
 import logging
+#restart RHE
+import time
+from pynta.polaris import createFWorkers
+from pynta.utils import copyDataAndSave
+from pynta.multi_launcher import launch_multiprocess2
+import json
 
 #logger
 logger = logging.getLogger(__name__)
@@ -40,6 +46,7 @@ class Pynta:
                             }, },
         software_kwargs_gas=None,
         TS_opt_software_kwargs=None,
+        machine=None,
         irc_mode="fixed", #choose irc mode: 'skip', 'relaxed', 'fixed'
         lattice_opt_software_kwargs={'kpts': (25,25,25), 'ecutwfc': 70, 'degauss':0.02, 'mixing_mode': 'plain'},
         reset_launchpad=False,queue_adapter_path=None,num_jobs=25,max_num_hfsp_opts=None,#max_num_hfsp_opts is mostly for fast testing
@@ -74,6 +81,7 @@ class Pynta:
         self.adsorbate_fw_dict = dict()
         self.software_kwargs = software_kwargs
         self.irc_mode = irc_mode
+        self.machine = machine #need to specify 'alcf' or other machine of choice
 
         if software.lower() == 'vasp':
             self.pbc = (True,True,True)
@@ -162,7 +170,7 @@ class Pynta:
         write(os.path.join(self.path,"slab_init.xyz"),slab)
         self.slab_path = os.path.join(self.path,"slab.xyz")
         if self.software != "XTB":
-            fwslab = optimize_firework(os.path.join(self.path,"slab_init.xyz"),self.software,"slab",
+            fwslab = optimize_firework(os.path.join(self.path,"slab_init.xyz"),self.software,self.machine,"slab",
                 opt_method="BFGSLineSearch",socket=self.socket,software_kwargs=self.software_kwargs,
                 run_kwargs={"fmax" : self.fmaxopt},out_path=os.path.join(self.path,"slab.xyz"),constraints=["freeze up to {}".format(self.freeze_ind)],priority=1000)
             wfslab = Workflow([fwslab], name=self.label+"_slab")
@@ -383,12 +391,12 @@ class Pynta:
                     xyz = os.path.join(self.path,"Adsorbates",adsname,str(prefix),str(prefix)+".xyz")
                     xyzs.append(xyz)
                     fwopt = optimize_firework(os.path.join(self.path,"Adsorbates",adsname,str(prefix),str(prefix)+"_init.xyz"),
-                        self.software,"weakopt_"+str(prefix),
+                        self.machine,self.software,"weakopt_"+str(prefix),
                         opt_method="MDMin",opt_kwargs={'dt': 0.05},socket=self.socket,software_kwargs=software_kwargs,
                         run_kwargs={"fmax" : 0.5, "steps" : 70},parents=[],constraints=constraints,
                         ignore_errors=True, metal=self.metal, facet=self.surface_type, target_site_num=target_site_num, priority=3)
                     fwopt2 = optimize_firework(os.path.join(self.path,"Adsorbates",adsname,str(prefix),"weakopt_"+str(prefix)+".xyz"),
-                        self.software,str(prefix),
+                        self.machine,self.software,str(prefix),
                         opt_method="QuasiNewton",socket=self.socket,software_kwargs=software_kwargs,
                         run_kwargs={"fmax" : self.fmaxopt, "steps" : 70},parents=[fwopt],constraints=constraints,
                         ignore_errors=True, metal=self.metal, facet=self.surface_type, target_site_num=target_site_num, priority=3, fmaxhard=self.fmaxopthard,
@@ -445,12 +453,12 @@ class Pynta:
                     assert os.path.exists(init_path), init_path
                     xyzs.append(xyz)
                     fwopt = optimize_firework(init_path,
-                        self.software,"weakopt_"+str(prefix),
+                        self.software,self.machine,"weakopt_"+str(prefix),
                         opt_method="MDMin",opt_kwargs={'dt': 0.05},socket=self.socket,software_kwargs=software_kwargs,
                         run_kwargs={"fmax" : 0.5, "steps" : 70},parents=[],constraints=constraints,
                         ignore_errors=True, metal=self.metal, facet=self.surface_type, target_site_num=target_site_num, priority=3)
                     fwopt2 = optimize_firework(os.path.join(self.path,"Adsorbates",ad,str(prefix),"weakopt_"+str(prefix)+".xyz"),
-                        self.software,str(prefix),
+                        self.machine,self.software,str(prefix),
                         opt_method="QuasiNewton",socket=self.socket,software_kwargs=software_kwargs,
                         run_kwargs={"fmax" : self.fmaxopt, "steps" : 70},parents=[fwopt],constraints=constraints,
                         ignore_errors=True, metal=self.metal, facet=self.surface_type, target_site_num=target_site_num, priority=3)
@@ -458,8 +466,8 @@ class Pynta:
                     optfws.append(fwopt2)
                     optfws2.append(fwopt2)
 
-                vib_obj_dict = {"software": self.software, "label": ad, "software_kwargs": software_kwargs,
-                    "constraints": vib_constraints}
+                vib_obj_dict = {"software": self.software, "label": adsname, "software_kwargs": software_kwargs,
+                    "machine": self.machine, "constraints": ["freeze up to "+str(self.nslab)]}
 
                 cfw = collect_firework(xyzs,True,["vibrations_firework"],[vib_obj_dict],["vib.json"],[True,False],parents=optfws2,label=ad,allow_fizzled_parents=False)
                 self.adsorbate_fw_dict[ad] = optfws2
@@ -473,10 +481,10 @@ class Pynta:
         Note the vibrational and IRC calculations are launched at the same time
         """
         if self.software != "XTB":
-            opt_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":self.software_kwargs_TS,
+            opt_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":self.software_kwargs_TS,"machine": self.machine,
                 "run_kwargs": {"fmax" : self.fmaxopt, "steps" : 70},"constraints": ["freeze up to {}".format(self.freeze_ind)],"sella":True,"order":1,}
         else:
-            opt_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":self.software_kwargs_TS,
+            opt_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":self.software_kwargs_TS,"machine": self.machine,
                 "run_kwargs": {"fmax" : 0.02, "steps" : 70},"constraints": ["freeze up to "+str(self.nslab)],"sella":True,"order":1,}
         
         vib_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":self.software_kwargs,
@@ -489,11 +497,11 @@ class Pynta:
         for i,rxn in enumerate(self.rxns_dict):
             #if irc_mode is "fixed" freeze all slab and conduct MolecularTSEstimate. 
             if self.irc_mode == "fixed":
-                IRC_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":self.software_kwargs,
+                IRC_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":self.software_kwargs,"machine": self.machine,
                     "run_kwargs": {"fmax" : self.fmaxopt, "steps" : 70},"constraints": ["freeze up to "+str(self.nslab)]}
 
             elif self.irc_mode == "relaxed":
-                IRC_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":self.software_kwargs,
+                IRC_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":self.software_kwargs,"machine": self.machine,
                     "run_kwargs": {"fmax" : self.fmaxopt, "steps" : 70},"constraints": ["freeze up to {}".format(self.freeze_ind)]}
         # if irc_mode = "skip" : do not conduct IRC
             else:
@@ -505,7 +513,7 @@ class Pynta:
             os.makedirs(ts_path)
             ts_task = MolecularTSEstimate({"rxn": rxn,"ts_path": ts_path,"slab_path": self.slab_path,"adsorbates_path": os.path.join(self.path,"Adsorbates"),
                     "rxns_file": self.rxns_file,"path": self.path,"metal": self.metal,"facet": self.surface_type, "sites": self.sites, "site_adjacency": {str(k):v for k,v in self.site_adjacency.items()},
-                    "out_path": ts_path, "irc_mode": self.irc_mode,
+                    "out_path": ts_path, "irc_mode": self.irc_mode,"machine": self.machine,
                     "spawn_jobs": True, "opt_obj_dict": opt_obj_dict, "vib_obj_dict": vib_obj_dict, "IRC_obj_dict": IRC_obj_dict,
                     "nprocs": 48, "name_to_adjlist_dict": self.name_to_adjlist_dict,
                     "gratom_to_molecule_atom_maps":{sm: {str(k):v for k,v in d.items()} for sm,d in self.gratom_to_molecule_atom_maps.items()},
@@ -525,12 +533,23 @@ class Pynta:
         """
         Call appropriate rapidfire function
         """
-        if self.queue:
-            rapidfirequeue(self.launchpad,self.fworker,self.qadapter,njobs_queue=self.njobs_queue,nlaunches="infinite")
-        elif not self.queue and (self.num_jobs == 1 or single_job):
-            rapidfire(self.launchpad,self.fworker,nlaunches="infinite")
+        if self.machine == "alcf":
+            print("You are using alcf machine: check your Fireworks Workflow id before restart Pynta, run pyn.reset(wfid='workflow id')")
+            if self.queue:
+                rapidfirequeue(self.launchpad,self.fworker,self.qadapter,njobs_queue=self.njobs_queue,nlaunches="infinite")
+            elif not self.queue and (self.num_jobs == 1 or single_job):
+                rapidfire(self.launchpad,self.fworker,nlaunches="infinite")
+            else:
+                listfworkers = createFWorkers(self.num_jobs)
+                launch_multiprocess2(self.launchpad,listfworkers,"INFO",0,self.num_jobs,5)
         else:
-            launch_multiprocess(self.launchpad,self.fworker,"INFO","infinite",self.num_jobs,5)
+            print("machine choice is not alcf: check your Fireworks Workflow id before restart Pynta, run pyn.reset(wfid='workflow id')")
+            if self.queue:
+                rapidfirequeue(self.launchpad,self.fworker,self.qadapter,njobs_queue=self.njobs_queue,nlaunches="infinite")
+            elif not self.queue and (self.num_jobs == 1 or single_job):
+                rapidfire(self.launchpad,self.fworker,nlaunches="infinite")
+            else:
+                launch_multiprocess(self.launchpad,self.fworker,"INFO","infinite",self.num_jobs,5)
 
     def execute(self,generate_initial_ad_guesses=True,calculate_adsorbates=True,
                 calculate_transition_states=True,launch=True):
@@ -584,6 +603,92 @@ class Pynta:
 
         wf = Workflow(self.fws, name=self.label)
         self.launchpad.add_wf(wf)
+
+
+        self.launch()
+
+#restart option: RHE + KSA
+    def restart(self,wfid):
+
+        id_number = int(wfid)
+        # Get the information of the workflow
+        wf1 = self.launchpad.get_wf_summary_dict(id_number, mode='more')
+
+        # Save the states of the workflow
+        wf_states = wf1['states']
+
+        # Save the launcher directories
+        wf_launchers = wf1['launch_dirs']
+
+        # In this bucle-for the tasks that are not completed, change the status
+        # We need the number of the task(id)
+
+        for task_name, task_state in wf_states.items():
+            if task_state != 'COMPLETED':
+                # Here we will change  the map - node
+                task_id = int(task_name.split('--')[-1])
+                d = self.launchpad.get_fw_dict_by_id(task_id)
+                newd = deepcopy(d['spec'])
+
+                nameTask = newd['_tasks'][0]['_fw_name']
+
+                nameTasks = ['{{pynta.tasks.MolecularOptimizationTask}}',
+                            '{{pynta.tasks.MolecularVibrationsTask}}',
+                            '{{pynta.tasks.MolecularIRC}}']
+
+                if 'opt' in task_name:
+                    dirs = wf_launchers[task_name]
+                    if dirs != []:
+                        src = dirs[0]
+                        print(' Name task {0:^20s} {1:^12s} {2}'.format(task_name, task_state, src))
+                        file_traj = [name for name in os.listdir(src) if name.endswith(".traj")]
+                        if len(file_traj) > 1:
+                            file_traj = file_traj[0]
+                            base, ext = os.path.splitext(file_traj)
+
+                            with open (os.path.join(src, "FW.json")) as file:
+                                filejson = json.load(file)
+
+                            if opt_method == 'QuasiNewton':
+                                namexyz = f'weakopt_{base}.xyz'
+                            else:
+                                namexyz = f'{base}_init.xyz'
+
+                            atoms = read(os.path.join(src, file_traj), index=-1)
+                            dst = os.path.dirname(filejson['spec']['_tasks'][0]['xyz'])
+
+                            write(f'{src}/{namexyz}', atoms, format='xyz')
+
+                            copyDataAndSave(src, dst, namexyz)
+                            copyDataAndSave(src, dst, f'{base}.traj')
+
+                if 'vib' in task_name:
+                    dirs = wf_launchers[task_name]
+                    if dirs != []:
+                        src = dirs[0]
+                        print(' Name task {0:^20s} {1:^12s} {2}'.format(task_name, task_state, src))
+
+                        # Check if there is a directory named 'vib' in the source directory
+                        dir_vib_path = os.path.join(src, 'vib')
+                        if os.path.isdir(dir_vib_path):
+                            dir_vib = dir_vib_path
+
+                            # List all JSON files in the dir_vib directory
+                            for filename in os.listdir(dir_vib):
+                                if filename.endswith('.json'):
+                                    file_path = os.path.join(dir_vib, filename)
+
+                                    # Check if the JSON file is empty
+                                    if os.path.getsize(file_path) == 0:
+                                        print(f'Deleting empty JSON file: {file_path}')
+                                        os.remove(file_path)
+                        else:
+                            print(f'No directory named "vib" found in {src}.')
+                            print('No vibration calculations executed: Check optimization runs are finished and optimized geometries are collected.')              
+                            
+                # Keep on with the task_state != 'COMPLETED'
+                self.launchpad.rerun_fw(task_id)
+                self.launchpad.update_spec([task_id], newd)
 
 
         self.launch()
