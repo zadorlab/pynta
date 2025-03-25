@@ -35,6 +35,8 @@ import signal
 from contextlib import contextmanager
 from copy import deepcopy
 from pathlib import Path
+#polaris node mapping
+from pynta.polaris import createCommand
 
 class OptimizationTask(FiretaskBase):
     def run_task(self, fw_spec):
@@ -57,10 +59,10 @@ class DoNothingTask(FiretaskBase):
     def run_task(self, fw_spec):
         return FWAction()
 
-def optimize_firework(xyz,software,label,opt_method=None,sella=None,socket=False,order=0,software_kwargs={},opt_kwargs={},
+def optimize_firework(xyz,software,machine,label,opt_method=None,sella=None,socket=False,order=0,software_kwargs={},opt_kwargs={},
                       run_kwargs={},constraints=[],parents=[],out_path=None,time_limit_hrs=np.inf,fmaxhard=0.0,ignore_errors=False,
                       target_site_num=None,metal=None,facet=None,priority=1,allow_fizzled_parents=False):
-    d = {"xyz" : xyz, "software" : software,"label" : label}
+    d = {"xyz" : xyz, "software" : software,"label" : label,"machine":machine}
     if opt_method: d["opt_method"] = opt_method
     if software_kwargs: d["software_kwargs"] = software_kwargs
     if opt_kwargs: d["opt_kwargs"] = opt_kwargs
@@ -77,6 +79,7 @@ def optimize_firework(xyz,software,label,opt_method=None,sella=None,socket=False
     d["target_site_num"] = target_site_num
     d["metal"] = metal
     d["facet"] = facet
+    d["machine"]= machine
     t1 = MolecularOptimizationTask(d)
     directory = os.path.dirname(xyz)
     if out_path is None: out_path = os.path.join(directory,label+".xyz")
@@ -88,10 +91,13 @@ def optimize_firework(xyz,software,label,opt_method=None,sella=None,socket=False
 class MolecularOptimizationTask(OptimizationTask):
     required_params = ["software","label"]
     optional_params = ["software_kwargs","opt_method",
-        "opt_kwargs","run_kwargs", "constraints","sella","order","socket","time_limit_hrs","fmaxhard","ignore_errors","target_site_num","metal","facet"]
+        "opt_kwargs","run_kwargs", "constraints","sella","order","socket","time_limit_hrs","fmaxhard","ignore_errors","target_site_num","metal","facet","machine"]
     def run_task(self, fw_spec):
         errors = []
         software_kwargs = deepcopy(self["software_kwargs"]) if "software_kwargs" in self.keys() else dict()
+        # Mapping nodes to fworkers
+        if self["machine"] == "alcf" and (self["software"] == "Espresso" or self["software"] == "PWDFT"):
+            software_kwargs["command"] = createCommand(fw_spec["_fw_env"]["host"], self["software"])
         socket = self["socket"] if "socket" in self.keys() else False
         if socket:
             unixsocket = "ase_"+self["software"].lower()+"_"+self["label"]+"_"+self["xyz"].replace("/","_").replace(".","_")
@@ -112,7 +118,7 @@ class MolecularOptimizationTask(OptimizationTask):
         metal = self["metal"] if "metal" in self.keys() else None
         facet = self["facet"] if "facet" in self.keys() else None
         ignore_errors = self["ignore_errors"] if "ignore_errors" in self.keys() else False
-
+        machine = self["machine"] if "machine" in self.keys() else None
         label = self["label"]
         xyz = self['xyz']
         suffix = os.path.split(xyz)[-1].split(".")[-1]
@@ -300,16 +306,20 @@ class MolecularOptimizationTask(OptimizationTask):
 @explicit_serialize
 class MolecularOptimizationFailTask(OptimizationTask):
     required_params = ["software","label"]
-    optional_params = ["software_kwargs","opt_method",
-        "opt_kwargs","run_kwargs"]
+    optional_params = ["software_kwargs","opt_method","opt_kwargs","run_kwargs","machine"]
     def run_task(self, fw_spec):
         print(fw_spec)
         software_kwargs = deepcopy(self["software_kwargs"]) if "software_kwargs" in self.keys() else dict()
+        # Mapping nodes to fworkers
+        if self["machine"] == "alcf" and (self["software"] == "Espresso" or self["software"] == "PWDFT"):
+            software_kwargs["command"] = createCommand(fw_spec["_fw_env"]["host"], self["software"])
         software = name_to_ase_software(self["software"])(**software_kwargs)
 
         opt_kwargs = deepcopy(self["opt_kwargs"]) if "opt_kwargs" in self.keys() else dict()
         opt_method = name_to_ase_opt(self["opt_method"]) if "opt_method" in self.keys() else BFGS
         run_kwargs = deepcopy(self["run_kwargs"]) if "run_kwargs" in self.keys() else dict()
+
+        machine = self["machine"] if "machine" in self.keys() else None
 
         label = self["label"]
         xyz = self['xyz']
@@ -327,10 +337,11 @@ class MolecularOptimizationFailTask(OptimizationTask):
 
         return FWAction()
 
-def energy_firework(xyz,software,label,software_kwargs={},parents=[],out_path=None,ignore_errors=False):
-    d = {"xyz" : xyz, "software" : software, "label" : label}
+def energy_firework(xyz,software,machine,label,software_kwargs={},parents=[],out_path=None,ignore_errors=False):
+    d = {"xyz" : xyz, "software" : software, "label" : label, "machine":machine}
     if software_kwargs: d["software_kwargs"] = software_kwargs
     d["ignore_errors"] = ignore_errors
+    d["machine"] = machine
     t1 = MolecularEnergyTask(d)
     directory = os.path.dirname(xyz)
     if out_path is None: out_path = os.path.join(directory,label+"_energy.json")
@@ -340,7 +351,7 @@ def energy_firework(xyz,software,label,software_kwargs={},parents=[],out_path=No
 @explicit_serialize
 class MolecularEnergyTask(EnergyTask):
     required_params = ["software","label"]
-    optional_params = ["software_kwargs","energy_kwargs","ignore_errors"]
+    optional_params = ["software_kwargs","energy_kwargs","ignore_errors","machine"]
     def run_task(self, fw_spec):
         xyz = self['xyz']
         software = name_to_ase_software(self["software"])
@@ -348,6 +359,10 @@ class MolecularEnergyTask(EnergyTask):
         software_kwargs = deepcopy(self["software_kwargs"]) if "software_kwargs" in self.keys() else dict()
         energy_kwargs = deepcopy(self["energy_kwargs"]) if "energy_kwargs" in self.keys() else dict()
         ignore_errors = deepcopy(self["ignore_errors"]) if "ignore_errors" in self.keys() else False
+        machine = self["machine"] if "machine" in self.keys() else None
+        # Mapping nodes to fworkers
+        if self["machine"] == "alcf" and (self["software"] == "Espresso" or self["software"] == "PWDFT"):
+            software_kwargs["command"] = createCommand(fw_spec["_fw_env"]["host"], self["software"])
 
         try:
             sp = read(xyz)
@@ -363,11 +378,12 @@ class MolecularEnergyTask(EnergyTask):
 
         return FWAction()
 
-def vibrations_firework(xyz,software,label,software_kwargs={},parents=[],out_path=None,constraints=[],socket=False,ignore_errors=False):
-    d = {"xyz" : xyz, "software" : software, "label" : label, "socket": socket}
+def vibrations_firework(xyz,software,machine,label,software_kwargs={},parents=[],out_path=None,constraints=[],socket=False,ignore_errors=False):
+    d = {"xyz" : xyz, "software" : software, "label" : label, "socket": socket, "machine":machine}
     if software_kwargs: d["software_kwargs"] = software_kwargs
     if constraints: d["constraints"] = constraints
     d["ignore_errors"] = ignore_errors
+    d["machine"] = machine
     t1 = MolecularVibrationsTask(d)
     directory = os.path.dirname(xyz)
     if out_path is None:
@@ -384,12 +400,16 @@ def vibrations_firework(xyz,software,label,software_kwargs={},parents=[],out_pat
 @explicit_serialize
 class MolecularVibrationsTask(VibrationTask):
     required_params = ["software","label"]
-    optional_params = ["software_kwargs","constraints","ignore_errors","socket"]
+    optional_params = ["software_kwargs","constraints","ignore_errors","socket","machine"]
     def run_task(self, fw_spec):
         indices = None
         xyz = self['xyz']
         label = self["label"]
+        machine = self["machine"] if "machine" in self.keys() else None
         software_kwargs = deepcopy(self["software_kwargs"]) if "software_kwargs" in self.keys() else dict()
+        # Mapping nodes to fworkers
+        if self["machine"] == "alcf" and (self["software"] == "Espresso" or self["software"] == "PWDFT"):
+            software_kwargs["command"] = createCommand(fw_spec["_fw_env"]["host"], self["software"])
         software = name_to_ase_software(self["software"])(**software_kwargs)
         ignore_errors = deepcopy(self["ignore_errors"]) if "ignore_errors" in self.keys() else False
         socket = self["socket"] if "socket" in self.keys() else False
@@ -745,10 +765,10 @@ class MolecularTSNudge(FiretaskBase):
         else:
             return FWAction()
 
-def IRC_firework(xyz,label,out_path=None,spawn_jobs=False,software=None,
+def IRC_firework(xyz,label,machine,out_path=None,spawn_jobs=False,software=None,
         socket=False,software_kwargs={},opt_kwargs={},run_kwargs={},constraints=[],parents=[],ignore_errors=False,forward=True):
         if out_path is None: out_path = os.path.join(directory,label+"_irc.traj")
-        t1 = MolecularIRC(xyz=xyz,label=label,software=software,
+        t1 = MolecularIRC(xyz=xyz,label=label,software=software,machine=machine,
             socket=socket,software_kwargs=software_kwargs,opt_kwargs=opt_kwargs,run_kwargs=run_kwargs,
             constraints=constraints,ignore_errors=ignore_errors,forward=forward)
         t2 = FileTransferTask({'files': [{'src': label+'_irc.traj', 'dest': out_path}], 'mode': 'copy', 'ignore_errors' : ignore_errors})
@@ -759,10 +779,14 @@ def IRC_firework(xyz,label,out_path=None,spawn_jobs=False,software=None,
 class MolecularIRC(FiretaskBase):
     required_params = ["xyz","label"]
     optional_params = ["software","socket",
-            "software_kwargs", "opt_kwargs", "run_kwargs", "constraints", "ignore_errors", "forward"]
+            "software_kwargs", "opt_kwargs", "run_kwargs", "constraints", "ignore_errors", "forward","machine"]
     def run_task(self, fw_spec):
         errors = []
         software_kwargs = deepcopy(self["software_kwargs"]) if "software_kwargs" in self.keys() else dict()
+        machine = self["machine"] if "machine" in self.keys() else None
+        # Mapping nodes to fworkers
+        if self["machine"] == "alcf" and (self["software"] == "Espresso" or self["software"] == "PWDFT"):
+            software_kwargs["command"] = createCommand(fw_spec["_fw_env"]["host"], self["software"])
         socket = self["socket"] if "socket" in self.keys() else False
         if socket:
             unixsocket = "ase_"+self["software"].lower()+"_"+self["label"]+"_"+self["xyz"].replace("/","_").replace(".","_")
