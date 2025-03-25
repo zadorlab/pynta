@@ -593,14 +593,14 @@ class MolecularTSEstimate(FiretaskBase):
 
         if max_num_hfsp_opts:
             inds = index_site_bond_potential_lists_by_site_distances(site_bond_potential_lists)[:max_num_hfsp_opts].tolist()
-            out_tsstructs = [tsstructs_out[ind] for ind in inds]
-            new_atom_bond_potential_lists = [atom_bond_potential_lists[ind] for ind in inds]
-            new_site_bond_potential_lists = [site_bond_potential_lists[ind] for ind in inds]
-            new_constraint_lists = [constraint_lists[ind] for ind in inds]
+            tsstructs_out = [tsstructs_out[ind] for ind in inds]
+            atom_bond_potential_lists = [atom_bond_potential_lists[ind] for ind in inds]
+            site_bond_potential_lists = [site_bond_potential_lists[ind] for ind in inds]
+            constraint_lists = [constraint_lists[ind] for ind in inds]
             print("number of TS guesses after filtering by max distance between sites")
-            print(len(out_tsstructs))
+            print(len(tsstructs_out))
 
-        inputs = [ (out_tsstructs[j],new_atom_bond_potential_lists[j],new_site_bond_potential_lists[j],nslab,new_constraint_lists[j],ts_path,j,molecule_to_atom_maps,ase_to_mol_num) for j in range(len(out_tsstructs))]
+        inputs = [ (tsstructs_out[j],atom_bond_potential_lists[j],site_bond_potential_lists[j],nslab,constraint_lists[j],ts_path,j,molecule_to_atom_maps,ase_to_mol_num) for j in range(len(tsstructs_out))]
 
         #with mp.Pool(nprocs) as pool:
         #    outputs = pool.map(map_harmonically_forced_xtb,inputs)
