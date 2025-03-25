@@ -497,12 +497,12 @@ class Pynta:
         for i,rxn in enumerate(self.rxns_dict):
             #if irc_mode is "fixed" freeze all slab and conduct MolecularTSEstimate. 
             if self.irc_mode == "fixed":
-                IRC_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":self.software_kwargs,"machine": self.machine,
-                    "run_kwargs": {"fmax" : self.fmaxopt, "steps" : 70},"constraints": ["freeze up to "+str(self.nslab)]}
+                IRC_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":self.software_kwargs,
+                    "run_kwargs": {"fmax" : self.fmaxirc, "steps" : 70},"constraints": ["freeze up to "+str(self.nslab)]}
 
             elif self.irc_mode == "relaxed":
-                IRC_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":self.software_kwargs,"machine": self.machine,
-                    "run_kwargs": {"fmax" : self.fmaxopt, "steps" : 70},"constraints": ["freeze up to {}".format(self.freeze_ind)]}
+                IRC_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":self.software_kwargs,
+                    "run_kwargs": {"fmax" : self.fmaxirc, "steps" : 70},"constraints": ["freeze up to {}".format(self.freeze_ind)]}
         # if irc_mode = "skip" : do not conduct IRC
             else:
                 logger.info("Skip IRC: IRC is not conducted")
