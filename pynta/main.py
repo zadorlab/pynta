@@ -531,7 +531,7 @@ class Pynta:
         Call appropriate rapidfire function
         """
         if self.machine == "alcf":
-            print("You are using alcf machine: if you want to restart, run pyn.reset(wfid='1')")
+            print("You are using alcf machine: check your Fireworks Workflow id before restart Pynta")
             if self.queue:
                 rapidfirequeue(self.launchpad,self.fworker,self.qadapter,njobs_queue=self.njobs_queue,nlaunches="infinite")
             elif not self.queue and (self.num_jobs == 1 or single_job):
@@ -604,11 +604,11 @@ class Pynta:
 
         self.launch()
 
-#restart option: RHE + KSA
-    def reset(self,wfid):
-
+# Restart option: RHE + KSA
+    def reset(self, wfid):
         id_number = int(wfid)
         # Get the information of the workflow
+        print(f'your workflow id number is: {id_number}')
         wf1 = self.launchpad.get_wf_summary_dict(id_number, mode='more')
 
         # Save the states of the workflow
@@ -617,12 +617,10 @@ class Pynta:
         # Save the launcher directories
         wf_launchers = wf1['launch_dirs']
 
-        # In this bucle-for the tasks that are not completed, change the status
-        # We need the number of the task(id)
-
+        # In this loop, for the tasks that are not completed, change the status
         for task_name, task_state in wf_states.items():
             if task_state != 'COMPLETED':
-                # Here we will change  the map - node
+                # Here we will change the map - node
                 task_id = int(task_name.split('--')[-1])
                 d = self.launchpad.get_fw_dict_by_id(task_id)
                 newd = deepcopy(d['spec'])
@@ -630,8 +628,8 @@ class Pynta:
                 nameTask = newd['_tasks'][0]['_fw_name']
 
                 nameTasks = ['{{pynta.tasks.MolecularOptimizationTask}}',
-                            '{{pynta.tasks.MolecularVibrationsTask}}',
-                            '{{pynta.tasks.MolecularIRC}}']
+                             '{{pynta.tasks.MolecularVibrationsTask}}',
+                             '{{pynta.tasks.MolecularIRC}}']
 
                 if 'opt' in task_name:
                     dirs = wf_launchers[task_name]
@@ -639,11 +637,28 @@ class Pynta:
                         src = dirs[0]
                         print(' Name task {0:^20s} {1:^12s} {2}'.format(task_name, task_state, src))
                         file_traj = [name for name in os.listdir(src) if name.endswith(".traj")]
+
+                        fw_json_path = os.path.join(src, "FW.json")
+
+                        # Check if FW.json exists
+                        if os.path.exists(fw_json_path):
+                            with open(fw_json_path) as file:
+                                filejson = json.load(file)
+
+                            dst = os.path.dirname(filejson['spec']['_tasks'][0]['xyz'])
+
+                            # Copy the .traj files to dst
+                            for traj_file in file_traj:
+                                copyDataAndSave(src, dst, traj_file)  # Copy each .traj file
+                            print('Copying traj files to the destination folder', dst)
+                        else:
+                            print(f"Warning: {fw_json_path} does not exist.")
+
                         if len(file_traj) > 1:
                             file_traj = file_traj[0]
                             base, ext = os.path.splitext(file_traj)
 
-                            with open (os.path.join(src, "FW.json")) as file:
+                            with open(os.path.join(src, "FW.json")) as file:
                                 filejson = json.load(file)
 
                             if opt_method == 'QuasiNewton':
@@ -659,37 +674,138 @@ class Pynta:
                             copyDataAndSave(src, dst, namexyz)
                             copyDataAndSave(src, dst, f'{base}.traj')
 
+                    # Rerun the firework and update the specification for optimization tasks
+                    self.launchpad.rerun_fw(task_id)
+                    self.launchpad.update_spec([task_id], newd)
+
                 if 'vib' in task_name:
                     dirs = wf_launchers[task_name]
                     if dirs != []:
                         src = dirs[0]
                         print(' Name task {0:^20s} {1:^12s} {2}'.format(task_name, task_state, src))
-                        
+
+                        fw_json_path = os.path.join(src, "FW.json")
+
+                        # Check if FW.json exists
+                        if os.path.exists(fw_json_path):
+                            with open(fw_json_path) as file:
+                                filejson = json.load(file)
+
+                            dst = os.path.dirname(filejson['spec']['_tasks'][0]['xyz'])
+                            print('Destination folder', dst)
+
                         # Check if there is a directory named 'vib' in the source directory
                         dir_vib_path = os.path.join(src, 'vib')
                         if os.path.isdir(dir_vib_path):
-                            dir_vib = dir_vib_path
-                            
                             # List all JSON files in the dir_vib directory
-                            for filename in os.listdir(dir_vib):
+                            for filename in os.listdir(dir_vib_path):
                                 if filename.endswith('.json'):
-                                    file_path = os.path.join(dir_vib, filename)
-                                    
+                                    file_path = os.path.join(dir_vib_path, filename)
+
                                     # Check if the JSON file is empty
                                     if os.path.getsize(file_path) == 0:
                                         print(f'Deleting empty JSON file: {file_path}')
                                         os.remove(file_path)
+
+                            # Copy the vib directory to the destination folder
+                            dst_vib_path = os.path.join(dst, 'vib')
+                            shutil.copytree(dir_vib_path, dst_vib_path)
+                            print(f'Copied vib directory to {dst_vib_path}')
                         else:
                             print(f'No directory named "vib" found in {src}.')
-                            print('No vibration calculations executed: Check optimization runs are finished and optimized geometries are collected.')              
 
-                # Keep on with the task_state != 'COMPLETED'
-                self.launchpad.rerun_fw(task_id)
-                self.launchpad.update_spec([task_id], newd)
-
+                    # Rerun the firework with specific options for 'vib' tasks
+                    self.launchpad.rerun_fw(task_id, rerun_duplicates=True, recover_launch=None, recover_mode='prev_dir') #run recovery fw in previous directory
+                    self.launchpad.update_spec([task_id], newd)
 
         self.launch()
 
+#restart option: RHE + KSA
+#    def reset(self,wfid):
+#
+#        id_number = int(wfid)
+#        # Get the information of the workflow
+#        wf1 = self.launchpad.get_wf_summary_dict(id_number, mode='more')
+#
+#        # Save the states of the workflow
+#        wf_states = wf1['states']
+#
+#        # Save the launcher directories
+#        wf_launchers = wf1['launch_dirs']
+#
+#        # In this bucle-for the tasks that are not completed, change the status
+#        # We need the number of the task(id)
+#
+#        for task_name, task_state in wf_states.items():
+#            if task_state != 'COMPLETED':
+#                # Here we will change  the map - node
+#                task_id = int(task_name.split('--')[-1])
+#                d = self.launchpad.get_fw_dict_by_id(task_id)
+#                newd = deepcopy(d['spec'])
+#
+#                nameTask = newd['_tasks'][0]['_fw_name']
+#
+#                nameTasks = ['{{pynta.tasks.MolecularOptimizationTask}}',
+#                            '{{pynta.tasks.MolecularVibrationsTask}}',
+#                            '{{pynta.tasks.MolecularIRC}}']
+#
+#                if 'opt' in task_name:
+#                    dirs = wf_launchers[task_name]
+#                    if dirs != []:
+#                        src = dirs[0]
+#                        print(' Name task {0:^20s} {1:^12s} {2}'.format(task_name, task_state, src))
+#                        file_traj = [name for name in os.listdir(src) if name.endswith(".traj")]
+#                        if len(file_traj) > 1:
+#                            file_traj = file_traj[0]
+#                            base, ext = os.path.splitext(file_traj)
+#
+#                            with open (os.path.join(src, "FW.json")) as file:
+#                                filejson = json.load(file)
+#
+#                            if opt_method == 'QuasiNewton':
+#                                namexyz = f'weakopt_{base}.xyz'
+#                            else:
+#                                namexyz = f'{base}_init.xyz'
+#
+#                            atoms = read(os.path.join(src, file_traj), index=-1)
+#                            dst = os.path.dirname(filejson['spec']['_tasks'][0]['xyz'])
+#
+#                            write(f'{src}/{namexyz}', atoms, format='xyz')
+#
+#                            copyDataAndSave(src, dst, namexyz)
+#                            copyDataAndSave(src, dst, f'{base}.traj')
+#
+#                if 'vib' in task_name:
+#                    dirs = wf_launchers[task_name]
+#                    if dirs != []:
+#                        src = dirs[0]
+#                        print(' Name task {0:^20s} {1:^12s} {2}'.format(task_name, task_state, src))
+#                        
+#                        # Check if there is a directory named 'vib' in the source directory
+#                        dir_vib_path = os.path.join(src, 'vib')
+#                        if os.path.isdir(dir_vib_path):
+#                            dir_vib = dir_vib_path
+#                            
+#                            # List all JSON files in the dir_vib directory
+#                            for filename in os.listdir(dir_vib):
+#                                if filename.endswith('.json'):
+#                                    file_path = os.path.join(dir_vib, filename)
+#                                    
+#                                    # Check if the JSON file is empty
+#                                    if os.path.getsize(file_path) == 0:
+#                                        print(f'Deleting empty JSON file: {file_path}')
+#                                        os.remove(file_path)
+#                        else:
+#                            print(f'No directory named "vib" found in {src}.')
+#                            print('No vibration calculations executed: Check optimization runs are finished and optimized geometries are collected.')              
+#
+#                # Keep on with the task_state != 'COMPLETED'
+#                self.launchpad.rerun_fw(task_id)
+#                self.launchpad.update_spec([task_id], newd)
+#
+#
+#        self.launch()
+#
 class CoverageDependence:
     def __init__(self,path,metal,surface_type,repeats,pynta_run_directory,software,software_kwargs,label,sites,site_adjacency,coad_stable_sites,adsorbates=[],transition_states=dict(),coadsorbates=[],
                  max_dist=3.0,frozen_layers=2,fmaxopt=0.05,Ncalc_per_iter=6,TS_opt_software_kwargs=None,launchpad_path=None,
