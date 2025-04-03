@@ -23,3 +23,7 @@ dependencies:
   - liblapack !=3.9.0
   - pysidt >=1
   - ruamel.yaml < 0.18
+  #MACE related packages
+  - pymace >=0.3.12
+  - orjson
+  - python-lmdb
