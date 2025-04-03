@@ -313,6 +313,9 @@ def name_to_ase_software(software_name):
     if software_name == "TBLite" or software_name == "XTB":
         module = import_module("tblite.ase")
         return getattr(module, "TBLite")
+    elif software_name == "MACECalculator":
+        module = import_module("mace.calculators.mace")
+        return getattr(module, software_name)
     else:
         module = import_module("ase.calculators."+software_name.lower())
         return getattr(module, software_name)
