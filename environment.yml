@@ -24,3 +24,7 @@ dependencies:
   - pysidt >=1
   - ruamel.yaml < 0.18
   - flask =2.2.5
+  #MACE related packages
+  - pymace >=0.3.12
+  - orjson
+  - python-lmdb
