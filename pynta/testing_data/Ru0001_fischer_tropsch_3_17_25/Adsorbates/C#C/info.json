@@ -1,0 +1,1 @@
+{"name": "C#C", "adjlist": "1 C u0 p0 c0 {2,T} {3,S}\n2 C u0 p0 c0 {1,T} {4,S}\n3 H u0 p0 c0 {1,S}\n4 H u0 p0 c0 {2,S}\n", "atom_to_molecule_atom_map": {"0": 0, "1": 1, "2": 2, "3": 3}, "gratom_to_molecule_surface_atom_map": {}, "nslab": 36}
