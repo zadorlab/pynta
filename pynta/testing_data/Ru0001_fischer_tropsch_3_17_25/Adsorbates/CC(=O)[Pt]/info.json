@@ -1,0 +1,1 @@
+{"name": "CC(=O)[Pt]", "adjlist": "1 O u0 p2 c0 {3,D}\n2 C u0 p0 c0 {3,S} {4,S} {5,S} {6,S}\n3 C u0 p0 c0 {1,D} {2,S} {7,S}\n4 H u0 p0 c0 {2,S}\n5 H u0 p0 c0 {2,S}\n6 H u0 p0 c0 {2,S}\n7 X u0 p0 c0 {3,S}\n", "atom_to_molecule_atom_map": {"0": 0, "1": 1, "2": 2, "3": 3, "4": 4, "5": 5}, "gratom_to_molecule_surface_atom_map": {"2": 2}, "nslab": 36}
