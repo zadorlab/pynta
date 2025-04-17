@@ -306,10 +306,10 @@ def generate_adsorbate_2D(atoms, sites, site_adjacency, nslab, max_dist=3.0, cut
 
 def generate_TS_2D(atoms, info_path,  metal, facet, sites, site_adjacency, nslab, imag_freq_path=None,
                      max_dist=3.0, cut_off_num=None, allowed_structure_site_structures=None,
-                     site_bond_cutoff=3.0,keep_binding_vdW_bonds=False,keep_vdW_surface_bonds=False):
+                     site_bond_cutoff=3.0,keep_binding_vdW_bonds=False,keep_vdW_surface_bonds=False,reaction_adsorbate_bond_cutoff=2.3):
 
     admol,neighbor_sites,ninds = generate_adsorbate_molecule(atoms, sites, site_adjacency, 
-                                                             nslab, max_dist=max_dist) 
+                                                             nslab, max_dist=max_dist)
 
     if cut_off_num:
         bds_to_remove = []
@@ -338,11 +338,13 @@ def generate_TS_2D(atoms, info_path,  metal, facet, sites, site_adjacency, nslab
     
     for bd in rbonds:
         inds2D = []
+        inds3D = []
         for label in bd:
             a = template.get_labeled_atoms(label)[0]
             aind = template.atoms.index(a)
             aseind = get_ase_index(aind,template_mol_map,molecule_to_atom_maps,nslab,info["ads_sizes"])
             if aseind:
+                inds3D.append(aseind)
                 inds2D.append(aseind - nslab + len(neighbor_sites))
 
         if len(inds2D) == 1:
@@ -376,8 +378,13 @@ def generate_TS_2D(atoms, info_path,  metal, facet, sites, site_adjacency, nslab
             else: 
                 b.set_order_str("S") #this ensures the the split_ts leaves this bond connected 
         else:
-            admol.add_bond(Bond(admol.atoms[inds2D[0]],admol.atoms[inds2D[1]],"R"))
-
+            if len(inds3D) == 2:
+                v,dist = get_distances(atoms.positions[inds3D[0]],atoms.positions[inds3D[1]],cell=atoms.cell,pbc=atoms.pbc)
+                if dist < reaction_adsorbate_bond_cutoff:
+                    admol.add_bond(Bond(admol.atoms[inds2D[0]],admol.atoms[inds2D[1]],"R"))
+            else:
+                admol.add_bond(Bond(admol.atoms[inds2D[0]],admol.atoms[inds2D[1]],"R"))
+            
     fix_bond_orders(admol,allow_failure=True,keep_binding_vdW_bonds=keep_binding_vdW_bonds,keep_vdW_surface_bonds=keep_vdW_surface_bonds)
 
     
@@ -442,12 +449,14 @@ def generate_TS_2D(atoms, info_path,  metal, facet, sites, site_adjacency, nslab
 
     for bd in rbonds:
         inds2D = []
+        inds3D = []
         for label in bd:
             a = template.get_labeled_atoms(label)[0]
             aind = template.atoms.index(a)
             aseind = get_ase_index(aind,template_mol_map,molecule_to_atom_maps,nslab,info["ads_sizes"])
             if aseind:
                 inds2D.append(aseind - nslab + len(neighbor_sites))
+                inds3D.append(aseind)
 
         if len(inds2D) == 1:
             i = inds2D[0]
@@ -537,7 +546,12 @@ def generate_TS_2D(atoms, info_path,  metal, facet, sites, site_adjacency, nslab
                 admol.add_bond(Bond(admol.atoms[site_pair[0]],Ratom,"R"))
                 admol.add_bond(Bond(admol.atoms[site_pair[1]],Ratom,"R")) 
         else:
-            admol.add_bond(Bond(admol.atoms[inds2D[0]],admol.atoms[inds2D[1]],"R"))
+            if len(inds3D) == 2:
+                v,dist = get_distances(atoms.positions[inds3D[0]],atoms.positions[inds3D[1]],cell=atoms.cell,pbc=atoms.pbc)
+                if dist < reaction_adsorbate_bond_cutoff:
+                    admol.add_bond(Bond(admol.atoms[inds2D[0]],admol.atoms[inds2D[1]],"R"))
+            else:
+                admol.add_bond(Bond(admol.atoms[inds2D[0]],admol.atoms[inds2D[1]],"R"))
 
     fix_bond_orders(admol,allow_failure=True,keep_binding_vdW_bonds=keep_binding_vdW_bonds,keep_vdW_surface_bonds=keep_vdW_surface_bonds) #Reaction bonds prevent proper octet completion
     
