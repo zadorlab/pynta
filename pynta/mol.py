@@ -837,7 +837,7 @@ def find_adsorbate_atoms_surface_sites(atom,mol):
     return atsout,surf_sites
 
 def split_adsorbed_structures(admol,clear_site_info=True,adsorption_info=False,atoms_to_skip=None,
-                              atom_mapping=False):
+                              atom_mapping=False, split_sites_with_multiple_adsorbates=False):
     """_summary_
 
     Args:
@@ -845,7 +845,8 @@ def split_adsorbed_structures(admol,clear_site_info=True,adsorption_info=False,a
         clear_site_info (bool, optional): clears site identify information. Defaults to True.
         adsorption_info (bool, optional): also returns the map from atom to index for admol for each surface site structures are split off from. Defaults to False.
         atoms_to_skip (_type_, optional): list of atoms in admol to not include in the split structures. Defaults to None.
-
+        split_sites_with_multiple_adsorbates (bool, optional): If a site has multiple bonds to adsorbates splits that site so that each adsorption bond is to a different site
+        
     Returns:
         _type_: _description_
     """
@@ -870,25 +871,68 @@ def split_adsorbed_structures(admol,clear_site_info=True,adsorption_info=False,a
             else:
                 atoms_to_remove.append(at)
 
+    reaction_bonds = False
+    bd_to_remove = []
+    for bd in m.get_all_edges():
+        if bd.is_reaction_bond():
+            reaction_bonds = True
+        if bd.atom1.is_surface_site() and bd.atom2.is_surface_site():
+            bd_to_remove.append(bd)
+    
+    split_site_atom_mapping = dict()
+    new_site_atoms = []
+    if split_sites_with_multiple_adsorbates:
+        ad_ind_to_original_site_atom_bond_map = dict()
+        adsorbate_new_site_inds = []
+        for i,a in enumerate(m.atoms):
+            if a.is_surface_site() and len([k for k in a.bonds.keys() if not k.is_surface_site()]) > 1:
+                ind = max(m.atoms.index(a2) for a2 in a.bonds.keys())
+                adsorbate_new_site_inds.append(ind)
+                bd = a.bonds[m.atoms[ind]]
+                ad_ind_to_original_site_atom_bond_map[ind] = (a,bd)
+                bd_to_remove.append(bd)
+
+        for ind in adsorbate_new_site_inds:
+            orig_site,orig_bond = ad_ind_to_original_site_atom_bond_map[ind]
+            a = m.atoms[ind]
+            newat = Atom(element="X", lone_pairs=0, site=a.site, morphology=a.morphology)
+            m.add_atom(newat)
+            new_site_atoms.append(newat)
+            bd = Bond(a,newat,order=orig_bond.order)
+            m.add_bond(bd)
+            split_site_atom_mapping[orig_site] = [m.atoms.index(orig_site),m.atoms.index(newat)]
+        
     if adsorption_info:
-        adsorbed_atom_dict = {at: i for i,at in enumerate(m.atoms) if at.is_surface_site() and at not in atoms_to_remove}
+        adsorbed_atom_dict = {at: i for i,at in enumerate(m.atoms) if at.is_surface_site() and at not in atoms_to_remove and at not in new_site_atoms}
+        for k,v in split_site_atom_mapping.items():
+            adsorbed_atom_dict[k] = v
 
     if atom_mapping:
-        mapping = {at: i for i,at in enumerate(m.atoms) if at not in atoms_to_remove}
+        mapping = {at: i for i,at in enumerate(m.atoms) if at not in atoms_to_remove and at not in new_site_atoms}
+        for k,v in split_site_atom_mapping.items():
+            mapping[k] = v
     
+    for bd in bd_to_remove:
+        m.remove_bond(bd)
+        
     for at in atoms_to_remove:
-        m.remove_atom(at)
+        m.remove_atom(at) 
     
     if clear_site_info:
         for at in m.atoms:
             if at.is_surface_site():
                 at.site = ""
                 at.morphology = ""
+
     split_structs = m.split()
-    for s in split_structs:
-        s.update(sort_atoms=False)
-        s.update_connectivity_values()
-        s.multiplicity = 1
+    for newmol in split_structs:
+        if reaction_bonds:
+            newmol.update_multiplicity()
+            newmol.identify_ring_membership()
+            newmol.update_connectivity_values()
+        else:
+            newmol.update(sort_atoms=False)
+            newmol.update_connectivity_values()
 
     if atom_mapping and not adsorption_info:
         return split_structs,mapping 
