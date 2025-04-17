@@ -306,10 +306,10 @@ def generate_adsorbate_2D(atoms, sites, site_adjacency, nslab, max_dist=3.0, cut
 
 def generate_TS_2D(atoms, info_path,  metal, facet, sites, site_adjacency, nslab, imag_freq_path=None,
                      max_dist=3.0, cut_off_num=None, allowed_structure_site_structures=None,
-                     site_bond_cutoff=3.0,keep_binding_vdW_bonds=False,keep_vdW_surface_bonds=False):
+                     site_bond_cutoff=3.0,keep_binding_vdW_bonds=False,keep_vdW_surface_bonds=False,reaction_adsorbate_bond_cutoff=2.3):
 
     admol,neighbor_sites,ninds = generate_adsorbate_molecule(atoms, sites, site_adjacency, 
-                                                             nslab, max_dist=max_dist) 
+                                                             nslab, max_dist=max_dist)
 
     if cut_off_num:
         bds_to_remove = []
@@ -338,11 +338,13 @@ def generate_TS_2D(atoms, info_path,  metal, facet, sites, site_adjacency, nslab
     
     for bd in rbonds:
         inds2D = []
+        inds3D = []
         for label in bd:
             a = template.get_labeled_atoms(label)[0]
             aind = template.atoms.index(a)
             aseind = get_ase_index(aind,template_mol_map,molecule_to_atom_maps,nslab,info["ads_sizes"])
             if aseind:
+                inds3D.append(aseind)
                 inds2D.append(aseind - nslab + len(neighbor_sites))
 
         if len(inds2D) == 1:
@@ -376,8 +378,13 @@ def generate_TS_2D(atoms, info_path,  metal, facet, sites, site_adjacency, nslab
             else: 
                 b.set_order_str("S") #this ensures the the split_ts leaves this bond connected 
         else:
-            admol.add_bond(Bond(admol.atoms[inds2D[0]],admol.atoms[inds2D[1]],"R"))
-
+            if len(inds3D) == 2:
+                v,dist = get_distances(atoms.positions[inds3D[0]],atoms.positions[inds3D[1]],cell=atoms.cell,pbc=atoms.pbc)
+                if dist < reaction_adsorbate_bond_cutoff:
+                    admol.add_bond(Bond(admol.atoms[inds2D[0]],admol.atoms[inds2D[1]],"R"))
+            else:
+                admol.add_bond(Bond(admol.atoms[inds2D[0]],admol.atoms[inds2D[1]],"R"))
+            
     fix_bond_orders(admol,allow_failure=True,keep_binding_vdW_bonds=keep_binding_vdW_bonds,keep_vdW_surface_bonds=keep_vdW_surface_bonds)
 
     
@@ -442,12 +449,14 @@ def generate_TS_2D(atoms, info_path,  metal, facet, sites, site_adjacency, nslab
 
     for bd in rbonds:
         inds2D = []
+        inds3D = []
         for label in bd:
             a = template.get_labeled_atoms(label)[0]
             aind = template.atoms.index(a)
             aseind = get_ase_index(aind,template_mol_map,molecule_to_atom_maps,nslab,info["ads_sizes"])
             if aseind:
                 inds2D.append(aseind - nslab + len(neighbor_sites))
+                inds3D.append(aseind)
 
         if len(inds2D) == 1:
             i = inds2D[0]
@@ -537,7 +546,12 @@ def generate_TS_2D(atoms, info_path,  metal, facet, sites, site_adjacency, nslab
                 admol.add_bond(Bond(admol.atoms[site_pair[0]],Ratom,"R"))
                 admol.add_bond(Bond(admol.atoms[site_pair[1]],Ratom,"R")) 
         else:
-            admol.add_bond(Bond(admol.atoms[inds2D[0]],admol.atoms[inds2D[1]],"R"))
+            if len(inds3D) == 2:
+                v,dist = get_distances(atoms.positions[inds3D[0]],atoms.positions[inds3D[1]],cell=atoms.cell,pbc=atoms.pbc)
+                if dist < reaction_adsorbate_bond_cutoff:
+                    admol.add_bond(Bond(admol.atoms[inds2D[0]],admol.atoms[inds2D[1]],"R"))
+            else:
+                admol.add_bond(Bond(admol.atoms[inds2D[0]],admol.atoms[inds2D[1]],"R"))
 
     fix_bond_orders(admol,allow_failure=True,keep_binding_vdW_bonds=keep_binding_vdW_bonds,keep_vdW_surface_bonds=keep_vdW_surface_bonds) #Reaction bonds prevent proper octet completion
     
@@ -1257,3 +1271,407 @@ def add_coadsorbate_2D(mol2D,site,coad2D,slab,neighbor_sites_2D,site_2D_inds):
     mol2D.update_connectivity_values()
     mol2D.identify_ring_membership()
     return mol2D
+
+def validate_TS_configs(path,sites,site_adjacency,nslab,irc_concern_len=8):
+    """analyze all TSs run for a given TS target in a Pynta run to determine validity
+
+    Args:
+        path (_type_): path to the overall TS target directory
+        sites (_type_): list of all sites
+        site_adjacency (_type_): site adjacency information
+        nslab (_type_): number of atoms in the slab
+        irc_concern_len (int, optional): length below which IRCs are considered short. Defaults to 8.
+
+    Returns:
+        dictionary mapping each TS guess index to overall validity assessment, dictionary mapping each TS guess index to the analysis information used to decide that
+    """
+    valid_dict = dict()
+    valid_info = dict()
+    for p in os.listdir(path):
+        if not os.path.isdir(os.path.join(path,p)):
+            continue
+        if os.path.exists(os.path.join(path,p,"vib.json_vib.json")):
+            valid,vinfo = validate_TS(os.path.join(path,p,"opt.xyz"),sites,site_adjacency,nslab,irc_concern_len=irc_concern_len)
+            valid_dict[p] = valid
+            valid_info[p] = vinfo
+    return valid_dict,valid_info
+            
+def validate_TS(ts_path,sites,site_adjacency,nslab,irc_path1=None,irc_path2=None,info_path=None,adsorbate_dir=None,imag_freq_path=None,irc_concern_len=8):
+    """Assess the validity of a transition state. Combines information from the TS geometry, imaginary frequency and if available the IRCs. 
+    
+
+    Args:
+        ts_path (_type_): path to the TS optimized geometry file
+        sites (_type_): list of all sites
+        site_adjacency (_type_): site adjacency information
+        nslab (_type_): number of atoms in the slab
+        irc_path1 (_type_): path to the first IRC trajectory file
+        irc_path2 (_type_): path to the second IRC trajectory file
+        info_path (_type_, optional): path to the TS info.json file. Defaults to None.
+        adsorbate_dir (_type_, optional): adsorbates directory corresponding to this TS. Defaults to None.
+        imag_freq_path (_type_, optional): path to the imaginary frequency trajectory file. Defaults to None.
+        irc_concern_len (int, optional): length below which IRCs are considered short. Defaults to 8.
+
+    Returns:
+        Overall assessment of TS validity (bool), detailed assessment criteria information (dict)
+    """
+    if adsorbate_dir is None:
+        adsorbate_dir = os.path.join(os.path.split(os.path.split(os.path.split(ts_path)[0])[0])[0],"Adsorbates")
+    
+    if irc_path1 is None and os.path.exists(os.path.join(os.path.split(ts_path)[0],"irc_forward.traj")) and os.path.exists(os.path.join(os.path.split(ts_path)[0],"irc_reverse.traj")):
+        irc_path1 = os.path.join(os.path.split(ts_path)[0],"irc_forward.traj")
+        irc_path2 = os.path.join(os.path.split(ts_path)[0],"irc_reverse.traj")
+    
+    if info_path is None:
+        info_path = os.path.join(os.path.split(os.path.split(ts_path)[0])[0],"info.json")
+        
+    if imag_freq_path is None:
+        imag_freq_path = os.path.join(os.path.split(ts_path)[0],"vib.0.traj")
+    
+    with open(info_path,'r') as f:
+        info = json.load(f)
+    
+    reactants = Molecule().from_adjacency_list(info["reactants"])
+    products = Molecule().from_adjacency_list(info["products"])
+    
+    vdW_surface_bonds = False
+    binding_vdW_bonds = False
+    for mol in [reactants,products]:
+        for bd in mol.get_all_edges():
+            if bd.order == 0:
+                if bd.atom1.is_surface_site() or bd.atom2.is_surface_site():
+                    binding_vdW_bonds = True
+                    m = mol.copy(deep=True)
+                    b = m.get_bond(m.atoms[mol.atoms.index(bd.atom1)],m.atoms[mol.atoms.index(bd.atom2)])
+                    m.remove_bond(b)
+                    out = m.split()
+                    if len(out) == 1: #vdW bond is not only thing connecting adsorbate to surface
+                        vdW_surface_bonds = True
+                        
+    ts_val,struct_match,reaction_bond_alignments,fixed_bond_alignments = validate_TS_geometry(ts_path,reactants,products,sites,site_adjacency,nslab,info_path=info_path,
+                         imag_freq_path=imag_freq_path,allowed_structure_site_structures=None,keep_binding_vdW_bonds=binding_vdW_bonds,keep_vdW_surface_bonds=vdW_surface_bonds)
+    
+    if irc_path1 is not None:
+        both_valid,one_endpoint_valid,endpoints_match,target_endpoints_match,short_irc = validate_TS_ircs(irc_path1,irc_path2,reactants,products,sites,site_adjacency,nslab,
+                                                                allowed_structure_site_structures=None,
+                        binding_vdW_bonds=binding_vdW_bonds, vdW_surface_bonds=vdW_surface_bonds, irc_concern_len=irc_concern_len)
+        
+        d = {"TS_direct_Validation": ts_val, "IRC_Validation": both_valid, "One_Endpoint_Valid": one_endpoint_valid, "IRC_Endpoints_Match": endpoints_match,
+                                                    "Short_IRC": short_irc, "Struct Validation": struct_match, "Reaction_Bond_Freq_Alignments": reaction_bond_alignments,
+                                                    "Fixed_Bond_Freq_Alignments": fixed_bond_alignments}
+        if one_endpoint_valid is not None:
+            return both_valid or (((one_endpoint_valid and endpoints_match) or target_endpoints_match) and ts_val), d
+        else:
+            return ts_val,d
+    else:
+        d = {"TS_direct_Validation": ts_val, "IRC_Validation": None, "One_Endpoint_Valid": None,"IRC_Endpoints_Match": None,
+                                                    "Short_IRC": None, "Struct Validation": struct_match, "Reaction_Bond_Freq_Alignments": reaction_bond_alignments,
+                                                    "Fixed_Bond_Freq_Alignments": fixed_bond_alignments}
+        return ts_val,d
+
+def validate_TS_ircs(irc_path1,irc_path2,reactants,products,sites,site_adjacency,nslab,allowed_structure_site_structures=None,
+                     binding_vdW_bonds=False, vdW_surface_bonds=False, irc_concern_len=8, vdW_site_bond_cutoff=2.0):
+    """Assess the validity of a transition state based on the intrinsic reaction coordinate calculation (IRC)
+
+    Args:
+        irc_path1 (_type_): path to the first IRC trajectory file
+        irc_path2 (_type_): path to the second IRC trajectory file
+        reactants (_type_): Molecule representation of reactants
+        products (_type_): Molecule representation of products
+        sites (_type_): list of all sites
+        site_adjacency (_type_): site adjacency information
+        nslab (_type_): number of atoms in the slab
+        allowed_structure_site_structures (_type_, optional): allowed site binding information. Defaults to None.
+        binding_vdW_bonds (bool, optional): if the target reactants/products have binding surface vdW bonds. Defaults to False.
+        vdW_surface_bonds (bool, optional): if the target reactants/products have vdW surface vdW bonds that are not binding. Defaults to False.
+        irc_concern_len (int, optional): length below which IRCs are considered short. Defaults to 8.
+        vdW_site_bond_cutoff (float, optional): bond length above which surface vdW bonds to non-ontop sites are removed. Defaults to 2.0.
+
+    Returns:
+        overall assessment of TS validity (bool), if at least one IRC endpoint matches reactants/products (bool), if both IRC endpoints are the same (bool), if reactants and products are the same (bool), if the IRC was short (bool)
+    """
+    tr1 = Trajectory(irc_path1)
+    try:
+        admol1,neighbor_sites1,ninds1 = generate_adsorbate_2D(tr1[-1], sites, site_adjacency, nslab, max_dist=np.inf, cut_off_num=None, allowed_structure_site_structures=allowed_structure_site_structures,
+                            keep_binding_vdW_bonds=True, keep_vdW_surface_bonds=vdW_surface_bonds)
+    except (SiteOccupationException,FailedFixBondsException,TooManyElectronsException):
+        return None,None,None,None,None
+    
+    vdw_ase_inds = []
+    vdw_bds = []
+    for bd in admol1.get_all_edges():
+        if bd.is_van_der_waals():
+            if bd.atom1.is_surface_site() and not bd.atom2.is_surface_site():
+                vdw_ase_inds.append(admol1.atoms.index(bd.atom2) - len(neighbor_sites1) + nslab)
+                vdw_bds.append(bd)
+            elif not bd.atom1.is_surface_site() and bd.atom2.is_surface_site():
+                vdw_ase_inds.append(admol1.atoms.index(bd.atom1) - len(neighbor_sites1) + nslab)
+                vdw_bds.append(bd)
+                
+    occs = get_occupied_sites(tr1[-1],sites,nslab)
+    
+    vdw_bd_to_remove = []
+    for i,ind in enumerate(vdw_ase_inds):
+        for occ in occs:
+            if occ["bonding_index"] == ind:
+                if not binding_vdW_bonds and (occ["site"] == "ontop" or occ["bond_length"] > vdW_site_bond_cutoff):
+                    vdw_bd_to_remove.append(vdw_bds[i])
+    
+    for bd in vdw_bd_to_remove:
+        admol1.remove_bond(bd)
+    
+    split_structs1 = split_adsorbed_structures(admol1,clear_site_info=True,adsorption_info=False,atoms_to_skip=None,
+                              atom_mapping=False,split_sites_with_multiple_adsorbates=True)
+    
+    tr2 = Trajectory(irc_path2)
+    try:
+        admol2,neighbor_sites2,ninds2 = generate_adsorbate_2D(tr2[-1], sites, site_adjacency, nslab, max_dist=np.inf, cut_off_num=None, allowed_structure_site_structures=allowed_structure_site_structures,
+                            keep_binding_vdW_bonds=True, keep_vdW_surface_bonds=vdW_surface_bonds)
+    except (SiteOccupationException,FailedFixBondsException,TooManyElectronsException):
+        return False,None,None,None,None
+    
+    vdw_ase_inds = []
+    vdw_bds = []
+    for bd in admol2.get_all_edges():
+        if bd.is_van_der_waals():
+            if bd.atom1.is_surface_site() and not bd.atom2.is_surface_site():
+                vdw_ase_inds.append(admol2.atoms.index(bd.atom2) - len(neighbor_sites2) + nslab)
+                vdw_bds.append(bd)
+            elif not bd.atom1.is_surface_site() and bd.atom2.is_surface_site():
+                vdw_ase_inds.append(admol2.atoms.index(bd.atom1) - len(neighbor_sites2) + nslab)
+                vdw_bds.append(bd)
+                
+    occs = get_occupied_sites(tr2[-1],sites,nslab)
+    
+    vdw_bd_to_remove = []
+    for i,ind in enumerate(vdw_ase_inds):
+        for occ in occs:
+            if occ["bonding_index"] == ind:
+                if not binding_vdW_bonds and (occ["site"] == "ontop" or occ["bond_length"] > vdW_site_bond_cutoff):
+                    vdw_bd_to_remove.append(vdw_bds[i])
+    
+    for bd in vdw_bd_to_remove:
+        admol2.remove_bond(bd)
+        
+    split_structs2 = split_adsorbed_structures(admol2,clear_site_info=True,adsorption_info=False,atoms_to_skip=None,
+                              atom_mapping=False,split_sites_with_multiple_adsorbates=True)
+        
+    rs = reactants.split()
+    ps = products.split()
+    for r in rs+ps:
+        r.update_multiplicity()
+        r.update_atomtypes()
+        r.update_connectivity_values()
+        r.identify_ring_membership()
+        
+    reactant_1_mapping = dict()
+    reactant_1_match = True
+    for i,st in enumerate(split_structs1):
+        for j,r in enumerate(rs):
+            if j in reactant_1_mapping.keys():
+                continue
+            if st.is_isomorphic(r,save_order=True,strict=False):
+                reactant_1_mapping[j] = i
+                break 
+        else:
+            reactant_1_match = False
+    
+    reactant_2_mapping = dict()
+    reactant_2_match = True
+    for i,st in enumerate(split_structs2):
+        for j,r in enumerate(rs):
+            if j in reactant_2_mapping.keys():
+                continue
+            if st.is_isomorphic(r,save_order=True,strict=False):
+                reactant_2_mapping[j] = i
+                break 
+        else:
+            reactant_2_match = False
+    
+    product_1_mapping = dict()
+    product_1_match = True
+    for i,st in enumerate(split_structs1):
+        for j,r in enumerate(ps):
+            if j in product_1_mapping.keys():
+                continue
+            if st.is_isomorphic(r,save_order=True,strict=False):
+                product_1_mapping[j] = i
+                break 
+        else:
+            product_1_match = False
+    
+    product_2_mapping = dict()
+    product_2_match = True
+    for i,st in enumerate(split_structs2):
+        for j,r in enumerate(ps):
+            if j in product_2_mapping.keys():
+                continue
+            if st.is_isomorphic(r,save_order=True,strict=False):
+                product_2_mapping[j] = i
+                break 
+        else:
+            product_2_match = False
+    
+    #Check if IRC reactants and products are the same
+    endpoints_mapping = dict() 
+    endpoints_match = True
+    for i,st in enumerate(split_structs1):
+        for j,r in enumerate(split_structs2):
+            if j in endpoints_mapping.keys():
+                continue
+            if st.is_isomorphic(r,save_order=True,strict=False):
+                endpoints_mapping[j] = i
+                break 
+        else:
+            endpoints_match = False
+    
+    #Check if target reactants and products are the same
+    target_endpoints_mapping = dict() 
+    target_endpoints_match = True
+    for i,st in enumerate(rs):
+        for j,r in enumerate(ps):
+            if j in target_endpoints_mapping.keys():
+                continue
+            if st.is_isomorphic(r,save_order=True,strict=False):
+                target_endpoints_mapping[j] = i
+                break 
+        else:
+            target_endpoints_match = False
+    
+    if (reactant_1_match and product_2_match) or (reactant_2_match and product_1_match):
+        both_valid = True 
+    else:
+        both_valid = False
+    
+    if reactant_1_match or product_2_match or reactant_2_match or product_1_match:
+        one_endpoint_valid = True 
+    else:
+        one_endpoint_valid = False
+    
+    if len(tr1) < irc_concern_len or len(tr2) < irc_concern_len:
+        short_irc = True
+    else:
+        short_irc = False
+    
+    return both_valid,one_endpoint_valid,endpoints_match,target_endpoints_match,short_irc
+
+def validate_TS_geometry(opt_path,reactants,products,sites,site_adjacency,nslab,info_path=None,
+                         imag_freq_path=None,allowed_structure_site_structures=None,keep_binding_vdW_bonds=False,keep_vdW_surface_bonds=False,
+                         min_reaction_bond_alignment=0.7,max_fixed_bond_alignment=0.4):
+    """Evaluates the validity of a transition state based on its geometry and frequencies
+    1) the geometry is converted into graph form and compared with the target transition state graph
+    2) the imaginary frequency projection onto covalent bonds is examined to see if covalent bonds are being correctly stretched/not stretched
+
+    Args:
+        opt_path (_type_): path to the optimized TS geometry
+        reactants (_type_): Molecule representation of reactants
+        products (_type_): Molecule representation of products
+        sites (_type_): list of all sites
+        site_adjacency (_type_): site adjacency information
+        nslab (_type_): number of atoms in the slab
+        info_path (_type_, optional): path to the TS info.json file. Defaults to None.
+        imag_freq_path (_type_, optional): path to the imaginary frequency trajectory file. Defaults to None.
+        allowed_structure_site_structures (_type_, optional): allowed site binding information. Defaults to None.
+        keep_binding_vdW_bonds (bool, optional): during 3D to 2D keep vdW bonds that are needed to bind to the surface. Defaults to False.
+        keep_vdW_surface_bonds (bool, optional): during 3D to 2D keep vdW bonds in general. Defaults to False.
+        min_reaction_bond_alignment (float, optional): the minimum allowed bond alignment with imaginary frequency for a covalent bond breaking/forming in the reaction. Defaults to 0.7.
+        max_fixed_bond_alignment (float, optional): the maximum allowed bond alignment with imaginary frequency for a covalent bond unchanged in the reaction. Defaults to 0.3.
+
+    Returns:
+        overall assessment of validity (bool), if the TS geometry structurally matches the target (bool), list of breaking/forming bond alignments (list), list of fixed bond alignments (list)
+    """
+    atoms = read(opt_path)
+    
+    broken_bonds,formed_bonds = get_broken_formed_bonds(reactants,products)
+    target_TS = reactants.copy(deep=True)
+    
+    for labels in list(broken_bonds)+list(formed_bonds):
+        label1,label2 = list(labels)
+        a1 = target_TS.get_labeled_atoms(label1)[0]
+        a2 = target_TS.get_labeled_atoms(label2)[0]
+        if target_TS.has_bond(a1,a2):
+            bd = target_TS.get_bond(a1,a2)
+            bd.set_order_str('R')
+        else:
+            bd = Bond(a1,a2,order='R')
+            target_TS.add_bond(bd)
+    
+    target_TS.clear_labeled_atoms()
+    
+    target_split = target_TS.split()
+    
+    for st in target_split:
+        st.update_multiplicity()
+        st.update_atomtypes()
+        st.update_connectivity_values()
+        st.identify_ring_membership()
+    try:
+        admol,neighbor_sites,ninds = generate_TS_2D(atoms, info_path,  None, None, sites, site_adjacency, nslab, imag_freq_path=imag_freq_path,
+                        max_dist=np.inf, cut_off_num=None, allowed_structure_site_structures=allowed_structure_site_structures,
+                        keep_binding_vdW_bonds=keep_binding_vdW_bonds,keep_vdW_surface_bonds=keep_vdW_surface_bonds)
+        
+        
+        split_mols = split_adsorbed_structures(admol,clear_site_info=True,adsorption_info=False,atoms_to_skip=None,
+                                atom_mapping=False,split_sites_with_multiple_adsorbates=True)
+
+        for st in split_mols:
+            st.update_multiplicity()
+            st.update_atomtypes()
+            st.update_connectivity_values()
+            st.identify_ring_membership()
+            
+        mapping = dict()
+        match = True
+        for i,st in enumerate(split_mols):
+            for j,r in enumerate(target_split):
+                if j in mapping.keys():
+                    continue
+                if st.is_isomorphic(r,save_order=True,strict=False):
+                    mapping[j] = i
+                    break 
+            else:
+                match = False
+    except (SiteOccupationException,TooManyElectronsException):
+        return False,False,[],[]
+    
+    #get imaginary frequency motion
+    tr_ts = Trajectory(imag_freq_path)
+    v_ts = np.array([get_distances(tr_ts[15].positions[i], tr_ts[16].positions[i], cell=tr_ts[15].cell, pbc=tr_ts[15].pbc)[0][0][0] for i in range(nslab,len(tr_ts[15].positions))])
+    v_ts = v_ts.flatten()
+    v_ts /= np.linalg.norm(v_ts)
+    
+    Nrbonds = len([bd for bd in admol.get_all_edges() if bd.is_reaction_bond()])
+    
+    reaction_bond_alignments = []
+    fixed_bond_alignments = []
+    for bd in admol.get_all_edges():
+        if bd.atom1.is_surface_site() or bd.atom2.is_surface_site():
+            continue
+        else:
+            admol_ind1 = admol.atoms.index(bd.atom1)
+            admol_ind2 = admol.atoms.index(bd.atom2)
+            ase_ind1 = admol_ind1 - len(neighbor_sites) + nslab
+            ase_ind2 = admol_ind2 - len(neighbor_sites) + nslab
+            bvec = get_distances(atoms.positions[ase_ind1],atoms.positions[ase_ind2],cell=atoms.cell,pbc=atoms.pbc)[0][0][0]
+            v_b = []
+            for i in range(nslab,len(atoms.positions)):
+                if i == ase_ind1:
+                    v_b.append(bvec)
+                elif i == ase_ind2:
+                    v_b.append(-bvec)
+                else:
+                    v_b.append(np.zeros(3))
+            v_b = np.array(v_b).flatten()
+            v_b /= np.linalg.norm(v_b)
+            bond_alignment = Nrbonds * np.abs(np.dot(v_ts,v_b))
+            if bd.is_reaction_bond():
+                reaction_bond_alignments.append(bond_alignment)
+            else:
+                fixed_bond_alignments.append(bond_alignment)
+    
+    if fixed_bond_alignments:
+        min_r_bond_alignment = np.max(fixed_bond_alignments) < max_fixed_bond_alignment
+    else:
+        min_r_bond_alignment = True
+        
+    return match and np.min(reaction_bond_alignments) > min_reaction_bond_alignment and min_r_bond_alignment, match,reaction_bond_alignments,fixed_bond_alignments

@@ -1,0 +1,1 @@
+{"name": "O=C=[Pt]", "adjlist": "1 O u0 p2 c0 {2,D}\n2 C u0 p0 c0 {1,D} {3,D}\n3 X u0 p0 c0 {2,D}\n", "atom_to_molecule_atom_map": {"0": 0, "1": 1}, "gratom_to_molecule_surface_atom_map": {"1": 1}, "nslab": 36}

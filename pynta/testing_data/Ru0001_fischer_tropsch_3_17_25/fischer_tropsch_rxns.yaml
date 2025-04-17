@@ -1,0 +1,438 @@
+- index: 0
+  product: 'multiplicity 1
+
+    1 *1 H u0 p0 c0 {2,S}
+
+    2 *2 H u0 p0 c0 {1,S}
+
+    3 *3 X u0 p0 c0
+
+    4 *4 X u0 p0 c0
+
+    '
+  reactant: 'multiplicity 1
+
+    1 *1 H u0 p0 c0 {3,S}
+
+    2 *2 H u0 p0 c0 {4,S}
+
+    3 *3 X u0 p0 c0 {1,S}
+
+    4 *4 X u0 p0 c0 {2,S}
+
+    '
+  reaction: 'H2 + 2* => 2 H*'
+  reaction_family: Dissociative Adsorption
+- index: 1
+  product: 'multiplicity 1
+
+    1 *1 H u0 p0 c0 {4,S}
+
+    2 *2 C u0 p0 c0 {3,D} {5,D}
+
+    3 *3 O u0 p2 c0 {2,D}
+
+    4 *4 X u0 p0 c0 {1,S}
+
+    5 *5 X u0 p0 c0 {2,D}
+
+    '
+  reactant: 'multiplicity 1
+
+    1 *1 H u0 p0 c0 {2,S}
+
+    2 *2 C u0 p0 c0 {3,D} {5,S} {1,S}
+
+    3 *3 O u0 p2 c0 {2,D}
+
+    4 *4 X u0 p0 c0
+
+    5 *5 X u0 p0 c0 {2,S}
+
+    '
+  reaction: 'CO* + H* => HCO*'
+  reaction_family: Reverse Dissociation
+- index: 2
+  product: 'multiplicity 1
+
+    1 *1 C u0 p0 c0 {2,D} {3,D}
+
+    2 *2 O u0 p2 c0 {1,D}
+
+    3 *3 X u0 p0 c0 {1,D}
+
+    4 *4 X u0 p0 c0
+
+    '
+  reactant: 'multiplicity 1
+
+    1 *1 C u0 p0 c0 {3,Q}
+
+    2 *2 O u0 p2 c0 {4,D}
+
+    3 *3 X u0 p0 c0 {1,Q}
+
+    4 *4 X u0 p0 c0 {2,D}
+
+    '
+  reaction: 'CO* => C* + O*'
+  reaction_family: Dissociation
+- index: 3
+  product: 'multiplicity 1
+
+    1 *1 C u0 p0 c0 {3,Q}
+
+    2 *2 H u0 p0 c0 {4,S}
+
+    3 *3 X u0 p0 c0 {1,Q}
+
+    4 *4 X u0 p0 c0 {2,S}
+
+    '
+  reactant: 'multiplicity 1
+
+    1 *1 C u0 p0 c0 {3,T} {2,S}
+
+    2 *2 H u0 p0 c0 {1,S}
+
+    3 *3 X u0 p0 c0 {1,T}
+
+    4 *4 X u0 p0 c0
+
+    '
+  reaction: 'C* + H* => CH* + *'
+  reaction_family: Addition
+- index: 4
+  product: 'multiplicity 1
+
+    1 *1 H u0 p0 c0 {2,S}
+
+    2 *2 C u0 p0 c0 {1,S} {3,D} {5,S}
+
+    3 *3 O u0 p2 c0 {2,D}
+
+    4 *4 H u0 p0 c0 {6,S}
+
+    5 *5 X u0 p0 c0 {2,S}
+
+    6 *6 X u0 p0 c0 {4,S}
+
+    '
+  reactant: 'multiplicity 1
+
+    1 *1 H u0 p0 c0 {2,S}
+
+    2 *2 C u0 p0 c0 {1,S} {3,S} {5,D}
+
+    3 *3 O u0 p2 c0 {2,S} {4,S}
+
+    4 *4 H u0 p0 c0 {3,S}
+
+    5 *5 X u0 p0 c0 {2,D}
+
+    6 *6 X u0 p0 c0
+
+    '
+  reaction: 'HCO* + H* => HCOH*'
+  reaction_family: Addition
+- index: 5
+  product: 'multiplicity 1
+
+    1 *1 H u0 p0 c0 {2,S}
+
+    2 *2 C u0 p0 c0 {1,S} {3,S} {5,D}
+
+    3 *3 O u0 p2 c0 {2,S} {4,S}
+
+    4 *4 H u0 p0 c0 {3,S}
+
+    5 *5 X u0 p0 c0 {2,D}
+
+    6 *6 X u0 p0 c0
+
+    '
+  reactant: 'multiplicity 1
+
+    1 *1 H u0 p0 c0 {2,S}
+
+    2 *2 C u0 p0 c0 {1,S} {5,T}
+
+    3 *3 O u0 p2 c0 {6,S} {4,S}
+
+    4 *4 H u0 p0 c0 {3,S}
+
+    5 *5 X u0 p0 c0 {2,T}
+
+    6 *6 X u0 p0 c0 {3,S}
+
+    '
+  reaction: 'HCOH* => CH* + OH*'
+  reaction_family: Dissociation
+- index: 6
+  product: 'multiplicity 1
+
+    1 *1 H u0 p0 c0 {2,S}
+
+    2 *2 O u0 p2 c0 {1,S} {3,S}
+
+    3 *3 X u0 p0 c0 {2,S}
+
+    4 *4 X u0 p0 c0
+
+    '
+  reactant: 'multiplicity 1
+
+    1 *1 H u0 p0 c0 {4,S}
+
+    2 *2 O u0 p2 c0 {3,D}
+
+    3 *3 X u0 p0 c0 {2,D}
+
+    4 *4 X u0 p0 c0 {1,S}
+
+    '
+  reaction: 'OH* => O* + H*'
+  reaction_family: Dissociation
+- index: 7
+  product: 'multiplicity 1
+
+    1 *1 H u0 p0 c0 {2,S}
+
+    2 *2 O u0 p2 c0 {1,S} {4,S}
+
+    3 *3 H u0 p0 c0 {5,S}
+
+    4 *4 X u0 p0 c0 {2,S}
+
+    5 *5 X u0 p0 c0 {3,S}
+
+    '
+  reactant: 'multiplicity 1
+
+    1 *1 H u0 p0 c0 {2,S}
+
+    2 *2 O u0 p2 c0 {1,S} {3,S}
+
+    3 *3 H u0 p0 c0 {2,S}
+
+    4 *4 X u0 p0 c0
+
+    5 *5 X u0 p0 c0
+
+    '
+  reaction: 'OH* + H* => H2O + 2*'
+  reaction_family: Dissociative Desorption
+- index: 8
+  product: 'multiplicity 1
+
+    1 *1 H u0 p0 c0 {2,S}
+
+    2 *2 C u0 p0 c0 {1,S} {4,T}
+
+    3 *3 H u0 p0 c0 {5,S}
+
+    4 *4 X u0 p0 c0 {2,T}
+
+    5 *5 X u0 p0 c0 {3,S}
+
+    '
+  reactant: 'multiplicity 1
+
+    1 *1 H u0 p0 c0 {2,S}
+
+    2 *2 C u0 p0 c0 {1,S} {4,D} {3,S}
+
+    3 *3 H u0 p0 c0 {2,S}
+
+    4 *4 X u0 p0 c0 {2,D}
+
+    5 *5 X u0 p0 c0
+
+    '
+  reaction: 'CH* + H* => CH2* + *'
+  reaction_family: Addition
+- index: 9
+  product: 'multiplicity 1
+
+    1 *1 C u0 p0 c0 {2,S} {3,S} {5,D}
+
+    2 *2 H u0 p0 c0 {1,S}
+
+    3 *3 H u0 p0 c0 {1,S}
+
+    4 *4 H u0 p0 c0 {6,S}
+
+    5 *5 X u0 p0 c0 {1,D}
+
+    6 *6 X u0 p0 c0 {4,S}
+
+    '
+  reactant: 'multiplicity 1
+
+    1 *1 C u0 p0 c0 {2,S} {3,S} {5,S} {4,S}
+
+    2 *2 H u0 p0 c0 {1,S}
+
+    3 *3 H u0 p0 c0 {1,S}
+
+    4 *4 H u0 p0 c0 {1,S}
+
+    5 *5 X u0 p0 c0 {1,S}
+
+    6 *6 X u0 p0 c0
+
+    '
+  reaction: 'CH2* + H* => CH3* + *'
+  reaction_family: Addition
+- index: 10
+  product: 'multiplicity 1
+
+    1 *1 C u0 p0 c0 {2,S} {3,S} {4,S} {6,S}
+
+    2 *2 H u0 p0 c0 {1,S}
+
+    3 *3 H u0 p0 c0 {1,S}
+
+    4 *4 H u0 p0 c0 {1,S}
+
+    5 *5 H u0 p0 c0 {7,S}
+
+    6 *6 X u0 p0 c0 {1,S}
+
+    7 *7 X u0 p0 c0 {5,S}
+
+    '
+  reactant: 'multiplicity 1
+
+    1 *1 C u0 p0 c0 {2,S} {3,S} {4,S} {5,S}
+
+    2 *2 H u0 p0 c0 {1,S}
+
+    3 *3 H u0 p0 c0 {1,S}
+
+    4 *4 H u0 p0 c0 {1,S}
+
+    5 *5 H u0 p0 c0 {1,S}
+
+    6 *6 X u0 p0 c0
+
+    7 *7 X u0 p0 c0
+
+    '
+  reaction: 'CH3* + H* => CH4 + 2*'
+  reaction_family: Associative Desorption
+- index: 11
+  product: 'multiplicity 1
+
+    1 *1 C u0 p0 c0 {2,S} {5,T}
+
+    2 *2 H u0 p0 c0 {1,S}
+
+    3 *3 C u0 p0 c0 {4,S} {6,T}
+
+    4 *4 H u0 p0 c0 {3,S}
+
+    5 *5 X u0 p0 c0 {1,T}
+
+    6 *6 X u0 p0 c0 {3,T}
+
+    '
+  reactant: 'multiplicity 1
+
+    1 *1 C u0 p0 c0 {2,S} {3,T}
+
+    2 *2 H u0 p0 c0 {1,S}
+
+    3 *3 C u0 p0 c0 {4,S} {1,T}
+
+    4 *4 H u0 p0 c0 {3,S}
+
+    5 *5 X u0 p0 c0
+
+    6 *6 X u0 p0 c0
+
+    '
+  reaction: 'CH* + CH* => C2H2'
+  reaction_family: Associative Desorption
+- index: 12
+  product: 'multiplicity 1
+
+    1 *1 C u0 p0 c0 {2,S} {3,S} {4,S} {7,S}
+
+    2 *2 H u0 p0 c0 {1,S}
+
+    3 *3 H u0 p0 c0 {1,S}
+
+    4 *4 H u0 p0 c0 {1,S}
+
+    5 *5 C u0 p0 c0 {6,D} {8,D}
+
+    6 *6 O u0 p2 c0 {5,D}
+
+    7 *7 X u0 p0 c0 {1,S}
+
+    8 *8 X u0 p0 c0 {5,D}
+
+    '
+  reactant: 'multiplicity 1
+
+    1 *1 C u0 p0 c0 {2,S} {3,S} {4,S} {5,S}
+
+    2 *2 H u0 p0 c0 {1,S}
+
+    3 *3 H u0 p0 c0 {1,S}
+
+    4 *4 H u0 p0 c0 {1,S}
+
+    5 *5 C u0 p0 c0 {6,D} {8,S} {1,S}
+
+    6 *6 O u0 p2 c0 {5,D}
+
+    7 *7 X u0 p0 c0
+
+    8 *8 X u0 p0 c0 {5,S}
+
+    '
+  reaction: 'CH3* + CO* => CH3CO*'
+  reaction_family: Insertion
+- index: 13
+  product: 'multiplicity 1
+
+    1 *1 C u0 p0 c0 {2,S} {3,S} {4,S} {5,S}
+
+    2 *2 H u0 p0 c0 {1,S}
+
+    3 *3 H u0 p0 c0 {1,S}
+
+    4 *4 H u0 p0 c0 {1,S}
+
+    5 *5 C u0 p0 c0 {6,D} {8,S} {1,S}
+
+    6 *6 O u0 p2 c0 {5,D}
+
+    7 *7 X u0 p0 c0
+
+    8 *8 X u0 p0 c0 {5,S}
+
+    '
+  reactant: 'multiplicity 1
+
+    1 *1 C u0 p0 c0 {2,S} {3,S} {4,S} {5,S}
+
+    2 *2 H u0 p0 c0 {1,S}
+
+    3 *3 H u0 p0 c0 {1,S}
+
+    4 *4 H u0 p0 c0 {1,S}
+
+    5 *5 C u0 p0 c0 {8,T} {1,S}
+
+    6 *6 O u0 p2 c0 {7,D}
+
+    7 *7 X u0 p0 c0 {6,D}
+
+    8 *8 X u0 p0 c0 {5,T}
+
+    '
+  reaction: 'CH3CO* + * => CH3C* + O*'
+  reaction_family: Dissociation
