@@ -1272,6 +1272,79 @@ def add_coadsorbate_2D(mol2D,site,coad2D,slab,neighbor_sites_2D,site_2D_inds):
     mol2D.identify_ring_membership()
     return mol2D
 
+def validate_TS(ts_path,sites,site_adjacency,nslab,irc_path1=None,irc_path2=None,info_path=None,adsorbate_dir=None,imag_freq_path=None,irc_concern_len=8):
+    """Assess the validity of a transition state. Combines information from the TS geometry, imaginary frequency and if available the IRCs. 
+    
+
+    Args:
+        ts_path (_type_): path to the TS optimized geometry file
+        sites (_type_): list of all sites
+        site_adjacency (_type_): site adjacency information
+        nslab (_type_): number of atoms in the slab
+        irc_path1 (_type_): path to the first IRC trajectory file
+        irc_path2 (_type_): path to the second IRC trajectory file
+        info_path (_type_, optional): path to the TS info.json file. Defaults to None.
+        adsorbate_dir (_type_, optional): adsorbates directory corresponding to this TS. Defaults to None.
+        imag_freq_path (_type_, optional): path to the imaginary frequency trajectory file. Defaults to None.
+        irc_concern_len (int, optional): length below which IRCs are considered short. Defaults to 8.
+
+    Returns:
+        Overall assessment of TS validity (bool), detailed assessment criteria information (dict)
+    """
+    if adsorbate_dir is None:
+        adsorbate_dir = os.path.join(os.path.split(os.path.split(os.path.split(ts_path)[0])[0])[0],"Adsorbates")
+    
+    if irc_path1 is None and os.path.exists(os.path.join(os.path.split(ts_path)[0],"irc_forward.traj")) and os.path.exists(os.path.join(os.path.split(ts_path)[0],"irc_reverse.traj")):
+        irc_path1 = os.path.join(os.path.split(ts_path)[0],"irc_forward.traj")
+        irc_path2 = os.path.join(os.path.split(ts_path)[0],"irc_reverse.traj")
+    
+    if info_path is None:
+        info_path = os.path.join(os.path.split(os.path.split(ts_path)[0])[0],"info.json")
+        
+    if imag_freq_path is None:
+        imag_freq_path = os.path.join(os.path.split(ts_path)[0],"vib.0.traj")
+    
+    with open(info_path,'r') as f:
+        info = json.load(f)
+    
+    reactants = Molecule().from_adjacency_list(info["reactants"])
+    products = Molecule().from_adjacency_list(info["products"])
+    
+    vdW_surface_bonds = False
+    binding_vdW_bonds = False
+    for mol in [reactants,products]:
+        for bd in mol.get_all_edges():
+            if bd.order == 0:
+                if bd.atom1.is_surface_site() or bd.atom2.is_surface_site():
+                    binding_vdW_bonds = True
+                    m = mol.copy(deep=True)
+                    b = m.get_bond(m.atoms[mol.atoms.index(bd.atom1)],m.atoms[mol.atoms.index(bd.atom2)])
+                    m.remove_bond(b)
+                    out = m.split()
+                    if len(out) == 1: #vdW bond is not only thing connecting adsorbate to surface
+                        vdW_surface_bonds = True
+                        
+    ts_val,struct_match,reaction_bond_alignments,fixed_bond_alignments = validate_TS_geometry(ts_path,reactants,products,sites,site_adjacency,nslab,info_path=info_path,
+                         imag_freq_path=imag_freq_path,allowed_structure_site_structures=None,keep_binding_vdW_bonds=binding_vdW_bonds,keep_vdW_surface_bonds=vdW_surface_bonds)
+    
+    if irc_path1 is not None:
+        both_valid,one_endpoint_valid,endpoints_match,target_endpoints_match,short_irc = validate_TS_ircs(irc_path1,irc_path2,reactants,products,sites,site_adjacency,nslab,
+                                                                allowed_structure_site_structures=None,
+                        binding_vdW_bonds=binding_vdW_bonds, vdW_surface_bonds=vdW_surface_bonds, irc_concern_len=irc_concern_len)
+        
+        d = {"TS_direct_Validation": ts_val, "IRC_Validation": both_valid, "One_Endpoint_Valid": one_endpoint_valid, "IRC_Endpoints_Match": endpoints_match,
+                                                    "Short_IRC": short_irc, "Struct Validation": struct_match, "Reaction_Bond_Freq_Alignments": reaction_bond_alignments,
+                                                    "Fixed_Bond_Freq_Alignments": fixed_bond_alignments}
+        if one_endpoint_valid is not None:
+            return both_valid or (((one_endpoint_valid and endpoints_match) or target_endpoints_match) and ts_val), d
+        else:
+            return ts_val,d
+    else:
+        d = {"TS_direct_Validation": ts_val, "IRC_Validation": None, "One_Endpoint_Valid": None,"IRC_Endpoints_Match": None,
+                                                    "Short_IRC": None, "Struct Validation": struct_match, "Reaction_Bond_Freq_Alignments": reaction_bond_alignments,
+                                                    "Fixed_Bond_Freq_Alignments": fixed_bond_alignments}
+        return ts_val,d
+
 def validate_TS_ircs(irc_path1,irc_path2,reactants,products,sites,site_adjacency,nslab,allowed_structure_site_structures=None,
                      binding_vdW_bonds=False, vdW_surface_bonds=False, irc_concern_len=8, vdW_site_bond_cutoff=2.0):
     """Assess the validity of a transition state based on the intrinsic reaction coordinate calculation (IRC)
