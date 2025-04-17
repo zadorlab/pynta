@@ -1272,6 +1272,30 @@ def add_coadsorbate_2D(mol2D,site,coad2D,slab,neighbor_sites_2D,site_2D_inds):
     mol2D.identify_ring_membership()
     return mol2D
 
+def validate_TS_configs(path,sites,site_adjacency,nslab,irc_concern_len=8):
+    """analyze all TSs run for a given TS target in a Pynta run to determine validity
+
+    Args:
+        path (_type_): path to the overall TS target directory
+        sites (_type_): list of all sites
+        site_adjacency (_type_): site adjacency information
+        nslab (_type_): number of atoms in the slab
+        irc_concern_len (int, optional): length below which IRCs are considered short. Defaults to 8.
+
+    Returns:
+        dictionary mapping each TS guess index to overall validity assessment, dictionary mapping each TS guess index to the analysis information used to decide that
+    """
+    valid_dict = dict()
+    valid_info = dict()
+    for p in os.listdir(path):
+        if not os.path.isdir(os.path.join(path,p)):
+            continue
+        if os.path.exists(os.path.join(path,p,"vib.json_vib.json")):
+            valid,vinfo = validate_TS(os.path.join(path,p,"opt.xyz"),sites,site_adjacency,nslab,irc_concern_len=irc_concern_len)
+            valid_dict[p] = valid
+            valid_info[p] = vinfo
+    return valid_dict,valid_info
+            
 def validate_TS(ts_path,sites,site_adjacency,nslab,irc_path1=None,irc_path2=None,info_path=None,adsorbate_dir=None,imag_freq_path=None,irc_concern_len=8):
     """Assess the validity of a transition state. Combines information from the TS geometry, imaginary frequency and if available the IRCs. 
     
