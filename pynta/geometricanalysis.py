@@ -1271,3 +1271,124 @@ def add_coadsorbate_2D(mol2D,site,coad2D,slab,neighbor_sites_2D,site_2D_inds):
     mol2D.update_connectivity_values()
     mol2D.identify_ring_membership()
     return mol2D
+
+def validate_TS_geometry(opt_path,reactants,products,sites,site_adjacency,nslab,info_path=None,
+                         imag_freq_path=None,allowed_structure_site_structures=None,keep_binding_vdW_bonds=False,keep_vdW_surface_bonds=False,
+                         min_reaction_bond_alignment=0.7,max_fixed_bond_alignment=0.4):
+    """Evaluates the validity of a transition state based on its geometry and frequencies
+    1) the geometry is converted into graph form and compared with the target transition state graph
+    2) the imaginary frequency projection onto covalent bonds is examined to see if covalent bonds are being correctly stretched/not stretched
+
+    Args:
+        opt_path (_type_): path to the optimized TS geometry
+        reactants (_type_): Molecule representation of reactants
+        products (_type_): Molecule representation of products
+        sites (_type_): list of all sites
+        site_adjacency (_type_): site adjacency information
+        nslab (_type_): number of atoms in the slab
+        info_path (_type_, optional): path to the TS info.json file. Defaults to None.
+        imag_freq_path (_type_, optional): path to the imaginary frequency trajectory file. Defaults to None.
+        allowed_structure_site_structures (_type_, optional): allowed site binding information. Defaults to None.
+        keep_binding_vdW_bonds (bool, optional): during 3D to 2D keep vdW bonds that are needed to bind to the surface. Defaults to False.
+        keep_vdW_surface_bonds (bool, optional): during 3D to 2D keep vdW bonds in general. Defaults to False.
+        min_reaction_bond_alignment (float, optional): the minimum allowed bond alignment with imaginary frequency for a covalent bond breaking/forming in the reaction. Defaults to 0.7.
+        max_fixed_bond_alignment (float, optional): the maximum allowed bond alignment with imaginary frequency for a covalent bond unchanged in the reaction. Defaults to 0.3.
+
+    Returns:
+        overall assessment of validity (bool), if the TS geometry structurally matches the target (bool), list of breaking/forming bond alignments (list), list of fixed bond alignments (list)
+    """
+    atoms = read(opt_path)
+    
+    broken_bonds,formed_bonds = get_broken_formed_bonds(reactants,products)
+    target_TS = reactants.copy(deep=True)
+    
+    for labels in list(broken_bonds)+list(formed_bonds):
+        label1,label2 = list(labels)
+        a1 = target_TS.get_labeled_atoms(label1)[0]
+        a2 = target_TS.get_labeled_atoms(label2)[0]
+        if target_TS.has_bond(a1,a2):
+            bd = target_TS.get_bond(a1,a2)
+            bd.set_order_str('R')
+        else:
+            bd = Bond(a1,a2,order='R')
+            target_TS.add_bond(bd)
+    
+    target_TS.clear_labeled_atoms()
+    
+    target_split = target_TS.split()
+    
+    for st in target_split:
+        st.update_multiplicity()
+        st.update_atomtypes()
+        st.update_connectivity_values()
+        st.identify_ring_membership()
+    try:
+        admol,neighbor_sites,ninds = generate_TS_2D(atoms, info_path,  None, None, sites, site_adjacency, nslab, imag_freq_path=imag_freq_path,
+                        max_dist=np.inf, cut_off_num=None, allowed_structure_site_structures=allowed_structure_site_structures,
+                        keep_binding_vdW_bonds=keep_binding_vdW_bonds,keep_vdW_surface_bonds=keep_vdW_surface_bonds)
+        
+        
+        split_mols = split_adsorbed_structures(admol,clear_site_info=True,adsorption_info=False,atoms_to_skip=None,
+                                atom_mapping=False,split_sites_with_multiple_adsorbates=True)
+
+        for st in split_mols:
+            st.update_multiplicity()
+            st.update_atomtypes()
+            st.update_connectivity_values()
+            st.identify_ring_membership()
+            
+        mapping = dict()
+        match = True
+        for i,st in enumerate(split_mols):
+            for j,r in enumerate(target_split):
+                if j in mapping.keys():
+                    continue
+                if st.is_isomorphic(r,save_order=True,strict=False):
+                    mapping[j] = i
+                    break 
+            else:
+                match = False
+    except (SiteOccupationException,TooManyElectronsException):
+        return False,False,[],[]
+    
+    #get imaginary frequency motion
+    tr_ts = Trajectory(imag_freq_path)
+    v_ts = np.array([get_distances(tr_ts[15].positions[i], tr_ts[16].positions[i], cell=tr_ts[15].cell, pbc=tr_ts[15].pbc)[0][0][0] for i in range(nslab,len(tr_ts[15].positions))])
+    v_ts = v_ts.flatten()
+    v_ts /= np.linalg.norm(v_ts)
+    
+    Nrbonds = len([bd for bd in admol.get_all_edges() if bd.is_reaction_bond()])
+    
+    reaction_bond_alignments = []
+    fixed_bond_alignments = []
+    for bd in admol.get_all_edges():
+        if bd.atom1.is_surface_site() or bd.atom2.is_surface_site():
+            continue
+        else:
+            admol_ind1 = admol.atoms.index(bd.atom1)
+            admol_ind2 = admol.atoms.index(bd.atom2)
+            ase_ind1 = admol_ind1 - len(neighbor_sites) + nslab
+            ase_ind2 = admol_ind2 - len(neighbor_sites) + nslab
+            bvec = get_distances(atoms.positions[ase_ind1],atoms.positions[ase_ind2],cell=atoms.cell,pbc=atoms.pbc)[0][0][0]
+            v_b = []
+            for i in range(nslab,len(atoms.positions)):
+                if i == ase_ind1:
+                    v_b.append(bvec)
+                elif i == ase_ind2:
+                    v_b.append(-bvec)
+                else:
+                    v_b.append(np.zeros(3))
+            v_b = np.array(v_b).flatten()
+            v_b /= np.linalg.norm(v_b)
+            bond_alignment = Nrbonds * np.abs(np.dot(v_ts,v_b))
+            if bd.is_reaction_bond():
+                reaction_bond_alignments.append(bond_alignment)
+            else:
+                fixed_bond_alignments.append(bond_alignment)
+    
+    if fixed_bond_alignments:
+        min_r_bond_alignment = np.max(fixed_bond_alignments) < max_fixed_bond_alignment
+    else:
+        min_r_bond_alignment = True
+        
+    return match and np.min(reaction_bond_alignments) > min_reaction_bond_alignment and min_r_bond_alignment, match,reaction_bond_alignments,fixed_bond_alignments
