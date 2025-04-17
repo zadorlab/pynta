@@ -23,3 +23,4 @@ dependencies:
   - liblapack !=3.9.0
   - pysidt >=1
   - ruamel.yaml < 0.18
+  - flask =2.2.5
