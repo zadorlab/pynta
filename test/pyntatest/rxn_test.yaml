@@ -7,9 +7,9 @@
 
     3    H u0 p0 c0 {2,S}
 
-    4    H u0 p0 c0 {2,S}
+    4 *4 H u0 p0 c0 {2,S}
 
-    5 *4 H u0 p0 c0 {2,S}
+    5    H u0 p0 c0 {2,S}
 
     6 *1 X u0 p0 c0 {1,S}
 
@@ -18,7 +18,7 @@
     '
   reactant: 'multiplicity 1
 
-    1 *3 O u0 p2 c0 {2,S} {5,S}
+    1 *3 O u0 p2 c0 {2,S} {6,S}
 
     2 *2 C u0 p0 c0 {1,S} {3,S} {4,S} {7,S}
 
@@ -26,9 +26,9 @@
 
     4    H u0 p0 c0 {2,S}
 
-    5 *4 H u0 p0 c0 {1,S}
-
-    6 *1 X u0 p0 c0
+    5 *1 X u0 p0 c0
+    
+    6 *4 H u0 p0 c0 {1,S}
 
     7 *5 X u0 p0 c0 {2,S}
 
