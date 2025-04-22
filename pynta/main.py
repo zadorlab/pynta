@@ -364,7 +364,7 @@ class Pynta:
                         big_slab_ads = structure
                         software_kwargs = deepcopy(self.software_kwargs)
                         target_site_num = len(mol.get_surface_sites())
-                        if self.software != "XTB":
+                        if self.software != "XTB" and self.software != "TBLite":
                             constraints = ["freeze up to {}".format(self.freeze_ind)]
                         else:
                             constraints = ["freeze up to "+str(self.nslab)]
@@ -441,7 +441,7 @@ class Pynta:
                             software_kwargs["command"] = software_kwargs["command"].replace("< PREFIX.pwi > PREFIX.pwo","-ndiag 1 < PREFIX.pwi > PREFIX.pwo")
                     else:
                         software_kwargs = deepcopy(self.software_kwargs)
-                        if self.software != "XTB":
+                        if self.software != "XTB" and self.software != "TBLite":
                             constraints = ["freeze up to {}".format(self.freeze_ind)]
                         else:
                             constraints = ["freeze up to "+str(self.nslab)]
@@ -478,7 +478,7 @@ class Pynta:
         and run vibrational and IRC calculations on the each unique final transition state
         Note the vibrational and IRC calculations are launched at the same time
         """
-        if self.software != "XTB":
+        if self.software != "XTB" and self.software != "TBLite":
             opt_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":self.software_kwargs_TS,
                 "run_kwargs": {"fmax" : self.fmaxopt, "steps" : 70},"constraints": ["freeze up to {}".format(self.freeze_ind)],"sella":True,"order":1,}
         else:
