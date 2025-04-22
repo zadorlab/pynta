@@ -40,6 +40,8 @@ class Pynta:
                             }, },
         software_kwargs_gas=None,
         TS_opt_software_kwargs=None,
+        harm_f_software="TBLite",
+        harm_f_software_kwargs={"method": "GFN1-xTB"},
         irc_mode="fixed", #choose irc mode: 'skip', 'relaxed', 'fixed'
         lattice_opt_software_kwargs={'kpts': (25,25,25), 'ecutwfc': 70, 'degauss':0.02, 'mixing_mode': 'plain'},
         reset_launchpad=False,queue_adapter_path=None,num_jobs=25,max_num_hfsp_opts=None,#max_num_hfsp_opts is mostly for fast testing
@@ -75,6 +77,9 @@ class Pynta:
         self.software_kwargs = software_kwargs
         self.irc_mode = irc_mode
 
+        self.harm_f_software = harm_f_software
+        self.harm_f_software_kwargs = harm_f_software_kwargs
+        
         if software.lower() == 'vasp':
             self.pbc = (True,True,True)
 
