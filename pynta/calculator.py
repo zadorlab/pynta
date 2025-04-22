@@ -66,33 +66,10 @@ def get_energy_forces_site_bond(atoms,ind,site_pos,k,deq):
     energy = k*(d-deq)**2
     return energy,k*forces
 
-class HarmonicallyForcedXTB(TBLite):
-    def get_energy_forces(self):
-        energy = 0.0
-        forces = np.zeros(self.atoms.positions.shape)
-        if hasattr(self.parameters,"atom_bond_potentials"):
-            for atom_bond_potential in self.parameters.atom_bond_potentials:
-                E,F = get_energy_forces_atom_bond(self.atoms,**atom_bond_potential)
-                energy += E
-                forces += F
-
-        if hasattr(self.parameters,"site_bond_potentials"):
-            for site_bond_potential in self.parameters.site_bond_potentials:
-                E,F = get_energy_forces_site_bond(self.atoms,**site_bond_potential)
-                energy += E
-                forces += F
-
-        return energy[0][0],forces
-
-    def calculate(self, atoms=None, properties=None, system_changes=calculator.all_changes):
-        TBLite.calculate(self,atoms=atoms,properties=properties,system_changes=system_changes)
-        energy,forces = self.get_energy_forces()
-        self.results["energy"] += energy
-        self.results["free_energy"] += energy
-        self.results["forces"] += forces
 
 def run_harmonically_forced_xtb(atoms,atom_bond_potentials,site_bond_potentials,nslab,
-        molecule_to_atom_maps=None,ase_to_mol_num=None,method="GFN1-xTB",constraints=[]):
+        molecule_to_atom_maps=None,ase_to_mol_num=None,harm_f_software="TBLite",
+                                harm_f_software_kwargs={"method": "GFN1-xTB","verbosity": 0},constraints=[]):
     """
     Optimize TS guess using xTB + harmonic forcing terms determined by atom_bond_potentials and site_bond_potentials
     """
@@ -122,11 +99,37 @@ def run_harmonically_forced_xtb(atoms,atom_bond_potentials,site_bond_potentials,
             
     atoms.set_constraint(out_constraints)
     
-    hfxtb = HarmonicallyForcedXTB(method="GFN1-xTB",
-                              atom_bond_potentials=atom_bond_potentials,
-                             site_bond_potentials=site_bond_potentials,verbosity=0)
+    hfsoft = name_to_ase_software(harm_f_software)
+    
+    class HarmonicallyForced(hfsoft):
+        def get_energy_forces(self):
+            energy = 0.0
+            forces = np.zeros(self.atoms.positions.shape)
+            if hasattr(self.parameters,"atom_bond_potentials"):
+                for atom_bond_potential in self.parameters.atom_bond_potentials:
+                    E,F = get_energy_forces_atom_bond(self.atoms,**atom_bond_potential)
+                    energy += E
+                    forces += F
 
-    atoms.calc = hfxtb
+            if hasattr(self.parameters,"site_bond_potentials"):
+                for site_bond_potential in self.parameters.site_bond_potentials:
+                    E,F = get_energy_forces_site_bond(self.atoms,**site_bond_potential)
+                    energy += E
+                    forces += F
+
+            return energy[0][0],forces
+
+        def calculate(self, atoms=None, properties=None, system_changes=calculator.all_changes):
+            hfsoft.calculate(self,atoms=atoms,properties=properties,system_changes=system_changes)
+            energy,forces = self.get_energy_forces()
+            self.results["energy"] += energy
+            self.results["free_energy"] += energy
+            self.results["forces"] += forces
+        
+    hf = HarmonicallyForced(atom_bond_potentials=atom_bond_potentials,
+                             site_bond_potentials=site_bond_potentials,**harm_f_software_kwargs)
+
+    atoms.calc = hf
 
     opt = Sella(atoms,trajectory="xtbharm.traj",order=0)
 
@@ -135,7 +138,8 @@ def run_harmonically_forced_xtb(atoms,atom_bond_potentials,site_bond_potentials,
     except Exception as e: #no pbc fallback
         return run_harmonically_forced_xtb_no_pbc(atoms,atom_bond_potentials,site_bond_potentials,nslab,
                                        molecule_to_atom_maps=molecule_to_atom_maps,ase_to_mol_num=ase_to_mol_num,
-                                               constraints=constraints,method=method,dthresh=4.0)
+                                               constraints=constraints,harm_f_software=harm_f_software,
+                                                harm_f_software_kwargs=harm_f_software_kwargs,dthresh=4.0)
 
     Eharm,Fharm = atoms.calc.get_energy_forces()
 
@@ -143,7 +147,8 @@ def run_harmonically_forced_xtb(atoms,atom_bond_potentials,site_bond_potentials,
 
 def run_harmonically_forced_xtb_no_pbc(atoms,atom_bond_potentials,site_bond_potentials,nslab,
                                molecule_to_atom_maps,ase_to_mol_num=None,
-                                       constraints=[],method="GFN1-xTB",dthresh=4.0):
+                                       constraints=[],harm_f_software="TBLite",
+                                harm_f_software_kwargs={"method": "GFN1-xTB","verbosity": 0},dthresh=4.0):
     """
     This algorithm extends the slab and selects a section of the slab in which the adsorbates are closest
     together, truncates the slab around it and optimizes without pbc based on the truncated slab before
@@ -283,11 +288,38 @@ def run_harmonically_forced_xtb_no_pbc(atoms,atom_bond_potentials,site_bond_pote
                 indices=list(range(n))
                 ))
     
-    hfxtb = HarmonicallyForcedXTB(method="GFN1-xTB",
-                                  atom_bond_potentials=new_atom_bond_potentials,
-                                 site_bond_potentials=new_site_potentials,verbosity=0)
+    hfsoft = name_to_ase_software(harm_f_software)
+    
+    class HarmonicallyForced(hfsoft):
+        def get_energy_forces(self):
+            energy = 0.0
+            forces = np.zeros(self.atoms.positions.shape)
+            if hasattr(self.parameters,"atom_bond_potentials"):
+                for atom_bond_potential in self.parameters.atom_bond_potentials:
+                    E,F = get_energy_forces_atom_bond(self.atoms,**atom_bond_potential)
+                    energy += E
+                    forces += F
+
+            if hasattr(self.parameters,"site_bond_potentials"):
+                for site_bond_potential in self.parameters.site_bond_potentials:
+                    E,F = get_energy_forces_site_bond(self.atoms,**site_bond_potential)
+                    energy += E
+                    forces += F
+
+            return energy[0][0],forces
+
+        def calculate(self, atoms=None, properties=None, system_changes=calculator.all_changes):
+            hfsoft.calculate(self,atoms=atoms,properties=properties,system_changes=system_changes)
+            energy,forces = self.get_energy_forces()
+            self.results["energy"] += energy
+            self.results["free_energy"] += energy
+            self.results["forces"] += forces
+        
+    hf = HarmonicallyForced(atom_bond_potentials=atom_bond_potentials,
+                             site_bond_potentials=site_bond_potentials,**harm_f_software_kwargs)
+    
     bigad.set_constraint(out_constraints)
-    bigad.calc = hfxtb
+    bigad.calc = hf
 
     opt = Sella(bigad,trajectory="xtbharm.traj",order=0)
 
