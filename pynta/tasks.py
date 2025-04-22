@@ -471,7 +471,8 @@ class MolecularTSEstimate(FiretaskBase):
     required_params = ["rxn","ts_path","slab_path","adsorbates_path","rxns_file","path","metal","facet","sites","site_adjacency",
                         "name_to_adjlist_dict", "gratom_to_molecule_atom_maps",
                         "gratom_to_molecule_surface_atom_maps","irc_mode",
-                        "vib_obj_dict","opt_obj_dict","nslab","Eharmtol","Eharmfiltertol","Ntsmin","max_num_hfsp_opts","surrogate_metal"]
+                        "vib_obj_dict","opt_obj_dict","nslab","Eharmtol","Eharmfiltertol","Ntsmin","max_num_hfsp_opts","surrogate_metal",
+                        "harm_f_software", "harm_f_software_kwargs"]
     optional_params = ["out_path","spawn_jobs","nprocs","IRC_obj_dict"]
     def run_task(self, fw_spec):
         gratom_to_molecule_atom_maps = {sm: {int(k):v for k,v in d.items()} for sm,d in self["gratom_to_molecule_atom_maps"].items()}
@@ -501,6 +502,8 @@ class MolecularTSEstimate(FiretaskBase):
         surrogate_metal = self["surrogate_metal"]
         slab = read(slab_path)
         irc_mode = self["irc_mode"]
+        harm_f_software = self["harm_f_software"]
+        harm_f_software_kwargs = self["harm_f_software_kwargs"]
 
         adsorbates_path = self["adsorbates_path"]
 
@@ -600,7 +603,7 @@ class MolecularTSEstimate(FiretaskBase):
             print("number of TS guesses after filtering by max distance between sites")
             print(len(tsstructs_out))
 
-        inputs = [ (tsstructs_out[j],atom_bond_potential_lists[j],site_bond_potential_lists[j],nslab,constraint_lists[j],ts_path,j,molecule_to_atom_maps,ase_to_mol_num) for j in range(len(tsstructs_out))]
+        inputs = [ (tsstructs_out[j],atom_bond_potential_lists[j],site_bond_potential_lists[j],nslab,constraint_lists[j],ts_path,j,molecule_to_atom_maps,ase_to_mol_num,harm_f_software,harm_f_software_kwargs) for j in range(len(tsstructs_out))]
 
         #with mp.Pool(nprocs) as pool:
         #    outputs = pool.map(map_harmonically_forced_xtb,inputs)
@@ -1304,11 +1307,11 @@ class SelectCalculationsTask(FiretaskBase):
         return FWAction(detours=newwf)
         
 def map_harmonically_forced_xtb(input):
-    tsstruct,atom_bond_potentials,site_bond_potentials,nslab,constraints,ts_path,j,molecule_to_atom_maps,ase_to_mol_num = input
+    tsstruct,atom_bond_potentials,site_bond_potentials,nslab,constraints,ts_path,j,molecule_to_atom_maps,ase_to_mol_num,harm_f_software,harm_f_software_kwargs = input
     os.makedirs(os.path.join(ts_path,str(j)))
     sp,Eharm,Fharm = run_harmonically_forced_xtb(tsstruct,atom_bond_potentials,site_bond_potentials,nslab,
                     molecule_to_atom_maps=molecule_to_atom_maps,ase_to_mol_num=ase_to_mol_num,
-                    method="GFN1-xTB",constraints=constraints)
+                    harm_f_software=harm_f_software,harm_f_software_kwargs=harm_f_software_kwargs,constraints=constraints)
 
     if sp:
         if "initial_charges" in sp.arrays.keys(): #avoid bug in ase
