@@ -6,7 +6,6 @@ import os
 from pynta.utils import get_unique_sym, get_unique_sym_structs, sites_match
 from pynta.geometricanalysis import *
 import itertools
-from pynta.calculator import HarmonicallyForcedXTB
 from pynta.mol import *
 from copy import deepcopy
 from pysidt.sidt import *
