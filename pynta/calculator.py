@@ -67,7 +67,7 @@ def get_energy_forces_site_bond(atoms,ind,site_pos,k,deq):
     return energy,k*forces
 
 
-def run_harmonically_forced_xtb(atoms,atom_bond_potentials,site_bond_potentials,nslab,
+def run_harmonically_forced(atoms,atom_bond_potentials,site_bond_potentials,nslab,
         molecule_to_atom_maps=None,ase_to_mol_num=None,harm_f_software="TBLite",
                                 harm_f_software_kwargs={"method": "GFN1-xTB","verbosity": 0},constraints=[]):
     """
@@ -136,7 +136,7 @@ def run_harmonically_forced_xtb(atoms,atom_bond_potentials,site_bond_potentials,
     try:
         opt.run(fmax=0.02,steps=150)
     except Exception as e: #no pbc fallback
-        return run_harmonically_forced_xtb_no_pbc(atoms,atom_bond_potentials,site_bond_potentials,nslab,
+        return run_harmonically_forced_no_pbc(atoms,atom_bond_potentials,site_bond_potentials,nslab,
                                        molecule_to_atom_maps=molecule_to_atom_maps,ase_to_mol_num=ase_to_mol_num,
                                                constraints=constraints,harm_f_software=harm_f_software,
                                                 harm_f_software_kwargs=harm_f_software_kwargs,dthresh=4.0)
@@ -145,7 +145,7 @@ def run_harmonically_forced_xtb(atoms,atom_bond_potentials,site_bond_potentials,
 
     return atoms,Eharm,Fharm
 
-def run_harmonically_forced_xtb_no_pbc(atoms,atom_bond_potentials,site_bond_potentials,nslab,
+def run_harmonically_forced_no_pbc(atoms,atom_bond_potentials,site_bond_potentials,nslab,
                                molecule_to_atom_maps,ase_to_mol_num=None,
                                        constraints=[],harm_f_software="TBLite",
                                 harm_f_software_kwargs={"method": "GFN1-xTB","verbosity": 0},dthresh=4.0):

@@ -18,7 +18,7 @@ from fireworks.core.fworker import FWorker
 import fireworks.fw_config
 from pynta.transitionstate import get_unique_optimized_adsorbates,determine_TS_construction,get_unique_TS_structs,generate_constraints_harmonic_parameters,get_unique_TS_templates_site_pairings
 from pynta.utils import *
-from pynta.calculator import run_harmonically_forced_xtb, add_sella_constraint
+from pynta.calculator import run_harmonically_forced, add_sella_constraint
 from pynta.mol import *
 from pynta.coveragedependence import *
 from pynta.geometricanalysis import *
@@ -606,8 +606,8 @@ class MolecularTSEstimate(FiretaskBase):
         inputs = [ (tsstructs_out[j],atom_bond_potential_lists[j],site_bond_potential_lists[j],nslab,constraint_lists[j],ts_path,j,molecule_to_atom_maps,ase_to_mol_num,harm_f_software,harm_f_software_kwargs) for j in range(len(tsstructs_out))]
 
         #with mp.Pool(nprocs) as pool:
-        #    outputs = pool.map(map_harmonically_forced_xtb,inputs)
-        outputs = list(map(map_harmonically_forced_xtb,inputs))
+        #    outputs = pool.map(map_harmonically_forced,inputs)
+        outputs = list(map(map_harmonically_forced,inputs))
 
         xyzs = [output[2] for output in outputs if output[0]]
         Es = [output[1] for output in outputs if output[0]]
@@ -912,7 +912,7 @@ class MolecularHFSP(OptimizationTask):
             else:
                 errors.append(e)
 
-        spout,Eharm,Fharm = run_harmonically_forced_xtb(sp,atom_bond_potentials,site_bond_potentials,nslab,
+        spout,Eharm,Fharm = run_harmonically_forced(sp,atom_bond_potentials,site_bond_potentials,nslab,
                     molecule_to_atom_maps=molecule_to_atom_maps,ase_to_mol_num=ase_to_mol_num,
                     method="GFN1-xTB",constraints=constraints)
         if spout:
@@ -1306,10 +1306,10 @@ class SelectCalculationsTask(FiretaskBase):
         
         return FWAction(detours=newwf)
         
-def map_harmonically_forced_xtb(input):
+def map_harmonically_forced(input):
     tsstruct,atom_bond_potentials,site_bond_potentials,nslab,constraints,ts_path,j,molecule_to_atom_maps,ase_to_mol_num,harm_f_software,harm_f_software_kwargs = input
     os.makedirs(os.path.join(ts_path,str(j)))
-    sp,Eharm,Fharm = run_harmonically_forced_xtb(tsstruct,atom_bond_potentials,site_bond_potentials,nslab,
+    sp,Eharm,Fharm = run_harmonically_forced(tsstruct,atom_bond_potentials,site_bond_potentials,nslab,
                     molecule_to_atom_maps=molecule_to_atom_maps,ase_to_mol_num=ase_to_mol_num,
                     harm_f_software=harm_f_software,harm_f_software_kwargs=harm_f_software_kwargs,constraints=constraints)
 
