@@ -29,6 +29,7 @@ def generate_adsorbate_guesses(mol,ads,slab,mol_to_atoms_map,metal,
             m_adatom = list(m_site.bonds.keys())[0]
             admol_site_index = [j for j,s in enumerate(neighbor_sites) if sites_match(s,sites_lists[i][0],slab)][0]
             admol_site = admol.atoms[admol_site_index]
+            m.remove_bond(m.get_bond(m_site,m_adatom))
             m.remove_atom(m_site)
             admol = admol.merge(m)
             admol.add_bond(Bond(m_adatom,admol_site,order=order))
@@ -54,18 +55,19 @@ def generate_adsorbate_guesses(mol,ads,slab,mol_to_atoms_map,metal,
             site_bond_params_list[0]["ind"] = atom_surf_inds[0]+len(slab)
             site_bond_params_list[1]["ind"] = atom_surf_inds[1]+len(slab)
             
-            admol = slabmol.copy()
+            admol = slabmol.copy(deep=True)
             m = mol.copy(deep=True)
             m_sites = m.get_surface_sites()
-            bds = list(m_site.bonds.values())
+            bds = [list(m_site.bonds.values())[0] for m_site in m_sites]
             orders = [bd.order for bd in bds]
-            m_adatoms = [list(m_site.bonds.keys())[0] for msite in m_sites]
+            m_adatoms = [list(m_site.bonds.keys())[0] for m_site in m_sites]
             admol_site_indices = [[j for j,s in enumerate(neighbor_sites) if sites_match(s,sites_lists[i][0],slab)][0],[j for j,s in enumerate(neighbor_sites) if sites_match(s,sites_lists[i][1],slab)][0]]
             admol_sites = [admol.atoms[admol_site_index] for admol_site_index in admol_site_indices]
-            for m_site in m_sites:
+            for i,m_site in enumerate(m_sites):
+                m.remove_bond(m.get_bond(m_site,m_adatoms[i]))
                 m.remove_atom(m_site)
             admol = admol.merge(m)
-            for i,m_adatom in m_adatoms:
+            for i,m_adatom in enumerate(m_adatoms):
                 admol.add_bond(Bond(m_adatom,admol_sites[i],order=orders[i]))
             admol.update_multiplicity()
             admol.update_atomtypes()
