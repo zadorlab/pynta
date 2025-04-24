@@ -8,7 +8,7 @@ import pynta
 
 def generate_adsorbate_guesses(mol,ads,slab,mol_to_atoms_map,metal,
                                single_site_bond_params_lists,single_sites_lists,double_site_bond_params_lists,double_sites_lists,
-                               Eharmtol,Eharmfiltertol,Ntsmin,slab_sites,site_adjacency):
+                               Eharmtol,Eharmfiltertol,Ntsmin,slab_sites,site_adjacency,harm_f_software,harm_f_software_kwargs):
     mol_surf_inds = [mol.atoms.index(a) for a in mol.get_adatoms()]
     atom_surf_inds = [mol_to_atoms_map[i] for i in mol_surf_inds]
     nslab = len(slab)
@@ -102,9 +102,9 @@ def generate_adsorbate_guesses(mol,ads,slab,mol_to_atoms_map,metal,
     site_bond_params_lists_out = []
     for i,geo in enumerate(geos):
         #freeze bonds for messier first opt
-        geo_out,Eharm,Fharm = run_harmonically_forced_xtb(geo,[],site_bond_params_lists[i],len(slab),
-                                molecule_to_atom_maps=mol_to_atoms_map,ase_to_mol_num=None,
-                                method="GFN1-xTB",constraints=constraint_list)
+        geo_out,Eharm,Fharm = run_harmonically_forced(geo,[],site_bond_params_lists[i],len(slab),
+                                molecule_to_atom_maps=mol_to_atoms_map,ase_to_mol_num=None,harm_f_software=harm_f_software,
+                                harm_f_software_kwargs=harm_f_software_kwargs,constraints=constraint_list)
         if geo_out:
             geo_out.calc = None
             geos_out.append(geo_out)

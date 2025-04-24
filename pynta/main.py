@@ -40,6 +40,8 @@ class Pynta:
                             }, },
         software_kwargs_gas=None,
         TS_opt_software_kwargs=None,
+        harm_f_software="TBLite",
+        harm_f_software_kwargs={"method": "GFN1-xTB"},
         irc_mode="fixed", #choose irc mode: 'skip', 'relaxed', 'fixed'
         lattice_opt_software_kwargs={'kpts': (25,25,25), 'ecutwfc': 70, 'degauss':0.02, 'mixing_mode': 'plain'},
         reset_launchpad=False,queue_adapter_path=None,num_jobs=25,max_num_hfsp_opts=None,#max_num_hfsp_opts is mostly for fast testing
@@ -75,6 +77,9 @@ class Pynta:
         self.software_kwargs = software_kwargs
         self.irc_mode = irc_mode
 
+        self.harm_f_software = harm_f_software
+        self.harm_f_software_kwargs = harm_f_software_kwargs
+        
         if software.lower() == 'vasp':
             self.pbc = (True,True,True)
 
@@ -297,7 +302,8 @@ class Pynta:
                         structs = generate_adsorbate_guesses(mol,ads,self.slab,mol_to_atoms_map,self.metal,
                                            self.single_site_bond_params_lists,self.single_sites_lists,
                                            self.double_site_bond_params_lists,self.double_sites_lists,
-                                           self.Eharmtol,self.Eharmfiltertol,self.Ntsmin,self.sites,self.site_adjacency)
+                                           self.Eharmtol,self.Eharmfiltertol,self.Ntsmin,self.sites,self.site_adjacency,
+                                           self.harm_f_software,self.harm_f_software_kwargs)
                         structures[sm] = structs
 
 
@@ -358,7 +364,7 @@ class Pynta:
                         big_slab_ads = structure
                         software_kwargs = deepcopy(self.software_kwargs)
                         target_site_num = len(mol.get_surface_sites())
-                        if self.software != "XTB":
+                        if self.software != "XTB" and self.software != "TBLite":
                             constraints = ["freeze up to {}".format(self.freeze_ind)]
                         else:
                             constraints = ["freeze up to "+str(self.nslab)]
@@ -435,7 +441,7 @@ class Pynta:
                             software_kwargs["command"] = software_kwargs["command"].replace("< PREFIX.pwi > PREFIX.pwo","-ndiag 1 < PREFIX.pwi > PREFIX.pwo")
                     else:
                         software_kwargs = deepcopy(self.software_kwargs)
-                        if self.software != "XTB":
+                        if self.software != "XTB" and self.software != "TBLite":
                             constraints = ["freeze up to {}".format(self.freeze_ind)]
                         else:
                             constraints = ["freeze up to "+str(self.nslab)]
@@ -472,7 +478,7 @@ class Pynta:
         and run vibrational and IRC calculations on the each unique final transition state
         Note the vibrational and IRC calculations are launched at the same time
         """
-        if self.software != "XTB":
+        if self.software != "XTB" and self.software != "TBLite":
             opt_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":self.software_kwargs_TS,
                 "run_kwargs": {"fmax" : self.fmaxopt, "steps" : 70},"constraints": ["freeze up to {}".format(self.freeze_ind)],"sella":True,"order":1,}
         else:
@@ -511,7 +517,8 @@ class Pynta:
                     "gratom_to_molecule_atom_maps":{sm: {str(k):v for k,v in d.items()} for sm,d in self.gratom_to_molecule_atom_maps.items()},
                     "gratom_to_molecule_surface_atom_maps":{sm: {str(k):v for k,v in d.items()} for sm,d in self.gratom_to_molecule_surface_atom_maps.items()},
                     "nslab":self.nslab,"Eharmtol":self.Eharmtol,"Eharmfiltertol":self.Eharmfiltertol,"Ntsmin":self.Ntsmin,
-                    "max_num_hfsp_opts":self.max_num_hfsp_opts, "surrogate_metal":self.surrogate_metal})
+                    "max_num_hfsp_opts":self.max_num_hfsp_opts, "surrogate_metal":self.surrogate_metal,
+                    "harm_f_software": self.harm_f_software, "harm_f_software_kwargs": self.harm_f_software_kwargs})
             reactants = rxn["reactant_names"]
             products = rxn["product_names"]
             parents = []
