@@ -650,14 +650,16 @@ class MolecularTSEstimate(FiretaskBase):
         else:
             return FWAction()
 
-def collect_firework(xyzs,check_symm,fw_generators,fw_generator_dicts,out_names,future_check_symms,parents=[],label="",allow_fizzled_parents=False):
+def collect_firework(xyzs,check_symm,fw_generators,fw_generator_dicts,out_names,future_check_symms,parents=[],label="",allow_fizzled_parents=False,
+                     detour=True):
     task = MolecularCollect({"xyzs": xyzs, "check_symm": check_symm, "fw_generators": fw_generators,
-        "fw_generator_dicts": fw_generator_dicts, "out_names": out_names, "future_check_symms": future_check_symms, "label": label})
+        "fw_generator_dicts": fw_generator_dicts, "out_names": out_names, "future_check_symms": future_check_symms, "label": label, "detour": detour})
     return Firework([task],parents=parents,name=label+"collect",spec={"_allow_fizzled_parents": allow_fizzled_parents,"_priority": 5})
 
 @explicit_serialize
 class MolecularCollect(CollectTask):
     required_params = ["xyzs","check_symm","fw_generators","fw_generator_dicts","out_names","future_check_symms","label"]
+    optional_params = ["detour"]
     def run_task(self, fw_spec):
         xyzs = [xyz for xyz in self["xyzs"] if os.path.exists(xyz)] #if the associated task errored a file may not be present
         if self["check_symm"]:
@@ -669,6 +671,7 @@ class MolecularCollect(CollectTask):
         fw_generator_dicts = self["fw_generator_dicts"]
         out_names = self["out_names"]
         future_check_symms = self["future_check_symms"]
+        detour = self["detour"] if "detour" in self.keys() else True
 
         for i in range(len(fw_generators)):
             if not isinstance(fw_generators[i],list):
@@ -701,9 +704,15 @@ class MolecularCollect(CollectTask):
                     "out_names": out_names[1:],"future_check_symms": future_check_symms[1:],"label": self["label"]})
             cfw = Firework([task],parents=fws,name=self["label"]+"collect",spec={"_allow_fizzled_parents":True,"_priority": 4})
             newwf = Workflow(fws+[cfw],name=self["label"]+"collect"+str(-len(self["fw_generators"])))
-            return FWAction(detours=newwf) #using detour allows us to inherit children from the original collect to the subsequent collects
+            if detour:
+                return FWAction(detours=newwf) #using detour allows us to inherit children from the original collect to the subsequent collects
+            else:
+                return FWAction(additions=newwf)
         else:
-            return FWAction(detours=fws)
+            if detour:
+                return FWAction(detours=fws)
+            else:
+                return FWAction(additions=fws)
 
 def TSnudge_firework(xyz,label,forward_path=None,reverse_path=None,spawn_jobs=False,software=None,opt_method=None,sella=False,
         socket=False,software_kwargs={},opt_kwargs={},run_kwargs={},constraints=[],parents=[],out_path=None,ignore_errors=False):
