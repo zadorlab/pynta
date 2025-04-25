@@ -385,7 +385,8 @@ class Pynta:
             parents = []
             if not adsorbates_finished:
                 for m in reactants+products:
-                    parents.extend(self.adsorbate_fw_dict[m])
+                    parents.append(self.adsorbate_fw_dict[m])
+                
             fw = Firework([ts_task],parents=parents,name="TS"+str(i)+"est",spec={"_allow_fizzled_parents": True,"_priority": 10})
             self.fws.append(fw)
 
