@@ -5,7 +5,82 @@ from pynta.geometricanalysis import generate_site_molecule
 import logging 
 import os 
 import pynta
+import json
 
+def construct_initial_guess_files(mol,mol_name,pynta_path,slab,metal,
+                               single_site_bond_params_lists,single_sites_lists,double_site_bond_params_lists,double_sites_lists,
+                               Eharmtol,Eharmfiltertol,Nharmmin,slab_sites,site_adjacency,pbc,nslab,harm_f_software,harm_f_software_kwargs):
+    """Generate and write initial guesses for adsorbate optimization
+
+    Args:
+        mol (_type_): Molecule representation of adsorbate
+        mol_name (_type_): name of the adsorbate
+        pynta_path (_type_): path to the pynta run directory
+        slab (_type_): slab ase.Atoms object
+        metal (_type_): metal/surrogate metal identify
+        single_site_bond_params_lists (_type_): list of site_bond_params for individual unique sites
+        single_sites_lists (_type_): list of individual unique sites
+        double_site_bond_params_lists (_type_):  list of site_bond_params for unique pairs of sites
+        double_sites_lists (_type_): list of unique pairs of sites
+        Eharmtol (_type_): harmonic tolerance for automatic selection
+        Eharmfiltertol (_type_): harmonic tolerance for removal
+        Nharmmin (_type_): target number of selected configurations after harmonic filtering
+        slab_sites (_type_): list of all sites
+        site_adjacency (_type_): site adjacency information
+        pbc (_type_): periodic boundary tuple
+        nslab (_type_): number of slab atoms
+        harm_f_software (_type_): software used for harmonic optimizations
+        harm_f_software_kwargs (_type_): keyword arguments for harmonic optimizations
+
+    Returns:
+        list of files with the corresponding xyzs
+    """
+    if os.path.exists(os.path.join(pynta_path,"Adsorbates",mol_name)):
+        return
+    
+    surf_sites = mol.get_surface_sites()
+
+    ads,mol_to_atoms_map = get_adsorbate(mol)
+    
+    if len(surf_sites) == 0:
+        ads.pbc = pbc
+        ads.center(vacuum=10)
+        structs = [ads]
+        gratom_to_molecule_atom_map = {val:key for key,val in mol_to_atoms_map.items()}
+        gratom_to_molecule_surface_atom_map = dict()
+    else:
+        structs = generate_adsorbate_guesses(mol,ads,slab,mol_to_atoms_map,metal,
+                                single_site_bond_params_lists,single_sites_lists,
+                                double_site_bond_params_lists,double_sites_lists,
+                                Eharmtol,Eharmfiltertol,Nharmmin,slab_sites,site_adjacency,harm_f_software,harm_f_software_kwargs)
+
+
+        gratom_to_molecule_atom_map = {val:key for key,val in mol_to_atoms_map.items()}
+
+        adatoms = []
+        surf_index_atom_map = dict()
+        for i,atm in enumerate(mol.atoms):
+            if atm.is_bonded_to_surface():
+                surf_index_atom_map[mol_to_atoms_map[i]] = i
+
+        gratom_to_molecule_surface_atom_map = surf_index_atom_map
+        xyzs = []
+        for i,structure in enumerate(structs):
+            prefix = i
+            try:
+                os.makedirs(os.path.join(pynta_path,"Adsorbates",mol_name,str(prefix)))
+            except:
+                pass
+            xyz = os.path.join(pynta_path,"Adsorbates",mol_name,str(prefix),str(prefix)+"_init.xyz")
+            xyzs.append(xyz)
+            write(xyz,structure)
+            sp_dict = {"name":mol_name, "adjlist":mol.to_adjacency_list(),"atom_to_molecule_atom_map": gratom_to_molecule_atom_map,
+                    "gratom_to_molecule_surface_atom_map": gratom_to_molecule_surface_atom_map, "nslab": nslab}
+            with open(os.path.join(pynta_path,"Adsorbates",mol_name,"info.json"),'w') as f:
+                json.dump(sp_dict,f)
+        
+        return xyzs
+                
 def generate_adsorbate_guesses(mol,ads,slab,mol_to_atoms_map,metal,
                                single_site_bond_params_lists,single_sites_lists,double_site_bond_params_lists,double_sites_lists,
                                Eharmtol,Eharmfiltertol,Nharmmin,slab_sites,site_adjacency,harm_f_software,harm_f_software_kwargs):
