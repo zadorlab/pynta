@@ -22,6 +22,7 @@ from pynta.calculator import run_harmonically_forced, add_sella_constraint
 from pynta.mol import *
 from pynta.coveragedependence import *
 from pynta.geometricanalysis import *
+from pynta.adsorbate import construct_initial_guess_files
 import numpy as np
 import multiprocessing as mp
 import json
@@ -464,6 +465,96 @@ class MolecularVibrationsTask(VibrationTask):
                 return FWAction(stored_data={"error": e}, exit=True)
 
         return FWAction()
+
+@explicit_serialize
+class MolecularAdsorbateEstimate(FiretaskBase):
+    required_params = ["mol","mol_name","slab_path","path","metal","facet","sites","site_adjacency",
+                        "single_site_bond_params_lists", "single_sites_lists",
+                        "double_site_bond_params_lists","double_sites_lists",
+                        "vib_obj_dict","nslab","Eharmtol","Eharmfiltertol","Nharmmin","pbc",
+                        "harm_f_software", "harm_f_software_kwargs","opt_software","opt_software_kwargs","opt_constraints","vib_constraints",
+                        "fmaxopt","socket"]
+    optional_params = ["out_path","spawn_jobs","nprocs"]
+    def run_task(self, fw_spec):
+        spawn_jobs = self["spawn_jobs"] if "spawn_jobs" in self.keys() else False
+        nprocs = self["nprocs"] if "nprocs" in self.keys() else 1
+        path = self["path"]
+
+        mol = Molecule().from_adjacency_list(self["mol"])
+        mol_name = self["mol_name"]
+        
+        opt_software = self["opt_software"]
+        opt_software_kwargs = self["opt_software_kwargs"]
+        opt_constraints = self["opt_constraints"]
+        vib_constraints = self["vib_constraints"]
+        
+        single_site_bond_params_lists = self["single_site_bond_params_lists"]
+        single_sites_lists = self["single_sites_lists"]
+        for q in single_sites_lists:
+            for s in q:
+                s["position"] = np.array(s["position"])
+                s["normal"] = np.array(s["normal"])
+        double_site_bond_params_lists = self["double_site_bond_params_lists"]
+        double_sites_lists = self["double_sites_lists"]
+        for q in double_sites_lists:
+            for s in q:
+                s["position"] = np.array(s["position"])
+                s["normal"] = np.array(s["normal"])
+            
+        metal = self["metal"]
+        facet = self["facet"]
+        nslab = self["nslab"]
+        pbc = self["pbc"]
+        sites = self["sites"]
+        for s in sites:
+            s["position"] = np.array(s["position"])
+            s["normal"] = np.array(s["normal"])
+        
+        site_adjacency = {int(k):[int(x) for x in v] for k,v in self["site_adjacency"].items()}
+        Nharmmin = self["Nharmmin"]
+        Eharmtol = self["Eharmtol"]
+        Eharmfiltertol = self["Eharmfiltertol"]
+        slab_path = self["slab_path"]
+        slab = read(slab_path)
+        harm_f_software = self["harm_f_software"]
+        harm_f_software_kwargs = self["harm_f_software_kwargs"]
+        fmaxopt = self["fmaxopt"]
+        socket = self["socket"]
+        
+        xyzs = construct_initial_guess_files(mol,mol_name,path,slab,metal,
+                               single_site_bond_params_lists,single_sites_lists,double_site_bond_params_lists,double_sites_lists,
+                               Eharmtol,Eharmfiltertol,Nharmmin,sites,site_adjacency,pbc,nslab,harm_f_software,harm_f_software_kwargs)
+        
+        if spawn_jobs:
+            optfws = []
+            optfws2 = []
+            previbxyzs = []
+            for xyz in xyzs:
+                prefix = os.path.split(os.path.split(xyz)[0])[1]
+                previbxyz = os.path.join(os.path.split(xyz)[0],prefix+".xyz")
+                previbxyzs.append(previbxyz)
+                fwopt = optimize_firework(os.path.join(path,"Adsorbates",mol_name,prefix,prefix+"_init.xyz"),
+                    opt_software,"weakopt_"+prefix,socket=socket,
+                    opt_method="MDMin",opt_kwargs={'dt': 0.05},software_kwargs=opt_software_kwargs,
+                    run_kwargs={"fmax" : 0.5, "steps" : 70},parents=[],constraints=opt_constraints,
+                    ignore_errors=True, metal=metal, facet=facet, priority=3.5)
+                fwopt2 = optimize_firework(os.path.join(path,"Adsorbates",mol_name,str(prefix),"weakopt_"+prefix+".xyz"),
+                    opt_software,prefix,socket=socket,
+                    opt_method="QuasiNewton",software_kwargs=opt_software_kwargs,
+                    run_kwargs={"fmax" : fmaxopt, "steps" : 70},parents=[fwopt],constraints=opt_constraints,
+                    ignore_errors=True, metal=metal, facet=facet, priority=3,
+                    allow_fizzled_parents=True)
+                optfws.append(fwopt)
+                optfws2.append(fwopt2)
+
+                vib_obj_dict = {"software": opt_software, "label": mol_name, "software_kwargs": opt_software_kwargs,
+                    "constraints": vib_constraints}
+
+            cfw = collect_firework(previbxyzs,True,["vibrations_firework"],[vib_obj_dict],["vib.json"],[],parents=optfws2,label=mol_name,detour=False)
+            newwf = Workflow(optfws+optfws2+[cfw],name=mol_name+"_optvib")
+            return FWAction(detours=newwf)
+        else:
+            return FWAction()
 
 
 @explicit_serialize
