@@ -420,30 +420,25 @@ class Pynta:
             else:
                 launch_multiprocess(self.launchpad,self.fworker,"INFO","infinite",self.num_jobs,5)
 
-    def execute(self,generate_initial_ad_guesses=True,calculate_adsorbates=True,
+    def execute(self,calculate_adsorbates=True,
                 calculate_transition_states=True,launch=True):
         """
         generate and launch a Pynta Fireworks Workflow
-        if generate_initial_ad_guesses is true generates initial guesses, otherwise assumes they are already there
         if calculate_adsorbates is true generates firework jobs for adsorbates, otherwise assumes they are not needed
         if calculate_transition_states is true generates fireworks jobs for transition states, otherwise assumes they are not needed
         if launch is true launches the fireworks workflow in infinite mode...this generates a process that will continue to spawn jobs
         if launch is false the Fireworks workflow is added to the launchpad, where it can be launched separately using fireworks commands
         """
-
-        if not calculate_adsorbates: #default handling
-            generate_initial_ad_guesses = False
-
         if self.slab_path is None: #handle slab
             self.generate_slab()
 
         self.analyze_slab()
         self.generate_mol_dict()
-        self.generate_initial_adsorbate_guesses(skip_structs=(not generate_initial_ad_guesses))
+        self.generate_atom_maps()
 
         #adsorbate optimization
         if calculate_adsorbates:
-            self.setup_adsorbates(initial_guess_finished=(not generate_initial_ad_guesses))
+            self.setup_adsorbates()
 
         if calculate_transition_states:
             #setup transition states
@@ -455,143 +450,6 @@ class Pynta:
         if launch:
             self.launch()
 
-
-    def execute_from_initial_ad_guesses(self):
-        if self.slab_path is None: #handle slab
-            self.generate_slab()
-
-        self.analyze_slab()
-        self.generate_mol_dict()
-        self.generate_initial_adsorbate_guesses(skip_structs=True)
-
-        #adsorbate optimization
-        self.setup_adsorbates(initial_guess_finished=True)
-
-        #setup transition states
-        self.setup_transition_states()
-
-        wf = Workflow(self.fws, name=self.label)
-        self.launchpad.add_wf(wf)
-
-
-        self.launch()
-
-#restart option: RHE + KSA
-    def restart(self,wfid):
-
-        id_number = int(wfid)
-        # Get the information of the workflow
-        print(f'your workflow id number is: {id_number}')
-        wf1 = self.launchpad.get_wf_summary_dict(id_number, mode='more')
-
-        # Save the states of the workflow
-        wf_states = wf1['states']
-
-        # Save the launcher directories
-        wf_launchers = wf1['launch_dirs']
-
-        # In this loop, for the tasks that are not completed, change the status
-        for task_name, task_state in wf_states.items():
-            if task_state != 'COMPLETED':
-                # Here we will change the map - node
-                task_id = int(task_name.split('--')[-1])
-                d = self.launchpad.get_fw_dict_by_id(task_id)
-                newd = deepcopy(d['spec'])
-
-                nameTask = newd['_tasks'][0]['_fw_name']
-
-                nameTasks = ['{{pynta.tasks.MolecularOptimizationTask}}',
-                             '{{pynta.tasks.MolecularVibrationsTask}}',
-                             '{{pynta.tasks.MolecularIRC}}']
-
-                if 'opt' in task_name:
-                    dirs = wf_launchers[task_name]
-                    if dirs != []:
-                        src = dirs[0]
-                        print(' Name task {0:^20s} {1:^12s} {2}'.format(task_name, task_state, src))
-                        file_traj = [name for name in os.listdir(src) if name.endswith(".traj")]
-
-                        fw_json_path = os.path.join(src, "FW.json")
-
-                        # Check if FW.json exists
-                        if os.path.exists(fw_json_path):
-                            with open(fw_json_path) as file:
-                                filejson = json.load(file)
-
-                            dst = os.path.dirname(filejson['spec']['_tasks'][0]['xyz'])
-
-                            # Copy the .traj files to dst
-                            for traj_file in file_traj:
-                                copyDataAndSave(src, dst, traj_file)  # Copy each .traj file
-                            print('Copying traj files to the destination folder', dst)
-                        else:
-                            print(f"Warning: {fw_json_path} does not exist.")
-
-                        if len(file_traj) > 1:
-                            file_traj = file_traj[0]
-                            base, ext = os.path.splitext(file_traj)
-
-                            with open(os.path.join(src, "FW.json")) as file:
-                                filejson = json.load(file)
-
-                            if opt_method == 'QuasiNewton':
-                                namexyz = f'weakopt_{base}.xyz'
-                            else:
-                                namexyz = f'{base}_init.xyz'
-
-                            atoms = read(os.path.join(src, file_traj), index=-1)
-                            dst = os.path.dirname(filejson['spec']['_tasks'][0]['xyz'])
-
-                            write(f'{src}/{namexyz}', atoms, format='xyz')
-
-                            copyDataAndSave(src, dst, namexyz)
-                            copyDataAndSave(src, dst, f'{base}.traj')
-
-                    # Rerun the firework and update the specification for optimization tasks
-                    self.launchpad.rerun_fw(task_id)
-                    self.launchpad.update_spec([task_id], newd)
-
-                if 'vib' in task_name:
-                    dirs = wf_launchers[task_name]
-                    if dirs != []:
-                        src = dirs[0]
-                        print(' Name task {0:^20s} {1:^12s} {2}'.format(task_name, task_state, src))
-
-                        fw_json_path = os.path.join(src, "FW.json")
-
-                        # Check if FW.json exists
-                        if os.path.exists(fw_json_path):
-                            with open(fw_json_path) as file:
-                                filejson = json.load(file)
-
-                            dst = os.path.dirname(filejson['spec']['_tasks'][0]['xyz'])
-                            print('Destination folder', dst)
-
-                        # Check if there is a directory named 'vib' in the source directory
-                        dir_vib_path = os.path.join(src, 'vib')
-                        if os.path.isdir(dir_vib_path):
-                            # List all JSON files in the dir_vib directory
-                            for filename in os.listdir(dir_vib_path):
-                                if filename.endswith('.json'):
-                                    file_path = os.path.join(dir_vib_path, filename)
-
-                                    # Check if the JSON file is empty
-                                    if os.path.getsize(file_path) == 0:
-                                        print(f'Deleting empty JSON file: {file_path}')
-                                        os.remove(file_path)
-
-                            # Copy the vib directory to the destination folder
-                            dst_vib_path = os.path.join(dst, 'vib')
-                            shutil.copytree(dir_vib_path, dst_vib_path)
-                            print(f'Copied vib directory to {dst_vib_path}')
-                        else:
-                            print(f'No directory named "vib" found in {src}.')
-
-                    # Rerun the firework with specific options for 'vib' tasks
-                    self.launchpad.rerun_fw(task_id, rerun_duplicates=True, recover_launch=None, recover_mode='prev_dir') #run recovery fw in previous directory
-                    self.launchpad.update_spec([task_id], newd)
-
-        self.launch()
 
 class CoverageDependence:
     def __init__(self,path,metal,surface_type,repeats,pynta_run_directory,software,software_kwargs,label,sites,site_adjacency,coad_stable_sites,adsorbates=[],transition_states=dict(),coadsorbates=[],
