@@ -8,7 +8,7 @@ import pynta
 
 def generate_adsorbate_guesses(mol,ads,slab,mol_to_atoms_map,metal,
                                single_site_bond_params_lists,single_sites_lists,double_site_bond_params_lists,double_sites_lists,
-                               Eharmtol,Eharmfiltertol,Ntsmin,slab_sites,site_adjacency,harm_f_software,harm_f_software_kwargs):
+                               Eharmtol,Eharmfiltertol,Nharmmin,slab_sites,site_adjacency,harm_f_software,harm_f_software_kwargs):
     mol_surf_inds = [mol.atoms.index(a) for a in mol.get_adatoms()]
     atom_surf_inds = [mol_to_atoms_map[i] for i in mol_surf_inds]
     nslab = len(slab)
@@ -136,7 +136,7 @@ def generate_adsorbate_guesses(mol,ads,slab,mol_to_atoms_map,metal,
                 site_bond_params_lists_final.append(site_bond_params_lists_out[Eind])
             elif Eharms[Eind]/Emin > Eharmfiltertol: #if the energy is much larger than Emin skip it
                 continue
-            elif len(xyzsout) < Ntsmin: #if the energy isn't similar, but isn't much larger include the smallest until Ntsmin is reached
+            elif len(xyzsout) < Nharmmin: #if the energy isn't similar, but isn't much larger include the smallest until Nharmmin is reached
                 xyzsout.append(geos_out[Eind])
                 site_bond_params_lists_final.append(site_bond_params_lists_out[Eind])
 

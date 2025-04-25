@@ -45,7 +45,7 @@ class Pynta:
         irc_mode="fixed", #choose irc mode: 'skip', 'relaxed', 'fixed'
         lattice_opt_software_kwargs={'kpts': (25,25,25), 'ecutwfc': 70, 'degauss':0.02, 'mixing_mode': 'plain'},
         reset_launchpad=False,queue_adapter_path=None,num_jobs=25,max_num_hfsp_opts=None,#max_num_hfsp_opts is mostly for fast testing
-        Eharmtol=3.0,Eharmfiltertol=30.0,Ntsmin=5,frozen_layers=2,fmaxopt=0.05,fmaxirc=0.1,fmaxopthard=0.05,c=None,
+        Eharmtol=3.0,Eharmfiltertol=30.0,Nharmmin=5,frozen_layers=2,fmaxopt=0.05,fmaxirc=0.1,c=None,
         surrogate_metal=None,sites=None,site_adjacency=None):
 
         self.surface_type = surface_type
@@ -130,11 +130,10 @@ class Pynta:
         self.mol_dict = None
         self.Eharmtol = Eharmtol
         self.Eharmfiltertol = Eharmfiltertol
-        self.Ntsmin = Ntsmin
+        self.Nharmmin = Nharmmin
         self.max_num_hfsp_opts = max_num_hfsp_opts
         self.fmaxopt = fmaxopt
         self.fmaxirc = fmaxirc
-        self.fmaxopthard = fmaxopthard
 
         self.sites = sites
         self.site_adjacency = site_adjacency
@@ -516,7 +515,7 @@ class Pynta:
                     "nprocs": 48, "name_to_adjlist_dict": self.name_to_adjlist_dict,
                     "gratom_to_molecule_atom_maps":{sm: {str(k):v for k,v in d.items()} for sm,d in self.gratom_to_molecule_atom_maps.items()},
                     "gratom_to_molecule_surface_atom_maps":{sm: {str(k):v for k,v in d.items()} for sm,d in self.gratom_to_molecule_surface_atom_maps.items()},
-                    "nslab":self.nslab,"Eharmtol":self.Eharmtol,"Eharmfiltertol":self.Eharmfiltertol,"Ntsmin":self.Ntsmin,
+                    "nslab":self.nslab,"Eharmtol":self.Eharmtol,"Eharmfiltertol":self.Eharmfiltertol,"Nharmmin":self.Nharmmin,
                     "max_num_hfsp_opts":self.max_num_hfsp_opts, "surrogate_metal":self.surrogate_metal,
                     "harm_f_software": self.harm_f_software, "harm_f_software_kwargs": self.harm_f_software_kwargs})
             reactants = rxn["reactant_names"]

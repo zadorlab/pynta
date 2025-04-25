@@ -471,7 +471,7 @@ class MolecularTSEstimate(FiretaskBase):
     required_params = ["rxn","ts_path","slab_path","adsorbates_path","rxns_file","path","metal","facet","sites","site_adjacency",
                         "name_to_adjlist_dict", "gratom_to_molecule_atom_maps",
                         "gratom_to_molecule_surface_atom_maps","irc_mode",
-                        "vib_obj_dict","opt_obj_dict","nslab","Eharmtol","Eharmfiltertol","Ntsmin","max_num_hfsp_opts","surrogate_metal",
+                        "vib_obj_dict","opt_obj_dict","nslab","Eharmtol","Eharmfiltertol","Nharmmin","max_num_hfsp_opts","surrogate_metal",
                         "harm_f_software", "harm_f_software_kwargs"]
     optional_params = ["out_path","spawn_jobs","nprocs","IRC_obj_dict"]
     def run_task(self, fw_spec):
@@ -496,7 +496,7 @@ class MolecularTSEstimate(FiretaskBase):
         site_adjacency = {int(k):[int(x) for x in v] for k,v in self["site_adjacency"].items()}
         Eharmtol = self["Eharmtol"]
         Eharmfiltertol = self["Eharmfiltertol"]
-        Ntsmin = self["Ntsmin"]
+        Nharmmin = self["Nharmmin"]
         max_num_hfsp_opts = self["max_num_hfsp_opts"]
         slab_path = self["slab_path"]
         surrogate_metal = self["surrogate_metal"]
@@ -622,7 +622,7 @@ class MolecularTSEstimate(FiretaskBase):
                 xyzsout.append(xyzs[Eind])
             elif Es[Eind]/Emin > Eharmfiltertol: #if the energy is much larger than Emin skip it
                 continue
-            elif len(xyzsout) < Ntsmin: #if the energy isn't similar, but isn't much larger include the smallest until Ntsmin is reached
+            elif len(xyzsout) < Nharmmin: #if the energy isn't similar, but isn't much larger include the smallest until Nharmmin is reached
                 xyzsout.append(xyzs[Eind])
 
         if spawn_jobs:
