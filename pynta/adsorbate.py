@@ -2,10 +2,13 @@ from pynta.mol import *
 from pysidt.sidt import read_nodes
 from pynta.sidt import SurfaceBondLengthSIDT
 from pynta.geometricanalysis import generate_site_molecule
+from pynta.calculator import map_harmonically_forced
 import logging 
 import os 
 import pynta
 import json
+from joblib import Parallel, delayed
+from ase import Atoms
 
 def construct_initial_guess_files(mol,mol_name,pynta_path,slab,metal,
                                single_site_bond_params_lists,single_sites_lists,double_site_bond_params_lists,double_sites_lists,
@@ -177,12 +180,15 @@ def generate_adsorbate_guesses(mol,ads,slab,mol_to_atoms_map,metal,
     geos_out = []
     Eharms = []
     site_bond_params_lists_out = []
-    for i,geo in enumerate(geos):
-        #freeze bonds for messier first opt
-        geo_out,Eharm,Fharm = run_harmonically_forced(geo,[],site_bond_params_lists[i],len(slab),
-                                molecule_to_atom_maps=mol_to_atoms_map,ase_to_mol_num=None,harm_f_software=harm_f_software,
-                                harm_f_software_kwargs=harm_f_software_kwargs,constraints=constraint_list)
+    
+    inputs = [ (geos[j],[],site_bond_params_lists[j],nslab,constraint_list,None,j,mol_to_atoms_map,None,harm_f_software,harm_f_software_kwargs) for j in range(len(geos))]
+
+    outputs = Parallel(n_jobs=nprocs)(delayed(map_harmonically_forced)(inp) for inp in inputs)
+    for i in range(len(outputs)):
+        geo_out,Eharm,_ = outputs[i]
         if geo_out:
+            del geo_out["constraints"]
+            geo_out = Atoms(**geo_out)
             geo_out.calc = None
             geos_out.append(geo_out)
             Eharms.append(Eharm)
