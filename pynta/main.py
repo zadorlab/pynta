@@ -46,7 +46,7 @@ class Pynta:
         lattice_opt_software_kwargs={'kpts': (25,25,25), 'ecutwfc': 70, 'degauss':0.02, 'mixing_mode': 'plain'},
         reset_launchpad=False,queue_adapter_path=None,num_jobs=25,max_num_hfsp_opts=None,#max_num_hfsp_opts is mostly for fast testing
         Eharmtol=3.0,Eharmfiltertol=30.0,Nharmmin=5,frozen_layers=2,fmaxopt=0.05,fmaxirc=0.1,c=None,
-        surrogate_metal=None,sites=None,site_adjacency=None):
+        surrogate_metal=None,sites=None,site_adjacency=None,nprocs_harm=1):
 
         self.surface_type = surface_type
         if launchpad_path:
@@ -79,6 +79,7 @@ class Pynta:
 
         self.harm_f_software = harm_f_software
         self.harm_f_software_kwargs = harm_f_software_kwargs
+        self.nprocs_harm = nprocs_harm 
         
         if software.lower() == 'vasp':
             self.pbc = (True,True,True)
@@ -308,7 +309,7 @@ class Pynta:
                     "opt_software": self.software,
                     "opt_software_kwargs": software_kwargs,
                     "opt_constraints": opt_constraints,
-                    "vib_constraints": vib_constraints,"fmaxopt": self.fmaxopt,"socket": self.socket,
+                    "vib_constraints": vib_constraints,"fmaxopt": self.fmaxopt,"socket": self.socket,"nprocs": self.nprocs_harm,
                      })
             
             fw = Firework([adest_task],parents=[],name="Adguess"+sm,spec={"_priority": 10})
@@ -379,7 +380,7 @@ class Pynta:
                     "gratom_to_molecule_surface_atom_maps":{sm: {str(k):v for k,v in d.items()} for sm,d in self.gratom_to_molecule_surface_atom_maps.items()},
                     "nslab":self.nslab,"Eharmtol":self.Eharmtol,"Eharmfiltertol":self.Eharmfiltertol,"Nharmmin":self.Nharmmin,
                     "max_num_hfsp_opts":self.max_num_hfsp_opts, "surrogate_metal":self.surrogate_metal,
-                    "harm_f_software": self.harm_f_software, "harm_f_software_kwargs": self.harm_f_software_kwargs})
+                    "harm_f_software": self.harm_f_software, "harm_f_software_kwargs": self.harm_f_software_kwargs, "nprocs": self.nprocs_harm})
             reactants = rxn["reactant_names"]
             products = rxn["product_names"]
             parents = []

@@ -523,7 +523,7 @@ class MolecularAdsorbateEstimate(FiretaskBase):
         
         xyzs = construct_initial_guess_files(mol,mol_name,path,slab,metal,
                                single_site_bond_params_lists,single_sites_lists,double_site_bond_params_lists,double_sites_lists,
-                               Eharmtol,Eharmfiltertol,Nharmmin,sites,site_adjacency,pbc,nslab,harm_f_software,harm_f_software_kwargs)
+                               Eharmtol,Eharmfiltertol,Nharmmin,sites,site_adjacency,pbc,nslab,harm_f_software,harm_f_software_kwargs,nprocs)
         
         if spawn_jobs:
             optfws = []
