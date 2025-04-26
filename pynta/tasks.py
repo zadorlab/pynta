@@ -18,7 +18,7 @@ from fireworks.core.fworker import FWorker
 import fireworks.fw_config
 from pynta.transitionstate import get_unique_optimized_adsorbates,determine_TS_construction,get_unique_TS_structs,generate_constraints_harmonic_parameters,get_unique_TS_templates_site_pairings
 from pynta.utils import *
-from pynta.calculator import run_harmonically_forced, add_sella_constraint
+from pynta.calculator import run_harmonically_forced, map_harmonically_forced, add_sella_constraint
 from pynta.mol import *
 from pynta.coveragedependence import *
 from pynta.geometricanalysis import *
@@ -36,6 +36,7 @@ import signal
 from contextlib import contextmanager
 from copy import deepcopy
 from pathlib import Path
+from joblib import Parallel, delayed
 
 class OptimizationTask(FiretaskBase):
     def run_task(self, fw_spec):
@@ -695,10 +696,7 @@ class MolecularTSEstimate(FiretaskBase):
             print(len(tsstructs_out))
 
         inputs = [ (tsstructs_out[j],atom_bond_potential_lists[j],site_bond_potential_lists[j],nslab,constraint_lists[j],ts_path,j,molecule_to_atom_maps,ase_to_mol_num,harm_f_software,harm_f_software_kwargs) for j in range(len(tsstructs_out))]
-
-        #with mp.Pool(nprocs) as pool:
-        #    outputs = pool.map(map_harmonically_forced,inputs)
-        outputs = list(map(map_harmonically_forced,inputs))
+        outputs = Parallel(n_jobs=nprocs)(delayed(map_harmonically_forced)(inp) for inp in inputs)
 
         xyzs = [output[2] for output in outputs if output[0]]
         Es = [output[1] for output in outputs if output[0]]
