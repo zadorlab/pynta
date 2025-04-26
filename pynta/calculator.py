@@ -15,6 +15,7 @@ import copy
 from copy import deepcopy
 import itertools
 from pynta.utils import *
+import json
 
 def get_energy_atom_bond(atoms,ind1,ind2,k,deq):
     bd,d = get_distances([atoms.positions[ind1]], [atoms.positions[ind2]], cell=atoms.cell, pbc=atoms.pbc)
@@ -340,6 +341,32 @@ def run_harmonically_forced_no_pbc(atoms,atom_bond_potentials,site_bond_potentia
 
     return outadslab,Eharm,Fharm
 
+def map_harmonically_forced(input):
+    struct,atom_bond_potentials,site_bond_potentials,nslab,constraints,path,j,molecule_to_atom_maps,ase_to_mol_num,harm_f_software,harm_f_software_kwargs = input
+    sp,Eharm,Fharm = run_harmonically_forced(struct,atom_bond_potentials,site_bond_potentials,nslab,
+                    molecule_to_atom_maps=molecule_to_atom_maps,ase_to_mol_num=ase_to_mol_num,
+                    harm_f_software=harm_f_software,harm_f_software_kwargs=harm_f_software_kwargs,constraints=constraints)
+
+    if sp and path:
+        os.makedirs(os.path.join(path,str(j)))
+        if "initial_charges" in sp.arrays.keys(): #avoid bug in ase
+            del sp.arrays["initial_charges"]
+        s_bond_potentials = deepcopy(site_bond_potentials)
+        for d in s_bond_potentials:
+            d["site_pos"] = d["site_pos"].tolist()
+            d["deq"] = float(d["deq"])
+        with open(os.path.join(path,str(j),"harm.json"),'w') as f:
+            d = {"harmonic energy": Eharm, "harmonic force": Fharm.tolist(),"atom_bond_potentials":atom_bond_potentials,
+                 "site_bond_potentials":s_bond_potentials,"molecule_to_atom_maps":molecule_to_atom_maps,"ase_to_mol_num":ase_to_mol_num}
+            json.dump(d,f)
+        write(os.path.join(path,str(j),"xtb.xyz"),sp)
+        xyz = os.path.join(path,str(j),"xtb.xyz")
+        return (sp.todict(),Eharm,xyz)
+    elif sp:
+        return (sp.todict(),Eharm,None)
+    else:
+        return (None,None,None)
+    
 def get_best_translation(poss,apos,cell):
     target = (cell[0][:2] + cell[1][:2])*1.5
     pos2ds = [np.array(pos[:2]) for pos in poss]
