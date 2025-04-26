@@ -57,8 +57,8 @@ class MainTest(unittest.TestCase):
                TS_opt_software_kwargs={},
                lattice_opt_software_kwargs={},
                slab_path=os.path.join(self.path,"slab.xyz"),
-               Eharmtol=1.0, Nharmmin=2,
-               launchpad_path=lpad_name
+               Eharmtol=1.0, Nharmmin=2,nprocs_harm=4,
+               launchpad_path=lpad_name,
                )
 
         pyn.analyze_slab()
