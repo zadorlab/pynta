@@ -9,7 +9,8 @@ import json
 
 def construct_initial_guess_files(mol,mol_name,pynta_path,slab,metal,
                                single_site_bond_params_lists,single_sites_lists,double_site_bond_params_lists,double_sites_lists,
-                               Eharmtol,Eharmfiltertol,Nharmmin,slab_sites,site_adjacency,pbc,nslab,harm_f_software,harm_f_software_kwargs):
+                               Eharmtol,Eharmfiltertol,Nharmmin,slab_sites,site_adjacency,pbc,nslab,harm_f_software,harm_f_software_kwargs,
+                               nprocs):
     """Generate and write initial guesses for adsorbate optimization
 
     Args:
@@ -52,7 +53,8 @@ def construct_initial_guess_files(mol,mol_name,pynta_path,slab,metal,
         structs = generate_adsorbate_guesses(mol,ads,slab,mol_to_atoms_map,metal,
                                 single_site_bond_params_lists,single_sites_lists,
                                 double_site_bond_params_lists,double_sites_lists,
-                                Eharmtol,Eharmfiltertol,Nharmmin,slab_sites,site_adjacency,harm_f_software,harm_f_software_kwargs)
+                                Eharmtol,Eharmfiltertol,Nharmmin,slab_sites,site_adjacency,harm_f_software,harm_f_software_kwargs,
+                                nprocs=nprocs)
 
 
         gratom_to_molecule_atom_map = {val:key for key,val in mol_to_atoms_map.items()}
@@ -83,7 +85,7 @@ def construct_initial_guess_files(mol,mol_name,pynta_path,slab,metal,
                 
 def generate_adsorbate_guesses(mol,ads,slab,mol_to_atoms_map,metal,
                                single_site_bond_params_lists,single_sites_lists,double_site_bond_params_lists,double_sites_lists,
-                               Eharmtol,Eharmfiltertol,Nharmmin,slab_sites,site_adjacency,harm_f_software,harm_f_software_kwargs):
+                               Eharmtol,Eharmfiltertol,Nharmmin,slab_sites,site_adjacency,harm_f_software,harm_f_software_kwargs,nprocs=1):
     mol_surf_inds = [mol.atoms.index(a) for a in mol.get_adatoms()]
     atom_surf_inds = [mol_to_atoms_map[i] for i in mol_surf_inds]
     nslab = len(slab)
