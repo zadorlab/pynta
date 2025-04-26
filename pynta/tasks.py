@@ -1406,29 +1406,6 @@ class SelectCalculationsTask(FiretaskBase):
         
         return FWAction(detours=newwf)
         
-def map_harmonically_forced(input):
-    tsstruct,atom_bond_potentials,site_bond_potentials,nslab,constraints,ts_path,j,molecule_to_atom_maps,ase_to_mol_num,harm_f_software,harm_f_software_kwargs = input
-    os.makedirs(os.path.join(ts_path,str(j)))
-    sp,Eharm,Fharm = run_harmonically_forced(tsstruct,atom_bond_potentials,site_bond_potentials,nslab,
-                    molecule_to_atom_maps=molecule_to_atom_maps,ase_to_mol_num=ase_to_mol_num,
-                    harm_f_software=harm_f_software,harm_f_software_kwargs=harm_f_software_kwargs,constraints=constraints)
-
-    if sp:
-        if "initial_charges" in sp.arrays.keys(): #avoid bug in ase
-            del sp.arrays["initial_charges"]
-        s_bond_potentials = deepcopy(site_bond_potentials)
-        for d in s_bond_potentials:
-            d["site_pos"] = d["site_pos"].tolist()
-            d["deq"] = float(d["deq"])
-        with open(os.path.join(ts_path,str(j),"harm.json"),'w') as f:
-            d = {"harmonic energy": Eharm, "harmonic force": Fharm.tolist(),"atom_bond_potentials":atom_bond_potentials,
-                 "site_bond_potentials":s_bond_potentials,"molecule_to_atom_maps":molecule_to_atom_maps,"ase_to_mol_num":ase_to_mol_num}
-            json.dump(d,f)
-        write(os.path.join(ts_path,str(j),"xtb.xyz"),sp)
-        xyz = os.path.join(ts_path,str(j),"xtb.xyz")
-        return (sp,Eharm,xyz)
-    else:
-        return (None,None,None)
 
 class StructureError(Exception): pass
 class TimeLimitError(Exception): pass
