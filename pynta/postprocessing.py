@@ -311,7 +311,7 @@ def get_enthalpy_reaction(rnasas,pnasas,T,dT=0.01):
 def write_min_en_species_db(
         ad_path: str,
         slab_path: str,
-) -> db:
+):
     '''
     Generates an ase database of the minimum energy configurations for all
     Pynta optimized adsorbates and gas-phase species.
