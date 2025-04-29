@@ -18,10 +18,11 @@ from fireworks.core.fworker import FWorker
 import fireworks.fw_config
 from pynta.transitionstate import get_unique_optimized_adsorbates,determine_TS_construction,get_unique_TS_structs,generate_constraints_harmonic_parameters,get_unique_TS_templates_site_pairings
 from pynta.utils import *
-from pynta.calculator import run_harmonically_forced, add_sella_constraint
+from pynta.calculator import run_harmonically_forced, map_harmonically_forced, add_sella_constraint
 from pynta.mol import *
 from pynta.coveragedependence import *
 from pynta.geometricanalysis import *
+from pynta.adsorbate import construct_initial_guess_files
 import numpy as np
 import multiprocessing as mp
 import json
@@ -35,6 +36,7 @@ import signal
 from contextlib import contextmanager
 from copy import deepcopy
 from pathlib import Path
+from joblib import Parallel, delayed
 
 class OptimizationTask(FiretaskBase):
     def run_task(self, fw_spec):
@@ -465,13 +467,103 @@ class MolecularVibrationsTask(VibrationTask):
 
         return FWAction()
 
+@explicit_serialize
+class MolecularAdsorbateEstimate(FiretaskBase):
+    required_params = ["mol","mol_name","slab_path","path","metal","facet","sites","site_adjacency",
+                        "single_site_bond_params_lists", "single_sites_lists",
+                        "double_site_bond_params_lists","double_sites_lists",
+                        "vib_obj_dict","nslab","Eharmtol","Eharmfiltertol","Nharmmin","pbc",
+                        "harm_f_software", "harm_f_software_kwargs","opt_software","opt_software_kwargs","opt_constraints","vib_constraints",
+                        "fmaxopt","socket"]
+    optional_params = ["out_path","spawn_jobs","nprocs"]
+    def run_task(self, fw_spec):
+        spawn_jobs = self["spawn_jobs"] if "spawn_jobs" in self.keys() else False
+        nprocs = self["nprocs"] if "nprocs" in self.keys() else 1
+        path = self["path"]
+
+        mol = Molecule().from_adjacency_list(self["mol"])
+        mol_name = self["mol_name"]
+        
+        opt_software = self["opt_software"]
+        opt_software_kwargs = self["opt_software_kwargs"]
+        opt_constraints = self["opt_constraints"]
+        vib_constraints = self["vib_constraints"]
+        
+        single_site_bond_params_lists = self["single_site_bond_params_lists"]
+        single_sites_lists = self["single_sites_lists"]
+        for q in single_sites_lists:
+            for s in q:
+                s["position"] = np.array(s["position"])
+                s["normal"] = np.array(s["normal"])
+        double_site_bond_params_lists = self["double_site_bond_params_lists"]
+        double_sites_lists = self["double_sites_lists"]
+        for q in double_sites_lists:
+            for s in q:
+                s["position"] = np.array(s["position"])
+                s["normal"] = np.array(s["normal"])
+            
+        metal = self["metal"]
+        facet = self["facet"]
+        nslab = self["nslab"]
+        pbc = self["pbc"]
+        sites = self["sites"]
+        for s in sites:
+            s["position"] = np.array(s["position"])
+            s["normal"] = np.array(s["normal"])
+        
+        site_adjacency = {int(k):[int(x) for x in v] for k,v in self["site_adjacency"].items()}
+        Nharmmin = self["Nharmmin"]
+        Eharmtol = self["Eharmtol"]
+        Eharmfiltertol = self["Eharmfiltertol"]
+        slab_path = self["slab_path"]
+        slab = read(slab_path)
+        harm_f_software = self["harm_f_software"]
+        harm_f_software_kwargs = self["harm_f_software_kwargs"]
+        fmaxopt = self["fmaxopt"]
+        socket = self["socket"]
+        
+        xyzs = construct_initial_guess_files(mol,mol_name,path,slab,metal,
+                               single_site_bond_params_lists,single_sites_lists,double_site_bond_params_lists,double_sites_lists,
+                               Eharmtol,Eharmfiltertol,Nharmmin,sites,site_adjacency,pbc,nslab,harm_f_software,harm_f_software_kwargs,nprocs)
+        
+        if spawn_jobs:
+            optfws = []
+            optfws2 = []
+            previbxyzs = []
+            for xyz in xyzs:
+                prefix = os.path.split(os.path.split(xyz)[0])[1]
+                previbxyz = os.path.join(os.path.split(xyz)[0],prefix+".xyz")
+                previbxyzs.append(previbxyz)
+                fwopt = optimize_firework(os.path.join(path,"Adsorbates",mol_name,prefix,prefix+"_init.xyz"),
+                    opt_software,"weakopt_"+prefix,socket=socket,
+                    opt_method="MDMin",opt_kwargs={'dt': 0.05},software_kwargs=opt_software_kwargs,
+                    run_kwargs={"fmax" : 0.5, "steps" : 70},parents=[],constraints=opt_constraints,
+                    ignore_errors=True, metal=metal, facet=facet, priority=3.5)
+                fwopt2 = optimize_firework(os.path.join(path,"Adsorbates",mol_name,str(prefix),"weakopt_"+prefix+".xyz"),
+                    opt_software,prefix,socket=socket,
+                    opt_method="QuasiNewton",software_kwargs=opt_software_kwargs,
+                    run_kwargs={"fmax" : fmaxopt, "steps" : 70},parents=[fwopt],constraints=opt_constraints,
+                    ignore_errors=True, metal=metal, facet=facet, priority=3,
+                    allow_fizzled_parents=True)
+                optfws.append(fwopt)
+                optfws2.append(fwopt2)
+
+                vib_obj_dict = {"software": opt_software, "label": mol_name, "software_kwargs": opt_software_kwargs,
+                    "constraints": vib_constraints}
+
+            cfw = collect_firework(previbxyzs,True,["vibrations_firework"],[vib_obj_dict],["vib.json"],[],parents=optfws2,label=mol_name,detour=False)
+            newwf = Workflow(optfws+optfws2+[cfw],name=mol_name+"_optvib")
+            return FWAction(detours=newwf)
+        else:
+            return FWAction()
+
 
 @explicit_serialize
 class MolecularTSEstimate(FiretaskBase):
     required_params = ["rxn","ts_path","slab_path","adsorbates_path","rxns_file","path","metal","facet","sites","site_adjacency",
                         "name_to_adjlist_dict", "gratom_to_molecule_atom_maps",
                         "gratom_to_molecule_surface_atom_maps","irc_mode",
-                        "vib_obj_dict","opt_obj_dict","nslab","Eharmtol","Eharmfiltertol","Ntsmin","max_num_hfsp_opts","surrogate_metal",
+                        "vib_obj_dict","opt_obj_dict","nslab","Eharmtol","Eharmfiltertol","Nharmmin","max_num_hfsp_opts","surrogate_metal",
                         "harm_f_software", "harm_f_software_kwargs"]
     optional_params = ["out_path","spawn_jobs","nprocs","IRC_obj_dict"]
     def run_task(self, fw_spec):
@@ -496,7 +588,7 @@ class MolecularTSEstimate(FiretaskBase):
         site_adjacency = {int(k):[int(x) for x in v] for k,v in self["site_adjacency"].items()}
         Eharmtol = self["Eharmtol"]
         Eharmfiltertol = self["Eharmfiltertol"]
-        Ntsmin = self["Ntsmin"]
+        Nharmmin = self["Nharmmin"]
         max_num_hfsp_opts = self["max_num_hfsp_opts"]
         slab_path = self["slab_path"]
         surrogate_metal = self["surrogate_metal"]
@@ -604,10 +696,7 @@ class MolecularTSEstimate(FiretaskBase):
             print(len(tsstructs_out))
 
         inputs = [ (tsstructs_out[j],atom_bond_potential_lists[j],site_bond_potential_lists[j],nslab,constraint_lists[j],ts_path,j,molecule_to_atom_maps,ase_to_mol_num,harm_f_software,harm_f_software_kwargs) for j in range(len(tsstructs_out))]
-
-        #with mp.Pool(nprocs) as pool:
-        #    outputs = pool.map(map_harmonically_forced,inputs)
-        outputs = list(map(map_harmonically_forced,inputs))
+        outputs = Parallel(n_jobs=nprocs)(delayed(map_harmonically_forced)(inp) for inp in inputs)
 
         xyzs = [output[2] for output in outputs if output[0]]
         Es = [output[1] for output in outputs if output[0]]
@@ -622,7 +711,7 @@ class MolecularTSEstimate(FiretaskBase):
                 xyzsout.append(xyzs[Eind])
             elif Es[Eind]/Emin > Eharmfiltertol: #if the energy is much larger than Emin skip it
                 continue
-            elif len(xyzsout) < Ntsmin: #if the energy isn't similar, but isn't much larger include the smallest until Ntsmin is reached
+            elif len(xyzsout) < Nharmmin: #if the energy isn't similar, but isn't much larger include the smallest until Nharmmin is reached
                 xyzsout.append(xyzs[Eind])
 
         if spawn_jobs:
@@ -650,14 +739,16 @@ class MolecularTSEstimate(FiretaskBase):
         else:
             return FWAction()
 
-def collect_firework(xyzs,check_symm,fw_generators,fw_generator_dicts,out_names,future_check_symms,parents=[],label="",allow_fizzled_parents=False):
+def collect_firework(xyzs,check_symm,fw_generators,fw_generator_dicts,out_names,future_check_symms,parents=[],label="",allow_fizzled_parents=False,
+                     detour=True):
     task = MolecularCollect({"xyzs": xyzs, "check_symm": check_symm, "fw_generators": fw_generators,
-        "fw_generator_dicts": fw_generator_dicts, "out_names": out_names, "future_check_symms": future_check_symms, "label": label})
+        "fw_generator_dicts": fw_generator_dicts, "out_names": out_names, "future_check_symms": future_check_symms, "label": label, "detour": detour})
     return Firework([task],parents=parents,name=label+"collect",spec={"_allow_fizzled_parents": allow_fizzled_parents,"_priority": 5})
 
 @explicit_serialize
 class MolecularCollect(CollectTask):
     required_params = ["xyzs","check_symm","fw_generators","fw_generator_dicts","out_names","future_check_symms","label"]
+    optional_params = ["detour"]
     def run_task(self, fw_spec):
         xyzs = [xyz for xyz in self["xyzs"] if os.path.exists(xyz)] #if the associated task errored a file may not be present
         if self["check_symm"]:
@@ -669,6 +760,7 @@ class MolecularCollect(CollectTask):
         fw_generator_dicts = self["fw_generator_dicts"]
         out_names = self["out_names"]
         future_check_symms = self["future_check_symms"]
+        detour = self["detour"] if "detour" in self.keys() else True
 
         for i in range(len(fw_generators)):
             if not isinstance(fw_generators[i],list):
@@ -701,9 +793,15 @@ class MolecularCollect(CollectTask):
                     "out_names": out_names[1:],"future_check_symms": future_check_symms[1:],"label": self["label"]})
             cfw = Firework([task],parents=fws,name=self["label"]+"collect",spec={"_allow_fizzled_parents":True,"_priority": 4})
             newwf = Workflow(fws+[cfw],name=self["label"]+"collect"+str(-len(self["fw_generators"])))
-            return FWAction(detours=newwf) #using detour allows us to inherit children from the original collect to the subsequent collects
+            if detour:
+                return FWAction(detours=newwf) #using detour allows us to inherit children from the original collect to the subsequent collects
+            else:
+                return FWAction(additions=newwf)
         else:
-            return FWAction(detours=fws)
+            if detour:
+                return FWAction(detours=fws)
+            else:
+                return FWAction(additions=fws)
 
 def TSnudge_firework(xyz,label,forward_path=None,reverse_path=None,spawn_jobs=False,software=None,opt_method=None,sella=False,
         socket=False,software_kwargs={},opt_kwargs={},run_kwargs={},constraints=[],parents=[],out_path=None,ignore_errors=False):
@@ -1306,29 +1404,6 @@ class SelectCalculationsTask(FiretaskBase):
         
         return FWAction(detours=newwf)
         
-def map_harmonically_forced(input):
-    tsstruct,atom_bond_potentials,site_bond_potentials,nslab,constraints,ts_path,j,molecule_to_atom_maps,ase_to_mol_num,harm_f_software,harm_f_software_kwargs = input
-    os.makedirs(os.path.join(ts_path,str(j)))
-    sp,Eharm,Fharm = run_harmonically_forced(tsstruct,atom_bond_potentials,site_bond_potentials,nslab,
-                    molecule_to_atom_maps=molecule_to_atom_maps,ase_to_mol_num=ase_to_mol_num,
-                    harm_f_software=harm_f_software,harm_f_software_kwargs=harm_f_software_kwargs,constraints=constraints)
-
-    if sp:
-        if "initial_charges" in sp.arrays.keys(): #avoid bug in ase
-            del sp.arrays["initial_charges"]
-        s_bond_potentials = deepcopy(site_bond_potentials)
-        for d in s_bond_potentials:
-            d["site_pos"] = d["site_pos"].tolist()
-            d["deq"] = float(d["deq"])
-        with open(os.path.join(ts_path,str(j),"harm.json"),'w') as f:
-            d = {"harmonic energy": Eharm, "harmonic force": Fharm.tolist(),"atom_bond_potentials":atom_bond_potentials,
-                 "site_bond_potentials":s_bond_potentials,"molecule_to_atom_maps":molecule_to_atom_maps,"ase_to_mol_num":ase_to_mol_num}
-            json.dump(d,f)
-        write(os.path.join(ts_path,str(j),"xtb.xyz"),sp)
-        xyz = os.path.join(ts_path,str(j),"xtb.xyz")
-        return (sp,Eharm,xyz)
-    else:
-        return (None,None,None)
 
 class StructureError(Exception): pass
 class TimeLimitError(Exception): pass

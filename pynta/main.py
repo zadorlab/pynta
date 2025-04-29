@@ -45,8 +45,8 @@ class Pynta:
         irc_mode="fixed", #choose irc mode: 'skip', 'relaxed', 'fixed'
         lattice_opt_software_kwargs={'kpts': (25,25,25), 'ecutwfc': 70, 'degauss':0.02, 'mixing_mode': 'plain'},
         reset_launchpad=False,queue_adapter_path=None,num_jobs=25,max_num_hfsp_opts=None,#max_num_hfsp_opts is mostly for fast testing
-        Eharmtol=3.0,Eharmfiltertol=30.0,Ntsmin=5,frozen_layers=2,fmaxopt=0.05,fmaxirc=0.1,fmaxopthard=0.05,c=None,
-        surrogate_metal=None,sites=None,site_adjacency=None):
+        Eharmtol=3.0,Eharmfiltertol=30.0,Nharmmin=5,frozen_layers=2,fmaxopt=0.05,fmaxirc=0.1,c=None,
+        surrogate_metal=None,sites=None,site_adjacency=None,nprocs_harm=1):
 
         self.surface_type = surface_type
         if launchpad_path:
@@ -79,6 +79,7 @@ class Pynta:
 
         self.harm_f_software = harm_f_software
         self.harm_f_software_kwargs = harm_f_software_kwargs
+        self.nprocs_harm = nprocs_harm 
         
         if software.lower() == 'vasp':
             self.pbc = (True,True,True)
@@ -130,11 +131,10 @@ class Pynta:
         self.mol_dict = None
         self.Eharmtol = Eharmtol
         self.Eharmfiltertol = Eharmfiltertol
-        self.Ntsmin = Ntsmin
+        self.Nharmmin = Nharmmin
         self.max_num_hfsp_opts = max_num_hfsp_opts
         self.fmaxopt = fmaxopt
         self.fmaxirc = fmaxirc
-        self.fmaxopthard = fmaxopthard
 
         self.sites = sites
         self.site_adjacency = site_adjacency
@@ -273,204 +273,66 @@ class Pynta:
             r["reactant_mols"] = [x.to_adjacency_list() for x in r["reactant_mols"]]
             r["product_mols"] = [x.to_adjacency_list() for x in r["product_mols"]]
 
-    def generate_initial_adsorbate_guesses(self,skip_structs=False):
+    def setup_adsorbates(self):
         """
         Generates initial guess geometries for adsorbates and gas phase species
         Generates maps connecting the molecule objects with these adsorbates
         """
-        structures = dict()
+        self.adsorbate_fw_dict = dict()
+        for sm,mol in self.mol_dict.items():
+            if len(mol.get_surface_sites()) > 0:
+                software_kwargs = deepcopy(self.software_kwargs)
+                if self.software != "XTB" and self.software != "TBLite":
+                    opt_constraints = ["freeze up to {}".format(self.freeze_ind)]
+                else:
+                    opt_constraints = ["freeze up to "+str(self.nslab)]
+                vib_constraints = ["freeze up to "+str(self.nslab)]
+                vib_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":software_kwargs,
+                                "constraints": ["freeze up to "+str(self.nslab)]}
+            else: #gas phase
+                software_kwargs = deepcopy(self.software_kwargs_gas)
+                opt_constraints = []
+                vib_constraints = []
+                if len([a for a in mol.atoms if not a.is_surface_site()]) == 1 and self.software == "Espresso": #monoatomic species
+                    software_kwargs["command"] = software_kwargs["command"].replace("< PREFIX.pwi > PREFIX.pwo","-ndiag 1 < PREFIX.pwi > PREFIX.pwo")
+                    
+                vib_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":software_kwargs,
+                            "constraints": []}
+    
+            adest_task = MolecularAdsorbateEstimate({"mol": mol.to_adjacency_list(),"mol_name": sm, "slab_path": self.slab_path,
+                    "path": self.path,"metal": self.metal,"facet": self.surface_type, "sites": self.sites, "site_adjacency": {str(k):v for k,v in self.site_adjacency.items()},
+                    "single_site_bond_params_lists": self.single_site_bond_params_lists, "single_sites_lists": self.single_sites_lists,
+                    "double_site_bond_params_lists": self.double_site_bond_params_lists, "double_sites_lists": self.double_sites_lists,
+                    "spawn_jobs": True, "vib_obj_dict": vib_obj_dict, 
+                    "nslab":self.nslab,"Eharmtol":self.Eharmtol,"Eharmfiltertol":self.Eharmfiltertol,"Nharmmin": self.Nharmmin,"pbc": self.pbc,
+                    "harm_f_software": self.harm_f_software, "harm_f_software_kwargs": self.harm_f_software_kwargs,
+                    "opt_software": self.software,
+                    "opt_software_kwargs": software_kwargs,
+                    "opt_constraints": opt_constraints,
+                    "vib_constraints": vib_constraints,"fmaxopt": self.fmaxopt,"socket": self.socket,"nprocs": self.nprocs_harm,
+                     })
+            
+            fw = Firework([adest_task],parents=[],name="Adguess"+sm,spec={"_priority": 10})
+            self.adsorbate_fw_dict[sm] = fw
+            self.fws.append(fw)
+
+    def generate_atom_maps(self):
         gratom_to_molecule_atom_maps = dict()
         gratom_to_molecule_surface_atom_maps = dict()
         for sm,mol in self.mol_dict.items():
-            print(sm)
-            surf_sites = mol.get_surface_sites()
-
             ads,mol_to_atoms_map = get_adsorbate(mol)
-            if len(surf_sites) == 0:
-                if not skip_structs:
-                    ads.pbc = self.pbc
-                    ads.center(vacuum=10)
-                    structures[sm] = [ads]
-                gratom_to_molecule_atom_maps[sm] = {val:key for key,val in mol_to_atoms_map.items()}
-                gratom_to_molecule_surface_atom_maps[sm] = dict()
-            else:
-                if not skip_structs:
-                    #check if this adsorbate is already calculated
-                    if os.path.exists(os.path.join(self.path,"Adsorbates",sm)): #assume initial guesses already generated
-                        structures[sm] = None
-                    else:
-                        structs = generate_adsorbate_guesses(mol,ads,self.slab,mol_to_atoms_map,self.metal,
-                                           self.single_site_bond_params_lists,self.single_sites_lists,
-                                           self.double_site_bond_params_lists,self.double_sites_lists,
-                                           self.Eharmtol,self.Eharmfiltertol,self.Ntsmin,self.sites,self.site_adjacency,
-                                           self.harm_f_software,self.harm_f_software_kwargs)
-                        structures[sm] = structs
+            
+            gratom_to_molecule_atom_maps[sm] = {val:key for key,val in mol_to_atoms_map.items()}
 
+            surf_index_atom_map = dict()
+            for i,atm in enumerate(mol.atoms):
+                if atm.is_bonded_to_surface():
+                    surf_index_atom_map[mol_to_atoms_map[i]] = i
 
-                gratom_to_molecule_atom_maps[sm] = {val:key for key,val in mol_to_atoms_map.items()}
-
-                adatoms = []
-                surf_index_atom_map = dict()
-                for i,atm in enumerate(mol.atoms):
-                    if atm.is_bonded_to_surface():
-                        surf_index_atom_map[mol_to_atoms_map[i]] = i
-
-                gratom_to_molecule_surface_atom_maps[sm] = surf_index_atom_map
+            gratom_to_molecule_surface_atom_maps[sm] = surf_index_atom_map
 
         self.gratom_to_molecule_atom_maps = gratom_to_molecule_atom_maps
         self.gratom_to_molecule_surface_atom_maps = gratom_to_molecule_surface_atom_maps
-        if not skip_structs:
-            self.adsorbate_structures = structures
-
-    def setup_adsorbates(self,initial_guess_finished=False):
-        """
-        Attaches each adsorbate structure to the slab and sets up fireworks to
-        first optimize each possible geometry and then run vibrational calculations on each unique final geometry
-        """
-        if not initial_guess_finished:
-            adsorbate_dict = dict()
-            for sp_symbol, adsorbate in self.adsorbate_structures.items():
-                adsorbate_dict[sp_symbol] = dict()
-                if adsorbate is not None:
-                    for prefix, structure in enumerate(adsorbate):
-                        adsorbate_dict[sp_symbol][prefix] = structure
-                else: #read from Adsorbates directory
-                    prefixes = os.listdir(os.path.join(self.path,"Adsorbates",sp_symbol))
-                    for prefix in prefixes:
-                        if prefix == "info.json":
-                            continue
-                        adsorbate_dict[sp_symbol][prefix] = read(os.path.join(self.path,"Adsorbates",sp_symbol,str(prefix),str(prefix)+"_init.xyz"))
-
-            big_slab = self.slab
-            nsmall_slab = len(self.slab)
-            for adsname,adsorbate in adsorbate_dict.items():
-                xyzs = []
-                optfws = []
-                optfws2 = []
-                mol = self.mol_dict[adsname]
-
-                #check if this adsorbate is already calculated
-                exists = False
-                for prefix,structure in adsorbate.items():
-                    if os.path.exists(os.path.join(self.path,"Adsorbates",adsname,str(prefix),str(prefix)+".xyz")):
-                        exists = True
-
-                if exists: #if this species already has a completed opt job in any prefix driectory skip it
-                    self.adsorbate_fw_dict[adsname] = []
-                    continue
-
-                for prefix,structure in adsorbate.items():
-                    if len(mol.get_surface_sites()) > 0:
-                        big_slab_ads = structure
-                        software_kwargs = deepcopy(self.software_kwargs)
-                        target_site_num = len(mol.get_surface_sites())
-                        if self.software != "XTB" and self.software != "TBLite":
-                            constraints = ["freeze up to {}".format(self.freeze_ind)]
-                        else:
-                            constraints = ["freeze up to "+str(self.nslab)]
-                        vib_constraints = ["freeze up to "+str(self.nslab)]
-                    else: #gas phase
-                        big_slab_ads = structure
-                        target_site_num = None #no slab so can't run site analysis
-                        software_kwargs = deepcopy(self.software_kwargs_gas)
-                        constraints = []
-                        vib_constraints = []
-                        if len(big_slab_ads) == 1 and self.software == "Espresso": #monoatomic species
-                            software_kwargs["command"] = software_kwargs["command"].replace("< PREFIX.pwi > PREFIX.pwo","-ndiag 1 < PREFIX.pwi > PREFIX.pwo")
-                    try:
-                        os.makedirs(os.path.join(self.path,"Adsorbates",adsname,str(prefix)))
-                    except:
-                        pass
-                    write(os.path.join(self.path,"Adsorbates",adsname,str(prefix),str(prefix)+"_init.xyz"),big_slab_ads)
-                    sp_dict = {"name":adsname, "adjlist":mol.to_adjacency_list(),"atom_to_molecule_atom_map": self.gratom_to_molecule_atom_maps[adsname],
-                            "gratom_to_molecule_surface_atom_map": self.gratom_to_molecule_surface_atom_maps[adsname], "nslab": self.nslab}
-                    with open(os.path.join(self.path,"Adsorbates",adsname,"info.json"),'w') as f:
-                        json.dump(sp_dict,f)
-                    xyz = os.path.join(self.path,"Adsorbates",adsname,str(prefix),str(prefix)+".xyz")
-                    xyzs.append(xyz)
-                    fwopt = optimize_firework(os.path.join(self.path,"Adsorbates",adsname,str(prefix),str(prefix)+"_init.xyz"),
-                        self.software,"weakopt_"+str(prefix),
-                        opt_method="MDMin",opt_kwargs={'dt': 0.05},socket=self.socket,software_kwargs=software_kwargs,
-                        run_kwargs={"fmax" : 0.5, "steps" : 70},parents=[],constraints=constraints,
-                        ignore_errors=True, metal=self.metal, facet=self.surface_type, target_site_num=target_site_num, priority=3)
-                    fwopt2 = optimize_firework(os.path.join(self.path,"Adsorbates",adsname,str(prefix),"weakopt_"+str(prefix)+".xyz"),
-                        self.software,str(prefix),
-                        opt_method="QuasiNewton",socket=self.socket,software_kwargs=software_kwargs,
-                        run_kwargs={"fmax" : self.fmaxopt, "steps" : 70},parents=[fwopt],constraints=constraints,
-                        ignore_errors=True, metal=self.metal, facet=self.surface_type, target_site_num=target_site_num, priority=3, fmaxhard=self.fmaxopthard,
-                        allow_fizzled_parents=True)
-                    optfws.append(fwopt)
-                    optfws.append(fwopt2)
-                    optfws2.append(fwopt2)
-
-                vib_obj_dict = {"software": self.software, "label": adsname, "software_kwargs": software_kwargs,
-                    "constraints": vib_constraints}
-
-                cfw = collect_firework(xyzs,True,["vibrations_firework"],[vib_obj_dict],["vib.json"],[],parents=optfws2,label=adsname)
-                self.adsorbate_fw_dict[adsname] = optfws2
-                logging.error(self.adsorbate_fw_dict.keys())
-                self.fws.extend(optfws+[cfw])
-        else:
-            ads_path = os.path.join(self.path,"Adsorbates")
-            for ad in os.listdir(ads_path):
-                xyzs = []
-                optfws = []
-                optfws2 = []
-                if ad in self.mol_dict.keys():
-                    mol = self.mol_dict[ad]
-                else:
-                    continue #the species is not in the target reactions so skip it
-                target_site_num = len(mol.get_surface_sites())
-                ad_path = os.path.join(ads_path,ad)
-                completed = False
-                for prefix in os.listdir(ad_path):
-                    if os.path.exists(os.path.join(ad_path,prefix,prefix+".xyz")):
-                        completed = True
-                if completed:
-                    self.adsorbate_fw_dict[ad] = []
-                    continue
-                for prefix in os.listdir(ad_path):
-                    if prefix.split(".")[-1] == "json":
-                        continue
-                    prefix_path = os.path.join(ad_path,prefix)
-                    if target_site_num == 0:
-                        software_kwargs = deepcopy(self.software_kwargs_gas)
-                        constraints = []
-                        vib_constraints = []
-                        if len(mol.atoms) == 1 and self.software == "Espresso": #monoatomic species
-                            software_kwargs["command"] = software_kwargs["command"].replace("< PREFIX.pwi > PREFIX.pwo","-ndiag 1 < PREFIX.pwi > PREFIX.pwo")
-                    else:
-                        software_kwargs = deepcopy(self.software_kwargs)
-                        if self.software != "XTB" and self.software != "TBLite":
-                            constraints = ["freeze up to {}".format(self.freeze_ind)]
-                        else:
-                            constraints = ["freeze up to "+str(self.nslab)]
-                        vib_constraints = ["freeze up to "+str(self.nslab)]
-                    xyz = os.path.join(prefix_path,str(prefix)+".xyz")
-                    init_path = os.path.join(prefix_path,prefix+"_init.xyz")
-                    assert os.path.exists(init_path), init_path
-                    xyzs.append(xyz)
-                    fwopt = optimize_firework(init_path,
-                        self.software,"weakopt_"+str(prefix),
-                        opt_method="MDMin",opt_kwargs={'dt': 0.05},socket=self.socket,software_kwargs=software_kwargs,
-                        run_kwargs={"fmax" : 0.5, "steps" : 70},parents=[],constraints=constraints,
-                        ignore_errors=True, metal=self.metal, facet=self.surface_type, target_site_num=target_site_num, priority=3)
-                    fwopt2 = optimize_firework(os.path.join(self.path,"Adsorbates",ad,str(prefix),"weakopt_"+str(prefix)+".xyz"),
-                        self.software,str(prefix),
-                        opt_method="QuasiNewton",socket=self.socket,software_kwargs=software_kwargs,
-                        run_kwargs={"fmax" : self.fmaxopt, "steps" : 70},parents=[fwopt],constraints=constraints,
-                        ignore_errors=True, metal=self.metal, facet=self.surface_type, target_site_num=target_site_num, priority=3)
-                    optfws.append(fwopt)
-                    optfws.append(fwopt2)
-                    optfws2.append(fwopt2)
-
-                vib_obj_dict = {"software": self.software, "label": ad, "software_kwargs": software_kwargs,
-                    "constraints": vib_constraints}
-
-                cfw = collect_firework(xyzs,True,["vibrations_firework"],[vib_obj_dict],["vib.json"],[True,False],parents=optfws2,label=ad,allow_fizzled_parents=False)
-                self.adsorbate_fw_dict[ad] = optfws2
-                logging.error(self.adsorbate_fw_dict.keys())
-                self.fws.extend(optfws+[cfw])
 
     def setup_transition_states(self,adsorbates_finished=False):
         """
@@ -516,15 +378,16 @@ class Pynta:
                     "nprocs": 48, "name_to_adjlist_dict": self.name_to_adjlist_dict,
                     "gratom_to_molecule_atom_maps":{sm: {str(k):v for k,v in d.items()} for sm,d in self.gratom_to_molecule_atom_maps.items()},
                     "gratom_to_molecule_surface_atom_maps":{sm: {str(k):v for k,v in d.items()} for sm,d in self.gratom_to_molecule_surface_atom_maps.items()},
-                    "nslab":self.nslab,"Eharmtol":self.Eharmtol,"Eharmfiltertol":self.Eharmfiltertol,"Ntsmin":self.Ntsmin,
+                    "nslab":self.nslab,"Eharmtol":self.Eharmtol,"Eharmfiltertol":self.Eharmfiltertol,"Nharmmin":self.Nharmmin,
                     "max_num_hfsp_opts":self.max_num_hfsp_opts, "surrogate_metal":self.surrogate_metal,
-                    "harm_f_software": self.harm_f_software, "harm_f_software_kwargs": self.harm_f_software_kwargs})
+                    "harm_f_software": self.harm_f_software, "harm_f_software_kwargs": self.harm_f_software_kwargs, "nprocs": self.nprocs_harm})
             reactants = rxn["reactant_names"]
             products = rxn["product_names"]
             parents = []
             if not adsorbates_finished:
                 for m in reactants+products:
-                    parents.extend(self.adsorbate_fw_dict[m])
+                    parents.append(self.adsorbate_fw_dict[m])
+                
             fw = Firework([ts_task],parents=parents,name="TS"+str(i)+"est",spec={"_allow_fizzled_parents": True,"_priority": 10})
             self.fws.append(fw)
 
@@ -539,30 +402,25 @@ class Pynta:
         else:
             launch_multiprocess(self.launchpad,self.fworker,"INFO","infinite",self.num_jobs,5)
 
-    def execute(self,generate_initial_ad_guesses=True,calculate_adsorbates=True,
+    def execute(self,calculate_adsorbates=True,
                 calculate_transition_states=True,launch=True):
         """
         generate and launch a Pynta Fireworks Workflow
-        if generate_initial_ad_guesses is true generates initial guesses, otherwise assumes they are already there
         if calculate_adsorbates is true generates firework jobs for adsorbates, otherwise assumes they are not needed
         if calculate_transition_states is true generates fireworks jobs for transition states, otherwise assumes they are not needed
         if launch is true launches the fireworks workflow in infinite mode...this generates a process that will continue to spawn jobs
         if launch is false the Fireworks workflow is added to the launchpad, where it can be launched separately using fireworks commands
         """
-
-        if not calculate_adsorbates: #default handling
-            generate_initial_ad_guesses = False
-
         if self.slab_path is None: #handle slab
             self.generate_slab()
 
         self.analyze_slab()
         self.generate_mol_dict()
-        self.generate_initial_adsorbate_guesses(skip_structs=(not generate_initial_ad_guesses))
+        self.generate_atom_maps()
 
         #adsorbate optimization
         if calculate_adsorbates:
-            self.setup_adsorbates(initial_guess_finished=(not generate_initial_ad_guesses))
+            self.setup_adsorbates()
 
         if calculate_transition_states:
             #setup transition states
@@ -574,26 +432,6 @@ class Pynta:
         if launch:
             self.launch()
 
-
-    def execute_from_initial_ad_guesses(self):
-        if self.slab_path is None: #handle slab
-            self.generate_slab()
-
-        self.analyze_slab()
-        self.generate_mol_dict()
-        self.generate_initial_adsorbate_guesses(skip_structs=True)
-
-        #adsorbate optimization
-        self.setup_adsorbates(initial_guess_finished=True)
-
-        #setup transition states
-        self.setup_transition_states()
-
-        wf = Workflow(self.fws, name=self.label)
-        self.launchpad.add_wf(wf)
-
-
-        self.launch()
 
 class CoverageDependence:
     def __init__(self,path,metal,surface_type,repeats,pynta_run_directory,software,software_kwargs,label,sites,site_adjacency,coad_stable_sites,adsorbates=[],transition_states=dict(),coadsorbates=[],

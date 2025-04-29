@@ -323,29 +323,32 @@ def name_to_ase_opt(opt_name):
     return getattr(module, opt_name)
 
 def clean_pynta_path(path,save_initial_guess=True):
-    assert save_initial_guess
-
-    for p in os.listdir(path):
-        if p[:2] == "TS": #delete TSs
-            shutil.rmtree(os.path.join(path,p))
-        elif p == "Adsorbates":
-            for ad in os.listdir(os.path.join(path,p)):
-                if ad == ".DS_Store":
-                    os.remove(os.path.join(path,p,ad))
-                    continue
-                for ind in os.listdir(os.path.join(path,p,ad)):
-                    if ind == "info.json":
+    if save_initial_guess:
+        for p in os.listdir(path):
+            if p[:2] == "TS": #delete TSs
+                shutil.rmtree(os.path.join(path,p))
+            elif p == "Adsorbates":
+                for ad in os.listdir(os.path.join(path,p)):
+                    if ad == ".DS_Store":
+                        os.remove(os.path.join(path,p,ad))
                         continue
-                    elif ind.isdigit():
-                        for file in os.listdir(os.path.join(path,p,ad,ind)):
-                            if not "_init.xyz" in file:
-                                pa = os.path.join(path,p,ad,ind,file)
-                                if os.path.isdir(pa):
-                                    shutil.rmtree(pa)
-                                else:
-                                    os.remove(pa)
-                    else:
-                        os.remove(os.path.join(path,p,ad,ind))
+                    for ind in os.listdir(os.path.join(path,p,ad)):
+                        if ind == "info.json":
+                            continue
+                        elif ind.isdigit():
+                            for file in os.listdir(os.path.join(path,p,ad,ind)):
+                                if not "_init.xyz" in file:
+                                    pa = os.path.join(path,p,ad,ind,file)
+                                    if os.path.isdir(pa):
+                                        shutil.rmtree(pa)
+                                    else:
+                                        os.remove(pa)
+                        else:
+                            os.remove(os.path.join(path,p,ad,ind))
+    else:
+         for p in os.listdir(path):
+            if p[:2] == "TS" or p == "Adsorbates": #delete TSs
+                shutil.rmtree(os.path.join(path,p))
 
 def construct_constraint(d):
     """

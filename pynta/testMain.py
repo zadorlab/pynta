@@ -23,7 +23,7 @@ class MainTest(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         """A function that is run ONCE after all unit tests in this class."""
-        clean_pynta_path(cls.path) #clean Pynta stuff
+        clean_pynta_path(cls.path,save_initial_guess=False) #clean Pynta stuff
 
         #remove launch files
         fnames = os.listdir(cls.launchpath)
@@ -38,7 +38,7 @@ class MainTest(unittest.TestCase):
         returndir = os.getcwd()
         os.chdir(self.launchpath)
 
-        lpad_name=returndir+"/test/my_launchpad.yaml"
+        lpad_name=os.path.join(os.path.split(self.path)[0],"my_launchpad.yaml")
         lpad = LaunchPad.from_file(lpad_name)
         wfnames = [lpad.get_wf_summary_dict(wf_id)['name'] for wf_id in lpad.get_wf_ids()]
         name = "Pynta_functional_test_"
@@ -57,17 +57,17 @@ class MainTest(unittest.TestCase):
                TS_opt_software_kwargs={},
                lattice_opt_software_kwargs={},
                slab_path=os.path.join(self.path,"slab.xyz"),
-               Eharmtol=1.0, Ntsmin=2,
-               launchpad_path=lpad_name
+               Eharmtol=1.0, Nharmmin=2,nprocs_harm=4,
+               launchpad_path=lpad_name,
                )
 
         pyn.analyze_slab()
         pyn.generate_mol_dict()
-        pyn.generate_initial_adsorbate_guesses(skip_structs=True)
+        pyn.generate_atom_maps()
 
         #adsorbate optimization
-        pyn.setup_adsorbates(initial_guess_finished=True)
-
+        pyn.setup_adsorbates()
+        
         #setup transition states
         pyn.setup_transition_states()
 
