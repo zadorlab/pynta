@@ -10,6 +10,7 @@ from pynta.mol import *
 from pynta.geometricanalysis import *
 from pynta.tasks import *
 from pynta.postprocessing import get_adsorbate_energies
+from pynta.adsorbate import *
 from pysidt import *
 from pysidt.extensions import split_mols
 from pysidt.sidt import *
