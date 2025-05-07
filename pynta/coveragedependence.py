@@ -9,6 +9,7 @@ from pynta.utils import get_unique_sym, get_occupied_sites, sites_match, SiteOcc
 from pynta.mol import *
 from pynta.geometricanalysis import *
 from pynta.postprocessing import get_adsorbate_energies
+from pynta.adsorbate import *
 from pysidt import *
 from pysidt.extensions import split_mols
 from pysidt.sidt import *
