@@ -99,7 +99,7 @@ def get_unstable_pairs(pairsdir,adsorbate_dir,sites,site_adjacency,nslab,max_dis
                                 config_show.append(final)
                             continue
                         #gout.update(sort_atoms=False)
-                    except (FindingPathError, SiteOccupationException):
+                    except (FindingPathError, SiteOccupationException, TooManyElectronsException):
                         continue
                     except FailedFixBondsException: #Pynta is unable to understand the final structure in a resonance sense...definitely not isomorphic
                         logging.error("Failed to fix bonds for structure: {}".format(p))
