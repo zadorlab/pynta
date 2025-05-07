@@ -10,7 +10,6 @@ from pynta.mol import *
 from pynta.geometricanalysis import *
 from pynta.tasks import *
 from pynta.postprocessing import get_adsorbate_energies
-from pynta.adsorbate import *
 from pysidt import *
 from pysidt.extensions import split_mols
 from pysidt.sidt import *
@@ -2241,6 +2240,7 @@ def mol_to_atoms(admol,slab,sites,metal,partial_atoms=None,partial_admol=None):
                 assert sites[sind]["site"] == a.site, (admol.to_adjacency_list(),partial_admol.to_adjacency_list())
                 atom_surf_inds.append(mol_to_atoms_map[adatom_molind])
                 ad_sites.append(sites[sind])
-        atoms,_,_ = place_adsorbate(ad,atoms,atom_surf_inds,ad_sites,metal)
+
+        atoms,_,_ = place_adsorbate_covdep(ad,atoms,atom_surf_inds,ad_sites,metal)
 
     return atoms
