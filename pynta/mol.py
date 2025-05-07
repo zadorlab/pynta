@@ -229,7 +229,25 @@ def add_adsorbate_to_site(atoms, adsorbate, surf_ind, site, height=None,
         shift = (atoms.positions[-2] - atoms.positions[-1]) / 2
         atoms.positions[-2:,:] += shift
 
-
+def place_adsorbate_covdep(ads,slab,atom_surf_inds,sites,metal):
+    if len(atom_surf_inds) == 1:
+        geo = slab.copy()
+        h = get_site_bond_length(sites[0]["site"],ads.get_chemical_symbols()[atom_surf_inds[0]],metal)
+        add_adsorbate_to_site(geo, ads, atom_surf_inds[0], sites[0], height=h)
+        return geo,h,None
+    elif len(atom_surf_inds) == 2:
+        geo = slab.copy()
+        h1 = get_site_bond_length(sites[0]["site"],ads.get_chemical_symbols()[atom_surf_inds[0]],metal)
+        h2 = get_site_bond_length(sites[1]["site"],ads.get_chemical_symbols()[atom_surf_inds[1]],metal)
+        ori = get_mic(sites[0]['position'], sites[1]['position'], geo.cell)
+        add_adsorbate_to_site(geo, deepcopy(ads), atom_surf_inds[0], sites[0], height=h1, orientation=ori)
+        if np.isnan(geo.positions).any(): #if nans just ignore orientation and let it optimize
+            geo = slab.copy()
+            add_adsorbate_to_site(geo, deepcopy(ads), atom_surf_inds[0], sites[0], height=h1, orientation=None)
+        return geo,h1,h2
+    else:
+        raise ValueError
+    
 def get_unique_sites(site_list, cell, unique_composition=False,
                          unique_subsurf=False,
                          return_signatures=False,
