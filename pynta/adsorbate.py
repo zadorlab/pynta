@@ -40,6 +40,7 @@ def construct_initial_guess_files(mol,mol_name,pynta_path,slab,metal,
         list of files with the corresponding xyzs
     """
     if os.path.exists(os.path.join(pynta_path,"Adsorbates",mol_name)):
+        logging.info("Found existing path {0} for {1}".format(os.path.join(pynta_path,"Adsorbates",mol_name),mol_name))
         return
     
     surf_sites = mol.get_surface_sites()
