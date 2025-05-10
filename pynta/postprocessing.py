@@ -1061,6 +1061,11 @@ class Kinetics:
                         metal=self.metal,
                         facet=self.facet[3:],index="{index}")
         self.rmg_kinetics_text = txt
+
+    def run(self):
+        self.calculate_barrier()
+        self.calculate_kinetic_parameters()
+        self.generate_kinetics_entry()
     def create_RMG_header(self,
                           lib_name,
                           lib_short_desc,
