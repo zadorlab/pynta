@@ -349,6 +349,11 @@ def clean_pynta_path(path,save_initial_guess=True):
          for p in os.listdir(path):
             if p[:2] == "TS" or p == "Adsorbates": #delete TSs
                 shutil.rmtree(os.path.join(path,p))
+    
+    if os.path.exists(os.path.join(path,"reaction_library")):
+        shutil.rmtree(os.path.join(path,"reaction_library"))
+    if os.path.exists(os.path.join(path,"thermo_library.py")):
+        os.remove(os.path.join(path,"thermo_library.py"))
 
 def construct_constraint(d):
     """
