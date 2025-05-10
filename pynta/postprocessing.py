@@ -699,7 +699,7 @@ class SurfaceConfiguration:
         self.heat_of_formation_0K = (self.dHfgas + self.dHads * self.eV_to_kJpermole) * 1000.0
         self.heat_of_formation_0K_units = 'J/mol'
 
-    def _get_translation_thermo(self):
+    def get_translation_thermo(self):
         # unpack the constants (not essential, but makes it easier to read)
         R = self.R
         kB = self.kB
@@ -709,19 +709,18 @@ class SurfaceConfiguration:
         m = self.adsorbate_mass
         pi = np.pi
         area = self.unit_cell_area_per_site
-        sites = self.sites
+        sites = self.site_num
 
         # initialize the arrays for the partition function, entropy, enthalpy,
         # and heat capacity.
-        Q_trans = np.ones(len(self.temperature))
-        S_trans = np.zeros(len(self.temperature))
-        dH_trans = np.zeros(len(self.temperature))
-        Cp_trans = np.zeros(len(self.temperature))
+        Q_trans = np.ones(len(self.temperature)+2)
+        S_trans = np.zeros(len(self.temperature)+2)
+        dH_trans = np.zeros(len(self.temperature)+2)
+        Cp_trans = np.zeros(len(self.temperature)+2)
 
         if self.twoD_gas:
-            print("switching to 2D-gas for 2 lowest modes for %s" % self.name)
             # cycle through each temperature
-            for (i, T) in enumerate(self.temperature):
+            for (i, T) in enumerate([10.0]+self.temperature.tolist()+[1.0e7]):
                 # partition function is: (2*pi*mass*kB*T/h**2)^(2/2) * area
                 if (1 == 0):  # 3D gas, really here just for inspiration
                     V = kB * T / P_ref
@@ -744,16 +743,16 @@ class SurfaceConfiguration:
                         dH_trans[i] = R * 1.0 * T
 
                         # add the results to the thermo object
-        self.Q_trans = Q_trans
-        self.S_trans = S_trans
-        self.dH_trans = dH_trans
-        self.Cp_trans = Cp_trans
-
-        return
-
     def _get_vibrational_thermo(self):
         units = 1.0
         units *= self.h * self.c / self.kB * self.invcm_to_invm  # K * cm
+        self.Cp0_trans = Cp_trans[0] #all J-mol-K
+        self.Cpinf_trans = Cp_trans[-1]
+        self.Q_trans = Q_trans[1:-1]
+        self.S_trans = S_trans[1:-1]
+        self.dH_trans = dH_trans[1:-1]
+        self.Cp_trans = Cp_trans[1:-1]
+
         amu = self.amu
         kB = self.kB
         h = self.h
