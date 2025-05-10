@@ -905,3 +905,49 @@ entry(
         self.compute_heat_of_formation()
         self.calculate_thermochemistry()
         
+class Kinetics:
+    """
+    Class for computing the kinetic parameters of reactions
+    """
+    def __init__(self,reactants,transition_state,reactant_mol,product_mol,site_density,
+                 metal,facet,products=None,family_comment=None,valid=True):
+        """
+        Args:
+            reactants: list of GasConfiguration/SurfaceConfiguration reactants for the reaction
+            transition_state: SurfaceConfiguration object corresponding to the transition state
+            reactant_mol: Molecule object representing the tagged reactants (not slab resolved)
+            product_mol: Molecule object representing the tagged products (not slab resolved)
+            site_density: site density of the slab in molecules/m^2
+            metal: metal of the slab
+            facet: facet of the slab
+            products: list of GasConfiguration/SurfaceConfiguration product for the reaction. Defaults to None.
+            family_comment: string containing information about the reaction, transition state and reactants/products. Defaults to None.
+            valid: if the class is valid for calculating kinetics
+        """
+        self.metal = metal
+        self.facet = facet
+        temperature = [298.15]
+        self.T_low = 300.0
+        self.T_high = 2000.0
+        self.dT = 10.0  # temperature increment
+        self.temperature = np.append(temperature, np.arange(self.T_low, self.T_high + self.dT, self.dT))
+        self.reactants = reactants
+        self.transition_state = transition_state
+        self.site_density = site_density
+        self.products = products
+        self.reactant_mol = reactant_mol
+        self.product_mol = product_mol
+        self.valid = valid
+        self.valid_info = self.transition_state.valid_info
+        self.rnum = len(reactant_mol.split())
+        if self.products:
+            self.pnum = len(product_mol.split())
+        else:
+            self.pnum = None
+        self.reactant_names = [x.name for x in self.reactants]
+        if self.products:
+            self.product_names = [x.name for x in self.products]
+        else:
+            self.product_names = None
+        self.reaction_str = " + ".join(self.reactant_names+["vacantX" for i in range(self.rnum-len(self.reactant_names))])+" <=> "+" + ".join(self.product_names+["vacantX" for i in range(self.pnum-len(self.product_names))])
+        self.family_comment = family_comment
