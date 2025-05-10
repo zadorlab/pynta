@@ -743,9 +743,6 @@ class SurfaceConfiguration:
                         dH_trans[i] = R * 1.0 * T
 
                         # add the results to the thermo object
-    def _get_vibrational_thermo(self):
-        units = 1.0
-        units *= self.h * self.c / self.kB * self.invcm_to_invm  # K * cm
         self.Cp0_trans = Cp_trans[0] #all J-mol-K
         self.Cpinf_trans = Cp_trans[-1]
         self.Q_trans = Q_trans[1:-1]
@@ -753,6 +750,8 @@ class SurfaceConfiguration:
         self.dH_trans = dH_trans[1:-1]
         self.Cp_trans = Cp_trans[1:-1]
 
+    def get_vibrational_thermo(self):
+        units = self.h * self.c / self.kB * self.invcm_to_invm  # K * cm
         amu = self.amu
         kB = self.kB
         h = self.h
@@ -761,19 +760,15 @@ class SurfaceConfiguration:
 
         # initialize the arrays for the partition function, entropy, enthalpy,
         # and heat capacity.
-        Q_vib = np.ones(len(self.temperature))
-        S_vib = np.zeros(len(self.temperature))
-        dH_vib = np.zeros(len(self.temperature))
-        Cv_vib = np.zeros(len(self.temperature))
+        Q_vib = np.ones(len(self.temperature)+2)
+        S_vib = np.zeros(len(self.temperature)+2)
+        dH_vib = np.zeros(len(self.temperature)+2)
+        Cv_vib = np.zeros(len(self.temperature)+2)
 
-        for (t, temp) in enumerate(self.temperature):
+        for (t, temp) in enumerate([10.0]+self.temperature.tolist()+[1.0e7]):
             for (n, nu) in enumerate(self.freqs):
-                if self.twoD_gas == True and n <= 1:  # skip the first two if we do 2D gas
-                    # do nothing!
-                    Q_vib[t] *= 1.0
-                    S_vib[t] += 0.0
-                    dH_vib[t] += 0.0
-                    Cv_vib[t] += 0.0
+                if (self.twoD_gas == True and n <= 1) or nu == 0:  # skip the first two if we do 2D gas and skip if frequency was imaginary (no real component)
+                    continue
                 else:
                     # where did these equations come from
                     x = nu * units / temp  # cm^-1 * K cm / K = dimensionless
@@ -789,11 +784,13 @@ class SurfaceConfiguration:
             dH_vib[t] *= self.R * temp
             Cv_vib[t] *= self.R
 
+        self.Cv0_vib = Cv_vib[0] #all J-mol-K
+        self.Cvinf_vib = Cv_vib[-1]
         # add the results to the thermo object
-        self.Q_vib = Q_vib
-        self.S_vib = S_vib
-        self.dH_vib = dH_vib
-        self.Cv_vib = Cv_vib  # NOTE: the correction from Cv to Cp is handled in the translation partition function.
+        self.Q_vib = Q_vib[1:-1]
+        self.S_vib = S_vib[1:-1]
+        self.dH_vib = dH_vib[1:-1]
+        self.Cv_vib = Cv_vib[1:-1]  # NOTE: the correction from Cv to Cp is handled in the translation partition function.
         # if the molecule is tightly bound and thus the 2D-gas is not used,
         # then we assume that Cp=Cv for the adsorbate.
 
