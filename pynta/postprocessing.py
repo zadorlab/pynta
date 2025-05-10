@@ -900,3 +900,8 @@ entry(
         self.fit_NASA()
         self.format_RMG_output()
         return
+
+    def run(self):
+        self.compute_heat_of_formation()
+        self.calculate_thermochemistry()
+        
