@@ -84,7 +84,11 @@ class MainTest(unittest.TestCase):
             state = pyn.launchpad.get_wf_summary_dict(wf_id)["state"]
 
         self.assertTrue(pyn.launchpad.get_wf_summary_dict(wf_id)["state"]=="COMPLETED")
-
+        
+        self.assertTrue(os.path.exists(os.path.join(self.path,"thermo_library.py")))
+        self.assertTrue(os.path.exists(os.path.join(self.path,"reaction_library","reactions.py")))
+        self.assertTrue(os.path.exists(os.path.join(self.path,"reaction_library","dictionary.txt")))
+        
         os.chdir(returndir)
 
 if __name__ == '__main__':
