@@ -1041,3 +1041,35 @@ class Kinetics:
         
         self.krevs = krevs 
             
+    def generate_kinetics_entry(self):
+        xyz = str(len(self.transition_state.atoms)) + "\n"
+        for s,(x,y,z) in zip(self.transition_state.atoms.symbols,self.transition_state.atoms.positions):
+            xyz += s + " " + str(x) + " " + str(y) + " " + str(z) + "\n"
+        txt = '''entry(
+    index = {index},
+    label = "{rlabel}",
+    kinetics = {kinetics},
+    shortDesc = u"{short_desc}",
+    longDesc = u"""{long_desc}""",
+    metal = "{metal}",
+    facet = "{facet}",
+)'''
+        txt = txt.format(rlabel=self.reaction_str,
+                        kinetics=repr(self.arr_f),
+                        short_desc="Computed using Pynta",
+                        long_desc="Computed using Pynta\n" + self.family_comment + "\n" + xyz,
+                        metal=self.metal,
+                        facet=self.facet[3:],index="{index}")
+        self.rmg_kinetics_text = txt
+    def create_RMG_header(self,
+                          lib_name,
+                          lib_short_desc,
+                          lib_long_desc):
+        line = f'''#!/usr/bin/env python
+# encoding: utf-8
+
+name = "{lib_name}"
+shortDesc = u"{lib_short_desc}"
+longDesc = u"""{lib_long_desc}"""
+'''
+        return line
