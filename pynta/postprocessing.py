@@ -1066,6 +1066,31 @@ class Kinetics:
         self.calculate_barrier()
         self.calculate_kinetic_parameters()
         self.generate_kinetics_entry()
+        
+    def get_gibbs_energy_reaction(self,T):
+        dG = 0.0
+        for th in self.reactants:
+            dG -= th.nasa.get_free_energy(T)
+        for th in self.products:
+            dG += th.nasa.get_free_energy(T)
+        return dG
+        
+    def get_entropy_reaction(self,T):
+        dS = 0.0
+        for th in self.reactants:
+            dS -= th.nasa.get_entropy(T)
+        for th in self.products:
+            dS += th.nasa.get_entropy(T)
+        return dS
+
+    def get_enthalpy_reaction(self,T):
+        dH = 0.0
+        for th in self.reactants:
+            dH -= th.nasa.get_enthalpy(T)
+        for th in self.products:
+            dH += th.nasa.get_enthalpy(T)
+        return dH
+    
     def create_RMG_header(self,
                           lib_name,
                           lib_short_desc,
