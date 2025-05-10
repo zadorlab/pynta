@@ -951,3 +951,24 @@ class Kinetics:
             self.product_names = None
         self.reaction_str = " + ".join(self.reactant_names+["vacantX" for i in range(self.rnum-len(self.reactant_names))])+" <=> "+" + ".join(self.product_names+["vacantX" for i in range(self.pnum-len(self.product_names))])
         self.family_comment = family_comment
+
+    def to_dict(self):
+        return to_dict(self)
+    
+    def calculate_barrier(self):
+        bar_f = self.transition_state.energy - self.transition_state.Eslab
+        bar_r = bar_f
+        for r in self.reactants:
+            if isinstance(r,SurfaceConfiguration):
+                bar_f -= r.energy - r.Eslab
+            elif isinstance(r,GasConfiguration):
+                bar_f -= r.energy
+        for p in self.products:
+            if isinstance(p,SurfaceConfiguration):
+                bar_r -= p.energy - p.Eslab
+            elif isinstance(p,GasConfiguration):
+                bar_r -= p.energy
+
+        self.barrier_f = bar_f
+        self.barrier_r = bar_r
+        
