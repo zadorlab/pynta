@@ -681,23 +681,6 @@ class SurfaceConfiguration:
         return to_dict(self)
         
     def compute_heat_of_formation(self):
-
-        # Leaving this here in case we want to start calculating gas-phase intermediates
-        '''
-        # Atomic hydrogen
-        if self.name == '[Pt]':
-            self.energy_gas = (self.DFT_energy_gas + self.ZPE_energy_gas + self.dHrxnatct[
-                'H2-2H'] / self.eV_to_kJpermole) / 2
-        # Atomic oxygen
-        elif self.name == 'O=[Pt]':
-            self.energy_gas = (self.DFT_energy_gas + self.ZPE_energy_gas + self.dHrxnatct[
-                'O2-2O'] / self.eV_to_kJpermole) / 2
-        #Atomic nitrogen
-        elif self.name == 'N#[Pt]':
-            self.energy_gas = (self.DFT_energy_gas + self.ZPE_energy_gas + self.dHrxnatct[
-                'N2-2N'] / self.eV_to_kJpermole) / 2
-        else:
-            self.energy_gas = self.DFT_energy_gas + self.ZPE_energy_gas'''
         self.energy = self.DFT_energy + self.ZPE_energy
 
         self.dHrxndftgas = (self.energy_gas - self.composition['C'] * self.Eref['CH4']
@@ -713,15 +696,8 @@ class SurfaceConfiguration:
                        + self.dHrxndftgas * self.eV_to_kJpermole)
 
         self.dHads = self.energy - self.energy_gas - self.Eslab
-        self.heat_of_formation_0K = self.dHfgas + self.dHads * self.eV_to_kJpermole
-        self.heat_of_formation_0K_units = 'kJ/mol'
-        print(f"heat of formation adsorbate= {self.heat_of_formation_0K:.4} kJ/mol")
-        print(f"heat of formation precursor= {self.dHfgas:.4} kJ/mol")
-        print(f"heat of reaction precursor= {self.dHrxndftgas:.4} eV")
-        print(f"DFT binding energy= {self.dHads:.4} eV")
-        print(f"molecular mass= {self.adsorbate_mass} {self.adsorbate_mass_units}")
-
-        return
+        self.heat_of_formation_0K = (self.dHfgas + self.dHads * self.eV_to_kJpermole) * 1000.0
+        self.heat_of_formation_0K_units = 'J/mol'
 
     def _get_translation_thermo(self):
         # unpack the constants (not essential, but makes it easier to read)
