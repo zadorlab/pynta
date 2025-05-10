@@ -206,8 +206,7 @@ def fix_atom(mol,atom,allow_failure=False,cleanup_surface_bonds=True):
     delta = get_octet_deviation(atom)
     
     if delta < 0: #too many electrons
-        logging.error(mol.to_adjacency_list())
-        raise TooManyElectronsException("Cannot solve problem of too many electrons not counting surface bonds and all ad bonds are 1")
+        raise TooManyElectronsException("Cannot solve problem of too many electrons not counting surface bonds and all ad bonds are 1: {}".format(mol.to_adjacency_list()))
     elif delta > 0: #too few electrons
         atoms = [k for k,v in atom.bonds.items()]
         symbols = [k.symbol for k in atoms]
@@ -360,10 +359,7 @@ def generate_TS_2D(atoms, info_path,  metal, facet, sites, site_adjacency, nslab
                         pos = site["position"]
                         break
                 else:
-                    logging.error("couldn't find right site bond")
-                    logging.error(admol.to_adjacency_list())
-                    logging.error(i - len(neighbor_sites))
-                    raise SiteOccupationException
+                    raise SiteOccupationException("couldn't find right site bond")
                 for j,s in enumerate(neighbor_sites):
                     if (s["position"] == pos).all():
                         inds2D.append(j)
@@ -928,8 +924,7 @@ def get_bond_factors(ts_path,adsorbates_path,metal,facet,sites,site_adjacency,ma
                         pos = site["position"]
                         break
                 else:
-                    logging.error(admol.to_adjacency_list())
-                    raise SiteOccupationException
+                    raise SiteOccupationException(admol.to_adjacency_list())
                 for j,s in enumerate(neighbor_sites):
                     if (s["position"] == pos).all():
                         inds2D.append(j)
