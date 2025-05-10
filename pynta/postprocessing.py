@@ -1283,3 +1283,72 @@ def get_TS(path,adsorbates_path,metal,facet,slab,sites,site_adjacency,nslab,c_re
             ts_dict[k] = spc
             
     return ts_dict
+
+def get_kinetics(path,adsorbates_path,metal,facet,slab,sites,site_adjacency,nslab,site_density,config_dict=None,
+                c_ref=0.0,o_ref=0.0,h_ref=0.0,n_ref=0.0):
+    """
+    Generate a dictionary of GasConfiguration/SurfaceConfiguration objects corresponding to a Pynta 
+    species calculation
+    Args:
+        path: directory of the corresponding TS in the Pynta run
+        adsorbates_path: Adsorbates directory of the Pynta run
+        metal: metal of the slab
+        facet: facet of the slab
+        slab: ase.Atoms object for the slab
+        sites: list of sites correspondingn to the slab
+        site_adjacency: site_adjacency corresponding to the slab
+        nslab: number of atoms in the slab
+        site_density: the site density of the slab in molecules/m^2
+        config_dict: dictionary mapping names to lowest energy GasConfiguration/SurfaceConfiguration objects, will generate needed ones automatically if not provided
+        c_ref: ZPE corrected gas phase reference for carbon (CH4) [eV]
+        o_ref: ZPE corrected gas phase reference for oxygen (H2O) [eV]
+        h_ref: ZPE corrected gas phase reference for hydrogen(H2) [eV]
+        n_ref: ZPE corrected gas phase reference for nitrogen (NH3) [eV]
+
+    Returns:
+        dictionary mapping string index to TS SurfaceConfiguration objects
+    """
+    ts_dict = get_TS(path,adsorbates_path,metal,facet,slab,sites,site_adjacency,nslab,
+                c_ref=c_ref,o_ref=o_ref,h_ref=h_ref,n_ref=n_ref)
+    
+    with open(os.path.join(path,"info.json"),'r') as f:
+        info = json.load(f)
+    
+    if config_dict is None:
+        config_dict = dict()
+        for spc_name in np.unique(np.array(info["species_names"]+info["reverse_names"])):
+            spcs = get_species(os.path.join(adsorbates_path,spc_name),adsorbates_path,metal,facet,slab,sites,site_adjacency,nslab,c_ref=c_ref,o_ref=o_ref,h_ref=h_ref,n_ref=n_ref)
+            minspc = spcs[min({k:v for k,v in spcs.items() if v.valid},key=lambda x: spcs[x].energy)]
+            config_dict[spc_name] = minspc
+
+
+    if info["forward"]:
+        reactant_mol = Molecule().from_adjacency_list(info["reactants"])
+        product_mol = Molecule().from_adjacency_list(info["products"])
+    else:
+        product_mol = Molecule().from_adjacency_list(info["reactants"])
+        reactant_mol = Molecule().from_adjacency_list(info["products"])
+    
+    reactants = [config_dict[name] for name in info["species_names"]]
+    products = [config_dict[name] for name in info["reverse_names"]]
+
+    rstr = reactant_mol.to_adjacency_list()
+    reactant_mol.clear_labeled_atoms()
+    pstr = product_mol.to_adjacency_list()
+    product_mol.clear_labeled_atoms()
+
+    family_comment = ""
+    if "family_name" in info.keys():
+        family_comment += info["family_name"]+"\n"
+
+    family_comment += "reactants:\n" + rstr
+    family_comment += "products:\n" + pstr
+
+    kin_dict = dict()
+    for k,ts in ts_dict.items():
+        kin = Kinetics(reactants,ts,reactant_mol,product_mol,
+                    site_density,metal=metal,facet=facet,products=products,family_comment=family_comment,valid=ts.valid)
+        kin.run()
+        kin_dict[k] = kin
+
+    return kin_dict
