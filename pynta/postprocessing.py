@@ -972,3 +972,72 @@ class Kinetics:
         self.barrier_f = bar_f
         self.barrier_r = bar_r
         
+    def calculate_kinetic_parameters(self):
+        kB = ase.units.kB
+        R = 8.314 #J/(mol K)
+        h = 6.582119569e-16 # eV * s
+        c0 = 2.4282*10**22*1000.0 #molecules/m^3
+
+        kfs = []
+        krevs = []
+        for i,T in enumerate(self.temperature):
+            factor_f = self.site_density
+            Lunits_f = -2
+            factor_r = self.site_density
+            Lunits_r = -2
+            
+            GTS = self.transition_state.G[i]
+            
+            GR = 0.0
+            for r in self.reactants:
+                GR += r.G[i]
+                if isinstance(r,SurfaceConfiguration):
+                    factor_f /= self.site_density
+                    Lunits_f += 2
+                elif isinstance(r,GasConfiguration):
+                    factor_f /= c0
+                    Lunits_f += 3
+
+            for i in range(self.rnum-len(self.reactants)):
+                factor_f /= self.site_density
+                Lunits_f += 2
+            
+            kf = kB*T/h * np.exp(-(GTS-GR)/(R*T)) * factor_f
+            kfs.append(kf)
+            
+            if self.products:
+                GP = 0.0
+                for p in self.products:
+                    GP += p.G[i]
+                    if isinstance(p,SurfaceConfiguration):
+                        factor_r /= self.site_density
+                        Lunits_r += 2
+                    elif isinstance(p,GasConfiguration):
+                        factor_r /= c0
+                        Lunits_r += 3
+                for i in range(self.pnum-len(self.products)):
+                    factor_r /= self.site_density
+                    Lunits_r += 2
+                
+                krev = kB*T/h * np.exp(-(GTS-GP)/(R*T)) * factor_r
+                krevs.append(krev)
+                
+        if Lunits_f == 0 and self.rnum - 1 == 0:
+            self.arr_f = SurfaceArrhenius().fit_to_data(self.temperature,np.array(kfs),"s^-1")
+        elif self.rnum - 1 == 1:
+            self.arr_f = SurfaceArrhenius().fit_to_data(self.temperature,np.array(kfs),"m^{Lunits}/(molecule*s)".format(Lunits=Lunits_f))
+        else:
+            self.arr_f = SurfaceArrhenius().fit_to_data(self.temperature,np.array(kfs),"m^{Lunits}/(molecules^{mols}*s)".format(Lunits=Lunits_f,mols=self.rnum-1))
+        
+        self.kfs = kfs
+        
+        if self.products:
+            if Lunits_r == 0 and self.pnum - 1 == 0:
+                self.arr_r = SurfaceArrhenius().fit_to_data(self.temperature,np.array(krevs),"s^-1")
+            elif self.pnum - 1 == 1:
+                self.arr_r = SurfaceArrhenius().fit_to_data(self.temperature,np.array(krevs),"m^{Lunits}/(molecule*s)".format(Lunits=Lunits_r))
+            else:
+                self.arr_r = SurfaceArrhenius().fit_to_data(self.temperature,np.array(krevs),"m^{Lunits}/(molecules^{mols}*s)".format(Lunits=Lunits_r,mols=self.pnum-1))
+        
+        self.krevs = krevs 
+            
