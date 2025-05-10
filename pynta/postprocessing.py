@@ -1177,3 +1177,109 @@ def get_species(path,adsorbates_path,metal,facet,slab,sites,site_adjacency,nslab
             
     return species_dict 
                 
+def get_TS(path,adsorbates_path,metal,facet,slab,sites,site_adjacency,nslab,c_ref=0.0,o_ref=0.0,h_ref=0.0,n_ref=0.0):
+    """
+    Generate a dictionary of GasConfiguration/SurfaceConfiguration objects corresponding to a Pynta 
+    species calculation
+    Args:
+        path: directory of the corresponding TS in the Pynta run
+        adsorbates_path: Adsorbates directory of the Pynta run
+        metal: metal of the slab
+        facet: facet of the slab
+        slab: ase.Atoms object for the slab
+        sites: list of sites correspondingn to the slab
+        site_adjacency: site_adjacency corresponding to the slab
+        nslab: number of atoms in the slab
+        c_ref: ZPE corrected gas phase reference for carbon (CH4) [eV]
+        o_ref: ZPE corrected gas phase reference for oxygen (H2O) [eV]
+        h_ref: ZPE corrected gas phase reference for hydrogen(H2) [eV]
+        n_ref: ZPE corrected gas phase reference for nitrogen (NH3) [eV]
+
+    Returns:
+        dictionary mapping string index to TS SurfaceConfiguration objects
+    """
+    allowed_structure_site_structures = generate_allowed_structure_site_structures(adsorbates_path,sites,
+                                                                                   site_adjacency,nslab,max_dist=np.inf)
+    valid_dict,valid_info = validate_TS_configs(path,sites,site_adjacency,nslab,irc_concern_len=8)
+    
+    with open(os.path.join(path,"info.json"),'r') as f:
+        info = json.load(f)
+        
+    reactants = Molecule().from_adjacency_list(info["reactants"])
+    products = Molecule().from_adjacency_list(info["products"])
+    
+    broken_bonds,formed_bonds = get_broken_formed_bonds(reactants,products)
+    target_TS = reactants.copy(deep=True)
+    
+    for labels in list(broken_bonds)+list(formed_bonds):
+        label1,label2 = list(labels)
+        a1 = target_TS.get_labeled_atoms(label1)[0]
+        a2 = target_TS.get_labeled_atoms(label2)[0]
+        if target_TS.has_bond(a1,a2):
+            bd = target_TS.get_bond(a1,a2)
+            bd.set_order_str('R')
+        else:
+            bd = Bond(a1,a2,order='R')
+            target_TS.add_bond(bd)
+    
+    target_TS.clear_labeled_atoms()
+    
+    keep_binding_vdW_bonds_in_reactants=False
+    keep_vdW_surface_bonds_in_reactants=False
+    mol = reactants
+    for bd in mol.get_all_edges():
+        if bd.order == 0:
+            if bd.atom1.is_surface_site() or bd.atom2.is_surface_site():
+                keep_binding_vdW_bonds_in_reactants = True
+                m = mol.copy(deep=True)
+                b = m.get_bond(m.atoms[mol.atoms.index(bd.atom1)],m.atoms[mol.atoms.index(bd.atom2)])
+                m.remove_bond(b)
+                out = m.split()
+                if len(out) == 1: #vdW bond is not only thing connecting adsorbate to surface
+                    keep_vdW_surface_bonds_in_reactants = True
+    keep_binding_vdW_bonds_in_products=False
+    keep_vdW_surface_bonds_in_products=False
+    mol = products
+    for bd in mol.get_all_edges():
+        if bd.order == 0:
+            if bd.atom1.is_surface_site() or bd.atom2.is_surface_site():
+                keep_binding_vdW_bonds_in_products = True
+                m = mol.copy(deep=True)
+                b = m.get_bond(m.atoms[mol.atoms.index(bd.atom1)],m.atoms[mol.atoms.index(bd.atom2)])
+                m.remove_bond(b)
+                out = m.split()
+                if len(out) == 1: #vdW bond is not only thing connecting adsorbate to surface
+                    keep_vdW_surface_bonds_in_products = True
+        
+    keep_binding_vdW_bonds = keep_binding_vdW_bonds_in_reactants and keep_binding_vdW_bonds_in_products
+    keep_vdW_surface_bonds = keep_vdW_surface_bonds_in_reactants and keep_vdW_surface_bonds_in_products
+
+    ts_dict = dict()
+    for k in valid_dict.keys():
+        dopt = os.path.join(path,k,"opt.xyz")
+        dvib = os.path.join(path,k,"vib.json_vib.json")
+        vibdata = vibdata = get_vibdata(dopt,dvib,nslab)
+        atoms = read(dopt)
+        valid = valid_dict[k]
+        vinfo = valid_info[k]
+        try:
+            admol,neighbor_sites,ninds = generate_TS_2D(atoms, os.path.join(path,"info.json"),  metal, facet, sites, site_adjacency, nslab, 
+                                                    imag_freq_path=os.path.join(path,k,"vib.0.traj"),
+                     max_dist=np.inf, allowed_structure_site_structures=allowed_structure_site_structures,
+                     keep_binding_vdW_bonds=keep_binding_vdW_bonds,keep_vdW_surface_bonds=keep_vdW_surface_bonds)
+            
+            spc = SurfaceConfiguration(atoms,slab,admol,vibdata,os.path.split(path)[1],metal,facet,is_TS=True,sites_per_cell=1,
+                      c_ref=c_ref,o_ref=o_ref,h_ref=h_ref,n_ref=n_ref,valid=valid,valid_info=vinfo,)
+            
+            spc.run()
+            
+            ts_dict[k] = spc
+        except SiteOccupationException:
+            spc = SurfaceConfiguration(atoms,slab,None,vibdata,os.path.split(path)[1],metal,facet,is_TS=True,sites_per_cell=1,
+                      c_ref=c_ref,o_ref=o_ref,h_ref=h_ref,n_ref=n_ref,valid=valid,valid_info=vinfo,mol=target_TS)
+            
+            spc.run()
+            
+            ts_dict[k] = spc
+            
+    return ts_dict
