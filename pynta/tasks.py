@@ -741,15 +741,17 @@ class MolecularTSEstimate(FiretaskBase):
             return FWAction()
 
 def collect_firework(xyzs,check_symm,fw_generators,fw_generator_dicts,out_names,future_check_symms,parents=[],label="",allow_fizzled_parents=False,
-                     detour=True):
+                     detour=True,postprocess=False,metal=None,facet=None,sites=None,site_adjacency=None,slab_path=None):
     task = MolecularCollect({"xyzs": xyzs, "check_symm": check_symm, "fw_generators": fw_generators,
-        "fw_generator_dicts": fw_generator_dicts, "out_names": out_names, "future_check_symms": future_check_symms, "label": label, "detour": detour})
+        "fw_generator_dicts": fw_generator_dicts, "out_names": out_names, "future_check_symms": future_check_symms, "label": label, 
+        "detour": detour, "postprocess": postprocess, "metal": metal, "facet": facet, "sites": sites, "site_adjacency": site_adjacency,
+        "slab_path": slab_path})
     return Firework([task],parents=parents,name=label+"collect",spec={"_allow_fizzled_parents": allow_fizzled_parents,"_priority": 5})
 
 @explicit_serialize
 class MolecularCollect(CollectTask):
     required_params = ["xyzs","check_symm","fw_generators","fw_generator_dicts","out_names","future_check_symms","label"]
-    optional_params = ["detour"]
+    optional_params = ["detour","postprocess","metal","facet","sites","site_adjacency","slab_path"]
     def run_task(self, fw_spec):
         xyzs = [xyz for xyz in self["xyzs"] if os.path.exists(xyz)] #if the associated task errored a file may not be present
         if self["check_symm"]:
@@ -762,7 +764,13 @@ class MolecularCollect(CollectTask):
         out_names = self["out_names"]
         future_check_symms = self["future_check_symms"]
         detour = self["detour"] if "detour" in self.keys() else True
-
+        postprocess = self["postprocess"] if "postprocess" in self.keys() else False 
+        metal = self["metal"] if "metal" in self.keys() else None 
+        facet = self["facet"] if "facet" in self.keys() else None 
+        sites = self["sites"] if "sites" in self.keys() else None 
+        site_adjacency = self["site_adjacency"] if "site_adjacency" in self.keys() else None 
+        slab_path = self["slab_path"] if "slab_path" in self.keys() else None
+        
         for i in range(len(fw_generators)):
             if not isinstance(fw_generators[i],list):
                 fw_generators[i] = [fw_generators[i]]
@@ -791,18 +799,29 @@ class MolecularCollect(CollectTask):
         if len(fw_generators) > 1:
             task = MolecularCollect({"xyzs": out_xyzs,"check_symm": future_check_symms[0],
                     "fw_generators": fw_generators[1:],"fw_generator_dicts": fw_generator_dicts[1:],
-                    "out_names": out_names[1:],"future_check_symms": future_check_symms[1:],"label": self["label"]})
+                    "out_names": out_names[1:],"future_check_symms": future_check_symms[1:],"label": self["label"], 
+                    "postprocess": postprocess, "metal": metal, "facet": facet, "sites": sites, "site_adjacency": site_adjacency,
+                    "slab_path": slab_path})
             cfw = Firework([task],parents=fws,name=self["label"]+"collect",spec={"_allow_fizzled_parents":True,"_priority": 4})
             newwf = Workflow(fws+[cfw],name=self["label"]+"collect"+str(-len(self["fw_generators"])))
             if detour:
                 return FWAction(detours=newwf) #using detour allows us to inherit children from the original collect to the subsequent collects
             else:
                 return FWAction(additions=newwf)
-        else:
-            if detour:
-                return FWAction(detours=fws)
+        else: #last round 
+            if postprocess:
+                pfw = postprocessing_firework(os.path.split(os.path.split(xyzs[0])[0])[0],metal,facet,sites,site_adjacency,slab_path,self["label"],parents=fws,
+                    priority=10, allow_fizzled_parents=True)
+                newwf = Workflow(fws+[pfw],name=self["label"]+"collectfinal")
+                if detour:
+                    return FWAction(detours=newwf)
+                else:
+                    return FWAction(additions=newwf)
             else:
-                return FWAction(additions=fws)
+                if detour:
+                    return FWAction(detours=fws)
+                else:
+                    return FWAction(additions=fws)
 
 def postprocessing_firework(path,metal,facet,sites,site_adjacency,slab_path,label,parents=[],priority=10,allow_fizzled_parents=False):
     """
