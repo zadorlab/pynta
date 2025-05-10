@@ -1346,7 +1346,7 @@ def validate_TS(ts_path,sites,site_adjacency,nslab,irc_path1=None,irc_path2=None
                     if len(out) == 1: #vdW bond is not only thing connecting adsorbate to surface
                         vdW_surface_bonds = True
                         
-    ts_val,struct_match,reaction_bond_alignments,fixed_bond_alignments = validate_TS_geometry(ts_path,reactants,products,sites,site_adjacency,nslab,info_path=info_path,
+    ts_val,struct_match,bond_alignment_validation,reaction_bond_alignments,fixed_bond_alignments = validate_TS_geometry(ts_path,reactants,products,sites,site_adjacency,nslab,info_path=info_path,
                          imag_freq_path=imag_freq_path,allowed_structure_site_structures=None,keep_binding_vdW_bonds=binding_vdW_bonds,keep_vdW_surface_bonds=vdW_surface_bonds)
     
     if irc_path1 is not None:
@@ -1355,7 +1355,8 @@ def validate_TS(ts_path,sites,site_adjacency,nslab,irc_path1=None,irc_path2=None
                         binding_vdW_bonds=binding_vdW_bonds, vdW_surface_bonds=vdW_surface_bonds, irc_concern_len=irc_concern_len)
         
         d = {"TS_direct_Validation": ts_val, "IRC_Validation": both_valid, "One_Endpoint_Valid": one_endpoint_valid, "IRC_Endpoints_Match": endpoints_match,
-                                                    "Short_IRC": short_irc, "Struct Validation": struct_match, "Reaction_Bond_Freq_Alignments": reaction_bond_alignments,
+                                                    "Short_IRC": short_irc, "Struct Validation": struct_match,
+                                                    "Freq Alignment Validation": bond_alignment_validation, "Reaction_Bond_Freq_Alignments": reaction_bond_alignments,
                                                     "Fixed_Bond_Freq_Alignments": fixed_bond_alignments}
         if one_endpoint_valid is not None:
             return both_valid or (((one_endpoint_valid and endpoints_match) or target_endpoints_match) and ts_val), d
@@ -1363,7 +1364,8 @@ def validate_TS(ts_path,sites,site_adjacency,nslab,irc_path1=None,irc_path2=None
             return ts_val,d
     else:
         d = {"TS_direct_Validation": ts_val, "IRC_Validation": None, "One_Endpoint_Valid": None,"IRC_Endpoints_Match": None,
-                                                    "Short_IRC": None, "Struct Validation": struct_match, "Reaction_Bond_Freq_Alignments": reaction_bond_alignments,
+                                                    "Short_IRC": None, "Struct Validation": struct_match, "Freq Alignment Validation": bond_alignment_validation, 
+                                                    "Reaction_Bond_Freq_Alignments": reaction_bond_alignments,
                                                     "Fixed_Bond_Freq_Alignments": fixed_bond_alignments}
         return ts_val,d
 
@@ -1630,7 +1632,7 @@ def validate_TS_geometry(opt_path,reactants,products,sites,site_adjacency,nslab,
             else:
                 match = False
     except (SiteOccupationException,TooManyElectronsException):
-        return False,False,[],[]
+        return False,False,False,[],[]
     
     #get imaginary frequency motion
     tr_ts = Trajectory(imag_freq_path)
@@ -1671,5 +1673,10 @@ def validate_TS_geometry(opt_path,reactants,products,sites,site_adjacency,nslab,
         min_r_bond_alignment = np.max(fixed_bond_alignments) < max_fixed_bond_alignment
     else:
         min_r_bond_alignment = True
-        
-    return match and np.min(reaction_bond_alignments) > min_reaction_bond_alignment and min_r_bond_alignment, match,reaction_bond_alignments,fixed_bond_alignments
+    
+    if reaction_bond_alignments:
+        bond_alignment_validation = np.min(reaction_bond_alignments) > min_reaction_bond_alignment and min_r_bond_alignment
+    else:
+        bond_alignment_validation = min_r_bond_alignment
+    
+    return match and bond_alignment_validation,match,bond_alignment_validation,reaction_bond_alignments,fixed_bond_alignments
