@@ -1175,9 +1175,12 @@ def get_adsorbate_energies(ad_path,atom_corrections=None,include_zpe=True):
 
     return Es,thermos,fs
 
-def get_vibdata(dopt,dvib,nslab):
+def get_vibdata(dopt,dvib,nslab,gas_phase=False):
     xyz = read(dopt)
-    inds = range(nslab,len(xyz))
+    if not gas_phase:
+        inds = range(nslab,len(xyz))
+    else:
+        inds = range(0,len(xyz))
     with open(dvib,'r') as f:
         out = json.load(f)
     sh = (len(inds),3,len(inds),3)
