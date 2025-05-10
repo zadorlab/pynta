@@ -803,20 +803,26 @@ class SurfaceConfiguration:
         
         self.thermo_lines = "thermo="+repr(self.nasa)+","
 
-    def _format_RMG_output(self):
+    def format_RMG_output(self):
+        xyz = str(len(self.atoms)) + "\n"
+        for s,(x,y,z) in zip(self.atoms.symbols,self.atoms.positions):
+            xyz += s + " " + str(x) + " " + str(y) + " " + str(z) + "\n"
         line = '\n'
-        line += 'entry(\n    index = %s,\n' % (self.index)
+        line += 'entry(\n    index = {index},\n'
         line += f'    label = "{self.name}",\n'
-        line += '    molecule = \n"""\n%s\n""",\n' % (self.formatted_adj_list)
+        line += '    molecule = \n"""\n%s""",\n' % (self.formatted_adj_list)
         line += self.thermo_lines
-        line += f'    longDesc = u"""Calculated by {self.author} at {self.institution} using statistical mechanics using Pynta Thermo in postprocessing. \n'
-        line += "                   These methods were based on approach by Blondal et. al in https://doi.org/10.1021/acscatal.2c03378. If you use this database in your work, please cite the publication mentioned above.\n"
+        line += f'    \nlongDesc = u"""Calculated using Pynta https://doi.org/10.1021/acs.jcim.3c00948. \n'
+        line += "                   Thermochemistry computed using approach from Blondal et. al in https://doi.org/10.1021/acscatal.2c03378. \nIf you use this library in your work, please cite the publications mentioned above.\n"
+        line += "Hf298: {} [kcal/mol]\n".format(self.H[0]/4184.0)
+        line += "Sf298: {} [cal/(mol-K)]\n".format(self.S[0]/4.184)
+        line += xyz
         if self.twoD_gas:
             line += '\n            The two lowest frequencies, %.1F and %.1F %s, where replaced by the 2D gas model.' % (
                 self.freqs[0], self.freqs[1], self.frequencies_units.replace("'", ""))
         line += '""",\n)\n'
 
-        self.species_lines = line
+        self.rmg_species_text = line
 
         return
 
@@ -855,8 +861,7 @@ entry(
     facet = "111",
 )
         '''
-        self.header = line
-        return
+        return line
 
     def temp_corrections(self):
         index = self.index
