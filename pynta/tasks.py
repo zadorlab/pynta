@@ -23,6 +23,7 @@ from pynta.mol import *
 from pynta.coveragedependence import *
 from pynta.geometricanalysis import *
 from pynta.adsorbate import construct_initial_guess_files
+from pynta.postprocessing import postprocess, write_rmg_libraries
 import numpy as np
 import multiprocessing as mp
 import json
@@ -803,6 +804,51 @@ class MolecularCollect(CollectTask):
             else:
                 return FWAction(additions=fws)
 
+def postprocessing_firework(path,metal,facet,sites,site_adjacency,slab_path,label,parents=[],priority=10,allow_fizzled_parents=False):
+    """
+    generates firework that marks the species/TS corresponding to path as complete and then postprocesses everything marked as complete 
+    in the Pynta run
+    """
+    d = {"path" : path, "metal": metal, "facet": facet, "sites": sites, "site_adjacency": site_adjacency, "slab_path": slab_path}
+    
+    t1 = PostprocessingTask(d)
+    return Firework([t1],parents=parents,name=label+"_postprocessing",spec={"_allow_fizzled_parents": allow_fizzled_parents,"_priority": priority})
+
+@explicit_serialize
+class PostprocessingTask(FiretaskBase):
+    """
+    firework that marks the species/TS corresponding to path as complete and then postprocesses everything marked as complete 
+    in the Pynta run
+    """
+    required_params = ["path","metal","facet","sites","site_adjacency","slab_path"]
+    optional_params = []
+    def run_task(self, fw_spec):
+        path = self["path"]
+        metal = self["metal"]
+        facet = self["facet"]
+        sites = self["sites"]
+        for s in sites:
+            s["position"] = np.array(s["position"])
+            s["normal"] = np.array(s["normal"])
+        
+        site_adjacency = {int(k):[int(x) for x in v] for k,v in self["site_adjacency"].items()}
+        slab_path = self["slab_path"]
+        
+        is_TS = os.path.split(path)[1][:2] == "TS"
+        
+        open(os.path.join(path,"complete.sgnl"),'a').close()
+        
+        time.sleep(1) #wait one second, in case of any synchronization issues
+        
+        if is_TS:
+            pynta_path = os.path.split(path)[0]
+        else:
+            pynta_path = os.path.split(os.path.split(path)[0])[0]
+            
+        spc_dict,ts_dict = postprocess(pynta_path,metal,facet,sites,site_adjacency,slab_path=slab_path,check_finished=True)
+        
+        write_rmg_libraries(pynta_path,spc_dict,ts_dict)
+    
 def TSnudge_firework(xyz,label,forward_path=None,reverse_path=None,spawn_jobs=False,software=None,opt_method=None,sella=False,
         socket=False,software_kwargs={},opt_kwargs={},run_kwargs={},constraints=[],parents=[],out_path=None,ignore_errors=False):
         """
