@@ -1352,3 +1352,75 @@ def get_kinetics(path,adsorbates_path,metal,facet,slab,sites,site_adjacency,nsla
         kin_dict[k] = kin
 
     return kin_dict
+
+def get_reference_energies(adsorbates_path,nslab):
+    """
+    Extract references energies for reference species for thermochemistry calculations
+    Args:
+        adsorbates_path: path to the Adsorbates directory in the pynta run
+        nslab: size of the slab
+
+    Returns:
+        Reference energies: c_ref,o_ref,h_ref,n_ref
+    """
+    spc_names = [x for x in os.listdir(adsorbates_path) if os.path.isdir(os.path.join(adsorbates_path,x))]
+
+    #get reference species
+    if "C" in spc_names:
+        c_energies = []
+        for ind in os.listdir(os.path.join(adsorbates_path,"C")):
+            if not os.path.isdir(os.path.join(adsorbates_path,"C",ind)):
+                continue
+            cdopt = os.path.join(adsorbates_path,"C",ind,ind+".xyz")
+            cdvib = os.path.join(adsorbates_path,"C",ind,"vib.json_vib.json")
+            c_energy = read(cdopt).get_potential_energy() + get_vibdata(cdopt,cdvib,nslab,gas_phase=True).get_zero_point_energy()
+            c_energies.append(c_energy)
+        c_ref = min(c_energies)
+    else:
+        logging.warning("No C reference (no CH4 calculation), thermochemistry with C will be wrong")
+        c_ref = 0.0
+
+    if "O" in spc_names:
+        o_energies = []
+        for ind in os.listdir(os.path.join(adsorbates_path,"O")):
+            if not os.path.isdir(os.path.join(adsorbates_path,"O",ind)):
+                continue
+            odopt = os.path.join(adsorbates_path,"O",ind,ind+".xyz")
+            odvib = os.path.join(adsorbates_path,"O",ind,"vib.json_vib.json")
+            o_energy = read(odopt).get_potential_energy() + get_vibdata(odopt,odvib,nslab,gas_phase=True).get_zero_point_energy()
+            o_energies.append(o_energy)
+        o_ref = min(o_energies)
+    else:
+        logging.warning("No O reference (no H2O calculation), thermochemistry with O will be wrong")
+        o_ref = 0.0
+
+    if "[H][H]" in spc_names:
+        h_energies = []
+        for ind in os.listdir(os.path.join(adsorbates_path,"[H][H]")):
+            if not os.path.isdir(os.path.join(adsorbates_path,"[H][H]",ind)):
+                continue
+            hdopt = os.path.join(adsorbates_path,"[H][H]",ind,ind+".xyz")
+            hdvib = os.path.join(adsorbates_path,"[H][H]",ind,"vib.json_vib.json")
+            h_energy = read(hdopt).get_potential_energy() + get_vibdata(hdopt,hdvib,nslab,gas_phase=True).get_zero_point_energy()
+            h_energies.append(h_energy)
+        h_ref = min(h_energies)
+    else:
+        logging.warning("No H reference (no H2 calculation), thermochemistry with H will be wrong")
+        h_ref = 0.0
+
+    if "N" in spc_names:
+        n_energies = []
+        for ind in os.listdir(os.path.join(adsorbates_path,"N")):
+            if not os.path.isdir(os.path.join(adsorbates_path,"N",ind)):
+                continue
+            ndopt = os.path.join(adsorbates_path,"N",ind,ind+".xyz")
+            ndvib = os.path.join(adsorbates_path,"N",ind,"vib.json_vib.json")
+            n_energy = read(ndopt).get_potential_energy() + get_vibdata(ndopt,ndvib,nslab,gas_phase=True).get_zero_point_energy()
+            n_energies.append(n_energy)
+        n_ref = min(n_energies)
+    else:
+        logging.warning("No N reference (no NH3 calculation), thermochemistry with N will be wrong")
+        n_ref = 0.0
+    
+    return c_ref,o_ref,h_ref,n_ref
+    
