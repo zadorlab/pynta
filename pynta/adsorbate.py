@@ -189,6 +189,7 @@ def generate_adsorbate_guesses(mol,ads,slab,mol_to_atoms_map,metal,
         geo_out,Eharm,_ = outputs[i]
         if geo_out:
             del geo_out["constraints"]
+            del geo_out["forces"]
             geo_out = Atoms(**geo_out)
             geo_out.calc = None
             geos_out.append(geo_out)
