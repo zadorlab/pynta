@@ -1424,3 +1424,76 @@ def get_reference_energies(adsorbates_path,nslab):
     
     return c_ref,o_ref,h_ref,n_ref
     
+def postprocess(path,metal,facet,sites,site_adjacency,slab_path=None,check_finished=False):
+    """
+    Postprocess Pynta run into GasConfiguration/SurfaceConfiguration/Kinetics objects
+    Args:
+        path: directory of the pynta run
+        metal: metal of the slab
+        facet: facet of the slab
+        sites: list of slab sites
+        site_adjacency: slab adjacency
+        slab_path: path to the slab file. Defaults to None.
+        check_finished: If True the function will only postprocess directories with a complete.sgnl file in them
+            During a Pynta run this allows us to avoid postprocessing unfinished calculations. Defaults to False.
+
+    Returns:
+        spc_dict,kin_dict dictionaries mapping names of species and transition states to lowest energy valid GasConfiguration/SurfaceConfiguration and 
+            lowest barrier valid Kinetics objects. 
+    """
+    if slab_path:
+        slab = read(slab_path)
+    else:
+        slab = read(os.path.join(path,"slab.xyz"))
+        
+    nslab = len(slab)
+
+    site_density = get_site_density(slab,metal,facet)
+    
+    spc_names = [x for x in os.listdir(os.path.join(path,"Adsorbates")) if os.path.isdir(os.path.join(path,"Adsorbates",x))]
+
+    c_ref,o_ref,h_ref,n_ref = get_reference_energies(os.path.join(path,"Adsorbates"),nslab)
+
+    spc_dict = dict()
+    for name in spc_names:
+        if check_finished and not os.path.exists(os.path.join(path,"Adsorbates",name,"complete.sgnl")):
+            continue # not ready to process this species yet
+        spcs = get_species(os.path.join(path,"Adsorbates",name),os.path.join(path,"Adsorbates"),metal,facet,slab,sites,site_adjacency,
+                           nslab,c_ref=c_ref,o_ref=o_ref,h_ref=h_ref,n_ref=n_ref)
+        
+        min_energy = np.inf
+        mink = None
+        for k,spc in spcs.items():
+            if spc.valid and spc.energy < min_energy: #ZPE corrected energies
+                min_energy = spc.energy
+                mink = k
+        if mink:
+            spc = spcs[mink]
+            spc_dict[name] = spc
+    
+    ts_dict = dict()
+    for ts in os.listdir(path):
+        
+        if ts[:2] != "TS":
+            continue
+        
+        if check_finished and not os.path.exists(os.path.join(path,ts,"complete.sgnl")):
+            continue # not ready to process this species yet
+            
+        try:
+            kinetics = get_kinetics(os.path.join(path,ts),os.path.join(path,"Adsorbates"),metal,facet,slab,sites,site_adjacency,nslab,site_density,config_dict=spc_dict,
+                                   c_ref=c_ref,o_ref=o_ref,h_ref=h_ref,n_ref=n_ref)
+        except KeyError: #species required isn't in spc_dict yet
+            continue
+            
+        min_barrier = np.inf
+        mink = None
+        for k,kinetic in kinetics.items():
+            if kinetic.valid and kinetic.barrier_f < min_barrier: #ZPE corrected barriers
+                min_barrier = kinetic.barrier_f
+                mink = k
+        if mink:
+            kin = kinetics[mink]
+            ts_dict[ts] = kin
+
+    return spc_dict,ts_dict
