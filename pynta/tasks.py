@@ -476,7 +476,7 @@ class MolecularAdsorbateEstimate(FiretaskBase):
                         "vib_obj_dict","nslab","Eharmtol","Eharmfiltertol","Nharmmin","pbc",
                         "harm_f_software", "harm_f_software_kwargs","opt_software","opt_software_kwargs","opt_constraints","vib_constraints",
                         "fmaxopt","socket"]
-    optional_params = ["out_path","spawn_jobs","nprocs"]
+    optional_params = ["out_path","spawn_jobs","nprocs","postprocess"]
     def run_task(self, fw_spec):
         spawn_jobs = self["spawn_jobs"] if "spawn_jobs" in self.keys() else False
         nprocs = self["nprocs"] if "nprocs" in self.keys() else 1
@@ -522,6 +522,7 @@ class MolecularAdsorbateEstimate(FiretaskBase):
         harm_f_software_kwargs = self["harm_f_software_kwargs"]
         fmaxopt = self["fmaxopt"]
         socket = self["socket"]
+        postprocess = self["postprocess"] if "postprocess" in self.keys() else False
         
         xyzs = construct_initial_guess_files(mol,mol_name,path,slab,metal,
                                single_site_bond_params_lists,single_sites_lists,double_site_bond_params_lists,double_sites_lists,
@@ -552,7 +553,8 @@ class MolecularAdsorbateEstimate(FiretaskBase):
                 vib_obj_dict = {"software": opt_software, "label": mol_name, "software_kwargs": opt_software_kwargs,
                     "constraints": vib_constraints}
 
-            cfw = collect_firework(previbxyzs,True,["vibrations_firework"],[vib_obj_dict],["vib.json"],[],parents=optfws2,label=mol_name,detour=False)
+            cfw = collect_firework(previbxyzs,True,["vibrations_firework"],[vib_obj_dict],["vib.json"],[],parents=optfws2,label=mol_name,detour=False,
+                                   postprocess=postprocess,metal=metal,facet=facet,sites=self["sites"],site_adjacency=self["site_adjacency"],slab_path=slab_path)
             newwf = Workflow(optfws+optfws2+[cfw],name=mol_name+"_optvib")
             return FWAction(detours=newwf)
         else:
@@ -566,7 +568,7 @@ class MolecularTSEstimate(FiretaskBase):
                         "gratom_to_molecule_surface_atom_maps","irc_mode",
                         "vib_obj_dict","opt_obj_dict","nslab","Eharmtol","Eharmfiltertol","Nharmmin","max_num_hfsp_opts","surrogate_metal",
                         "harm_f_software", "harm_f_software_kwargs"]
-    optional_params = ["out_path","spawn_jobs","nprocs","IRC_obj_dict"]
+    optional_params = ["out_path","spawn_jobs","nprocs","IRC_obj_dict","postprocess"]
     def run_task(self, fw_spec):
         gratom_to_molecule_atom_maps = {sm: {int(k):v for k,v in d.items()} for sm,d in self["gratom_to_molecule_atom_maps"].items()}
         gratom_to_molecule_surface_atom_maps = {sm: {int(k):v for k,v in d.items()} for sm,d in self["gratom_to_molecule_surface_atom_maps"].items()}
@@ -599,7 +601,7 @@ class MolecularTSEstimate(FiretaskBase):
         harm_f_software_kwargs = self["harm_f_software_kwargs"]
 
         adsorbates_path = self["adsorbates_path"]
-
+        postprocess = self["postprocess"] if "postprocess" in self.keys() else False 
 
         reactants = Molecule().from_adjacency_list(rxn["reactant"])
         reactants.multiplicity = reactants.get_radical_count() + 1
@@ -724,7 +726,9 @@ class MolecularTSEstimate(FiretaskBase):
 
                 ctask = MolecularCollect({"xyzs":xyzsout,"check_symm":True,"fw_generators": ["optimize_firework",["vibrations_firework","IRC_firework","IRC_firework"]],
                     "fw_generator_dicts": [self["opt_obj_dict"],[self["vib_obj_dict"],irc_obj_dict_forward,irc_obj_dict_reverse]],
-                    "out_names": ["opt.xyz",["vib.json","irc_forward.traj","irc_reverse.traj"]],"future_check_symms": [True,False], "label": "TS"+str(index)+"_"+rxn_name})
+                    "out_names": ["opt.xyz",["vib.json","irc_forward.traj","irc_reverse.traj"]],"future_check_symms": [True,False], "label": "TS"+str(index)+"_"+rxn_name,
+                    "postprocess": postprocess, "metal": metal, "facet": facet, "sites": self["sites"], "site_adjacency": self["site_adjacency"],
+                    "slab_path": slab_path})
                 cfw = Firework([ctask],name="TS"+str(index)+"_"+rxn_name+"_collect",spec={"_allow_fizzled_parents": True, "_priority": 5})
                 newwf = Workflow([cfw],name='rxn_'+str(index)+str(rxn_name))
                 return FWAction(detours=newwf) #using detour allows us to inherit children from the original collect to the subsequent collects
