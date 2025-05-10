@@ -1,4 +1,4 @@
-from ase.io import read
+from ase.io import read, write
 from ase.io.trajectory import Trajectory
 from ase.visualize import view
 import json
@@ -12,7 +12,10 @@ import ase.units
 from molecule.molecule import Molecule
 from acat.adsorption_sites import SlabAdsorptionSites
 from molecule.thermo import Wilhoit
-from pynta.geometricanalysis import get_adsorbate_energies, get_vibdata
+from pynta.mol import split_adsorbed_structures
+from pynta.geometricanalysis import *
+from pynta.utils import to_dict
+import logging 
 
 eV_to_Jmol = 9.648328e4
 
@@ -387,10 +390,161 @@ def write_min_en_species_db(
         db.write(atoms, name=name, zpe=zpe, adj_list=adj_list, spin=spin,
                  gasphase=gasphase, data=data, num_sites=len(info["gratom_to_molecule_surface_atom_map"]))
         return
+           
+class GasConfiguration:
+    """Base class for calculating statmech of gas phase species
+    """
+    def __init__(self,
+                 atoms,
+                 slab,
+                 mol,
+                 vibdata,
+                 name,
+                 c_ref=0,
+                 o_ref=0,
+                 h_ref=0,
+                 n_ref=0,
+                 valid=True):
+        """
+        Args:
+            atoms (_type_): ase.Atoms object for configuration
+            mol (_type_): Molecule object corresponding to configuration
+            vibdata (_type_): ase VibrationData object corresponding to configuration
+            name (_type_): name of configuration
+            c_ref (int, optional): ZPE corrected reference energy for C (CH4). Defaults to 0.
+            o_ref (int, optional): ZPE corrected reference energy for O (H2O). Defaults to 0.
+            h_ref (int, optional): ZPE corrected reference energy for H (H2). Defaults to 0.
+            n_ref (int, optional): ZPE corrected reference energy for N (NH3). Defaults to 0.
+            valid (bool, optional): whether the configuration is valid for thermochemistry/kinetics. Defaults to True.
+        """
+        
+        # start by defining some physical constants
+        self.R = 8.3144621  # ideal Gas constant in J/mol-K
+        self.kB = 1.38065e-23  # Boltzmann constant in J/K
+        self.h = 6.62607e-34  # Planck constant in J*s
+        self.c = 2.99792458e8  # speed of light in m/s
+        self.amu = 1.6605e-27  # atomic mass unit in kg
+        self.Avogadro = 6.0221E23  # mole^-1
+        self.GHz_to_Hz = 1.0E9  # convert rotational constants from GHz to Hz
+        self.invcm_to_invm = 1.0E2  # convert cm^-1 to m^-1, for frequencies
+        self.P_ref = 1.0E5  # reference pressure, 1 bar = 1E5 Pascal
+        self.hartree_to_kcalpermole = 627.5095  # convert hartree/molecule to kcal/mol
+        self.hartree_to_kJpermole = 2627.25677  # convert hartree/molecule to kJ/mol
+        self.eV_to_kJpermole = 96.485  # convert eV/molecule to kJ/mol
+        
+        self.Eref = {'CH4': c_ref, 'H2O': o_ref, 'H2': h_ref, 'NH3': n_ref}  # eV
+        self.dHfatct = {'CH4': -66.540, 'H2O': -238.903, 'H2': 0,
+                        'NH3': -38.563}  # heats of formation (0K) in kJ/mol from the ATcT database for the reference species, version 1.202
+        self.dHrxnatct = {'H2-2H': 432.0680600, 'O2-2O': 493.6871,
+                          'N2-2N': 941.165}  # Heats of the dissociation reactions in the gas phase from the ATcT database, version 1.202
+        
+        self.atoms = atoms 
+        self.mol = mol
+        self.vibdata = vibdata 
+        self.name = name
+        self.valid = valid
+        temperature = [298.15]  # NOTE 298.15 must be first for the NASA polynomial routine to work!
+        self.T_low = 300.0
+        self.T_switch = 1000.0
+        self.T_high = 2000.0
+        dT = 10.0  # temperature increment
+        self.temperature = np.append(temperature, np.arange(self.T_low, self.T_high + dT, dT))
 
-class Thermo:
-    """Base class for calculating thermodynamic properties from Pynta optimized
-    adsorbates.
+        formula = atoms.get_chemical_formula(mode='all')
+        self.composition = {'H': formula.count('H'), 'C': formula.count('C'),
+                            'N': formula.count('N'), 'O': formula.count('O')}
+
+        self.energy_gas = 0 #cancels out later in calculations
+
+        self.DFT_energy = self.atoms.get_potential_energy()
+        self.ZPE_energy = self.vibdata.get_zero_point_energy()
+        self.DFT_energy_gas_units = 'eV'
+        self.DFT_energy_units = 'eV'
+        self.ZPE_energy_units = 'eV'
+        
+    def compute_heat_of_formation(self):
+        self.energy = self.DFT_energy + self.ZPE_energy
+
+        self.dHrxndftgas = (self.energy - self.composition['C'] * self.Eref['CH4']
+                            - self.composition['O'] * self.Eref['H2O']
+                            - self.composition['N'] * self.Eref['NH3']
+                            - (self.composition['H'] / 2 - 2 * self.composition['C'] - self.composition[
+                    'O'] - 3 / 2 * self.composition['N']) * self.Eref['H2']) #eV
+        self.dHfgas = (self.composition['C'] * self.dHfatct['CH4']
+                       + self.composition['O'] * self.dHfatct['H2O']
+                       + self.composition['N'] * self.dHfatct['NH3']
+                       + (self.composition['H'] / 2 - 2 * self.composition['C'] - self.composition[
+                    'O'] - 3 / 2 * self.composition['N']) * self.dHfatct['H2']
+                       + self.dHrxndftgas * self.eV_to_kJpermole) * 1000.0 #J/mol
+
+        self.heat_of_formation_0K = self.dHfgas #J/mol
+    
+    def to_dict(self):
+        return to_dict(self)
+    
+    def fit_NASA(self):
+        wh = Wilhoit().fit_to_data(Tdata=self.temperature,Cpdata=np.array(self.Cp),Cp0=self.Cp0,CpInf=self.Cpinf,H298=self.H[0],S298=self.S[0])
+
+        self.nasa = wh.to_nasa(Tmin=298.15, Tmax=self.T_high, Tint=self.T_switch)
+        
+        self.thermo_lines = "thermo="+repr(self.nasa)+","
+        
+    def format_RMG_output(self):
+        xyz = ""
+        for i,a in enumerate(self.atoms):
+            xyz += a.symbol+" "+str(self.atoms.positions[i][0])+" "+str(self.atoms.positions[i][1])+" "+str(self.atoms.positions[i][1])+"\n"
+        
+        line = '\n'
+        line += 'entry(\n    index = {index},\n'
+        line += f'    label = "{self.name}",\n'
+        line += '    molecule = """\n%s""",\n' % (self.mol.to_adjacency_list())
+        line += self.thermo_lines
+        line += f'    \nlongDesc = u"""Calculated using Pynta https://doi.org/10.1021/acs.jcim.3c00948. \n'
+        line += "                   Thermochemistry computed using approach from Blondal et. al in https://doi.org/10.1021/acscatal.2c03378. \nIf you use this library in your work, please cite the publications mentioned above.\n"
+        line += "Hf298: {} [kcal/mol]\n".format(self.H[0]/4184.0)
+        line += "Sf298: {} [cal/(mol-K)]\n".format(self.S[0]/4.184)
+        line += xyz
+        line += '""",\n)\n'
+
+        self.rmg_species_text = line
+        
+    def run(self):
+        self.compute_heat_of_formation()
+        
+        if len(self.atoms) == 1:
+            geometry = 'monatomic'
+        elif any([ I < 1.0e-3 for I in self.atoms.get_moments_of_inertia()]):
+            geometry = "linear"
+        else:
+            geometry = "nonlinear"
+
+        self.thermo = IdealGasThermo(np.real(self.vibdata.get_energies()),geometry,
+                                        potentialenergy=(self.heat_of_formation_0K/1000.0)/self.eV_to_kJpermole-self.ZPE_energy,atoms=self.atoms,symmetrynumber=1,
+                                        natoms=len(self.atoms),spin=(self.mol.multiplicity - 1)/2)
+        self.G = []
+        self.H = []
+        self.S = []
+        self.Cp = []
+        for T in self.temperature:
+            G = self.thermo.get_gibbs_energy(T,1.0e5,verbose=False)
+            H = self.thermo.get_enthalpy(T,verbose=False)
+            S = self.thermo.get_entropy(T,1.0e5,verbose=False)
+            Cp = get_cp(self.thermo,T,dT=0.01)
+            
+            self.G.append(G*self.eV_to_kJpermole*1000.0)
+            self.H.append(H*self.eV_to_kJpermole*1000.0)
+            self.S.append(S*self.eV_to_kJpermole*1000.0)
+            self.Cp.append(Cp*self.eV_to_kJpermole*1000.0)
+
+        self.Cp0 = get_cp(self.thermo,10.0,dT=0.01)
+        self.Cpinf = get_cp(self.thermo,1.0e7,dT=0.01)
+        
+        self.entropy_of_formation_298K = self.S[0]
+        self.heat_of_formation_298K = self.H[0]
+        
+        self.fit_NASA()
+        self.format_RMG_output()
+        
 
     parameters:
         atoms: ase atoms object
