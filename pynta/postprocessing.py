@@ -1103,3 +1103,77 @@ shortDesc = u"{lib_short_desc}"
 longDesc = u"""{lib_long_desc}"""
 '''
         return line
+    
+def get_species(path,adsorbates_path,metal,facet,slab,sites,site_adjacency,nslab,c_ref=0.0,o_ref=0.0,h_ref=0.0,
+               n_ref=0.0):
+    """
+    Generate a dictionary of GasConfiguration/SurfaceConfiguration objects corresponding to a Pynta 
+    species calculation
+    Args:
+        path: directory of the corresponding adsorbate/species in the Pynta run
+        adsorbates_path: Adsorbates directory of the Pynta run
+        metal: metal of the slab
+        facet: facet of the slab
+        slab: ase.Atoms object for the slab
+        sites: list of sites correspondingn to the slab
+        site_adjacency: site_adjacency corresponding to the slab
+        nslab: number of atoms in the slab
+        c_ref: ZPE corrected gas phase reference for carbon (CH4) [eV]
+        o_ref: ZPE corrected gas phase reference for oxygen (H2O) [eV]
+        h_ref: ZPE corrected gas phase reference for hydrogen(H2) [eV]
+        n_ref: ZPE corrected gas phase reference for nitrogen (NH3) [eV]
+
+    Returns:
+        dictionary mapping string index to GasConfiguration/SurfaceConfiguration objects
+    """
+    with open(os.path.join(path,"info.json"),'r') as f:
+        info = json.load(f)
+        name = info["name"]
+        mol = Molecule().from_adjacency_list(info["adjlist"])
+        keep_binding_vdW_bonds = False
+        keep_vdW_surface_bonds = False
+        for bd in mol.get_all_edges():
+            if bd.order == 0:
+                if bd.atom1.is_surface_site() or bd.atom2.is_surface_site():
+                    keep_binding_vdW_bonds = True
+                    m = mol.copy(deep=True)
+                    b = m.get_bond(m.atoms[mol.atoms.index(bd.atom1)],m.atoms[mol.atoms.index(bd.atom2)])
+                    m.remove_bond(b)
+                    out = m.split()
+                    if len(out) == 1: #vdW bond is not only thing connecting adsorbate to surface
+                        keep_vdW_surface_bonds = True
+
+    
+    gas_phase = len(mol.get_surface_sites()) == 0
+    species_dict = dict()
+    for ind in os.listdir(path):
+        if os.path.exists(os.path.join(path,ind,"vib.json_vib.json")):
+            dopt = os.path.join(path,ind,ind+".xyz")
+            dvib = os.path.join(path,ind,"vib.json_vib.json")
+            atoms = read(dopt)
+            if not gas_phase:
+                vibdata = get_vibdata(dopt,dvib,nslab)
+                admol,neighbor_sites,ninds = generate_adsorbate_2D(atoms, sites, site_adjacency, nslab, max_dist=np.inf, 
+                          keep_binding_vdW_bonds=keep_binding_vdW_bonds, keep_vdW_surface_bonds=keep_vdW_surface_bonds)
+                split_structs = split_adsorbed_structures(admol)
+                if len(split_structs) != 1 or not split_structs[0].is_isomorphic(mol,save_order=True):
+                    valid = False
+                else:
+                    valid = True
+            else:
+                valid = True
+                vibdata = get_vibdata(dopt,dvib,0)
+            
+            if not gas_phase:
+                spc = SurfaceConfiguration(atoms,slab,admol,vibdata,name,metal,facet,is_TS=False,sites_per_cell=1,
+                  c_ref=c_ref,o_ref=o_ref,h_ref=h_ref,n_ref=n_ref,valid=valid)
+                spc.run()
+            else:
+                spc = GasConfiguration(atoms,mol,vibdata,name,
+                  c_ref=c_ref,o_ref=o_ref,h_ref=h_ref,n_ref=n_ref,valid=valid)
+                spc.run()
+                
+            species_dict[ind] = spc
+            
+    return species_dict 
+                
