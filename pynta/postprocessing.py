@@ -1497,3 +1497,48 @@ def postprocess(path,metal,facet,sites,site_adjacency,slab_path=None,check_finis
             ts_dict[ts] = kin
 
     return spc_dict,ts_dict
+
+def write_rmg_libraries(path,spc_dict,ts_dict):
+    """
+    Writes RMG thermo and kinetics libraries in the pynta directory
+    Args:
+        path: directory of the pynta run
+        spc_dict: dictionary mapping names to lowest energy GasConfiguration/SurfaceConfiguration objects
+        ts_dict: dictionary mapping TS names (TS1...etc) to Kinetics objects corresponding to the lowest energy valid TS/reactants/products
+    """
+    index = 0
+    thermo_text = ""
+    spc_dictionary_txt = "vacantX\n1 X u0 p0 c0\n\n"
+    for name,spc in spc_dict.items():
+        if thermo_text == "":
+            thermo_text += spc.create_RMG_header("thermo_library","","")
+        thermo_text += spc.rmg_species_text.replace("{index}",str(index))
+        index += 1
+        thermo_text += "\n"
+        spc_dictionary_txt += name + "\n"
+        spc_dictionary_txt += spc.mol.to_adjacency_list()
+        spc_dictionary_txt += "\n"
+
+    with open(os.path.join(path,"thermo_library.py"),'w') as f:
+        f.write(thermo_text)
+
+    index = 0
+    reaction_text = ""
+    for ts,kinetics in ts_dict.items():
+        if reaction_text == "":
+            reaction_text += kinetics.create_RMG_header("reaction_library",lib_short_desc="",lib_long_desc="")
+        reaction_text += kinetics.rmg_kinetics_text.replace("{index}",str(index)) 
+        index += 1
+        reaction_text += "\n"
+
+    if os.path.exists(os.path.join(path,"reaction_library")):
+        shutil.rmtree(os.path.join(path,"reaction_library"))
+
+    os.makedirs(os.path.join(path,"reaction_library"))
+
+    
+    with open(os.path.join(path,"reaction_library","reactions.py"),'w') as f:
+        f.write(reaction_text)
+
+    with open(os.path.join(path,"reaction_library","dictionary.txt"),'w') as f:
+        f.write(spc_dictionary_txt)
