@@ -146,21 +146,45 @@ class Pynta:
         slab.pbc = self.pbc
         write(os.path.join(self.path,"slab_init.xyz"),slab)
         self.slab_path = os.path.join(self.path,"slab.xyz")
+        
+        # Determine the appropriate opt_kwargs based on the software
+        if self.software in ["PWDFT", "NWChem"]:
+            opt_kwargs = {'task': 'gradient'}
+        else:
+            opt_kwargs = {}  # Original value for opt_kwargs in the original code
+
         if self.software != "XTB":
-            fwslab = optimize_firework(os.path.join(self.path,"slab_init.xyz"),self.software,self.machine,"slab",
-                opt_method="BFGSLineSearch",socket=self.socket,software_kwargs=self.software_kwargs,
-                run_kwargs={"fmax" : self.fmaxopt},out_path=os.path.join(self.path,"slab.xyz"),constraints=["freeze up to {}".format(self.freeze_ind)],priority=1000)
-            wfslab = Workflow([fwslab], name=self.label+"_slab")
+            fwslab = optimize_firework(os.path.join(self.path, "slab_init.xyz"), self.software, self.machine, "slab",
+                opt_method="BFGSLineSearch", socket=self.socket, software_kwargs=self.software_kwargs,
+                run_kwargs={"fmax": self.fmaxopt}, out_path=os.path.join(self.path, "slab.xyz"),
+                constraints=["freeze up to {}".format(self.freeze_ind)], priority=1000, opt_kwargs=opt_kwargs)  # Include opt_kwargs here
+            wfslab = Workflow([fwslab], name=self.label + "_slab")
             self.launchpad.add_wf(wfslab)
             if skip_launch:
                 return
             self.launch(single_job=True)
-            while not os.path.exists(self.slab_path): #wait until slab optimizes, this is required anyway and makes the rest of the code simpler
+            while not os.path.exists(self.slab_path):  # Wait until slab optimizes
                 time.sleep(1)
             self.slab = read(self.slab_path)
-        else: #testing
+        else:  # Testing
             self.slab = slab
-            write(self.slab_path,slab)
+            write(self.slab_path, slab)
+
+#        if self.software != "XTB":
+#            fwslab = optimize_firework(os.path.join(self.path,"slab_init.xyz"),self.software,self.machine,"slab",
+#                opt_method="BFGSLineSearch",socket=self.socket,software_kwargs=self.software_kwargs,
+#                run_kwargs={"fmax" : self.fmaxopt},out_path=os.path.join(self.path,"slab.xyz"),constraints=["freeze up to {}".format(self.freeze_ind)],priority=1000)
+#            wfslab = Workflow([fwslab], name=self.label+"_slab")
+#            self.launchpad.add_wf(wfslab)
+#            if skip_launch:
+#                return
+#            self.launch(single_job=True)
+#            while not os.path.exists(self.slab_path): #wait until slab optimizes, this is required anyway and makes the rest of the code simpler
+#                time.sleep(1)
+#            self.slab = read(self.slab_path)
+#        else: #testing
+#            self.slab = slab
+#            write(self.slab_path,slab)
 
     def analyze_slab(self):
         #pickle info RHE
