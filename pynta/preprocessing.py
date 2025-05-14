@@ -11,6 +11,9 @@ import matplotlib.pyplot as plt
 # call pynta module
 from pynta.utils import name_to_ase_software
 from pynta.tasks import *
+from pynta.calculator import get_lattice_parameters
+from pynta.main import generate_slab
+
 # fireworks
 from fireworks import LaunchPad, Workflow
 from fireworks.queue.queue_launcher import rapidfire as rapidfirequeue
@@ -80,7 +83,7 @@ def plot_results(cutoff_energy, kpts_list, energies):
 # create Prep class for running calculations
 class Prep:
     def __init__(self, metal='Pt', surface_type='fcc111', a0=3.96, software='Espresso', fmax=0.05, adsorbate=None, position=None, vacuum=10, slab=None,
-                 launchpad_path=None,fworker_path=None,reset_launchpad=False,queue_adapter_path=None,queue=False,njobs_queue=0,num_jobs=25,
+                 launchpad_path=None,fworker_path=None,reset_launchpad=False,queue_adapter_path=None,queue=False,njobs_queue=0,num_jobs=25, ecut_range=None,
                  software_kwargs={'kpts': (3, 3, 1), 'tprnfor': True, 'occupations': 'smearing',
                             'smearing':  'marzari-vanderbilt',
                             'degauss': 0.01, 'ecutwfc': 40, 'nosym': True,
@@ -137,8 +140,10 @@ class Prep:
         self.position = position
         self.vacuum = vacuum
         self.slab = slab
+        self.ecut_range = ecut_range
+    
 
-    def opt_cutoff_energy(self, ecut_range=(200, 501, 50), skip_launch=False):
+    def opt_cutoff_energy(self, ecut_range=None, skip_launch=False):
         """
         Optimize bulk aluminum by varying the kinetic energy cutoff.
 
@@ -255,10 +260,11 @@ class Prep:
                 energies.append(eslab)  # Store corresponding energy
 
                 # Store the result in the dictionary with tuple as string key
-                results[str(kpts)] = eslab  # Use string representation of the tuple
+                results[''.join(map(str, kpts))] = eslab  # Use concatenated string representation of the tuple
 
             else:  # Get the optimized energy via Fireworks
-                fwkpt = energy_firework(os.path.join(self.path, "test_slab.xyz"), self.software, f"kpoints_{kpts}", software_kwargs=self.software_kwargs)
+                kpts_name = ''.join(map(str, kpts))  # Create a name like '111', '221', etc.
+                fwkpt = energy_firework(os.path.join(self.path, "test_slab.xyz"), self.software, f"kpoints_{kpts_name}", software_kwargs=self.software_kwargs)
                 wfkpt = Workflow([fwkpt], name=self.label)
                 self.launchpad.add_wf(wfkpt)  # Add the workflow to the launchpad
 
@@ -314,9 +320,50 @@ class Prep:
             add_adsorbate(test_slab, adsorbate=self.adsorbate, position=self.position)
 
         # Visualize the slab
-        view(test_slab)
+        #view(test_slab)
 
         # Save the slab to a file named 'test_slab.xyz'
         write("test_slab.xyz", test_slab)  # Save the slab to the specified file
+
+        # see below, fix this to generate slab of interest to use for Pynta simulation
+        """
+        generates and optimizes a small scale slab that can be scaled to a large slab as needed
+        optimization occurs through fireworks and this process waits until the optimization is completed
+        """
+        slab_type = getattr(ase.build,self.surface_type)
+        #optimize the lattice constant
+        if self.a is None:
+            a = get_lattice_parameters(self.metal,self.surface_type,self.software,self.lattice_opt_software_kwargs)
+            print("computed lattice constants of: {} Angstroms".format(a))
+            if isinstance(a,float):
+                self.a = a
+            else:
+                self.a = a[0]
+                self.c = a[1]
+        
+        logger.info('Construct slab with optimal lattice constant')
+        #construct slab with optimial lattice constant
+        if self.c:
+            slab = slab_type(symbol=self.metal,size=self.repeats,a=self.a,vacuum=self.vacuum,c=self.c)
+        else:
+            slab = slab_type(symbol=self.metal,size=self.repeats,a=self.a,vacuum=self.vacuum)
+        slab.pbc = self.pbc
+        write(os.path.join(self.path,"slab_init.xyz"),slab)
+        self.slab_path = os.path.join(self.path,"slab.xyz")
+        if self.software != "XTB":
+            fwslab = optimize_firework(os.path.join(self.path,"slab_init.xyz"),self.software,"slab",
+                opt_method="BFGSLineSearch",socket=self.socket,software_kwargs=self.software_kwargs,
+                run_kwargs={"fmax" : self.fmaxopt},out_path=os.path.join(self.path,"slab.xyz"),constraints=["freeze up to {}".format(self.freeze_ind)],priority=1000)
+            wfslab = Workflow([fwslab], name=self.label+"_slab")
+            self.launchpad.add_wf(wfslab)
+            if skip_launch:
+                return
+            self.launch(single_job=True)
+            while not os.path.exists(self.slab_path): #wait until slab optimizes, this is required anyway and makes the rest of the code simpler
+                time.sleep(1)
+            self.slab = read(self.slab_path)
+        else: #testing
+            self.slab = slab
+            write(self.slab_path,slab)
 
         return test_slab
