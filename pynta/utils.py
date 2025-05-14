@@ -1,6 +1,8 @@
 import shutil
 import os
 import ase
+from ase import Atoms 
+from molecule.quantity import ScalarQuantity
 from ase.utils.structure_comparator import SymmetryEquivalenceCheck
 from ase.io import write, read
 import ase.constraints
@@ -9,6 +11,7 @@ from copy import deepcopy
 from importlib import import_module
 import numpy as np
 import copy
+import json
 
 def sites_match(site1,site2,slab,tol=0.5):
     """determine if two sites match
@@ -349,6 +352,11 @@ def clean_pynta_path(path,save_initial_guess=True):
          for p in os.listdir(path):
             if p[:2] == "TS" or p == "Adsorbates": #delete TSs
                 shutil.rmtree(os.path.join(path,p))
+    
+    if os.path.exists(os.path.join(path,"reaction_library")):
+        shutil.rmtree(os.path.join(path,"reaction_library"))
+    if os.path.exists(os.path.join(path,"thermo_library.py")):
+        os.remove(os.path.join(path,"thermo_library.py"))
 
 def construct_constraint(d):
     """
@@ -360,3 +368,34 @@ def construct_constraint(d):
     constructor = getattr(ase.constraints,constraint_dict["type"])
     del constraint_dict["type"]
     return constructor(**constraint_dict)
+
+def to_dict(self):
+    out_dict = dict()
+    attrs = [attr for attr in dir(self) if not attr.startswith("_")]
+    for attr in attrs:
+        val = getattr(self,attr)
+    
+        if not isinstance(val,list) and not isinstance(val,np.ndarray) and not isinstance(val,dict) and callable(val):
+            continue
+        
+        try:
+            json.dumps(val)
+            out_dict[attr] = val 
+            assert not isinstance(val,np.ndarray)
+        except:
+            if isinstance(val, ScalarQuantity):
+                out_dict[attr] = {
+                "class": val.__class__.__name__,
+                "value": val.value,
+                "units": val.units,
+                "uncertainty": val.uncertainty,
+                "uncertainty_type": val.uncertainty_type,
+            }
+            elif isinstance(val, Atoms):
+                new_dict = val.todict()
+                new_dict["class"] = val.__class__.__name__
+                out_dict[attr] = new_dict
+            else:
+                out_dict[attr] = to_dict
+                
+    return out_dict

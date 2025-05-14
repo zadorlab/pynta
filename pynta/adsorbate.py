@@ -40,6 +40,7 @@ def construct_initial_guess_files(mol,mol_name,pynta_path,slab,metal,
         list of files with the corresponding xyzs
     """
     if os.path.exists(os.path.join(pynta_path,"Adsorbates",mol_name)):
+        logging.info("Found existing path {0} for {1}".format(os.path.join(pynta_path,"Adsorbates",mol_name),mol_name))
         return
     
     surf_sites = mol.get_surface_sites()
@@ -188,6 +189,7 @@ def generate_adsorbate_guesses(mol,ads,slab,mol_to_atoms_map,metal,
         geo_out,Eharm,_ = outputs[i]
         if geo_out:
             del geo_out["constraints"]
+            del geo_out["forces"]
             geo_out = Atoms(**geo_out)
             geo_out.calc = None
             geos_out.append(geo_out)
