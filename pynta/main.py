@@ -114,7 +114,17 @@ class Pynta:
 
         self.rxns_file = rxns_file
         with open(self.rxns_file,'r') as f:
-            self.rxns_dict = yaml.safe_load(f)
+            targets = yaml.safe_load(f)
+        rxns_list = []
+        spcs_list = []
+        for v in targets:
+            if "reactant" in v.keys():
+                rxns_list.append(v)
+            else:
+                spcs_list.append(v)
+        self.rxns_list = rxns_list
+        self.spcs_list = spcs_list
+        
         self.slab = read(self.slab_path) if self.slab_path else None
         self.njobs_queue = njobs_queue
         self.num_jobs = num_jobs
@@ -208,11 +218,15 @@ class Pynta:
         """
         generates all unique Molecule objects based on the reactions and generates a dictionary
         mapping smiles to each unique Molecule object
-        also updates self.rxns_dict with addtional useful information for each reaction
+        also updates self.rxns_list and self.spcs_list with addtional useful information for each reaction
         """
         mols = []
-
-        for r in self.rxns_dict:
+        for r in self.spcs_list:
+            mol = Molecule().from_adjacency_list(r["molecule"])
+            mol.multiplicity = mol.get_radical_count() + 1
+            mols.append(mol)
+        
+        for r in self.rxns_list:
             r["reactant_mols"] = []
             r["product_mols"] = []
             react = Molecule().from_adjacency_list(r["reactant"])
@@ -246,7 +260,7 @@ class Pynta:
         self.name_to_adjlist_dict = {sm:mol.to_adjacency_list() for sm,mol in mol_dict.items()}
 
 
-        for r in self.rxns_dict:
+        for r in self.rxns_list:
             r["reactant_names"] = []
             r["product_names"] = []
 
@@ -357,7 +371,7 @@ class Pynta:
         logger.info(f"================= IRC mode is: {self.irc_mode} =======================")
         #pass through 
         
-        for i,rxn in enumerate(self.rxns_dict):
+        for i,rxn in enumerate(self.rxns_list):
             #if irc_mode is "fixed" freeze all slab and conduct MolecularTSEstimate. 
             if self.irc_mode == "fixed":
                 IRC_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":self.software_kwargs,
