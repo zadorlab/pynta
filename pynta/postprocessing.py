@@ -396,7 +396,6 @@ class GasConfiguration:
     """
     def __init__(self,
                  atoms,
-                 slab,
                  mol,
                  vibdata,
                  name,
@@ -507,6 +506,44 @@ class GasConfiguration:
         line += '""",\n)\n'
 
         self.rmg_species_text = line
+    
+    def create_RMG_header(self,
+                          lib_name,
+                          lib_short_desc,
+                          lib_long_desc,
+                          metal,facet):
+        line = f'''#!/usr/bin/env python
+# encoding: utf-8
+
+name = "{lib_name}"
+shortDesc = u"{lib_short_desc}"
+longDesc = u"""{lib_long_desc}"""
+#
+
+entry(
+    index = 1,
+    label = "vacant",
+    molecule =
+"""
+1 X  u0 p0 c0
+""",
+    thermo = NASA(
+        polynomials = [
+            NASAPolynomial(coeffs=[
+             0.000000000E+00,   0.000000000E+00,   0.000000000E+00,   0.000000000E+00,
+             0.000000000E+00,   0.000000000E+00,   0.000000000E+00], Tmin=(298.0,'K'), Tmax=(1000.0, 'K')),
+            NASAPolynomial(coeffs=[
+             0.000000000E+00,   0.000000000E+00,   0.000000000E+00,   0.000000000E+00,
+             0.000000000E+00,   0.000000000E+00,   0.000000000E+00], Tmin=(1000.0,'K'), Tmax=(3000.0, 'K')),
+        ],
+        Tmin = (298.0, 'K'),
+        Tmax = (3000.0, 'K'),
+    ),
+    metal = "{metal}",
+    facet = "{facet}",
+)
+        '''
+        return line
         
     def run(self):
         self.compute_heat_of_formation()
@@ -858,7 +895,7 @@ entry(
         Tmax = (3000.0, 'K'),
     ),
     metal = "{self.cat_element}",
-    facet = "111",
+    facet = "{self.facet}",
 )
         '''
         return line
