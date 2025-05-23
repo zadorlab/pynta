@@ -1353,7 +1353,7 @@ def get_kinetics(path,adsorbates_path,metal,facet,slab,sites,site_adjacency,nsla
 
     return kin_dict
 
-def get_reference_energies(adsorbates_path,nslab):
+def get_reference_energies(adsorbates_path,nslab,check_finished=False):
     """
     Extract references energies for reference species for thermochemistry calculations
     Args:
@@ -1361,12 +1361,15 @@ def get_reference_energies(adsorbates_path,nslab):
         nslab: size of the slab
 
     Returns:
-        Reference energies: c_ref,o_ref,h_ref,n_ref
+        Reference energies: c_ref,o_ref,h_ref,n_ref,
+         and finished_atoms a list of the atoms that appropriate references are provided for. 
+        
     """
     spc_names = [x for x in os.listdir(adsorbates_path) if os.path.isdir(os.path.join(adsorbates_path,x))]
-
+    finished_names = []
+    
     #get reference species
-    if "C" in spc_names:
+    if "C" in spc_names and (not check_finished or os.path.exists(os.path.join(adsorbates_path,"C","complete.sgnl"))):
         c_energies = []
         for ind in os.listdir(os.path.join(adsorbates_path,"C")):
             if not os.path.isdir(os.path.join(adsorbates_path,"C",ind)):
@@ -1376,11 +1379,12 @@ def get_reference_energies(adsorbates_path,nslab):
             c_energy = read(cdopt).get_potential_energy() + get_vibdata(cdopt,cdvib,nslab,gas_phase=True).get_zero_point_energy()
             c_energies.append(c_energy)
         c_ref = min(c_energies)
+        finished_names.append("C")
     else:
         logging.warning("No C reference (no CH4 calculation), thermochemistry with C will be wrong")
         c_ref = 0.0
 
-    if "O" in spc_names:
+    if "O" in spc_names and (not check_finished or os.path.exists(os.path.join(adsorbates_path,"O","complete.sgnl"))):
         o_energies = []
         for ind in os.listdir(os.path.join(adsorbates_path,"O")):
             if not os.path.isdir(os.path.join(adsorbates_path,"O",ind)):
@@ -1390,11 +1394,12 @@ def get_reference_energies(adsorbates_path,nslab):
             o_energy = read(odopt).get_potential_energy() + get_vibdata(odopt,odvib,nslab,gas_phase=True).get_zero_point_energy()
             o_energies.append(o_energy)
         o_ref = min(o_energies)
+        finished_names.append("O")
     else:
         logging.warning("No O reference (no H2O calculation), thermochemistry with O will be wrong")
         o_ref = 0.0
 
-    if "[H][H]" in spc_names:
+    if "[H][H]" in spc_names and (not check_finished or os.path.exists(os.path.join(adsorbates_path,"[H][H]","complete.sgnl"))):
         h_energies = []
         for ind in os.listdir(os.path.join(adsorbates_path,"[H][H]")):
             if not os.path.isdir(os.path.join(adsorbates_path,"[H][H]",ind)):
@@ -1404,11 +1409,12 @@ def get_reference_energies(adsorbates_path,nslab):
             h_energy = read(hdopt).get_potential_energy() + get_vibdata(hdopt,hdvib,nslab,gas_phase=True).get_zero_point_energy()
             h_energies.append(h_energy)
         h_ref = min(h_energies)
+        finished_names.append("[H][H]")
     else:
         logging.warning("No H reference (no H2 calculation), thermochemistry with H will be wrong")
         h_ref = 0.0
 
-    if "N" in spc_names:
+    if "N" in spc_names and (not check_finished or os.path.exists(os.path.join(adsorbates_path,"N","complete.sgnl"))):
         n_energies = []
         for ind in os.listdir(os.path.join(adsorbates_path,"N")):
             if not os.path.isdir(os.path.join(adsorbates_path,"N",ind)):
@@ -1418,11 +1424,17 @@ def get_reference_energies(adsorbates_path,nslab):
             n_energy = read(ndopt).get_potential_energy() + get_vibdata(ndopt,ndvib,nslab,gas_phase=True).get_zero_point_energy()
             n_energies.append(n_energy)
         n_ref = min(n_energies)
+        finished_names.append("N")
     else:
         logging.warning("No N reference (no NH3 calculation), thermochemistry with N will be wrong")
         n_ref = 0.0
     
-    return c_ref,o_ref,h_ref,n_ref
+    if "[H][H]" not in finished_names:
+        finished_atoms = []
+    else:
+        finished_atoms = ["H"] + [x for x in finished_names if x != "[H][H]"]
+    
+    return c_ref,o_ref,h_ref,n_ref,finished_atoms
     
 def postprocess(path,metal,facet,sites,site_adjacency,slab_path=None,check_finished=False):
     """
@@ -1452,7 +1464,7 @@ def postprocess(path,metal,facet,sites,site_adjacency,slab_path=None,check_finis
     
     spc_names = [x for x in os.listdir(os.path.join(path,"Adsorbates")) if os.path.isdir(os.path.join(path,"Adsorbates",x))]
 
-    c_ref,o_ref,h_ref,n_ref = get_reference_energies(os.path.join(path,"Adsorbates"),nslab)
+    c_ref,o_ref,h_ref,n_ref,finished_atoms = get_reference_energies(os.path.join(path,"Adsorbates"),nslab,check_finished=check_finished)
 
     spc_dict = dict()
     for name in spc_names:
