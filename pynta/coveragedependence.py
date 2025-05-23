@@ -621,14 +621,14 @@ def get_unique_site_pair_inds(site_pairs,slab,tol=0.15):
 
     return unique_inds
 
-def setup_pair_opts_for_rxns(targetdir,tsdirs,coadnames,metal,facet,max_dist=3.0,imag_freq_max=150.0):
+def setup_pair_opts_for_rxns(targetdir,adsorbates,tsdirs,coadnames,metal,facet,sites,site_adjacency,max_dist=3.0,imag_freq_max=150.0):
     pairdir = os.path.join(targetdir,"pairs")
     addir = os.path.join(os.path.split(os.path.split(tsdirs[0])[0])[0],"Adsorbates")
     slabpath = os.path.join(os.path.split(os.path.split(tsdirs[0])[0])[0],"slab.xyz")
     if not os.path.exists(pairdir):
         os.makedirs(pairdir)
     
-    ads = set()  
+    ads = set(adsorbates)
     combs = []
     for tsdir in tsdirs:
         for coadname in coadnames:
@@ -670,15 +670,15 @@ def setup_pair_opts_for_rxns(targetdir,tsdirs,coadnames,metal,facet,max_dist=3.0
                 ds = [os.path.join(addir,x) for x in s]
             else:
                 ds = [s[0],os.path.join(addir,s[1])]
-            pairs,pairmols,pairxyzs = generate_pair_geometries(ds[0],ds[1],slabpath,metal,facet,
+            pairs,pairmols,pairxyzs = generate_pair_geometries(ds[0],ds[1],slabpath,metal,facet,sites,site_adjacency,
                                  max_dist=max_dist,imag_freq_max=imag_freq_max)
             for i,pair in enumerate(pairs):
                 os.makedirs(os.path.join(namedir,str(i)))
                 write(os.path.join(namedir,str(i),"init.xyz"), pair)
                 if not is_ts:
-                    moldict = {"adjlist": pairmols[i].to_adjacency_list(),"xyz": pairxyzs[i]}
+                    moldict = {"adjlist": pairmols[i].to_adjacency_list(),"xyz": pairxyzs[i], "coadname": s[1]}
                 else:
-                    moldict = {"adjlist": pairmols[i].to_adjacency_list(),"tsdir": s[0], "xyz": pairxyzs[i]}
+                    moldict = {"adjlist": pairmols[i].to_adjacency_list(),"tsdir": s[0], "xyz": pairxyzs[i], "coadname": s[1]}
                 with open(os.path.join(namedir,str(i),"info.json"),'w') as f:
                     json.dump(moldict,f)
                 if not is_ts:
