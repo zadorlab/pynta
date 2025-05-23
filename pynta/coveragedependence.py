@@ -2063,36 +2063,37 @@ def process_calculation(d,ad_energy_dict,slab,metal,facet,sites,site_adjacency,p
     
     return datum_E,datums_stability
 
-def get_configs_for_calculation(configs_of_concern_by_admol,Ncoad_energy_by_admol,admol_name_structure_dict,
+def get_configs_for_calculation(configs_of_concern_by_coad_admol,Ncoad_energy_by_coad_admol,admol_name_structure_dict,coadnames,
                                 computed_configs,tree_regressor,Ncalc_per_iter,T=5000.0,calculation_selection_iterations=10):
     group_to_occurence = dict()
     configs_of_concern = []
-    for admol_name in configs_of_concern_by_admol.keys():
-        admol = admol_name_structure_dict[admol_name]
-        Nocc_isolated = len([a for a in admol.atoms if a.is_surface_site() and any(not a2.is_surface_site() for a2 in a.bonds.keys())])
-        configs_of_concern_admol = configs_of_concern_by_admol[admol_name]
-        group_to_occurence_admol = dict()
-        N = 0 #number of group contributions associated with given admol
-        for v in configs_of_concern_admol:
-            m = v[0]
-            E = v[1]
-            sigma = v[3]
-            grps = v[2]
-            Nocc = len([a for a in m.atoms if a.is_surface_site() and any(not a2.is_surface_site() for a2 in a.bonds.keys())])
-            configs_of_concern.append(v)
-            Emin = Ncoad_energy_by_admol[admol_name][Nocc-Nocc_isolated]
-            for grp in grps:
-                if grp in group_to_occurence_admol:
-                    group_to_occurence_admol[grp] += np.exp(-(E-Emin)/(8.314*T))
-                    N += 1
+    for coadname in coadnames:
+        for admol_name in configs_of_concern_by_coad_admol[coadname].keys():
+            admol = admol_name_structure_dict[admol_name]
+            Nocc_isolated = len([a for a in admol.atoms if a.is_surface_site() and any(not a2.is_surface_site() for a2 in a.bonds.keys())])
+            configs_of_concern_admol = configs_of_concern_by_coad_admol[coadname][admol_name]
+            group_to_occurence_admol = dict()
+            N = 0 #number of group contributions associated with given admol
+            for v in configs_of_concern_admol:
+                m = v[0]
+                E = v[1]
+                sigma = v[3]
+                grps = v[2]
+                Nocc = len([a for a in m.atoms if a.is_surface_site() and any(not a2.is_surface_site() for a2 in a.bonds.keys())])
+                configs_of_concern.append(v)
+                Emin = Ncoad_energy_by_coad_admol[coadname][admol_name][Nocc-Nocc_isolated]
+                for grp in grps:
+                    if grp in group_to_occurence_admol:
+                        group_to_occurence_admol[grp] += np.exp(-(E-Emin)/(8.314*T))
+                        N += 1
+                    else:
+                        group_to_occurence_admol[grp] = np.exp(-(E-Emin)/(8.314*T))
+                        N += 1
+            for g,n in group_to_occurence_admol.items():
+                if grp in group_to_occurence:
+                    group_to_occurence[grp] += n/N
                 else:
-                    group_to_occurence_admol[grp] = np.exp(-(E-Emin)/(8.314*T))
-                    N += 1
-        for g,n in group_to_occurence_admol.items():
-            if grp in group_to_occurence:
-                group_to_occurence[grp] += n/N
-            else:
-                group_to_occurence[grp] = n/N 
+                    group_to_occurence[grp] = n/N 
                     
     concern_groups = list(group_to_occurence.keys()) #selected ordering
         
@@ -2146,20 +2147,26 @@ def get_configs_for_calculation(configs_of_concern_by_admol,Ncoad_energy_by_admo
                         group_fract_for_calculation[maxarglocal] = group_fract
                         configs_for_calculation[maxarglocal] = config
                         maxval = maxvallocal
-        
-    admol_to_config_for_calculation = dict()
+
+    coad_admol_to_config_for_calculation = dict()
     for config in configs_for_calculation:
-        for admol_name,v in configs_of_concern_by_admol.items():
-            if any(x[0] is config for x in v):
-                if admol_name in admol_to_config_for_calculation.keys():
-                    admol_to_config_for_calculation[admol_name].append(config)
-                else:
-                    admol_to_config_for_calculation[admol_name] = [config]
+        found = False
+        for coadname in coadnames:
+            coad_admol_to_config_for_calculation[coadname] = dict()
+            for admol_name,v in configs_of_concern_by_coad_admol[coadname].items():
+                if any(x[0] is config for x in v):
+                    if admol_name in coad_admol_to_config_for_calculation[coadname].keys():
+                        coad_admol_to_config_for_calculation[coadname][admol_name].append(config)
+                    else:
+                        coad_admol_to_config_for_calculation[coadname][admol_name] = [config]
+                    found = True
+                    break
+            if found:
                 break
         else:
             raise ValueError
 
-    return configs_for_calculation,admol_to_config_for_calculation
+    return configs_for_calculation,coad_admol_to_config_for_calculation
 
 def mol_to_atoms(admol,slab,sites,metal,partial_atoms=None,partial_admol=None):
     """Generate a 3D initial guess for a given 2D admol configuration
