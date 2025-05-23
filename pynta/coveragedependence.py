@@ -187,7 +187,7 @@ def copy_stable_pairs(pairsdir,sites,site_adjacency,nslab,max_dist=3.0):
 
     return None
 
-def generate_pair_geometries(adpath1,adpath2,slabpath,metal,facet,adinfo1=None,adinfo2=None,
+def generate_pair_geometries(adpath1,adpath2,slabpath,metal,facet,sites,site_adjacency,adinfo1=None,adinfo2=None,
                              max_dist=3.0,imag_freq_max=150.0,symmetric=None):
     """
     adpath1 can be bidentate
@@ -196,11 +196,6 @@ def generate_pair_geometries(adpath1,adpath2,slabpath,metal,facet,adinfo1=None,a
     #slab information
     slab = read(slabpath)
     nslab = len(slab)
-    cas = SlabAdsorptionSites(slab,facet,allow_6fold=False,composition_effect=False,
-                            label_sites=True,
-                            surrogate_metal=metal)
-    sites = cas.get_sites()
-    site_adjacency = cas.get_neighbor_site_list()
     
     adsorbate_dir = os.path.split(adpath2)[0]
     allowed_structure_site_structures = generate_allowed_structure_site_structures(adsorbate_dir,sites,site_adjacency,nslab,max_dist=max_dist)
@@ -368,11 +363,7 @@ def generate_pair_geometries(adpath1,adpath2,slabpath,metal,facet,adinfo1=None,a
                     ad1_to_ad2_sites[j][i] = []
                     ad1_to_ad2_heights[j][i] = []
         
-                cas = SlabAdsorptionSites(ad2,facet,allow_6fold=False,composition_effect=False,
-                                    label_sites=True,
-                                    surrogate_metal=metal)
-                sites2 = cas.get_sites()
-                occ = get_occupied_sites(ad2,sites2,nslab)
+                occ = get_occupied_sites(ad2,sites,nslab)
                 occsite = None
                 
                 for s in occ:
