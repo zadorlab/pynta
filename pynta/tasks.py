@@ -1092,28 +1092,28 @@ class MolecularHFSP(OptimizationTask):
         
         return FWAction(stored_data={"error": errors,"converged": converged})
 
-def calculate_configruation_energies_firework(admol_name,tree_file,path,coad_stable_sites,Nocc_isolated,
+def calculate_configruation_energies_firework(admol_name,tree_file,path,coadname,coad_stable_sites,Nocc_isolated,
                                               coadmol_E_dict,concern_energy_tol=None,out_path=None,parents=[],iter=0,ignore_errors=False):
-    d = {"admol_name": admol_name,"tree_file": tree_file,"path": path,
+    d = {"admol_name": admol_name,"tree_file": tree_file,"path": path,"coadname": coadname,
          "coad_stable_sites": coad_stable_sites,"Nocc_isolated": Nocc_isolated,"coadmol_E_dict": coadmol_E_dict, 
          "concern_energy_tol": concern_energy_tol}
     t1 = CalculateConfigurationEnergiesTask(d)
     if out_path is None: 
-        out_path_energy = os.path.join(os.path.split(tree_file)[0],"Ncoad_energy_"+admol_name+".json")
-        out_path_config = os.path.join(os.path.split(tree_file)[0],"Ncoad_config_"+admol_name+".json")
-        out_path_concern = os.path.join(os.path.split(tree_file)[0],"configs_of_concern_"+admol_name+".json")
+        out_path_energy = os.path.join(os.path.split(tree_file)[0],"Ncoad_energy_"+admol_name+"_"+coadname+".json")
+        out_path_config = os.path.join(os.path.split(tree_file)[0],"Ncoad_config_"+admol_name+"_"+coadname+".json")
+        out_path_concern = os.path.join(os.path.split(tree_file)[0],"configs_of_concern_"+admol_name+"_"+coadname+".json")
     else:
-        out_path_energy = os.path.join(out_path,"Ncoad_energy_"+admol_name+".json")
-        out_path_config = os.path.join(out_path,"Ncoad_config_"+admol_name+".json")
-        out_path_concern = os.path.join(out_path,"configs_of_concern_"+admol_name+".json")
-    t2 = FileTransferTask({'files': [{'src': "Ncoad_energy_"+admol_name+".json", 'dest': out_path_energy},
-                                     {'src': "Ncoad_config_"+admol_name+".json", 'dest': out_path_config},
-                                     {'src': "configs_of_concern_"+admol_name+".json", 'dest': out_path_concern}], 'mode': 'copy', 'ignore_errors': ignore_errors})
-    return Firework([t1,t2],parents=parents,name=admol_name+"_energies"+str(iter))
+        out_path_energy = os.path.join(out_path,"Ncoad_energy_"+admol_name+"_"+coadname+".json")
+        out_path_config = os.path.join(out_path,"Ncoad_config_"+admol_name+"_"+coadname+".json")
+        out_path_concern = os.path.join(out_path,"configs_of_concern_"+admol_name+"_"+coadname+".json")
+    t2 = FileTransferTask({'files': [{'src': "Ncoad_energy_"+admol_name+"_"+coadname+".json", 'dest': out_path_energy},
+                                     {'src': "Ncoad_config_"+admol_name+"_"+coadname+".json", 'dest': out_path_config},
+                                     {'src': "configs_of_concern_"+admol_name+"_"+coadname+".json", 'dest': out_path_concern}], 'mode': 'copy', 'ignore_errors': ignore_errors})
+    return Firework([t1,t2],parents=parents,name=admol_name+"_"+coadname+"_energies"+str(iter))
 
 @explicit_serialize
 class CalculateConfigurationEnergiesTask(FiretaskBase):
-    required_params = ["admol_name","tree_file","path","coad_stable_sites","Nocc_isolated","coadmol_E_dict"]
+    required_params = ["admol_name","tree_file","path","coad_stable_sites","Nocc_isolated","coadmol_E_dict","coadname"]
     optional_params = ["concern_energy_tol","ignore_errors"]
     def run_task(self, fw_spec):
         admol_name = self['admol_name']
@@ -1121,6 +1121,7 @@ class CalculateConfigurationEnergiesTask(FiretaskBase):
         path= self["path"]
         coad_stable_sites = self["coad_stable_sites"]
         Nocc_isolated = self["Nocc_isolated"]
+        coadname = self["coadname"]
         coadmol_E_dict = {Molecule().from_adjacency_list(k):v for k,v in self["coadmol_E_dict"].items()}
         concern_energy_tol = self["concern_energy_tol"] if "concern_energy_tol" in self.keys() else None
         ignore_errors = self["ignore_errors"] if "ignore_errors" in self.keys() else False
@@ -1130,16 +1131,16 @@ class CalculateConfigurationEnergiesTask(FiretaskBase):
             tree = MultiEvalSubgraphIsomorphicDecisionTreeRegressor([adsorbate_interaction_decomposition],
                                                         nodes=nodes)
             
-            with open(os.path.join(path,"Configurations",admol_name+".json"),'r') as f:
+            with open(os.path.join(path,"Configurations",admol_name+"_"+coadname+".json"),'r') as f:
                 configs = [Molecule().from_adjacency_list(m,check_consistency=False) for m in json.load(f)]
             
             Ncoad_energy_dict,Ncoad_config_dict,configs_of_concern_admol = get_cov_energies_configs_concern_tree(tree, configs, coad_stable_sites, Nocc_isolated, concern_energy_tol, 
                                                 coadmol_E_dict=coadmol_E_dict)
-            with open("Ncoad_energy_"+admol_name+".json",'w') as f:
+            with open("Ncoad_energy_"+admol_name+"_"+coadname+".json",'w') as f:
                 json.dump(Ncoad_energy_dict,f)
-            with open("Ncoad_config_"+admol_name+".json",'w') as f:
+            with open("Ncoad_config_"+admol_name+"_"+coadname+".json",'w') as f:
                 json.dump(Ncoad_config_dict,f)
-            with open("configs_of_concern_"+admol_name+".json",'w') as f:
+            with open("configs_of_concern_"+admol_name+"_"+coadname+".json",'w') as f:
                 json.dump([tuple([v[0].to_adjacency_list(),v[1],v[2],v[3]]) for v in configs_of_concern_admol.values()],f)
                 
         except Exception as e:
