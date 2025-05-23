@@ -868,9 +868,9 @@ class PostprocessingTask(FiretaskBase):
         else:
             pynta_path = os.path.split(os.path.split(path)[0])[0]
             
-        spc_dict,ts_dict = postprocess(pynta_path,metal,facet,sites,site_adjacency,slab_path=slab_path,check_finished=True)
+        spc_dict,ts_dict,spc_dict_thermo = postprocess(pynta_path,metal,facet,sites,site_adjacency,slab_path=slab_path,check_finished=True)
         
-        write_rmg_libraries(pynta_path,spc_dict,ts_dict)
+        write_rmg_libraries(pynta_path,spc_dict,spc_dict_thermo,ts_dict,metal,facet)
     
 def TSnudge_firework(xyz,label,forward_path=None,reverse_path=None,spawn_jobs=False,software=None,opt_method=None,sella=False,
         socket=False,software_kwargs={},opt_kwargs={},run_kwargs={},constraints=[],parents=[],out_path=None,ignore_errors=False):
