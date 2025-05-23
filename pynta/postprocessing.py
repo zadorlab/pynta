@@ -1504,12 +1504,19 @@ def postprocess(path,metal,facet,sites,site_adjacency,slab_path=None,check_finis
     c_ref,o_ref,h_ref,n_ref,finished_atoms = get_reference_energies(os.path.join(path,"Adsorbates"),nslab,check_finished=check_finished)
 
     spc_dict = dict()
+    spc_dict_thermo = dict()
     for name in spc_names:
         if check_finished and not os.path.exists(os.path.join(path,"Adsorbates",name,"complete.sgnl")):
             continue # not ready to process this species yet
         spcs = get_species(os.path.join(path,"Adsorbates",name),os.path.join(path,"Adsorbates"),metal,facet,slab,sites,site_adjacency,
                            nslab,c_ref=c_ref,o_ref=o_ref,h_ref=h_ref,n_ref=n_ref)
         
+        reference_missing = False
+        if len(spcs) > 0:
+            for elm in list(spcs.values())[0].mol.get_element_count().keys():
+                if elm not in finished_atoms and elm != 'X': #we don't have appropriate references for this species
+                    reference_missing = True 
+                
         min_energy = np.inf
         mink = None
         for k,spc in spcs.items():
@@ -1519,6 +1526,8 @@ def postprocess(path,metal,facet,sites,site_adjacency,slab_path=None,check_finis
         if mink:
             spc = spcs[mink]
             spc_dict[name] = spc
+            if not reference_missing: #if missing references don't do thermochemistry
+                spc_dict_thermo[name] = spc
     
     ts_dict = dict()
     for ts in os.listdir(path):
@@ -1545,9 +1554,9 @@ def postprocess(path,metal,facet,sites,site_adjacency,slab_path=None,check_finis
             kin = kinetics[mink]
             ts_dict[ts] = kin
 
-    return spc_dict,ts_dict
+    return spc_dict,ts_dict,spc_dict_thermo
 
-def write_rmg_libraries(path,spc_dict,ts_dict):
+def write_rmg_libraries(path,spc_dict,spc_dict_thermo,ts_dict,metal,facet):
     """
     Writes RMG thermo and kinetics libraries in the pynta directory
     Args:
@@ -1558,12 +1567,17 @@ def write_rmg_libraries(path,spc_dict,ts_dict):
     index = 0
     thermo_text = ""
     spc_dictionary_txt = "vacantX\n1 X u0 p0 c0\n\n"
-    for name,spc in spc_dict.items():
+    for name,spc in spc_dict_thermo.items():
         if thermo_text == "":
-            thermo_text += spc.create_RMG_header("thermo_library","","")
+            if isinstance(spc,SurfaceConfiguration):
+                thermo_text += spc.create_RMG_header("thermo_library","","")
+            else:
+                thermo_text += spc.create_RMG_header("thermo_library","","",metal,facet)
         thermo_text += spc.rmg_species_text.replace("{index}",str(index))
         index += 1
         thermo_text += "\n"
+    
+    for name,spc in spc_dict.items():
         spc_dictionary_txt += name + "\n"
         spc_dictionary_txt += spc.mol.to_adjacency_list()
         spc_dictionary_txt += "\n"
