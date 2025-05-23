@@ -769,7 +769,7 @@ def get_adsorbate_ts_information(xyz,slabxyz,is_ts,
     
     return ad,admol,neighbor_sites_2D,ninds,actual_occ,neighbor_sites,aseinds,slab,nslab
 
-def get_coadsorbate_information(coadnames,ads_dir,neighbor_sites,sites,site_adjacency,nslab,slab):
+def get_coadsorbate_information(coadnames,ads_dir,neighbor_sites,sites,site_adjacency,nslab,slab,imag_freq_max=150.0):
     coad_to_stable_neighbor_sites = dict()
     coad_site_stable_parameters = {name:[] for name in coadnames}
     coad_atom_to_molecule_surface_atom_map = dict()
@@ -787,7 +787,7 @@ def get_coadsorbate_information(coadnames,ads_dir,neighbor_sites,sites,site_adja
         atom_to_molecule_surface_atom_map = {int(key):int(val) for key,val in infocoad["gratom_to_molecule_surface_atom_map"].items()}
         coads = get_unique_adsorbate_geometries(coaddir,Molecule().from_adjacency_list(infocoad["adjlist"]),
                                sites,site_adjacency,atom_to_molecule_surface_atom_map,
-                               nslab)
+                               nslab,imag_freq_max=imag_freq_max)
         atom_to_molecule_surface_atom_map = {int(key):int(val) for key,val in infocoad["gratom_to_molecule_surface_atom_map"].items()}
         coad_atom_to_molecule_surface_atom_map[coadname] = atom_to_molecule_surface_atom_map
         coads_dict[coadname] = coads
