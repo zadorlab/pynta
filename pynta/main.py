@@ -46,7 +46,8 @@ class Pynta:
         lattice_opt_software_kwargs={'kpts': (25,25,25), 'ecutwfc': 70, 'degauss':0.02, 'mixing_mode': 'plain'},
         reset_launchpad=False,queue_adapter_path=None,num_jobs=25,max_num_hfsp_opts=None,#max_num_hfsp_opts is mostly for fast testing
         Eharmtol=3.0,Eharmfiltertol=30.0,Nharmmin=5,frozen_layers=2,fmaxopt=0.05,fmaxirc=0.1,c=None,
-        surrogate_metal=None,sites=None,site_adjacency=None,nprocs_harm=1,postprocess=True):
+        surrogate_metal=None,sites=None,site_adjacency=None,nprocs_harm=1,postprocess=True,
+        calculate_thermodynamic_references=True):
 
         self.surface_type = surface_type
         if launchpad_path:
@@ -150,6 +151,7 @@ class Pynta:
         self.site_adjacency = site_adjacency
         
         self.postprocess = postprocess
+        self.calculate_thermodynamic_references = calculate_thermodynamic_references
 
         logger.info('Pynta class is initiated')
 
@@ -220,7 +222,11 @@ class Pynta:
         mapping smiles to each unique Molecule object
         also updates self.rxns_list and self.spcs_list with addtional useful information for each reaction
         """
-        mols = []
+        if self.calculate_thermodynamic_references: #force inclusion of H2, H2O, CH4 and NH3 for thermochemistry referencing
+            mols = [Molecule().from_smiles(sm) for sm in ["[H][H]","O","C","N"]]
+        else:
+            mols = []
+        
         for r in self.spcs_list:
             mol = Molecule().from_adjacency_list(r["molecule"])
             mol.multiplicity = mol.get_radical_count() + 1
