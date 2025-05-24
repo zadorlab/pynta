@@ -396,7 +396,6 @@ class GasConfiguration:
     """
     def __init__(self,
                  atoms,
-                 slab,
                  mol,
                  vibdata,
                  name,
@@ -507,6 +506,44 @@ class GasConfiguration:
         line += '""",\n)\n'
 
         self.rmg_species_text = line
+    
+    def create_RMG_header(self,
+                          lib_name,
+                          lib_short_desc,
+                          lib_long_desc,
+                          metal,facet):
+        line = f'''#!/usr/bin/env python
+# encoding: utf-8
+
+name = "{lib_name}"
+shortDesc = u"{lib_short_desc}"
+longDesc = u"""{lib_long_desc}"""
+#
+
+entry(
+    index = 1,
+    label = "vacant",
+    molecule =
+"""
+1 X  u0 p0 c0
+""",
+    thermo = NASA(
+        polynomials = [
+            NASAPolynomial(coeffs=[
+             0.000000000E+00,   0.000000000E+00,   0.000000000E+00,   0.000000000E+00,
+             0.000000000E+00,   0.000000000E+00,   0.000000000E+00], Tmin=(298.0,'K'), Tmax=(1000.0, 'K')),
+            NASAPolynomial(coeffs=[
+             0.000000000E+00,   0.000000000E+00,   0.000000000E+00,   0.000000000E+00,
+             0.000000000E+00,   0.000000000E+00,   0.000000000E+00], Tmin=(1000.0,'K'), Tmax=(3000.0, 'K')),
+        ],
+        Tmin = (298.0, 'K'),
+        Tmax = (3000.0, 'K'),
+    ),
+    metal = "{metal}",
+    facet = "{facet}",
+)
+        '''
+        return line
         
     def run(self):
         self.compute_heat_of_formation()
@@ -858,7 +895,7 @@ entry(
         Tmax = (3000.0, 'K'),
     ),
     metal = "{self.cat_element}",
-    facet = "111",
+    facet = "{self.facet}",
 )
         '''
         return line
@@ -1353,7 +1390,7 @@ def get_kinetics(path,adsorbates_path,metal,facet,slab,sites,site_adjacency,nsla
 
     return kin_dict
 
-def get_reference_energies(adsorbates_path,nslab):
+def get_reference_energies(adsorbates_path,nslab,check_finished=False):
     """
     Extract references energies for reference species for thermochemistry calculations
     Args:
@@ -1361,12 +1398,15 @@ def get_reference_energies(adsorbates_path,nslab):
         nslab: size of the slab
 
     Returns:
-        Reference energies: c_ref,o_ref,h_ref,n_ref
+        Reference energies: c_ref,o_ref,h_ref,n_ref,
+         and finished_atoms a list of the atoms that appropriate references are provided for. 
+        
     """
     spc_names = [x for x in os.listdir(adsorbates_path) if os.path.isdir(os.path.join(adsorbates_path,x))]
-
+    finished_names = []
+    
     #get reference species
-    if "C" in spc_names:
+    if "C" in spc_names and (not check_finished or os.path.exists(os.path.join(adsorbates_path,"C","complete.sgnl"))):
         c_energies = []
         for ind in os.listdir(os.path.join(adsorbates_path,"C")):
             if not os.path.isdir(os.path.join(adsorbates_path,"C",ind)):
@@ -1376,11 +1416,12 @@ def get_reference_energies(adsorbates_path,nslab):
             c_energy = read(cdopt).get_potential_energy() + get_vibdata(cdopt,cdvib,nslab,gas_phase=True).get_zero_point_energy()
             c_energies.append(c_energy)
         c_ref = min(c_energies)
+        finished_names.append("C")
     else:
         logging.warning("No C reference (no CH4 calculation), thermochemistry with C will be wrong")
         c_ref = 0.0
 
-    if "O" in spc_names:
+    if "O" in spc_names and (not check_finished or os.path.exists(os.path.join(adsorbates_path,"O","complete.sgnl"))):
         o_energies = []
         for ind in os.listdir(os.path.join(adsorbates_path,"O")):
             if not os.path.isdir(os.path.join(adsorbates_path,"O",ind)):
@@ -1390,11 +1431,12 @@ def get_reference_energies(adsorbates_path,nslab):
             o_energy = read(odopt).get_potential_energy() + get_vibdata(odopt,odvib,nslab,gas_phase=True).get_zero_point_energy()
             o_energies.append(o_energy)
         o_ref = min(o_energies)
+        finished_names.append("O")
     else:
         logging.warning("No O reference (no H2O calculation), thermochemistry with O will be wrong")
         o_ref = 0.0
 
-    if "[H][H]" in spc_names:
+    if "[H][H]" in spc_names and (not check_finished or os.path.exists(os.path.join(adsorbates_path,"[H][H]","complete.sgnl"))):
         h_energies = []
         for ind in os.listdir(os.path.join(adsorbates_path,"[H][H]")):
             if not os.path.isdir(os.path.join(adsorbates_path,"[H][H]",ind)):
@@ -1404,11 +1446,12 @@ def get_reference_energies(adsorbates_path,nslab):
             h_energy = read(hdopt).get_potential_energy() + get_vibdata(hdopt,hdvib,nslab,gas_phase=True).get_zero_point_energy()
             h_energies.append(h_energy)
         h_ref = min(h_energies)
+        finished_names.append("[H][H]")
     else:
         logging.warning("No H reference (no H2 calculation), thermochemistry with H will be wrong")
         h_ref = 0.0
 
-    if "N" in spc_names:
+    if "N" in spc_names and (not check_finished or os.path.exists(os.path.join(adsorbates_path,"N","complete.sgnl"))):
         n_energies = []
         for ind in os.listdir(os.path.join(adsorbates_path,"N")):
             if not os.path.isdir(os.path.join(adsorbates_path,"N",ind)):
@@ -1418,11 +1461,17 @@ def get_reference_energies(adsorbates_path,nslab):
             n_energy = read(ndopt).get_potential_energy() + get_vibdata(ndopt,ndvib,nslab,gas_phase=True).get_zero_point_energy()
             n_energies.append(n_energy)
         n_ref = min(n_energies)
+        finished_names.append("N")
     else:
         logging.warning("No N reference (no NH3 calculation), thermochemistry with N will be wrong")
         n_ref = 0.0
     
-    return c_ref,o_ref,h_ref,n_ref
+    if "[H][H]" not in finished_names:
+        finished_atoms = []
+    else:
+        finished_atoms = ["H"] + [x for x in finished_names if x != "[H][H]"]
+    
+    return c_ref,o_ref,h_ref,n_ref,finished_atoms
     
 def postprocess(path,metal,facet,sites,site_adjacency,slab_path=None,check_finished=False):
     """
@@ -1452,15 +1501,22 @@ def postprocess(path,metal,facet,sites,site_adjacency,slab_path=None,check_finis
     
     spc_names = [x for x in os.listdir(os.path.join(path,"Adsorbates")) if os.path.isdir(os.path.join(path,"Adsorbates",x))]
 
-    c_ref,o_ref,h_ref,n_ref = get_reference_energies(os.path.join(path,"Adsorbates"),nslab)
+    c_ref,o_ref,h_ref,n_ref,finished_atoms = get_reference_energies(os.path.join(path,"Adsorbates"),nslab,check_finished=check_finished)
 
     spc_dict = dict()
+    spc_dict_thermo = dict()
     for name in spc_names:
         if check_finished and not os.path.exists(os.path.join(path,"Adsorbates",name,"complete.sgnl")):
             continue # not ready to process this species yet
         spcs = get_species(os.path.join(path,"Adsorbates",name),os.path.join(path,"Adsorbates"),metal,facet,slab,sites,site_adjacency,
                            nslab,c_ref=c_ref,o_ref=o_ref,h_ref=h_ref,n_ref=n_ref)
         
+        reference_missing = False
+        if len(spcs) > 0:
+            for elm in list(spcs.values())[0].mol.get_element_count().keys():
+                if elm not in finished_atoms and elm != 'X': #we don't have appropriate references for this species
+                    reference_missing = True 
+                
         min_energy = np.inf
         mink = None
         for k,spc in spcs.items():
@@ -1470,6 +1526,8 @@ def postprocess(path,metal,facet,sites,site_adjacency,slab_path=None,check_finis
         if mink:
             spc = spcs[mink]
             spc_dict[name] = spc
+            if not reference_missing: #if missing references don't do thermochemistry
+                spc_dict_thermo[name] = spc
     
     ts_dict = dict()
     for ts in os.listdir(path):
@@ -1496,9 +1554,9 @@ def postprocess(path,metal,facet,sites,site_adjacency,slab_path=None,check_finis
             kin = kinetics[mink]
             ts_dict[ts] = kin
 
-    return spc_dict,ts_dict
+    return spc_dict,ts_dict,spc_dict_thermo
 
-def write_rmg_libraries(path,spc_dict,ts_dict):
+def write_rmg_libraries(path,spc_dict,spc_dict_thermo,ts_dict,metal,facet):
     """
     Writes RMG thermo and kinetics libraries in the pynta directory
     Args:
@@ -1509,12 +1567,17 @@ def write_rmg_libraries(path,spc_dict,ts_dict):
     index = 0
     thermo_text = ""
     spc_dictionary_txt = "vacantX\n1 X u0 p0 c0\n\n"
-    for name,spc in spc_dict.items():
+    for name,spc in spc_dict_thermo.items():
         if thermo_text == "":
-            thermo_text += spc.create_RMG_header("thermo_library","","")
+            if isinstance(spc,SurfaceConfiguration):
+                thermo_text += spc.create_RMG_header("thermo_library","","")
+            else:
+                thermo_text += spc.create_RMG_header("thermo_library","","",metal,facet)
         thermo_text += spc.rmg_species_text.replace("{index}",str(index))
         index += 1
         thermo_text += "\n"
+    
+    for name,spc in spc_dict.items():
         spc_dictionary_txt += name + "\n"
         spc_dictionary_txt += spc.mol.to_adjacency_list()
         spc_dictionary_txt += "\n"

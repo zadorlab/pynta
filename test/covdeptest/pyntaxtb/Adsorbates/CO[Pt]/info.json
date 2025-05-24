@@ -1,0 +1,1 @@
+{"name": "CO[Pt]", "adjlist": "1 O u0 p2 c0 {2,S} {6,S}\n2 C u0 p0 c0 {1,S} {3,S} {4,S} {5,S}\n3 H u0 p0 c0 {2,S}\n4 H u0 p0 c0 {2,S}\n5 H u0 p0 c0 {2,S}\n6 X u0 p0 c0 {1,S}\n", "atom_to_molecule_atom_map": {"0": 0, "1": 1, "2": 2, "3": 3, "4": 4}, "gratom_to_molecule_surface_atom_map": {"0": 0}, "nslab": 36}

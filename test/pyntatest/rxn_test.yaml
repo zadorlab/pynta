@@ -35,3 +35,11 @@
     '
   reaction: OC[Pt] <=> CO[Pt]
   reaction_family: Surface_Migration
+- index: 1
+  molecule: 'multiplicity 1
+
+    1 H u0 p0 c0 {2,S}
+
+    2 H u0 p0 c0 {1,S}
+
+    '

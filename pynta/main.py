@@ -46,7 +46,8 @@ class Pynta:
         lattice_opt_software_kwargs={'kpts': (25,25,25), 'ecutwfc': 70, 'degauss':0.02, 'mixing_mode': 'plain'},
         reset_launchpad=False,queue_adapter_path=None,num_jobs=25,max_num_hfsp_opts=None,#max_num_hfsp_opts is mostly for fast testing
         Eharmtol=3.0,Eharmfiltertol=30.0,Nharmmin=5,frozen_layers=2,fmaxopt=0.05,fmaxirc=0.1,c=None,
-        surrogate_metal=None,sites=None,site_adjacency=None,nprocs_harm=1,postprocess=True):
+        surrogate_metal=None,sites=None,site_adjacency=None,nprocs_harm=1,postprocess=True,
+        calculate_thermodynamic_references=True):
 
         self.surface_type = surface_type
         if launchpad_path:
@@ -114,7 +115,17 @@ class Pynta:
 
         self.rxns_file = rxns_file
         with open(self.rxns_file,'r') as f:
-            self.rxns_dict = yaml.safe_load(f)
+            targets = yaml.safe_load(f)
+        rxns_list = []
+        spcs_list = []
+        for v in targets:
+            if "reactant" in v.keys():
+                rxns_list.append(v)
+            else:
+                spcs_list.append(v)
+        self.rxns_list = rxns_list
+        self.spcs_list = spcs_list
+        
         self.slab = read(self.slab_path) if self.slab_path else None
         self.njobs_queue = njobs_queue
         self.num_jobs = num_jobs
@@ -140,6 +151,7 @@ class Pynta:
         self.site_adjacency = site_adjacency
         
         self.postprocess = postprocess
+        self.calculate_thermodynamic_references = calculate_thermodynamic_references
 
         logger.info('Pynta class is initiated')
 
@@ -208,11 +220,19 @@ class Pynta:
         """
         generates all unique Molecule objects based on the reactions and generates a dictionary
         mapping smiles to each unique Molecule object
-        also updates self.rxns_dict with addtional useful information for each reaction
+        also updates self.rxns_list and self.spcs_list with addtional useful information for each reaction
         """
-        mols = []
-
-        for r in self.rxns_dict:
+        if self.calculate_thermodynamic_references: #force inclusion of H2, H2O, CH4 and NH3 for thermochemistry referencing
+            mols = [Molecule().from_smiles(sm) for sm in ["[H][H]","O","C","N"]]
+        else:
+            mols = []
+        
+        for r in self.spcs_list:
+            mol = Molecule().from_adjacency_list(r["molecule"])
+            mol.multiplicity = mol.get_radical_count() + 1
+            mols.append(mol)
+        
+        for r in self.rxns_list:
             r["reactant_mols"] = []
             r["product_mols"] = []
             react = Molecule().from_adjacency_list(r["reactant"])
@@ -246,7 +266,7 @@ class Pynta:
         self.name_to_adjlist_dict = {sm:mol.to_adjacency_list() for sm,mol in mol_dict.items()}
 
 
-        for r in self.rxns_dict:
+        for r in self.rxns_list:
             r["reactant_names"] = []
             r["product_names"] = []
 
@@ -357,7 +377,7 @@ class Pynta:
         logger.info(f"================= IRC mode is: {self.irc_mode} =======================")
         #pass through 
         
-        for i,rxn in enumerate(self.rxns_dict):
+        for i,rxn in enumerate(self.rxns_list):
             #if irc_mode is "fixed" freeze all slab and conduct MolecularTSEstimate. 
             if self.irc_mode == "fixed":
                 IRC_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":self.software_kwargs,
@@ -441,7 +461,7 @@ class CoverageDependence:
     def __init__(self,path,metal,surface_type,repeats,pynta_run_directory,software,software_kwargs,label,sites,site_adjacency,coad_stable_sites,adsorbates=[],transition_states=dict(),coadsorbates=[],
                  max_dist=3.0,frozen_layers=2,fmaxopt=0.05,Ncalc_per_iter=6,TS_opt_software_kwargs=None,launchpad_path=None,
                  fworker_path=None,queue=False,njobs_queue=0,reset_launchpad=False,queue_adapter_path=None,
-                 num_jobs=25,surrogate_metal=None,concern_energy_tol=None,max_iters=np.inf):
+                 num_jobs=25,surrogate_metal=None,concern_energy_tol=None,max_iters=np.inf,imag_freq_max=150.0):
         self.path = path
         self.metal = metal
         self.repeats = repeats
@@ -464,8 +484,6 @@ class CoverageDependence:
             for key,val in TS_opt_software_kwargs.items():
                 self.software_kwargs_TS[key] = val
         
-        if adsorbates != []:
-            raise ValueError("Not implemented yet")
         self.adsorbates = adsorbates
         self.transition_states = transition_states
         self.coadsorbates = coadsorbates
@@ -476,6 +494,7 @@ class CoverageDependence:
         self.fmaxopt = fmaxopt
         self.label = label
         self.max_iters = max_iters
+        self.imag_freq_max = imag_freq_max
         
         if launchpad_path:
             launchpad = LaunchPad.from_file(launchpad_path)
@@ -509,7 +528,8 @@ class CoverageDependence:
         
     def setup_pairs_calculations(self):
         tsdirs = [os.path.join(self.pynta_run_directory,t,ind) for t,ind in self.transition_states.items()]
-        outdirs_ad,outdirs_ts = setup_pair_opts_for_rxns(self.path,tsdirs,self.coadsorbates,self.surrogate_metal,self.surface_type,max_dist=self.max_dist)
+        outdirs_ad,outdirs_ts = setup_pair_opts_for_rxns(self.path,self.adsorbates,tsdirs,self.coadsorbates,self.surrogate_metal,self.surface_type,self.sites,self.site_adjacency,
+                                                         max_dist=self.max_dist,imag_freq_max=self.imag_freq_max)
         
         for d in outdirs_ad:
             fwopt = optimize_firework(d,
@@ -552,7 +572,7 @@ class CoverageDependence:
     def setup_active_learning_loop(self):
         admol_name_path_dict = {k: os.path.join(self.pynta_run_directory,k,v,"opt.xyz") for k,v in self.transition_states.items()}
         admol_name_structure_dict = dict()
-        ads = self.adsorbates
+        ads = list(set(self.adsorbates + self.coadsorbates))
         allowed_structure_site_structures = generate_allowed_structure_site_structures(os.path.join(self.pynta_run_directory,"Adsorbates"),self.sites,self.site_adjacency,self.nslab,max_dist=np.inf)
 
         for ts in self.transition_states.keys():
@@ -623,7 +643,7 @@ class CoverageDependence:
                             if len(out) == 1: #vdW bond is not only thing connecting adsorbate to surface
                                 keep_vdW_surface_bonds = True
                         
-                ad_xyz = get_best_adsorbate_xyz(p,self.sites,self.nslab)
+                ad_xyz = get_best_adsorbate_xyz(p,self.sites,self.site_adjacency,self.nslab,allowed_structure_site_structures,keep_binding_vdW_bonds,keep_vdW_surface_bonds)
                 admol_name_path_dict[ad] = ad_xyz 
                 atoms = read(ad_xyz)
                 st,_,_ = generate_adsorbate_2D(atoms, self.sites, self.site_adjacency, self.nslab, max_dist=np.inf, allowed_structure_site_structures=allowed_structure_site_structures,
@@ -637,18 +657,30 @@ class CoverageDependence:
         
         
         fw = train_covdep_model_firework(self.path,admol_name_path_dict,admol_name_structure_dict,self.sites,self.site_adjacency,
-                                self.pynta_run_directory, self.metal, self.surface_type, self.slab_path, calculation_directories, self.coadsorbates[0], 
+                                self.pynta_run_directory, self.metal, self.surface_type, self.slab_path, calculation_directories, self.coadsorbates, 
                                 self.coad_stable_sites, self.software, self.software_kwargs, self.software_kwargs_TS, self.freeze_ind, self.fmaxopt,
                                 parents=self.fws, max_iters=self.max_iters,
                                 Ncalc_per_iter=self.Ncalc_per_iter,iter=0,concern_energy_tol=self.concern_energy_tol,ignore_errors=True)
 
         self.fws.append(fw)
-        
-        
-    def execute(self,run_pairs=True,run_active_learning=False):
+    
+    def launch(self,single_job=False):
+        """
+        Call appropriate rapidfire function
+        """
+        if self.queue:
+            rapidfirequeue(self.launchpad,self.fworker,self.qadapter,njobs_queue=self.njobs_queue,nlaunches="infinite")
+        elif not self.queue and (self.num_jobs == 1 or single_job):
+            rapidfire(self.launchpad,self.fworker,nlaunches="infinite")
+        else:
+            launch_multiprocess(self.launchpad,self.fworker,"INFO","infinite",self.num_jobs,5)
+    
+    def execute(self,run_pairs=True,run_active_learning=True,launch=False):
         if run_pairs:
             self.setup_pairs_calculations()
         if run_active_learning:
             self.setup_active_learning_loop()
         wf = Workflow(self.fws, name=self.label)
         self.launchpad.add_wf(wf)
+        if launch:
+            self.launch()
