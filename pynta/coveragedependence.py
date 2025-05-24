@@ -1085,8 +1085,10 @@ def get_best_adsorbate_xyz(adsorbate_path,sites,nslab):
     min_energy = np.inf
     Es,_,freq = get_adsorbate_energies(adsorbate_path)
     for xyz in xyzs:
-        geo = read(xyz)
         strind = os.path.split(xyz)[1].split(".")[0]
+        if strind not in Es.keys():
+            continue
+        geo = read(xyz)
         occ = get_occupied_sites(geo,sites,nslab)
         required_surface_inds = set([ind+nslab for ind in ase_to_mol_surface_atom_map.keys()])
         found_surface_inds = set([site["bonding_index"] for site in occ])
