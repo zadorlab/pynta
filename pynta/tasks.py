@@ -1320,11 +1320,11 @@ class TrainCovdepModelTask(FiretaskBase):
         return FWAction(detours=newwf)
 
 def select_calculations_firework(path,admol_name_path_dict,admol_name_structure_dict,sites,site_adjacency,
-                                pynta_dir, metal, facet, slab_path, calculation_directories, coadname,
+                                pynta_dir, metal, facet, slab_path, calculation_directories, coadnames,
                                 coad_stable_sites, software, software_kwargs, software_kwargs_TS, freeze_ind, fmaxopt, parents=[],Ncalc_per_iter=6,iter=0,max_iters=6,concern_energy_tol=None,ignore_errors=False):
     d = {"path": path,"admol_name_path_dict": admol_name_path_dict,"admol_name_structure_dict": {k:v.to_adjacency_list() for k,v in admol_name_structure_dict.items()},
          "sites": sites, "site_adjacency": {str(k): v for k,v in site_adjacency.items()}, "pynta_dir": pynta_dir, "metal": metal, "facet": facet, "slab_path": slab_path,
-         "calculation_directories": calculation_directories, "coadname": coadname, "coad_stable_sites": coad_stable_sites, 
+         "calculation_directories": calculation_directories, "coadnames": coadnames, "coad_stable_sites": coad_stable_sites, 
          "Ncalc_per_iter": Ncalc_per_iter, "software": software, "iter": iter, "max_iters": max_iters,
                        "software_kwargs": software_kwargs, "software_kwargs_TS": software_kwargs_TS, "freeze_ind": freeze_ind, 
                        "fmaxopt": fmaxopt, "concern_energy_tol": concern_energy_tol, "ignore_errors": ignore_errors}
@@ -1334,7 +1334,7 @@ def select_calculations_firework(path,admol_name_path_dict,admol_name_structure_
 @explicit_serialize
 class SelectCalculationsTask(FiretaskBase):
     required_params = ["path","admol_name_path_dict","admol_name_structure_dict","sites","site_adjacency", "pynta_dir", "metal", "facet",
-                       "slab_path", "calculation_directories", "coadname", "coad_stable_sites", "iter", "software", "max_iters",
+                       "slab_path", "calculation_directories", "coadnames", "coad_stable_sites", "iter", "software", "max_iters",
                        "software_kwargs", "software_kwargs_TS", "freeze_ind", "fmaxopt"]
     optional_params = ["concern_energy_tol","ignore_errors"]
     def run_task(self, fw_spec):
@@ -1354,7 +1354,7 @@ class SelectCalculationsTask(FiretaskBase):
         facet = self["facet"]
         slab_path = self["slab_path"]
         calculation_directories = self["calculation_directories"]
-        coadname  = self["coadname"]
+        coadnames  = self["coadnames"]
         Ncalc_per_iter = self["Ncalc_per_iter"]
         iter = self["iter"]
         coad_stable_sites = self["coad_stable_sites"]
@@ -1370,9 +1370,9 @@ class SelectCalculationsTask(FiretaskBase):
         if iter == max_iters: #terminate
             return FWAction()
         
-        coad = admol_name_structure_dict[coadname]
+        coads = {coadname: admol_name_structure_dict[coadname] for coadname in coadnames}
         
-        coad_path = os.path.join(pynta_dir,"Adsorbates",coadname)
+        coad_paths = {coadname: os.path.join(pynta_dir,"Adsorbates",coadname) for coadname in coadnames}
         
         slab = read(slab_path)
         nslab = len(slab)
@@ -1380,34 +1380,42 @@ class SelectCalculationsTask(FiretaskBase):
         allowed_structure_site_structures = generate_allowed_structure_site_structures(os.path.join(pynta_dir,"Adsorbates"),sites,site_adjacency,nslab,max_dist=np.inf)
         
         ad_energy_dict = get_lowest_adsorbate_energies(os.path.join(pynta_dir,"Adsorbates"))
-        Es = get_adsorbate_energies(coad_path)[0]
-        coadmol_E_dict = dict()
-        coadmol_stability_dict = dict()
-        for p in os.listdir(coad_path):
-            if p == "info.json" or (p not in Es.keys()):
-                continue
-            admol_init,neighbor_sites_init,ninds_init = generate_adsorbate_2D(read(os.path.join(coad_path,p,p+"_init.xyz")),sites,site_adjacency,nslab,max_dist=np.inf)
-            admol,neighbor_sites,ninds = generate_adsorbate_2D(read(os.path.join(coad_path,p,p+".xyz")),sites,site_adjacency,nslab,max_dist=np.inf)
-            out_struct = split_adsorbed_structures(admol,clear_site_info=False)[0]
-            out_struct_init = split_adsorbed_structures(admol_init,clear_site_info=False)[0]
-            coadmol_E_dict[out_struct] = Es[p] 
-            if admol_init.is_isomorphic(admol,save_order=True):
-                coadmol_stability_dict[out_struct_init] = True
-            else:
-                coadmol_stability_dict[out_struct_init] = False
-                
+        coad_Es = {coadname: get_adsorbate_energies(coad_paths[coadname])[0] for coadname in coadnames}
+        coadmol_E_dicts = dict()
+        coadmol_stability_dicts = dict()
+        for coadname in coadnames:
+            coadmol_E_dict = dict()
+            coadmol_stability_dict = dict()
+            for p in os.listdir(coad_paths[coadname]):
+                if p == "info.json" or (p not in coad_Es[coadname].keys()):
+                    continue
+                admol_init,neighbor_sites_init,ninds_init = generate_adsorbate_2D(read(os.path.join(coad_paths[coadname],p,p+"_init.xyz")),sites,site_adjacency,nslab,max_dist=np.inf)
+                admol,neighbor_sites,ninds = generate_adsorbate_2D(read(os.path.join(coad_paths[coadname],p,p+".xyz")),sites,site_adjacency,nslab,max_dist=np.inf)
+                out_struct = split_adsorbed_structures(admol,clear_site_info=False)[0]
+                out_struct_init = split_adsorbed_structures(admol_init,clear_site_info=False)[0]
+                coadmol_E_dict[out_struct] = coad_Es[coadname][p] 
+                if admol_init.is_isomorphic(admol,save_order=True):
+                    coadmol_stability_dict[out_struct_init] = True
+                else:
+                    coadmol_stability_dict[out_struct_init] = False
+            
+            coadmol_E_dicts[coadname] = coadmol_E_dict
+            coadmol_stability_dicts[coadname] = coadmol_stability_dict
         
         #load configurations and Ncoad_energies
-        configs_of_concern_by_admol = dict()
-        Ncoad_energy_by_admol = dict()
-        for admol_name,st in admol_name_structure_dict.items():
-            config_path = os.path.join(path,"Iterations",str(iter),"configs_of_concern_"+admol_name+".json")
-            with open(config_path,'r') as f:
-                configs_of_concern_by_admol[admol_name] = [(Molecule().from_adjacency_list(k[0],check_consistency=False),k[1],k[2],k[3]) for k in json.load(f)]
-            Ncoad_energy_path = os.path.join(path,"Iterations",str(iter),"Ncoad_energy_"+admol_name+".json")
-            with open(Ncoad_energy_path,'r') as f:
-                Ncoad_energy_by_admol[admol_name] = {int(k):v for k,v in json.load(f).items()}
-            
+        configs_of_concern_by_coad_admol = dict()
+        Ncoad_energy_by_coad_admol = dict()
+        for coadname in coadnames:
+            configs_of_concern_by_coad_admol[coadname] = dict()
+            Ncoad_energy_by_coad_admol[coadname] = dict()
+            for admol_name,st in admol_name_structure_dict.items():
+                config_path = os.path.join(path,"Iterations",str(iter),"configs_of_concern_"+admol_name+"_"+coadname+".json")
+                with open(config_path,'r') as f:
+                    configs_of_concern_by_coad_admol[coadname][admol_name] = [(Molecule().from_adjacency_list(k[0],check_consistency=False),k[1],k[2],k[3]) for k in json.load(f)]
+                Ncoad_energy_path = os.path.join(path,"Iterations",str(iter),"Ncoad_energy_"+admol_name+"_"+coadname+".json")
+                with open(Ncoad_energy_path,'r') as f:
+                    Ncoad_energy_by_coad_admol[coadname][admol_name] = {int(k):v for k,v in json.load(f).items()}
+                
         #load tree
         nodes = read_nodes(os.path.join(path,"Iterations",str(iter),"regressor.json"))
         tree = MultiEvalSubgraphIsomorphicDecisionTreeRegressor([adsorbate_interaction_decomposition],
@@ -1417,7 +1425,8 @@ class SelectCalculationsTask(FiretaskBase):
         with open(os.path.join(path,"Iterations",str(iter),"computed_configurations.json"),'r') as f:
             computed_configs = [Molecule().from_adjacency_list(x,check_consistency=False) for x in json.load(f)]
         
-        configs_for_calculation,admol_to_config_for_calculation= get_configs_for_calculation(configs_of_concern_by_admol,Ncoad_energy_by_admol,admol_name_structure_dict,computed_configs,tree,Ncalc_per_iter)
+        
+        configs_for_calculation,coad_admol_to_config_for_calculation = get_configs_for_calculation(configs_of_concern_by_coad_admol,Ncoad_energy_by_coad_admol,admol_name_structure_dict,coadnames,computed_configs,tree,Ncalc_per_iter)
 
         os.makedirs(os.path.join(path,"Iterations",str(iter),"Samples"))
         assert len(configs_for_calculation) > 0, configs_for_calculation
@@ -1425,12 +1434,15 @@ class SelectCalculationsTask(FiretaskBase):
         calculation_directories = []
         for i,config in enumerate(configs_for_calculation):
             adname = None
-            for admol_name,config_list in admol_to_config_for_calculation.items():
-                if any(x is config for x in config_list):
-                    adname = admol_name
-                    break
-            else:
-                raise ValueError
+            coadname = None
+            for cname in coad_admol_to_config_for_calculation.keys():
+                for admol_name,config_list in coad_admol_to_config_for_calculation[cname].items():
+                    if any(x is config for x in config_list):
+                        adname = admol_name
+                        coadname = cname
+                        break
+                else:
+                    raise ValueError
             
             partial_admol = admol_name_structure_dict[adname]
             admol_path = admol_name_path_dict[adname]
@@ -1440,7 +1452,7 @@ class SelectCalculationsTask(FiretaskBase):
             init_path = os.path.join(path,"Iterations",str(iter),"Samples",str(i),"init.xyz")
             write(init_path,init_atoms)
             calculation_directories.append(os.path.split(init_path)[0])
-            json_out = {"adjlist": config.to_adjacency_list(), "xyz": admol_path}
+            json_out = {"adjlist": config.to_adjacency_list(), "xyz": admol_path, "coadname": coadname}
             with open(os.path.join(os.path.split(init_path)[0],'info.json'),'w') as f:
                 json.dump(json_out,f)
             
@@ -1477,7 +1489,7 @@ class SelectCalculationsTask(FiretaskBase):
                 sample_fws.extend([fwopt,fwvib])
             
         tfw = train_covdep_model_firework(path,admol_name_path_dict,admol_name_structure_dict,sites,site_adjacency,
-                            pynta_dir, metal, facet, slab_path, calculation_directories, coadname,
+                            pynta_dir, metal, facet, slab_path, calculation_directories, coadnames,
                             coad_stable_sites, software, software_kwargs, software_kwargs_TS, freeze_ind, fmaxopt, parents=sample_fws,
                             Ncalc_per_iter=Ncalc_per_iter,iter=iter+1,max_iters=max_iters,concern_energy_tol=concern_energy_tol,ignore_errors=ignore_errors)
         newwf = Workflow(sample_fws+[tfw],name="Train Iteration "+str(iter+1))
