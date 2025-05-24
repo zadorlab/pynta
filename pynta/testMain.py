@@ -118,7 +118,6 @@ class MainTest(unittest.TestCase):
             ind += 1
         name = name+str(ind)
         
-        path = "/Users/mjohns9/code/pynta/test/covdeptest"
         pynta_path = os.path.join(self.covdep_path,"pyntaxtb") 
         slab = read(os.path.join(pynta_path,"slab.xyz"))
         metal = "Pt"
@@ -131,7 +130,7 @@ class MainTest(unittest.TestCase):
         sites = cas.get_sites()
         site_adjacency = cas.get_neighbor_site_list()
 
-        covdep = CoverageDependence(path,metal,facet,(3,3,4),pynta_path,software="XTB",software_kwargs={"method": "GFN1-xTB","verbosity":0},
+        covdep = CoverageDependence(self.covdep_path,metal,facet,(3,3,4),pynta_path,software="XTB",software_kwargs={"method": "GFN1-xTB","verbosity":0},
                                     label=name,sites=sites,site_adjacency=site_adjacency,coad_stable_sites={"O=[Pt]":["fcc"],"[Pt]":["fcc"]},adsorbates=["CO[Pt]"],transition_states={"TS0":"9"},
                                     coadsorbates=["O=[Pt]","[Pt]"],
                         frozen_layers=4,fmaxopt=0.05,Ncalc_per_iter=1,launchpad_path=lpad_name,max_iters=1,
