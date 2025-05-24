@@ -2,11 +2,14 @@ import unittest
 from nose.plugins.attrib import attr
 import os
 import shutil
-from pynta.main import Pynta
+from pynta.main import Pynta, CoverageDependence
 from pynta.utils import clean_pynta_path
+from ase.io import read
 from fireworks import LaunchPad, Workflow
 from fireworks.core.rocket_launcher import rapidfire, launch_rocket
-
+from acat.adsorption_sites import SlabAdsorptionSites
+import numpy as np
+import logging
 
 @attr('functional')
 class MainTest(unittest.TestCase):
@@ -19,6 +22,8 @@ class MainTest(unittest.TestCase):
         cls.path = os.path.join(pynta_path,"test","pyntatest")
         clean_pynta_path(cls.path)
         cls.launchpath = os.path.join(cls.path,"launches")
+        cls.covdep_path = os.path.join(pynta_path,"test","covdeptest")
+        cls.launchpath_covdep = os.path.join(cls.covdep_path,"launches")
 
     @classmethod
     def tearDownClass(cls):
@@ -33,7 +38,15 @@ class MainTest(unittest.TestCase):
                 os.remove(pv)
             else:
                 shutil.rmtree(pv)
-
+        
+        # remove covdep files
+        if os.path.exists(os.path.join(cls.covdep_path,"Iterations")):
+            shutil.rmtree(os.path.join(cls.covdep_path,"Iterations"))
+        if os.path.exists(os.path.join(cls.covdep_path,"Configurations")):
+            shutil.rmtree(os.path.join(cls.covdep_path,"Configurations"))
+        if os.path.exists(os.path.join(cls.covdep_path,"pairs_datums.json")):
+            os.remove(os.path.join(cls.covdep_path,"pairs_datums.json"))
+        
     def test_workflow(self):
         returndir = os.getcwd()
         os.chdir(self.launchpath)
