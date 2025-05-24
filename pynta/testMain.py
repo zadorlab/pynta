@@ -72,6 +72,7 @@ class MainTest(unittest.TestCase):
                slab_path=os.path.join(self.path,"slab.xyz"),
                Eharmtol=1.0, Nharmmin=2,nprocs_harm=4,
                launchpad_path=lpad_name,
+               calculate_thermodynamic_references=False,
                )
 
         pyn.analyze_slab()
