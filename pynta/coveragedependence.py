@@ -1064,38 +1064,32 @@ def configuration_is_valid(mol2D,admol,is_ts,unstable_pairs):
 
     return all(validity_judgements)
 
-def get_best_adsorbate_xyz(adsorbate_path,sites,nslab):
+def get_best_adsorbate_xyz(adsorbate_path,sites,site_adjacency,nslab,allowed_structure_site_structures,keep_binding_vdW_bonds,keep_vdW_surface_bonds):
     """
     load the adsorbates associated with the reaction and find the unique optimized
     adsorbate structures for each species
     returns a dictionary mapping each adsorbate name to a list of ase.Atoms objects
     """
-    prefixes = os.listdir(adsorbate_path)
     with open(os.path.join(adsorbate_path,"info.json"),"r") as f:
         info = json.load(f)
-    ase_to_mol_surface_atom_map = {int(k):int(v) for k,v in info["gratom_to_molecule_surface_atom_map"].items()}
+        
     mol = Molecule().from_adjacency_list(info["adjlist"])
-    geoms = []
-    for prefix in prefixes:
-        path = os.path.join(adsorbate_path,prefix,prefix+".xyz")
-        if os.path.exists(path):
-            geoms.append(path)
-    xyzs = get_unique_sym(geoms)
+    
     adsorbate = None
     min_energy = np.inf
     Es,_,freq = get_adsorbate_energies(adsorbate_path)
-    for xyz in xyzs:
+    for prefix in Es.keys():
+        xyz = os.path.join(adsorbate_path,prefix,prefix+".xyz")
         strind = os.path.split(xyz)[1].split(".")[0]
         if strind not in Es.keys():
             continue
         geo = read(xyz)
-        occ = get_occupied_sites(geo,sites,nslab)
-        required_surface_inds = set([ind+nslab for ind in ase_to_mol_surface_atom_map.keys()])
-        found_surface_inds = set([site["bonding_index"] for site in occ])
-        if len(occ) >= len(mol.get_adatoms()) and required_surface_inds.issubset(found_surface_inds):
-            if Es[strind] < min_energy:
-                adsorbate = xyz
-                min_energy = Es[strind]
+        admol,_,_ = generate_adsorbate_2D(geo, sites, site_adjacency, nslab, max_dist=np.inf, allowed_structure_site_structures=allowed_structure_site_structures,
+                                               keep_binding_vdW_bonds=keep_binding_vdW_bonds,keep_vdW_surface_bonds=keep_vdW_surface_bonds)
+        molp = split_adsorbed_structures(admol,clear_site_info=True)[0]
+        if molp.is_isomorphic(mol,save_order=True) and Es[strind] < min_energy: #if matches target and is lower in energy
+            adsorbate = xyz
+            min_energy = Es[strind]
 
     return adsorbate
 
