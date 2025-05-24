@@ -5,8 +5,6 @@ from ase.io import write, read
 from ase.io.trajectory import Trajectory
 from ase.calculators.socketio import SocketIOCalculator
 from ase.vibrations import Vibrations
-from acat.adsorption_sites import SlabAdsorptionSites
-from acat.adsorbate_coverage import SlabAdsorbateCoverage
 from molecule.molecule import Molecule
 from sella import Sella, Constraints, IRC
 from fireworks import *
@@ -16,16 +14,16 @@ from fireworks.queue.queue_launcher import rapidfire as rapidfirequeue
 from fireworks.utilities.fw_serializers import load_object_from_file
 from fireworks.core.fworker import FWorker
 import fireworks.fw_config
+from pysidt.sidt import *
 from pynta.transitionstate import get_unique_optimized_adsorbates,determine_TS_construction,get_unique_TS_structs,generate_constraints_harmonic_parameters,get_unique_TS_templates_site_pairings
 from pynta.utils import *
 from pynta.calculator import run_harmonically_forced, map_harmonically_forced, add_sella_constraint
 from pynta.mol import *
-from pynta.coveragedependence import *
+from pynta.coveragedependence import get_unstable_pairs, mol_to_atoms, get_configs_for_calculation, get_cov_energies_configs_concern_tree, get_configurations, train_sidt_cov_dep_regressor, process_calculation
 from pynta.geometricanalysis import *
 from pynta.adsorbate import construct_initial_guess_files
 from pynta.postprocessing import postprocess, write_rmg_libraries
 import numpy as np
-import multiprocessing as mp
 import json
 import copy
 from copy import deepcopy
@@ -36,7 +34,6 @@ import logging
 import signal
 from contextlib import contextmanager
 from copy import deepcopy
-from pathlib import Path
 from joblib import Parallel, delayed
 
 class OptimizationTask(FiretaskBase):
