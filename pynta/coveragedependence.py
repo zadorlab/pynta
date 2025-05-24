@@ -8,7 +8,6 @@ from acat.adsorption_sites import SlabAdsorptionSites
 from pynta.utils import get_unique_sym, get_occupied_sites, sites_match, SiteOccupationException
 from pynta.mol import *
 from pynta.geometricanalysis import *
-from pynta.tasks import *
 from pynta.postprocessing import get_adsorbate_energies
 from pysidt import *
 from pysidt.extensions import split_mols
