@@ -663,12 +663,24 @@ class CoverageDependence:
                                 Ncalc_per_iter=self.Ncalc_per_iter,iter=0,concern_energy_tol=self.concern_energy_tol,ignore_errors=True)
 
         self.fws.append(fw)
-        
-        
-    def execute(self,run_pairs=True,run_active_learning=False):
+    
+    def launch(self,single_job=False):
+        """
+        Call appropriate rapidfire function
+        """
+        if self.queue:
+            rapidfirequeue(self.launchpad,self.fworker,self.qadapter,njobs_queue=self.njobs_queue,nlaunches="infinite")
+        elif not self.queue and (self.num_jobs == 1 or single_job):
+            rapidfire(self.launchpad,self.fworker,nlaunches="infinite")
+        else:
+            launch_multiprocess(self.launchpad,self.fworker,"INFO","infinite",self.num_jobs,5)
+    
+    def execute(self,run_pairs=True,run_active_learning=True,launch=False):
         if run_pairs:
             self.setup_pairs_calculations()
         if run_active_learning:
             self.setup_active_learning_loop()
         wf = Workflow(self.fws, name=self.label)
         self.launchpad.add_wf(wf)
+        if launch:
+            self.launch()
