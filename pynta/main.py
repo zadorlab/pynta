@@ -643,7 +643,7 @@ class CoverageDependence:
                             if len(out) == 1: #vdW bond is not only thing connecting adsorbate to surface
                                 keep_vdW_surface_bonds = True
                         
-                ad_xyz = get_best_adsorbate_xyz(p,self.sites,self.nslab)
+                ad_xyz = get_best_adsorbate_xyz(p,self.sites,self.site_adjacency,self.nslab,allowed_structure_site_structures,keep_binding_vdW_bonds,keep_vdW_surface_bonds)
                 admol_name_path_dict[ad] = ad_xyz 
                 atoms = read(ad_xyz)
                 st,_,_ = generate_adsorbate_2D(atoms, self.sites, self.site_adjacency, self.nslab, max_dist=np.inf, allowed_structure_site_structures=allowed_structure_site_structures,
