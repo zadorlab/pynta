@@ -1,0 +1,1570 @@
+{
+    "spec": {
+        "_allow_fizzled_parents": true,
+        "_priority": 10,
+        "_tasks": [
+            {
+                "path": "/Users/mjohns9/code/pynta/test/pyntatest/Adsorbates/[H][H]",
+                "metal": "Cu",
+                "facet": "fcc111",
+                "sites": [
+                    {
+                        "site": "ontop",
+                        "surface": "fcc111",
+                        "morphology": "terrace",
+                        "position": [
+                            3.176e-05,
+                            5.032e-05,
+                            14.34901118
+                        ],
+                        "normal": [
+                            9.86e-06,
+                            1.086e-05,
+                            1.0
+                        ],
+                        "indices": [
+                            27
+                        ],
+                        "composition": null,
+                        "subsurf_index": null,
+                        "subsurf_element": null,
+                        "label": 1
+                    },
+                    {
+                        "site": "bridge",
+                        "surface": "fcc111",
+                        "morphology": "terrace",
+                        "position": [
+                            1.28466651,
+                            3.418e-05,
+                            14.34908715
+                        ],
+                        "normal": [
+                            -1.727e-05,
+                            -3.3e-06,
+                            1.0
+                        ],
+                        "indices": [
+                            27,
+                            28
+                        ],
+                        "composition": null,
+                        "subsurf_index": null,
+                        "subsurf_element": null,
+                        "label": 2
+                    },
+                    {
+                        "site": "fcc",
+                        "surface": "fcc111",
+                        "morphology": "terrace",
+                        "position": [
+                            1.28468037,
+                            0.74174653,
+                            14.34908198
+                        ],
+                        "normal": [
+                            -5.914e-05,
+                            6.98e-06,
+                            1.0
+                        ],
+                        "indices": [
+                            27,
+                            28,
+                            30
+                        ],
+                        "composition": null,
+                        "subsurf_index": null,
+                        "subsurf_element": null,
+                        "label": 3
+                    },
+                    {
+                        "site": "hcp",
+                        "surface": "fcc111",
+                        "morphology": "terrace",
+                        "position": [
+                            5.13880919,
+                            5.93373213,
+                            14.34908424
+                        ],
+                        "normal": [
+                            -5.914e-05,
+                            -3.93e-06,
+                            1.0
+                        ],
+                        "indices": [
+                            27,
+                            28,
+                            34
+                        ],
+                        "composition": null,
+                        "subsurf_index": "25",
+                        "subsurf_element": null,
+                        "label": 4
+                    },
+                    {
+                        "site": "bridge",
+                        "surface": "fcc111",
+                        "morphology": "terrace",
+                        "position": [
+                            6.42340367,
+                            3.806e-05,
+                            14.34911776
+                        ],
+                        "normal": [
+                            2.22e-05,
+                            1.36e-06,
+                            1.0
+                        ],
+                        "indices": [
+                            27,
+                            29
+                        ],
+                        "composition": null,
+                        "subsurf_index": null,
+                        "subsurf_element": null,
+                        "label": 2
+                    },
+                    {
+                        "site": "fcc",
+                        "surface": "fcc111",
+                        "morphology": "terrace",
+                        "position": [
+                            6.42343251,
+                            0.74171687,
+                            14.34909348
+                        ],
+                        "normal": [
+                            8.295e-05,
+                            3.272e-05,
+                            1.0
+                        ],
+                        "indices": [
+                            27,
+                            29,
+                            32
+                        ],
+                        "composition": null,
+                        "subsurf_index": null,
+                        "subsurf_element": null,
+                        "label": 3
+                    },
+                    {
+                        "site": "hcp",
+                        "surface": "fcc111",
+                        "morphology": "terrace",
+                        "position": [
+                            10.27755051,
+                            5.93377218,
+                            14.34912343
+                        ],
+                        "normal": [
+                            8.295e-05,
+                            7.66e-06,
+                            1.0
+                        ],
+                        "indices": [
+                            27,
+                            29,
+                            33
+                        ],
+                        "composition": null,
+                        "subsurf_index": "24",
+                        "subsurf_element": null,
+                        "label": 4
+                    },
+                    {
+                        "site": "bridge",
+                        "surface": "fcc111",
+                        "morphology": "terrace",
+                        "position": [
+                            0.64236992,
+                            1.11261078,
+                            14.3490414
+                        ],
+                        "normal": [
+                            -1.596e-05,
+                            7.4e-07,
+                            1.0
+                        ],
+                        "indices": [
+                            27,
+                            30
+                        ],
+                        "composition": null,
+                        "subsurf_index": null,
+                        "subsurf_element": null,
+                        "label": 2
+                    },
+                    {
+                        "site": "hcp",
+                        "surface": "fcc111",
+                        "morphology": "terrace",
+                        "position": [
+                            7.70816138,
+                            1.48343202,
+                            14.34904258
+                        ],
+                        "normal": [
+                            -1.039e-05,
+                            -2.117e-05,
+                            1.0
+                        ],
+                        "indices": [
+                            27,
+                            30,
+                            32
+                        ],
+                        "composition": null,
+                        "subsurf_index": "18",
+                        "subsurf_element": null,
+                        "label": 4
+                    },
+                    {
+                        "site": "bridge",
+                        "surface": "fcc111",
+                        "morphology": "terrace",
+                        "position": [
+                            7.06582451,
+                            1.11256241,
+                            14.34902806
+                        ],
+                        "normal": [
+                            2.425e-05,
+                            7.34e-06,
+                            1.0
+                        ],
+                        "indices": [
+                            27,
+                            32
+                        ],
+                        "composition": null,
+                        "subsurf_index": null,
+                        "subsurf_element": null,
+                        "label": 2
+                    },
+                    {
+                        "site": "bridge",
+                        "surface": "fcc111",
+                        "morphology": "terrace",
+                        "position": [
+                            3.2118427,
+                            5.56292846,
+                            14.34907298
+                        ],
+                        "normal": [
+                            7.81e-06,
+                            1.224e-05,
+                            1.0
+                        ],
+                        "indices": [
+                            27,
+                            33
+                        ],
+                        "composition": null,
+                        "subsurf_index": null,
+                        "subsurf_element": null,
+                        "label": 2
+                    },
+                    {
+                        "site": "fcc",
+                        "surface": "fcc111",
+                        "morphology": "terrace",
+                        "position": [
+                            3.85421763,
+                            5.1920391,
+                            14.34907479
+                        ],
+                        "normal": [
+                            2.194e-05,
+                            4.288e-05,
+                            1.0
+                        ],
+                        "indices": [
+                            27,
+                            33,
+                            34
+                        ],
+                        "composition": null,
+                        "subsurf_index": null,
+                        "subsurf_element": null,
+                        "label": 3
+                    },
+                    {
+                        "site": "bridge",
+                        "surface": "fcc111",
+                        "morphology": "terrace",
+                        "position": [
+                            4.4965314,
+                            5.56287227,
+                            14.3490448
+                        ],
+                        "normal": [
+                            8.56e-06,
+                            1.418e-05,
+                            1.0
+                        ],
+                        "indices": [
+                            27,
+                            34
+                        ],
+                        "composition": null,
+                        "subsurf_index": null,
+                        "subsurf_element": null,
+                        "label": 2
+                    },
+                    {
+                        "site": "ontop",
+                        "surface": "fcc111",
+                        "morphology": "terrace",
+                        "position": [
+                            2.56930125,
+                            1.804e-05,
+                            14.34916312
+                        ],
+                        "normal": [
+                            -4.439e-05,
+                            -1.746e-05,
+                            1.0
+                        ],
+                        "indices": [
+                            28
+                        ],
+                        "composition": null,
+                        "subsurf_index": null,
+                        "subsurf_element": null,
+                        "label": 1
+                    },
+                    {
+                        "site": "bridge",
+                        "surface": "fcc111",
+                        "morphology": "terrace",
+                        "position": [
+                            3.85397489,
+                            2.192e-05,
+                            14.34919372
+                        ],
+                        "normal": [
+                            -4.93e-06,
+                            -1.279e-05,
+                            1.0
+                        ],
+                        "indices": [
+                            28,
+                            29
+                        ],
+                        "composition": null,
+                        "subsurf_index": null,
+                        "subsurf_element": null,
+                        "label": 2
+                    },
+                    {
+                        "site": "fcc",
+                        "surface": "fcc111",
+                        "morphology": "terrace",
+                        "position": [
+                            3.85401428,
+                            0.74174297,
+                            14.3492242
+                        ],
+                        "normal": [
+                            -2.382e-05,
+                            -4.109e-05,
+                            1.0
+                        ],
+                        "indices": [
+                            28,
+                            29,
+                            31
+                        ],
+                        "composition": null,
+                        "subsurf_index": null,
+                        "subsurf_element": null,
+                        "label": 3
+                    },
+                    {
+                        "site": "hcp",
+                        "surface": "fcc111",
+                        "morphology": "terrace",
+                        "position": [
+                            7.70807922,
+                            5.93373279,
+                            14.34917014
+                        ],
+                        "normal": [
+                            -2.382e-05,
+                            -3.18e-05,
+                            1.0
+                        ],
+                        "indices": [
+                            28,
+                            29,
+                            35
+                        ],
+                        "composition": null,
+                        "subsurf_index": "26",
+                        "subsurf_element": null,
+                        "label": 4
+                    },
+                    {
+                        "site": "bridge",
+                        "surface": "fcc111",
+                        "morphology": "terrace",
+                        "position": [
+                            1.92700467,
+                            1.11259464,
+                            14.34911737
+                        ],
+                        "normal": [
+                            -4.309e-05,
+                            -1.342e-05,
+                            1.0
+                        ],
+                        "indices": [
+                            28,
+                            30
+                        ],
+                        "composition": null,
+                        "subsurf_index": null,
+                        "subsurf_element": null,
+                        "label": 2
+                    },
+                    {
+                        "site": "hcp",
+                        "surface": "fcc111",
+                        "morphology": "terrace",
+                        "position": [
+                            2.56936747,
+                            1.48345812,
+                            14.3491733
+                        ],
+                        "normal": [
+                            -8.311e-05,
+                            -6.86e-06,
+                            1.0
+                        ],
+                        "indices": [
+                            28,
+                            30,
+                            31
+                        ],
+                        "composition": null,
+                        "subsurf_index": "19",
+                        "subsurf_element": null,
+                        "label": 4
+                    },
+                    {
+                        "site": "bridge",
+                        "surface": "fcc111",
+                        "morphology": "terrace",
+                        "position": [
+                            3.21169716,
+                            1.11260156,
+                            14.34922414
+                        ],
+                        "normal": [
+                            -2.062e-05,
+                            1.06e-06,
+                            1.0
+                        ],
+                        "indices": [
+                            28,
+                            31
+                        ],
+                        "composition": null,
+                        "subsurf_index": null,
+                        "subsurf_element": null,
+                        "label": 2
+                    },
+                    {
+                        "site": "bridge",
+                        "surface": "fcc111",
+                        "morphology": "terrace",
+                        "position": [
+                            5.78116614,
+                            5.56285613,
+                            14.34912077
+                        ],
+                        "normal": [
+                            -1.857e-05,
+                            2e-08,
+                            1.0
+                        ],
+                        "indices": [
+                            28,
+                            34
+                        ],
+                        "composition": null,
+                        "subsurf_index": null,
+                        "subsurf_element": null,
+                        "label": 2
+                    },
+                    {
+                        "site": "fcc",
+                        "surface": "fcc111",
+                        "morphology": "terrace",
+                        "position": [
+                            6.42349771,
+                            5.1919997,
+                            14.3491215
+                        ],
+                        "normal": [
+                            -1.734e-05,
+                            -2.806e-05,
+                            1.0
+                        ],
+                        "indices": [
+                            28,
+                            34,
+                            35
+                        ],
+                        "composition": null,
+                        "subsurf_index": null,
+                        "subsurf_element": null,
+                        "label": 3
+                    },
+                    {
+                        "site": "bridge",
+                        "surface": "fcc111",
+                        "morphology": "terrace",
+                        "position": [
+                            7.06576281,
+                            5.56286937,
+                            14.34914304
+                        ],
+                        "normal": [
+                            -2.87e-05,
+                            -2.395e-05,
+                            1.0
+                        ],
+                        "indices": [
+                            28,
+                            35
+                        ],
+                        "composition": null,
+                        "subsurf_index": null,
+                        "subsurf_element": null,
+                        "label": 2
+                    },
+                    {
+                        "site": "ontop",
+                        "surface": "fcc111",
+                        "morphology": "terrace",
+                        "position": [
+                            5.13864853,
+                            2.58e-05,
+                            14.34922433
+                        ],
+                        "normal": [
+                            3.453e-05,
+                            -8.13e-06,
+                            1.0
+                        ],
+                        "indices": [
+                            29
+                        ],
+                        "composition": null,
+                        "subsurf_index": null,
+                        "subsurf_element": null,
+                        "label": 1
+                    },
+                    {
+                        "site": "bridge",
+                        "surface": "fcc111",
+                        "morphology": "terrace",
+                        "position": [
+                            4.4963708,
+                            1.11260544,
+                            14.34925474
+                        ],
+                        "normal": [
+                            1.884e-05,
+                            5.72e-06,
+                            1.0
+                        ],
+                        "indices": [
+                            29,
+                            31
+                        ],
+                        "composition": null,
+                        "subsurf_index": null,
+                        "subsurf_element": null,
+                        "label": 2
+                    },
+                    {
+                        "site": "hcp",
+                        "surface": "fcc111",
+                        "morphology": "terrace",
+                        "position": [
+                            5.13874394,
+                            1.48342846,
+                            14.34918481
+                        ],
+                        "normal": [
+                            9.349e-05,
+                            2.664e-05,
+                            1.0
+                        ],
+                        "indices": [
+                            29,
+                            31,
+                            32
+                        ],
+                        "composition": null,
+                        "subsurf_index": "20",
+                        "subsurf_element": null,
+                        "label": 4
+                    },
+                    {
+                        "site": "bridge",
+                        "surface": "fcc111",
+                        "morphology": "terrace",
+                        "position": [
+                            5.78106937,
+                            1.11255015,
+                            14.34913464
+                        ],
+                        "normal": [
+                            3.658e-05,
+                            -2.15e-06,
+                            1.0
+                        ],
+                        "indices": [
+                            29,
+                            32
+                        ],
+                        "composition": null,
+                        "subsurf_index": null,
+                        "subsurf_element": null,
+                        "label": 2
+                    },
+                    {
+                        "site": "bridge",
+                        "surface": "fcc111",
+                        "morphology": "terrace",
+                        "position": [
+                            9.6352146,
+                            5.5629162,
+                            14.34917956
+                        ],
+                        "normal": [
+                            2.014e-05,
+                            2.75e-06,
+                            1.0
+                        ],
+                        "indices": [
+                            29,
+                            33
+                        ],
+                        "composition": null,
+                        "subsurf_index": null,
+                        "subsurf_element": null,
+                        "label": 2
+                    },
+                    {
+                        "site": "fcc",
+                        "surface": "fcc111",
+                        "morphology": "terrace",
+                        "position": [
+                            8.99286335,
+                            5.19203975,
+                            14.34916069
+                        ],
+                        "normal": [
+                            -4.59e-06,
+                            -4.29e-05,
+                            1.0
+                        ],
+                        "indices": [
+                            29,
+                            33,
+                            35
+                        ],
+                        "composition": null,
+                        "subsurf_index": null,
+                        "subsurf_element": null,
+                        "label": 3
+                    },
+                    {
+                        "site": "bridge",
+                        "surface": "fcc111",
+                        "morphology": "terrace",
+                        "position": [
+                            8.35043645,
+                            5.56287325,
+                            14.34917365
+                        ],
+                        "normal": [
+                            1.076e-05,
+                            -1.928e-05,
+                            1.0
+                        ],
+                        "indices": [
+                            29,
+                            35
+                        ],
+                        "composition": null,
+                        "subsurf_index": null,
+                        "subsurf_element": null,
+                        "label": 2
+                    },
+                    {
+                        "site": "ontop",
+                        "surface": "fcc111",
+                        "morphology": "terrace",
+                        "position": [
+                            1.28470809,
+                            2.22517124,
+                            14.34907163
+                        ],
+                        "normal": [
+                            -4.179e-05,
+                            -9.37e-06,
+                            1.0
+                        ],
+                        "indices": [
+                            30
+                        ],
+                        "composition": null,
+                        "subsurf_index": null,
+                        "subsurf_element": null,
+                        "label": 1
+                    },
+                    {
+                        "site": "bridge",
+                        "surface": "fcc111",
+                        "morphology": "terrace",
+                        "position": [
+                            2.56940058,
+                            2.22517816,
+                            14.3491784
+                        ],
+                        "normal": [
+                            -1.932e-05,
+                            5.1e-06,
+                            1.0
+                        ],
+                        "indices": [
+                            30,
+                            31
+                        ],
+                        "composition": null,
+                        "subsurf_index": null,
+                        "subsurf_element": null,
+                        "label": 2
+                    },
+                    {
+                        "site": "fcc",
+                        "surface": "fcc111",
+                        "morphology": "terrace",
+                        "position": [
+                            2.56946376,
+                            2.96690969,
+                            14.34916386
+                        ],
+                        "normal": [
+                            -8.311e-05,
+                            1.961e-05,
+                            1.0
+                        ],
+                        "indices": [
+                            30,
+                            31,
+                            33
+                        ],
+                        "composition": null,
+                        "subsurf_index": null,
+                        "subsurf_element": null,
+                        "label": 3
+                    },
+                    {
+                        "site": "bridge",
+                        "surface": "fcc111",
+                        "morphology": "terrace",
+                        "position": [
+                            7.70816267,
+                            2.22512287,
+                            14.34905828
+                        ],
+                        "normal": [
+                            -1.57e-06,
+                            -2.77e-06,
+                            1.0
+                        ],
+                        "indices": [
+                            30,
+                            32
+                        ],
+                        "composition": null,
+                        "subsurf_index": null,
+                        "subsurf_element": null,
+                        "label": 2
+                    },
+                    {
+                        "site": "fcc",
+                        "surface": "fcc111",
+                        "morphology": "terrace",
+                        "position": [
+                            7.70816206,
+                            2.9668442,
+                            14.34907985
+                        ],
+                        "normal": [
+                            -1.039e-05,
+                            -2.907e-05,
+                            1.0
+                        ],
+                        "indices": [
+                            30,
+                            32,
+                            35
+                        ],
+                        "composition": null,
+                        "subsurf_index": null,
+                        "subsurf_element": null,
+                        "label": 3
+                    },
+                    {
+                        "site": "bridge",
+                        "surface": "fcc111",
+                        "morphology": "terrace",
+                        "position": [
+                            1.9271491,
+                            3.337772,
+                            14.3491032
+                        ],
+                        "normal": [
+                            -1.802e-05,
+                            2.13e-06,
+                            1.0
+                        ],
+                        "indices": [
+                            30,
+                            33
+                        ],
+                        "composition": null,
+                        "subsurf_index": null,
+                        "subsurf_element": null,
+                        "label": 2
+                    },
+                    {
+                        "site": "hcp",
+                        "surface": "fcc111",
+                        "morphology": "terrace",
+                        "position": [
+                            8.99290437,
+                            3.70861029,
+                            14.34910979
+                        ],
+                        "normal": [
+                            -4.6e-06,
+                            -2.573e-05,
+                            1.0
+                        ],
+                        "indices": [
+                            30,
+                            33,
+                            35
+                        ],
+                        "composition": null,
+                        "subsurf_index": "21",
+                        "subsurf_element": null,
+                        "label": 4
+                    },
+                    {
+                        "site": "bridge",
+                        "surface": "fcc111",
+                        "morphology": "terrace",
+                        "position": [
+                            8.35049799,
+                            3.33772905,
+                            14.3490973
+                        ],
+                        "normal": [
+                            -2.74e-05,
+                            -1.99e-05,
+                            1.0
+                        ],
+                        "indices": [
+                            30,
+                            35
+                        ],
+                        "composition": null,
+                        "subsurf_index": null,
+                        "subsurf_element": null,
+                        "label": 2
+                    },
+                    {
+                        "site": "ontop",
+                        "surface": "fcc111",
+                        "morphology": "terrace",
+                        "position": [
+                            3.85409307,
+                            2.22518508,
+                            14.34928516
+                        ],
+                        "normal": [
+                            3.15e-06,
+                            1.958e-05,
+                            1.0
+                        ],
+                        "indices": [
+                            31
+                        ],
+                        "composition": null,
+                        "subsurf_index": null,
+                        "subsurf_element": null,
+                        "label": 1
+                    },
+                    {
+                        "site": "bridge",
+                        "surface": "fcc111",
+                        "morphology": "terrace",
+                        "position": [
+                            5.13879164,
+                            2.22512979,
+                            14.34916505
+                        ],
+                        "normal": [
+                            2.089e-05,
+                            1.17e-05,
+                            1.0
+                        ],
+                        "indices": [
+                            31,
+                            32
+                        ],
+                        "composition": null,
+                        "subsurf_index": null,
+                        "subsurf_element": null,
+                        "label": 2
+                    },
+                    {
+                        "site": "fcc",
+                        "surface": "fcc111",
+                        "morphology": "terrace",
+                        "position": [
+                            5.13885026,
+                            2.96683999,
+                            14.34913617
+                        ],
+                        "normal": [
+                            9.349e-05,
+                            3.893e-05,
+                            0.99999999
+                        ],
+                        "indices": [
+                            31,
+                            32,
+                            34
+                        ],
+                        "composition": null,
+                        "subsurf_index": null,
+                        "subsurf_element": null,
+                        "label": 3
+                    },
+                    {
+                        "site": "bridge",
+                        "surface": "fcc111",
+                        "morphology": "terrace",
+                        "position": [
+                            3.21184159,
+                            3.33777892,
+                            14.34920997
+                        ],
+                        "normal": [
+                            4.45e-06,
+                            1.66e-05,
+                            1.0
+                        ],
+                        "indices": [
+                            31,
+                            33
+                        ],
+                        "composition": null,
+                        "subsurf_index": null,
+                        "subsurf_element": null,
+                        "label": 2
+                    },
+                    {
+                        "site": "hcp",
+                        "surface": "fcc111",
+                        "morphology": "terrace",
+                        "position": [
+                            3.8542169,
+                            3.70860607,
+                            14.34916612
+                        ],
+                        "normal": [
+                            2.194e-05,
+                            8.025e-05,
+                            1.0
+                        ],
+                        "indices": [
+                            31,
+                            33,
+                            34
+                        ],
+                        "composition": null,
+                        "subsurf_index": "22",
+                        "subsurf_element": null,
+                        "label": 4
+                    },
+                    {
+                        "site": "bridge",
+                        "surface": "fcc111",
+                        "morphology": "terrace",
+                        "position": [
+                            4.49653029,
+                            3.33772273,
+                            14.34918179
+                        ],
+                        "normal": [
+                            5.2e-06,
+                            1.854e-05,
+                            1.0
+                        ],
+                        "indices": [
+                            31,
+                            34
+                        ],
+                        "composition": null,
+                        "subsurf_index": null,
+                        "subsurf_element": null,
+                        "label": 2
+                    },
+                    {
+                        "site": "ontop",
+                        "surface": "fcc111",
+                        "morphology": "terrace",
+                        "position": [
+                            6.42349021,
+                            2.2250745,
+                            14.34904494
+                        ],
+                        "normal": [
+                            3.864e-05,
+                            3.83e-06,
+                            1.0
+                        ],
+                        "indices": [
+                            32
+                        ],
+                        "composition": null,
+                        "subsurf_index": null,
+                        "subsurf_element": null,
+                        "label": 1
+                    },
+                    {
+                        "site": "bridge",
+                        "surface": "fcc111",
+                        "morphology": "terrace",
+                        "position": [
+                            5.78122886,
+                            3.33766744,
+                            14.34906168
+                        ],
+                        "normal": [
+                            2.295e-05,
+                            1.067e-05,
+                            1.0
+                        ],
+                        "indices": [
+                            32,
+                            34
+                        ],
+                        "composition": null,
+                        "subsurf_index": null,
+                        "subsurf_element": null,
+                        "label": 2
+                    },
+                    {
+                        "site": "hcp",
+                        "surface": "fcc111",
+                        "morphology": "terrace",
+                        "position": [
+                            6.42353952,
+                            3.70854058,
+                            14.34908211
+                        ],
+                        "normal": [
+                            -1.734e-05,
+                            -2.506e-05,
+                            1.0
+                        ],
+                        "indices": [
+                            32,
+                            34,
+                            35
+                        ],
+                        "composition": null,
+                        "subsurf_index": "23",
+                        "subsurf_element": null,
+                        "label": 4
+                    },
+                    {
+                        "site": "bridge",
+                        "surface": "fcc111",
+                        "morphology": "terrace",
+                        "position": [
+                            7.06582552,
+                            3.33768068,
+                            14.34908396
+                        ],
+                        "normal": [
+                            1.281e-05,
+                            -1.33e-05,
+                            1.0
+                        ],
+                        "indices": [
+                            32,
+                            35
+                        ],
+                        "composition": null,
+                        "subsurf_index": null,
+                        "subsurf_element": null,
+                        "label": 2
+                    },
+                    {
+                        "site": "ontop",
+                        "surface": "fcc111",
+                        "morphology": "terrace",
+                        "position": [
+                            2.56959011,
+                            4.45037276,
+                            14.34913478
+                        ],
+                        "normal": [
+                            5.76e-06,
+                            1.363e-05,
+                            1.0
+                        ],
+                        "indices": [
+                            33
+                        ],
+                        "composition": null,
+                        "subsurf_index": null,
+                        "subsurf_element": null,
+                        "label": 1
+                    },
+                    {
+                        "site": "bridge",
+                        "surface": "fcc111",
+                        "morphology": "terrace",
+                        "position": [
+                            3.85427881,
+                            4.45031657,
+                            14.3491066
+                        ],
+                        "normal": [
+                            6.51e-06,
+                            1.557e-05,
+                            1.0
+                        ],
+                        "indices": [
+                            33,
+                            34
+                        ],
+                        "composition": null,
+                        "subsurf_index": null,
+                        "subsurf_element": null,
+                        "label": 2
+                    },
+                    {
+                        "site": "bridge",
+                        "surface": "fcc111",
+                        "morphology": "terrace",
+                        "position": [
+                            8.992939,
+                            4.45032981,
+                            14.34912888
+                        ],
+                        "normal": [
+                            -3.63e-06,
+                            -8.4e-06,
+                            1.0
+                        ],
+                        "indices": [
+                            33,
+                            35
+                        ],
+                        "composition": null,
+                        "subsurf_index": null,
+                        "subsurf_element": null,
+                        "label": 2
+                    },
+                    {
+                        "site": "ontop",
+                        "surface": "fcc111",
+                        "morphology": "terrace",
+                        "position": [
+                            5.13896751,
+                            4.45026038,
+                            14.34907842
+                        ],
+                        "normal": [
+                            7.26e-06,
+                            1.75e-05,
+                            1.0
+                        ],
+                        "indices": [
+                            34
+                        ],
+                        "composition": null,
+                        "subsurf_index": null,
+                        "subsurf_element": null,
+                        "label": 1
+                    },
+                    {
+                        "site": "bridge",
+                        "surface": "fcc111",
+                        "morphology": "terrace",
+                        "position": [
+                            6.42356417,
+                            4.45027362,
+                            14.3491007
+                        ],
+                        "normal": [
+                            -2.88e-06,
+                            -6.47e-06,
+                            1.0
+                        ],
+                        "indices": [
+                            34,
+                            35
+                        ],
+                        "composition": null,
+                        "subsurf_index": null,
+                        "subsurf_element": null,
+                        "label": 2
+                    },
+                    {
+                        "site": "ontop",
+                        "surface": "fcc111",
+                        "morphology": "terrace",
+                        "position": [
+                            7.70816084,
+                            4.45028686,
+                            14.34912297
+                        ],
+                        "normal": [
+                            -1.301e-05,
+                            -3.043e-05,
+                            1.0
+                        ],
+                        "indices": [
+                            35
+                        ],
+                        "composition": null,
+                        "subsurf_index": null,
+                        "subsurf_element": null,
+                        "label": 1
+                    }
+                ],
+                "site_adjacency": {
+                    "0": [
+                        "1",
+                        "4",
+                        "7",
+                        "9",
+                        "10",
+                        "12"
+                    ],
+                    "1": [
+                        "2",
+                        "3"
+                    ],
+                    "2": [
+                        "1",
+                        "7",
+                        "17"
+                    ],
+                    "3": [
+                        "1",
+                        "12",
+                        "20"
+                    ],
+                    "4": [
+                        "5",
+                        "6"
+                    ],
+                    "5": [
+                        "4",
+                        "9",
+                        "26"
+                    ],
+                    "6": [
+                        "4",
+                        "10",
+                        "27"
+                    ],
+                    "7": [
+                        "2",
+                        "8"
+                    ],
+                    "8": [
+                        "7",
+                        "9",
+                        "33"
+                    ],
+                    "9": [
+                        "5",
+                        "8"
+                    ],
+                    "10": [
+                        "6",
+                        "11"
+                    ],
+                    "11": [
+                        "10",
+                        "12",
+                        "49"
+                    ],
+                    "12": [
+                        "3",
+                        "11"
+                    ],
+                    "13": [
+                        "1",
+                        "14",
+                        "17",
+                        "19",
+                        "20",
+                        "22"
+                    ],
+                    "14": [
+                        "15",
+                        "16"
+                    ],
+                    "15": [
+                        "14",
+                        "19",
+                        "24"
+                    ],
+                    "16": [
+                        "14",
+                        "22",
+                        "29"
+                    ],
+                    "17": [
+                        "2",
+                        "18"
+                    ],
+                    "18": [
+                        "17",
+                        "19",
+                        "31"
+                    ],
+                    "19": [
+                        "15",
+                        "18"
+                    ],
+                    "20": [
+                        "3",
+                        "21"
+                    ],
+                    "21": [
+                        "20",
+                        "22",
+                        "52"
+                    ],
+                    "22": [
+                        "16",
+                        "21"
+                    ],
+                    "23": [
+                        "4",
+                        "14",
+                        "24",
+                        "26",
+                        "27",
+                        "29"
+                    ],
+                    "24": [
+                        "15",
+                        "25"
+                    ],
+                    "25": [
+                        "24",
+                        "26",
+                        "39"
+                    ],
+                    "26": [
+                        "5",
+                        "25"
+                    ],
+                    "27": [
+                        "6",
+                        "28"
+                    ],
+                    "28": [
+                        "27",
+                        "29",
+                        "50"
+                    ],
+                    "29": [
+                        "16",
+                        "28"
+                    ],
+                    "30": [
+                        "7",
+                        "17",
+                        "31",
+                        "33",
+                        "35",
+                        "37"
+                    ],
+                    "31": [
+                        "18",
+                        "32"
+                    ],
+                    "32": [
+                        "31",
+                        "35",
+                        "41"
+                    ],
+                    "33": [
+                        "8",
+                        "34"
+                    ],
+                    "34": [
+                        "33",
+                        "37",
+                        "47"
+                    ],
+                    "35": [
+                        "32",
+                        "36"
+                    ],
+                    "36": [
+                        "35",
+                        "37",
+                        "50"
+                    ],
+                    "37": [
+                        "34",
+                        "36"
+                    ],
+                    "38": [
+                        "19",
+                        "24",
+                        "31",
+                        "39",
+                        "41",
+                        "43"
+                    ],
+                    "39": [
+                        "25",
+                        "40"
+                    ],
+                    "40": [
+                        "39",
+                        "43",
+                        "45"
+                    ],
+                    "41": [
+                        "32",
+                        "42"
+                    ],
+                    "42": [
+                        "41",
+                        "43",
+                        "49"
+                    ],
+                    "43": [
+                        "40",
+                        "42"
+                    ],
+                    "44": [
+                        "9",
+                        "26",
+                        "33",
+                        "39",
+                        "45",
+                        "47"
+                    ],
+                    "45": [
+                        "40",
+                        "46"
+                    ],
+                    "46": [
+                        "45",
+                        "47",
+                        "52"
+                    ],
+                    "47": [
+                        "34",
+                        "46"
+                    ],
+                    "48": [
+                        "10",
+                        "27",
+                        "35",
+                        "41",
+                        "49",
+                        "50"
+                    ],
+                    "49": [
+                        "11",
+                        "42"
+                    ],
+                    "50": [
+                        "28",
+                        "36"
+                    ],
+                    "51": [
+                        "12",
+                        "20",
+                        "43",
+                        "45",
+                        "49",
+                        "52"
+                    ],
+                    "52": [
+                        "21",
+                        "46"
+                    ],
+                    "53": [
+                        "22",
+                        "29",
+                        "37",
+                        "47",
+                        "50",
+                        "52"
+                    ]
+                },
+                "slab_path": "/Users/mjohns9/code/pynta/test/pyntatest/slab.xyz",
+                "_fw_name": "{{pynta.tasks.PostprocessingTask}}"
+            }
+        ]
+    },
+    "fw_id": 449,
+    "created_on": "2025-05-22T19:03:02.452099",
+    "updated_on": "2025-05-22T19:38:13.406893",
+    "launches": [
+        {
+            "fworker": {
+                "name": "Automatically generated Worker",
+                "category": "",
+                "query": "{}",
+                "env": {}
+            },
+            "fw_id": 449,
+            "launch_dir": "/Users/mjohns9/code/pynta/test/pyntatest/launches",
+            "host": "s1077699ca",
+            "ip": "134.252.7.148",
+            "trackers": [],
+            "action": null,
+            "state": "RUNNING",
+            "state_history": [
+                {
+                    "state": "RUNNING",
+                    "created_on": "2025-05-22T19:38:13.404187",
+                    "updated_on": "2025-05-22T19:38:13.404192"
+                }
+            ],
+            "launch_id": 421
+        }
+    ],
+    "state": "RUNNING",
+    "name": "[H][H]_postprocessing"
+}
