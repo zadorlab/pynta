@@ -1083,8 +1083,11 @@ def get_best_adsorbate_xyz(adsorbate_path,sites,site_adjacency,nslab,allowed_str
         if strind not in Es.keys():
             continue
         geo = read(xyz)
-        admol,_,_ = generate_adsorbate_2D(geo, sites, site_adjacency, nslab, max_dist=np.inf, allowed_structure_site_structures=allowed_structure_site_structures,
-                                               keep_binding_vdW_bonds=keep_binding_vdW_bonds,keep_vdW_surface_bonds=keep_vdW_surface_bonds)
+        try:
+            admol,_,_ = generate_adsorbate_2D(geo, sites, site_adjacency, nslab, max_dist=np.inf, allowed_structure_site_structures=allowed_structure_site_structures,
+                                                keep_binding_vdW_bonds=keep_binding_vdW_bonds,keep_vdW_surface_bonds=keep_vdW_surface_bonds)
+        except (SiteOccupationException,TooManyElectronsException,ValueError,FailedFixBondsException) as e:
+            continue
         molp = split_adsorbed_structures(admol,clear_site_info=True)[0]
         if molp.is_isomorphic(mol,save_order=True) and Es[strind] < min_energy: #if matches target and is lower in energy
             adsorbate = xyz
