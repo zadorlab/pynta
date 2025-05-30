@@ -1605,3 +1605,27 @@ def write_rmg_libraries(path,spc_dict,spc_dict_thermo,ts_dict,metal,facet):
 
     with open(os.path.join(path,"reaction_library","dictionary.txt"),'w') as f:
         f.write(spc_dictionary_txt)
+        
+def get_energy_correction_configuration(Ncoad_energy_dict,ts_dict,config_name,coad_name,iter,Ncoad,reactant_names=None):
+    """Compute the energy corrections (difference in energy between the isolated configuration and non-isolated configuraitons)
+        at each coverage for adsorbate/TS with name config_name
+        
+        Note the TS energy correction can depend on the direction of reaction so it needs the reactant_names
+    """
+    if config_name not in Ncoad_energy_dict[coad_name][0].keys(): #gas phase
+        return 0.0
+    elif config_name not in ts_dict.keys() and config_name != coad_name: #adsorbate that is not the co-adsorbate
+        return Ncoad_energy_dict[coad_name][iter][config_name][Ncoad]-Ncoad_energy_dict[coad_name][iter][coad_name][Ncoad-1]
+    elif config_name not in ts_dict.keys() and config_name == coad_name: #co-adsorbate
+        try:
+            return Ncoad_energy_dict[coad_name][iter][config_name][Ncoad-1]/Ncoad
+        except Exception as e:
+            print((config_name,coad_name,iter,Ncoad))
+            raise e
+    else: #TS
+        assert reactant_names is not None
+        Ncoad_reactants = reactant_names.count(coad_name)
+        if Ncoad-Ncoad_reactants <= 0:
+            return 0.0
+        else:
+            return Ncoad_energy_dict[coad_name][iter][config_name][Ncoad-Ncoad_reactants]-Ncoad_energy_dict[coad_name][iter][coad_name][Ncoad-1]
