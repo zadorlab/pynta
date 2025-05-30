@@ -1270,6 +1270,38 @@ def add_coadsorbate_2D(mol2D,site,coad2D,slab,neighbor_sites_2D,site_2D_inds):
     mol2D.identify_ring_membership()
     return mol2D
 
+def get_best_adsorbate_xyz(adsorbate_path,sites,site_adjacency,nslab,allowed_structure_site_structures,keep_binding_vdW_bonds,keep_vdW_surface_bonds):
+    """
+    load the adsorbates associated with the reaction and find the unique optimized
+    adsorbate structures for each species
+    returns a dictionary mapping each adsorbate name to a list of ase.Atoms objects
+    """
+    with open(os.path.join(adsorbate_path,"info.json"),"r") as f:
+        info = json.load(f)
+        
+    mol = Molecule().from_adjacency_list(info["adjlist"])
+    
+    adsorbate = None
+    min_energy = np.inf
+    Es,_,freq = get_adsorbate_energies(adsorbate_path)
+    for prefix in Es.keys():
+        xyz = os.path.join(adsorbate_path,prefix,prefix+".xyz")
+        strind = os.path.split(xyz)[1].split(".")[0]
+        if strind not in Es.keys():
+            continue
+        geo = read(xyz)
+        try:
+            admol,_,_ = generate_adsorbate_2D(geo, sites, site_adjacency, nslab, max_dist=np.inf, allowed_structure_site_structures=allowed_structure_site_structures,
+                                                keep_binding_vdW_bonds=keep_binding_vdW_bonds,keep_vdW_surface_bonds=keep_vdW_surface_bonds)
+        except (SiteOccupationException,TooManyElectronsException,ValueError,FailedFixBondsException) as e:
+            continue
+        molp = split_adsorbed_structures(admol,clear_site_info=True)[0]
+        if molp.is_isomorphic(mol,save_order=True) and Es[strind] < min_energy: #if matches target and is lower in energy
+            adsorbate = xyz
+            min_energy = Es[strind]
+
+    return adsorbate
+
 def validate_TS_configs(path,sites,site_adjacency,nslab,irc_concern_len=8):
     """analyze all TSs run for a given TS target in a Pynta run to determine validity
 
