@@ -1812,3 +1812,22 @@ def extract_covdep_data(path,pynta_path,ts_dict,metal,facet,sites,site_adjacency
     max_coad_indexes = {coad_name: {i:max(Ncoad_energy_dict[coad_name][i].keys()) for i in sorted(Ncoad_energy_dict[coad_name].keys())} for coad_name in coad_names}
     
     return Ncoad_energy_dict,Ncoad_config_dict,tree_dict,admol_name_structure_dict,admol_name_path_dict,ts_info,max_coad_indexes,ad_energy_dict,coadmol_E_dict
+
+def analyze_covdep_lowest_energy(Ncoad_config_dict,iter_configs,config_name,coad_name,metal,slab,sites,admol_name_structure_dict,admol_name_path_dict,tree_dict):
+    configs_3D = []
+    configs_2D = []
+    sidt_Es = []
+    sidt_traces = []
+    partial_admol = admol_name_structure_dict[config_name]
+    admol_path = admol_name_path_dict[config_name]
+    partial_atoms = read(admol_path)
+    for k,v in Ncoad_config_dict[coad_name][iter_configs][config_name].items():
+        for x in v:
+            atoms = mol_to_atoms(x,slab,sites,metal,partial_atoms=partial_atoms,partial_admol=partial_admol)
+            configs_3D.append(atoms)
+            Einteraction,std,tr = tree_dict[iter_configs].evaluate(x,trace=True, estimate_uncertainty=True)
+            sidt_traces.append(tr)
+            configs_2D.append(x)
+            sidt_Es.append(Einteraction)
+            
+    return configs_3D,configs_2D,sidt_Es,sidt_traces
