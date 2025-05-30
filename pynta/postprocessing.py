@@ -1629,3 +1629,21 @@ def get_energy_correction_configuration(Ncoad_energy_dict,ts_dict,config_name,co
             return 0.0
         else:
             return Ncoad_energy_dict[coad_name][iter][config_name][Ncoad-Ncoad_reactants]-Ncoad_energy_dict[coad_name][iter][coad_name][Ncoad-1]
+
+def get_barrier_correction(Ncoad_energy_dict,ts_dict,ts_name,coad_name,iter,Ncoad,reactant_names):
+    ts_correction = get_energy_correction_configuration(Ncoad_energy_dict,ts_dict,ts_name,coad_name,iter,Ncoad,reactant_names=reactant_names)
+    reactant_correction = 0.0
+    for rname in reactant_names:
+        reactant_correction += get_energy_correction_configuration(Ncoad_energy_dict,ts_dict,rname,coad_name,iter,Ncoad)
+
+    return ts_correction-reactant_correction
+
+def get_reaction_energy_correction(Ncoad_energy_dict,ts_dict,ts_name,coad_name,iter,Ncoad,reactant_names,product_names):
+    reactant_correction = 0.0
+    for rname in reactant_names:
+        reactant_correction += get_energy_correction_configuration(Ncoad_energy_dict,ts_dict,rname,coad_name,iter,Ncoad)
+    product_correction = 0.0
+    for pname in product_names:
+        product_correction += get_energy_correction_configuration(Ncoad_energy_dict,ts_dict,pname,coad_name,iter,Ncoad)
+
+    return product_correction - reactant_correction
