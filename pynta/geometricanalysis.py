@@ -1270,6 +1270,113 @@ def add_coadsorbate_2D(mol2D,site,coad2D,slab,neighbor_sites_2D,site_2D_inds):
     mol2D.identify_ring_membership()
     return mol2D
 
+def mol_to_atoms(admol,slab,sites,metal,partial_atoms=None,partial_admol=None):
+    """Generate a 3D initial guess for a given 2D admol configuration
+
+    Args:
+        admol (_type_): 2D representation of the configuration
+        slab (_type_): 3D Atoms object for the slab
+        sites (_type_): list of sites
+        metal (_type_): metal of the slab
+        partial_atoms (_type_, optional): a 3D Atoms object representing part of the target configuraitons. Defaults to None.
+        partial_admol (_type_, optional): 2D representation of the partial_atoms Atoms object. Defaults to None.
+
+    Raises:
+        ValueError: _description_
+        ValueError: _description_
+
+    Returns:
+        _type_: Atoms object corresponding to the admol 2D configuration
+    """
+    if partial_atoms and partial_admol:
+        atoms = deepcopy(partial_atoms)
+        gpartial_admol = partial_admol.to_group()
+        admol_atom_order = admol.atoms[:]
+        gpartial_admol_order = gpartial_admol.atoms[:]
+        initial_map = dict()
+        for i,a in enumerate(admol.atoms):
+            if a.is_surface_site():
+                assert a.site == gpartial_admol.atoms[i].site[0]
+                initial_map[a] = gpartial_admol.atoms[i]
+        try:
+            subisos = admol.find_subgraph_isomorphisms(gpartial_admol,initial_map=initial_map,save_order=True)
+        except ValueError:
+            subisos = admol.find_subgraph_isomorphisms(gpartial_admol,initial_map=initial_map)
+            admol.atoms = admol_atom_order
+            gpartial_admol.atoms = gpartial_admol_order
+        if len(subisos) == 0:
+            raise ValueError("partial_admol is not subgraph isomorphic to admol: {0}, {1}".format(gpartial_admol.to_adjacency_list(),admol.to_adjacency_list()))
+        subiso = subisos[0]
+        atoms_in_partial = [a for a in subiso.keys() if not a.is_surface_site()]
+        split_structs,adsorbed_atom_dict = split_adsorbed_structures(admol,clear_site_info=False,adsorption_info=True,atoms_to_skip=atoms_in_partial)
+    elif partial_atoms is None and partial_admol is None:
+        atoms = deepcopy(slab)
+        split_structs,adsorbed_atom_dict = split_adsorbed_structures(admol,clear_site_info=False,adsorption_info=True)
+    else:
+        raise ValueError("Must include both partial_atoms, partial_admol to start from partial")
+    
+    for st in split_structs:
+        if len(st.atoms) == 0:
+            continue
+        ad,mol_to_atoms_map = get_adsorbate(st)
+        
+        if len(st.atoms) > 2: #not atomic adsorbate
+            rot_vec = np.array([0.0,0.0,0.0])
+            for atst in st.atoms:
+                if atst.is_bonded_to_surface():
+                    adatom_molind = st.atoms.index(atst)
+                    for bdat in atst.bonds.keys():
+                        if not bdat.is_surface_site():
+                            rot_vec += ad.positions[mol_to_atoms_map[st.atoms.index(bdat)]] - ad.positions[mol_to_atoms_map[adatom_molind]]
+            rot_vec /= np.linalg.norm(rot_vec)
+            ad.rotate(rot_vec,[0.0,0.0,1.0]) #rotate bonds toward the +z-axis
+        else:
+            adatom_molind = st.atoms.index([a for a in st.atoms if not a.is_surface_site()][0])
+
+        atom_surf_inds = []
+        ad_sites = []
+        for a,sind in adsorbed_atom_dict.items():
+            if a in st.atoms:
+                assert sites[sind]["site"] == a.site, (admol.to_adjacency_list(),partial_admol.to_adjacency_list())
+                atom_surf_inds.append(mol_to_atoms_map[adatom_molind])
+                ad_sites.append(sites[sind])
+
+        atoms,_,_ = place_adsorbate_covdep(ad,atoms,atom_surf_inds,ad_sites,metal)
+
+    return atoms
+
+def get_best_adsorbate_xyz(adsorbate_path,sites,site_adjacency,nslab,allowed_structure_site_structures,keep_binding_vdW_bonds,keep_vdW_surface_bonds):
+    """
+    load the adsorbates associated with the reaction and find the unique optimized
+    adsorbate structures for each species
+    returns a dictionary mapping each adsorbate name to a list of ase.Atoms objects
+    """
+    with open(os.path.join(adsorbate_path,"info.json"),"r") as f:
+        info = json.load(f)
+        
+    mol = Molecule().from_adjacency_list(info["adjlist"])
+    
+    adsorbate = None
+    min_energy = np.inf
+    Es,_,freq = get_adsorbate_energies(adsorbate_path)
+    for prefix in Es.keys():
+        xyz = os.path.join(adsorbate_path,prefix,prefix+".xyz")
+        strind = os.path.split(xyz)[1].split(".")[0]
+        if strind not in Es.keys():
+            continue
+        geo = read(xyz)
+        try:
+            admol,_,_ = generate_adsorbate_2D(geo, sites, site_adjacency, nslab, max_dist=np.inf, allowed_structure_site_structures=allowed_structure_site_structures,
+                                                keep_binding_vdW_bonds=keep_binding_vdW_bonds,keep_vdW_surface_bonds=keep_vdW_surface_bonds)
+        except (SiteOccupationException,TooManyElectronsException,ValueError,FailedFixBondsException) as e:
+            continue
+        molp = split_adsorbed_structures(admol,clear_site_info=True)[0]
+        if molp.is_isomorphic(mol,save_order=True) and Es[strind] < min_energy: #if matches target and is lower in energy
+            adsorbate = xyz
+            min_energy = Es[strind]
+
+    return adsorbate
+
 def validate_TS_configs(path,sites,site_adjacency,nslab,irc_concern_len=8):
     """analyze all TSs run for a given TS target in a Pynta run to determine validity
 

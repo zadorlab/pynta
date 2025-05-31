@@ -15,6 +15,8 @@ from molecule.thermo import Wilhoit
 from pynta.mol import split_adsorbed_structures
 from pynta.geometricanalysis import *
 from pynta.utils import to_dict
+from pynta.coveragedependence import mol_to_atoms, process_calculation
+from pysidt.sidt import *
 import logging 
 
 eV_to_Jmol = 9.648328e4
@@ -1605,3 +1607,272 @@ def write_rmg_libraries(path,spc_dict,spc_dict_thermo,ts_dict,metal,facet):
 
     with open(os.path.join(path,"reaction_library","dictionary.txt"),'w') as f:
         f.write(spc_dictionary_txt)
+        
+def get_energy_correction_configuration(Ncoad_energy_dict,ts_dict,config_name,coad_name,iter,Ncoad,reactant_names=None):
+    """Compute the energy corrections (difference in energy between the isolated configuration and non-isolated configuraitons)
+        at each coverage for adsorbate/TS with name config_name
+        
+        Note the TS energy correction can depend on the direction of reaction so it needs the reactant_names
+    """
+    if config_name not in Ncoad_energy_dict[coad_name][0].keys(): #gas phase
+        return 0.0
+    elif config_name not in ts_dict.keys() and config_name != coad_name: #adsorbate that is not the co-adsorbate
+        return Ncoad_energy_dict[coad_name][iter][config_name][Ncoad]-Ncoad_energy_dict[coad_name][iter][coad_name][Ncoad-1]
+    elif config_name not in ts_dict.keys() and config_name == coad_name: #co-adsorbate
+        try:
+            return Ncoad_energy_dict[coad_name][iter][config_name][Ncoad-1]/Ncoad
+        except Exception as e:
+            print((config_name,coad_name,iter,Ncoad))
+            raise e
+    else: #TS
+        assert reactant_names is not None
+        Ncoad_reactants = reactant_names.count(coad_name)
+        if Ncoad-Ncoad_reactants <= 0:
+            return 0.0
+        else:
+            return Ncoad_energy_dict[coad_name][iter][config_name][Ncoad-Ncoad_reactants]-Ncoad_energy_dict[coad_name][iter][coad_name][Ncoad-1]
+
+def get_barrier_correction(Ncoad_energy_dict,ts_dict,ts_name,coad_name,iter,Ncoad,reactant_names):
+    ts_correction = get_energy_correction_configuration(Ncoad_energy_dict,ts_dict,ts_name,coad_name,iter,Ncoad,reactant_names=reactant_names)
+    reactant_correction = 0.0
+    for rname in reactant_names:
+        reactant_correction += get_energy_correction_configuration(Ncoad_energy_dict,ts_dict,rname,coad_name,iter,Ncoad)
+
+    return ts_correction-reactant_correction
+
+def get_reaction_energy_correction(Ncoad_energy_dict,ts_dict,ts_name,coad_name,iter,Ncoad,reactant_names,product_names):
+    reactant_correction = 0.0
+    for rname in reactant_names:
+        reactant_correction += get_energy_correction_configuration(Ncoad_energy_dict,ts_dict,rname,coad_name,iter,Ncoad)
+    product_correction = 0.0
+    for pname in product_names:
+        product_correction += get_energy_correction_configuration(Ncoad_energy_dict,ts_dict,pname,coad_name,iter,Ncoad)
+
+    return product_correction - reactant_correction
+
+def extract_covdep_data(path,pynta_path,ts_dict,metal,facet,sites,site_adjacency,nslab,coad_names):
+    admol_name_path_dict = {k: os.path.join(pynta_path,k,v,"opt.xyz") for k,v in ts_dict.items()}
+    admol_name_structure_dict = dict()
+    ads = [x for x in os.listdir(os.path.join(pynta_path,"Adsorbates")) if x[0] != "."]
+    allowed_structure_site_structures = generate_allowed_structure_site_structures(os.path.join(pynta_path,"Adsorbates"),sites,site_adjacency,nslab,max_dist=np.inf)
+
+    for ts in ts_dict.keys():
+        info_path = os.path.join(pynta_path,ts,"info.json")
+        atoms = read(admol_name_path_dict[ts])
+        st,_,_ = generate_TS_2D(atoms, info_path,  metal, facet, sites, site_adjacency, nslab,
+                max_dist=np.inf, allowed_structure_site_structures=allowed_structure_site_structures)
+        admol_name_structure_dict[ts] = st
+        with open(info_path,"r") as f:
+            info = json.load(f)
+            for name in info["species_names"]+info["reverse_names"]:
+                if name not in ads:
+                    ads.append(name)
+
+    for ad in ads:
+        p = os.path.join(pynta_path,"Adsorbates",ad)
+        with open(os.path.join(p,"info.json")) as f:
+            info = json.load(f)
+        mol = Molecule().from_adjacency_list(info["adjlist"])
+        if mol.contains_surface_site():
+            keep_binding_vdW_bonds=False 
+            keep_vdW_surface_bonds=False
+            for bd in mol.get_all_edges():
+                if bd.order == 0:
+                    if bd.atom1.is_surface_site() or bd.atom2.is_surface_site():
+                        keep_binding_vdW_bonds = True
+                        m = mol.copy(deep=True)
+                        b = m.get_bond(m.atoms[mol.atoms.index(bd.atom1)],m.atoms[mol.atoms.index(bd.atom2)])
+                        m.remove_bond(b)
+                        out = m.split()
+                        if len(out) == 1: #vdW bond is not only thing connecting adsorbate to surface
+                            keep_vdW_surface_bonds = True
+            ad_xyz = get_best_adsorbate_xyz(p,sites,site_adjacency,nslab,allowed_structure_site_structures,False,False)
+            if ad_xyz is None:
+                continue
+            admol_name_path_dict[ad] = ad_xyz 
+            atoms = read(ad_xyz)
+            st,_,_ = generate_adsorbate_2D(atoms, sites, site_adjacency, nslab, max_dist=np.inf, allowed_structure_site_structures=allowed_structure_site_structures)
+            admol_name_structure_dict[ad] = st
+
+    ad_energy_dict = get_lowest_adsorbate_energies(os.path.join(pynta_path,"Adsorbates"))
+    
+    coadmol_E_dict = dict()
+    coadmol_stability_dict = dict()
+    for coad_name in coad_names:
+        coad_path = os.path.join(pynta_path,"Adsorbates",coad_name)
+        coadmol_E_dict[coad_name] = dict()
+        coadmol_stability_dict[coad_name] = dict()
+        Es = get_adsorbate_energies(coad_path)[0]
+        for p in os.listdir(coad_path):
+            if p == "info.json" or (p not in Es.keys()):
+                continue
+            admol_init,neighbor_sites_init,ninds_init = generate_adsorbate_2D(read(os.path.join(coad_path,p,p+"_init.xyz")),sites,site_adjacency,nslab,max_dist=np.inf,allowed_structure_site_structures=allowed_structure_site_structures)
+            admol,neighbor_sites,ninds = generate_adsorbate_2D(read(os.path.join(coad_path,p,p+".xyz")),sites,site_adjacency,nslab,max_dist=np.inf,allowed_structure_site_structures=allowed_structure_site_structures)
+            out_struct = split_adsorbed_structures(admol,clear_site_info=False)[0]
+            out_struct_init = split_adsorbed_structures(admol_init,clear_site_info=False)[0]
+            coadmol_E_dict[coad_name][out_struct] = Es[p] 
+            if admol_init.is_isomorphic(admol,save_order=True):
+                coadmol_stability_dict[coad_name][out_struct_init] = True
+            else:
+                coadmol_stability_dict[coad_name][out_struct_init] = False
+
+    i = 0
+    Ncoad_energy_dict = dict()
+    Ncoad_config_dict = dict()
+    tree_dict = dict()
+    iter_path = os.path.join(path,"Iterations",str(i))
+    
+    #check if old format files
+    files_are_old_format = len([file for file in os.listdir(iter_path) if file.startswith("Ncoad_energy_")][0].split("_")) == 3
+    
+    if files_are_old_format:
+        coad_name = coad_names[0]
+        Ncoad_energy_dict[coad_name] = dict()
+        Ncoad_config_dict[coad_name] = dict()
+        while os.path.exists(iter_path):
+            nodes = read_nodes(os.path.join(iter_path,"regressor.json"))
+            root = [n for n in nodes.values() if n.parent is None][0]
+            tree = MultiEvalSubgraphIsomorphicDecisionTreeRegressor([adsorbate_interaction_decomposition],
+                                                        nodes=nodes)
+            tree_dict[i] = tree
+            Ncoad_energy_dict[coad_name][i] = dict()
+            Ncoad_config_dict[coad_name][i] = dict()
+            files = os.listdir(iter_path)
+            for file in files:
+                if file.startswith("Ncoad_energy_"):
+                    name = file.split("_")[-1].split(".")[0]
+                    with open(os.path.join(iter_path,file),'r') as f:
+                        out = {int(k): v for k,v in json.load(f).items()}
+                    Ncoad_energy_dict[coad_name][i][name] = out
+                elif file.startswith("Ncoad_config_"):
+                    name = file.split("_")[-1].split(".")[0]
+                    with open(os.path.join(iter_path,file),'r') as f:
+                        out = {int(k): v for k,v in json.load(f).items()}
+                    for k in out.keys():
+                        if isinstance(out[k],list):
+                            out[k] = [Molecule().from_adjacency_list(x,check_consistency=False) for x in out[k]]
+                        else:
+                            out[k] = [Molecule().from_adjacency_list(out[k],check_consistency=False)]
+                    Ncoad_config_dict[coad_name][i][name] = out
+                    
+            i += 1
+            iter_path = os.path.join(path,"Iterations",str(i))
+    else:
+        for coad_name in coad_names:
+            Ncoad_energy_dict[coad_name] = dict()
+            Ncoad_config_dict[coad_name] = dict()
+            i = 0
+            iter_path = os.path.join(path,"Iterations",str(i))
+            while os.path.exists(iter_path):
+                Ncoad_energy_dict[coad_name][i] = dict()
+                Ncoad_config_dict[coad_name][i] = dict()
+                i += 1
+                iter_path = os.path.join(path,"Iterations",str(i))
+        
+        i = 0
+        iter_path = os.path.join(path,"Iterations",str(i))
+        while os.path.exists(iter_path):
+            nodes = read_nodes(os.path.join(iter_path,"regressor.json"))
+            root = [n for n in nodes.values() if n.parent is None][0]
+            tree = MultiEvalSubgraphIsomorphicDecisionTreeRegressor([adsorbate_interaction_decomposition],
+                                                        nodes=nodes)
+            tree_dict[i] = tree
+            Ncoad_energy_dict[coad_name][i] = dict()
+            Ncoad_config_dict[coad_name][i] = dict()
+            files = os.listdir(iter_path)
+            for file in files:
+                if file.startswith("Ncoad_energy_"):
+                    spfile = file.split("_")
+                    coad_name = spfile[-1].split(".")[0]
+                    name = spfile[-2]
+                    with open(os.path.join(iter_path,file),'r') as f:
+                        out = {int(k): v for k,v in json.load(f).items()}
+                    Ncoad_energy_dict[coad_name][i][name] = out
+                elif file.startswith("Ncoad_config_"):
+                    spfile = file.split("_")
+                    coad_name = spfile[-1].split(".")[0]
+                    name = spfile[-2]
+                    with open(os.path.join(iter_path,file),'r') as f:
+                        out = {int(k): v for k,v in json.load(f).items()}
+                    for k in out.keys():
+                        if isinstance(out[k],list):
+                            out[k] = [Molecule().from_adjacency_list(x,check_consistency=False) for x in out[k]]
+                        else:
+                            out[k] = [Molecule().from_adjacency_list(out[k],check_consistency=False)]
+                    Ncoad_config_dict[coad_name][i][name] = out
+                    
+            i += 1
+            iter_path = os.path.join(path,"Iterations",str(i))
+
+    ts_info = dict()
+    for ts_name in ts_dict.keys():
+        with open(os.path.join(pynta_path,ts_name,"info.json"),'r') as f:
+            ts_info[ts_name] = json.load(f)
+
+    max_coad_indexes = {coad_name: {i:max(Ncoad_energy_dict[coad_name][i].keys()) for i in sorted(Ncoad_energy_dict[coad_name].keys())} for coad_name in coad_names}
+    
+    return Ncoad_energy_dict,Ncoad_config_dict,tree_dict,admol_name_structure_dict,admol_name_path_dict,ts_info,max_coad_indexes,ad_energy_dict,coadmol_E_dict
+
+def analyze_covdep_lowest_energy(Ncoad_config_dict,iter_configs,config_name,coad_name,metal,slab,sites,admol_name_structure_dict,admol_name_path_dict,tree_dict):
+    configs_3D = []
+    configs_2D = []
+    sidt_Es = []
+    sidt_traces = []
+    partial_admol = admol_name_structure_dict[config_name]
+    admol_path = admol_name_path_dict[config_name]
+    partial_atoms = read(admol_path)
+    for k,v in Ncoad_config_dict[coad_name][iter_configs][config_name].items():
+        for x in v:
+            atoms = mol_to_atoms(x,slab,sites,metal,partial_atoms=partial_atoms,partial_admol=partial_admol)
+            configs_3D.append(atoms)
+            Einteraction,std,tr = tree_dict[iter_configs].evaluate(x,trace=True, estimate_uncertainty=True)
+            sidt_traces.append(tr)
+            configs_2D.append(x)
+            sidt_Es.append(Einteraction)
+            
+    return configs_3D,configs_2D,sidt_Es,sidt_traces
+
+def analyze_covdep_sample_data(config_name,coad_name,Ncoad_energy_dict,path,pynta_path,
+                               slab,metal,facet,sites,site_adjacency,ad_energy_dict,ts_dict,coadmol_E_dict,reactant_names=None):
+    
+    to_eV = 1.0/(96.48530749925793*1000.0) #converts from J/mol to eV
+    configs_3D = []
+    config_Es = []
+    config_E_correction = []
+    config_xyzs = []
+    config_mols = []
+    for k in range(len(Ncoad_energy_dict[coad_name])):
+        if os.path.exists(os.path.join(path,"Iterations",str(k),"Samples")):
+            for i in os.listdir(os.path.join(path,"Iterations",str(k),"Samples")):
+                infopath = os.path.join(path,"Iterations",str(k),"Samples",i,"info.json")
+                with open(infopath,"r") as f:
+                    info = json.load(f)
+                if os.path.split(os.path.split(os.path.split(info["xyz"])[0])[0])[1] == config_name:
+                    d = os.path.join(path,"Iterations",str(k),"Samples",i)
+                    datum_E,datums_stability = process_calculation(d,ad_energy_dict,slab,metal,facet,sites,site_adjacency,pynta_path,coadmol_E_dict[coad_name],max_dist=3.0,rxn_alignment_min=0.7,
+                    coad_disruption_tol=1.1,out_file_name="out",init_file_name="init",vib_file_name="vib_vib",is_ad=config_name not in ts_dict.keys())
+                    xyz = os.path.join(path,"Iterations",str(k),"Samples",i,"out.xyz")
+                    if os.path.exists(xyz):
+                        config_xyzs.append(xyz)
+                        configs_3D.append(read(xyz))
+                        if datum_E is not None:
+                            config_Es.append(datum_E.value*to_eV)
+                            config_mols.append(datum_E.mol)
+                            Ncoad = len(split_adsorbed_structures(datum_E.mol)) - 1
+                            if config_name not in ts_dict.keys() and config_name != coad_name: #adsorbate that is not the co-adsorbate
+                                Ecorr = (datum_E.value-Ncoad_energy_dict[coad_name][len(Ncoad_energy_dict)-1][coad_name][Ncoad-1])*to_eV
+                            elif config_name not in ts_dict.keys() and config_name == coad_name: #co-adsorbate
+                                Ecorr = Ncoad_energy_dict[coad_name][k][config_name][Ncoad-1]/Ncoad*to_eV
+                            else: #TS
+                                assert reactant_names is not None
+                                Ncoad_reactants = reactant_names.count(coad_name)
+                                if Ncoad-Ncoad_reactants <= 0:
+                                    Ecorr = 0.0
+                                else:
+                                    Ecorr = (datum_E.values-Ncoad_energy_dict[coad_name][len(Ncoad_energy_dict[coad_name])-1][coad_name][Ncoad-1]/Ncoad*(Ncoad-Ncoad_reactants))*to_eV
+
+                            config_E_correction.append(Ecorr)
+                        else:
+                            config_Es.append(None)
+                            
+    return configs_3D,config_Es,config_E_correction,config_xyzs,config_mols
