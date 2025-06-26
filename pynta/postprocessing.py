@@ -1192,13 +1192,16 @@ def get_species(path,adsorbates_path,metal,facet,slab,sites,site_adjacency,nslab
             atoms = read(dopt)
             if not gas_phase:
                 vibdata = get_vibdata(dopt,dvib,nslab)
-                admol,neighbor_sites,ninds = generate_adsorbate_2D(atoms, sites, site_adjacency, nslab, max_dist=np.inf, 
+                try: 
+                    admol,neighbor_sites,ninds = generate_adsorbate_2D(atoms, sites, site_adjacency, nslab, max_dist=np.inf, 
                           keep_binding_vdW_bonds=keep_binding_vdW_bonds, keep_vdW_surface_bonds=keep_vdW_surface_bonds)
-                split_structs = split_adsorbed_structures(admol)
-                if len(split_structs) != 1 or not split_structs[0].is_isomorphic(mol,save_order=True):
+                    split_structs = split_adsorbed_structures(admol)
+                    if len(split_structs) != 1 or not split_structs[0].is_isomorphic(mol,save_order=True):
+                        valid = False
+                    else:
+                        valid = True
+                except (SiteOccupationException,TooManyElectronsException,FailedFixBondsException) as e:
                     valid = False
-                else:
-                    valid = True
             else:
                 valid = True
                 vibdata = get_vibdata(dopt,dvib,0)
@@ -1313,7 +1316,7 @@ def get_TS(path,adsorbates_path,metal,facet,slab,sites,site_adjacency,nslab,c_re
             spc.run()
             
             ts_dict[k] = spc
-        except SiteOccupationException:
+        except (SiteOccupationException,TooManyElectronsException,ValueError):
             spc = SurfaceConfiguration(atoms,slab,None,vibdata,os.path.split(path)[1],metal,facet,is_TS=True,sites_per_cell=1,
                       c_ref=c_ref,o_ref=o_ref,h_ref=h_ref,n_ref=n_ref,valid=valid,valid_info=vinfo,mol=target_TS)
             
