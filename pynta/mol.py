@@ -1,4 +1,4 @@
-from molecule.molecule import Molecule,Atom,Bond
+from molecule.molecule import Molecule,Atom,Bond,ATOMTYPES
 from ase.io import read, write
 from ase.data import covalent_radii
 from ase import Atoms
@@ -1002,8 +1002,12 @@ def get_labeled_full_TS_mol(template,mol):
     for tempmol in tempmols:
         if tempmol.multiplicity == -187: #handle surface molecules
             tempmol.multiplicity = tempmol.get_radical_count() + 1
-        tempgrps.append(tempmol.to_group())
-
+        tgp = tempmol.to_group()
+        for a in tgp.atoms:
+            if a.is_surface_site():
+                a.atomtype = [ATOMTYPES["X"]]
+        tempgrps.append(tgp)
+        
     map_list = []
     for tempgrp in tempgrps:
         mapvs = m.find_subgraph_isomorphisms(tempgrp,save_order=True)
