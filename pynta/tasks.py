@@ -681,6 +681,8 @@ class MolecularTSEstimate(FiretaskBase):
         unique_tsstructs,unique_tsmols,target_sites,label_site_mappings = get_unique_TS_templates_site_pairings(tsstructs,
                                         tsmols,reactants,products,nsites,slab,neighbor_sites,ninds,sites,nslab)
         
+        print("number of unique TS guesses:")
+        print(len(unique_tsstructs))
         
         tsstructs_out,constraint_lists,atom_bond_potential_lists,site_bond_potential_lists = generate_constraints_harmonic_parameters(
                                             unique_tsstructs,unique_tsmols,label_site_mappings,adsorbates,slab,reactants,
