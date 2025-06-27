@@ -1822,7 +1822,7 @@ def validate_TS_geometry(opt_path,reactants,products,sites,site_adjacency,nslab,
                     break 
             else:
                 match = False
-    except (SiteOccupationException,TooManyElectronsException):
+    except (SiteOccupationException,TooManyElectronsException,ValueError):
         return False,False,False,[],[]
     
     #get imaginary frequency motion
