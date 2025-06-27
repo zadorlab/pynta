@@ -304,7 +304,11 @@ def get_unique_TS_templates_site_pairings(tsstructs,tsmols,forward_template,reve
     unique_tsstructs = []
     unique_tsmols = []
     for i,tsmol in enumerate(tsmols):
-        labeled_tsmols = get_labeled_full_TS_mol(template,tsmol)
+        try:
+            labeled_tsmols = get_labeled_full_TS_mol(template,tsmol)
+        except IndexError:
+            logging.warning("could not label a TS structure, usually means a reactant/product structure is bad")
+            continue
         for labeled_tsmol in labeled_tsmols:
             unique_tsstructs.append(tsstructs[i].copy())
             unique_tsmols.append(labeled_tsmol)
