@@ -634,20 +634,17 @@ class MolecularTSEstimate(FiretaskBase):
 
         ordered_adsorbates = [adsorbates[name] for name in species_names]
 
-        rnum_surf_sites = [len(mol.get_surface_sites()) for i,mol in enumerate(reactant_mols)]
-        pnum_surf_sites = [len(mol.get_surface_sites()) for i,mol in enumerate(product_mols)]
-
         ts_dict = {"forward": forward, "name": rxn_name, "reactants": reactants.to_adjacency_list(), "products": products.to_adjacency_list(),
             "species_names": species_names, "nslab": nslab}
 
+        num_surf_sites = [len(mol_dict[name].get_surface_sites()) for name in species_names]
+        
         if forward:
-            num_surf_sites = rnum_surf_sites
             reverse_names = product_names
         else:
             temp = products
             products = reactants
             reactants = temp
-            num_surf_sites = pnum_surf_sites
             reverse_names = reactant_names
 
         mols = [mol_dict[name] for name in species_names]
