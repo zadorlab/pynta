@@ -625,6 +625,9 @@ class MolecularTSEstimate(FiretaskBase):
         product_mols = [mol_dict[name] for name in product_names]
 
         adsorbates = get_unique_optimized_adsorbates(rxn,adsorbates_path,mol_dict,gratom_to_molecule_surface_atom_maps,sites,nslab)
+        
+        if any(len(v) == 0 for v in adsorbates.values()):
+            raise ValueError("Missing reactant or product for reaction")
 
         forward,species_names = determine_TS_construction(reactant_names,
                     reactant_mols,product_names,product_mols)
