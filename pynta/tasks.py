@@ -567,8 +567,6 @@ class MolecularTSEstimate(FiretaskBase):
                         "harm_f_software", "harm_f_software_kwargs"]
     optional_params = ["out_path","spawn_jobs","nprocs","IRC_obj_dict","postprocess"]
     def run_task(self, fw_spec):
-        gratom_to_molecule_atom_maps = {sm: {int(k):v for k,v in d.items()} for sm,d in self["gratom_to_molecule_atom_maps"].items()}
-        gratom_to_molecule_surface_atom_maps = {sm: {int(k):v for k,v in d.items()} for sm,d in self["gratom_to_molecule_surface_atom_maps"].items()}
         out_path = self["out_path"] if "out_path" in self.keys() else ts_path
         spawn_jobs = self["spawn_jobs"] if "spawn_jobs" in self.keys() else False
         nprocs = self["nprocs"] if "nprocs" in self.keys() else 1
@@ -599,6 +597,15 @@ class MolecularTSEstimate(FiretaskBase):
 
         adsorbates_path = self["adsorbates_path"]
         postprocess = self["postprocess"] if "postprocess" in self.keys() else False 
+
+        gratom_to_molecule_atom_maps = dict()
+        gratom_to_molecule_surface_atom_maps = dict()
+        for ad in os.listdir(adsorbates_path):
+            if os.path.isdir(os.path.join(adsorbates_path,ad)):
+                with open(os.path.join(adsorbates_path,ad,"info.json"),'r') as f:
+                    info = json.load(f)
+                    gratom_to_molecule_atom_maps[info["name"]] = {int(k):v for k,v in info["atom_to_molecule_atom_map"].items()}
+                    gratom_to_molecule_surface_atom_maps[info["name"]] = {int(k):v for k,v in info["gratom_to_molecule_surface_atom_map"].items()}
 
         reactants = Molecule().from_adjacency_list(rxn["reactant"])
         reactants.multiplicity = reactants.get_radical_count() + 1
