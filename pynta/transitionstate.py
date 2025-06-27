@@ -158,8 +158,12 @@ def get_unique_TS_structs(adsorbates,species_names,slab,slab_sites,site_adjacenc
     for adss in itertools.product(*ordered_adsorbates):
         if num_surf_sites[0] > 0:
             adslab = adss[0].copy()
-            adslabmol,neighbor_sites,ninds = generate_adsorbate_2D(adslab, slab_sites, site_adjacency, nslab, max_dist=np.inf, cut_off_num=None, allowed_structure_site_structures=None,
+            try:
+                adslabmol,neighbor_sites,ninds = generate_adsorbate_2D(adslab, slab_sites, site_adjacency, nslab, max_dist=np.inf, cut_off_num=None, allowed_structure_site_structures=None,
                           keep_binding_vdW_bonds=True, keep_vdW_surface_bonds=any(bd.is_van_der_waals() for bd in mol_dict[species_names[0]].get_all_edges()))
+            except (SiteOccupationException,FailedFixBondsException,TooManyElectronsException) as e:
+                logging.warning("a configuration for {} was not convertable to 2D and has been skipped".format(species_names[0]))
+                continue
         else:
             adslab = slab.copy()
             adslabmol,neighbor_sites,ninds = generate_adsorbate_2D(adslab, slab_sites, site_adjacency, nslab, max_dist=np.inf, cut_off_num=None, allowed_structure_site_structures=None,
