@@ -466,13 +466,15 @@ def generate_constraints_harmonic_parameters(tsstructs,tsmols,label_site_mapping
         label_site_mapping = label_site_mappings[i]
         
         occ = get_occupied_sites(tsstruct,slab_sites,nslab)
+        occ_atom_inds = [site["bonding_index"] for site in occ]
         
-        if len(occ) < len(forward_template.get_adatoms()): #if we don't identify as many occupied sites as we should skip this structure
-            print("occupied not equal to forward_template")
+        #if we don't identify all the template sites in the occupied site list skip this structure
+        if not ({get_ase_index(forward_template.atoms.index(a),template_mol_map,molecule_to_gratom_maps,nslab,ads_sizes) for a in forward_template.get_adatoms()} <= set(occ_atom_inds)): 
+            print("occupied sites and forward_template sites do not match")
             print("occ={0}".format(len(occ)))
             print("forward_template_occs={0}".format(len(forward_template.get_adatoms())))
             continue
-        occ_atom_inds = [site["bonding_index"] for site in occ]
+        
         occ_bd_lengths = {site["bonding_index"]:site['bond_length'] for site in occ}
         occ_site_types = {site["bonding_index"]:site['site'] for site in occ}
         occ_site_pos = {site["bonding_index"]:site['position'] for site in occ}
