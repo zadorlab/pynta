@@ -52,6 +52,9 @@ def determine_TS_construction(reactant_names,reactant_mols,product_names,product
     rnum_surf_sites = [len(mol.get_surface_sites()) for i,mol in enumerate(reactant_mols)]
     pnum_surf_sites = [len(mol.get_surface_sites()) for i,mol in enumerate(product_mols)]
 
+    rnum_vdW_species = len([i for i,mol in enumerate(reactant_mols) if any(bd.is_van_der_waals() for bd in mol.get_all_edges())])
+    pnum_vdW_species = len([i for i,mol in enumerate(product_mols) if any(bd.is_van_der_waals() for bd in mol.get_all_edges())])
+    
     rnummultidentate = len([i for i in rnum_surf_sites if i>1])
     pnummultidentate = len([i for i in pnum_surf_sites if i>1])
 
@@ -66,6 +69,13 @@ def determine_TS_construction(reactant_names,reactant_mols,product_names,product
     elif pnummultidentate >= 2:
         forward = True
 
+    #prefer directions with fewer species with vdW bonds
+    if forward is None:
+        if rnum_vdW_species > pnum_vdW_species:
+            forward = False
+        elif pnum_vdW_species > rnum_vdW_species:
+            forward = True
+    
     #prefer directions with multidentate species, this reduces the time and cost of finding TS guesses
     if forward is None:
         if rnummultidentate == 1 and pnummultidentate == 0:
