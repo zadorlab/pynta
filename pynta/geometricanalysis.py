@@ -127,7 +127,7 @@ def generate_adsorbate_molecule(adslab, sites, site_adjacency, nslab, max_dist=N
 def fix_bond_orders(mol,allow_failure=False,keep_binding_vdW_bonds=False,keep_vdW_surface_bonds=False):
     atom_order = ["C","Si","N","P","O","S","F","Cl","Br","I","Li","H"]#["H","Li","I","Br","Cl","F","S","O","P","N","Si","C"]#["C","Si","N","P","O","S","F","Cl","Br","I","Li","H"]
     finished = False
-    cleanup_surface_bonds = keep_vdW_surface_bonds or keep_binding_vdW_bonds
+    cleanup_surface_bonds = not (keep_vdW_surface_bonds or keep_binding_vdW_bonds)
     atoms_to_fix = [a for a in mol.atoms if not a.is_surface_site()]
     while len(atoms_to_fix) > 0:
         atoms_to_remove = []
