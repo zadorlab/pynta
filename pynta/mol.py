@@ -714,7 +714,7 @@ def get_name(mol):
     try:
         return mol.to_smiles()
     except:
-        return mol.to_adjacency_list().replace("\n"," ")[:-1]
+        return mol.to_adjacency_list().replace("\n"," ")[:-1].replace(' ','')
 
 
 def remove_slab(mol,remove_slab_bonds=False,update_atomtypes=True):
