@@ -1308,13 +1308,26 @@ def add_coadsorbate_2D(mol2D,site,coad2D,slab,neighbor_sites_2D,site_2D_inds):
     for a in siteatom.edges.keys():
         if not a.is_surface_site():
             return None
-    c = coad2D.get_desorbed_molecules()[0]
+    if list(coad2D.get_surface_sites()[0].bonds.values())[0].is_van_der_waals():
+        c = coad2D.copy(deep=True)
+        c.clear_labeled_atoms()
+        bd = list(c.get_surface_sites()[0].bonds.values())[0]
+        if bd.atom1.is_surface_site():
+            bd.atom2.label = "*0"
+            c.remove_atom(bd.atom1)
+        else:
+            bd.atom1.label = "*0"
+            c.remove_atom(bd.atom2)
+    else:
+        c = coad2D.get_desorbed_molecules()[0]
     mol2D = mol2D.merge(c)
     ldict = mol2D.get_all_labeled_atoms()
     label = list(ldict.keys())[0]
     catom = list(ldict.values())[0]
     catom.label = ''
-    if label == "*1":
+    if label == "*0":
+        bd = Bond(siteatom,catom,order='vdW')
+    elif label == "*1":
         bd = Bond(siteatom,catom,order=1)
         catom.radical_electrons -= 1
     elif label == "*2":
