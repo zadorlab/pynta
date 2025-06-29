@@ -123,6 +123,10 @@ class Pynta:
                 rxns_list.append(v)
             else:
                 spcs_list.append(v)
+                
+        for i,r in enumerate(rxns_list):
+            r["index"] = i
+        
         self.rxns_list = rxns_list
         self.spcs_list = spcs_list
         
