@@ -1,0 +1,17 @@
+ModuleCmd_Load.c(213):ERROR:105: Unable to locate a modulefile for 'MPICH/4.3.0b1'
+ModuleCmd_Load.c(213):ERROR:105: Unable to locate a modulefile for 'OpenMPI/4.1.6'
+ModuleCmd_Load.c(213):ERROR:105: Unable to locate a modulefile for 'OpenBLAS/0.3.29'
+No Modulefiles Currently Loaded.
+DEBUG:launchpad:FW with id: 20 is unique!
+DEBUG:launchpad:Created/updated Launch with launch_id: 27
+DEBUG:launchpad:RUNNING FW with id: 20
+INFO:rocket.launcher:RUNNING fw_id: 20 in directory: /work/westgroup/lekia.p/pynta/Fe/block_2025-07-09-11-18-07-205805/launcher_2025-07-09-15-02-14-465572
+INFO:rocket.launcher:Task started: {{pynta.tasks.MolecularOptimizationTask}}.
+/work/westgroup/lekia.p/fairchem/src/fairchem/core/models/uma/escn_md.py:130: FutureWarning: You are using `torch.load` with `weights_only=False` (the current default value), which uses the default pickle module implicitly. It is possible to construct malicious pickle data which will execute arbitrary code during unpickling (See https://github.com/pytorch/pytorch/blob/main/SECURITY.md#untrusted-models for more details). In a future release, the default value for `weights_only` will be flipped to `True`. This limits the functions that could be executed during unpickling. Arbitrary objects will no longer be allowed to be loaded via this mode unless they are explicitly allowlisted by the user via `torch.serialization.add_safe_globals`. We recommend you start setting `weights_only=True` for any use case where you don't have full control of the loaded file. Please open an issue on GitHub for any issues related to this experimental feature.
+WARNING:root:task_name='omol' detected, but charge is not set in atoms.info. Defaulting to charge=0. Ensure charge is an integer representing the total charge on the system and is within the range -100 to 100.
+WARNING:root:task_name='omol' detected, but spin multiplicity is not set in atoms.info. Defaulting to spin=1. Ensure spin is an integer representing the spin multiplicity from 0 to 100.
+/home/lekia.p/miniforge3/envs/pynta_fairchem38/lib/python3.8/site-packages/torch/utils/checkpoint.py:1399: FutureWarning: `torch.cpu.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cpu', args...)` instead.
+INFO:rocket.launcher:Task completed: {{pynta.tasks.MolecularOptimizationTask}}
+INFO:rocket.launcher:Task started: FileTransferTask.
+INFO:rocket.launcher:Task completed: FileTransferTask
+INFO:rocket.launcher:Rocket finished

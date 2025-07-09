@@ -1,0 +1,30 @@
+ModuleCmd_Load.c(213):ERROR:105: Unable to locate a modulefile for 'MPICH/4.3.0b1'
+ModuleCmd_Load.c(213):ERROR:105: Unable to locate a modulefile for 'OpenMPI/4.1.6'
+ModuleCmd_Load.c(213):ERROR:105: Unable to locate a modulefile for 'OpenBLAS/0.3.29'
+No Modulefiles Currently Loaded.
+DEBUG:launchpad:FW with id: 22 is unique!
+DEBUG:launchpad:Created/updated Launch with launch_id: 32
+DEBUG:launchpad:RUNNING FW with id: 22
+INFO:rocket.launcher:RUNNING fw_id: 22 in directory: /work/westgroup/lekia.p/pynta/Fe/block_2025-07-09-11-18-07-205805/launcher_2025-07-09-15-04-45-747359
+INFO:rocket.launcher:Task started: {{pynta.tasks.MolecularOptimizationTask}}.
+/work/westgroup/lekia.p/fairchem/src/fairchem/core/models/uma/escn_md.py:130: FutureWarning: You are using `torch.load` with `weights_only=False` (the current default value), which uses the default pickle module implicitly. It is possible to construct malicious pickle data which will execute arbitrary code during unpickling (See https://github.com/pytorch/pytorch/blob/main/SECURITY.md#untrusted-models for more details). In a future release, the default value for `weights_only` will be flipped to `True`. This limits the functions that could be executed during unpickling. Arbitrary objects will no longer be allowed to be loaded via this mode unless they are explicitly allowlisted by the user via `torch.serialization.add_safe_globals`. We recommend you start setting `weights_only=True` for any use case where you don't have full control of the loaded file. Please open an issue on GitHub for any issues related to this experimental feature.
+INFO:rocket.launcher:Task completed: {{pynta.tasks.MolecularOptimizationTask}}
+INFO:rocket.launcher:Task started: FileTransferTask.
+Traceback (most recent call last):
+  File "/home/lekia.p/miniforge3/envs/pynta_fairchem38/lib/python3.8/site-packages/fireworks/user_objects/firetasks/fileio_tasks.py", line 145, in run_task
+    FileTransferTask.fn_list[mode](src, dest)
+  File "/home/lekia.p/miniforge3/envs/pynta_fairchem38/lib/python3.8/shutil.py", line 418, in copy
+    copyfile(src, dst, follow_symlinks=follow_symlinks)
+  File "/home/lekia.p/miniforge3/envs/pynta_fairchem38/lib/python3.8/shutil.py", line 264, in copyfile
+    with open(src, 'rb') as fsrc, open(dst, 'wb') as fdst:
+FileNotFoundError: [Errno 2] No such file or directory: '/work/westgroup/lekia.p/pynta/Fe/block_2025-07-09-11-18-07-205805/launcher_2025-07-09-15-04-45-747359/0.xyz'
+Traceback (most recent call last):
+  File "/home/lekia.p/miniforge3/envs/pynta_fairchem38/lib/python3.8/site-packages/fireworks/user_objects/firetasks/fileio_tasks.py", line 145, in run_task
+    FileTransferTask.fn_list[mode](src, dest)
+  File "/home/lekia.p/miniforge3/envs/pynta_fairchem38/lib/python3.8/shutil.py", line 418, in copy
+    copyfile(src, dst, follow_symlinks=follow_symlinks)
+  File "/home/lekia.p/miniforge3/envs/pynta_fairchem38/lib/python3.8/shutil.py", line 264, in copyfile
+    with open(src, 'rb') as fsrc, open(dst, 'wb') as fdst:
+FileNotFoundError: [Errno 2] No such file or directory: '/work/westgroup/lekia.p/pynta/Fe/block_2025-07-09-11-18-07-205805/launcher_2025-07-09-15-04-45-747359/0.traj'
+INFO:rocket.launcher:Task completed: FileTransferTask
+INFO:rocket.launcher:Rocket finished

@@ -1,0 +1,27 @@
+#!/bin/bash -l
+
+#SBATCH --ntasks=1
+#SBATCH --ntasks-per-node=1
+#SBATCH --cpus-per-task=1
+#SBATCH --time=2160:00:00
+#SBATCH --partition=west
+#SBATCH --job-name=Lekia_Pynta
+#SBATCH --output=Lekia_Pynta-%j.out
+#SBATCH --error=Lekia_Pynta-%j.error
+
+
+module list  # Check what modules are loaded
+module unload openmpi  # If it's loaded as a module
+module unload mpich
+# export LD_LIBRARY_PATH="$HOME/local_libs:/shared/EL9/explorer/AMBER/24/lib:/shared/EL9/explorer/OpenBLAS/0.3.29/lib:/shared/EL9/explorer/OpenMPI/4.1.6/lib:/home/lekia.p/miniforge3/lib"
+export PYTHONPATH="/projects/westgroup/lekia.p/pynta:$PYTHONPATH"
+source /home/lekia.p/miniforge3/etc/profile.d/conda.sh
+conda activate pynta_fairchem38
+echo "Python path: $(which python)"
+echo "Conda environment: $CONDA_DEFAULT_ENV"
+python -c 'import ase; print("ASE version:", ase.__version__)' || echo "ASE import failed"
+
+cd /work/westgroup/lekia.p/pynta/Fe/block_2025-07-09-11-18-07-205805/launcher_2025-07-09-15-00-32-974646
+/home/lekia.p/miniforge3/envs/pynta_fairchem38/bin/rlaunch -w /projects/westgroup/lekia.p/pynta/my_fworker.yaml -l /projects/westgroup/lekia.p/pynta/my_launchpad.yaml singleshot
+
+# CommonAdapter (SLURM) completed writing Template

@@ -1,0 +1,11 @@
+Python path: /home/lekia.p/miniforge3/envs/pynta_fairchem38/bin/python
+Conda environment: pynta_fairchem38
+ASE version: 3.23.0
+2025-07-09 11:04:54,973 INFO Hostname/IP lookup (this will take a few seconds)
+2025-07-09 11:04:54,974 INFO Launching Rocket
+2025-07-09 11:04:58,773 INFO RUNNING fw_id: 22 in directory: /work/westgroup/lekia.p/pynta/Fe/block_2025-07-09-11-18-07-205805/launcher_2025-07-09-15-04-45-747359
+2025-07-09 11:04:58,785 INFO Task started: {{pynta.tasks.MolecularOptimizationTask}}.
+2025-07-09 11:06:27,252 INFO Task completed: {{pynta.tasks.MolecularOptimizationTask}}
+2025-07-09 11:06:27,258 INFO Task started: FileTransferTask.
+2025-07-09 11:06:27,265 INFO Task completed: FileTransferTask
+2025-07-09 11:06:27,300 INFO Rocket finished

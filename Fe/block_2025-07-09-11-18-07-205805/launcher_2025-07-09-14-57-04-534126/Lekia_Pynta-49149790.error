@@ -1,0 +1,15 @@
+ModuleCmd_Load.c(213):ERROR:105: Unable to locate a modulefile for 'MPICH/4.3.0b1'
+ModuleCmd_Load.c(213):ERROR:105: Unable to locate a modulefile for 'OpenMPI/4.1.6'
+ModuleCmd_Load.c(213):ERROR:105: Unable to locate a modulefile for 'OpenBLAS/0.3.29'
+No Modulefiles Currently Loaded.
+DEBUG:launchpad:FW with id: 7 is unique!
+DEBUG:launchpad:Created/updated Launch with launch_id: 2
+DEBUG:launchpad:RUNNING FW with id: 7
+INFO:rocket.launcher:RUNNING fw_id: 7 in directory: /work/westgroup/lekia.p/pynta/Fe/block_2025-07-09-11-18-07-205805/launcher_2025-07-09-14-57-04-534126
+INFO:rocket.launcher:Task started: {{pynta.tasks.MolecularAdsorbateEstimate}}.
+WARNING:root:Estimation used SIDT Root group
+WARNING:root:Estimation used SIDT Root group
+WARNING:root:Estimation used SIDT Root group
+WARNING:jax._src.lib.xla_bridge:No GPU/TPU found, falling back to CPU. (Set TF_CPP_MIN_LOG_LEVEL=0 and rerun for more info.)
+INFO:rocket.launcher:Task completed: {{pynta.tasks.MolecularAdsorbateEstimate}}
+INFO:rocket.launcher:Rocket finished

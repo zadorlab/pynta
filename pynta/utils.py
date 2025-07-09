@@ -305,17 +305,49 @@ def filter_nonunique_TS_guess_indices(geoms,Es):
 def get_fmax(at):
     return np.max(np.abs([np.linalg.norm(at.get_forces()[i,:]) for i in range(at.get_forces().shape[0])]))
 
+# def name_to_ase_software(software_name):
+#     """
+#     go from software_name to the associated
+#     ASE calculator constructor
+#     """
+#     if software_name == "TBLite" or software_name == "XTB":
+#         module = import_module("tblite.ase")
+#         return getattr(module, "TBLite")
+        
+#     # Adding Fairchem by Lekia
+#     elif software_name == "FAIRChemCalculator":
+#         module = import_module("fairchem.core.calculate.ase_calculator")
+#         return getattr(module, sofware_name)
+#     else:
+#         module = import_module("ase.calculators."+software_name.lower())
+#         return getattr(module, software_name)
+
 def name_to_ase_software(software_name):
     """
-    go from software_name to the associated
-    ASE calculator constructor
+    Go from software_name to the associated
+    ASE calculator constructor.
     """
-    if software_name == "TBLite" or software_name == "XTB":
+    name_lower = software_name.lower()
+
+    # 1) TBLite / XTB special case
+    if name_lower in ("tblite", "xtb"):
         module = import_module("tblite.ase")
         return getattr(module, "TBLite")
-    else:
-        module = import_module("ase.calculators."+software_name.lower())
+
+    # 2) FairChemCalculator special case
+    if name_lower == "fairchemcalculator":
+        # adjust this path if your package layout is different
+        module = import_module("fairchem.core.calculate.ase_calculator")
+        # make sure the class is actually named "FairChemCalculator"
+        return getattr(module, "FAIRChemCalculator")
+
+    # 3) Fallback to built-in ASE calculators
+    try:
+        module = import_module(f"ase.calculators.{name_lower}")
         return getattr(module, software_name)
+    except (ModuleNotFoundError, AttributeError) as e:
+        raise ValueError(f"Unknown ASE calculator '{software_name}'") from e
+
 
 def name_to_ase_opt(opt_name):
     """

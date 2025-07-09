@@ -1,0 +1,11 @@
+ModuleCmd_Load.c(213):ERROR:105: Unable to locate a modulefile for 'MPICH/4.3.0b1'
+ModuleCmd_Load.c(213):ERROR:105: Unable to locate a modulefile for 'OpenMPI/4.1.6'
+ModuleCmd_Load.c(213):ERROR:105: Unable to locate a modulefile for 'OpenBLAS/0.3.29'
+No Modulefiles Currently Loaded.
+DEBUG:launchpad:FW with id: 17 is unique!
+DEBUG:launchpad:Created/updated Launch with launch_id: 12
+DEBUG:launchpad:RUNNING FW with id: 17
+INFO:rocket.launcher:RUNNING fw_id: 17 in directory: /work/westgroup/lekia.p/pynta/Fe/block_2025-07-09-11-18-07-205805/launcher_2025-07-09-14-58-56-763999
+INFO:rocket.launcher:Task started: {{pynta.tasks.MolecularAdsorbateEstimate}}.
+INFO:rocket.launcher:Task completed: {{pynta.tasks.MolecularAdsorbateEstimate}}
+INFO:rocket.launcher:Rocket finished

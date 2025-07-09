@@ -1,0 +1,44 @@
+&CONTROL
+   calculation      = 'relax'
+   verbosity        = 'low'
+   tstress          = .true.
+   tprnfor          = .true.
+   pseudo_dir       = '/home/lekia.p/SSSP_1.3.0_PBE_efficiency'
+/
+&SYSTEM
+   occupations      = 'smearing'
+   degauss          = 0.03
+   smearing         = 'marzari-vanderbilt'
+   input_dft        = 'PBE'
+   ntyp             = 1
+   nat              = 8
+   ibrav            = 0
+/
+&ELECTRONS
+/
+&IONS
+/
+&CELL
+/
+
+ATOMIC_SPECIES
+Fe 55.845 Fe.pbe-spn-kjpaw_psl.0.2.1.UPF
+
+K_POINTS automatic
+3 3 1  0 0 0
+
+CELL_PARAMETERS angstrom
+5.66200000000000 0.00000000000000 0.00000000000000
+2.83100000000000 4.00363859507823 0.00000000000000
+0.00000000000000 0.00000000000000 18.00181929753911
+
+ATOMIC_POSITIONS angstrom
+Fe 0.0000000000 2.0018193000 8.0000000000 
+Fe 2.8310000000 2.0018193000 8.0000000000 
+Fe 1.4155000000 4.0036386000 8.0000000000 
+Fe 4.2465000000 4.0036386000 8.0000000000 
+Fe 0.0000000000 0.0000000000 10.0018193000 
+Fe 2.8310000000 0.0000000000 10.0018193000 
+Fe 1.4155000000 2.0018193000 10.0018193000 
+Fe 4.2465000000 2.0018193000 10.0018193000 
+

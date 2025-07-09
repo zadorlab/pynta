@@ -1,0 +1,32 @@
+ERROR: Unable to locate a modulefile for 'discovery/2021-10-06'
+ERROR: Unable to locate a modulefile for 'git/2.19.0'
+ERROR: Unable to locate a modulefile for 'gcc/10.1.0'
+ERROR: Unable to locate a modulefile for 'openblas/0.3.13-gcc10.1'
+DEBUG:launchpad:FW with id: 2 is unique!
+DEBUG:launchpad:Created/updated Launch with launch_id: 2
+DEBUG:launchpad:RUNNING FW with id: 2
+INFO:rocket.launcher:RUNNING fw_id: 2 in directory: /projects/westgroup/lekia.p/pynta/Fe/block_2025-07-01-14-54-29-748305/launcher_2025-07-01-14-55-03-436266
+INFO:rocket.launcher:Task started: {{pynta.tasks.MolecularOptimizationTask}}.
+Note: The following floating-point exceptions are signalling: IEEE_DENORMAL
+Note: The following floating-point exceptions are signalling: IEEE_INVALID_FLAG IEEE_DENORMAL
+Traceback (most recent call last):
+  File "/home/lekia.p/miniforge3/envs/pynta_env/lib/python3.8/site-packages/fireworks/core/rocket.py", line 261, in run
+    m_action = t.run_task(my_spec)
+  File "/projects/westgroup/lekia.p/pynta/pynta/tasks.py", line 176, in run_task
+    raise e
+  File "/projects/westgroup/lekia.p/pynta/pynta/tasks.py", line 170, in run_task
+    opt.run(**run_kwargs)
+  File "/home/lekia.p/miniforge3/envs/pynta_env/lib/python3.8/site-packages/ase/optimize/optimize.py", line 269, in run
+    return Dynamics.run(self)
+  File "/home/lekia.p/miniforge3/envs/pynta_env/lib/python3.8/site-packages/ase/optimize/optimize.py", line 156, in run
+    for converged in Dynamics.irun(self):
+  File "/home/lekia.p/miniforge3/envs/pynta_env/lib/python3.8/site-packages/ase/optimize/optimize.py", line 122, in irun
+    self.atoms.get_forces()
+  File "/home/lekia.p/miniforge3/envs/pynta_env/lib/python3.8/site-packages/ase/atoms.py", line 788, in get_forces
+    forces = self._calc.get_forces(self)
+  File "/home/lekia.p/miniforge3/envs/pynta_env/lib/python3.8/site-packages/ase/calculators/abc.py", line 23, in get_forces
+    return self.get_property('forces', atoms)
+  File "/home/lekia.p/miniforge3/envs/pynta_env/lib/python3.8/site-packages/ase/calculators/calculator.py", line 742, in get_property
+    raise PropertyNotImplementedError('{} not present in this '
+ase.calculators.calculator.PropertyNotImplementedError: forces not present in this calculation
+INFO:rocket.launcher:Rocket finished

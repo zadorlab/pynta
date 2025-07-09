@@ -1,0 +1,31 @@
+ModuleCmd_Load.c(213):ERROR:105: Unable to locate a modulefile for 'MPICH/4.3.0b1'
+ModuleCmd_Load.c(213):ERROR:105: Unable to locate a modulefile for 'OpenMPI/4.1.6'
+ModuleCmd_Load.c(213):ERROR:105: Unable to locate a modulefile for 'OpenBLAS/0.3.29'
+No Modulefiles Currently Loaded.
+DEBUG:launchpad:FW with id: 28 is unique!
+DEBUG:launchpad:Created/updated Launch with launch_id: 30
+DEBUG:launchpad:RUNNING FW with id: 28
+INFO:rocket.launcher:RUNNING fw_id: 28 in directory: /work/westgroup/lekia.p/pynta/Fe/block_2025-07-09-11-18-07-205805/launcher_2025-07-09-15-03-35-218269
+INFO:rocket.launcher:Task started: {{pynta.tasks.MolecularOptimizationTask}}.
+/work/westgroup/lekia.p/fairchem/src/fairchem/core/models/uma/escn_md.py:130: FutureWarning: You are using `torch.load` with `weights_only=False` (the current default value), which uses the default pickle module implicitly. It is possible to construct malicious pickle data which will execute arbitrary code during unpickling (See https://github.com/pytorch/pytorch/blob/main/SECURITY.md#untrusted-models for more details). In a future release, the default value for `weights_only` will be flipped to `True`. This limits the functions that could be executed during unpickling. Arbitrary objects will no longer be allowed to be loaded via this mode unless they are explicitly allowlisted by the user via `torch.serialization.add_safe_globals`. We recommend you start setting `weights_only=True` for any use case where you don't have full control of the loaded file. Please open an issue on GitHub for any issues related to this experimental feature.
+Traceback (most recent call last):
+  File "/home/lekia.p/miniforge3/envs/pynta_fairchem38/lib/python3.8/site-packages/fireworks/core/rocket.py", line 261, in run
+    m_action = t.run_task(my_spec)
+  File "/projects/westgroup/lekia.p/pynta/pynta/tasks.py", line 240, in run_task
+    converged = opt.converged()
+  File "/home/lekia.p/miniforge3/envs/pynta_fairchem38/lib/python3.8/site-packages/ase/optimize/optimize.py", line 435, in converged
+    forces = self.optimizable.get_forces()
+  File "/home/lekia.p/miniforge3/envs/pynta_fairchem38/lib/python3.8/site-packages/ase/optimize/optimize.py", line 34, in get_forces
+    return self.atoms.get_forces()
+  File "/home/lekia.p/miniforge3/envs/pynta_fairchem38/lib/python3.8/site-packages/ase/atoms.py", line 812, in get_forces
+    forces = self._calc.get_forces(self)
+  File "/home/lekia.p/miniforge3/envs/pynta_fairchem38/lib/python3.8/site-packages/ase/calculators/abc.py", line 30, in get_forces
+    return self.get_property('forces', atoms)
+  File "/home/lekia.p/miniforge3/envs/pynta_fairchem38/lib/python3.8/site-packages/ase/calculators/calculator.py", line 538, in get_property
+    self.calculate(atoms, [name], system_changes)
+  File "/work/westgroup/lekia.p/fairchem/src/fairchem/core/calculate/ase_calculator.py", line 210, in calculate
+    self._validate_charge_and_spin(atoms)
+  File "/work/westgroup/lekia.p/fairchem/src/fairchem/core/calculate/ase_calculator.py", line 313, in _validate_charge_and_spin
+    raise TypeError(
+TypeError: Invalid type for charge: <class 'numpy.int64'>. Charge must be an integer representing the total charge on the system.
+INFO:rocket.launcher:Rocket finished

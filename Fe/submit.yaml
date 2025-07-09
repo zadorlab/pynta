@@ -1,0 +1,9 @@
+spec:
+  _tasks:
+  - _fw_name: ScriptTask
+    script: |
+      source ~/miniforge3/etc/profile.d/conda.sh
+      conda activate pynta_env
+      cd /projects/westgroup/lekia.p/pynta/Fe
+      echo "=== RUNNING SCRIPT ==="
+      python /projects/westgroup/lekia.p/pynta/Fe/fe_backup.py

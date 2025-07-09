@@ -1,0 +1,18 @@
+ModuleCmd_Load.c(213):ERROR:105: Unable to locate a modulefile for 'MPICH/4.3.0b1'
+ModuleCmd_Load.c(213):ERROR:105: Unable to locate a modulefile for 'OpenMPI/4.1.6'
+ModuleCmd_Load.c(213):ERROR:105: Unable to locate a modulefile for 'OpenBLAS/0.3.29'
+No Modulefiles Currently Loaded.
+DEBUG:launchpad:FW with id: 2 is unique!
+DEBUG:launchpad:Created/updated Launch with launch_id: 19
+DEBUG:launchpad:RUNNING FW with id: 2
+INFO:rocket.launcher:RUNNING fw_id: 2 in directory: /work/westgroup/lekia.p/pynta/Fe/block_2025-07-09-11-18-07-205805/launcher_2025-07-09-15-00-32-974646
+INFO:rocket.launcher:Task started: {{pynta.tasks.MolecularTSEstimate}}.
+Traceback (most recent call last):
+  File "/home/lekia.p/miniforge3/envs/pynta_fairchem38/lib/python3.8/site-packages/fireworks/core/rocket.py", line 261, in run
+    m_action = t.run_task(my_spec)
+  File "/projects/westgroup/lekia.p/pynta/pynta/tasks.py", line 629, in run_task
+    adsorbates = get_unique_optimized_adsorbates(rxn,adsorbates_path,mol_dict,gratom_to_molecule_surface_atom_maps,sites,nslab)
+  File "/projects/westgroup/lekia.p/pynta/pynta/transitionstate.py", line 24, in get_unique_optimized_adsorbates
+    prefixes = os.listdir(os.path.join(adsorbates_path,name))
+FileNotFoundError: [Errno 2] No such file or directory: '/projects/westgroup/lekia.p/pynta/Fe/Adsorbates/O[Pt]'
+INFO:rocket.launcher:Rocket finished

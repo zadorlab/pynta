@@ -1,0 +1,8 @@
+Python path: /home/lekia.p/miniforge3/envs/pynta_env/bin/python
+Conda environment: pynta_env
+ASE version: 3.22.1
+2025-07-01 10:55:21,235 INFO Hostname/IP lookup (this will take a few seconds)
+2025-07-01 10:55:21,235 INFO Launching Rocket
+2025-07-01 10:55:29,063 INFO RUNNING fw_id: 2 in directory: /projects/westgroup/lekia.p/pynta/Fe/block_2025-07-01-14-54-29-748305/launcher_2025-07-01-14-55-03-436266
+2025-07-01 10:55:29,088 INFO Task started: {{pynta.tasks.MolecularOptimizationTask}}.
+2025-07-01 11:48:24,752 INFO Rocket finished

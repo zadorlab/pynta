@@ -1,0 +1,129 @@
+- index: 0
+  product: 'multiplicity 1
+
+    1 *1 H u0 p0 c0 {2,S}
+
+    2 *2 X u0 p0 c0 {1,S}
+
+    '
+  reactant: '
+
+    1 *1 H u1 p0 c0
+
+    2 *2 X u0 p0 c0
+
+    '
+  reaction: '* + H <=> H*'
+  reaction_family: Surface_Adsorption_Single
+
+- index: 1
+  product: 'multiplicity 1
+
+    1 *1 O u0 p2 c0 {3,D}
+
+    2 *2 O u0 p2 c0 {4,D}
+
+    3 *3 X u0 p0 c0 {1,D}
+
+    4 *4 X u0 p0 c0 {2,D}
+
+    '
+  reactant: '
+
+    1 *1 O u0 p2 c0 {2,D}
+
+    2 *2 O u0 p2 c0 {1,D}
+
+    3 *3 X u0 p0 c0
+
+    4 *4 X u0 p0 c0
+
+    '
+  reaction: '* + * + O2 <=> O* + O*'
+  reaction_family: Dissociative Adsorption
+
+- index: 2
+  product: 'multiplicity 1
+
+    1 *1 O u0 p2 c0 {3,S} {5,S}
+
+    2 *2 N u0 p1 c0 {6,D} {4,S}
+
+    3 *3 H u0 p0 c0 {1,S}
+
+    4 *4 H u0 p0 c0 {2,S}
+
+    5 *5 X u0 p0 c0 {1,S}
+
+    6 *6 X u0 p0 c0 {2,D}
+
+    '
+  reactant: 'multiplicity 1
+
+    1 *1 O u0 p2 c0 {5,D}
+
+    2 *2 N u0 p1 c0 {6,S} {3,S} {4,S}
+
+    3 *3 H u0 p0 c0 {2,S}
+
+    4 *4 H u0 p0 c0 {2,S}
+
+    5 *5 X u0 p0 c0 {1,D}
+
+    6 *6 X u0 p0 c0 {2,S}
+
+    '
+  reaction: 'O* + NH2* <=> OH* + NH*'
+  reaction_family: Surface_Abstraction
+
+- index: 3
+  product: 'multiplicity 1
+
+    1 *1 O u0 p2 c0 {3,D}
+
+    2 *2 H u0 p0 c0 {4,S}
+
+    3 *3 X u0 p0 c0 {1,D}
+
+    4 *4 X u0 p0 c0 {2,S}
+
+    '
+  reactant: 'multiplicity 1
+
+    1 *1 O u0 p2 c0 {3,S} {2,S}
+
+    2 *2 H u0 p0 c0 {1,S}
+
+    3 *3 X u0 p0 c0 {1,S}
+
+    4 *4 X u0 p0 c0
+
+    '
+  reaction: '* + OH* <=> O* + H*'
+  reaction_family: Surface_Dissociation
+
+- index: 4
+  product: 'multiplicity 1
+
+    1 *1 N u0 p1 c0 {3,T}
+
+    2 *2 H u0 p0 c0 {4,S}
+
+    3 *3 X u0 p0 c0 {1,T}
+
+    4 *4 X u0 p0 c0 {2,S}
+
+    '
+  reactant: 'multiplicity 1
+
+    1 *1 N u0 p1 c0 {3,D} {2,S}
+
+    2 *2 H u0 p0 c0 {1,S}
+
+    3 *3 X u0 p0 c0 {1,D}
+
+    4 *4 X u0 p0 c0
+
+    '
+  reaction: '* + NH* <=> N* + H*'
+  reaction_family: Surface_Dissociation

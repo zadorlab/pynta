@@ -1,0 +1,7 @@
+Python path: /home/lekia.p/miniforge3/envs/pynta_fairchem38/bin/python
+Conda environment: pynta_fairchem38
+ASE version: 3.23.0
+2025-07-09 07:18:19,485 INFO Hostname/IP lookup (this will take a few seconds)
+2025-07-09 07:18:19,486 INFO Launching Rocket
+No FireWorks are ready to run and match query! {'$or': [{'spec._fworker': {'$exists': False}}, {'spec._fworker': None}, {'spec._fworker': 'my first fireworker'}]}
+2025-07-09 07:18:19,489 INFO Rocket finished
