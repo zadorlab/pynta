@@ -1,0 +1,50 @@
+name: pynta_fairchem38
+channels:
+  - defaults
+  - mjohnson541
+  - conda-forge
+dependencies:
+  # Core dependencies
+  - python =3.8  # Upgraded from 3.8 to avoid compatibility issues
+  - pip
+  
+  # Pynta dependencies
+  - matplotlib
+  - spglib
+  - ase =3.22.1
+  - scipy >=1.1.0
+  - numpy
+  - pyyaml
+  - sella >=2.2.1
+  - sphinx
+  - fireworks
+  # - tblite-python
+  - rmgmolecule
+  - acat
+  - nose
+  - coverage
+  - liblapack !=3.9.0
+  - pysidt >=1
+  - ruamel.yaml < 0.18
+  - flask =2.2.5
+
+  - pip:
+    # FairChem dependencies not in conda
+    - e3nn>=0.5
+    - wandb
+    - orjson
+    - submitit
+    - hydra-core
+    - torchtnt
+    - huggingface_hub>=0.27.1
+    - clusterscope
+    - torch
+    - lmdb
+    - pymatgen
+    - pyyaml
+    - tensorboard
+    - numba
+    - requests
+    - tqdm
+    - ase
+    - tblite[ase]
