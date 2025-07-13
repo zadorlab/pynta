@@ -1,0 +1,54 @@
+name: pynta_fairchem
+channels:
+  - defaults
+  - mjohnson541
+  - conda-forge
+dependencies:
+  # Core
+  - python=3.8
+  - pip
+
+  # Force MKL‐linked arrays for correct LAPACK workspaces
+  - blas=*=mkl
+  - numpy
+  - scipy>=1.1.0
+  - ase=3.22.1        # pick 3.23.x to match patches
+  - sella >=2.2.1       # latest 1.x release
+
+  # Pynta and friends
+  - pyyaml
+  - joblib
+  - fireworks
+  - spglib
+  - matplotlib
+  - rmgmolecule
+  - acat
+  - nose
+  - coverage
+  - liblapack!=3.9.0  # keep your existing exclusion if needed
+  - pysidt>=1
+  - ruamel.yaml < 0.18
+  - flask=2.2.5
+  - sphinx
+  - qe  # or "espresso" if that’s the package name
+  - mpi4py
+  - tblite-python # optional: if you want TBLite freq’s
+
+  # ML potential dependencies (via pip below)
+  - pip:
+    - e3nn>=0.5
+    - wandb
+    - orjson
+    - submitit
+    - hydra-core
+    - torchtnt
+    - huggingface_hub>=0.27.1
+    - clusterscope
+    - torch
+    - lmdb
+    - pymatgen
+    - tensorboard
+    - numba
+    - requests
+    - tqdm
+    - tblite[ase]
