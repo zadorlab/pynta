@@ -1,0 +1,12 @@
+DEBUG:launchpad:FW with id: 31 is unique!
+DEBUG:launchpad:Created/updated Launch with launch_id: 81
+DEBUG:launchpad:RUNNING FW with id: 31
+INFO:rocket.launcher:RUNNING fw_id: 31 in directory: /projects/westgroup/lekia.p/pynta/Fe/block_2025-07-12-17-50-43-929229/launcher_2025-07-12-18-32-02-928640
+INFO:rocket.launcher:Task started: {{pynta.tasks.MolecularCollect}}.
+Traceback (most recent call last):
+  File "/home/lekia.p/miniforge3/envs/pynta_fairchem/lib/python3.8/site-packages/fireworks/core/rocket.py", line 261, in run
+    m_action = t.run_task(my_spec)
+  File "/projects/westgroup/lekia.p/pynta/pynta/tasks.py", line 773, in run_task
+    raise ValueError("No xyzs to collect")
+ValueError: No xyzs to collect
+INFO:rocket.launcher:Rocket finished

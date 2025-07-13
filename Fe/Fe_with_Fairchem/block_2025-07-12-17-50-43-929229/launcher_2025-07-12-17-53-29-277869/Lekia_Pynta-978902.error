@@ -1,0 +1,12 @@
+DEBUG:launchpad:FW with id: 13 is unique!
+DEBUG:launchpad:Created/updated Launch with launch_id: 7
+DEBUG:launchpad:RUNNING FW with id: 13
+INFO:rocket.launcher:RUNNING fw_id: 13 in directory: /projects/westgroup/lekia.p/pynta/Fe/block_2025-07-12-17-50-43-929229/launcher_2025-07-12-17-53-29-277869
+INFO:rocket.launcher:Task started: {{pynta.tasks.MolecularAdsorbateEstimate}}.
+[13:54:26] WARNING: not removing hydrogen atom without neighbors
+WARNING:root:Estimation used SIDT Root group
+WARNING:root:Estimation used SIDT Root group
+WARNING:root:Estimation used SIDT Root group
+WARNING:jax._src.lib.xla_bridge:No GPU/TPU found, falling back to CPU. (Set TF_CPP_MIN_LOG_LEVEL=0 and rerun for more info.)
+INFO:rocket.launcher:Task completed: {{pynta.tasks.MolecularAdsorbateEstimate}}
+INFO:rocket.launcher:Rocket finished

@@ -1,0 +1,21 @@
+DEBUG:launchpad:FW with id: 100 is unique!
+DEBUG:launchpad:Created/updated Launch with launch_id: 120
+DEBUG:launchpad:RUNNING FW with id: 100
+INFO:rocket.launcher:RUNNING fw_id: 100 in directory: /projects/westgroup/lekia.p/pynta/Fe/block_2025-07-12-17-50-43-929229/launcher_2025-07-12-19-03-25-195846
+INFO:rocket.launcher:Task started: {{pynta.tasks.PostprocessingTask}}.
+WARNING:root:No O reference (no H2O calculation), thermochemistry with O will be wrong
+Traceback (most recent call last):
+  File "/home/lekia.p/miniforge3/envs/pynta_fairchem/lib/python3.8/site-packages/fireworks/core/rocket.py", line 261, in run
+    m_action = t.run_task(my_spec)
+  File "/projects/westgroup/lekia.p/pynta/pynta/tasks.py", line 882, in run_task
+    write_rmg_libraries(pynta_path,spc_dict,spc_dict_thermo,ts_dict,metal,facet)
+  File "/projects/westgroup/lekia.p/pynta/pynta/postprocessing.py", line 1600, in write_rmg_libraries
+    shutil.rmtree(os.path.join(path,"reaction_library"))
+  File "/home/lekia.p/miniforge3/envs/pynta_fairchem/lib/python3.8/shutil.py", line 718, in rmtree
+    _rmtree_safe_fd(fd, path, onerror)
+  File "/home/lekia.p/miniforge3/envs/pynta_fairchem/lib/python3.8/shutil.py", line 675, in _rmtree_safe_fd
+    onerror(os.unlink, fullname, sys.exc_info())
+  File "/home/lekia.p/miniforge3/envs/pynta_fairchem/lib/python3.8/shutil.py", line 673, in _rmtree_safe_fd
+    os.unlink(entry.name, dir_fd=topfd)
+FileNotFoundError: [Errno 2] No such file or directory: 'reactions.py'
+INFO:rocket.launcher:Rocket finished

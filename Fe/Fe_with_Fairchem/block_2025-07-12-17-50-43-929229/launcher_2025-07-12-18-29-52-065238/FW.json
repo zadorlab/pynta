@@ -1,0 +1,1698 @@
+{
+    "spec": {
+        "_allow_fizzled_parents": true,
+        "_priority": 10,
+        "_tasks": [
+            {
+                "rxn": {
+                    "index": 2,
+                    "product": "multiplicity 1\n1 *1 O u0 p2 c0 {3,S} {5,S}\n2 *2 N u0 p1 c0 {6,D} {4,S}\n3 *3 H u0 p0 c0 {1,S}\n4 *4 H u0 p0 c0 {2,S}\n5 *5 X u0 p0 c0 {1,S}\n6 *6 X u0 p0 c0 {2,D}\n",
+                    "reactant": "multiplicity 1\n1 *1 O u0 p2 c0 {5,D}\n2 *2 N u0 p1 c0 {6,S} {3,S} {4,S}\n3 *3 H u0 p0 c0 {2,S}\n4 *4 H u0 p0 c0 {2,S}\n5 *5 X u0 p0 c0 {1,D}\n6 *6 X u0 p0 c0 {2,S}\n",
+                    "reaction": "O* + NH2* <=> OH* + NH*",
+                    "reaction_family": "Surface_Abstraction",
+                    "reactant_mols": [
+                        "1 N u0 p1 c0 {2,S} {3,S} {4,S}\n2 H u0 p0 c0 {1,S}\n3 H u0 p0 c0 {1,S}\n4 X u0 p0 c0 {1,S}\n",
+                        "1 O u0 p2 c0 {2,D}\n2 X u0 p0 c0 {1,D}\n"
+                    ],
+                    "product_mols": [
+                        "1 N u0 p1 c0 {2,S} {3,D}\n2 H u0 p0 c0 {1,S}\n3 X u0 p0 c0 {1,D}\n",
+                        "1 O u0 p2 c0 {2,S} {3,S}\n2 H u0 p0 c0 {1,S}\n3 X u0 p0 c0 {1,S}\n"
+                    ],
+                    "reactant_names": [
+                        "N[Pt]",
+                        "O=[Pt]"
+                    ],
+                    "product_names": [
+                        "N=[Pt]",
+                        "O[Pt]"
+                    ]
+                },
+                "ts_path": "/projects/westgroup/lekia.p/pynta/Fe/TS2",
+                "slab_path": "/projects/westgroup/lekia.p/pynta/Fe/slab.xyz",
+                "adsorbates_path": "/projects/westgroup/lekia.p/pynta/Fe/Adsorbates",
+                "rxns_file": "/projects/westgroup/lekia.p/pynta/Fe/reaction.yaml",
+                "path": "/projects/westgroup/lekia.p/pynta/Fe",
+                "metal": "Fe",
+                "facet": "bcc110",
+                "sites": [
+                    {
+                        "site": "ontop",
+                        "surface": "bcc110",
+                        "morphology": "terrace",
+                        "position": [
+                            -1.2e-07,
+                            2e-07,
+                            11.86921836
+                        ],
+                        "normal": [
+                            3e-08,
+                            -2e-08,
+                            1.0
+                        ],
+                        "indices": [
+                            18
+                        ],
+                        "composition": null,
+                        "subsurf_index": null,
+                        "subsurf_element": null,
+                        "label": 1
+                    },
+                    {
+                        "site": "longbridge",
+                        "surface": "bcc110",
+                        "morphology": "terrace",
+                        "position": [
+                            1.41550002,
+                            2.8e-07,
+                            11.86921838
+                        ],
+                        "normal": [
+                            -1e-08,
+                            -1e-08,
+                            1.0
+                        ],
+                        "indices": [
+                            18,
+                            19
+                        ],
+                        "composition": null,
+                        "subsurf_index": null,
+                        "subsurf_element": null,
+                        "label": 3
+                    },
+                    {
+                        "site": "3fold",
+                        "surface": "bcc110",
+                        "morphology": "terrace",
+                        "position": [
+                            1.41549998,
+                            0.6672733,
+                            11.86921838
+                        ],
+                        "normal": [
+                            -1e-08,
+                            -1e-08,
+                            1.0
+                        ],
+                        "indices": [
+                            18,
+                            19,
+                            21
+                        ],
+                        "composition": null,
+                        "subsurf_index": null,
+                        "subsurf_element": null,
+                        "label": 4
+                    },
+                    {
+                        "site": "3fold",
+                        "surface": "bcc110",
+                        "morphology": "terrace",
+                        "position": [
+                            5.66200002,
+                            5.33818501,
+                            11.8692184
+                        ],
+                        "normal": [
+                            -1e-08,
+                            4e-08,
+                            1.0
+                        ],
+                        "indices": [
+                            18,
+                            19,
+                            25
+                        ],
+                        "composition": null,
+                        "subsurf_index": null,
+                        "subsurf_element": null,
+                        "label": 4
+                    },
+                    {
+                        "site": "longbridge",
+                        "surface": "bcc110",
+                        "morphology": "terrace",
+                        "position": [
+                            7.07749996,
+                            1.4e-07,
+                            11.86921852
+                        ],
+                        "normal": [
+                            2e-08,
+                            -3e-08,
+                            1.0
+                        ],
+                        "indices": [
+                            18,
+                            20
+                        ],
+                        "composition": null,
+                        "subsurf_index": null,
+                        "subsurf_element": null,
+                        "label": 3
+                    },
+                    {
+                        "site": "3fold",
+                        "surface": "bcc110",
+                        "morphology": "terrace",
+                        "position": [
+                            7.07749993,
+                            0.66727323,
+                            11.86921851
+                        ],
+                        "normal": [
+                            1.2e-07,
+                            2e-08,
+                            1.0
+                        ],
+                        "indices": [
+                            18,
+                            20,
+                            23
+                        ],
+                        "composition": null,
+                        "subsurf_index": null,
+                        "subsurf_element": null,
+                        "label": 4
+                    },
+                    {
+                        "site": "3fold",
+                        "surface": "bcc110",
+                        "morphology": "terrace",
+                        "position": [
+                            11.32400002,
+                            5.33818479,
+                            11.86921843
+                        ],
+                        "normal": [
+                            1.2e-07,
+                            -1.5e-07,
+                            1.0
+                        ],
+                        "indices": [
+                            18,
+                            20,
+                            24
+                        ],
+                        "composition": null,
+                        "subsurf_index": null,
+                        "subsurf_element": null,
+                        "label": 4
+                    },
+                    {
+                        "site": "shortbridge",
+                        "surface": "bcc110",
+                        "morphology": "terrace",
+                        "position": [
+                            0.70774988,
+                            1.00090978,
+                            11.86921838
+                        ],
+                        "normal": [
+                            2e-08,
+                            -1e-08,
+                            1.0
+                        ],
+                        "indices": [
+                            18,
+                            21
+                        ],
+                        "composition": null,
+                        "subsurf_index": null,
+                        "subsurf_element": null,
+                        "label": 2
+                    },
+                    {
+                        "site": "3fold",
+                        "surface": "bcc110",
+                        "morphology": "terrace",
+                        "position": [
+                            8.49299989,
+                            1.33454632,
+                            11.86921841
+                        ],
+                        "normal": [
+                            3e-08,
+                            -4e-08,
+                            1.0
+                        ],
+                        "indices": [
+                            18,
+                            21,
+                            23
+                        ],
+                        "composition": null,
+                        "subsurf_index": null,
+                        "subsurf_element": null,
+                        "label": 4
+                    },
+                    {
+                        "site": "shortbridge",
+                        "surface": "bcc110",
+                        "morphology": "terrace",
+                        "position": [
+                            7.78524989,
+                            1.0009098,
+                            11.86921842
+                        ],
+                        "normal": [
+                            3e-08,
+                            -0.0,
+                            1.0
+                        ],
+                        "indices": [
+                            18,
+                            23
+                        ],
+                        "composition": null,
+                        "subsurf_index": null,
+                        "subsurf_element": null,
+                        "label": 2
+                    },
+                    {
+                        "site": "shortbridge",
+                        "surface": "bcc110",
+                        "morphology": "terrace",
+                        "position": [
+                            3.53875001,
+                            5.00454819,
+                            11.8692183
+                        ],
+                        "normal": [
+                            2e-08,
+                            -3e-08,
+                            1.0
+                        ],
+                        "indices": [
+                            18,
+                            24
+                        ],
+                        "composition": null,
+                        "subsurf_index": null,
+                        "subsurf_element": null,
+                        "label": 2
+                    },
+                    {
+                        "site": "3fold",
+                        "surface": "bcc110",
+                        "morphology": "terrace",
+                        "position": [
+                            4.24650001,
+                            4.67091169,
+                            11.86921835
+                        ],
+                        "normal": [
+                            -8e-08,
+                            -1e-08,
+                            1.0
+                        ],
+                        "indices": [
+                            18,
+                            24,
+                            25
+                        ],
+                        "composition": null,
+                        "subsurf_index": null,
+                        "subsurf_element": null,
+                        "label": 4
+                    },
+                    {
+                        "site": "shortbridge",
+                        "surface": "bcc110",
+                        "morphology": "terrace",
+                        "position": [
+                            4.95424994,
+                            5.00454839,
+                            11.8692184
+                        ],
+                        "normal": [
+                            -0.0,
+                            -0.0,
+                            1.0
+                        ],
+                        "indices": [
+                            18,
+                            25
+                        ],
+                        "composition": null,
+                        "subsurf_index": null,
+                        "subsurf_element": null,
+                        "label": 2
+                    },
+                    {
+                        "site": "ontop",
+                        "surface": "bcc110",
+                        "morphology": "terrace",
+                        "position": [
+                            2.83100016,
+                            3.5e-07,
+                            11.86921839
+                        ],
+                        "normal": [
+                            -4e-08,
+                            1e-08,
+                            1.0
+                        ],
+                        "indices": [
+                            19
+                        ],
+                        "composition": null,
+                        "subsurf_index": null,
+                        "subsurf_element": null,
+                        "label": 1
+                    },
+                    {
+                        "site": "longbridge",
+                        "surface": "bcc110",
+                        "morphology": "terrace",
+                        "position": [
+                            4.2465001,
+                            2.2e-07,
+                            11.86921854
+                        ],
+                        "normal": [
+                            -1e-08,
+                            -1e-08,
+                            1.0
+                        ],
+                        "indices": [
+                            19,
+                            20
+                        ],
+                        "composition": null,
+                        "subsurf_index": null,
+                        "subsurf_element": null,
+                        "label": 3
+                    },
+                    {
+                        "site": "3fold",
+                        "surface": "bcc110",
+                        "morphology": "terrace",
+                        "position": [
+                            4.24650006,
+                            0.66727326,
+                            11.86921851
+                        ],
+                        "normal": [
+                            -1.1e-07,
+                            5e-08,
+                            1.0
+                        ],
+                        "indices": [
+                            19,
+                            20,
+                            22
+                        ],
+                        "composition": null,
+                        "subsurf_index": null,
+                        "subsurf_element": null,
+                        "label": 4
+                    },
+                    {
+                        "site": "3fold",
+                        "surface": "bcc110",
+                        "morphology": "terrace",
+                        "position": [
+                            8.49300005,
+                            5.33818495,
+                            11.86921851
+                        ],
+                        "normal": [
+                            -1.1e-07,
+                            -4e-08,
+                            1.0
+                        ],
+                        "indices": [
+                            19,
+                            20,
+                            26
+                        ],
+                        "composition": null,
+                        "subsurf_index": null,
+                        "subsurf_element": null,
+                        "label": 4
+                    },
+                    {
+                        "site": "shortbridge",
+                        "surface": "bcc110",
+                        "morphology": "terrace",
+                        "position": [
+                            2.12325002,
+                            1.00090986,
+                            11.8692184
+                        ],
+                        "normal": [
+                            -1e-08,
+                            1e-08,
+                            1.0
+                        ],
+                        "indices": [
+                            19,
+                            21
+                        ],
+                        "composition": null,
+                        "subsurf_index": null,
+                        "subsurf_element": null,
+                        "label": 2
+                    },
+                    {
+                        "site": "3fold",
+                        "surface": "bcc110",
+                        "morphology": "terrace",
+                        "position": [
+                            2.83100001,
+                            1.33454635,
+                            11.86921841
+                        ],
+                        "normal": [
+                            -1e-08,
+                            -1e-08,
+                            1.0
+                        ],
+                        "indices": [
+                            19,
+                            21,
+                            22
+                        ],
+                        "composition": null,
+                        "subsurf_index": null,
+                        "subsurf_element": null,
+                        "label": 4
+                    },
+                    {
+                        "site": "shortbridge",
+                        "surface": "bcc110",
+                        "morphology": "terrace",
+                        "position": [
+                            3.53875007,
+                            1.00090985,
+                            11.86921842
+                        ],
+                        "normal": [
+                            -4e-08,
+                            3e-08,
+                            1.0
+                        ],
+                        "indices": [
+                            19,
+                            22
+                        ],
+                        "composition": null,
+                        "subsurf_index": null,
+                        "subsurf_element": null,
+                        "label": 2
+                    },
+                    {
+                        "site": "shortbridge",
+                        "surface": "bcc110",
+                        "morphology": "terrace",
+                        "position": [
+                            6.36975008,
+                            5.00454846,
+                            11.86921842
+                        ],
+                        "normal": [
+                            -4e-08,
+                            1e-08,
+                            1.0
+                        ],
+                        "indices": [
+                            19,
+                            25
+                        ],
+                        "composition": null,
+                        "subsurf_index": null,
+                        "subsurf_element": null,
+                        "label": 2
+                    },
+                    {
+                        "site": "3fold",
+                        "surface": "bcc110",
+                        "morphology": "terrace",
+                        "position": [
+                            7.07750005,
+                            4.67091185,
+                            11.86921843
+                        ],
+                        "normal": [
+                            0.0,
+                            3e-08,
+                            1.0
+                        ],
+                        "indices": [
+                            19,
+                            25,
+                            26
+                        ],
+                        "composition": null,
+                        "subsurf_index": null,
+                        "subsurf_element": null,
+                        "label": 4
+                    },
+                    {
+                        "site": "shortbridge",
+                        "surface": "bcc110",
+                        "morphology": "terrace",
+                        "position": [
+                            7.78525006,
+                            5.00454844,
+                            11.86921842
+                        ],
+                        "normal": [
+                            -1e-08,
+                            -1e-08,
+                            1.0
+                        ],
+                        "indices": [
+                            19,
+                            26
+                        ],
+                        "composition": null,
+                        "subsurf_index": null,
+                        "subsurf_element": null,
+                        "label": 2
+                    },
+                    {
+                        "site": "ontop",
+                        "surface": "bcc110",
+                        "morphology": "terrace",
+                        "position": [
+                            5.66200003,
+                            8e-08,
+                            11.86921869
+                        ],
+                        "normal": [
+                            1e-08,
+                            -3e-08,
+                            1.0
+                        ],
+                        "indices": [
+                            20
+                        ],
+                        "composition": null,
+                        "subsurf_index": null,
+                        "subsurf_element": null,
+                        "label": 1
+                    },
+                    {
+                        "site": "shortbridge",
+                        "surface": "bcc110",
+                        "morphology": "terrace",
+                        "position": [
+                            4.95425001,
+                            1.00090971,
+                            11.86921856
+                        ],
+                        "normal": [
+                            -1e-08,
+                            1e-08,
+                            1.0
+                        ],
+                        "indices": [
+                            20,
+                            22
+                        ],
+                        "composition": null,
+                        "subsurf_index": null,
+                        "subsurf_element": null,
+                        "label": 2
+                    },
+                    {
+                        "site": "3fold",
+                        "surface": "bcc110",
+                        "morphology": "terrace",
+                        "position": [
+                            5.66199997,
+                            1.33454628,
+                            11.86921854
+                        ],
+                        "normal": [
+                            -1e-08,
+                            1.1e-07,
+                            1.0
+                        ],
+                        "indices": [
+                            20,
+                            22,
+                            23
+                        ],
+                        "composition": null,
+                        "subsurf_index": null,
+                        "subsurf_element": null,
+                        "label": 4
+                    },
+                    {
+                        "site": "shortbridge",
+                        "surface": "bcc110",
+                        "morphology": "terrace",
+                        "position": [
+                            6.36974996,
+                            1.00090974,
+                            11.86921858
+                        ],
+                        "normal": [
+                            2e-08,
+                            -1e-08,
+                            1.0
+                        ],
+                        "indices": [
+                            20,
+                            23
+                        ],
+                        "composition": null,
+                        "subsurf_index": null,
+                        "subsurf_element": null,
+                        "label": 2
+                    },
+                    {
+                        "site": "shortbridge",
+                        "surface": "bcc110",
+                        "morphology": "terrace",
+                        "position": [
+                            10.61625009,
+                            5.00454813,
+                            11.86921846
+                        ],
+                        "normal": [
+                            2e-08,
+                            -3e-08,
+                            1.0
+                        ],
+                        "indices": [
+                            20,
+                            24
+                        ],
+                        "composition": null,
+                        "subsurf_index": null,
+                        "subsurf_element": null,
+                        "label": 2
+                    },
+                    {
+                        "site": "3fold",
+                        "surface": "bcc110",
+                        "morphology": "terrace",
+                        "position": [
+                            9.90850005,
+                            4.67091163,
+                            11.86921846
+                        ],
+                        "normal": [
+                            8e-08,
+                            -1.7e-07,
+                            1.0
+                        ],
+                        "indices": [
+                            20,
+                            24,
+                            26
+                        ],
+                        "composition": null,
+                        "subsurf_index": null,
+                        "subsurf_element": null,
+                        "label": 4
+                    },
+                    {
+                        "site": "shortbridge",
+                        "surface": "bcc110",
+                        "morphology": "terrace",
+                        "position": [
+                            9.20075,
+                            5.0045483,
+                            11.86921857
+                        ],
+                        "normal": [
+                            1e-08,
+                            -3e-08,
+                            1.0
+                        ],
+                        "indices": [
+                            20,
+                            26
+                        ],
+                        "composition": null,
+                        "subsurf_index": null,
+                        "subsurf_element": null,
+                        "label": 2
+                    },
+                    {
+                        "site": "ontop",
+                        "surface": "bcc110",
+                        "morphology": "terrace",
+                        "position": [
+                            1.41549989,
+                            2.00181936,
+                            11.8692184
+                        ],
+                        "normal": [
+                            2e-08,
+                            1e-08,
+                            1.0
+                        ],
+                        "indices": [
+                            21
+                        ],
+                        "composition": null,
+                        "subsurf_index": null,
+                        "subsurf_element": null,
+                        "label": 1
+                    },
+                    {
+                        "site": "longbridge",
+                        "surface": "bcc110",
+                        "morphology": "terrace",
+                        "position": [
+                            2.83099994,
+                            2.00181936,
+                            11.86921842
+                        ],
+                        "normal": [
+                            -1e-08,
+                            3e-08,
+                            1.0
+                        ],
+                        "indices": [
+                            21,
+                            22
+                        ],
+                        "composition": null,
+                        "subsurf_index": null,
+                        "subsurf_element": null,
+                        "label": 3
+                    },
+                    {
+                        "site": "3fold",
+                        "surface": "bcc110",
+                        "morphology": "terrace",
+                        "position": [
+                            2.831,
+                            2.66909233,
+                            11.86921836
+                        ],
+                        "normal": [
+                            -1e-08,
+                            9e-08,
+                            1.0
+                        ],
+                        "indices": [
+                            21,
+                            22,
+                            24
+                        ],
+                        "composition": null,
+                        "subsurf_index": null,
+                        "subsurf_element": null,
+                        "label": 4
+                    },
+                    {
+                        "site": "longbridge",
+                        "surface": "bcc110",
+                        "morphology": "terrace",
+                        "position": [
+                            8.49299989,
+                            2.00181938,
+                            11.86921844
+                        ],
+                        "normal": [
+                            2e-08,
+                            1e-08,
+                            1.0
+                        ],
+                        "indices": [
+                            21,
+                            23
+                        ],
+                        "composition": null,
+                        "subsurf_index": null,
+                        "subsurf_element": null,
+                        "label": 3
+                    },
+                    {
+                        "site": "3fold",
+                        "surface": "bcc110",
+                        "morphology": "terrace",
+                        "position": [
+                            8.49299992,
+                            2.66909247,
+                            11.86921844
+                        ],
+                        "normal": [
+                            3e-08,
+                            -0.0,
+                            1.0
+                        ],
+                        "indices": [
+                            21,
+                            23,
+                            26
+                        ],
+                        "composition": null,
+                        "subsurf_index": null,
+                        "subsurf_element": null,
+                        "label": 4
+                    },
+                    {
+                        "site": "shortbridge",
+                        "surface": "bcc110",
+                        "morphology": "terrace",
+                        "position": [
+                            2.12325002,
+                            3.00272882,
+                            11.86921832
+                        ],
+                        "normal": [
+                            2e-08,
+                            -1e-08,
+                            1.0
+                        ],
+                        "indices": [
+                            21,
+                            24
+                        ],
+                        "composition": null,
+                        "subsurf_index": null,
+                        "subsurf_element": null,
+                        "label": 2
+                    },
+                    {
+                        "site": "3fold",
+                        "surface": "bcc110",
+                        "morphology": "terrace",
+                        "position": [
+                            9.9085,
+                            3.33636543,
+                            11.86921836
+                        ],
+                        "normal": [
+                            8e-08,
+                            3e-08,
+                            1.0
+                        ],
+                        "indices": [
+                            21,
+                            24,
+                            26
+                        ],
+                        "composition": null,
+                        "subsurf_index": null,
+                        "subsurf_element": null,
+                        "label": 4
+                    },
+                    {
+                        "site": "shortbridge",
+                        "surface": "bcc110",
+                        "morphology": "terrace",
+                        "position": [
+                            9.20074993,
+                            3.002729,
+                            11.86921842
+                        ],
+                        "normal": [
+                            1e-08,
+                            -1e-08,
+                            1.0
+                        ],
+                        "indices": [
+                            21,
+                            26
+                        ],
+                        "composition": null,
+                        "subsurf_index": null,
+                        "subsurf_element": null,
+                        "label": 2
+                    },
+                    {
+                        "site": "ontop",
+                        "surface": "bcc110",
+                        "morphology": "terrace",
+                        "position": [
+                            4.24649998,
+                            2.00181935,
+                            11.86921844
+                        ],
+                        "normal": [
+                            -4e-08,
+                            5e-08,
+                            1.0
+                        ],
+                        "indices": [
+                            22
+                        ],
+                        "composition": null,
+                        "subsurf_index": null,
+                        "subsurf_element": null,
+                        "label": 1
+                    },
+                    {
+                        "site": "longbridge",
+                        "surface": "bcc110",
+                        "morphology": "terrace",
+                        "position": [
+                            5.66199994,
+                            2.00181938,
+                            11.86921846
+                        ],
+                        "normal": [
+                            -1e-08,
+                            3e-08,
+                            1.0
+                        ],
+                        "indices": [
+                            22,
+                            23
+                        ],
+                        "composition": null,
+                        "subsurf_index": null,
+                        "subsurf_element": null,
+                        "label": 3
+                    },
+                    {
+                        "site": "3fold",
+                        "surface": "bcc110",
+                        "morphology": "terrace",
+                        "position": [
+                            5.66199996,
+                            2.66909248,
+                            11.86921846
+                        ],
+                        "normal": [
+                            -1e-08,
+                            0.0,
+                            1.0
+                        ],
+                        "indices": [
+                            22,
+                            23,
+                            25
+                        ],
+                        "composition": null,
+                        "subsurf_index": null,
+                        "subsurf_element": null,
+                        "label": 4
+                    },
+                    {
+                        "site": "shortbridge",
+                        "surface": "bcc110",
+                        "morphology": "terrace",
+                        "position": [
+                            3.53875006,
+                            3.00272882,
+                            11.86921834
+                        ],
+                        "normal": [
+                            -1e-08,
+                            1e-08,
+                            1.0
+                        ],
+                        "indices": [
+                            22,
+                            24
+                        ],
+                        "composition": null,
+                        "subsurf_index": null,
+                        "subsurf_element": null,
+                        "label": 2
+                    },
+                    {
+                        "site": "3fold",
+                        "surface": "bcc110",
+                        "morphology": "terrace",
+                        "position": [
+                            4.24650004,
+                            3.33636544,
+                            11.86921837
+                        ],
+                        "normal": [
+                            -8e-08,
+                            5e-08,
+                            1.0
+                        ],
+                        "indices": [
+                            22,
+                            24,
+                            25
+                        ],
+                        "composition": null,
+                        "subsurf_index": null,
+                        "subsurf_element": null,
+                        "label": 4
+                    },
+                    {
+                        "site": "shortbridge",
+                        "surface": "bcc110",
+                        "morphology": "terrace",
+                        "position": [
+                            4.95424999,
+                            3.00272902,
+                            11.86921844
+                        ],
+                        "normal": [
+                            -4e-08,
+                            4e-08,
+                            1.0
+                        ],
+                        "indices": [
+                            22,
+                            25
+                        ],
+                        "composition": null,
+                        "subsurf_index": null,
+                        "subsurf_element": null,
+                        "label": 2
+                    },
+                    {
+                        "site": "ontop",
+                        "surface": "bcc110",
+                        "morphology": "terrace",
+                        "position": [
+                            7.07749989,
+                            2.00181941,
+                            11.86921848
+                        ],
+                        "normal": [
+                            2e-08,
+                            2e-08,
+                            1.0
+                        ],
+                        "indices": [
+                            23
+                        ],
+                        "composition": null,
+                        "subsurf_index": null,
+                        "subsurf_element": null,
+                        "label": 1
+                    },
+                    {
+                        "site": "shortbridge",
+                        "surface": "bcc110",
+                        "morphology": "terrace",
+                        "position": [
+                            6.36974995,
+                            3.00272904,
+                            11.86921846
+                        ],
+                        "normal": [
+                            -0.0,
+                            2e-08,
+                            1.0
+                        ],
+                        "indices": [
+                            23,
+                            25
+                        ],
+                        "composition": null,
+                        "subsurf_index": null,
+                        "subsurf_element": null,
+                        "label": 2
+                    },
+                    {
+                        "site": "3fold",
+                        "surface": "bcc110",
+                        "morphology": "terrace",
+                        "position": [
+                            7.07749996,
+                            3.33636557,
+                            11.86921846
+                        ],
+                        "normal": [
+                            0.0,
+                            1e-08,
+                            1.0
+                        ],
+                        "indices": [
+                            23,
+                            25,
+                            26
+                        ],
+                        "composition": null,
+                        "subsurf_index": null,
+                        "subsurf_element": null,
+                        "label": 4
+                    },
+                    {
+                        "site": "shortbridge",
+                        "surface": "bcc110",
+                        "morphology": "terrace",
+                        "position": [
+                            7.78524993,
+                            3.00272902,
+                            11.86921846
+                        ],
+                        "normal": [
+                            2e-08,
+                            -0.0,
+                            1.0
+                        ],
+                        "indices": [
+                            23,
+                            26
+                        ],
+                        "composition": null,
+                        "subsurf_index": null,
+                        "subsurf_element": null,
+                        "label": 2
+                    },
+                    {
+                        "site": "ontop",
+                        "surface": "bcc110",
+                        "morphology": "terrace",
+                        "position": [
+                            2.83100014,
+                            4.00363829,
+                            11.86921823
+                        ],
+                        "normal": [
+                            2e-08,
+                            -3e-08,
+                            1.0
+                        ],
+                        "indices": [
+                            24
+                        ],
+                        "composition": null,
+                        "subsurf_index": null,
+                        "subsurf_element": null,
+                        "label": 1
+                    },
+                    {
+                        "site": "longbridge",
+                        "surface": "bcc110",
+                        "morphology": "terrace",
+                        "position": [
+                            4.24650008,
+                            4.00363848,
+                            11.86921834
+                        ],
+                        "normal": [
+                            -1e-08,
+                            -0.0,
+                            1.0
+                        ],
+                        "indices": [
+                            24,
+                            25
+                        ],
+                        "composition": null,
+                        "subsurf_index": null,
+                        "subsurf_element": null,
+                        "label": 3
+                    },
+                    {
+                        "site": "longbridge",
+                        "surface": "bcc110",
+                        "morphology": "terrace",
+                        "position": [
+                            9.90850006,
+                            4.00363846,
+                            11.86921834
+                        ],
+                        "normal": [
+                            2e-08,
+                            -3e-08,
+                            1.0
+                        ],
+                        "indices": [
+                            24,
+                            26
+                        ],
+                        "composition": null,
+                        "subsurf_index": null,
+                        "subsurf_element": null,
+                        "label": 3
+                    },
+                    {
+                        "site": "ontop",
+                        "surface": "bcc110",
+                        "morphology": "terrace",
+                        "position": [
+                            5.66200001,
+                            4.00363868,
+                            11.86921845
+                        ],
+                        "normal": [
+                            -3e-08,
+                            2e-08,
+                            1.0
+                        ],
+                        "indices": [
+                            25
+                        ],
+                        "composition": null,
+                        "subsurf_index": null,
+                        "subsurf_element": null,
+                        "label": 1
+                    },
+                    {
+                        "site": "longbridge",
+                        "surface": "bcc110",
+                        "morphology": "terrace",
+                        "position": [
+                            7.07749999,
+                            4.00363865,
+                            11.86921845
+                        ],
+                        "normal": [
+                            -1e-08,
+                            -0.0,
+                            1.0
+                        ],
+                        "indices": [
+                            25,
+                            26
+                        ],
+                        "composition": null,
+                        "subsurf_index": null,
+                        "subsurf_element": null,
+                        "label": 3
+                    },
+                    {
+                        "site": "ontop",
+                        "surface": "bcc110",
+                        "morphology": "terrace",
+                        "position": [
+                            8.49299997,
+                            4.00363863,
+                            11.86921845
+                        ],
+                        "normal": [
+                            1e-08,
+                            -2e-08,
+                            1.0
+                        ],
+                        "indices": [
+                            26
+                        ],
+                        "composition": null,
+                        "subsurf_index": null,
+                        "subsurf_element": null,
+                        "label": 1
+                    }
+                ],
+                "site_adjacency": {
+                    "0": [
+                        "7",
+                        "9",
+                        "10",
+                        "12"
+                    ],
+                    "1": [
+                        "2",
+                        "3"
+                    ],
+                    "2": [
+                        "1"
+                    ],
+                    "3": [
+                        "1"
+                    ],
+                    "4": [
+                        "5",
+                        "6"
+                    ],
+                    "5": [
+                        "4"
+                    ],
+                    "6": [
+                        "4"
+                    ],
+                    "7": [
+                        "2",
+                        "8"
+                    ],
+                    "8": [
+                        "33"
+                    ],
+                    "9": [
+                        "5",
+                        "8"
+                    ],
+                    "10": [
+                        "6",
+                        "11"
+                    ],
+                    "11": [
+                        "49"
+                    ],
+                    "12": [
+                        "3",
+                        "11"
+                    ],
+                    "13": [
+                        "17",
+                        "19",
+                        "20",
+                        "22"
+                    ],
+                    "14": [
+                        "15",
+                        "16"
+                    ],
+                    "15": [
+                        "14"
+                    ],
+                    "16": [
+                        "14"
+                    ],
+                    "17": [
+                        "2",
+                        "18"
+                    ],
+                    "18": [
+                        "31"
+                    ],
+                    "19": [
+                        "15",
+                        "18"
+                    ],
+                    "20": [
+                        "3",
+                        "21"
+                    ],
+                    "21": [
+                        "52"
+                    ],
+                    "22": [
+                        "16",
+                        "21"
+                    ],
+                    "23": [
+                        "24",
+                        "26",
+                        "27",
+                        "29"
+                    ],
+                    "24": [
+                        "15",
+                        "25"
+                    ],
+                    "25": [
+                        "39"
+                    ],
+                    "26": [
+                        "5",
+                        "25"
+                    ],
+                    "27": [
+                        "6",
+                        "28"
+                    ],
+                    "28": [
+                        "50"
+                    ],
+                    "29": [
+                        "16",
+                        "28"
+                    ],
+                    "30": [
+                        "7",
+                        "17",
+                        "35",
+                        "37"
+                    ],
+                    "31": [
+                        "18",
+                        "32"
+                    ],
+                    "32": [
+                        "31"
+                    ],
+                    "33": [
+                        "8",
+                        "34"
+                    ],
+                    "34": [
+                        "33"
+                    ],
+                    "35": [
+                        "32",
+                        "36"
+                    ],
+                    "36": [
+                        "50"
+                    ],
+                    "37": [
+                        "34",
+                        "36"
+                    ],
+                    "38": [
+                        "19",
+                        "24",
+                        "41",
+                        "43"
+                    ],
+                    "39": [
+                        "25",
+                        "40"
+                    ],
+                    "40": [
+                        "39"
+                    ],
+                    "41": [
+                        "32",
+                        "42"
+                    ],
+                    "42": [
+                        "49"
+                    ],
+                    "43": [
+                        "40",
+                        "42"
+                    ],
+                    "44": [
+                        "9",
+                        "26",
+                        "45",
+                        "47"
+                    ],
+                    "45": [
+                        "40",
+                        "46"
+                    ],
+                    "46": [
+                        "52"
+                    ],
+                    "47": [
+                        "34",
+                        "46"
+                    ],
+                    "48": [
+                        "10",
+                        "27",
+                        "35",
+                        "41"
+                    ],
+                    "49": [
+                        "11",
+                        "42"
+                    ],
+                    "50": [
+                        "28",
+                        "36"
+                    ],
+                    "51": [
+                        "12",
+                        "20",
+                        "43",
+                        "45"
+                    ],
+                    "52": [
+                        "21",
+                        "46"
+                    ],
+                    "53": [
+                        "22",
+                        "29",
+                        "37",
+                        "47"
+                    ]
+                },
+                "out_path": "/projects/westgroup/lekia.p/pynta/Fe/TS2",
+                "irc_mode": "fixed",
+                "spawn_jobs": true,
+                "opt_obj_dict": {
+                    "software": "FairChemCalculator",
+                    "label": "prefix",
+                    "socket": false,
+                    "software_kwargs": {
+                        "predict_unit": "<fairchem.core.units.mlip_unit.predict.MLIPPredictUnit object at 0x147b9f0baaf0>",
+                        "task_name": "oc20"
+                    },
+                    "run_kwargs": {
+                        "fmax": 0.05,
+                        "steps": 70
+                    },
+                    "constraints": [
+                        "freeze up to 18"
+                    ],
+                    "sella": true,
+                    "order": 1
+                },
+                "vib_obj_dict": {
+                    "software": "FairChemCalculator",
+                    "label": "prefix",
+                    "socket": false,
+                    "software_kwargs": {
+                        "predict_unit": "<fairchem.core.units.mlip_unit.predict.MLIPPredictUnit object at 0x147b9f0baaf0>",
+                        "task_name": "oc20"
+                    },
+                    "constraints": [
+                        "freeze up to 27"
+                    ]
+                },
+                "IRC_obj_dict": {
+                    "software": "FairChemCalculator",
+                    "label": "prefix",
+                    "socket": false,
+                    "software_kwargs": {
+                        "predict_unit": "<fairchem.core.units.mlip_unit.predict.MLIPPredictUnit object at 0x147b9f0baaf0>",
+                        "task_name": "oc20"
+                    },
+                    "run_kwargs": {
+                        "fmax": 0.1,
+                        "steps": 70
+                    },
+                    "constraints": [
+                        "freeze up to 27"
+                    ]
+                },
+                "nprocs": 1,
+                "name_to_adjlist_dict": {
+                    "[H][H]": "1 H u0 p0 c0 {2,S}\n2 H u0 p0 c0 {1,S}\n",
+                    "O": "1 O u0 p2 c0 {2,S} {3,S}\n2 H u0 p0 c0 {1,S}\n3 H u0 p0 c0 {1,S}\n",
+                    "C": "1 C u0 p0 c0 {2,S} {3,S} {4,S} {5,S}\n2 H u0 p0 c0 {1,S}\n3 H u0 p0 c0 {1,S}\n4 H u0 p0 c0 {1,S}\n5 H u0 p0 c0 {1,S}\n",
+                    "N": "1 N u0 p1 c0 {2,S} {3,S} {4,S}\n2 H u0 p0 c0 {1,S}\n3 H u0 p0 c0 {1,S}\n4 H u0 p0 c0 {1,S}\n",
+                    "[H]": "multiplicity 2\n1 H u1 p0 c0\n",
+                    "[Pt]": "1 H u0 p0 c0 {2,S}\n2 X u0 p0 c0 {1,S}\n",
+                    "O=O": "1 O u0 p2 c0 {2,D}\n2 O u0 p2 c0 {1,D}\n",
+                    "O=[Pt]": "1 O u0 p2 c0 {2,D}\n2 X u0 p0 c0 {1,D}\n",
+                    "N[Pt]": "1 N u0 p1 c0 {2,S} {3,S} {4,S}\n2 H u0 p0 c0 {1,S}\n3 H u0 p0 c0 {1,S}\n4 X u0 p0 c0 {1,S}\n",
+                    "N=[Pt]": "1 N u0 p1 c0 {2,S} {3,D}\n2 H u0 p0 c0 {1,S}\n3 X u0 p0 c0 {1,D}\n",
+                    "O[Pt]": "1 O u0 p2 c0 {2,S} {3,S}\n2 H u0 p0 c0 {1,S}\n3 X u0 p0 c0 {1,S}\n",
+                    "N#[Pt]": "1 N u0 p1 c0 {2,T}\n2 X u0 p0 c0 {1,T}\n"
+                },
+                "gratom_to_molecule_atom_maps": {
+                    "[H][H]": {
+                        "0": 0,
+                        "1": 1
+                    },
+                    "O": {
+                        "0": 0,
+                        "1": 1,
+                        "2": 2
+                    },
+                    "C": {
+                        "0": 0,
+                        "1": 1,
+                        "2": 2,
+                        "3": 3,
+                        "4": 4
+                    },
+                    "N": {
+                        "0": 0,
+                        "1": 1,
+                        "2": 2,
+                        "3": 3
+                    },
+                    "[H]": {
+                        "0": 0
+                    },
+                    "[Pt]": {
+                        "0": 0
+                    },
+                    "O=O": {
+                        "0": 0,
+                        "1": 1
+                    },
+                    "O=[Pt]": {
+                        "0": 0
+                    },
+                    "N[Pt]": {
+                        "0": 0,
+                        "1": 1,
+                        "2": 2
+                    },
+                    "N=[Pt]": {
+                        "0": 0,
+                        "1": 1
+                    },
+                    "O[Pt]": {
+                        "0": 0,
+                        "1": 1
+                    },
+                    "N#[Pt]": {
+                        "0": 0
+                    }
+                },
+                "gratom_to_molecule_surface_atom_maps": {
+                    "[H][H]": {},
+                    "O": {},
+                    "C": {},
+                    "N": {},
+                    "[H]": {},
+                    "[Pt]": {
+                        "0": 0
+                    },
+                    "O=O": {},
+                    "O=[Pt]": {
+                        "0": 0
+                    },
+                    "N[Pt]": {
+                        "0": 0
+                    },
+                    "N=[Pt]": {
+                        "0": 0
+                    },
+                    "O[Pt]": {
+                        "0": 0
+                    },
+                    "N#[Pt]": {
+                        "0": 0
+                    }
+                },
+                "nslab": 27,
+                "Eharmtol": 3.0,
+                "Eharmfiltertol": 30.0,
+                "Nharmmin": 5,
+                "max_num_hfsp_opts": null,
+                "surrogate_metal": "Fe",
+                "harm_f_software": "TBLite",
+                "harm_f_software_kwargs": {
+                    "method": "GFN1-xTB"
+                },
+                "postprocess": true,
+                "_fw_name": "{{pynta.tasks.MolecularTSEstimate}}"
+            }
+        ]
+    },
+    "fw_id": 4,
+    "created_on": "2025-07-12T17:53:03.088232",
+    "updated_on": "2025-07-12T18:30:29.136987",
+    "launches": [
+        {
+            "fworker": {
+                "name": "my first fireworker",
+                "category": "",
+                "query": "{}",
+                "env": {
+                    "LD_LIBRARY_PATH": "LD_LIBRARY_PATH=\"$HOME/local_libs:/shared/EL9/explorer/AMBER/24/lib:/shared/EL9/explorer/OpenBLAS/0.3.29/lib:/shared/EL9/explorer/OpenMPI/4.1.6/lib:/home/lekia.p/miniforge3/lib\""
+                }
+            },
+            "fw_id": 4,
+            "launch_dir": "/projects/westgroup/lekia.p/pynta/Fe/block_2025-07-12-17-50-43-929229/launcher_2025-07-12-18-29-52-065238",
+            "host": "c3047",
+            "ip": "10.99.249.77",
+            "trackers": [],
+            "action": null,
+            "state": "RUNNING",
+            "state_history": [
+                {
+                    "state": "RUNNING",
+                    "created_on": "2025-07-12T18:30:29.135743",
+                    "updated_on": "2025-07-12T18:30:29.135747"
+                }
+            ],
+            "launch_id": 77
+        }
+    ],
+    "state": "RUNNING",
+    "name": "TS2est"
+}

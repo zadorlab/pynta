@@ -1,0 +1,7 @@
+DEBUG:launchpad:FW with id: 17 is unique!
+DEBUG:launchpad:Created/updated Launch with launch_id: 13
+DEBUG:launchpad:RUNNING FW with id: 17
+INFO:rocket.launcher:RUNNING fw_id: 17 in directory: /projects/westgroup/lekia.p/pynta/Fe/block_2025-07-12-17-50-43-929229/launcher_2025-07-12-17-57-01-203545
+INFO:rocket.launcher:Task started: {{pynta.tasks.MolecularAdsorbateEstimate}}.
+INFO:rocket.launcher:Task completed: {{pynta.tasks.MolecularAdsorbateEstimate}}
+INFO:rocket.launcher:Rocket finished

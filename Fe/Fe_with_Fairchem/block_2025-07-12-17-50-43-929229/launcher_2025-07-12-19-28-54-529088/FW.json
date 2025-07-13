@@ -1,0 +1,81 @@
+{
+    "spec": {
+        "_allow_fizzled_parents": false,
+        "_priority": 1,
+        "_tasks": [
+            {
+                "xyz": "/projects/westgroup/lekia.p/pynta/Fe/TS3/10/xtb.xyz",
+                "software": "FairChemCalculator",
+                "label": "opt.xyz",
+                "software_kwargs": {
+                    "predict_unit": "<fairchem.core.units.mlip_unit.predict.MLIPPredictUnit object at 0x147b9f0baaf0>",
+                    "task_name": "oc20"
+                },
+                "run_kwargs": {
+                    "fmax": 0.05,
+                    "steps": 70
+                },
+                "constraints": [
+                    "freeze up to 18"
+                ],
+                "order": 1,
+                "sella": true,
+                "socket": false,
+                "time_limit_hrs": Infinity,
+                "fmaxhard": 0.0,
+                "ignore_errors": true,
+                "target_site_num": null,
+                "metal": null,
+                "facet": null,
+                "_fw_name": "{{pynta.tasks.MolecularOptimizationTask}}"
+            },
+            {
+                "files": [
+                    {
+                        "src": "opt.xyz.xyz",
+                        "dest": "/projects/westgroup/lekia.p/pynta/Fe/TS3/10/opt.xyz"
+                    },
+                    {
+                        "src": "opt.xyz.traj",
+                        "dest": "/projects/westgroup/lekia.p/pynta/Fe/TS3/10/opt.xyz.traj"
+                    }
+                ],
+                "mode": "copy",
+                "ignore_errors": true,
+                "_fw_name": "FileTransferTask"
+            }
+        ]
+    },
+    "fw_id": 151,
+    "created_on": "2025-07-12T19:21:37.742189",
+    "updated_on": "2025-07-12T19:29:37.906709",
+    "launches": [
+        {
+            "fworker": {
+                "name": "my first fireworker",
+                "category": "",
+                "query": "{}",
+                "env": {
+                    "LD_LIBRARY_PATH": "LD_LIBRARY_PATH=\"$HOME/local_libs:/shared/EL9/explorer/AMBER/24/lib:/shared/EL9/explorer/OpenBLAS/0.3.29/lib:/shared/EL9/explorer/OpenMPI/4.1.6/lib:/home/lekia.p/miniforge3/lib\""
+                }
+            },
+            "fw_id": 151,
+            "launch_dir": "/projects/westgroup/lekia.p/pynta/Fe/block_2025-07-12-17-50-43-929229/launcher_2025-07-12-19-28-54-529088",
+            "host": "c3044",
+            "ip": "10.99.249.74",
+            "trackers": [],
+            "action": null,
+            "state": "RUNNING",
+            "state_history": [
+                {
+                    "state": "RUNNING",
+                    "created_on": "2025-07-12T19:29:37.905679",
+                    "updated_on": "2025-07-12T19:29:37.905682"
+                }
+            ],
+            "launch_id": 148
+        }
+    ],
+    "state": "RUNNING",
+    "name": "opt.xyzopt"
+}

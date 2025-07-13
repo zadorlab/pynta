@@ -1,0 +1,71 @@
+{
+    "spec": {
+        "_priority": 0.5,
+        "_tasks": [
+            {
+                "xyz": "/projects/westgroup/lekia.p/pynta/Fe/TS3/10/opt.xyz",
+                "label": "irc_forward.traj",
+                "software": "FairChemCalculator",
+                "socket": false,
+                "software_kwargs": {
+                    "predict_unit": "<fairchem.core.units.mlip_unit.predict.MLIPPredictUnit object at 0x147b9f0baaf0>",
+                    "task_name": "oc20"
+                },
+                "opt_kwargs": {},
+                "run_kwargs": {
+                    "fmax": 0.1,
+                    "steps": 70
+                },
+                "constraints": [
+                    "freeze up to 27"
+                ],
+                "ignore_errors": true,
+                "forward": true,
+                "_fw_name": "{{pynta.tasks.MolecularIRC}}"
+            },
+            {
+                "files": [
+                    {
+                        "src": "irc_forward.traj_irc.traj",
+                        "dest": "/projects/westgroup/lekia.p/pynta/Fe/TS3/10/irc_forward.traj"
+                    }
+                ],
+                "mode": "copy",
+                "ignore_errors": true,
+                "_fw_name": "FileTransferTask"
+            }
+        ]
+    },
+    "fw_id": 165,
+    "created_on": "2025-07-12T19:34:47.804712",
+    "updated_on": "2025-07-12T19:46:50.557685",
+    "launches": [
+        {
+            "fworker": {
+                "name": "my first fireworker",
+                "category": "",
+                "query": "{}",
+                "env": {
+                    "LD_LIBRARY_PATH": "LD_LIBRARY_PATH=\"$HOME/local_libs:/shared/EL9/explorer/AMBER/24/lib:/shared/EL9/explorer/OpenBLAS/0.3.29/lib:/shared/EL9/explorer/OpenMPI/4.1.6/lib:/home/lekia.p/miniforge3/lib\""
+                }
+            },
+            "fw_id": 165,
+            "launch_dir": "/projects/westgroup/lekia.p/pynta/Fe/block_2025-07-12-17-50-43-929229/launcher_2025-07-12-19-45-35-542176",
+            "host": "c3044",
+            "ip": "10.99.249.74",
+            "trackers": [],
+            "action": null,
+            "state": "RUNNING",
+            "state_history": [
+                {
+                    "state": "RUNNING",
+                    "created_on": "2025-07-12T19:46:50.555831",
+                    "updated_on": "2025-07-12T19:46:50.555836"
+                }
+            ],
+            "launch_id": 167
+        }
+    ],
+    "state": "RUNNING",
+    "name": "irc_forward.traj_IRC"
+}

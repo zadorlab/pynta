@@ -1,0 +1,8 @@
+DEBUG:launchpad:FW with id: 98 is unique!
+DEBUG:launchpad:Created/updated Launch with launch_id: 121
+DEBUG:launchpad:RUNNING FW with id: 98
+INFO:rocket.launcher:RUNNING fw_id: 98 in directory: /projects/westgroup/lekia.p/pynta/Fe/block_2025-07-12-17-50-43-929229/launcher_2025-07-12-19-03-30-352171
+INFO:rocket.launcher:Task started: {{pynta.tasks.PostprocessingTask}}.
+WARNING:root:No O reference (no H2O calculation), thermochemistry with O will be wrong
+INFO:rocket.launcher:Task completed: {{pynta.tasks.PostprocessingTask}}
+INFO:rocket.launcher:Rocket finished

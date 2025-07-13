@@ -1,0 +1,31 @@
+Python path: /home/lekia.p/miniforge3/envs/pynta_env/bin/python
+Conda environment: pynta_fairchem
+ASE version: 3.22.1
+2025-07-12 15:38:36,348 INFO Hostname/IP lookup (this will take a few seconds)
+2025-07-12 15:38:36,349 INFO Launching Rocket
+✅ Patched scipy.linalg.lapack.dsyevr
+2025-07-12 15:38:39,545 INFO RUNNING fw_id: 172 in directory: /projects/westgroup/lekia.p/pynta/Fe/block_2025-07-12-17-50-43-929229/launcher_2025-07-12-19-37-52-871161
+2025-07-12 15:38:39,562 INFO Task started: {{pynta.tasks.MolecularIRC}}.
+     Step     Time          Energy         fmax
+IRC:    0 15:40:22     -193.522296        0.0487
+IRC:    1 15:40:33     -193.555642        0.6638
+IRC:    2 15:40:41     -193.648445        1.2286
+IRC:    3 15:40:52     -193.781385        1.4551
+IRC:    4 15:41:03     -193.921212        1.3084
+IRC:    5 15:41:14     -194.048952        1.1924
+IRC:    6 15:41:21     -194.166640        1.1114
+IRC:    7 15:41:28     -194.276374        1.0299
+IRC:    8 15:41:36     -194.377441        0.9548
+IRC:    9 15:41:43     -194.468366        0.9662
+IRC:   10 15:41:50     -194.547637        0.9587
+IRC:   11 15:41:57     -194.613958        0.9195
+IRC:   12 15:42:04     -194.666195        0.8421
+IRC:   13 15:42:11     -194.703812        0.7159
+IRC:   14 15:42:22     -194.728331        0.5411
+IRC:   15 15:42:25     -194.743317        0.3635
+IRC:   16 15:42:32     -194.751773        0.2029
+IRC:   17 15:42:36     -194.755851        0.0861
+2025-07-12 15:42:36,411 INFO Task completed: {{pynta.tasks.MolecularIRC}}
+2025-07-12 15:42:36,415 INFO Task started: FileTransferTask.
+2025-07-12 15:42:36,433 INFO Task completed: FileTransferTask
+2025-07-12 15:42:36,458 INFO Rocket finished

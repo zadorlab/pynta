@@ -1,0 +1,27 @@
+Python path: /home/lekia.p/miniforge3/envs/pynta_env/bin/python
+Conda environment: pynta_fairchem
+ASE version: 3.22.1
+2025-07-12 14:25:30,018 INFO Hostname/IP lookup (this will take a few seconds)
+2025-07-12 14:25:30,018 INFO Launching Rocket
+✅ Patched scipy.linalg.lapack.dsyevr
+2025-07-12 14:25:33,339 INFO RUNNING fw_id: 48 in directory: /projects/westgroup/lekia.p/pynta/Fe/block_2025-07-12-17-50-43-929229/launcher_2025-07-12-18-24-39-047299
+2025-07-12 14:25:33,353 INFO Task started: {{pynta.tasks.MolecularOptimizationTask}}.
+                Step[ FC]     Time          Energy          fmax
+*Force-consistent energies used in optimization.
+BFGSLineSearch:    0[  0] 14:27:04     -187.799559*       0.4659
+BFGSLineSearch:    1[  2] 14:27:09     -188.111077*       2.2105
+BFGSLineSearch:    2[  3] 14:27:12     -188.281806*       1.1258
+BFGSLineSearch:    3[  4] 14:27:16     -188.616487*       0.7801
+BFGSLineSearch:    4[  5] 14:27:19     -188.964906*       0.7580
+BFGSLineSearch:    5[  6] 14:27:22     -189.221601*       0.8596
+BFGSLineSearch:    6[  7] 14:27:25     -189.381262*       0.2859
+BFGSLineSearch:    7[ 10] 14:27:35     -189.443351*       0.2067
+BFGSLineSearch:    8[ 12] 14:27:41     -189.468487*       0.1903
+BFGSLineSearch:    9[ 13] 14:27:44     -189.477725*       0.0856
+BFGSLineSearch:   10[ 14] 14:27:47     -189.482308*       0.0641
+BFGSLineSearch:   11[ 15] 14:27:50     -189.485425*       0.0534
+BFGSLineSearch:   12[ 16] 14:27:53     -189.486785*       0.0314
+2025-07-12 14:27:53,536 INFO Task completed: {{pynta.tasks.MolecularOptimizationTask}}
+2025-07-12 14:27:53,541 INFO Task started: FileTransferTask.
+2025-07-12 14:27:53,568 INFO Task completed: FileTransferTask
+2025-07-12 14:27:53,622 INFO Rocket finished

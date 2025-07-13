@@ -1,0 +1,38 @@
+Python path: /home/lekia.p/miniforge3/envs/pynta_env/bin/python
+Conda environment: pynta_fairchem
+ASE version: 3.22.1
+2025-07-12 13:59:21,426 INFO Hostname/IP lookup (this will take a few seconds)
+2025-07-12 13:59:21,426 INFO Launching Rocket
+✅ Patched scipy.linalg.lapack.dsyevr
+2025-07-12 13:59:24,839 INFO RUNNING fw_id: 84 in directory: /projects/westgroup/lekia.p/pynta/Fe/block_2025-07-12-17-50-43-929229/launcher_2025-07-12-17-58-27-328226
+2025-07-12 13:59:24,855 INFO Task started: {{pynta.tasks.MolecularOptimizationTask}}.
+       Step     Time          Energy         fmax
+MDMin:    0 14:00:55     -194.075740        4.1026
+MDMin:    1 14:00:58     -194.125403        4.0127
+MDMin:    2 14:01:00     -194.267354        3.7083
+MDMin:    3 14:01:03     -194.477389        3.2443
+MDMin:    4 14:01:06     -194.707542        2.3009
+MDMin:    5 14:01:08     -194.890365        1.4937
+MDMin:    6 14:01:11     -195.026878        1.4473
+MDMin:    7 14:01:13     -195.167088        1.3508
+MDMin:    8 14:01:16     -195.309257        1.2101
+MDMin:    9 14:01:18     -195.446459        0.9824
+MDMin:   10 14:01:21     -195.568303        0.7023
+MDMin:   11 14:01:24     -195.656790        0.9076
+MDMin:   12 14:01:27     -195.701672        0.7549
+MDMin:   13 14:01:29     -195.723350        0.6082
+MDMin:   14 14:01:32     -195.746493        0.6026
+MDMin:   15 14:01:35     -195.773691        0.5975
+MDMin:   16 14:01:38     -195.804954        0.5941
+MDMin:   17 14:01:41     -195.840092        0.5927
+MDMin:   18 14:01:43     -195.878896        0.5926
+MDMin:   19 14:01:46     -195.921023        0.5905
+MDMin:   20 14:01:49     -195.965921        0.5820
+MDMin:   21 14:01:53     -196.012707        0.5648
+MDMin:   22 14:01:56     -196.060234        0.5386
+MDMin:   23 14:01:59     -196.107081        0.5046
+MDMin:   24 14:02:02     -196.150877        0.4662
+2025-07-12 14:02:02,954 INFO Task completed: {{pynta.tasks.MolecularOptimizationTask}}
+2025-07-12 14:02:02,958 INFO Task started: FileTransferTask.
+2025-07-12 14:02:02,976 INFO Task completed: FileTransferTask
+2025-07-12 14:02:02,997 INFO Rocket finished

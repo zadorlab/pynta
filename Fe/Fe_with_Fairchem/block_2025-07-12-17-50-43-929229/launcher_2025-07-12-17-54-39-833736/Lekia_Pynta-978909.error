@@ -1,0 +1,8 @@
+DEBUG:launchpad:FW with id: 14 is unique!
+DEBUG:launchpad:Created/updated Launch with launch_id: 9
+DEBUG:launchpad:RUNNING FW with id: 14
+INFO:rocket.launcher:RUNNING fw_id: 14 in directory: /projects/westgroup/lekia.p/pynta/Fe/block_2025-07-12-17-50-43-929229/launcher_2025-07-12-17-54-39-833736
+INFO:rocket.launcher:Task started: {{pynta.tasks.MolecularAdsorbateEstimate}}.
+[13:55:26] WARNING: not removing hydrogen atom without neighbors
+INFO:rocket.launcher:Task completed: {{pynta.tasks.MolecularAdsorbateEstimate}}
+INFO:rocket.launcher:Rocket finished

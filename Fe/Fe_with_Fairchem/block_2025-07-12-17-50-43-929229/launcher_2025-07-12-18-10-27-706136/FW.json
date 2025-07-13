@@ -1,0 +1,85 @@
+{
+    "spec": {
+        "_allow_fizzled_parents": false,
+        "_priority": 3.5,
+        "_tasks": [
+            {
+                "xyz": "/projects/westgroup/lekia.p/pynta/Fe/Adsorbates/N#[Pt]/0/0_init.xyz",
+                "software": "FairChemCalculator",
+                "label": "weakopt_0",
+                "opt_method": "MDMin",
+                "software_kwargs": {
+                    "predict_unit": "<fairchem.core.units.mlip_unit.predict.MLIPPredictUnit object at 0x147abb7af280>",
+                    "task_name": "oc20"
+                },
+                "opt_kwargs": {
+                    "dt": 0.05
+                },
+                "run_kwargs": {
+                    "fmax": 0.5,
+                    "steps": 70
+                },
+                "constraints": [
+                    "freeze up to 18"
+                ],
+                "order": 0,
+                "sella": false,
+                "socket": false,
+                "time_limit_hrs": Infinity,
+                "fmaxhard": 0.0,
+                "ignore_errors": true,
+                "target_site_num": null,
+                "metal": "Fe",
+                "facet": "bcc110",
+                "_fw_name": "{{pynta.tasks.MolecularOptimizationTask}}"
+            },
+            {
+                "files": [
+                    {
+                        "src": "weakopt_0.xyz",
+                        "dest": "/projects/westgroup/lekia.p/pynta/Fe/Adsorbates/N#[Pt]/0/weakopt_0.xyz"
+                    },
+                    {
+                        "src": "weakopt_0.traj",
+                        "dest": "/projects/westgroup/lekia.p/pynta/Fe/Adsorbates/N#[Pt]/0/weakopt_0.traj"
+                    }
+                ],
+                "mode": "copy",
+                "ignore_errors": true,
+                "_fw_name": "FileTransferTask"
+            }
+        ]
+    },
+    "fw_id": 30,
+    "created_on": "2025-07-12T17:55:02.568704",
+    "updated_on": "2025-07-12T18:11:31.641035",
+    "launches": [
+        {
+            "fworker": {
+                "name": "my first fireworker",
+                "category": "",
+                "query": "{}",
+                "env": {
+                    "LD_LIBRARY_PATH": "LD_LIBRARY_PATH=\"$HOME/local_libs:/shared/EL9/explorer/AMBER/24/lib:/shared/EL9/explorer/OpenBLAS/0.3.29/lib:/shared/EL9/explorer/OpenMPI/4.1.6/lib:/home/lekia.p/miniforge3/lib\""
+                }
+            },
+            "fw_id": 30,
+            "launch_dir": "/projects/westgroup/lekia.p/pynta/Fe/block_2025-07-12-17-50-43-929229/launcher_2025-07-12-18-10-27-706136",
+            "host": "c3044",
+            "ip": "10.99.249.74",
+            "trackers": [],
+            "action": null,
+            "state": "RUNNING",
+            "state_history": [
+                {
+                    "state": "RUNNING",
+                    "created_on": "2025-07-12T18:11:31.639623",
+                    "updated_on": "2025-07-12T18:11:31.639626"
+                }
+            ],
+            "launch_id": 42
+        }
+    ],
+    "state": "RUNNING",
+    "name": "weakopt_0opt"
+}

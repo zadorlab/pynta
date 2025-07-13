@@ -1,0 +1,44 @@
+Python path: /home/lekia.p/miniforge3/envs/pynta_env/bin/python
+Conda environment: pynta_fairchem
+ASE version: 3.22.1
+2025-07-12 16:05:42,024 INFO Hostname/IP lookup (this will take a few seconds)
+2025-07-12 16:05:42,025 INFO Launching Rocket
+✅ Patched scipy.linalg.lapack.dsyevr
+2025-07-12 16:05:46,104 INFO RUNNING fw_id: 192 in directory: /projects/westgroup/lekia.p/pynta/Fe/block_2025-07-12-17-50-43-929229/launcher_2025-07-12-20-05-24-660313
+2025-07-12 16:05:46,115 INFO Task started: {{pynta.tasks.MolecularIRC}}.
+     Step     Time          Energy         fmax
+IRC:    0 16:07:50     -205.233305        0.0269
+IRC:    1 16:07:58     -205.234222        0.0581
+IRC:    2 16:08:02     -205.236309        0.1087
+IRC:    3 16:08:06     -205.239647        0.1586
+IRC:    4 16:08:09     -205.244223        0.2073
+IRC:    5 16:08:13     -205.249998        0.2537
+IRC:    6 16:08:17     -205.256891        0.2962
+IRC:    7 16:08:21     -205.264779        0.3327
+IRC:    8 16:08:25     -205.273489        0.3617
+IRC:    9 16:08:29     -205.282824        0.3834
+IRC:   10 16:08:33     -205.292646        0.4014
+IRC:   11 16:08:37     -205.302916        0.4200
+IRC:   12 16:08:41     -205.313685        0.4417
+IRC:   13 16:08:45     -205.325042        0.4664
+IRC:   14 16:08:48     -205.337037        0.4931
+IRC:   15 16:08:52     -205.349713        0.5203
+IRC:   16 16:08:56     -205.363058        0.5466
+IRC:   17 16:09:00     -205.377035        0.5707
+IRC:   18 16:09:04     -205.391577        0.5917
+IRC:   19 16:09:08     -205.406592        0.6083
+IRC:   20 16:09:12     -205.421950        0.6188
+IRC:   21 16:09:16     -205.437476        0.6215
+IRC:   22 16:09:19     -205.452948        0.6142
+IRC:   23 16:09:23     -205.468097        0.5953
+IRC:   24 16:09:27     -205.482605        0.5625
+IRC:   25 16:09:31     -205.496073        0.5116
+IRC:   26 16:09:35     -205.508014        0.4398
+IRC:   27 16:09:39     -205.517898        0.3476
+IRC:   28 16:09:43     -205.525226        0.2353
+IRC:   29 16:09:47     -205.529513        0.1051
+IRC:   30 16:09:51     -205.530510        0.0125
+2025-07-12 16:09:51,389 INFO Task completed: {{pynta.tasks.MolecularIRC}}
+2025-07-12 16:09:51,393 INFO Task started: FileTransferTask.
+2025-07-12 16:09:51,414 INFO Task completed: FileTransferTask
+2025-07-12 16:09:51,438 INFO Rocket finished

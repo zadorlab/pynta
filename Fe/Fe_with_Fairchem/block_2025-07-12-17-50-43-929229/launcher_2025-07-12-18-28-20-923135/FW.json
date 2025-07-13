@@ -1,0 +1,222 @@
+{
+    "spec": {
+        "_allow_fizzled_parents": true,
+        "_priority": 3,
+        "_tasks": [
+            {
+                "xyz": "/projects/westgroup/lekia.p/pynta/Fe/Adsorbates/[H]/0/weakopt_0.xyz",
+                "software": "FairChemCalculator",
+                "label": "0",
+                "opt_method": "QuasiNewton",
+                "software_kwargs": {
+                    "predict_unit": "<fairchem.core.units.mlip_unit.predict.MLIPPredictUnit object at 0x147ab980a6d0>",
+                    "task_name": "omol"
+                },
+                "run_kwargs": {
+                    "fmax": 0.05,
+                    "steps": 70
+                },
+                "order": 0,
+                "sella": false,
+                "socket": false,
+                "time_limit_hrs": Infinity,
+                "fmaxhard": 0.0,
+                "ignore_errors": true,
+                "target_site_num": null,
+                "metal": "Fe",
+                "facet": "bcc110",
+                "_fw_name": "{{pynta.tasks.MolecularOptimizationTask}}"
+            },
+            {
+                "files": [
+                    {
+                        "src": "0.xyz",
+                        "dest": "/projects/westgroup/lekia.p/pynta/Fe/Adsorbates/[H]/0/0.xyz"
+                    },
+                    {
+                        "src": "0.traj",
+                        "dest": "/projects/westgroup/lekia.p/pynta/Fe/Adsorbates/[H]/0/0.traj"
+                    }
+                ],
+                "mode": "copy",
+                "ignore_errors": true,
+                "_fw_name": "FileTransferTask"
+            }
+        ],
+        "_fizzled_parents": [
+            {
+                "spec": {
+                    "_allow_fizzled_parents": false,
+                    "_priority": 3.5,
+                    "_tasks": [
+                        {
+                            "xyz": "/projects/westgroup/lekia.p/pynta/Fe/Adsorbates/[H]/0/0_init.xyz",
+                            "software": "FairChemCalculator",
+                            "label": "weakopt_0",
+                            "opt_method": "MDMin",
+                            "software_kwargs": {
+                                "predict_unit": "<fairchem.core.units.mlip_unit.predict.MLIPPredictUnit object at 0x147ab980a6d0>",
+                                "task_name": "omol"
+                            },
+                            "opt_kwargs": {
+                                "dt": 0.05
+                            },
+                            "run_kwargs": {
+                                "fmax": 0.5,
+                                "steps": 70
+                            },
+                            "order": 0,
+                            "sella": false,
+                            "socket": false,
+                            "time_limit_hrs": Infinity,
+                            "fmaxhard": 0.0,
+                            "ignore_errors": true,
+                            "target_site_num": null,
+                            "metal": "Fe",
+                            "facet": "bcc110",
+                            "_fw_name": "{{pynta.tasks.MolecularOptimizationTask}}"
+                        },
+                        {
+                            "files": [
+                                {
+                                    "src": "weakopt_0.xyz",
+                                    "dest": "/projects/westgroup/lekia.p/pynta/Fe/Adsorbates/[H]/0/weakopt_0.xyz"
+                                },
+                                {
+                                    "src": "weakopt_0.traj",
+                                    "dest": "/projects/westgroup/lekia.p/pynta/Fe/Adsorbates/[H]/0/weakopt_0.traj"
+                                }
+                            ],
+                            "mode": "copy",
+                            "ignore_errors": true,
+                            "_fw_name": "FileTransferTask"
+                        }
+                    ]
+                },
+                "fw_id": 33,
+                "created_on": "2025-07-12T17:55:26.369475",
+                "updated_on": "2025-07-12T18:10:55.274965",
+                "launches": [
+                    {
+                        "fworker": {
+                            "name": "my first fireworker",
+                            "category": "",
+                            "query": "{}",
+                            "env": {
+                                "LD_LIBRARY_PATH": "LD_LIBRARY_PATH=\"$HOME/local_libs:/shared/EL9/explorer/AMBER/24/lib:/shared/EL9/explorer/OpenBLAS/0.3.29/lib:/shared/EL9/explorer/OpenMPI/4.1.6/lib:/home/lekia.p/miniforge3/lib\""
+                            }
+                        },
+                        "fw_id": 33,
+                        "launch_dir": "/projects/westgroup/lekia.p/pynta/Fe/block_2025-07-12-17-50-43-929229/launcher_2025-07-12-18-09-06-964427",
+                        "host": "c3044",
+                        "ip": "10.99.249.74",
+                        "trackers": [],
+                        "action": {
+                            "stored_data": {
+                                "_message": "runtime error during task",
+                                "_task": {
+                                    "xyz": "/projects/westgroup/lekia.p/pynta/Fe/Adsorbates/[H]/0/0_init.xyz",
+                                    "software": "FairChemCalculator",
+                                    "label": "weakopt_0",
+                                    "opt_method": "MDMin",
+                                    "software_kwargs": {
+                                        "predict_unit": "<fairchem.core.units.mlip_unit.predict.MLIPPredictUnit object at 0x147ab980a6d0>",
+                                        "task_name": "omol"
+                                    },
+                                    "opt_kwargs": {
+                                        "dt": 0.05
+                                    },
+                                    "run_kwargs": {
+                                        "fmax": 0.5,
+                                        "steps": 70
+                                    },
+                                    "order": 0,
+                                    "sella": false,
+                                    "socket": false,
+                                    "time_limit_hrs": Infinity,
+                                    "fmaxhard": 0.0,
+                                    "ignore_errors": true,
+                                    "target_site_num": null,
+                                    "metal": "Fe",
+                                    "facet": "bcc110",
+                                    "_fw_name": "{{pynta.tasks.MolecularOptimizationTask}}"
+                                },
+                                "_exception": {
+                                    "_stacktrace": "Traceback (most recent call last):\n  File \"/home/lekia.p/miniforge3/envs/pynta_fairchem/lib/python3.8/site-packages/fireworks/core/rocket.py\", line 261, in run\n    m_action = t.run_task(my_spec)\n  File \"/projects/westgroup/lekia.p/pynta/pynta/tasks.py\", line 240, in run_task\n    converged = opt.converged()\n  File \"/home/lekia.p/miniforge3/envs/pynta_fairchem/lib/python3.8/site-packages/ase/optimize/optimize.py\", line 274, in converged\n    forces = self.atoms.get_forces()\n  File \"/home/lekia.p/miniforge3/envs/pynta_fairchem/lib/python3.8/site-packages/ase/atoms.py\", line 788, in get_forces\n    forces = self._calc.get_forces(self)\n  File \"/home/lekia.p/miniforge3/envs/pynta_fairchem/lib/python3.8/site-packages/ase/calculators/abc.py\", line 23, in get_forces\n    return self.get_property('forces', atoms)\n  File \"/home/lekia.p/miniforge3/envs/pynta_fairchem/lib/python3.8/site-packages/ase/calculators/calculator.py\", line 737, in get_property\n    self.calculate(atoms, [name], system_changes)\n  File \"/projects/westgroup/lekia.p/fairchem/src/fairchem/core/calculate/ase_calculator.py\", line 223, in calculate\n    pred = self.predictor.predict(batch)\n  File \"/projects/westgroup/lekia.p/fairchem/src/fairchem/core/units/mlip_unit/predict.py\", line 44, in collated_predict\n    preds = predict_fn(predict_unit, data, undo_element_references)\n  File \"/projects/westgroup/lekia.p/fairchem/src/fairchem/core/units/mlip_unit/predict.py\", line 233, in predict\n    output = self.model(data_device)\n  File \"/home/lekia.p/miniforge3/envs/pynta_fairchem/lib/python3.8/site-packages/torch/nn/modules/module.py\", line 1553, in _wrapped_call_impl\n    return self._call_impl(*args, **kwargs)\n  File \"/home/lekia.p/miniforge3/envs/pynta_fairchem/lib/python3.8/site-packages/torch/nn/modules/module.py\", line 1562, in _call_impl\n    return forward_call(*args, **kwargs)\n  File \"/home/lekia.p/miniforge3/envs/pynta_fairchem/lib/python3.8/site-packages/torch/optim/swa_utils.py\", line 219, in forward\n    return self.module(*args, **kwargs)\n  File \"/home/lekia.p/miniforge3/envs/pynta_fairchem/lib/python3.8/site-packages/torch/nn/modules/module.py\", line 1553, in _wrapped_call_impl\n    return self._call_impl(*args, **kwargs)\n  File \"/home/lekia.p/miniforge3/envs/pynta_fairchem/lib/python3.8/site-packages/torch/nn/modules/module.py\", line 1562, in _call_impl\n    return forward_call(*args, **kwargs)\n  File \"/projects/westgroup/lekia.p/fairchem/src/fairchem/core/models/base.py\", line 178, in forward\n    emb = self.backbone(data)\n  File \"/home/lekia.p/miniforge3/envs/pynta_fairchem/lib/python3.8/site-packages/torch/nn/modules/module.py\", line 1553, in _wrapped_call_impl\n    return self._call_impl(*args, **kwargs)\n  File \"/home/lekia.p/miniforge3/envs/pynta_fairchem/lib/python3.8/site-packages/torch/nn/modules/module.py\", line 1562, in _call_impl\n    return forward_call(*args, **kwargs)\n  File \"/projects/westgroup/lekia.p/fairchem/src/fairchem/core/common/utils.py\", line 71, in cls_method\n    return f(self, *args, **kwargs)\n  File \"/home/lekia.p/miniforge3/envs/pynta_fairchem/lib/python3.8/site-packages/torch/utils/_contextlib.py\", line 116, in decorate_context\n    return func(*args, **kwargs)\n  File \"/projects/westgroup/lekia.p/fairchem/src/fairchem/core/models/uma/escn_md.py\", line 446, in forward\n    raise ValueError(\nValueError: No edges found in input system, this means either you have a single atom in the system or the atoms are farther apart than the radius cutoff of the model of 6 Angstroms. We don't know how to handle this case. Check the positions of system: tensor([[10., 10., 10.]], grad_fn=<AddBackward0>)\n",
+                                    "_details": null
+                                }
+                            },
+                            "exit": true,
+                            "update_spec": {},
+                            "mod_spec": [],
+                            "additions": [],
+                            "detours": [],
+                            "defuse_children": false,
+                            "defuse_workflow": false,
+                            "propagate": false
+                        },
+                        "state": "FIZZLED",
+                        "state_history": [
+                            {
+                                "state": "RUNNING",
+                                "created_on": "2025-07-12T18:09:26.499732",
+                                "updated_on": "2025-07-12T18:10:55.261820",
+                                "checkpoint": {
+                                    "_task_n": 0,
+                                    "_all_stored_data": {},
+                                    "_all_update_spec": {},
+                                    "_all_mod_spec": []
+                                }
+                            },
+                            {
+                                "state": "FIZZLED",
+                                "created_on": "2025-07-12T18:10:55.264938",
+                                "checkpoint": {
+                                    "_task_n": 0,
+                                    "_all_stored_data": {},
+                                    "_all_update_spec": {},
+                                    "_all_mod_spec": []
+                                }
+                            }
+                        ],
+                        "launch_id": 38
+                    }
+                ],
+                "state": "FIZZLED",
+                "name": "weakopt_0opt"
+            }
+        ]
+    },
+    "fw_id": 32,
+    "created_on": "2025-07-12T17:55:26.369510",
+    "updated_on": "2025-07-12T18:29:32.208062",
+    "launches": [
+        {
+            "fworker": {
+                "name": "my first fireworker",
+                "category": "",
+                "query": "{}",
+                "env": {
+                    "LD_LIBRARY_PATH": "LD_LIBRARY_PATH=\"$HOME/local_libs:/shared/EL9/explorer/AMBER/24/lib:/shared/EL9/explorer/OpenBLAS/0.3.29/lib:/shared/EL9/explorer/OpenMPI/4.1.6/lib:/home/lekia.p/miniforge3/lib\""
+                }
+            },
+            "fw_id": 32,
+            "launch_dir": "/projects/westgroup/lekia.p/pynta/Fe/block_2025-07-12-17-50-43-929229/launcher_2025-07-12-18-28-20-923135",
+            "host": "c3044",
+            "ip": "10.99.249.74",
+            "trackers": [],
+            "action": null,
+            "state": "RUNNING",
+            "state_history": [
+                {
+                    "state": "RUNNING",
+                    "created_on": "2025-07-12T18:29:32.206762",
+                    "updated_on": "2025-07-12T18:29:32.206765"
+                }
+            ],
+            "launch_id": 76
+        }
+    ],
+    "state": "RUNNING",
+    "name": "0opt"
+}

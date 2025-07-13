@@ -1,0 +1,13 @@
+Python path: /home/lekia.p/miniforge3/envs/pynta_env/bin/python
+Conda environment: pynta_fairchem
+ASE version: 3.22.1
+2025-07-12 14:27:27,531 INFO Hostname/IP lookup (this will take a few seconds)
+2025-07-12 14:27:27,532 INFO Launching Rocket
+✅ Patched scipy.linalg.lapack.dsyevr
+2025-07-12 14:27:32,081 INFO RUNNING fw_id: 58 in directory: /projects/westgroup/lekia.p/pynta/Fe/block_2025-07-12-17-50-43-929229/launcher_2025-07-12-18-27-10-403383
+2025-07-12 14:27:32,097 INFO Task started: {{pynta.tasks.MolecularCollect}}.
+Initial xyzs: ['/projects/westgroup/lekia.p/pynta/Fe/Adsorbates/O[Pt]/0/0.xyz', '/projects/westgroup/lekia.p/pynta/Fe/Adsorbates/O[Pt]/1/1.xyz', '/projects/westgroup/lekia.p/pynta/Fe/Adsorbates/O[Pt]/2/2.xyz', '/projects/westgroup/lekia.p/pynta/Fe/Adsorbates/O[Pt]/3/3.xyz']
+Existing xyzs: ['/projects/westgroup/lekia.p/pynta/Fe/Adsorbates/O[Pt]/0/0.xyz', '/projects/westgroup/lekia.p/pynta/Fe/Adsorbates/O[Pt]/1/1.xyz', '/projects/westgroup/lekia.p/pynta/Fe/Adsorbates/O[Pt]/2/2.xyz', '/projects/westgroup/lekia.p/pynta/Fe/Adsorbates/O[Pt]/3/3.xyz']
+After symmetry check: ['/projects/westgroup/lekia.p/pynta/Fe/Adsorbates/O[Pt]/0/0.xyz', '/projects/westgroup/lekia.p/pynta/Fe/Adsorbates/O[Pt]/1/1.xyz', '/projects/westgroup/lekia.p/pynta/Fe/Adsorbates/O[Pt]/2/2.xyz', '/projects/westgroup/lekia.p/pynta/Fe/Adsorbates/O[Pt]/3/3.xyz']
+2025-07-12 14:27:32,214 INFO Task completed: {{pynta.tasks.MolecularCollect}}
+2025-07-12 14:27:32,293 INFO Rocket finished

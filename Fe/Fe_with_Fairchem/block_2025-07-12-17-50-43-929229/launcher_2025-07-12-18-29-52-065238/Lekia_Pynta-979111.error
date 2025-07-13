@@ -1,0 +1,9 @@
+DEBUG:launchpad:FW with id: 4 is unique!
+DEBUG:launchpad:Created/updated Launch with launch_id: 77
+DEBUG:launchpad:RUNNING FW with id: 4
+INFO:rocket.launcher:RUNNING fw_id: 4 in directory: /projects/westgroup/lekia.p/pynta/Fe/block_2025-07-12-17-50-43-929229/launcher_2025-07-12-18-29-52-065238
+INFO:rocket.launcher:Task started: {{pynta.tasks.MolecularTSEstimate}}.
+WARNING:jax._src.lib.xla_bridge:No GPU/TPU found, falling back to CPU. (Set TF_CPP_MIN_LOG_LEVEL=0 and rerun for more info.)
+/home/lekia.p/miniforge3/envs/pynta_fairchem/lib/python3.8/site-packages/ase/io/extxyz.py:1000: UserWarning: write_xyz() overwriting array "forces" present in atoms.arrays with stored results from calculator
+INFO:rocket.launcher:Task completed: {{pynta.tasks.MolecularTSEstimate}}
+INFO:rocket.launcher:Rocket finished

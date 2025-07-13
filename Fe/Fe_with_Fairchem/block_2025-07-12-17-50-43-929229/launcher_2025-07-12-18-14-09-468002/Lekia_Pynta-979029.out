@@ -1,0 +1,53 @@
+Python path: /home/lekia.p/miniforge3/envs/pynta_env/bin/python
+Conda environment: pynta_fairchem
+ASE version: 3.22.1
+2025-07-12 14:14:26,968 INFO Hostname/IP lookup (this will take a few seconds)
+2025-07-12 14:14:26,969 INFO Launching Rocket
+✅ Patched scipy.linalg.lapack.dsyevr
+2025-07-12 14:14:30,502 INFO RUNNING fw_id: 74 in directory: /projects/westgroup/lekia.p/pynta/Fe/block_2025-07-12-17-50-43-929229/launcher_2025-07-12-18-14-09-468002
+2025-07-12 14:14:30,513 INFO Task started: {{pynta.tasks.MolecularOptimizationTask}}.
+                Step[ FC]     Time          Energy          fmax
+*Force-consistent energies used in optimization.
+BFGSLineSearch:    0[  0] 14:16:00     -191.890559*       0.4380
+BFGSLineSearch:    1[  2] 14:16:06     -192.130797*       0.9339
+BFGSLineSearch:    2[  4] 14:16:11     -192.227980*       1.1843
+BFGSLineSearch:    3[  6] 14:16:17     -192.341585*       0.9540
+BFGSLineSearch:    4[  8] 14:16:23     -192.437985*       1.1475
+BFGSLineSearch:    5[ 10] 14:16:28     -192.614957*       0.6901
+BFGSLineSearch:    6[ 11] 14:16:31     -192.782901*       0.5879
+BFGSLineSearch:    7[ 12] 14:16:34     -192.922294*       0.5686
+BFGSLineSearch:    8[ 13] 14:16:37     -193.120971*       0.8049
+BFGSLineSearch:    9[ 15] 14:16:43     -193.199706*       0.8514
+BFGSLineSearch:   10[ 16] 14:16:46     -193.313649*       0.5466
+BFGSLineSearch:   11[ 17] 14:16:49     -193.386244*       0.2109
+BFGSLineSearch:   12[ 18] 14:16:52     -193.423394*       0.2542
+BFGSLineSearch:   13[ 19] 14:16:55     -193.455953*       0.5765
+BFGSLineSearch:   14[ 22] 14:17:04     -193.570444*       0.4953
+BFGSLineSearch:   15[ 23] 14:17:08     -193.626549*       0.2481
+BFGSLineSearch:   16[ 25] 14:17:14     -193.660501*       0.2427
+BFGSLineSearch:   17[ 26] 14:17:17     -193.671625*       0.1215
+BFGSLineSearch:   18[ 27] 14:17:20     -193.676637*       0.0698
+BFGSLineSearch:   19[ 29] 14:17:26     -193.682437*       0.1898
+BFGSLineSearch:   20[ 32] 14:17:36     -193.811764*       0.7328
+BFGSLineSearch:   21[ 34] 14:17:43     -193.829093*       0.8020
+BFGSLineSearch:   22[ 35] 14:17:46     -193.906243*       0.7663
+BFGSLineSearch:   23[ 36] 14:17:49     -193.974078*       0.2885
+BFGSLineSearch:   24[ 37] 14:17:53     -193.992431*       0.1812
+BFGSLineSearch:   25[ 38] 14:17:56     -194.008783*       0.1580
+BFGSLineSearch:   26[ 40] 14:18:03     -194.029311*       0.3068
+BFGSLineSearch:   27[ 41] 14:18:06     -194.046782*       0.1498
+BFGSLineSearch:   28[ 43] 14:18:12     -194.083547*       0.7681
+BFGSLineSearch:   29[ 45] 14:18:19     -194.244256*       1.5703
+BFGSLineSearch:   30[ 47] 14:18:26     -194.271406*       1.5770
+BFGSLineSearch:   31[ 48] 14:18:29     -194.550884*       0.8885
+BFGSLineSearch:   32[ 49] 14:18:33     -194.678893*       0.3199
+BFGSLineSearch:   33[ 52] 14:18:43     -194.736090*       0.2220
+BFGSLineSearch:   34[ 53] 14:18:46     -194.754269*       0.1365
+BFGSLineSearch:   35[ 54] 14:18:50     -194.763382*       0.0715
+BFGSLineSearch:   36[ 55] 14:18:53     -194.766550*       0.0587
+BFGSLineSearch:   37[ 56] 14:18:56     -194.768176*       0.0521
+BFGSLineSearch:   38[ 57] 14:19:00     -194.768962*       0.0221
+2025-07-12 14:19:00,071 INFO Task completed: {{pynta.tasks.MolecularOptimizationTask}}
+2025-07-12 14:19:00,076 INFO Task started: FileTransferTask.
+2025-07-12 14:19:00,100 INFO Task completed: FileTransferTask
+2025-07-12 14:19:00,132 INFO Rocket finished

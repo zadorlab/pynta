@@ -1,0 +1,30 @@
+Python path: /home/lekia.p/miniforge3/envs/pynta_env/bin/python
+Conda environment: pynta_fairchem
+ASE version: 3.22.1
+2025-07-12 15:55:40,286 INFO Hostname/IP lookup (this will take a few seconds)
+2025-07-12 15:55:40,286 INFO Launching Rocket
+✅ Patched scipy.linalg.lapack.dsyevr
+2025-07-12 15:55:44,009 INFO RUNNING fw_id: 185 in directory: /projects/westgroup/lekia.p/pynta/Fe/block_2025-07-12-17-50-43-929229/launcher_2025-07-12-19-54-49-698870
+2025-07-12 15:55:44,024 INFO Task started: {{pynta.tasks.MolecularOptimizationTask}}.
+     Step     Time          Energy         fmax         cmax       rtrust          rho
+Sella   0 15:57:19     -203.195276       2.1211       0.0000       0.1000       1.0000
+Sella   1 15:58:35     -203.593334       1.5524       0.0000       0.1150       0.9833
+Sella   2 15:58:39     -204.036407       1.1813       0.0000       0.1150       0.9345
+Sella   3 15:58:42     -204.374125       1.0309       0.0000       0.1150       0.8774
+Sella   4 15:58:46     -204.633035       0.6869       0.0000       0.1150       0.8190
+Sella   5 15:58:50     -204.709330       1.2705       0.0000       0.1150       0.4856
+Sella   6 15:58:54     -204.715160       0.9641       0.0000       0.0747       0.0506
+Sella   7 15:58:58     -204.776247       0.2791       0.0000       0.0747       0.8717
+Sella   8 15:59:01     -204.799645       0.3856       0.0000       0.0747       0.4058
+Sella   9 15:59:05     -204.810569       0.3804       0.0000       0.0747       0.4968
+Sella  10 15:59:09     -204.827485       0.2084       0.0000       0.0747       0.6463
+Sella  11 15:59:13     -204.836521       0.1510       0.0000       0.0747       0.7648
+Sella  12 15:59:17     -204.832766       0.3620       0.0000       0.0486      -0.2813
+Sella  13 15:59:20     -204.847139       0.1145       0.0000       0.0486       1.0811
+Sella  14 15:59:24     -204.849941       0.0974       0.0000       0.0486       1.0793
+Sella  15 15:59:28     -204.852772       0.0501       0.0000       0.0486       1.4259
+Sella  16 15:59:32     -204.854517       0.0458       0.0000       0.0486       1.0657
+2025-07-12 15:59:32,162 INFO Task completed: {{pynta.tasks.MolecularOptimizationTask}}
+2025-07-12 15:59:32,167 INFO Task started: FileTransferTask.
+2025-07-12 15:59:32,229 INFO Task completed: FileTransferTask
+2025-07-12 15:59:32,253 INFO Rocket finished

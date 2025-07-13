@@ -1,0 +1,7 @@
+DEBUG:launchpad:FW with id: 91 is unique!
+DEBUG:launchpad:Created/updated Launch with launch_id: 138
+DEBUG:launchpad:RUNNING FW with id: 91
+INFO:rocket.launcher:RUNNING fw_id: 91 in directory: /projects/westgroup/lekia.p/pynta/Fe/block_2025-07-12-17-50-43-929229/launcher_2025-07-12-19-22-06-757044
+INFO:rocket.launcher:Task started: {{pynta.tasks.PostprocessingTask}}.
+INFO:rocket.launcher:Task completed: {{pynta.tasks.PostprocessingTask}}
+INFO:rocket.launcher:Rocket finished

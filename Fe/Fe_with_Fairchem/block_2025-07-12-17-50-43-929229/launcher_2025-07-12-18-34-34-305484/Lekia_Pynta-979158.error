@@ -1,0 +1,12 @@
+DEBUG:launchpad:FW with id: 6 is unique!
+DEBUG:launchpad:Created/updated Launch with launch_id: 86
+DEBUG:launchpad:RUNNING FW with id: 6
+INFO:rocket.launcher:RUNNING fw_id: 6 in directory: /projects/westgroup/lekia.p/pynta/Fe/block_2025-07-12-17-50-43-929229/launcher_2025-07-12-18-34-34-305484
+INFO:rocket.launcher:Task started: {{pynta.tasks.MolecularTSEstimate}}.
+Traceback (most recent call last):
+  File "/home/lekia.p/miniforge3/envs/pynta_fairchem/lib/python3.8/site-packages/fireworks/core/rocket.py", line 261, in run
+    m_action = t.run_task(my_spec)
+  File "/projects/westgroup/lekia.p/pynta/pynta/tasks.py", line 630, in run_task
+    raise ValueError("Missing reactant or product for reaction: {}".format({k:len(v) for k,v in adsorbates.items()}))
+ValueError: Missing reactant or product for reaction: {'[H]': 0, '[Pt]': 4}
+INFO:rocket.launcher:Rocket finished

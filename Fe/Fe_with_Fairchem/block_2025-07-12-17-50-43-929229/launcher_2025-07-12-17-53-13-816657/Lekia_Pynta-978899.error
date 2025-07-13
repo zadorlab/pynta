@@ -1,0 +1,11 @@
+DEBUG:launchpad:FW with id: 9 is unique!
+DEBUG:launchpad:Created/updated Launch with launch_id: 5
+DEBUG:launchpad:RUNNING FW with id: 9
+INFO:rocket.launcher:RUNNING fw_id: 9 in directory: /projects/westgroup/lekia.p/pynta/Fe/block_2025-07-12-17-50-43-929229/launcher_2025-07-12-17-53-13-816657
+INFO:rocket.launcher:Task started: {{pynta.tasks.MolecularAdsorbateEstimate}}.
+WARNING:root:Estimation used SIDT Root group
+WARNING:root:Estimation used SIDT Root group
+WARNING:root:Estimation used SIDT Root group
+WARNING:jax._src.lib.xla_bridge:No GPU/TPU found, falling back to CPU. (Set TF_CPP_MIN_LOG_LEVEL=0 and rerun for more info.)
+INFO:rocket.launcher:Task completed: {{pynta.tasks.MolecularAdsorbateEstimate}}
+INFO:rocket.launcher:Rocket finished

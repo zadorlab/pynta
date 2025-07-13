@@ -1,0 +1,39 @@
+Python path: /home/lekia.p/miniforge3/envs/pynta_env/bin/python
+Conda environment: pynta_fairchem
+ASE version: 3.22.1
+2025-07-12 15:47:37,399 INFO Hostname/IP lookup (this will take a few seconds)
+2025-07-12 15:47:37,400 INFO Launching Rocket
+✅ Patched scipy.linalg.lapack.dsyevr
+2025-07-12 15:47:40,980 INFO RUNNING fw_id: 166 in directory: /projects/westgroup/lekia.p/pynta/Fe/block_2025-07-12-17-50-43-929229/launcher_2025-07-12-19-46-51-217194
+2025-07-12 15:47:41,009 INFO Task started: {{pynta.tasks.MolecularIRC}}.
+     Step     Time          Energy         fmax
+IRC:    0 15:49:26     -191.706423        0.0302
+IRC:    1 15:49:36     -191.737168        0.6436
+IRC:    2 15:49:43     -191.826858        1.2457
+IRC:    3 15:49:50     -191.960778        1.6784
+IRC:    4 15:49:57     -192.119439        1.9544
+IRC:    5 15:50:07     -192.279138        2.0633
+IRC:    6 15:50:17     -192.413669        2.0403
+IRC:    7 15:50:28     -192.510226        1.9345
+IRC:    8 15:50:40     -192.582173        1.7928
+IRC:    9 15:50:51     -192.646404        1.6405
+IRC:   10 15:50:58     -192.708023        1.4825
+IRC:   11 15:51:09     -192.767578        1.3256
+IRC:   12 15:51:16     -192.824774        1.1784
+IRC:   13 15:51:23     -192.879047        1.0314
+IRC:   14 15:51:30     -192.929606        0.8708
+IRC:   15 15:51:37     -192.975856        0.7098
+IRC:   16 15:51:47     -193.017972        0.5710
+IRC:   17 15:51:58     -193.056853        0.4622
+IRC:   18 15:52:05     -193.093807        0.3827
+IRC:   19 15:52:16     -193.129968        0.3523
+IRC:   20 15:52:24     -193.165943        0.3521
+IRC:   21 15:52:31     -193.201244        0.3390
+IRC:   22 15:52:39     -193.233762        0.2926
+IRC:   23 15:52:46     -193.258586        0.2051
+IRC:   24 15:52:53     -193.270536        0.1230
+IRC:   25 15:52:57     -193.272694        0.0185
+2025-07-12 15:52:57,662 INFO Task completed: {{pynta.tasks.MolecularIRC}}
+2025-07-12 15:52:57,667 INFO Task started: FileTransferTask.
+2025-07-12 15:52:57,682 INFO Task completed: FileTransferTask
+2025-07-12 15:52:57,716 INFO Rocket finished

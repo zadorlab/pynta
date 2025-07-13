@@ -1,0 +1,31 @@
+Python path: /home/lekia.p/miniforge3/envs/pynta_env/bin/python
+Conda environment: pynta_fairchem
+ASE version: 3.22.1
+2025-07-12 14:14:27,263 INFO Hostname/IP lookup (this will take a few seconds)
+2025-07-12 14:14:27,263 INFO Launching Rocket
+✅ Patched scipy.linalg.lapack.dsyevr
+2025-07-12 14:14:30,972 INFO RUNNING fw_id: 76 in directory: /projects/westgroup/lekia.p/pynta/Fe/block_2025-07-12-17-50-43-929229/launcher_2025-07-12-18-14-04-323416
+2025-07-12 14:14:30,983 INFO Task started: {{pynta.tasks.MolecularOptimizationTask}}.
+                Step[ FC]     Time          Energy          fmax
+*Force-consistent energies used in optimization.
+BFGSLineSearch:    0[  0] 14:16:00     -190.514997*       0.3757
+BFGSLineSearch:    1[  2] 14:16:05     -190.525532*       0.5875
+BFGSLineSearch:    2[  4] 14:16:10     -190.536676*       0.6395
+BFGSLineSearch:    3[  5] 14:16:13     -190.609540*       0.4147
+BFGSLineSearch:    4[  6] 14:16:16     -190.670626*       0.6716
+BFGSLineSearch:    5[  8] 14:16:21     -190.876343*       0.9696
+BFGSLineSearch:    6[  9] 14:16:24     -190.913052*       0.1586
+BFGSLineSearch:    7[ 10] 14:16:27     -190.929003*       0.2543
+BFGSLineSearch:    8[ 11] 14:16:30     -190.932922*       0.0550
+BFGSLineSearch:    9[ 13] 14:16:36     -190.936592*       0.2647
+BFGSLineSearch:   10[ 15] 14:16:42     -190.944395*       0.1653
+BFGSLineSearch:   11[ 17] 14:16:48     -190.954986*       0.1714
+BFGSLineSearch:   12[ 19] 14:16:54     -190.970484*       0.2817
+BFGSLineSearch:   13[ 21] 14:17:00     -190.976971*       0.2475
+BFGSLineSearch:   14[ 22] 14:17:03     -190.993875*       0.1238
+BFGSLineSearch:   15[ 23] 14:17:06     -191.001965*       0.0738
+BFGSLineSearch:   16[ 24] 14:17:09     -191.002871*       0.0384
+2025-07-12 14:17:09,506 INFO Task completed: {{pynta.tasks.MolecularOptimizationTask}}
+2025-07-12 14:17:09,510 INFO Task started: FileTransferTask.
+2025-07-12 14:17:09,536 INFO Task completed: FileTransferTask
+2025-07-12 14:17:09,562 INFO Rocket finished

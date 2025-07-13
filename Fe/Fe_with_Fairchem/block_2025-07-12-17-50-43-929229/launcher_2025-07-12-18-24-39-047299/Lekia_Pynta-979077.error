@@ -1,0 +1,12 @@
+DEBUG:launchpad:FW with id: 48 is unique!
+DEBUG:launchpad:Created/updated Launch with launch_id: 68
+DEBUG:launchpad:RUNNING FW with id: 48
+INFO:rocket.launcher:RUNNING fw_id: 48 in directory: /projects/westgroup/lekia.p/pynta/Fe/block_2025-07-12-17-50-43-929229/launcher_2025-07-12-18-24-39-047299
+INFO:rocket.launcher:Task started: {{pynta.tasks.MolecularOptimizationTask}}.
+/projects/westgroup/lekia.p/fairchem/src/fairchem/core/models/uma/escn_md.py:130: FutureWarning: You are using `torch.load` with `weights_only=False` (the current default value), which uses the default pickle module implicitly. It is possible to construct malicious pickle data which will execute arbitrary code during unpickling (See https://github.com/pytorch/pytorch/blob/main/SECURITY.md#untrusted-models for more details). In a future release, the default value for `weights_only` will be flipped to `True`. This limits the functions that could be executed during unpickling. Arbitrary objects will no longer be allowed to be loaded via this mode unless they are explicitly allowlisted by the user via `torch.serialization.add_safe_globals`. We recommend you start setting `weights_only=True` for any use case where you don't have full control of the loaded file. Please open an issue on GitHub for any issues related to this experimental feature.
+/home/lekia.p/miniforge3/envs/pynta_fairchem/lib/python3.8/site-packages/torch/utils/checkpoint.py:1399: FutureWarning: `torch.cpu.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cpu', args...)` instead.
+/home/lekia.p/miniforge3/envs/pynta_fairchem/lib/python3.8/site-packages/ase/io/extxyz.py:1000: UserWarning: write_xyz() overwriting array "forces" present in atoms.arrays with stored results from calculator
+INFO:rocket.launcher:Task completed: {{pynta.tasks.MolecularOptimizationTask}}
+INFO:rocket.launcher:Task started: FileTransferTask.
+INFO:rocket.launcher:Task completed: FileTransferTask
+INFO:rocket.launcher:Rocket finished

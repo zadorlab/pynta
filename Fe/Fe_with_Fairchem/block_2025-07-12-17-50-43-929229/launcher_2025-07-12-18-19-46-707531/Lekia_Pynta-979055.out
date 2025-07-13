@@ -1,0 +1,34 @@
+Python path: /home/lekia.p/miniforge3/envs/pynta_env/bin/python
+Conda environment: pynta_fairchem
+ASE version: 3.22.1
+2025-07-12 14:20:28,970 INFO Hostname/IP lookup (this will take a few seconds)
+2025-07-12 14:20:28,970 INFO Launching Rocket
+✅ Patched scipy.linalg.lapack.dsyevr
+2025-07-12 14:20:31,450 INFO RUNNING fw_id: 63 in directory: /projects/westgroup/lekia.p/pynta/Fe/block_2025-07-12-17-50-43-929229/launcher_2025-07-12-18-19-46-707531
+2025-07-12 14:20:31,461 INFO Task started: {{pynta.tasks.MolecularOptimizationTask}}.
+                Step[ FC]     Time          Energy          fmax
+*Force-consistent energies used in optimization.
+BFGSLineSearch:    0[  0] 14:22:01     -190.376444*       0.4534
+BFGSLineSearch:    1[  3] 14:22:08     -190.617872*       0.6513
+BFGSLineSearch:    2[  5] 14:22:14     -190.766592*       1.3634
+BFGSLineSearch:    3[  7] 14:22:19     -190.836838*       1.8702
+BFGSLineSearch:    4[  9] 14:22:25     -190.974905*       0.5717
+BFGSLineSearch:    5[ 12] 14:22:34     -191.170131*       0.7005
+BFGSLineSearch:    6[ 13] 14:22:37     -191.410538*       0.9567
+BFGSLineSearch:    7[ 14] 14:22:40     -191.665389*       0.8589
+BFGSLineSearch:    8[ 15] 14:22:43     -192.006095*       0.8463
+BFGSLineSearch:    9[ 16] 14:22:46     -192.259286*       0.7413
+BFGSLineSearch:   10[ 17] 14:22:49     -192.361424*       0.5670
+BFGSLineSearch:   11[ 18] 14:22:52     -192.413765*       0.2842
+BFGSLineSearch:   12[ 20] 14:22:58     -192.460919*       0.7035
+BFGSLineSearch:   13[ 21] 14:23:01     -192.490550*       0.2146
+BFGSLineSearch:   14[ 23] 14:23:08     -192.511760*       0.1264
+BFGSLineSearch:   15[ 26] 14:23:18     -192.523536*       0.3012
+BFGSLineSearch:   16[ 28] 14:23:25     -192.530108*       0.1880
+BFGSLineSearch:   17[ 30] 14:23:32     -192.533668*       0.1646
+BFGSLineSearch:   18[ 31] 14:23:35     -192.534927*       0.0736
+BFGSLineSearch:   19[ 32] 14:23:39     -192.535662*       0.0252
+2025-07-12 14:23:39,220 INFO Task completed: {{pynta.tasks.MolecularOptimizationTask}}
+2025-07-12 14:23:39,224 INFO Task started: FileTransferTask.
+2025-07-12 14:23:39,262 INFO Task completed: FileTransferTask
+2025-07-12 14:23:39,285 INFO Rocket finished

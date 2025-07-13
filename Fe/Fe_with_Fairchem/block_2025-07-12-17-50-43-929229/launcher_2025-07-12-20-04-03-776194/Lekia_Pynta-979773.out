@@ -1,0 +1,13 @@
+Python path: /home/lekia.p/miniforge3/envs/pynta_env/bin/python
+Conda environment: pynta_fairchem
+ASE version: 3.22.1
+2025-07-12 16:04:41,077 INFO Hostname/IP lookup (this will take a few seconds)
+2025-07-12 16:04:41,078 INFO Launching Rocket
+✅ Patched scipy.linalg.lapack.dsyevr
+2025-07-12 16:04:45,059 INFO RUNNING fw_id: 184 in directory: /projects/westgroup/lekia.p/pynta/Fe/block_2025-07-12-17-50-43-929229/launcher_2025-07-12-20-04-03-776194
+2025-07-12 16:04:45,084 INFO Task started: {{pynta.tasks.MolecularCollect}}.
+Initial xyzs: ['/projects/westgroup/lekia.p/pynta/Fe/TS2/13/opt.xyz', '/projects/westgroup/lekia.p/pynta/Fe/TS2/32/opt.xyz', '/projects/westgroup/lekia.p/pynta/Fe/TS2/1/opt.xyz', '/projects/westgroup/lekia.p/pynta/Fe/TS2/12/opt.xyz', '/projects/westgroup/lekia.p/pynta/Fe/TS2/19/opt.xyz']
+Existing xyzs: ['/projects/westgroup/lekia.p/pynta/Fe/TS2/13/opt.xyz', '/projects/westgroup/lekia.p/pynta/Fe/TS2/32/opt.xyz', '/projects/westgroup/lekia.p/pynta/Fe/TS2/1/opt.xyz', '/projects/westgroup/lekia.p/pynta/Fe/TS2/12/opt.xyz', '/projects/westgroup/lekia.p/pynta/Fe/TS2/19/opt.xyz']
+After symmetry check: ['/projects/westgroup/lekia.p/pynta/Fe/TS2/13/opt.xyz', '/projects/westgroup/lekia.p/pynta/Fe/TS2/32/opt.xyz', '/projects/westgroup/lekia.p/pynta/Fe/TS2/1/opt.xyz', '/projects/westgroup/lekia.p/pynta/Fe/TS2/19/opt.xyz']
+2025-07-12 16:04:45,250 INFO Task completed: {{pynta.tasks.MolecularCollect}}
+2025-07-12 16:04:45,467 INFO Rocket finished

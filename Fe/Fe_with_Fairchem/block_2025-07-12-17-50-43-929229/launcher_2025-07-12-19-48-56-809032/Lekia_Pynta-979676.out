@@ -1,0 +1,14 @@
+Python path: /home/lekia.p/miniforge3/envs/pynta_env/bin/python
+Conda environment: pynta_fairchem
+ASE version: 3.22.1
+2025-07-12 15:49:38,538 INFO Hostname/IP lookup (this will take a few seconds)
+2025-07-12 15:49:38,540 INFO Launching Rocket
+✅ Patched scipy.linalg.lapack.dsyevr
+2025-07-12 15:49:42,446 INFO RUNNING fw_id: 180 in directory: /projects/westgroup/lekia.p/pynta/Fe/block_2025-07-12-17-50-43-929229/launcher_2025-07-12-19-48-56-809032
+2025-07-12 15:49:42,460 INFO Task started: {{pynta.tasks.MolecularVibrationsTask}}.
+2025-07-12 15:51:56,639 INFO Task completed: {{pynta.tasks.MolecularVibrationsTask}}
+2025-07-12 15:51:56,644 INFO Task started: FileTransferTask.
+2025-07-12 15:51:56,668 INFO Task completed: FileTransferTask
+2025-07-12 15:51:56,671 INFO Task started: FileTransferTask.
+2025-07-12 15:51:56,879 INFO Task completed: FileTransferTask
+2025-07-12 15:51:56,902 INFO Rocket finished

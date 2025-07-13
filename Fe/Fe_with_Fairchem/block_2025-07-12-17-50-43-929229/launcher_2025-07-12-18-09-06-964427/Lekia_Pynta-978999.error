@@ -1,0 +1,51 @@
+DEBUG:launchpad:FW with id: 33 is unique!
+DEBUG:launchpad:Created/updated Launch with launch_id: 38
+DEBUG:launchpad:RUNNING FW with id: 33
+INFO:rocket.launcher:RUNNING fw_id: 33 in directory: /projects/westgroup/lekia.p/pynta/Fe/block_2025-07-12-17-50-43-929229/launcher_2025-07-12-18-09-06-964427
+INFO:rocket.launcher:Task started: {{pynta.tasks.MolecularOptimizationTask}}.
+/projects/westgroup/lekia.p/fairchem/src/fairchem/core/models/uma/escn_md.py:130: FutureWarning: You are using `torch.load` with `weights_only=False` (the current default value), which uses the default pickle module implicitly. It is possible to construct malicious pickle data which will execute arbitrary code during unpickling (See https://github.com/pytorch/pytorch/blob/main/SECURITY.md#untrusted-models for more details). In a future release, the default value for `weights_only` will be flipped to `True`. This limits the functions that could be executed during unpickling. Arbitrary objects will no longer be allowed to be loaded via this mode unless they are explicitly allowlisted by the user via `torch.serialization.add_safe_globals`. We recommend you start setting `weights_only=True` for any use case where you don't have full control of the loaded file. Please open an issue on GitHub for any issues related to this experimental feature.
+WARNING:root:task_name='omol' detected, but charge is not set in atoms.info. Defaulting to charge=0. Ensure charge is an integer representing the total charge on the system and is within the range -100 to 100.
+WARNING:root:task_name='omol' detected, but spin multiplicity is not set in atoms.info. Defaulting to spin=1. Ensure spin is an integer representing the spin multiplicity from 0 to 100.
+Traceback (most recent call last):
+  File "/home/lekia.p/miniforge3/envs/pynta_fairchem/lib/python3.8/site-packages/fireworks/core/rocket.py", line 261, in run
+    m_action = t.run_task(my_spec)
+  File "/projects/westgroup/lekia.p/pynta/pynta/tasks.py", line 240, in run_task
+    converged = opt.converged()
+  File "/home/lekia.p/miniforge3/envs/pynta_fairchem/lib/python3.8/site-packages/ase/optimize/optimize.py", line 274, in converged
+    forces = self.atoms.get_forces()
+  File "/home/lekia.p/miniforge3/envs/pynta_fairchem/lib/python3.8/site-packages/ase/atoms.py", line 788, in get_forces
+    forces = self._calc.get_forces(self)
+  File "/home/lekia.p/miniforge3/envs/pynta_fairchem/lib/python3.8/site-packages/ase/calculators/abc.py", line 23, in get_forces
+    return self.get_property('forces', atoms)
+  File "/home/lekia.p/miniforge3/envs/pynta_fairchem/lib/python3.8/site-packages/ase/calculators/calculator.py", line 737, in get_property
+    self.calculate(atoms, [name], system_changes)
+  File "/projects/westgroup/lekia.p/fairchem/src/fairchem/core/calculate/ase_calculator.py", line 223, in calculate
+    pred = self.predictor.predict(batch)
+  File "/projects/westgroup/lekia.p/fairchem/src/fairchem/core/units/mlip_unit/predict.py", line 44, in collated_predict
+    preds = predict_fn(predict_unit, data, undo_element_references)
+  File "/projects/westgroup/lekia.p/fairchem/src/fairchem/core/units/mlip_unit/predict.py", line 233, in predict
+    output = self.model(data_device)
+  File "/home/lekia.p/miniforge3/envs/pynta_fairchem/lib/python3.8/site-packages/torch/nn/modules/module.py", line 1553, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/home/lekia.p/miniforge3/envs/pynta_fairchem/lib/python3.8/site-packages/torch/nn/modules/module.py", line 1562, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/lekia.p/miniforge3/envs/pynta_fairchem/lib/python3.8/site-packages/torch/optim/swa_utils.py", line 219, in forward
+    return self.module(*args, **kwargs)
+  File "/home/lekia.p/miniforge3/envs/pynta_fairchem/lib/python3.8/site-packages/torch/nn/modules/module.py", line 1553, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/home/lekia.p/miniforge3/envs/pynta_fairchem/lib/python3.8/site-packages/torch/nn/modules/module.py", line 1562, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/projects/westgroup/lekia.p/fairchem/src/fairchem/core/models/base.py", line 178, in forward
+    emb = self.backbone(data)
+  File "/home/lekia.p/miniforge3/envs/pynta_fairchem/lib/python3.8/site-packages/torch/nn/modules/module.py", line 1553, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/home/lekia.p/miniforge3/envs/pynta_fairchem/lib/python3.8/site-packages/torch/nn/modules/module.py", line 1562, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/projects/westgroup/lekia.p/fairchem/src/fairchem/core/common/utils.py", line 71, in cls_method
+    return f(self, *args, **kwargs)
+  File "/home/lekia.p/miniforge3/envs/pynta_fairchem/lib/python3.8/site-packages/torch/utils/_contextlib.py", line 116, in decorate_context
+    return func(*args, **kwargs)
+  File "/projects/westgroup/lekia.p/fairchem/src/fairchem/core/models/uma/escn_md.py", line 446, in forward
+    raise ValueError(
+ValueError: No edges found in input system, this means either you have a single atom in the system or the atoms are farther apart than the radius cutoff of the model of 6 Angstroms. We don't know how to handle this case. Check the positions of system: tensor([[10., 10., 10.]], grad_fn=<AddBackward0>)
+INFO:rocket.launcher:Rocket finished

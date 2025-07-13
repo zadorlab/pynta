@@ -1,0 +1,57 @@
+vacantX
+1 X u0 p0 c0
+
+C
+1 C u0 p0 c0 {2,S} {3,S} {4,S} {5,S}
+2 H u0 p0 c0 {1,S}
+3 H u0 p0 c0 {1,S}
+4 H u0 p0 c0 {1,S}
+5 H u0 p0 c0 {1,S}
+
+N
+1 N u0 p1 c0 {2,S} {3,S} {4,S}
+2 H u0 p0 c0 {1,S}
+3 H u0 p0 c0 {1,S}
+4 H u0 p0 c0 {1,S}
+
+N#[Pt]
+1 X u0 p0 c0 {2,T}
+2 N u0 p1 c0 {1,T}
+
+N=[Pt]
+1 X u0 p0 c0 {2,D}
+2 N u0 p1 c0 {1,D} {3,S}
+3 H u0 p0 c0 {2,S}
+
+N[Pt]
+1 X u0 p0 c0 {2,S}
+2 N u0 p1 c0 {1,S} {3,S} {4,S}
+3 H u0 p0 c0 {2,S}
+4 H u0 p0 c0 {2,S}
+
+O
+1 O u0 p2 c0 {2,S} {3,S}
+2 H u0 p0 c0 {1,S}
+3 H u0 p0 c0 {1,S}
+
+O=O
+1 O u0 p2 c0 {2,D}
+2 O u0 p2 c0 {1,D}
+
+O=[Pt]
+1 X u0 p0 c0 {2,D}
+2 O u0 p2 c0 {1,D}
+
+O[Pt]
+1 X u0 p0 c0 {2,S}
+2 O u0 p2 c0 {1,S} {3,S}
+3 H u0 p0 c0 {2,S}
+
+[H][H]
+1 H u0 p0 c0 {2,S}
+2 H u0 p0 c0 {1,S}
+
+[Pt]
+1 X u0 p0 c0 {2,S}
+2 H u0 p0 c0 {1,S}
+
