@@ -567,8 +567,6 @@ class MolecularTSEstimate(FiretaskBase):
                         "harm_f_software", "harm_f_software_kwargs"]
     optional_params = ["out_path","spawn_jobs","nprocs","IRC_obj_dict","postprocess"]
     def run_task(self, fw_spec):
-        gratom_to_molecule_atom_maps = {sm: {int(k):v for k,v in d.items()} for sm,d in self["gratom_to_molecule_atom_maps"].items()}
-        gratom_to_molecule_surface_atom_maps = {sm: {int(k):v for k,v in d.items()} for sm,d in self["gratom_to_molecule_surface_atom_maps"].items()}
         out_path = self["out_path"] if "out_path" in self.keys() else ts_path
         spawn_jobs = self["spawn_jobs"] if "spawn_jobs" in self.keys() else False
         nprocs = self["nprocs"] if "nprocs" in self.keys() else 1
@@ -600,6 +598,15 @@ class MolecularTSEstimate(FiretaskBase):
         adsorbates_path = self["adsorbates_path"]
         postprocess = self["postprocess"] if "postprocess" in self.keys() else False 
 
+        gratom_to_molecule_atom_maps = dict()
+        gratom_to_molecule_surface_atom_maps = dict()
+        for ad in os.listdir(adsorbates_path):
+            if os.path.isdir(os.path.join(adsorbates_path,ad)):
+                with open(os.path.join(adsorbates_path,ad,"info.json"),'r') as f:
+                    info = json.load(f)
+                    gratom_to_molecule_atom_maps[info["name"]] = {int(k):v for k,v in info["atom_to_molecule_atom_map"].items()}
+                    gratom_to_molecule_surface_atom_maps[info["name"]] = {int(k):v for k,v in info["gratom_to_molecule_surface_atom_map"].items()}
+
         reactants = Molecule().from_adjacency_list(rxn["reactant"])
         reactants.multiplicity = reactants.get_radical_count() + 1
         products = Molecule().from_adjacency_list(rxn["product"])
@@ -618,26 +625,26 @@ class MolecularTSEstimate(FiretaskBase):
         product_mols = [mol_dict[name] for name in product_names]
 
         adsorbates = get_unique_optimized_adsorbates(rxn,adsorbates_path,mol_dict,gratom_to_molecule_surface_atom_maps,sites,nslab)
+        
+        if any(len(v) == 0 for v in adsorbates.values()):
+            raise ValueError("Missing reactant or product for reaction: {}".format({k:len(v) for k,v in adsorbates.items()}))
 
         forward,species_names = determine_TS_construction(reactant_names,
                     reactant_mols,product_names,product_mols)
 
         ordered_adsorbates = [adsorbates[name] for name in species_names]
 
-        rnum_surf_sites = [len(mol.get_surface_sites()) for i,mol in enumerate(reactant_mols)]
-        pnum_surf_sites = [len(mol.get_surface_sites()) for i,mol in enumerate(product_mols)]
-
         ts_dict = {"forward": forward, "name": rxn_name, "reactants": reactants.to_adjacency_list(), "products": products.to_adjacency_list(),
             "species_names": species_names, "nslab": nslab}
 
+        num_surf_sites = [len(mol_dict[name].get_surface_sites()) for name in species_names]
+        
         if forward:
-            num_surf_sites = rnum_surf_sites
             reverse_names = product_names
         else:
             temp = products
             products = reactants
             reactants = temp
-            num_surf_sites = pnum_surf_sites
             reverse_names = reactant_names
 
         mols = [mol_dict[name] for name in species_names]
@@ -674,6 +681,8 @@ class MolecularTSEstimate(FiretaskBase):
         unique_tsstructs,unique_tsmols,target_sites,label_site_mappings = get_unique_TS_templates_site_pairings(tsstructs,
                                         tsmols,reactants,products,nsites,slab,neighbor_sites,ninds,sites,nslab)
         
+        print("number of unique TS guesses:")
+        print(len(unique_tsstructs))
         
         tsstructs_out,constraint_lists,atom_bond_potential_lists,site_bond_potential_lists = generate_constraints_harmonic_parameters(
                                             unique_tsstructs,unique_tsmols,label_site_mappings,adsorbates,slab,reactants,

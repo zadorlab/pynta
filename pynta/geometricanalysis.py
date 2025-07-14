@@ -126,13 +126,38 @@ def generate_adsorbate_molecule(adslab, sites, site_adjacency, nslab, max_dist=N
 
 def fix_bond_orders(mol,allow_failure=False,keep_binding_vdW_bonds=False,keep_vdW_surface_bonds=False):
     atom_order = ["C","Si","N","P","O","S","F","Cl","Br","I","Li","H"]#["H","Li","I","Br","Cl","F","S","O","P","N","Si","C"]#["C","Si","N","P","O","S","F","Cl","Br","I","Li","H"]
-    for target in atom_order:
-        for a in mol.atoms:
-            if a.symbol == target:
-                if keep_vdW_surface_bonds or keep_binding_vdW_bonds:
-                    fix_atom(mol,a,allow_failure=allow_failure,cleanup_surface_bonds=False)
-                else:
-                    fix_atom(mol,a,allow_failure=allow_failure,cleanup_surface_bonds=True)
+    finished = False
+    cleanup_surface_bonds = not (keep_vdW_surface_bonds or keep_binding_vdW_bonds)
+    atoms_to_fix = [a for a in mol.atoms if not a.is_surface_site()]
+    while len(atoms_to_fix) > 0:
+        atoms_to_remove = []
+        atoms_modified = False
+        
+        for a in atoms_to_fix:
+            boo = fix_atom_only_required(mol,a,allow_failure=allow_failure,cleanup_surface_bonds=cleanup_surface_bonds)
+            if boo:
+                atoms_modified = True
+                atoms_to_remove.append(a)
+                
+        for a in atoms_to_remove:
+            atoms_to_fix.remove(a)
+        
+        if not atoms_modified: 
+            atoms_modified = False
+            a_to_remove = None
+            for target in atom_order:
+                for a in atoms_to_fix:
+                    if a.symbol == target:
+                        boo = fix_atom(mol,a,allow_failure=allow_failure,cleanup_surface_bonds=cleanup_surface_bonds)
+                        if boo:
+                            atoms_modified = True
+                            a_to_remove = a
+                            break
+                if atoms_modified:
+                    break
+            
+            if a_to_remove is not None:
+                atoms_to_fix.remove(a_to_remove)     
     
     if keep_vdW_surface_bonds:
         vdW_bonds = []
@@ -202,29 +227,46 @@ class TooManyElectronsException(Exception):
 class FailedFixBondsException(Exception):
     pass 
 
-def fix_atom(mol,atom,allow_failure=False,cleanup_surface_bonds=True):
+def fix_atom_only_required(mol,atom,allow_failure=False,cleanup_surface_bonds=True):
+    """
+    Only increment bonds for which there is no other way to achieve octet
+    """
+    fixed = False
+    if atom.is_bonded_to_surface(): #can always pull electrons from surface
+        return False
+    
     delta = get_octet_deviation(atom)
     
     if delta < 0: #too many electrons
         raise TooManyElectronsException("Cannot solve problem of too many electrons not counting surface bonds and all ad bonds are 1: {}".format(mol.to_adjacency_list()))
     elif delta > 0: #too few electrons
-        atoms = [k for k,v in atom.bonds.items()]
-        symbols = [k.symbol for k in atoms]
+        atoms = [k for k,v in atom.bonds.items()] #none of these will be sites
         octets = [get_octet_deviation(k) for k in atoms]
+        if len([oct for oct in octets if oct > 0]) != 1 and sum(octets) > delta: #if there is more than enough electrons and multiple ways to distribute them exit
+            return False
+        
+        symbols = [k.symbol for k in atoms]
+        
         orders = [v.get_order_str() for k,v in atom.bonds.items()]
         bonded_to_surface = [a.is_bonded_to_surface() for a in atoms]
-        deviation = True
+
         while delta > 0:
             ind,val = choose_bond_to_fix(symbols,octets,orders,bonded_to_surface)
+            fixed = True
             if val == 0:
                 if allow_failure:
                     break
                 else:
+                    logging.error(mol.to_adjacency_list())
+                    logging.error(mol.atoms.index(atom))
                     raise FailedFixBondsException
             bd = atom.bonds[atoms[ind]]
             bd.increment_order()
             delta -= 2
             octets[ind] -= 2
+    
+    else:
+        fixed = True #we're happy with this 
         
     #at end clean up improper surface bonds
     if cleanup_surface_bonds:
@@ -235,7 +277,49 @@ def fix_atom(mol,atom,allow_failure=False,cleanup_surface_bonds=True):
         
         for v in to_remove:
             mol.remove_bond(v)
+    
+    return fixed
+            
+def fix_atom(mol,atom,allow_failure=False,cleanup_surface_bonds=True):
+    
+    fixed = False
+    delta = get_octet_deviation(atom)
+    
+    if delta < 0: #too many electrons
+        raise TooManyElectronsException("Cannot solve problem of too many electrons not counting surface bonds and all ad bonds are 1: {}".format(mol.to_adjacency_list()))
+    elif delta > 0: #too few electrons
+        atoms = [k for k,v in atom.bonds.items()]
+        symbols = [k.symbol for k in atoms]
+        octets = [get_octet_deviation(k) for k in atoms]
+        orders = [v.get_order_str() for k,v in atom.bonds.items()]
+        bonded_to_surface = [a.is_bonded_to_surface() for a in atoms]
+        while delta > 0:
+            ind,val = choose_bond_to_fix(symbols,octets,orders,bonded_to_surface)
+            fixed = True
+            if val == 0:
+                if allow_failure:
+                    break
+                else:
+                    raise FailedFixBondsException
+            bd = atom.bonds[atoms[ind]]
+            bd.increment_order()
+            delta -= 2
+            octets[ind] -= 2
+    else:
+        fixed = True
         
+    #at end clean up improper surface bonds
+    if cleanup_surface_bonds:
+        to_remove = []
+        for k,v in atom.bonds.items():
+            if k.symbol == 'X' and v.order == 0:    
+                to_remove.append(v)
+        
+        for v in to_remove:
+            mol.remove_bond(v)
+    
+    return fixed
+
 def generate_adsorbate_2D(atoms, sites, site_adjacency, nslab, max_dist=3.0, cut_off_num=None, allowed_structure_site_structures=None,
                           keep_binding_vdW_bonds=False, keep_vdW_surface_bonds=False):
     admol,neighbor_sites,ninds = generate_adsorbate_molecule(atoms, sites, site_adjacency, nslab, max_dist=max_dist)
@@ -1224,13 +1308,26 @@ def add_coadsorbate_2D(mol2D,site,coad2D,slab,neighbor_sites_2D,site_2D_inds):
     for a in siteatom.edges.keys():
         if not a.is_surface_site():
             return None
-    c = coad2D.get_desorbed_molecules()[0]
+    if list(coad2D.get_surface_sites()[0].bonds.values())[0].is_van_der_waals():
+        c = coad2D.copy(deep=True)
+        c.clear_labeled_atoms()
+        bd = list(c.get_surface_sites()[0].bonds.values())[0]
+        if bd.atom1.is_surface_site():
+            bd.atom2.label = "*0"
+            c.remove_atom(bd.atom1)
+        else:
+            bd.atom1.label = "*0"
+            c.remove_atom(bd.atom2)
+    else:
+        c = coad2D.get_desorbed_molecules()[0]
     mol2D = mol2D.merge(c)
     ldict = mol2D.get_all_labeled_atoms()
     label = list(ldict.keys())[0]
     catom = list(ldict.values())[0]
     catom.label = ''
-    if label == "*1":
+    if label == "*0":
+        bd = Bond(siteatom,catom,order='vdW')
+    elif label == "*1":
         bd = Bond(siteatom,catom,order=1)
         catom.radical_electrons -= 1
     elif label == "*2":
@@ -1738,7 +1835,7 @@ def validate_TS_geometry(opt_path,reactants,products,sites,site_adjacency,nslab,
                     break 
             else:
                 match = False
-    except (SiteOccupationException,TooManyElectronsException):
+    except (SiteOccupationException,TooManyElectronsException,ValueError):
         return False,False,False,[],[]
     
     #get imaginary frequency motion

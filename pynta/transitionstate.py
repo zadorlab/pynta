@@ -52,6 +52,9 @@ def determine_TS_construction(reactant_names,reactant_mols,product_names,product
     rnum_surf_sites = [len(mol.get_surface_sites()) for i,mol in enumerate(reactant_mols)]
     pnum_surf_sites = [len(mol.get_surface_sites()) for i,mol in enumerate(product_mols)]
 
+    rnum_vdW_species = len([i for i,mol in enumerate(reactant_mols) if any(bd.is_van_der_waals() for bd in mol.get_all_edges())])
+    pnum_vdW_species = len([i for i,mol in enumerate(product_mols) if any(bd.is_van_der_waals() for bd in mol.get_all_edges())])
+    
     rnummultidentate = len([i for i in rnum_surf_sites if i>1])
     pnummultidentate = len([i for i in pnum_surf_sites if i>1])
 
@@ -66,6 +69,13 @@ def determine_TS_construction(reactant_names,reactant_mols,product_names,product
     elif pnummultidentate >= 2:
         forward = True
 
+    #prefer directions with fewer species with vdW bonds
+    if forward is None:
+        if rnum_vdW_species > pnum_vdW_species:
+            forward = False
+        elif pnum_vdW_species > rnum_vdW_species:
+            forward = True
+    
     #prefer directions with multidentate species, this reduces the time and cost of finding TS guesses
     if forward is None:
         if rnummultidentate == 1 and pnummultidentate == 0:
@@ -158,8 +168,12 @@ def get_unique_TS_structs(adsorbates,species_names,slab,slab_sites,site_adjacenc
     for adss in itertools.product(*ordered_adsorbates):
         if num_surf_sites[0] > 0:
             adslab = adss[0].copy()
-            adslabmol,neighbor_sites,ninds = generate_adsorbate_2D(adslab, slab_sites, site_adjacency, nslab, max_dist=np.inf, cut_off_num=None, allowed_structure_site_structures=None,
-                          keep_binding_vdW_bonds=True, keep_vdW_surface_bonds=False)
+            try:
+                adslabmol,neighbor_sites,ninds = generate_adsorbate_2D(adslab, slab_sites, site_adjacency, nslab, max_dist=np.inf, cut_off_num=None, allowed_structure_site_structures=None,
+                          keep_binding_vdW_bonds=True, keep_vdW_surface_bonds=any(bd.is_van_der_waals() for bd in mol_dict[species_names[0]].get_all_edges()))
+            except (SiteOccupationException,FailedFixBondsException,TooManyElectronsException) as e:
+                logging.warning("a configuration for {} was not convertable to 2D and has been skipped".format(species_names[0]))
+                continue
         else:
             adslab = slab.copy()
             adslabmol,neighbor_sites,ninds = generate_adsorbate_2D(adslab, slab_sites, site_adjacency, nslab, max_dist=np.inf, cut_off_num=None, allowed_structure_site_structures=None,
@@ -300,7 +314,11 @@ def get_unique_TS_templates_site_pairings(tsstructs,tsmols,forward_template,reve
     unique_tsstructs = []
     unique_tsmols = []
     for i,tsmol in enumerate(tsmols):
-        labeled_tsmols = get_labeled_full_TS_mol(template,tsmol)
+        try:
+            labeled_tsmols = get_labeled_full_TS_mol(template,tsmol)
+        except IndexError:
+            logging.warning("could not label a TS structure, usually means a reactant/product structure is bad")
+            continue
         for labeled_tsmol in labeled_tsmols:
             unique_tsstructs.append(tsstructs[i].copy())
             unique_tsmols.append(labeled_tsmol)
@@ -466,13 +484,15 @@ def generate_constraints_harmonic_parameters(tsstructs,tsmols,label_site_mapping
         label_site_mapping = label_site_mappings[i]
         
         occ = get_occupied_sites(tsstruct,slab_sites,nslab)
+        occ_atom_inds = [site["bonding_index"] for site in occ]
         
-        if len(occ) < len(forward_template.get_adatoms()): #if we don't identify as many occupied sites as we should skip this structure
-            print("occupied not equal to forward_template")
+        #if we don't identify all the template sites in the occupied site list skip this structure
+        if not ({get_ase_index(forward_template.atoms.index(a),template_mol_map,molecule_to_gratom_maps,nslab,ads_sizes) for a in forward_template.get_adatoms()} <= set(occ_atom_inds)): 
+            print("occupied sites and forward_template sites do not match")
             print("occ={0}".format(len(occ)))
             print("forward_template_occs={0}".format(len(forward_template.get_adatoms())))
             continue
-        occ_atom_inds = [site["bonding_index"] for site in occ]
+        
         occ_bd_lengths = {site["bonding_index"]:site['bond_length'] for site in occ}
         occ_site_types = {site["bonding_index"]:site['site'] for site in occ}
         occ_site_pos = {site["bonding_index"]:site['position'] for site in occ}
