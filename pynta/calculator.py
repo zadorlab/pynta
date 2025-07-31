@@ -8,6 +8,7 @@ from ase.calculators import calculator
 from ase.data import reference_states,chemical_symbols
 from ase.build import bulk
 from ase.constraints import *
+from ase.calculators.mixing import SumCalculator
 from pynta.utils import name_to_ase_software
 from sella import Sella, Constraints
 import scipy.optimize as opt
@@ -102,34 +103,62 @@ def run_harmonically_forced(atoms,atom_bond_potentials,site_bond_potentials,nsla
     
     hfsoft = name_to_ase_software(harm_f_software)
     
-    class HarmonicallyForced(hfsoft):
-        def get_energy_forces(self):
-            energy = 0.0
-            forces = np.zeros(self.atoms.positions.shape)
-            if hasattr(self.parameters,"atom_bond_potentials"):
-                for atom_bond_potential in self.parameters.atom_bond_potentials:
-                    E,F = get_energy_forces_atom_bond(self.atoms,**atom_bond_potential)
-                    energy += E
-                    forces += F
+    if not isinstance(hfsoft,list):
+        class HarmonicallyForced(hfsoft):
+            def get_energy_forces(self):
+                energy = 0.0
+                forces = np.zeros(self.atoms.positions.shape)
+                if hasattr(self.parameters,"atom_bond_potentials"):
+                    for atom_bond_potential in self.parameters.atom_bond_potentials:
+                        E,F = get_energy_forces_atom_bond(self.atoms,**atom_bond_potential)
+                        energy += E
+                        forces += F
 
-            if hasattr(self.parameters,"site_bond_potentials"):
-                for site_bond_potential in self.parameters.site_bond_potentials:
-                    E,F = get_energy_forces_site_bond(self.atoms,**site_bond_potential)
-                    energy += E
-                    forces += F
+                if hasattr(self.parameters,"site_bond_potentials"):
+                    for site_bond_potential in self.parameters.site_bond_potentials:
+                        E,F = get_energy_forces_site_bond(self.atoms,**site_bond_potential)
+                        energy += E
+                        forces += F
 
-            return energy[0][0],forces
+                return energy[0][0],forces
 
-        def calculate(self, atoms=None, properties=None, system_changes=calculator.all_changes):
-            hfsoft.calculate(self,atoms=atoms,properties=properties,system_changes=system_changes)
-            energy,forces = self.get_energy_forces()
-            self.results["energy"] += energy
-            self.results["free_energy"] += energy
-            self.results["forces"] += forces
-        
-    hf = HarmonicallyForced(atom_bond_potentials=atom_bond_potentials,
-                             site_bond_potentials=site_bond_potentials,**harm_f_software_kwargs)
+            def calculate(self, atoms=None, properties=None, system_changes=calculator.all_changes):
+                hfsoft.calculate(self,atoms=atoms,properties=properties,system_changes=system_changes)
+                energy,forces = self.get_energy_forces()
+                self.results["energy"] += energy
+                self.results["free_energy"] += energy
+                self.results["forces"] += forces
+            
+        hf = HarmonicallyForced(atom_bond_potentials=atom_bond_potentials,
+                                site_bond_potentials=site_bond_potentials,**harm_f_software_kwargs)
+    else:
+        class HarmonicallyForced(hfsoft[0]):
+            def get_energy_forces(self):
+                energy = 0.0
+                forces = np.zeros(self.atoms.positions.shape)
+                if hasattr(self.parameters,"atom_bond_potentials"):
+                    for atom_bond_potential in self.parameters.atom_bond_potentials:
+                        E,F = get_energy_forces_atom_bond(self.atoms,**atom_bond_potential)
+                        energy += E
+                        forces += F
 
+                if hasattr(self.parameters,"site_bond_potentials"):
+                    for site_bond_potential in self.parameters.site_bond_potentials:
+                        E,F = get_energy_forces_site_bond(self.atoms,**site_bond_potential)
+                        energy += E
+                        forces += F
+
+                return energy[0][0],forces
+
+            def calculate(self, atoms=None, properties=None, system_changes=calculator.all_changes):
+                hfsoft[0].calculate(self,atoms=atoms,properties=properties,system_changes=system_changes)
+                energy,forces = self.get_energy_forces()
+                self.results["energy"] += energy
+                self.results["free_energy"] += energy
+                self.results["forces"] += forces
+            
+        hf = SumCalculator([HarmonicallyForced(atom_bond_potentials=atom_bond_potentials,
+                                site_bond_potentials=site_bond_potentials,**harm_f_software_kwargs[0]),hfsoft[1](**harm_f_software_kwargs[1])])
     atoms.calc = hf
 
     opt = Sella(atoms,trajectory="xtbharm.traj",order=0)
@@ -142,7 +171,10 @@ def run_harmonically_forced(atoms,atom_bond_potentials,site_bond_potentials,nsla
                                                constraints=constraints,harm_f_software=harm_f_software,
                                                 harm_f_software_kwargs=harm_f_software_kwargs,dthresh=4.0)
 
-    Eharm,Fharm = atoms.calc.get_energy_forces()
+    if not isinstance(hf,SumCalculator):
+        Eharm,Fharm = atoms.calc.get_energy_forces()
+    else:
+        Eharm,Fharm = atoms.calc.calcs[0].get_energy_forces()
 
     return atoms,Eharm,Fharm
 
@@ -291,33 +323,62 @@ def run_harmonically_forced_no_pbc(atoms,atom_bond_potentials,site_bond_potentia
     
     hfsoft = name_to_ase_software(harm_f_software)
     
-    class HarmonicallyForced(hfsoft):
-        def get_energy_forces(self):
-            energy = 0.0
-            forces = np.zeros(self.atoms.positions.shape)
-            if hasattr(self.parameters,"atom_bond_potentials"):
-                for atom_bond_potential in self.parameters.atom_bond_potentials:
-                    E,F = get_energy_forces_atom_bond(self.atoms,**atom_bond_potential)
-                    energy += E
-                    forces += F
+    if not isinstance(hfsoft,list):
+        class HarmonicallyForced(hfsoft):
+            def get_energy_forces(self):
+                energy = 0.0
+                forces = np.zeros(self.atoms.positions.shape)
+                if hasattr(self.parameters,"atom_bond_potentials"):
+                    for atom_bond_potential in self.parameters.atom_bond_potentials:
+                        E,F = get_energy_forces_atom_bond(self.atoms,**atom_bond_potential)
+                        energy += E
+                        forces += F
 
-            if hasattr(self.parameters,"site_bond_potentials"):
-                for site_bond_potential in self.parameters.site_bond_potentials:
-                    E,F = get_energy_forces_site_bond(self.atoms,**site_bond_potential)
-                    energy += E
-                    forces += F
+                if hasattr(self.parameters,"site_bond_potentials"):
+                    for site_bond_potential in self.parameters.site_bond_potentials:
+                        E,F = get_energy_forces_site_bond(self.atoms,**site_bond_potential)
+                        energy += E
+                        forces += F
 
-            return energy[0][0],forces
+                return energy[0][0],forces
 
-        def calculate(self, atoms=None, properties=None, system_changes=calculator.all_changes):
-            hfsoft.calculate(self,atoms=atoms,properties=properties,system_changes=system_changes)
-            energy,forces = self.get_energy_forces()
-            self.results["energy"] += energy
-            self.results["free_energy"] += energy
-            self.results["forces"] += forces
-        
-    hf = HarmonicallyForced(atom_bond_potentials=atom_bond_potentials,
-                             site_bond_potentials=site_bond_potentials,**harm_f_software_kwargs)
+            def calculate(self, atoms=None, properties=None, system_changes=calculator.all_changes):
+                hfsoft.calculate(self,atoms=atoms,properties=properties,system_changes=system_changes)
+                energy,forces = self.get_energy_forces()
+                self.results["energy"] += energy
+                self.results["free_energy"] += energy
+                self.results["forces"] += forces
+            
+        hf = HarmonicallyForced(atom_bond_potentials=atom_bond_potentials,
+                                site_bond_potentials=site_bond_potentials,**harm_f_software_kwargs)
+    else:
+        class HarmonicallyForced(hfsoft[0]):
+            def get_energy_forces(self):
+                energy = 0.0
+                forces = np.zeros(self.atoms.positions.shape)
+                if hasattr(self.parameters,"atom_bond_potentials"):
+                    for atom_bond_potential in self.parameters.atom_bond_potentials:
+                        E,F = get_energy_forces_atom_bond(self.atoms,**atom_bond_potential)
+                        energy += E
+                        forces += F
+
+                if hasattr(self.parameters,"site_bond_potentials"):
+                    for site_bond_potential in self.parameters.site_bond_potentials:
+                        E,F = get_energy_forces_site_bond(self.atoms,**site_bond_potential)
+                        energy += E
+                        forces += F
+
+                return energy[0][0],forces
+
+            def calculate(self, atoms=None, properties=None, system_changes=calculator.all_changes):
+                hfsoft[0].calculate(self,atoms=atoms,properties=properties,system_changes=system_changes)
+                energy,forces = self.get_energy_forces()
+                self.results["energy"] += energy
+                self.results["free_energy"] += energy
+                self.results["forces"] += forces
+            
+        hf = SumCalculator([HarmonicallyForced(atom_bond_potentials=atom_bond_potentials,
+                                site_bond_potentials=site_bond_potentials,**harm_f_software_kwargs[0]),hfsoft[1](**harm_f_software_kwargs[1])])
     
     bigad.set_constraint(out_constraints)
     bigad.calc = hf
@@ -329,7 +390,10 @@ def run_harmonically_forced_no_pbc(atoms,atom_bond_potentials,site_bond_potentia
     except:
         return None,None,None
 
-    Eharm,Fharm = bigad.calc.get_energy_forces()
+    if not isinstance(hf,SumCalculator):
+        Eharm,Fharm = bigad.calc.get_energy_forces()
+    else:
+        Eharm,Fharm = bigad.calc.calcs[0].get_energy_forces()
 
     newad = bigad[new_nslab:]
     for ind,molind in ase_to_mol_num.items():
@@ -408,7 +472,10 @@ def add_sella_constraint(cons,d):
     return
 
 def get_lattice_parameters(metal,surface_type,software,software_kwargs,da=0.1,a0=None):
-    soft = name_to_ase_software(software)(**software_kwargs)
+    if not isinstance(software,list):
+        soft = name_to_ase_software(software)(**software_kwargs)
+    else:
+        soft = SumCalculator([name_to_ase_software(software[i])(**software_kwargs[i]) for i in range(len(software))])
     if surface_type != "hcp0001":
         options={"xatol":1e-4}
         def f(a):
