@@ -106,8 +106,14 @@ class Pynta:
 
         self.lattice_opt_software_kwargs = deepcopy(software_kwargs)
         if lattice_opt_software_kwargs:
-            for key,val in lattice_opt_software_kwargs.items():
-                self.lattice_opt_software_kwargs[key] = val
+            if not isinstance(lattice_opt_software_kwargs,list):
+                for key,val in lattice_opt_software_kwargs.items():
+                    self.lattice_opt_software_kwargs[key] = val
+            else:
+                self.lattice_opt_software_kwargs = [dict() for range(len(lattice_opt_software_kwargs))]
+                for i in range(len(lattice_opt_software_kwargs)):
+                    for key,val in lattice_opt_software_kwargs[i].items():
+                        self.lattice_opt_software_kwargs[i][key] = val
 
         self.queue = queue
         self.fworker = None
