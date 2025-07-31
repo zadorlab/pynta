@@ -5,6 +5,7 @@ from ase.io import write, read
 from ase.io.trajectory import Trajectory
 from ase.calculators.socketio import SocketIOCalculator
 from ase.vibrations import Vibrations
+from ase.calculators.mixing import SumCalculator
 from molecule.molecule import Molecule
 from sella import Sella, Constraints, IRC
 from fireworks import *
@@ -99,7 +100,10 @@ class MolecularOptimizationTask(OptimizationTask):
             if "command" in software_kwargs.keys() and "{unixsocket}" in software_kwargs["command"]:
                 software_kwargs["command"] = software_kwargs["command"].format(unixsocket=unixsocket)
 
-        software = name_to_ase_software(self["software"])(**software_kwargs)
+        if not isinstance(self["software"],list):
+            software = name_to_ase_software(self["software"])(**software_kwargs)
+        else:
+            software = SumCalculator([name_to_ase_software(self["software"][i])(**software_kwargs[i]) for i in range(len(self["software"]))])
 
         opt_kwargs = deepcopy(self["opt_kwargs"]) if "opt_kwargs" in self.keys() else dict()
         opt_method = name_to_ase_opt(self["opt_method"]) if "opt_method" in self.keys() else BFGS
@@ -305,7 +309,11 @@ class MolecularOptimizationFailTask(OptimizationTask):
     def run_task(self, fw_spec):
         print(fw_spec)
         software_kwargs = deepcopy(self["software_kwargs"]) if "software_kwargs" in self.keys() else dict()
-        software = name_to_ase_software(self["software"])(**software_kwargs)
+        if not isinstance(self["software"],list):
+            software = name_to_ase_software(self["software"])(**software_kwargs)
+        else:
+            software = SumCalculator([name_to_ase_software(self["software"][i])(**software_kwargs[i]) for i in range(len(self["software"]))])
+
 
         opt_kwargs = deepcopy(self["opt_kwargs"]) if "opt_kwargs" in self.keys() else dict()
         opt_method = name_to_ase_opt(self["opt_method"]) if "opt_method" in self.keys() else BFGS
@@ -343,7 +351,11 @@ class MolecularEnergyTask(EnergyTask):
     optional_params = ["software_kwargs","energy_kwargs","ignore_errors"]
     def run_task(self, fw_spec):
         xyz = self['xyz']
-        software = name_to_ase_software(self["software"])
+        if not isinstance(self["software"],list):
+            software = name_to_ase_software(self["software"])(**software_kwargs)
+        else:
+            software = SumCalculator([name_to_ase_software(self["software"][i])(**software_kwargs[i]) for i in range(len(self["software"]))])
+
         label = self["label"]
         software_kwargs = deepcopy(self["software_kwargs"]) if "software_kwargs" in self.keys() else dict()
         energy_kwargs = deepcopy(self["energy_kwargs"]) if "energy_kwargs" in self.keys() else dict()
@@ -390,7 +402,11 @@ class MolecularVibrationsTask(VibrationTask):
         xyz = self['xyz']
         label = self["label"]
         software_kwargs = deepcopy(self["software_kwargs"]) if "software_kwargs" in self.keys() else dict()
-        software = name_to_ase_software(self["software"])(**software_kwargs)
+        if not isinstance(self["software"],list):
+            software = name_to_ase_software(self["software"])(**software_kwargs)
+        else:
+            software = SumCalculator([name_to_ase_software(self["software"][i])(**software_kwargs[i]) for i in range(len(self["software"]))])
+
         ignore_errors = deepcopy(self["ignore_errors"]) if "ignore_errors" in self.keys() else False
         socket = self["socket"] if "socket" in self.keys() else False
         if socket:
@@ -946,7 +962,11 @@ class MolecularIRC(FiretaskBase):
             if "command" in software_kwargs.keys() and "{unixsocket}" in software_kwargs["command"]:
                 software_kwargs["command"] = software_kwargs["command"].format(unixsocket=unixsocket)
 
-        software = name_to_ase_software(self["software"])(**software_kwargs)
+        if not isinstance(self["software"],list):
+            software = name_to_ase_software(self["software"])(**software_kwargs)
+        else:
+            software = SumCalculator([name_to_ase_software(self["software"][i])(**software_kwargs[i]) for i in range(len(self["software"]))])
+
 
         opt_kwargs = deepcopy(self["opt_kwargs"]) if "opt_kwargs" in self.keys() else dict()
         run_kwargs = deepcopy(self["run_kwargs"]) if "run_kwargs" in self.keys() else dict()
