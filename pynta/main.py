@@ -82,8 +82,12 @@ class Pynta:
         self.harm_f_software_kwargs = harm_f_software_kwargs
         self.nprocs_harm = nprocs_harm 
         
-        if software.lower() == 'vasp':
-            self.pbc = (True,True,True)
+        if not isinstance(software,list):
+            if software.lower() == 'vasp':
+                self.pbc = (True,True,True)
+        else:
+            if any(s.lower() == 'vasp' for s in software):
+                self.pbc = (True,True,True)
 
         if software_kwargs_gas:
             self.software_kwargs_gas = software_kwargs_gas
