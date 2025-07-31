@@ -49,6 +49,12 @@ class Pynta:
         surrogate_metal=None,sites=None,site_adjacency=None,nprocs_harm=1,postprocess=True,
         calculate_thermodynamic_references=True):
 
+        if isinstance(software,list): #SumCalculator
+            assert len(software) == len(software_kwargs)
+            assert len(software) == len(software_kwargs_gas)
+        if isinstance(harm_f_software,list): #SumCalculator
+            assert len(harm_f_software) == len(harm_f_software_kwargs)
+            
         self.surface_type = surface_type
         if launchpad_path:
             launchpad = LaunchPad.from_file(launchpad_path)
