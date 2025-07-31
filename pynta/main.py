@@ -110,7 +110,7 @@ class Pynta:
                 for key,val in lattice_opt_software_kwargs.items():
                     self.lattice_opt_software_kwargs[key] = val
             else:
-                self.lattice_opt_software_kwargs = [dict() for range(len(lattice_opt_software_kwargs))]
+                self.lattice_opt_software_kwargs = [dict() for i in range(len(lattice_opt_software_kwargs))]
                 for i in range(len(lattice_opt_software_kwargs)):
                     for key,val in lattice_opt_software_kwargs[i].items():
                         self.lattice_opt_software_kwargs[i][key] = val
