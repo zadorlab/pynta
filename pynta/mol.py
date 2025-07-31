@@ -717,7 +717,7 @@ def get_name(mol):
         return mol.to_adjacency_list().replace("\n"," ")[:-1].replace(' ','')
 
 
-def remove_slab(mol,remove_slab_bonds=False,update_atomtypes=True):
+def remove_slab(mol,remove_slab_bonds=False,update_atomtypes=True,clear_site_info=False):
     m = mol.copy(deep=True)
     for site in m.get_surface_sites():
         for a in site.bonds.keys():
@@ -735,6 +735,12 @@ def remove_slab(mol,remove_slab_bonds=False,update_atomtypes=True):
     if update_atomtypes:           
         m.update_atomtypes()
     m.update_connectivity_values()
+    
+    if clear_site_info:
+        for a in m.atoms:
+            if a.is_surface_site():
+                a.site = ""
+                a.morphology = ""
     
     return m
 
