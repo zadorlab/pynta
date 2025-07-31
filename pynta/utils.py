@@ -310,6 +310,9 @@ def name_to_ase_software(software_name):
     go from software_name to the associated
     ASE calculator constructor
     """
+    if isinstance(software_name,list):
+        return [name_to_ase_software(x) for x in software_name]
+    
     if software_name == "TBLite" or software_name == "XTB":
         module = import_module("tblite.ase")
         return getattr(module, "TBLite")
