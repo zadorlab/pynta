@@ -319,6 +319,9 @@ def name_to_ase_software(software_name):
     elif software_name == "MACECalculator":
         module = import_module("mace.calculators.mace")
         return getattr(module, software_name)
+    elif software_name == "TorchDFTD3Calculator":
+        module = import_module("torch_dftd.torch_dftd3_calculator")
+        return getattr(module, software_name)
     else:
         module = import_module("ase.calculators."+software_name.lower())
         return getattr(module, software_name)
