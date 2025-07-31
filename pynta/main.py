@@ -105,7 +105,7 @@ class Pynta:
                 self.software_kwargs_TS[key] = val
 
         self.lattice_opt_software_kwargs = deepcopy(software_kwargs)
-        if lattice_opt_software_kwargs:
+        if self.slab_path is None and lattice_opt_software_kwargs:
             if not isinstance(lattice_opt_software_kwargs,list):
                 for key,val in lattice_opt_software_kwargs.items():
                     self.lattice_opt_software_kwargs[key] = val
