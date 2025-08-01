@@ -4,7 +4,7 @@ channels:
   - mjohnson541
   - conda-forge
 dependencies:
-  - python =3.8
+  - python =3.9
   - matplotlib
   - spglib
   - ase =3.22.1
@@ -12,6 +12,7 @@ dependencies:
   - numpy
   - pyyaml
   - sella >=2.2.1
+  - jax =0.3
   - sphinx
   - fireworks
   - tblite
@@ -20,7 +21,6 @@ dependencies:
   - acat
   - nose
   - coverage
-  - liblapack !=3.9.0
   - pysidt >=1
   - ruamel.yaml < 0.18
   - flask =2.2.5
