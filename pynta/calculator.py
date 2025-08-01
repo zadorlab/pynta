@@ -151,7 +151,7 @@ def run_harmonically_forced(atoms,atom_bond_potentials,site_bond_potentials,nsla
                 return energy[0][0],forces
 
             def calculate(self, atoms=None, properties=None, system_changes=calculator.all_changes):
-                hfsoft.calculate(self,atoms=atoms,properties=properties,system_changes=system_changes)
+                hfsoft[0].calculate(self,atoms=atoms,properties=properties,system_changes=system_changes)
                 energy,forces = self.get_energy_forces()
                 self.results["energy"] += energy
                 self.results["free_energy"] += energy
@@ -171,7 +171,10 @@ def run_harmonically_forced(atoms,atom_bond_potentials,site_bond_potentials,nsla
                                                constraints=constraints,harm_f_software=harm_f_software,
                                                 harm_f_software_kwargs=harm_f_software_kwargs,dthresh=4.0)
 
-    Eharm,Fharm = atoms.calc.get_energy_forces()
+    if not isinstance(hf,SumCalculator):
+        Eharm,Fharm = atoms.calc.get_energy_forces()
+    else:
+        Eharm,Fharm = atoms.calc.calcs[0].get_energy_forces()
 
     return atoms,Eharm,Fharm
 
@@ -368,7 +371,7 @@ def run_harmonically_forced_no_pbc(atoms,atom_bond_potentials,site_bond_potentia
                 return energy[0][0],forces
 
             def calculate(self, atoms=None, properties=None, system_changes=calculator.all_changes):
-                hfsoft.calculate(self,atoms=atoms,properties=properties,system_changes=system_changes)
+                hfsoft[0].calculate(self,atoms=atoms,properties=properties,system_changes=system_changes)
                 energy,forces = self.get_energy_forces()
                 self.results["energy"] += energy
                 self.results["free_energy"] += energy
@@ -387,7 +390,10 @@ def run_harmonically_forced_no_pbc(atoms,atom_bond_potentials,site_bond_potentia
     except:
         return None,None,None
 
-    Eharm,Fharm = bigad.calc.get_energy_forces()
+    if not isinstance(hf,SumCalculator):
+        Eharm,Fharm = bigad.calc.get_energy_forces()
+    else:
+        Eharm,Fharm = bigad.calc.calcs[0].get_energy_forces()
 
     newad = bigad[new_nslab:]
     for ind,molind in ase_to_mol_num.items():
