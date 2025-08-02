@@ -39,7 +39,7 @@ jobs:
       - name: Setup Fireworks configuration
         run: |
           cp /home/runner/work/pynta/pynta/test/FW_config.yaml /home/runner/work/pynta/pynta/test/pyntatest/launches
-          echo y | lpad -l /home/runner/work/pynta/pynta/test/my_launchpad.yaml reset
+          echo fireworks | lpad -l /home/runner/work/pynta/pynta/test/my_launchpad.yaml reset
       - name: Tests
         run: make test-all
       - name: Install codecov
