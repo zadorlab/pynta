@@ -1391,12 +1391,26 @@ def train_sidt_cov_dep_regressor(pairs_datums,sampling_datums,r_site=None,
 
     Nfullnodes = (len(pairs_datums)+len(sampling_datums))*node_fract_training
 
-    treepair = MultiEvalSubgraphIsomorphicDecisionTreeRegressor([adsorbate_interaction_decomposition],
+    try: #pysidt >1.0
+        treepair = MultiEvalSubgraphIsomorphicDecisionTreeRegressor([adsorbate_interaction_decomposition],
                                                    nodes=pairnodes,
                                                    r=[ATOMTYPES[x] for x in r_atoms],
                                                    r_bonds=[1,2,3,0.05],
-                                                             r_un=[0],
-                                                   r_site=["","ontop","bridge","hcp","fcc"],
+                                                   r_un=[0],
+                                                   r_site=r_site,
+                                                   max_structures_to_generate_extensions=100,
+                                                   fract_nodes_expand_per_iter=0.025,
+                                                   iter_max=2,
+                                                   iter_item_cap=100,
+                                                   weigh_node_selection_by_occurrence=False,
+                                                  )
+    except: #pysidt 1.0.0
+        treepair = MultiEvalSubgraphIsomorphicDecisionTreeRegressor([adsorbate_interaction_decomposition],
+                                                   nodes=pairnodes,
+                                                   r=[ATOMTYPES[x] for x in r_atoms],
+                                                   r_bonds=[1,2,3,0.05],
+                                                   r_un=[0],
+                                                   r_site=r_site,
                                                    max_structures_to_generate_extensions=100,
                                                    fract_nodes_expand_per_iter=0.025,
                                                    iter_max=2,
