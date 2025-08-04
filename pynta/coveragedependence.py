@@ -2128,11 +2128,11 @@ def get_configs_for_calculation(configs_of_concern_by_coad_admol,Ncoad_energy_by
                         configs_for_calculation[maxarglocal] = config
                         maxval = maxvallocal
 
-    coad_admol_to_config_for_calculation = dict()
+    coad_admol_to_config_for_calculation = {coadname: dict() for coadname in coadnames}
+    
     for config in configs_for_calculation:
         found = False
         for coadname in coadnames:
-            coad_admol_to_config_for_calculation[coadname] = dict()
             for admol_name,v in configs_of_concern_by_coad_admol[coadname].items():
                 if any(x[0] is config for x in v):
                     if admol_name in coad_admol_to_config_for_calculation[coadname].keys():
