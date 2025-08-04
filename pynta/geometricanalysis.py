@@ -1536,6 +1536,12 @@ def validate_TS(ts_path,sites,site_adjacency,nslab,irc_path1=None,irc_path2=None
     reactants = Molecule().from_adjacency_list(info["reactants"])
     products = Molecule().from_adjacency_list(info["products"])
     
+    rclear = reactants.copy(deep=True)
+    pclear = products.copy(deep=True)
+    rclear.clear_labeled_atoms()
+    pclear.clear_labeled_atoms()
+    is_diffusion = rclear.is_isomorphic(pclear,save_order=True)
+    
     vdW_surface_bonds = False
     binding_vdW_bonds = False
     for mol in [reactants,products]:
