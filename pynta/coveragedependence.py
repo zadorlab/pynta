@@ -2135,8 +2135,6 @@ def get_configs_for_calculation(configs_of_concern_by_coad_admol,Ncoad_energy_by
         for coadname in coadnames:
             for admol_name,v in configs_of_concern_by_coad_admol[coadname].items():
                 if any(x[0] is config for x in v):
-                    logging.error((admol_name,coadname))
-                    logging.error(config.to_adjacency_list())
                     if admol_name in coad_admol_to_config_for_calculation[coadname].keys():
                         coad_admol_to_config_for_calculation[coadname][admol_name].append(config)
                     else:
