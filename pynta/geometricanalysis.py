@@ -1796,33 +1796,106 @@ def validate_TS_geometry(opt_path,reactants,products,sites,site_adjacency,nslab,
     atoms = read(opt_path)
     
     broken_bonds,formed_bonds = get_broken_formed_bonds(reactants,products)
-    target_TS = reactants.copy(deep=True)
+    target_TS_r = reactants.copy(deep=True)
     
     for labels in list(broken_bonds)+list(formed_bonds):
         label1,label2 = list(labels)
-        a1 = target_TS.get_labeled_atoms(label1)[0]
-        a2 = target_TS.get_labeled_atoms(label2)[0]
-        if target_TS.has_bond(a1,a2):
-            bd = target_TS.get_bond(a1,a2)
+        a1 = target_TS_r.get_labeled_atoms(label1)[0]
+        a2 = target_TS_r.get_labeled_atoms(label2)[0]
+        if target_TS_r.has_bond(a1,a2):
+            bd = target_TS_r.get_bond(a1,a2)
             bd.set_order_str('R')
         else:
             bd = Bond(a1,a2,order='R')
-            target_TS.add_bond(bd)
+            target_TS_r.add_bond(bd)
     
-    target_TS.clear_labeled_atoms()
+    target_TS_r.clear_labeled_atoms()
     
-    target_split = target_TS.split()
+    target_split_r = target_TS_r.split()
     
-    for st in target_split:
+    for st in target_split_r:
         st.update_multiplicity()
         st.update_atomtypes()
         st.update_connectivity_values()
         st.identify_ring_membership()
+    
+    if any(bd.is_van_der_waals() for bd in target_TS_r.get_all_edges()):
+        vdW_in_target_r = True
+        target_TS_r_novdW = target_TS_r.copy(deep=True)
+        
+        bd_to_remove = []
+        for bd in target_TS_r_novdW.get_all_edges():
+            if bd.is_van_der_waals():
+                bd_to_remove.append(bd)
+        
+        for bd in bd_to_remove:
+            target_TS_r_novdW.remove_bond(bd)
+        
+        target_split_r_novdW = target_TS_r_novdW.split()
+        
+        for st in target_split_r_novdW:
+            st.update_multiplicity()
+            st.update_atomtypes()
+            st.update_connectivity_values()
+            st.identify_ring_membership()
+    else:
+        vdW_in_target_r = False 
+        target_TS_r_novdW = target_TS_r
+        target_split_r_novdW = target_split_r
+    
+    target_TS_p = products.copy(deep=True)
+    
+    for labels in list(broken_bonds)+list(formed_bonds):
+        label1,label2 = list(labels)
+        a1 = target_TS_p.get_labeled_atoms(label1)[0]
+        a2 = target_TS_p.get_labeled_atoms(label2)[0]
+        if target_TS_p.has_bond(a1,a2):
+            bd = target_TS_p.get_bond(a1,a2)
+            bd.set_order_str('R')
+        else:
+            bd = Bond(a1,a2,order='R')
+            target_TS_p.add_bond(bd)
+    
+    target_TS_p.clear_labeled_atoms()
+    
+    target_split_p = target_TS_p.split()
+    
+    for st in target_split_p:
+        st.update_multiplicity()
+        st.update_atomtypes()
+        st.update_connectivity_values()
+        st.identify_ring_membership()
+    
+    if any(bd.is_van_der_waals() for bd in target_TS_p.get_all_edges()):
+        vdW_in_target_p = True
+        target_TS_p_novdW = target_TS_p.copy(deep=True)
+        
+        bd_to_remove = []
+        for bd in target_TS_p_novdW.get_all_edges():
+            if bd.is_van_der_waals():
+                bd_to_remove.append(bd)
+        
+        for bd in bd_to_remove:
+            target_TS_p_novdW.remove_bond(bd)
+        
+        target_split_p_novdW = target_TS_p_novdW.split()
+        
+        for st in target_split_p_novdW:
+            st.update_multiplicity()
+            st.update_atomtypes()
+            st.update_connectivity_values()
+            st.identify_ring_membership()
+    else:
+        vdW_in_target_p = False
+        target_TS_p_novdW = target_TS_p
+        target_split_p_novdW = target_split_p
+        
     try:
         admol,neighbor_sites,ninds = generate_TS_2D(atoms, info_path,  None, None, sites, site_adjacency, nslab, imag_freq_path=imag_freq_path,
                         max_dist=np.inf, cut_off_num=None, allowed_structure_site_structures=allowed_structure_site_structures,
                         keep_binding_vdW_bonds=keep_binding_vdW_bonds,keep_vdW_surface_bonds=keep_vdW_surface_bonds)
         
+        #with vdW bonds
         
         split_mols = split_adsorbed_structures(admol,clear_site_info=True,adsorption_info=False,atoms_to_skip=None,
                                 atom_mapping=False,split_sites_with_multiple_adsorbates=True)
@@ -1836,7 +1909,7 @@ def validate_TS_geometry(opt_path,reactants,products,sites,site_adjacency,nslab,
         mapping = dict()
         match = True
         for i,st in enumerate(split_mols):
-            for j,r in enumerate(target_split):
+            for j,r in enumerate(target_split_r):
                 if j in mapping.keys():
                     continue
                 if st.is_isomorphic(r,save_order=True,strict=False):
@@ -1844,6 +1917,82 @@ def validate_TS_geometry(opt_path,reactants,products,sites,site_adjacency,nslab,
                     break 
             else:
                 match = False
+                
+        if not match:
+            match = True
+            for i,st in enumerate(split_mols):
+                for j,r in enumerate(target_split_p):
+                    if j in mapping.keys():
+                        continue
+                    if st.is_isomorphic(r,save_order=True,strict=False):
+                        mapping[j] = i
+                        break 
+                else:
+                    match = False
+        
+        if any(bd.is_van_der_waals() for bd in admol.get_all_edges()) or vdW_in_target_p or vdW_in_target_r:
+            #without vdW bonds 
+            admol_novdW = admol.copy(deep=True)
+            bd_to_remove = []
+            for bd in admol_novdW.get_all_edges():
+                if bd.is_van_der_waals():
+                    bd_to_remove.append(bd)
+            
+            for bd in bd_to_remove:
+                admol_novdW.remove_bond(bd)
+            
+            logging.error("admol_novdW")
+            logging.error(admol_novdW.to_adjacency_list())
+            
+            split_mols_novdW = split_adsorbed_structures(admol_novdW,clear_site_info=True,adsorption_info=False,atoms_to_skip=None,
+                                    atom_mapping=False,split_sites_with_multiple_adsorbates=True)
+
+            for st in split_mols_novdW:
+                st.update_multiplicity()
+                st.update_atomtypes()
+                st.update_connectivity_values()
+                st.identify_ring_membership()
+            
+            logging.error(opt_path)
+            logging.error("reactants")
+            logging.error("split mol")
+            for x in split_mols_novdW:
+                logging.error(x.to_adjacency_list())
+            logging.error("target r")
+            for x in target_split_r_novdW:
+                logging.error(x.to_adjacency_list())
+            logging.error("target p")
+            for x in target_split_p_novdW:
+                logging.error(x.to_adjacency_list())
+            
+            
+            mapping_novdW = dict()
+            match_novdW = True
+            for i,st in enumerate(split_mols_novdW):
+                for j,r in enumerate(target_split_r_novdW):
+                    if j in mapping_novdW.keys():
+                        continue
+                    if st.is_isomorphic(r,save_order=True,strict=False):
+                        mapping_novdW[j] = i
+                        break 
+                else:
+                    match_novdW = False
+            
+            if not match_novdW:
+                mapping_novdW = dict()
+                match_novdW = True
+                for i,st in enumerate(split_mols_novdW):
+                    for j,r in enumerate(target_split_p_novdW):
+                        if j in mapping_novdW.keys():
+                            continue
+                        if st.is_isomorphic(r,save_order=True,strict=False):
+                            mapping_novdW[j] = i
+                            break 
+                    else:
+                        match_novdW = False
+        else:
+            match_novdW = match
+        
     except (SiteOccupationException,TooManyElectronsException,ValueError):
         return False,False,False,[],[]
     
@@ -1892,4 +2041,4 @@ def validate_TS_geometry(opt_path,reactants,products,sites,site_adjacency,nslab,
     else:
         bond_alignment_validation = min_r_bond_alignment
     
-    return match and bond_alignment_validation,match,bond_alignment_validation,reaction_bond_alignments,fixed_bond_alignments
+    return match_novdW and bond_alignment_validation,match,match_novdW,bond_alignment_validation,reaction_bond_alignments,fixed_bond_alignments
