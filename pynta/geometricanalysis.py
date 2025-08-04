@@ -1608,7 +1608,7 @@ def validate_TS_ircs(irc_path1,irc_path2,reactants,products,sites,site_adjacency
         admol1,neighbor_sites1,ninds1 = generate_adsorbate_2D(tr1[-1], sites, site_adjacency, nslab, max_dist=np.inf, cut_off_num=None, allowed_structure_site_structures=allowed_structure_site_structures,
                             keep_binding_vdW_bonds=True, keep_vdW_surface_bonds=vdW_surface_bonds)
     except (SiteOccupationException,FailedFixBondsException,TooManyElectronsException):
-        return None,None,None,None,None
+        return None,None,None,None,None,None,None,None
     
     vdw_ase_inds = []
     vdw_bds = []
@@ -1633,15 +1633,34 @@ def validate_TS_ircs(irc_path1,irc_path2,reactants,products,sites,site_adjacency
     for bd in vdw_bd_to_remove:
         admol1.remove_bond(bd)
     
+    
     split_structs1 = split_adsorbed_structures(admol1,clear_site_info=True,adsorption_info=False,atoms_to_skip=None,
                               atom_mapping=False,split_sites_with_multiple_adsorbates=True)
+    
+    if any(bd.is_van_der_waals() for bd in admol1.get_all_edges()):
+        admol1_is_vdW = True
+        admol1_novdW = admol1.copy(deep=True)
+        bds_to_remove = []
+        for bd in admol1_novdW.get_all_edges():
+            if bd.is_van_der_waals():
+                bds_to_remove.append(bd)
+        
+        for bd in bds_to_remove:
+            admol1_novdW.remove_bond(bd)
+        
+        split_structs1_novdW = split_adsorbed_structures(admol1_novdW,clear_site_info=True,adsorption_info=False,atoms_to_skip=None,
+                              atom_mapping=False,split_sites_with_multiple_adsorbates=True)
+    else:
+        admol1_is_vdW = False
+        admol1_novdW = admol1 
+        split_structs1_novdW = split_structs1
     
     tr2 = Trajectory(irc_path2)
     try:
         admol2,neighbor_sites2,ninds2 = generate_adsorbate_2D(tr2[-1], sites, site_adjacency, nslab, max_dist=np.inf, cut_off_num=None, allowed_structure_site_structures=allowed_structure_site_structures,
                             keep_binding_vdW_bonds=True, keep_vdW_surface_bonds=vdW_surface_bonds)
     except (SiteOccupationException,FailedFixBondsException,TooManyElectronsException):
-        return False,None,None,None,None
+        return False,None,None,None,None,None,None,None
     
     vdw_ase_inds = []
     vdw_bds = []
@@ -1668,7 +1687,25 @@ def validate_TS_ircs(irc_path1,irc_path2,reactants,products,sites,site_adjacency
         
     split_structs2 = split_adsorbed_structures(admol2,clear_site_info=True,adsorption_info=False,atoms_to_skip=None,
                               atom_mapping=False,split_sites_with_multiple_adsorbates=True)
+    
+    if any(bd.is_van_der_waals() for bd in admol2.get_all_edges()):
+        admol2_is_vdW = True
+        admol2_novdW = admol2.copy(deep=True)
+        bds_to_remove = []
+        for bd in admol2_novdW.get_all_edges():
+            if bd.is_van_der_waals():
+                bds_to_remove.append(bd)
         
+        for bd in bds_to_remove:
+            admol2_novdW.remove_bond(bd)
+        
+        split_structs2_novdW = split_adsorbed_structures(admol2_novdW,clear_site_info=True,adsorption_info=False,atoms_to_skip=None,
+                              atom_mapping=False,split_sites_with_multiple_adsorbates=True)
+    else:
+        admol2_is_vdW = False
+        admol2_novdW = admol2
+        split_structs2_novdW = split_structs2
+    
     rs = reactants.split()
     ps = products.split()
     for r in rs+ps:
@@ -1676,6 +1713,51 @@ def validate_TS_ircs(irc_path1,irc_path2,reactants,products,sites,site_adjacency
         r.update_atomtypes()
         r.update_connectivity_values()
         r.identify_ring_membership()
+    
+    if any(bd.is_van_der_waals() for bd in reactants.get_all_edges()):
+        reactants_target_vdw = True
+        reactants_novdW = reactants.copy(deep=True)
+        bds_to_remove = []
+        for bd in reactants_novdW.get_all_edges():
+            if bd.is_van_der_waals():
+                bds_to_remove.append(bd)
+        
+        for bd in bds_to_remove:
+            reactants_novdW.remove_bond(bd)
+        
+        rs_novdW = reactants_novdW.split()
+        for r in rs_novdW:
+            r.update_multiplicity()
+            r.update_atomtypes()
+            r.update_connectivity_values()
+            r.identify_ring_membership()
+    else:
+        reactants_target_vdw = False 
+        reactants_novdW = reactants
+        rs_novdW = rs
+    
+    if any(bd.is_van_der_waals() for bd in products.get_all_edges()):
+        products_target_vdw = True
+        products_novdW = products.copy(deep=True)
+        bds_to_remove = []
+        for bd in products_novdW.get_all_edges():
+            if bd.is_van_der_waals():
+                bds_to_remove.append(bd)
+        
+        for bd in bds_to_remove:
+            products_novdW.remove_bond(bd)
+        
+        ps_novdW = products_novdW.split()
+        for r in ps_novdW:
+            r.update_multiplicity()
+            r.update_atomtypes()
+            r.update_connectivity_values()
+            r.identify_ring_membership()
+    else:
+        products_target_vdw = False 
+        products_novdW = products
+        ps_novdW = ps
+    
         
     reactant_1_mapping = dict()
     reactant_1_match = True
@@ -1689,6 +1771,22 @@ def validate_TS_ircs(irc_path1,irc_path2,reactants,products,sites,site_adjacency
         else:
             reactant_1_match = False
     
+    if reactants_target_vdw or admol1_is_vdW:
+        reactant_1_mapping_novdW = dict()
+        reactant_1_match_novdW = True
+        for i,st in enumerate(split_structs1_novdW):
+            for j,r in enumerate(rs_novdW):
+                if j in reactant_1_mapping_novdW.keys():
+                    continue
+                if st.is_isomorphic(r,save_order=True,strict=False):
+                    reactant_1_mapping_novdW[j] = i
+                    break 
+            else:
+                reactant_1_match_novdW = False
+    else:
+        reactant_1_mapping_novdW = reactant_1_mapping
+        reactant_1_match_novdW = reactant_1_match
+    
     reactant_2_mapping = dict()
     reactant_2_match = True
     for i,st in enumerate(split_structs2):
@@ -1701,6 +1799,22 @@ def validate_TS_ircs(irc_path1,irc_path2,reactants,products,sites,site_adjacency
         else:
             reactant_2_match = False
     
+    if reactants_target_vdw or admol2_is_vdW:
+        reactant_2_mapping_novdW = dict()
+        reactant_2_match_novdW = True
+        for i,st in enumerate(split_structs2_novdW):
+            for j,r in enumerate(rs_novdW):
+                if j in reactant_2_mapping_novdW.keys():
+                    continue
+                if st.is_isomorphic(r,save_order=True,strict=False):
+                    reactant_2_mapping_novdW[j] = i
+                    break 
+            else:
+                reactant_2_match_novdW = False
+    else:
+        reactant_2_mapping_novdW = reactant_2_mapping
+        reactant_2_match_novdW = reactant_2_match
+        
     product_1_mapping = dict()
     product_1_match = True
     for i,st in enumerate(split_structs1):
@@ -1713,6 +1827,22 @@ def validate_TS_ircs(irc_path1,irc_path2,reactants,products,sites,site_adjacency
         else:
             product_1_match = False
     
+    if products_target_vdw or admol1_is_vdW:
+        product_1_mapping_novdW = dict()
+        product_1_match_novdW = True
+        for i,st in enumerate(split_structs1_novdW):
+            for j,r in enumerate(ps_novdW):
+                if j in product_1_mapping_novdW.keys():
+                    continue
+                if st.is_isomorphic(r,save_order=True,strict=False):
+                    product_1_mapping_novdW[j] = i
+                    break 
+            else:
+                product_1_match_novdW = False
+    else:
+        product_1_mapping_novdW = product_1_mapping
+        product_1_match_novdW = product_1_match
+        
     product_2_mapping = dict()
     product_2_match = True
     for i,st in enumerate(split_structs2):
@@ -1725,6 +1855,22 @@ def validate_TS_ircs(irc_path1,irc_path2,reactants,products,sites,site_adjacency
         else:
             product_2_match = False
     
+    if products_target_vdw or admol2_is_vdW:
+        product_2_mapping_novdW = dict()
+        product_2_match_novdW = True
+        for i,st in enumerate(split_structs2_novdW):
+            for j,r in enumerate(ps_novdW):
+                if j in product_2_mapping_novdW.keys():
+                    continue
+                if st.is_isomorphic(r,save_order=True,strict=False):
+                    product_2_mapping_novdW[j] = i
+                    break 
+            else:
+                product_2_match_novdW = False
+    else:
+        product_2_mapping_novdW = product_2_mapping
+        product_2_match_novdW = product_2_match
+        
     #Check if IRC reactants and products are the same
     endpoints_mapping = dict() 
     endpoints_match = True
@@ -1737,6 +1883,18 @@ def validate_TS_ircs(irc_path1,irc_path2,reactants,products,sites,site_adjacency
                 break 
         else:
             endpoints_match = False
+            
+    endpoints_mapping_novdW = dict() 
+    endpoints_match_novdW = True
+    for i,st in enumerate(split_structs1_novdW):
+        for j,r in enumerate(split_structs2_novdW):
+            if j in endpoints_mapping_novdW.keys():
+                continue
+            if st.is_isomorphic(r,save_order=True,strict=False):
+                endpoints_mapping_novdW[j] = i
+                break 
+        else:
+            endpoints_match_novdW = False
     
     #Check if target reactants and products are the same
     target_endpoints_mapping = dict() 
@@ -1756,17 +1914,27 @@ def validate_TS_ircs(irc_path1,irc_path2,reactants,products,sites,site_adjacency
     else:
         both_valid = False
     
+    if (reactant_1_match_novdW and product_2_match_novdW) or (reactant_2_match_novdW and product_1_match_novdW):
+        both_valid_novdW = True 
+    else:
+        both_valid_novdW = False
+        
     if reactant_1_match or product_2_match or reactant_2_match or product_1_match:
         one_endpoint_valid = True 
     else:
         one_endpoint_valid = False
+        
+    if reactant_1_match_novdW or product_2_match_novdW or reactant_2_match_novdW or product_1_match_novdW:
+        one_endpoint_valid_novdW = True 
+    else:
+        one_endpoint_valid_novdW = False
     
     if len(tr1) < irc_concern_len or len(tr2) < irc_concern_len:
         short_irc = True
     else:
         short_irc = False
     
-    return both_valid,one_endpoint_valid,endpoints_match,target_endpoints_match,short_irc
+    return both_valid,both_valid_novdW,one_endpoint_valid,one_endpoint_valid_novdW,endpoints_match,endpoints_match_novdW,target_endpoints_match,short_irc
 
 def validate_TS_geometry(opt_path,reactants,products,sites,site_adjacency,nslab,info_path=None,
                          imag_freq_path=None,allowed_structure_site_structures=None,keep_binding_vdW_bonds=False,keep_vdW_surface_bonds=False,
