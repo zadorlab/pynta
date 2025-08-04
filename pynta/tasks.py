@@ -1472,6 +1472,9 @@ class SelectCalculationsTask(FiretaskBase):
                 if breaking:
                     break
             else:
+                logging.error(config.to_adjacency_list())
+                logging.error(coad_admol_to_config_for_calculation.keys())
+                logging.error([[admol_name for admol_name,config_list in coad_admol_to_config_for_calculation[cname].items()] for cname in coad_admol_to_config_for_calculation.keys()])
                 raise ValueError
             
             partial_admol = admol_name_structure_dict[adname]
