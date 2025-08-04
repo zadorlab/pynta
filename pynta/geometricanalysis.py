@@ -2162,7 +2162,7 @@ def validate_TS_geometry(opt_path,reactants,products,sites,site_adjacency,nslab,
             match_novdW = match
         
     except (SiteOccupationException,TooManyElectronsException,ValueError):
-        return False,False,False,[],[]
+        return False,False,False,False,[],[]
     
     #get imaginary frequency motion
     tr_ts = Trajectory(imag_freq_path)
