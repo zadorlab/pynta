@@ -1556,23 +1556,25 @@ def validate_TS(ts_path,sites,site_adjacency,nslab,irc_path1=None,irc_path2=None
                     if len(out) == 1: #vdW bond is not only thing connecting adsorbate to surface
                         vdW_surface_bonds = True
                         
-    ts_val,struct_match,bond_alignment_validation,reaction_bond_alignments,fixed_bond_alignments = validate_TS_geometry(ts_path,reactants,products,sites,site_adjacency,nslab,info_path=info_path,
+    ts_val,struct_match,struct_novdW_match,bond_alignment_validation,reaction_bond_alignments,fixed_bond_alignments = validate_TS_geometry(ts_path,reactants,products,sites,site_adjacency,nslab,info_path=info_path,
                          imag_freq_path=imag_freq_path,allowed_structure_site_structures=None,keep_binding_vdW_bonds=binding_vdW_bonds,keep_vdW_surface_bonds=vdW_surface_bonds)
     
     if irc_path1 is not None:
-        both_valid,one_endpoint_valid,endpoints_match,target_endpoints_match,short_irc = validate_TS_ircs(irc_path1,irc_path2,reactants,products,sites,site_adjacency,nslab,
+        both_valid,both_valid_novdW,one_endpoint_valid,one_endpoint_valid_novdW,endpoints_match,endpoints_match_novdW,target_endpoints_match,short_irc = validate_TS_ircs(irc_path1,irc_path2,reactants,products,sites,site_adjacency,nslab,
                                                                 allowed_structure_site_structures=None,
                         binding_vdW_bonds=binding_vdW_bonds, vdW_surface_bonds=vdW_surface_bonds, irc_concern_len=irc_concern_len)
         
-        d = {"TS_direct_Validation": ts_val, "IRC_Validation": both_valid, "One_Endpoint_Valid": one_endpoint_valid, "IRC_Endpoints_Match": endpoints_match,
-                                                    "Short_IRC": short_irc, "Struct Validation": struct_match,
+        d = {"TS_direct_Validation": ts_val, "IRC_Validation": both_valid, "IRC_No-vdW_Validation": both_valid_novdW, "One_Endpoint_Valid": one_endpoint_valid, 
+                                                    "One_Endpoint_Valid_No-vdW": one_endpoint_valid_novdW,"IRC_Endpoints_Match": endpoints_match,
+                                                    "IRC_Endpoints_Match_No-vdW": endpoints_match_novdW,
+                                                    "Short_IRC": short_irc, "Struct Validation": struct_match, "Struct No-vdW Validation": struct_novdW_match,
                                                     "Freq Alignment Validation": bond_alignment_validation, "Reaction_Bond_Freq_Alignments": reaction_bond_alignments,
                                                     "Fixed_Bond_Freq_Alignments": fixed_bond_alignments, "is_diffusion": is_diffusion}
         
         if one_endpoint_valid is not None and not is_diffusion:
-            return both_valid or (((one_endpoint_valid and endpoints_match) or target_endpoints_match) and ts_val), d
+            return both_valid_novdW or (((one_endpoint_valid_novdW and endpoints_match_novdW) or target_endpoints_match) and ts_val), d
         elif is_diffusion:
-            return (ts_val and both_valid),d
+            return (ts_val and both_valid_novdW),d
         else:
             return ts_val,d
     else:
