@@ -1461,14 +1461,18 @@ class SelectCalculationsTask(FiretaskBase):
         for i,config in enumerate(configs_for_calculation):
             adname = None
             coadname = None
+            breaking = False
             for cname in coad_admol_to_config_for_calculation.keys():
                 for admol_name,config_list in coad_admol_to_config_for_calculation[cname].items():
                     if any(x is config for x in config_list):
                         adname = admol_name
                         coadname = cname
+                        breaking = True
                         break
-                else:
-                    raise ValueError
+                if breaking:
+                    break
+            else:
+                raise ValueError
             
             partial_admol = admol_name_structure_dict[adname]
             admol_path = admol_name_path_dict[adname]
