@@ -1561,16 +1561,19 @@ def validate_TS(ts_path,sites,site_adjacency,nslab,irc_path1=None,irc_path2=None
         d = {"TS_direct_Validation": ts_val, "IRC_Validation": both_valid, "One_Endpoint_Valid": one_endpoint_valid, "IRC_Endpoints_Match": endpoints_match,
                                                     "Short_IRC": short_irc, "Struct Validation": struct_match,
                                                     "Freq Alignment Validation": bond_alignment_validation, "Reaction_Bond_Freq_Alignments": reaction_bond_alignments,
-                                                    "Fixed_Bond_Freq_Alignments": fixed_bond_alignments}
-        if one_endpoint_valid is not None:
+                                                    "Fixed_Bond_Freq_Alignments": fixed_bond_alignments, "is_diffusion": is_diffusion}
+        
+        if one_endpoint_valid is not None and not is_diffusion:
             return both_valid or (((one_endpoint_valid and endpoints_match) or target_endpoints_match) and ts_val), d
+        elif is_diffusion:
+            return (ts_val and both_valid),d
         else:
             return ts_val,d
     else:
         d = {"TS_direct_Validation": ts_val, "IRC_Validation": None, "One_Endpoint_Valid": None,"IRC_Endpoints_Match": None,
                                                     "Short_IRC": None, "Struct Validation": struct_match, "Freq Alignment Validation": bond_alignment_validation, 
                                                     "Reaction_Bond_Freq_Alignments": reaction_bond_alignments,
-                                                    "Fixed_Bond_Freq_Alignments": fixed_bond_alignments}
+                                                    "Fixed_Bond_Freq_Alignments": fixed_bond_alignments, "is_diffusion": is_diffusion}
         return ts_val,d
 
 def validate_TS_ircs(irc_path1,irc_path2,reactants,products,sites,site_adjacency,nslab,allowed_structure_site_structures=None,
