@@ -122,10 +122,10 @@ def get_energies(path,atom_corrections=None):
 
     return Es,thermos,fs
 
-def get_kinetics(path,metal,facet):
+def get_kinetics_old(path,metal,facet,repeats):
     info = json.load(open(os.path.join(path,"info.json"),'r'))
     slab = read(os.path.join(os.path.split(path)[0],"slab.xyz"))
-    site_density = get_site_density(slab,metal,facet)
+    site_density = get_site_density(slab,repeats)
     rnames = info["species_names"]
     pnames = info["reverse_names"]
     if info["forward"]:
@@ -250,11 +250,8 @@ def get_animated_mode(dopt,dvib,nslab,n=0):
     view(tr2)
     os.remove("temp_vib_vib.traj")
 
-def get_site_density(slab,metal,facet):
-    cas = SlabAdsorptionSites(slab, facet,allow_6fold=False,composition_effect=False,
-                        label_sites=True,
-                        surrogate_metal=metal)
-    S = len(cas.get_sites())
+def get_site_density(slab,repeats):
+    S = repeats[0]*repeats[1]
     cell = slab.cell
     n = np.cross(cell[0],cell[1])
     A = np.linalg.norm(n)
@@ -1478,7 +1475,6 @@ def get_reference_energies(adsorbates_path,nslab,check_finished=False):
     
     return c_ref,o_ref,h_ref,n_ref,finished_atoms
     
-def postprocess(path,metal,facet,sites,site_adjacency,slab_path=None,check_finished=False):
     """
     Postprocess Pynta run into GasConfiguration/SurfaceConfiguration/Kinetics objects
     Args:
@@ -1502,7 +1498,7 @@ def postprocess(path,metal,facet,sites,site_adjacency,slab_path=None,check_finis
         
     nslab = len(slab)
 
-    site_density = get_site_density(slab,metal,facet)
+    site_density = get_site_density(slab,repeats)
     
     spc_names = [x for x in os.listdir(os.path.join(path,"Adsorbates")) if os.path.isdir(os.path.join(path,"Adsorbates",x))]
 
