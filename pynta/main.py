@@ -23,6 +23,9 @@ from fireworks.core.rocket_launcher import rapidfire
 from fireworks.core.fworker import FWorker
 import fireworks.fw_config
 import logging
+from pynta.polaris import createFWorkers as createFWorkersPolaris
+from pynta.aurora import createFWorkers as createFWorkersAurora
+from pynta.multi_launcher import launch_multiprocess2
 
 #logger
 logger = logging.getLogger(__name__)
@@ -39,6 +42,7 @@ class Pynta:
                             "pseudopotentials": {"Cu": 'Cu.pbe-spn-kjpaw_psl.1.0.0.UPF',"H": 'H.pbe-kjpaw_psl.1.0.0.UPF',"O": 'O.pbe-n-kjpaw_psl.1.0.0.UPF',"C": 'C.pbe-n-kjpaw_psl.1.0.0.UPF',"N": 'N.pbe-n-kjpaw_psl.1.0.0.UPF',
                             }, },
         software_kwargs_gas=None,
+        machine='Aurora',
         TS_opt_software_kwargs=None,
         harm_f_software="TBLite",
         harm_f_software_kwargs={"method": "GFN1-xTB","verbosity":0},
@@ -441,10 +445,17 @@ class Pynta:
         """
         if self.queue:
             rapidfirequeue(self.launchpad,self.fworker,self.qadapter,njobs_queue=self.njobs_queue,nlaunches="infinite")
-        elif not self.queue and (self.num_jobs == 1 or single_job):
-            rapidfire(self.launchpad,self.fworker,nlaunches="infinite")
+#        elif not self.queue and (self.num_jobs == 1 or single_job):
+#            rapidfire(self.launchpad,self.fworker,nlaunches="infinite")
         else:
-            launch_multiprocess(self.launchpad,self.fworker,"INFO","infinite",self.num_jobs,5)
+#            launch_multiprocess(self.launchpad,self.fworker,"INFO","infinite",self.num_jobs,5)
+            print("custom multilauncher")
+            if self.machine == 'Aurora':
+                createFWorkers = createFWorkersAurora
+            else:
+                createFWorkers = createFWorkersPolaris
+            listfworkers = createFWorkers(self.num_jobs) # createFWorkers(self.num_jobs)
+            launch_multiprocess2(self.launchpad,listfworkers,"INFO",0,self.num_jobs,5)
 
     def execute(self,calculate_adsorbates=True,
                 calculate_transition_states=True,launch=True):

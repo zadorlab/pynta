@@ -1,10 +1,9 @@
-authsource: fireworks
-host: localhost
+host: 140.221.120.19
 logdir: null
 mongoclient_kwargs: {}
 name: fireworks
 password: null
-port: 27017
+port: 54015
 strm_lvl: INFO
 uri_mode: false
 user_indices: []
