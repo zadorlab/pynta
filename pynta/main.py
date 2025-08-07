@@ -73,6 +73,7 @@ class Pynta:
         self.pbc = pbc
         self.c = c
         self.software = software
+        self.machine = machine
         self.socket = socket
         self.repeats = repeats
         self.path = os.getcwd() if path is None else path
