@@ -23,7 +23,6 @@ from fireworks.core.rocket_launcher import rapidfire
 from fireworks.core.fworker import FWorker
 import fireworks.fw_config
 import logging
-from pynta.polaris import createFWorkers as createFWorkersPolaris
 from pynta.aurora import createFWorkers as createFWorkersAurora
 from pynta.multi_launcher import launch_multiprocess2
 
@@ -452,8 +451,6 @@ class Pynta:
             print("custom multilauncher")
             if self.machine == 'Aurora':
                 createFWorkers = createFWorkersAurora
-            else:
-                createFWorkers = createFWorkersPolaris
             listfworkers = createFWorkers(self.num_jobs) # createFWorkers(self.num_jobs)
             launch_multiprocess2(self.launchpad,listfworkers,"INFO",0,self.num_jobs,5)
 
