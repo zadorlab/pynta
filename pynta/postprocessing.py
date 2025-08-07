@@ -1474,7 +1474,8 @@ def get_reference_energies(adsorbates_path,nslab,check_finished=False):
         finished_atoms = ["H"] + [x for x in finished_names if x != "[H][H]"]
     
     return c_ref,o_ref,h_ref,n_ref,finished_atoms
-    
+
+def postprocess(path,metal,facet,sites,site_adjacency,slab_path=None,check_finished=False):
     """
     Postprocess Pynta run into GasConfiguration/SurfaceConfiguration/Kinetics objects
     Args:
