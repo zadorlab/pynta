@@ -441,7 +441,7 @@ class GasConfiguration:
         self.vibdata = vibdata 
         self.name = name
         self.valid = valid
-        temperature = [298.15]  # NOTE 298.15 must be first for the NASA polynomial routine to work!
+        temperature = [298.0]
         self.T_low = 300.0
         self.T_switch = 1000.0
         self.T_high = 2000.0
@@ -483,7 +483,7 @@ class GasConfiguration:
     def fit_NASA(self):
         wh = Wilhoit().fit_to_data(Tdata=self.temperature,Cpdata=np.array(self.Cp),Cp0=self.Cp0,CpInf=self.Cpinf,H298=self.H[0],S298=self.S[0])
 
-        self.nasa = wh.to_nasa(Tmin=298.15, Tmax=self.T_high, Tint=self.T_switch)
+        self.nasa = wh.to_nasa(Tmin=298.0, Tmax=self.T_high, Tint=self.T_switch)
         
         self.thermo_lines = "thermo="+repr(self.nasa)+","
         
@@ -705,7 +705,7 @@ class SurfaceConfiguration:
         if not self.is_TS and self.freqs[1].real < self.cutoff_frequency:
             self.twoD_gas = True
 
-        temperature = [298.15]  # NOTE 298.15 must be first for the NASA polynomial routine to work!
+        temperature = [298.0]
         self.T_low = 300.0
         self.T_high = 2000.0
         self.dT = 10.0  # temperature increment
@@ -835,7 +835,7 @@ class SurfaceConfiguration:
     def fit_NASA(self):
         wh = Wilhoit(comment='metal = {metal},facet = {facet}'.format(metal=self.metal,facet=self.facet)).fit_to_data(Tdata=self.temperature,Cpdata=self.Cp,Cp0=self.Cp0,CpInf=self.Cpinf,H298=self.H[0],S298=self.S[0])
 
-        self.nasa = wh.to_nasa(Tmin=298.15, Tmax=self.T_high, Tint=self.T_switch)
+        self.nasa = wh.to_nasa(Tmin=298.0, Tmax=self.T_high, Tint=self.T_switch)
         
         self.thermo_lines = "thermo="+repr(self.nasa)+","
 
@@ -962,7 +962,7 @@ class Kinetics:
         """
         self.metal = metal
         self.facet = facet
-        temperature = [298.15]
+        temperature = [298.0]
         self.T_low = 300.0
         self.T_high = 2000.0
         self.dT = 10.0  # temperature increment
