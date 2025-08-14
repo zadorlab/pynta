@@ -587,7 +587,7 @@ entry(
 
         self.Cp0 = get_cp(self.thermo,10.0,dT=0.01)
         self.Cpinf = get_cp(self.thermo,1.0e7,dT=0.01)
-        
+
         self.entropy_of_formation_298K = self.S[0]
         self.heat_of_formation_298K = self.H[0]
         
@@ -1578,7 +1578,7 @@ def write_rmg_libraries(path,spc_dict,spc_dict_thermo,ts_dict,metal,facet):
         spc_dict: dictionary mapping names to lowest energy GasConfiguration/SurfaceConfiguration objects
         ts_dict: dictionary mapping TS names (TS1...etc) to Kinetics objects corresponding to the lowest energy valid TS/reactants/products
     """
-    index = 0
+    index = 2 # Vacant site is number 1
     thermo_text = ""
     spc_dictionary_txt = "vacantX\n1 X u0 p0 c0\n\n"
     for name,spc in spc_dict_thermo.items():
@@ -1599,7 +1599,7 @@ def write_rmg_libraries(path,spc_dict,spc_dict_thermo,ts_dict,metal,facet):
     with open(os.path.join(path,"thermo_library.py"),'w') as f:
         f.write(thermo_text)
 
-    index = 0
+    index = 1
     reaction_text = ""
     for ts,kinetics in ts_dict.items():
         if reaction_text == "":
