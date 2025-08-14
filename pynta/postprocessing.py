@@ -561,14 +561,27 @@ entry(
         self.H = []
         self.S = []
         self.Cp = []
+
+        h_correction = 4.234  # kJ/mol. enthalpy_H(298) - enthalpy_H(0)
+        c_correction = 1.051  # kJ/mol. enthalpy_C(298) - enthalpy_C(0)
+        n_correction = 4.335  # kJ/mol. enthalpy_N(298) - enthalpy_N(0)
+        o_correction = 4.340  # kJ/mol. enthalpy_O(298) - enthalpy_O(0)
+
+        # Still not certain why these are needed. Need to read book
+        self.heat_of_formation_correction = 0.0
+        self.heat_of_formation_correction += self.composition['H'] * h_correction * 1000.0  # J/mol
+        self.heat_of_formation_correction += self.composition['C'] * c_correction * 1000.0
+        self.heat_of_formation_correction += self.composition['N'] * n_correction * 1000.0
+        self.heat_of_formation_correction += self.composition['O'] * o_correction * 1000.0
+
         for T in self.temperature:
             G = self.thermo.get_gibbs_energy(T,1.0e5,verbose=False)
             H = self.thermo.get_enthalpy(T,verbose=False)
             S = self.thermo.get_entropy(T,1.0e5,verbose=False)
             Cp = get_cp(self.thermo,T,dT=0.01)
             
-            self.G.append(G*self.eV_to_kJpermole*1000.0)
-            self.H.append(H*self.eV_to_kJpermole*1000.0)
+            self.G.append(G*self.eV_to_kJpermole*1000.0 - self.heat_of_formation_correction)
+            self.H.append(H*self.eV_to_kJpermole*1000.0 - self.heat_of_formation_correction)
             self.S.append(S*self.eV_to_kJpermole*1000.0)
             self.Cp.append(Cp*self.eV_to_kJpermole*1000.0)
 
