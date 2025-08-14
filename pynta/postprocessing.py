@@ -1047,7 +1047,7 @@ class Kinetics:
                     factor_f /= c0
                     Lunits_f += 3
 
-            for i in range(self.rnum-len(self.reactants)):
+            for j in range(self.rnum-len(self.reactants)):
                 factor_f /= self.site_density
                 Lunits_f += 2
             
@@ -1064,7 +1064,7 @@ class Kinetics:
                     elif isinstance(p,GasConfiguration):
                         factor_r /= c0
                         Lunits_r += 3
-                for i in range(self.pnum-len(self.products)):
+                for j in range(self.pnum-len(self.products)):
                     factor_r /= self.site_density
                     Lunits_r += 2
                 
