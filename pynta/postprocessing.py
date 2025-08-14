@@ -1581,6 +1581,9 @@ def write_rmg_libraries(path,spc_dict,spc_dict_thermo,ts_dict,metal,facet):
     index = 2 # Vacant site is number 1
     thermo_text = ""
     spc_dictionary_txt = "vacantX\n1 X u0 p0 c0\n\n"
+    # We need to remove the lattice name for RMG, only the facet
+    new_facet = [x for x in facet if x.isdigit()]
+    facet = ''.join(new_facet)
     for name,spc in spc_dict_thermo.items():
         if thermo_text == "":
             if isinstance(spc,SurfaceConfiguration):
