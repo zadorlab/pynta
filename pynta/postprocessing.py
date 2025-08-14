@@ -554,7 +554,12 @@ entry(
         else:
             geometry = "nonlinear"
 
-        self.thermo = IdealGasThermo(np.real(self.vibdata.get_energies()),geometry,
+        vib_energies = [self.vibdata.get_energies()]
+        for index, energy in enumerate(vib_energies):
+            if energy.real < 0.0014878111:
+                vib_energies[index] = 0.0014878111 # energy of a 12 cm^-1 freq.
+
+        self.thermo = IdealGasThermo(vib_energies,geometry,
                                         potentialenergy=(self.heat_of_formation_0K/1000.0)/self.eV_to_kJpermole-self.ZPE_energy,atoms=self.atoms,symmetrynumber=1,
                                         natoms=len(self.atoms),spin=(self.mol.multiplicity - 1)/2)
         self.G = []
@@ -710,7 +715,20 @@ class SurfaceConfiguration:
         self.adjacency_list = self.mol.to_adjacency_list()
         self.formatted_adj_list = self.adjacency_list
 
-        self.freqs = [np.complex128(x).real for x in self.vibdata.get_frequencies()]
+        freqs = [self.vibdata.get_frequencies()]
+        for index, freq in enumerate(freqs):
+            if index == 0 and self.is_TS:
+                freqs[index] = 0
+                continue
+            if freq.imag != 0:
+                if freq.imag > 100:
+                    print(f"IMAGINARY FREQUENCY IS TOO HIGH")
+                    freqs[index] = 12
+                else:
+                    freqs[index] = 12
+            else:
+                freqs[index] = freq.real
+        self.freqs = freqs
         self.name = name
 
         self.frequencies_units = 'cm-1'
