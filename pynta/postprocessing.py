@@ -1216,7 +1216,8 @@ def get_species(path,adsorbates_path,metal,facet,slab,sites,site_adjacency,nslab
             
     return species_dict 
                 
-def get_TS(path,adsorbates_path,metal,facet,slab,sites,site_adjacency,nslab,c_ref=0.0,o_ref=0.0,h_ref=0.0,n_ref=0.0):
+def get_TS(path,adsorbates_path,metal,facet,slab,sites,site_adjacency,nslab,c_ref=0.0,o_ref=0.0,h_ref=0.0,n_ref=0.0,
+           allowed_structure_site_structures=None):
     """
     Generate a dictionary of GasConfiguration/SurfaceConfiguration objects corresponding to a Pynta 
     species calculation
@@ -1237,7 +1238,8 @@ def get_TS(path,adsorbates_path,metal,facet,slab,sites,site_adjacency,nslab,c_re
     Returns:
         dictionary mapping string index to TS SurfaceConfiguration objects
     """
-    allowed_structure_site_structures = generate_allowed_structure_site_structures(adsorbates_path,sites,
+    if allowed_structure_site_structures is None:
+        allowed_structure_site_structures = generate_allowed_structure_site_structures(adsorbates_path,sites,
                                                                                    site_adjacency,nslab,max_dist=np.inf)
     valid_dict,valid_info = validate_TS_configs(path,sites,site_adjacency,nslab,irc_concern_len=8)
     
@@ -1324,7 +1326,7 @@ def get_TS(path,adsorbates_path,metal,facet,slab,sites,site_adjacency,nslab,c_re
     return ts_dict
 
 def get_kinetics(path,adsorbates_path,metal,facet,slab,sites,site_adjacency,nslab,site_density,config_dict=None,
-                c_ref=0.0,o_ref=0.0,h_ref=0.0,n_ref=0.0):
+                c_ref=0.0,o_ref=0.0,h_ref=0.0,n_ref=0.0,allowed_structure_site_structures=None):
     """
     Generate a dictionary of GasConfiguration/SurfaceConfiguration objects corresponding to a Pynta 
     species calculation
@@ -1348,7 +1350,7 @@ def get_kinetics(path,adsorbates_path,metal,facet,slab,sites,site_adjacency,nsla
         dictionary mapping string index to TS SurfaceConfiguration objects
     """
     ts_dict = get_TS(path,adsorbates_path,metal,facet,slab,sites,site_adjacency,nslab,
-                c_ref=c_ref,o_ref=o_ref,h_ref=h_ref,n_ref=n_ref)
+                c_ref=c_ref,o_ref=o_ref,h_ref=h_ref,n_ref=n_ref,allowed_structure_site_structures=allowed_structure_site_structures)
     
     with open(os.path.join(path,"info.json"),'r') as f:
         info = json.load(f)
@@ -1474,7 +1476,8 @@ def get_reference_energies(adsorbates_path,nslab,check_finished=False):
         finished_atoms = ["H"] + [x for x in finished_names if x != "[H][H]"]
     
     return c_ref,o_ref,h_ref,n_ref,finished_atoms
-    
+
+def postprocess(path,metal,facet,sites,site_adjacency,repeats,slab_path=None,check_finished=False,get_all_configs=False):
     """
     Postprocess Pynta run into GasConfiguration/SurfaceConfiguration/Kinetics objects
     Args:
@@ -1505,6 +1508,7 @@ def get_reference_energies(adsorbates_path,nslab,check_finished=False):
     c_ref,o_ref,h_ref,n_ref,finished_atoms = get_reference_energies(os.path.join(path,"Adsorbates"),nslab,check_finished=check_finished)
 
     spc_dict = dict()
+    spc_dict_for_kinetics = dict()
     spc_dict_thermo = dict()
     for name in spc_names:
         if check_finished and not os.path.exists(os.path.join(path,"Adsorbates",name,"complete.sgnl")):
@@ -1526,7 +1530,12 @@ def get_reference_energies(adsorbates_path,nslab,check_finished=False):
                 mink = k
         if mink:
             spc = spcs[mink]
-            spc_dict[name] = spc
+            if get_all_configs:
+                spc_dict[name] = spcs 
+                spc_dict_for_kinetics[name] = spc
+            else:
+                spc_dict[name] = spc
+                spc_dict_for_kinetics[name] = spc
             if not reference_missing: #if missing references don't do thermochemistry
                 spc_dict_thermo[name] = spc
     
@@ -1540,7 +1549,7 @@ def get_reference_energies(adsorbates_path,nslab,check_finished=False):
             continue # not ready to process this species yet
             
         try:
-            kinetics = get_kinetics(os.path.join(path,ts),os.path.join(path,"Adsorbates"),metal,facet,slab,sites,site_adjacency,nslab,site_density,config_dict=spc_dict,
+            kinetics = get_kinetics(os.path.join(path,ts),os.path.join(path,"Adsorbates"),metal,facet,slab,sites,site_adjacency,nslab,site_density,config_dict=spc_dict_for_kinetics,
                                    c_ref=c_ref,o_ref=o_ref,h_ref=h_ref,n_ref=n_ref)
         except KeyError: #species required isn't in spc_dict yet
             continue
@@ -1553,7 +1562,10 @@ def get_reference_energies(adsorbates_path,nslab,check_finished=False):
                 mink = k
         if mink:
             kin = kinetics[mink]
-            ts_dict[ts] = kin
+            if get_all_configs:
+                ts_dict[ts] = kinetics
+            else:
+                ts_dict[ts] = kin
 
     return spc_dict,ts_dict,spc_dict_thermo
 
