@@ -712,7 +712,10 @@ def generate_allowed_structure_site_structures(adsorbate_dir,sites,site_adjacenc
         geoms = get_adsorbate_geometries(os.path.join(adsorbate_dir,ad),target_mol,sites,atom_to_molecule_surface_atom_map,nslab)
         mols = []
         for geom in geoms:
-            admol,neighbor_sites,ninds = generate_adsorbate_2D(geom, sites, site_adjacency, nslab, max_dist=max_dist, cut_off_num=cut_off_num)
+            try:
+                admol,neighbor_sites,ninds = generate_adsorbate_2D(geom, sites, site_adjacency, nslab, max_dist=max_dist, cut_off_num=cut_off_num)
+            except FailedFixBondsException:
+                continue
             m = remove_slab(admol)
             if not generate_without_site_info(m).is_isomorphic(target_mol,save_order=True): #geom didn't optimize to target
                 continue
