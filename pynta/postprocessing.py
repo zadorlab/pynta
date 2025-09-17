@@ -1477,7 +1477,8 @@ def get_reference_energies(adsorbates_path,nslab,check_finished=False):
     
     return c_ref,o_ref,h_ref,n_ref,finished_atoms
 
-def postprocess(path,metal,facet,sites,site_adjacency,repeats,slab_path=None,check_finished=False,get_all_configs=False):
+def postprocess(path,metal,facet,sites,site_adjacency,repeats,slab_path=None,check_finished=False,get_all_configs=False,
+                allowed_structure_site_structures=None):
     """
     Postprocess Pynta run into GasConfiguration/SurfaceConfiguration/Kinetics objects
     Args:
@@ -1507,6 +1508,10 @@ def postprocess(path,metal,facet,sites,site_adjacency,repeats,slab_path=None,che
 
     c_ref,o_ref,h_ref,n_ref,finished_atoms = get_reference_energies(os.path.join(path,"Adsorbates"),nslab,check_finished=check_finished)
 
+    if allowed_structure_site_structures is None:
+        allowed_structure_site_structures = generate_allowed_structure_site_structures(os.path.join(path,"Adsorbates"),sites,
+                                                                                   site_adjacency,nslab,max_dist=np.inf)
+        
     spc_dict = dict()
     spc_dict_for_kinetics = dict()
     spc_dict_thermo = dict()
@@ -1550,7 +1555,7 @@ def postprocess(path,metal,facet,sites,site_adjacency,repeats,slab_path=None,che
             
         try:
             kinetics = get_kinetics(os.path.join(path,ts),os.path.join(path,"Adsorbates"),metal,facet,slab,sites,site_adjacency,nslab,site_density,config_dict=spc_dict_for_kinetics,
-                                   c_ref=c_ref,o_ref=o_ref,h_ref=h_ref,n_ref=n_ref)
+                                   c_ref=c_ref,o_ref=o_ref,h_ref=h_ref,n_ref=n_ref,allowed_structure_site_structures=allowed_structure_site_structures)
         except KeyError: #species required isn't in spc_dict yet
             continue
             
