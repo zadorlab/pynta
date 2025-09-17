@@ -18,6 +18,7 @@ from pynta.utils import to_dict
 from pynta.coveragedependence import mol_to_atoms, process_calculation
 from pysidt.sidt import *
 import logging 
+from molecule.exceptions import AtomTypeError
 
 eV_to_Jmol = 9.648328e4
 
