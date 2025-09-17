@@ -1200,7 +1200,7 @@ def get_species(path,adsorbates_path,metal,facet,slab,sites,site_adjacency,nslab
                         valid = False
                     else:
                         valid = True
-                except (SiteOccupationException,TooManyElectronsException,FailedFixBondsException) as e:
+                except (SiteOccupationException,TooManyElectronsException,FailedFixBondsException,ValueError) as e:
                     valid = False
             else:
                 valid = True
