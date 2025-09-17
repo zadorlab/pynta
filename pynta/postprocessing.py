@@ -1213,7 +1213,7 @@ def get_species(path,adsorbates_path,metal,facet,slab,sites,site_adjacency,nslab
                     spc = SurfaceConfiguration(atoms,slab,admol,vibdata,name,metal,facet,is_TS=False,sites_per_cell=1,
                     c_ref=c_ref,o_ref=o_ref,h_ref=h_ref,n_ref=n_ref,valid=valid)
                     spc.run()
-                except ValueError:
+                except (ValueError,AtomTypeError):
                     spc = None
             else:
                 try:
@@ -1330,7 +1330,7 @@ def get_TS(path,adsorbates_path,metal,facet,slab,sites,site_adjacency,nslab,c_re
             spc.run()
             
             ts_dict[k] = spc
-        except (SiteOccupationException,TooManyElectronsException,ValueError):
+        except (SiteOccupationException,TooManyElectronsException,ValueError,AtomTypeError):
             spc = SurfaceConfiguration(atoms,slab,None,vibdata,os.path.split(path)[1],metal,facet,is_TS=True,sites_per_cell=1,
                       c_ref=c_ref,o_ref=o_ref,h_ref=h_ref,n_ref=n_ref,valid=valid,valid_info=vinfo,mol=target_TS)
             
