@@ -578,6 +578,9 @@ entry(
         self.entropy_of_formation_298K = self.S[0]
         self.heat_of_formation_298K = self.H[0]
         
+        if not np.isnan(self.H[0]):
+            raise ValueError 
+
         self.fit_NASA()
         self.format_RMG_output()
         
@@ -1208,11 +1211,15 @@ def get_species(path,adsorbates_path,metal,facet,slab,sites,site_adjacency,nslab
                   c_ref=c_ref,o_ref=o_ref,h_ref=h_ref,n_ref=n_ref,valid=valid)
                 spc.run()
             else:
-                spc = GasConfiguration(atoms,mol,vibdata,name,
-                  c_ref=c_ref,o_ref=o_ref,h_ref=h_ref,n_ref=n_ref,valid=valid)
-                spc.run()
-                
-            species_dict[ind] = spc
+                try:
+                    spc = GasConfiguration(atoms,mol,vibdata,name,
+                    c_ref=c_ref,o_ref=o_ref,h_ref=h_ref,n_ref=n_ref,valid=valid)
+                    spc.run()
+                except ValueError:
+                    spc = None
+            
+            if spc:
+                species_dict[ind] = spc
             
     return species_dict 
                 
