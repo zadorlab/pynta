@@ -1249,6 +1249,9 @@ def get_TS(path,adsorbates_path,metal,facet,slab,sites,site_adjacency,nslab,c_re
     Returns:
         dictionary mapping string index to TS SurfaceConfiguration objects
     """
+    if not os.path.exists(os.path.join(path,"info.json")):
+        return dict()
+    
     if allowed_structure_site_structures is None:
         allowed_structure_site_structures = generate_allowed_structure_site_structures(adsorbates_path,sites,
                                                                                    site_adjacency,nslab,max_dist=np.inf)
