@@ -1363,6 +1363,9 @@ def get_kinetics(path,adsorbates_path,metal,facet,slab,sites,site_adjacency,nsla
     Returns:
         dictionary mapping string index to TS SurfaceConfiguration objects
     """
+    if not os.path.exists(os.path.join(path,"info.json")):
+        return dict()
+    
     ts_dict = get_TS(path,adsorbates_path,metal,facet,slab,sites,site_adjacency,nslab,
                 c_ref=c_ref,o_ref=o_ref,h_ref=h_ref,n_ref=n_ref,allowed_structure_site_structures=allowed_structure_site_structures)
     
