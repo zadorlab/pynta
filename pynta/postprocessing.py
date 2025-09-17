@@ -665,7 +665,11 @@ class SurfaceConfiguration:
         if mol:
             self.mol = mol 
         else:
-            self.mol = split_adsorbed_structures(admol)[0]
+            try:
+                self.mol = split_adsorbed_structures(admol)[0]
+            except Exception as e:
+                logging.error(admol.to_adjacency_list())
+                raise e
         self.vibdata = vibdata 
         self.metal = metal
         self.facet = facet 
