@@ -936,8 +936,9 @@ entry(
         self.G = self.H - self.temperature*self.S
         self.entropy_of_formation_298K = self.S[0]
         # now that we've computed the thermo properties, go ahead and fit them to a NASA polynomial
-        self.fit_NASA()
-        self.format_RMG_output()
+        if not np.isnan(self.H[0]):
+            self.fit_NASA()
+            self.format_RMG_output()
         return
 
     def run(self):
@@ -1207,9 +1208,12 @@ def get_species(path,adsorbates_path,metal,facet,slab,sites,site_adjacency,nslab
                 vibdata = get_vibdata(dopt,dvib,0)
             
             if not gas_phase:
-                spc = SurfaceConfiguration(atoms,slab,admol,vibdata,name,metal,facet,is_TS=False,sites_per_cell=1,
-                  c_ref=c_ref,o_ref=o_ref,h_ref=h_ref,n_ref=n_ref,valid=valid)
-                spc.run()
+                try:
+                    spc = SurfaceConfiguration(atoms,slab,admol,vibdata,name,metal,facet,is_TS=False,sites_per_cell=1,
+                    c_ref=c_ref,o_ref=o_ref,h_ref=h_ref,n_ref=n_ref,valid=valid)
+                    spc.run()
+                except ValueError:
+                    spc = None
             else:
                 try:
                     spc = GasConfiguration(atoms,mol,vibdata,name,
