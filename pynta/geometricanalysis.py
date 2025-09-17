@@ -2166,7 +2166,7 @@ def validate_TS_geometry(opt_path,reactants,products,sites,site_adjacency,nslab,
         else:
             match_novdW = match
         
-    except (SiteOccupationException,TooManyElectronsException,ValueError):
+    except (SiteOccupationException,TooManyElectronsException,ValueError,IndexError):
         return False,False,False,False,[],[]
     
     #get imaginary frequency motion
