@@ -1221,7 +1221,7 @@ def get_species(path,adsorbates_path,metal,facet,slab,sites,site_adjacency,nslab
                     c_ref=c_ref,o_ref=o_ref,h_ref=h_ref,n_ref=n_ref,valid=valid)
                     spc.run()
                 except ValueError:
-                    spc = None
+                    pass
             
             if spc:
                 species_dict[ind] = spc
