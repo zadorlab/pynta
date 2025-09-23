@@ -7,6 +7,7 @@ from ase.vibrations import VibrationsData
 from ase.thermochemistry import HarmonicThermo, IdealGasThermo
 from pynta.utils import get_unique_sym, get_occupied_sites, sites_match, SiteOccupationException
 from pynta.mol import *
+from molecule.exceptions import AtomTypeError
 import numpy as np
 import json
 import shutil
@@ -2166,7 +2167,7 @@ def validate_TS_geometry(opt_path,reactants,products,sites,site_adjacency,nslab,
         else:
             match_novdW = match
         
-    except (SiteOccupationException,TooManyElectronsException,ValueError,IndexError):
+    except (SiteOccupationException,TooManyElectronsException,ValueError,IndexError,AtomTypeError):
         return False,False,False,False,[],[]
     
     #get imaginary frequency motion
