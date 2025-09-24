@@ -1,4 +1,4 @@
-name: pynta_env
+name: pynta_env_old
 channels:
   - defaults
   - mjohnson541
@@ -7,7 +7,7 @@ dependencies:
   - python =3.8
   - matplotlib
   - spglib
-  - ase >=3.22.1
+  - ase =3.22.1
   - scipy >=1.1.0
   - numpy
   - pyyaml
@@ -24,3 +24,5 @@ dependencies:
   - nose
   - coverage
   - liblapack !=3.9.0
+  - pysidt
+
