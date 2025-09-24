@@ -134,6 +134,7 @@ def _format_line(key, val):
     else:
         return ' '.join([key, str(val)])
 
+
 def _fix_pseudopotentials_block(params):
     """
     Ensure pseudopotentials are always written as a block in nwpw.
@@ -164,17 +165,17 @@ def _fix_pseudopotentials_block(params):
         nwpw['pseudopotentials'] = {'__block__': block}
         params['nwpw'] = nwpw
 
+
 def _format_block(key, val, twod_hcurve, lmbfgs, nindent=0):
     print(f"[DEBUG] _format_block called: key={key}, val={val}")
     prefix = '  ' * nindent
     prefix2 = '  ' * (nindent + 1)
-
+    
     if val is None:
         return [prefix + key]
 
     # Special handling for pseudopotentials block
     if key == 'pseudopotentials':
-        # Accept both __block__ and plain dict
         block = None
         if isinstance(val, dict) and '__block__' in val:
             block = val['__block__']
@@ -182,7 +183,6 @@ def _format_block(key, val, twod_hcurve, lmbfgs, nindent=0):
             block = [f"  {symbol} library {fname}" for symbol, fname in val.items()]
         if block is not None:
             out = [prefix + key]
-            # Emit each line in the block as a separate line
             for line in block:
                 out.append(prefix2 + line.strip())
             out.append(prefix + 'end')
@@ -211,6 +211,9 @@ def _format_block(key, val, twod_hcurve, lmbfgs, nindent=0):
             out.append(prefix2 + ' '.join([_format_line(subkey, subval)]))
     out.append(prefix + 'end')
     return out
+
+def _format_line(key, val):
+    return f"{key} {val}"
 
 
 def _get_other(twod_hcurve, lmbfgs, **params):
@@ -302,6 +305,38 @@ def _update_mult(magmom_tot, **params):
     return params
 
 
+def _get_simulation_cell(atoms, **params):
+    """Automatically generate simulation_cell from ASE cell if not provided"""
+    nwpw = params.get('nwpw', dict())
+    
+    # If simulation_cell is already provided, don't override
+    if 'simulation_cell' in nwpw:
+        return params
+    
+    # Get cell dimensions
+    cell = atoms.cell
+    cell_diag = cell.diagonal()
+    
+    # Check if cell is cubic (all diagonal elements are the same)
+    if np.allclose(cell_diag[0], cell_diag[1]) and np.allclose(cell_diag[1], cell_diag[2]):
+        # Use SC format for cubic cells
+        nwpw['simulation_cell'] = {
+            'SC': cell_diag[0]  # Single value for cubic cell
+        }
+    else:
+        # Use lattice_vectors format for non-cubic cells
+        nwpw['simulation_cell'] = {
+            'lattice_vectors': [
+                [cell[0, 0], cell[0, 1], cell[0, 2]],
+                [cell[1, 0], cell[1, 1], cell[1, 2]],
+                [cell[2, 0], cell[2, 1], cell[2, 2]]
+            ]
+        }
+    
+    params['nwpw'] = nwpw
+    return params
+
+
 def _get_kpts(atoms, **params):
     """Converts top-level 'kpts' argument to native keywords"""
     kpts = params.get('kpts')
@@ -313,11 +348,14 @@ def _get_kpts(atoms, **params):
     if 'monkhorst-pack' in nwpw or 'brillouin_zone' in nwpw:
         raise ValueError("Redundant k-points specified!")
 
-    if isinstance(kpts, KPoints):
+    if KPoints is not None and isinstance(kpts, KPoints):
         nwpw['brillouin_zone'] = kpts.kpts
     elif isinstance(kpts, dict):
         if kpts.get('gamma', False) or 'size' not in kpts:
-            nwpw['brillouin_zone'] = kpts2kpts(kpts, atoms).kpts
+            if kpts2kpts is not None:
+                nwpw['brillouin_zone'] = kpts2kpts(kpts, atoms).kpts
+            else:
+                raise ValueError("kpts2kpts not available - please install ASE with k-points support")
         else:
             nwpw['monkhorst-pack'] = ' '.join(map(str, kpts['size']))
     elif isinstance(kpts, np.ndarray):
