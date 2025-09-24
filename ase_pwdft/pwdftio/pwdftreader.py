@@ -24,8 +24,14 @@ def read_pwdft_out(filename):
 
         data = json.loads(json_str)
 
-        pspw = data['pspw']
-        energy = pspw['energy'] * Hartree
+        if 'pspw' in data:
+            pspw = data['pspw']
+            energy = pspw['energy'] * Hartree
+        elif 'nwpw' in data:
+            nwpw = data['nwpw']
+            energy = nwpw['energy'] * Hartree
+        else:
+            raise KeyError("Neither 'pspw' nor 'nwpw' keys are present in the output data.")
 
         geo = data['geometries']
         geo1 = geo['geometry']
@@ -33,7 +39,6 @@ def read_pwdft_out(filename):
 
         symbols = geo1['symbols']
         cell = np.array(geo1['unita']).reshape(3, 3)
-        nwpw = data['nwpw']
         dipole = np.array(nwpw['dipole'])
         coors = np.array(geo1['coords']).reshape(nion, 3)
 
