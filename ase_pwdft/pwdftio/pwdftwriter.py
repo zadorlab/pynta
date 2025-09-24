@@ -1,6 +1,12 @@
 import os
 import numpy as np
 from copy import deepcopy
+try:
+    from ase.dft.kpoints import KPoints, kpts2kpts
+except ImportError:
+    # Fallback for older ASE versions
+    KPoints = None
+    kpts2kpts = None
 
 _special_kws = ['center', 'autosym', 'autoz', 'theory', 'basis', 'xc', 'task',
                 'set', 'symmetry', 'label', 'geompar', 'basispar', 'kpts',
@@ -128,12 +134,59 @@ def _format_line(key, val):
     else:
         return ' '.join([key, str(val)])
 
+def _fix_pseudopotentials_block(params):
+    """
+    Ensure pseudopotentials are always written as a block in nwpw.
+    Modifies params in-place if needed.
+    """
+    nwpw = params.get('nwpw', {})
+    psp = nwpw.get('pseudopotentials', None)
+    if psp is not None:
+        # If already a block dict, do nothing
+        if isinstance(psp, dict) and '__block__' in psp:
+            return
+        block = []
+        # If dict, convert to block
+        if isinstance(psp, dict):
+            for symbol, fname in psp.items():
+                block.append(f"  {symbol} library {fname}")
+        elif isinstance(psp, str):
+            lines = psp.strip().split('\n')
+            for line in lines:
+                toks = line.strip().split()
+                if len(toks) == 2:
+                    block.append(f"  {toks[0]} library {toks[1]}")
+        elif isinstance(psp, list):
+            for entry in psp:
+                if isinstance(entry, (list, tuple)) and len(entry) == 2:
+                    block.append(f"  {entry[0]} library {entry[1]}")
+        # Replace with block dict
+        nwpw['pseudopotentials'] = {'__block__': block}
+        params['nwpw'] = nwpw
 
 def _format_block(key, val, twod_hcurve, lmbfgs, nindent=0):
+    print(f"[DEBUG] _format_block called: key={key}, val={val}")
     prefix = '  ' * nindent
     prefix2 = '  ' * (nindent + 1)
+
     if val is None:
         return [prefix + key]
+
+    # Special handling for pseudopotentials block
+    if key == 'pseudopotentials':
+        # Accept both __block__ and plain dict
+        block = None
+        if isinstance(val, dict) and '__block__' in val:
+            block = val['__block__']
+        elif isinstance(val, dict):
+            block = [f"  {symbol} library {fname}" for symbol, fname in val.items()]
+        if block is not None:
+            out = [prefix + key]
+            # Emit each line in the block as a separate line
+            for line in block:
+                out.append(prefix2 + line.strip())
+            out.append(prefix + 'end')
+            return out
 
     if not isinstance(val, dict):
         return [prefix + _format_line(key, val)]
@@ -148,7 +201,9 @@ def _format_block(key, val, twod_hcurve, lmbfgs, nindent=0):
             if (key, subkey) == ('nwpw', 'brillouin_zone'):
                 out += _format_brillouin_zone(subval)
             else:
-                out += _format_block(subkey, subval, nindent=nindent + 1)
+                out += _format_block(subkey, subval, twod_hcurve, lmbfgs, nindent=nindent + 1)
+        elif subkey == 'pseudopotentials' and isinstance(subval, dict) and '__block__' in subval:
+            out += _format_block('pseudopotentials', subval, twod_hcurve, lmbfgs, nindent=nindent + 1)
         else:
             if isinstance(subval, dict):
                 subval = ' '.join([_format_line(a, b)
