@@ -135,8 +135,8 @@ class Pynta:
         slab_type = getattr(ase.build,self.surface_type)
         #optimize the lattice constant
         if self.a is None:
-            a = optimize_lattice_parameter_with_initial(self.metal,self.surface_type,self.software,self.lattice_opt_software_kwargs)
-            #a = get_lattice_parameter(self.metal,self.surface_type,self.software,self.lattice_opt_software_kwargs)
+            #a = optimize_lattice_parameter_with_initial(self.metal,self.surface_type,self.software,self.lattice_opt_software_kwargs)
+            a = get_lattice_parameter(self.metal,self.surface_type,self.software,self.lattice_opt_software_kwargs)
             print("computed lattice constant of: {} Angstroms".format(a))
             self.a = a
         else:
