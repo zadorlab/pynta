@@ -192,23 +192,14 @@ def _format_block(key, val, twod_hcurve, lmbfgs, nindent=0):
         return [prefix + _format_line(key, val)]
 
     out = [prefix + key]
-    if key == 'nwpw' and twod_hcurve is True:
-        out.append(prefix2 + '2d-hcurve')
-    if key == 'nwpw' and lmbfgs is True:
-        out.append(prefix2 + 'lmbfgs')
-    for subkey, subval in val.items():
-        if (key, subkey) in _special_keypairs:
-            if (key, subkey) == ('nwpw', 'brillouin_zone'):
-                out += _format_brillouin_zone(subval)
-            else:
-                out += _format_block(subkey, subval, twod_hcurve, lmbfgs, nindent=nindent + 1)
-        elif subkey == 'pseudopotentials' and isinstance(subval, dict) and '__block__' in subval:
-            out += _format_block('pseudopotentials', subval, twod_hcurve, lmbfgs, nindent=nindent + 1)
-        else:
-            if isinstance(subval, dict):
-                subval = ' '.join([_format_line(a, b)
-                                   for a, b in subval.items()])
-            out.append(prefix2 + ' '.join([_format_line(subkey, subval)]))
+    
+    # Handle specific keys and their formatting
+    if key == 'nwpw':
+        # Assuming val is a dictionary with specific keys
+        if isinstance(val, dict):
+            for subkey, subval in val.items():
+                out.append(prefix2 + _format_line(subkey, subval))
+    
     out.append(prefix + 'end')
     return out
 
