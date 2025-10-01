@@ -1213,7 +1213,7 @@ def get_species(path,adsorbates_path,metal,facet,slab,sites,site_adjacency,nslab
                     spc = SurfaceConfiguration(atoms,slab,admol,vibdata,name,metal,facet,is_TS=False,sites_per_cell=1,
                     c_ref=c_ref,o_ref=o_ref,h_ref=h_ref,n_ref=n_ref,valid=valid)
                     spc.run()
-                except (ValueError,AtomTypeError):
+                except (ValueError,AtomTypeError,UnboundLocalError):
                     spc = None
             else:
                 try:
