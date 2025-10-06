@@ -619,10 +619,10 @@ def get_unique_site_pair_inds(site_pairs,slab,tol=0.15):
 
     return unique_inds
 
-def setup_pair_opts_for_rxns(targetdir,adsorbates,tsdirs,coadnames,metal,facet,sites,site_adjacency,max_dist=3.0,imag_freq_max=150.0):
+def setup_pair_opts_for_rxns(targetdir,pynta_isolated_dir,adsorbates,tsdirs,coadnames,metal,facet,sites,site_adjacency,max_dist=3.0,imag_freq_max=150.0):
     pairdir = os.path.join(targetdir,"pairs")
-    addir = os.path.join(os.path.split(os.path.split(tsdirs[0])[0])[0],"Adsorbates")
-    slabpath = os.path.join(os.path.split(os.path.split(tsdirs[0])[0])[0],"slab.xyz")
+    addir = os.path.join(pynta_isolated_dir,"Adsorbates")
+    slabpath = os.path.join(pynta_isolated_dir,"slab.xyz")
     if not os.path.exists(pairdir):
         os.makedirs(pairdir)
     

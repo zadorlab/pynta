@@ -548,7 +548,7 @@ class CoverageDependence:
         
     def setup_pairs_calculations(self):
         tsdirs = [os.path.join(self.pynta_run_directory,t,ind) for t,ind in self.transition_states.items()]
-        outdirs_ad,outdirs_ts = setup_pair_opts_for_rxns(self.path,self.adsorbates,tsdirs,self.coadsorbates,self.surrogate_metal,self.surface_type,self.sites,self.site_adjacency,
+        outdirs_ad,outdirs_ts = setup_pair_opts_for_rxns(self.path,self.pynta_run_directory,self.adsorbates,tsdirs,self.coadsorbates,self.surrogate_metal,self.surface_type,self.sites,self.site_adjacency,
                                                          max_dist=self.max_dist,imag_freq_max=self.imag_freq_max)
         
         for d in outdirs_ad:
