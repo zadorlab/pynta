@@ -470,8 +470,14 @@ class Pynta:
             #setup transition states
             self.setup_transition_states(adsorbates_finished=(not calculate_adsorbates))
 
-        wf = Workflow(self.fws, name=self.label)
-        self.launchpad.add_wf(wf)
+        if len(self.fws) > 1000 and ((not calculate_adsorbates and calculate_transition_states) or (calculate_adsorbates and not calculate_transition_states)):
+            for i,fw in enumerate(self.fws): #this size is difficult for fireworks so split up into individual independent workflows
+                wf = Workflow([fw],name=self.label+"-"+str(i))
+                self.launchpad.add_wf(wf)
+        else:
+            wf = Workflow(self.fws, name=self.label)
+            self.launchpad.add_wf(wf)
+            
 
         if launch:
             self.launch()
