@@ -580,10 +580,8 @@ entry(
         self.heat_of_formation_298K = self.H[0]
         
         if not np.isnan(self.H[0]):
-            raise ValueError 
-
-        self.fit_NASA()
-        self.format_RMG_output()
+            self.fit_NASA()
+            self.format_RMG_output()
         
 class SurfaceConfiguration:
     """Base class for calculating statmech and thermodynamic properties for Pynta optimized
@@ -1062,24 +1060,30 @@ class Kinetics:
                 
                 krev = kB*T/h * np.exp(-(GTS-GP)/(R*T)) * factor_r
                 krevs.append(krev)
-                
-        if Lunits_f == 0 and self.rnum - 1 == 0:
-            self.arr_f = SurfaceArrhenius().fit_to_data(self.temperature,np.array(kfs),"s^-1")
-        elif self.rnum - 1 == 1:
-            self.arr_f = SurfaceArrhenius().fit_to_data(self.temperature,np.array(kfs),"m^{Lunits}/(molecule*s)".format(Lunits=Lunits_f))
-        else:
-            self.arr_f = SurfaceArrhenius().fit_to_data(self.temperature,np.array(kfs),"m^{Lunits}/(molecules^{mols}*s)".format(Lunits=Lunits_f,mols=self.rnum-1))
+        
+        try:
+            if Lunits_f == 0 and self.rnum - 1 == 0:
+                self.arr_f = SurfaceArrhenius().fit_to_data(self.temperature,np.array(kfs),"s^-1")
+            elif self.rnum - 1 == 1:
+                self.arr_f = SurfaceArrhenius().fit_to_data(self.temperature,np.array(kfs),"m^{Lunits}/(molecule*s)".format(Lunits=Lunits_f))
+            else:
+                self.arr_f = SurfaceArrhenius().fit_to_data(self.temperature,np.array(kfs),"m^{Lunits}/(molecules^{mols}*s)".format(Lunits=Lunits_f,mols=self.rnum-1))
+        except:
+            self.arr_f = None
         
         self.kfs = kfs
         
         if self.products:
-            if Lunits_r == 0 and self.pnum - 1 == 0:
-                self.arr_r = SurfaceArrhenius().fit_to_data(self.temperature,np.array(krevs),"s^-1")
-            elif self.pnum - 1 == 1:
-                self.arr_r = SurfaceArrhenius().fit_to_data(self.temperature,np.array(krevs),"m^{Lunits}/(molecule*s)".format(Lunits=Lunits_r))
-            else:
-                self.arr_r = SurfaceArrhenius().fit_to_data(self.temperature,np.array(krevs),"m^{Lunits}/(molecules^{mols}*s)".format(Lunits=Lunits_r,mols=self.pnum-1))
-        
+            try:
+                if Lunits_r == 0 and self.pnum - 1 == 0:
+                    self.arr_r = SurfaceArrhenius().fit_to_data(self.temperature,np.array(krevs),"s^-1")
+                elif self.pnum - 1 == 1:
+                    self.arr_r = SurfaceArrhenius().fit_to_data(self.temperature,np.array(krevs),"m^{Lunits}/(molecule*s)".format(Lunits=Lunits_r))
+                else:
+                    self.arr_r = SurfaceArrhenius().fit_to_data(self.temperature,np.array(krevs),"m^{Lunits}/(molecules^{mols}*s)".format(Lunits=Lunits_r,mols=self.pnum-1))
+            except ValueError:
+                self.arr_r = None
+                
         self.krevs = krevs 
             
     def generate_kinetics_entry(self):
