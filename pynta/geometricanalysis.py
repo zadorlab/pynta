@@ -1665,7 +1665,7 @@ def validate_TS_ircs(irc_path1,irc_path2,reactants,products,sites,site_adjacency
     try:
         admol2,neighbor_sites2,ninds2 = generate_adsorbate_2D(tr2[-1], sites, site_adjacency, nslab, max_dist=np.inf, cut_off_num=None, allowed_structure_site_structures=allowed_structure_site_structures,
                             keep_binding_vdW_bonds=True, keep_vdW_surface_bonds=vdW_surface_bonds)
-    except (SiteOccupationException,FailedFixBondsException,TooManyElectronsException):
+    except (SiteOccupationException,FailedFixBondsException,TooManyElectronsException, ValueError):
         return False,None,None,None,None,None,None,None
     
     vdw_ase_inds = []
