@@ -1162,7 +1162,7 @@ def get_adsorbate_geometries(adsorbate_path,mol,sites,atom_to_molecule_surface_a
 
     return adsorbates
 
-def get_lowest_adsorbate_energies(adsorbates_path):
+def get_lowest_adsorbate_energies(adsorbates_path,sidt_finetuned_to_dft=None):
     """
     load the adsorbates geometries find the lowest energy correct structure and the 2D representation
     """
@@ -1174,7 +1174,7 @@ def get_lowest_adsorbate_energies(adsorbates_path):
         with open(os.path.join(path,"info.json"),"r") as f:
             info = json.load(f)
             mol = Molecule().from_adjacency_list(info["adjlist"])
-        Es = get_adsorbate_energies(path)[0]
+        Es = get_adsorbate_energies(path,sidt_finetuned_to_dft=sidt_finetuned_to_dft)[0]
         ad_energy_dict[mol] = np.inf
         for E in Es.values():
             if E < ad_energy_dict[mol]:
@@ -1193,20 +1193,33 @@ def extract_pair_graph(atoms,sites,site_adjacency,nslab,max_dist,cut_off_num=Non
                                                        max_dist=max_dist,cut_off_num=cut_off_num,allowed_structure_site_structures=allowed_structure_site_structures)
     return reduce_graph_to_pairs(admol)
 
-def get_adsorbate_energies(ad_path,atom_corrections=None,include_zpe=True):
+def get_adsorbate_energies(ad_path,atom_corrections=None,include_zpe=True,sidt_finetuned_to_dft=None):
     """
     get ZPE corrected adsorbate energies
     """
+    if sidt_finetuned_to_dft:
+        metal = "Pt" #specify the metal
+        facet = "fcc111" #specify the facet
+        repeats = (3,3,4) #specify 
+        slab = read(os.path.join(os.path.split(os.path.split(ad_path)[0])[0],"slab.xyz"))
+        nslab = len(slab)
+
+        #Site Information
+        cas = SlabAdsorptionSites(slab, facet,allow_6fold=False,composition_effect=False,
+                                    label_sites=True,
+                                    surrogate_metal=metal)
+        sites = cas.get_sites()
+        site_adjacency = cas.get_neighbor_site_list()
     dirs = os.listdir(ad_path)
     slab = read(os.path.join(os.path.split(os.path.split(ad_path)[0])[0],"slab.xyz"))
     Eslab = slab.get_potential_energy()
     with open(os.path.join(ad_path,"info.json")) as f:
         info = json.load(f)
 
-    m = Molecule().from_adjacency_list(info["adjlist"])
+    mol = Molecule().from_adjacency_list(info["adjlist"])
     if atom_corrections:
         AEC = 0.0
-        for atom in m.atoms:
+        for atom in mol.atoms:
             s = str(atom.element)
             if not "X" in s:
                 AEC += atom_corrections[s]
@@ -1226,7 +1239,36 @@ def get_adsorbate_energies(ad_path,atom_corrections=None,include_zpe=True):
         if not (os.path.exists(optdir) and os.path.exists(freqdir)):
             continue
         sp = read(optdir)
-        E = sp.get_potential_energy()
+        if sidt_finetuned_to_dft:
+            if mol.contains_surface_site():
+                keep_binding_vdW_bonds = False
+                keep_vdW_surface_bonds = False
+                for bd in mol.get_all_edges():
+                    if bd.order == 0:
+                        if bd.atom1.is_surface_site() or bd.atom2.is_surface_site():
+                            keep_binding_vdW_bonds = True
+                            m = mol.copy(deep=True)
+                            b = m.get_bond(m.atoms[mol.atoms.index(bd.atom1)],m.atoms[mol.atoms.index(bd.atom2)])
+                            m.remove_bond(b)
+                            out = m.split()
+                            if len(out) == 1: #vdW bond is not only thing connecting adsorbate to surface
+                                keep_vdW_surface_bonds = True
+                try:
+                    admol,_,_ = generate_adsorbate_2D(sp, sites, site_adjacency, nslab, max_dist=np.inf, cut_off_num=None,
+                            keep_binding_vdW_bonds=keep_binding_vdW_bonds, keep_vdW_surface_bonds=keep_vdW_surface_bonds)
+                except (SiteOccupationException,TooManyElectronsException,FailedFixBondsException,ValueError) as e:
+                    admol = None
+                    
+                if admol:
+                    dE = sidt_finetuned_to_dft.evaluate(admol)
+                else:
+                    dE = 0.0
+            else:
+                dE = sidt_finetuned_to_dft.evaluate(mol)
+        else:
+            dE = 0.0
+        
+        E = sp.get_potential_energy() + dE
         if gasphase:
             vibdata = get_vibdata(optdir,freqdir,0)
         else:
