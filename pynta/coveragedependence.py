@@ -1697,7 +1697,8 @@ def get_configs_of_concern(tree_interaction_regressor,configs,coad_stable_sites,
     return configs_of_concern
 
 def load_coverage_delta(d,ad_energy_dict,slab,metal,facet,sites,site_adjacency,ts_pynta_dir=None,allowed_structure_site_structures=None,
-                       out_file_name="out",vib_file_name="vib",is_ad=None,keep_binding_vdW_bonds=False,keep_vdW_surface_bonds=False):
+                       out_file_name="out",vib_file_name="vib",is_ad=None,keep_binding_vdW_bonds=False,keep_vdW_surface_bonds=False,
+                       sidt_finetuned_to_dft=None,sidt_finetuned_to_covdep=None):
 
     try:
         info = json.load(open(os.path.join(d,"info.json")))
@@ -1724,7 +1725,7 @@ def load_coverage_delta(d,ad_energy_dict,slab,metal,facet,sites,site_adjacency,t
         try:
             vibdata = get_vibdata(os.path.join(d,out_file_name+".xyz"),os.path.join(d,vib_file_name+".json"),len(slab))
 
-            Ecad = atoms.get_potential_energy() - slab.get_potential_energy() + vibdata.get_zero_point_energy()
+            Ecad = atoms.get_potential_energy() - slab.get_potential_energy() + vibdata.get_zero_point_energy() + sidt_finetuned_to_dft.evaluate(admol)+ sidt_finetuned_to_covdep.evaluate(admol)
     
             Esep = 0.0
             for split_struct in split_structs:
@@ -1762,12 +1763,12 @@ def load_coverage_delta(d,ad_energy_dict,slab,metal,facet,sites,site_adjacency,t
         except FileNotFoundError:
             return admol,neighbor_sites,ninds,None
         
-        Ecad = atoms.get_potential_energy() - slab.get_potential_energy() + vibdata.get_zero_point_energy()
+        Ecad = atoms.get_potential_energy() - slab.get_potential_energy() + vibdata.get_zero_point_energy() + sidt_finetuned_to_dft.evaluate(admol)+ sidt_finetuned_to_covdep.evaluate(admol)
         
         
         ts = read(xyz)
         ts_vibdata = get_vibdata(xyz,os.path.join(os.path.split(xyz)[0],"vib.json_vib.json"),len(slab))
-        Ets = ts.get_potential_energy() - slab.get_potential_energy()  + ts_vibdata.get_zero_point_energy()
+        Ets = ts.get_potential_energy() - slab.get_potential_energy()  + ts_vibdata.get_zero_point_energy() + sidt_finetuned_to_dft.evaluate(admol)
         
         num_ts_atoms = len(ts) - len(slab)
         
@@ -1825,7 +1826,7 @@ def tagsites(atoms,sites):
 
 def extract_sample(d,ad_energy_dict,slab,metal,facet,sites,site_adjacency,pynta_dir,max_dist=3.0,rxn_alignment_min=0.7,
                    coad_disruption_tol=1.1,out_file_name="out",init_file_name="init",vib_file_name="vib",is_ad=None,
-                  use_allowed_site_structures=True):
+                  use_allowed_site_structures=True,sidt_finetuned_to_dft=None,sidt_finetuned_to_covdep=None):
     out_dict = dict()
     
     atoms_init = read(os.path.join(d,init_file_name+".xyz"))
@@ -1906,7 +1907,8 @@ def extract_sample(d,ad_energy_dict,slab,metal,facet,sites,site_adjacency,pynta_
     admol,neighbor_sites,ninds,dE = load_coverage_delta(d,ad_energy_dict,slab,metal,facet,sites,site_adjacency,
                                             ts_pynta_dir=pynta_dir,allowed_structure_site_structures=allowed_structure_site_structures,
                                                        out_file_name=out_file_name,vib_file_name=vib_file_name,is_ad=is_ad,
-                                                       keep_binding_vdW_bonds=keep_binding_vdW_bonds,keep_vdW_surface_bonds=keep_vdW_surface_bonds)
+                                                       keep_binding_vdW_bonds=keep_binding_vdW_bonds,keep_vdW_surface_bonds=keep_vdW_surface_bonds,
+                                                       sidt_finetuned_to_dft=sidt_finetuned_to_dft,sidt_finetuned_to_covdep=sidt_finetuned_to_covdep)
     
     
     if is_ad:
@@ -2002,14 +2004,16 @@ def extract_sample(d,ad_energy_dict,slab,metal,facet,sites,site_adjacency,pynta_
     return out_dict
 
 def process_calculation(d,ad_energy_dict,slab,metal,facet,sites,site_adjacency,pynta_dir,coadmol_E_dict,max_dist=3.0,rxn_alignment_min=0.7,
-                    coad_disruption_tol=1.1,out_file_name="out",init_file_name="init",vib_file_name="vib",is_ad=None):
+                    coad_disruption_tol=1.1,out_file_name="out",init_file_name="init",vib_file_name="vib",is_ad=None,
+                    sidt_finetuned_to_dft=None,sidt_finetuned_to_covdep=None):
     
     datums_stability = []
     datum_E = None
     
     outdict = extract_sample(d,ad_energy_dict,slab,metal,facet,sites,site_adjacency,pynta_dir,max_dist=max_dist,rxn_alignment_min=rxn_alignment_min,
                     coad_disruption_tol=coad_disruption_tol,
-                    out_file_name=out_file_name,init_file_name=init_file_name,vib_file_name=vib_file_name,is_ad=is_ad)
+                    out_file_name=out_file_name,init_file_name=init_file_name,vib_file_name=vib_file_name,is_ad=is_ad,
+                    sidt_finetuned_to_dft=sidt_finetuned_to_dft,sidt_finetuned_to_covdep=sidt_finetuned_to_covdep)
     
     if outdict["init_info"]:
         mol_init = Molecule().from_adjacency_list(outdict["init_info"],check_consistency=False)
