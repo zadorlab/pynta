@@ -1235,7 +1235,7 @@ class TrainCovdepModelTask(FiretaskBase):
         
         
         nodes_file = os.path.join(os.path.split(pynta.models.__file__)[0],"finetuned_to_dft_delta_model.json")
-        nodes = read_nodes(nodes_file)
+        nodes_isolated = read_nodes(nodes_file)
         def bond_decomposition_adsorbate(mol):
             pairs = []
             bonds = mol.get_all_edges()
@@ -1254,7 +1254,7 @@ class TrainCovdepModelTask(FiretaskBase):
             
         sidt_finetuned_to_dft = MultiEvalSubgraphIsomorphicDecisionTreeRegressor(
                     bond_decomposition_adsorbate,
-                    nodes=nodes,
+                    nodes=nodes_isolated,
                     root_group = Group().from_adjacency_list("""1 * R u0 px cx {2,[vdW,R,S,D,T,Q]}
                     2 * Rx u0 px cx {1,[vdW,R,S,D,T,Q]}"""),
                     r=[ATOMTYPES[x] for x in ["C", "O", "H", "N", "X"]],
@@ -1266,10 +1266,12 @@ class TrainCovdepModelTask(FiretaskBase):
         
         from pynta.coveragedependence import adsorbate_interaction_decomposition
         nodes_file = os.path.join(os.path.split(pynta.models.__file__)[0],"finetuned_to_dft_delta_model.json")
-        nodes = read_nodes(nodes_file)
-
+        nodes_covdep = read_nodes(nodes_file)
+        r_site = ["","ontop","bridge","hcp","fcc"]
+    
+        r_atoms = ["C","O","N","H","X"]
         sidt_finetuned_to_covdep = MultiEvalSubgraphIsomorphicDecisionTreeRegressor([adsorbate_interaction_decomposition],
-                                                        nodes=pairnodes,
+                                                        nodes=nodes_covdep,
                                                         r=[ATOMTYPES[x] for x in r_atoms],
                                                         r_bonds=[1,2,3,4,0.05],
                                                         r_un=[0],
