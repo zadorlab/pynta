@@ -6,7 +6,7 @@ from ase.io.trajectory import Trajectory
 from ase.calculators.socketio import SocketIOCalculator
 from ase.vibrations import Vibrations
 from ase.calculators.mixing import SumCalculator
-from molecule.molecule import Molecule
+from molecule.molecule import Molecule, Group, ATOMTYPES
 from sella import Sella, Constraints, IRC
 from fireworks import *
 from fireworks.core.rocket_launcher import rapidfire
@@ -16,6 +16,7 @@ from fireworks.utilities.fw_serializers import load_object_from_file
 from fireworks.core.fworker import FWorker
 import fireworks.fw_config
 from pysidt.sidt import *
+import pynta.models
 from pynta.transitionstate import get_unique_optimized_adsorbates,determine_TS_construction,get_unique_TS_structs,generate_constraints_harmonic_parameters,get_unique_TS_templates_site_pairings
 from pynta.utils import *
 from pynta.calculator import run_harmonically_forced, map_harmonically_forced, add_sella_constraint
@@ -36,6 +37,7 @@ import signal
 from contextlib import contextmanager
 from copy import deepcopy
 from joblib import Parallel, delayed
+import os 
 
 class OptimizationTask(FiretaskBase):
     def run_task(self, fw_spec):
@@ -1231,10 +1233,7 @@ class TrainCovdepModelTask(FiretaskBase):
         nslab = len(slab)
         allowed_structure_site_structures = generate_allowed_structure_site_structures(os.path.join(pynta_dir,"Adsorbates"),sites,site_adjacency,nslab,max_dist=np.inf)
         
-        from pysidt.sidt import read_nodes, MultiEvalSubgraphIsomorphicDecisionTreeRegressor
-        from molecule.molecule import Group, ATOMTYPES
-        import pynta.models
-        import os
+        
         nodes_file = os.path.join(os.path.split(pynta.models.__file__)[0],"finetuned_to_dft_delta_model.json")
         nodes = read_nodes(nodes_file)
         def bond_decomposition_adsorbate(mol):
