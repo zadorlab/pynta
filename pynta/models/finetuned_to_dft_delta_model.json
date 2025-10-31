@@ -1,0 +1,1 @@
+{"Root": {"group": "1 * R  u0 {2,[vdW,R,S,D,T,Q]}\n2 * Rx u0 {1,[vdW,R,S,D,T,Q]}\n", "rule": {"class": "Rule", "num_data": 5359.0, "uncertainty": 1.0, "value": -790.6518896540161}, "parent": null, "children": [], "name": "Root", "depth": 0}}
