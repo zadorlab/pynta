@@ -1260,11 +1260,11 @@ def get_adsorbate_energies(ad_path,atom_corrections=None,include_zpe=True,sidt_f
                     admol = None
                     
                 if admol:
-                    dE = sidt_finetuned_to_dft.evaluate(admol)
+                    dE = sidt_finetuned_to_dft.evaluate(admol)/96485.0 
                 else:
                     dE = 0.0
             else:
-                dE = sidt_finetuned_to_dft.evaluate(mol)
+                dE = sidt_finetuned_to_dft.evaluate(mol)/96485.0 
         else:
             dE = 0.0
         
