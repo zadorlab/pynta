@@ -1,0 +1,135 @@
+n_unique_geometries: 10
+n_distinct_three_fold_types: 4
+geometries:
+- geometry_index: 0
+  sites:
+  - site: bridge
+    morphology: subsurf
+    indices: !!python/tuple
+    - 32
+    - 35
+    position:
+    - 3.5697088200000002
+    - 1.4745624199999994
+    - 18.25133604
+    surface: CustomSurface
+    label: null
+- geometry_index: 1
+  sites:
+  - site: ontop
+    morphology: terrace
+    indices: !!python/tuple
+    - 36
+    position:
+    - 12.49398087
+    - 0.19026612
+    - 17.464157080000003
+    surface: CustomSurface
+    label: null
+- geometry_index: 2
+  sites:
+  - site: bridge
+    morphology: sc-tc
+    indices: !!python/tuple
+    - 36
+    - 37
+    position:
+    - 11.15534006
+    - 0.42809877
+    - 17.67149478
+    surface: CustomSurface
+    label: null
+- geometry_index: 3
+  sites:
+  - site: 3fold1
+    morphology: sc-tc
+    indices: !!python/tuple
+    - 36
+    - 37
+    - 38
+    position:
+    - 11.30407793
+    - 1.20501876
+    - 17.740607340000004
+    surface: CustomSurface
+    label: null
+- geometry_index: 4
+  sites:
+  - site: 3fold2
+    morphology: sc-tc
+    indices: !!python/tuple
+    - 36
+    - 37
+    - 39
+    position:
+    - -2.3798058786527214
+    - 3.837033404315008
+    - 17.60238221
+    surface: CustomSurface
+    label: null
+- geometry_index: 5
+  sites:
+  - site: bridge
+    morphology: terrace
+    indices: !!python/tuple
+    - 36
+    - 39
+    position:
+    - -1.7848544086527198
+    - 3.329657084315007
+    - 17.464157080000003
+    surface: CustomSurface
+    label: null
+- geometry_index: 6
+  sites:
+  - site: 3fold3
+    morphology: terrace
+    indices: !!python/tuple
+    - 36
+    - 39
+    - 39
+    position:
+    - 0.8924272113472776
+    - 1.0464636543150072
+    - 17.679694380000008
+    surface: CustomSurface
+    label: null
+- geometry_index: 7
+  sites:
+  - site: 3fold4
+    morphology: terrace
+    indices: !!python/tuple
+    - 36
+    - 39
+    - 39
+    position:
+    - 2.677281611347281
+    - 3.139390964315008
+    - 17.679694380000008
+    surface: CustomSurface
+    label: null
+- geometry_index: 8
+  sites:
+  - site: ontop
+    morphology: step
+    indices: !!python/tuple
+    - 37
+    position:
+    - 9.81669925
+    - 0.6659314199999999
+    - 17.87883247
+    surface: CustomSurface
+    label: null
+- geometry_index: 9
+  sites:
+  - site: bridge
+    morphology: step
+    indices: !!python/tuple
+    - 37
+    - 38
+    position:
+    - -4.462136028652725
+    - 3.8053223843150072
+    - 17.87883247
+    surface: CustomSurface
+    label: null
