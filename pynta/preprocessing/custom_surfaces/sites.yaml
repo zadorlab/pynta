@@ -1,5 +1,5 @@
-n_unique_geometries: 10
-n_distinct_three_fold_types: 4
+n_unique_geometries: 13
+n_distinct_three_fold_types: 3
 geometries:
 - geometry_index: 0
   sites:
@@ -82,6 +82,19 @@ geometries:
     label: null
 - geometry_index: 6
   sites:
+  - site: bridge
+    morphology: terrace
+    indices: !!python/tuple
+    - 36
+    - 39
+    position:
+    - -3.569708810373215
+    - 1.2367297699999993
+    - 17.464157080000003
+    surface: CustomSurface
+    label: null
+- geometry_index: 7
+  sites:
   - site: 3fold3
     morphology: terrace
     indices: !!python/tuple
@@ -91,20 +104,6 @@ geometries:
     position:
     - 0.8924272113472776
     - 1.0464636543150072
-    - 17.679694380000008
-    surface: CustomSurface
-    label: null
-- geometry_index: 7
-  sites:
-  - site: 3fold4
-    morphology: terrace
-    indices: !!python/tuple
-    - 36
-    - 39
-    - 39
-    position:
-    - 2.677281611347281
-    - 3.139390964315008
     - 17.679694380000008
     surface: CustomSurface
     label: null
@@ -131,5 +130,42 @@ geometries:
     - -4.462136028652725
     - 3.8053223843150072
     - 17.87883247
+    surface: CustomSurface
+    label: null
+- geometry_index: 10
+  sites:
+  - site: bridge
+    morphology: step
+    indices: !!python/tuple
+    - 37
+    - 38
+    position:
+    - 10.70912646
+    - 1.7123950699999992
+    - 17.87883247
+    surface: CustomSurface
+    label: null
+- geometry_index: 11
+  sites:
+  - site: ontop
+    morphology: step
+    indices: !!python/tuple
+    - 38
+    position:
+    - -5.3545632299999975
+    - 2.75885873
+    - 17.87883247
+    surface: CustomSurface
+    label: null
+- geometry_index: 12
+  sites:
+  - site: ontop
+    morphology: terrace
+    indices: !!python/tuple
+    - 39
+    position:
+    - -2.67728161
+    - 2.28319343
+    - 17.464157080000003
     surface: CustomSurface
     label: null
