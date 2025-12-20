@@ -124,7 +124,7 @@ def classify_threefold_sites(single_geoms, single_sites_lists):
 
     for i, (geom, sites) in enumerate(zip(single_geoms, single_sites_lists)):
         for s in sites:
-            if s["site"] == "3fold":
+            if s["site"]: #== "3fold":
                 admols.append(generate_graph_slab_fixed(geom))
                 geom_indices.append(i)
                 break
