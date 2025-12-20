@@ -1,6 +1,7 @@
 import numpy as np
 import os
 import matplotlib.pyplot as plt
+import json
 
 from scipy import optimize as opt
 from ase import Atoms, build
@@ -233,9 +234,34 @@ class Prep:
             options=options,
         )
 
+        a_opt = out.x
+
+        # ---- SAVE RESULTS (compute node) ----
+        log_data = {
+            "metal": self.metal,
+            "surface_type": self.surface_type,
+            "a0": a0,
+            "a_opt": float(a_opt),
+            "outavals": list(map(float, outavals)),
+            "Evals": list(map(float, Evals)),
+        }
+
+        with open("lattice_constant_convergence.out", "w") as f:
+            f.write("# Lattice constant convergence\n")
+            f.write(f"# Metal: {self.metal}\n")
+            f.write(f"# Surface type: {self.surface_type}\n")
+            f.write(f"# Reference a0 (Å): {a0:.6f}\n")
+            f.write(f"# Optimized a (Å): {a_opt:.6f}\n")
+            f.write("#\n")
+            f.write("# a (Å)        Energy (eV)\n")
+            f.write("# ------------------------\n")
+
+            for a, E in zip(outavals, Evals):
+                f.write(f"{a:12.6f}  {E:16.8f}\n")
+        
         if return_scan:
-            return out.x, outavals, Evals
-        return out.x
+            return a_opt, outavals, Evals
+        return a_opt
 
     def freeze_bottom_half(self):
         """Fix atoms in the bottom half of the slab."""
@@ -245,7 +271,7 @@ class Prep:
         self.slab.set_constraint(FixAtoms(mask=mask))
         return self.slab
 
-    def optimize_slab(self, a, c=None, slab_path=None, out_path="slab.xyz"):
+    def optimize_slab(self, a, c=None, slab_path=None, out_path="custom_slab.xyz"):
         """
         Optimize a slab using the calculator specified by `self.software`.
 
@@ -312,33 +338,28 @@ class Prep:
         write(out_path, self.slab)
         return self.slab
 
-    def generate_slab(self):
+    def generate_slab(self, a=None):
         """
         Generate and optimize a slab locally using ASE (no FireWorks).
         This module is revised from pyn.main generate_slab()
+        If `a` is provided, use it directly.
+        Otherwise, determine lattice constant internally.        
         """
 
         # ------------------------
-        # 1. Determine slab builder
+        # 1. Lattice constant
+        # ------------------------
+        if a is not None:
+            self.a = a
+        elif self.a is None:
+            self.a, _, _ = self.calculate_lattice_parameters(return_scan=True)
+
+        # ------------------------
+        # 2. Build slab
         # ------------------------
         slab_type = getattr(build, self.surface_type)
 
-        # ------------------------
-        # 2. Lattice constant optimization (if needed)
-        # ------------------------
-        if self.a is None:
-            a = self.calculate_lattice_parameters(return_scan=False)
-            print(f"computed lattice constants of: {a} Å")
-
-            if isinstance(a, float):
-                self.a = a
-            else:
-                self.a, self.c = a
-
-        # ------------------------
-        # 3. Construct slab
-        # ------------------------
-        if self.c:
+        if self.c is not None:
             slab = slab_type(
                 symbol=self.metal,
                 size=self.repeats,
@@ -355,40 +376,21 @@ class Prep:
             )
 
         slab.pbc = self.pbc
-
-        # Save initial slab
-        slab_init_path = os.path.join(self.path, "slab_init.xyz")
-        self.slab_path = os.path.join(self.path, "slab.xyz")
-        write(slab_init_path, slab)
-
         self.slab = slab
 
         # ------------------------
-        # 4. Set calculator
+        # 3. Optimize slab
         # ------------------------
         if self.software != "XTB":
-            soft_cls = name_to_ase_software(self.software)
-            self.slab.calc = soft_cls(**self.software_kwargs)
-
-            # ------------------------
-            # 5. Freeze bottom half
-            # ------------------------
+            self.slab.calc = name_to_ase_software(self.software)(**self.software_kwargs)
             self.freeze_bottom_half()
 
-            # ------------------------
-            # 6. Optimize slab
-            # ------------------------
-            dyn = BFGSLineSearch(
-                self.slab,
-                trajectory=os.path.join(self.path, "slab.traj"),
-            )
+            dyn = BFGSLineSearch(self.slab, trajectory="slab.traj")
             dyn.run(fmax=self.fmax, steps=200)
 
-        # ------------------------
-        # 7. Save optimized slab
-        # ------------------------
-        write(self.slab_path, self.slab)
+        write("slab.xyz", self.slab)
         return self.slab
+
 
     def run_convergence(self, ecut_values, kmesh_values):
         """Run ecut and k-point convergence tests.
@@ -528,4 +530,14 @@ class Prep:
 
                 results.append((ecut, kpts, E_ads))
 
+                # -----------------------
+                # 6. Save results
+                # -----------------------
+                if save_results:
+                    with open(outfile, "w") as f:
+                        f.write("# ecut (Ry)   kpts        E_ads (eV)\n")
+                        for ecut, kpts, E_ads in results:
+                            f.write(f"{ecut:<12} {str(kpts):<12} {E_ads:.8f}\n")
+
         return results
+
