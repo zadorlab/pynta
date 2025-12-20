@@ -298,24 +298,11 @@ class Prep:
         # ------------------------
         if slab_path is not None:
             self.slab = read(slab_path)
-        else:
-            slab_builder = getattr(build, self.surface_type)
-
-            if c is not None:
-                self.slab = slab_builder(
-                    symbol=self.metal,
-                    size=(3, 3, 4),
-                    a=a,
-                    c=c,
-                    vacuum=self.vacuum
-                )
-            else:
-                self.slab = slab_builder(
-                    symbol=self.metal,
-                    size=(3, 3, 4),
-                    a=a,
-                    vacuum=self.vacuum
-                )
+        elif self.slab is None:
+            raise RuntimeError(
+                "No slab found. "
+                "Provide `slab_path` or set `self.slab` before calling optimize_slab()."
+            )
 
         self.slab.pbc = (True, True, True)
         self.slab.calc = calc
@@ -328,7 +315,7 @@ class Prep:
 
             dyn = BFGSLineSearch(
                 self.slab,
-                trajectory="slab.traj"
+                trajectory="custom_slab.traj"
             )
             dyn.run(fmax=self.fmax, steps=200)
 
@@ -541,3 +528,113 @@ class Prep:
 
         return results
 
+    def conventional_slab_opt_convergence(
+        self,
+        ecut_values,
+        kmesh_values,
+        optimize_lattice=True,
+    ):
+        """
+        Optimize bulk lattice constant, generate a conventional slab,
+        and run ecut + k-point convergence tests.
+        """
+
+        # ------------------------
+        # 1. Lattice optimization
+        # ------------------------
+        if optimize_lattice:
+            self.a, _, _ = self.calculate_lattice_parameters(return_scan=True)
+
+        # ------------------------
+        # 2. Generate & optimize slab
+        # ------------------------
+        # This handles slab construction, PBC, freezing, and optimization
+        self.generate_slab()
+
+        # ------------------------
+        # 3. ecut convergence
+        # ------------------------
+        self.run_convergence_adsorbate(
+            ecut_values=ecut_values,
+            kmesh_values=[kmesh_values[0]],
+            outfile="ecut_results.out",
+        )
+
+        # ------------------------
+        # 4. k-point convergence
+        # ------------------------
+        if kpt_ecut is None:
+            kpt_ecut = max(ecut_values)
+
+        self.run_convergence_adsorbate(
+            ecut_values=[kpt_ecut],
+            kmesh_values=kmesh_values,
+            outfile="kpts_results.out",
+        )
+
+    def custom_slab_opt_convergence(
+        self,
+        ecut_values,
+        kmesh_values,
+        optimize_lattice=True,
+        kpt_ecut=None,
+    ):
+        """
+        Optimize a user-provided slab and run ecut + k-point convergence tests.
+
+        Requirements
+        ------------
+        - User must set `self.slab` before calling this method
+          (e.g. prep.slab = read("custom_slab.xyz"))
+        """
+
+        # ------------------------
+        # 1. Sanity check
+        # ------------------------
+        if self.slab is None:
+            raise RuntimeError(
+                "Custom slab not found. "
+                "Please set `prep.slab` before calling custom_slab_opt_convergence()."
+            )
+
+        # ------------------------
+        # 2. Lattice optimization (optional)
+        # ------------------------
+        if optimize_lattice:
+            self.a, _, _ = self.calculate_lattice_parameters(return_scan=True)
+
+        if self.a is None:
+            raise RuntimeError(
+                "Lattice constant `a` is not set. "
+                "Either set it manually or use optimize_lattice=True."
+            )
+
+        # ------------------------
+        # 3. Optimize provided slab
+        # ------------------------
+        # Uses self.slab already in memory
+        self.optimize_slab(
+            a=self.a,
+            out_path="custom_slab_optimized.xyz",
+        )
+
+        # ------------------------
+        # 4. ecut convergence
+        # ------------------------
+        self.run_convergence_adsorbate(
+            ecut_values=ecut_values,
+            kmesh_values=[kmesh_values[0]],
+            outfile="ecut_results.out",
+        )
+
+        # ------------------------
+        # 5. k-point convergence
+        # ------------------------
+        if kpt_ecut is None:
+            kpt_ecut = max(ecut_values)
+
+        self.run_convergence_adsorbate(
+            ecut_values=[kpt_ecut],
+            kmesh_values=kmesh_values,
+            outfile="kpts_results.out",
+        )
