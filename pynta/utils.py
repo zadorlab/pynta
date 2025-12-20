@@ -258,7 +258,7 @@ def get_unique_sym_struct_index_clusters(geoms):
                 break
         else:
             comparison = False
-
+        comparison = False # Delete this later
         if comparison is False:
             good_adsorbates_atom_obj_list.append([adsorbate_atom_obj])
             indices.append([i])
