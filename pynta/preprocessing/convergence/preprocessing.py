@@ -15,11 +15,6 @@ from ase.calculators.espresso import Espresso
 from pynta.utils import name_to_ase_software
 from pynta.calculator import get_lattice_parameters
 
-import numpy as np
-import matplotlib.pyplot as plt
-from scipy import optimize as opt
-
-
 def fit_lattice_constant_from_scan(
     outavals,
     Evals,
@@ -377,7 +372,6 @@ class Prep:
 
         write("slab.xyz", self.slab)
         return self.slab
-
 
     def run_convergence(self, ecut_values, kmesh_values):
         """Run ecut and k-point convergence tests.
