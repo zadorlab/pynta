@@ -212,27 +212,6 @@ def fit_lattice_constant_from_scan(
 # ============================================================
 # Prep class
 # ============================================================
-    
-DEFAULT_SOFTWARE_KWARGS = {
-    "kpts": (3, 3, 1),
-    "tprnfor": True,
-    "occupations": "smearing",
-    "smearing": "marzari-vanderbilt",
-    "degauss": 0.01,
-    "ecutwfc": 40,
-    "nosym": True,
-    "conv_thr": 1e-6,
-    "input_dft": "BEEF-VDW",
-    "mixing_mode": "local-TF",
-    "pseudopotentials": {
-        "Cu": "Cu.pbe-spn-kjpaw_psl.1.0.0.UPF",
-        "H": "H.pbe-n-kjpaw_psl.1.0.0.UPF",
-        "O": "O.pbe-n-kjpaw_psl.1.0.0.UPF",
-        "C": "C.pbe-n-kjpaw_psl.1.0.0.UPF",
-        "N": "N.pbe-n-kjpaw_psl.1.0.0.UPF",
-        "Pt": "Pt.pbe-spn-kjpaw_psl.1.0.0.UPF",
-    },
-}
 
 class Prep:
 
@@ -332,7 +311,7 @@ class Prep:
         else:
             self.software_kwargs = software_kwargs
             logger.info("Using user-provided software_kwargs")
-            
+
         # ---- lattice optimization kwargs ----
         if lattice_opt_software_kwargs is None:
             self.lattice_opt_software_kwargs = {
@@ -505,24 +484,58 @@ class Prep:
     def generate_slab(self):
         logger.info("Generating slab")
 
-        slab_builder = getattr(build, self.surface_type)
-        slab = slab_builder(
-            symbol=self.metal,
-            size=self.repeats,
-            a=self.a,
-            vacuum=self.vacuum,
-        )
+        """
+        Generate and optimize a slab locally using ASE (no FireWorks).
+        This module is revised from pyn.main generate_slab()
+        If `a` is provided, use it directly.
+        Otherwise, determine lattice constant internally.        
+        """
+
+        # ------------------------
+        # 1. Lattice constant
+        # ------------------------
+        if a is not None:
+            self.a = a
+        elif self.a is None:
+            self.a, _, _ = self.calculate_lattice_parameters(return_scan=True)
+
+        # ------------------------
+        # 2. Build slab
+        # ------------------------
+        slab_type = getattr(build, self.surface_type)
+
+        if self.c is not None:
+            slab = slab_type(
+                symbol=self.metal,
+                size=self.repeats,
+                a=self.a,
+                c=self.c,
+                vacuum=self.vacuum,
+            )
+        else:
+            slab = slab_type(
+                symbol=self.metal,
+                size=self.repeats,
+                a=self.a,
+                vacuum=self.vacuum,
+            )
+
         slab.pbc = self.pbc
         self.slab = slab
 
-        write("slab.xyz", slab)
+        # ------------------------
+        # 3. Optimize slab
+        # ------------------------
+        if self.software != "XTB":
+            self.slab.calc = name_to_ase_software(self.software)(**self.software_kwargs)
+            self.freeze_bottom_half()
 
-        self._record_step(
-            "generate_slab",
-            outputs={"slab_file": "slab.xyz"},
-        )
+            dyn = BFGSLineSearch(self.slab, trajectory="slab.traj")
+            dyn.run(fmax=self.fmax, steps=200)
 
-        return slab
+        write("slab.xyz", self.slab)
+        return self.slab
+
 
     @step(3)
     @requires("ecut_values", "kmesh_values")
