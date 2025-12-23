@@ -212,6 +212,27 @@ def fit_lattice_constant_from_scan(
 # ============================================================
 # Prep class
 # ============================================================
+    
+DEFAULT_SOFTWARE_KWARGS = {
+    "kpts": (3, 3, 1),
+    "tprnfor": True,
+    "occupations": "smearing",
+    "smearing": "marzari-vanderbilt",
+    "degauss": 0.01,
+    "ecutwfc": 40,
+    "nosym": True,
+    "conv_thr": 1e-6,
+    "input_dft": "BEEF-VDW",
+    "mixing_mode": "local-TF",
+    "pseudopotentials": {
+        "Cu": "Cu.pbe-spn-kjpaw_psl.1.0.0.UPF",
+        "H": "H.pbe-n-kjpaw_psl.1.0.0.UPF",
+        "O": "O.pbe-n-kjpaw_psl.1.0.0.UPF",
+        "C": "C.pbe-n-kjpaw_psl.1.0.0.UPF",
+        "N": "N.pbe-n-kjpaw_psl.1.0.0.UPF",
+        "Pt": "Pt.pbe-spn-kjpaw_psl.1.0.0.UPF",
+    },
+}
 
 class Prep:
 
@@ -285,8 +306,49 @@ class Prep:
         self.vacuum = vacuum
         self.slab = slab
 
-        self.software_kwargs = software_kwargs or {}
-        self.lattice_opt_software_kwargs = lattice_opt_software_kwargs or {}
+        # ---- software_kwargs handling ----
+        if software_kwargs is None:
+            self.software_kwargs = {
+            "kpts": (3, 3, 1),
+            "tprnfor": True,
+            "occupations": "smearing",
+            "smearing": "marzari-vanderbilt",
+            "degauss": 0.01,
+            "ecutwfc": 40,
+            "nosym": True,
+            "conv_thr": 1e-6,
+            "input_dft": "BEEF-VDW",
+            "mixing_mode": "local-TF",
+            "pseudopotentials": {
+                "Cu": "Cu.pbe-spn-kjpaw_psl.1.0.0.UPF",
+                "H": "H.pbe-n-kjpaw_psl.1.0.0.UPF",
+                "O": "O.pbe-n-kjpaw_psl.1.0.0.UPF",
+                "C": "C.pbe-n-kjpaw_psl.1.0.0.UPF",
+                "N": "N.pbe-n-kjpaw_psl.1.0.0.UPF",
+                "Pt": "Pt.pbe-spn-kjpaw_psl.1.0.0.UPF",
+                },
+            }
+            logger.info("Using default software_kwargs")
+        else:
+            self.software_kwargs = software_kwargs
+            logger.info("Using user-provided software_kwargs")
+            
+        # ---- lattice optimization kwargs ----
+        if lattice_opt_software_kwargs is None:
+            self.lattice_opt_software_kwargs = {
+                "kpts": (25, 25, 25),
+                "ecutwfc": 70,
+                "ecutrho": 280,
+                "degauss": 0.02,
+                "input_dft": "BEEF-VDW",
+                "mixing_mode": "plain",
+                "pseudopotentials": self.software_kwargs["pseudopotentials"],
+            }
+            logger.info("Using default lattice_opt_software_kwargs")
+        else:
+            self.lattice_opt_software_kwargs = lattice_opt_software_kwargs
+            logger.info("Using user-provided lattice_opt_software_kwargs")
+
         self.path = path or os.getcwd()
 
         # ---- Load or initialize provenance ----
