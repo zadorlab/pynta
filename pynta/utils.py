@@ -229,6 +229,44 @@ def get_unique_sym_struct_indices(geoms):
 
     return indices
 
+#def get_unique_sym_struct_index_clusters(geoms):
+#    ''' Check for the symmetry equivalent structures in the given files
+#
+#    Parameters
+#    ___________
+#    geoms: list of Atoms objects to compare
+#
+#
+#    '''
+#    comparator = SymmetryEquivalenceCheck()
+#
+#    geoms_copy = deepcopy(geoms)
+#
+#    good_adsorbates_atom_obj_list = []
+#    indices = []
+#
+#    for i,geom in enumerate(geoms_copy):
+#        adsorbate_atom_obj = geom
+#        adsorbate_atom_obj.set_constraint()
+#        adsorbate_atom_obj.pbc = True
+#        adsorbate_atom_obj.set_constraint() # Reset constraints before comparison
+#        comparison = None
+#        for j,adlist in enumerate(good_adsorbates_atom_obj_list):
+#            comparison = comparator.compare(adsorbate_atom_obj, [adlist[0]])
+#            ind = j
+#            if comparison:
+#                break
+#        else:
+#            comparison = False
+#        comparison = False # Delete this later
+#        if comparison is False:
+#            good_adsorbates_atom_obj_list.append([adsorbate_atom_obj])
+#            indices.append([i])
+#        else:
+#            indices[ind].append(i)
+#
+#    return indices
+
 def get_unique_sym_struct_index_clusters(geoms):
     ''' Check for the symmetry equivalent structures in the given files
 
@@ -236,34 +274,35 @@ def get_unique_sym_struct_index_clusters(geoms):
     ___________
     geoms: list of Atoms objects to compare
 
-
+    Returns
+    ________
+    indices: list of lists containing indices of unique symmetry equivalent structures
     '''
     comparator = SymmetryEquivalenceCheck()
-
     geoms_copy = deepcopy(geoms)
 
     good_adsorbates_atom_obj_list = []
     indices = []
 
-    for i,geom in enumerate(geoms_copy):
+    for i, geom in enumerate(geoms_copy):
         adsorbate_atom_obj = geom
         adsorbate_atom_obj.set_constraint()
         adsorbate_atom_obj.pbc = True
-        adsorbate_atom_obj.set_constraint() # Reset constraints before comparison
-        comparison = None
-        for j,adlist in enumerate(good_adsorbates_atom_obj_list):
+        adsorbate_atom_obj.set_constraint()  # Reset constraints before comparison
+
+        # Initialize comparison as False
+        found_equivalent = False
+
+        for j, adlist in enumerate(good_adsorbates_atom_obj_list):
             comparison = comparator.compare(adsorbate_atom_obj, [adlist[0]])
-            ind = j
             if comparison:
+                found_equivalent = True
+                indices[j].append(i)
                 break
-        else:
-            comparison = False
-        comparison = False # Delete this later
-        if comparison is False:
+
+        if not found_equivalent:
             good_adsorbates_atom_obj_list.append([adsorbate_atom_obj])
             indices.append([i])
-        else:
-            indices[ind].append(i)
 
     return indices
 
