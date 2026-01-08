@@ -13,6 +13,7 @@ from ase.constraints import FixAtoms
 from ase.optimize import BFGSLineSearch
 from ase.data import chemical_symbols, reference_states
 from ase.calculators.espresso import Espresso
+from ase.constraints import FixAtoms
 
 from pynta.utils import name_to_ase_software
 
@@ -236,7 +237,9 @@ class Prep:
         software_kwargs=None,
         lattice_opt_software_kwargs=None,
         path=None,
+        frozen_layers = None,
         **kwargs,
+
     ):
 
         # ---- Detect user-provided arguments ----
@@ -257,6 +260,7 @@ class Prep:
             software_kwargs=software_kwargs,
             lattice_opt_software_kwargs=lattice_opt_software_kwargs,
             path=path,
+            frozen_layers = frozen_layers
         )
 
         self.user_args = {
@@ -284,6 +288,14 @@ class Prep:
         self.position = position
         self.vacuum = vacuum
         self.slab = slab
+        self.layers = self.repeats[2]
+        if self.slab is None:
+            self.nslab = int(np.prod(np.array(self.repeats)))
+        else:
+            self.nslab = len(read(self.slab))
+        self.frozen_layers = frozen_layers
+        self.freeze_ind = int((self.nslab/self.layers)*self.frozen_layers)
+
 
         # ---- software_kwargs handling ----
         if software_kwargs is None:
@@ -402,6 +414,8 @@ class Prep:
                 continue
             if method._requires.issubset(self.user_args.keys()):
                 methods.append(method)
+        #print methods
+        print("Runnable methods", methods)
 
         return methods
 
@@ -446,6 +460,105 @@ class Prep:
         return method(**kwargs)
 
     # ========================================================
+    # Axiliary functions
+    # ========================================================
+
+    def apply_constraints(self, sp, constraints):
+        """
+        Apply user-defined constraints to a slab.
+
+        Parameters
+        ----------
+        sp : ase.Atoms
+            Slab structure
+        constraints : list
+            List of constraints, which may be:
+            - dict (passed to construct_constraint)
+            - str (human-readable constraint keywords)
+        """
+
+        out_constraints = []
+
+        for c in constraints:
+
+            # --------------------------
+            # Dict-based constraint
+            # --------------------------
+            if isinstance(c, dict):
+                constraint = construct_constraint(c)
+                out_constraints.append(constraint)
+
+            # --------------------------
+            # Freeze half slab (by z) 
+            # --------------------------
+            elif c == "freeze half slab":
+                z_mid = sp.cell[2, 2] / 2.0
+                out_constraints.append(
+                    FixAtoms(
+                        indices=[
+                            atom.index
+                            for atom in sp
+                            if atom.position[2] < z_mid
+                        ]
+                    )
+                )
+
+            # --------------------------
+            # Freeze all atoms of an element
+            # Example: "freeze all Cu"
+            # --------------------------
+            elif c.startswith("freeze all"):
+                sym = c.split()[2]
+                out_constraints.append(
+                    FixAtoms(
+                        indices=[
+                            atom.index
+                            for atom in sp
+                            if atom.symbol == sym
+                        ]
+                    )
+                )
+
+            # --------------------------
+            # Freeze bottom N layers (N from self.frozen_layers)
+            # Keyword trigger only
+            # --------------------------
+            elif c == "freeze bottom layers":
+
+                if self.frozen_layers is None:
+                    raise ValueError(
+                        "'freeze bottom layers' requested but frozen_layers is not set"
+                    )
+
+                nslab = len(sp)
+                layers = getattr(self, "layers", None) or self.repeats[2]
+
+                if self.frozen_layers > layers:
+                    raise ValueError(
+                        f"frozen_layers ({self.frozen_layers}) "
+                        f"> total layers ({layers})"
+                    )
+
+                n_per_layer = nslab // layers
+                n_freeze = n_per_layer * self.frozen_layers
+
+                # Robust: sort atoms by z (bottom → top)
+                z_sorted_indices = sorted(
+                    range(nslab),
+                    key=lambda i: sp.positions[i][2]
+                )
+
+                out_constraints.append(
+                    FixAtoms(indices=z_sorted_indices[:n_freeze])
+                )
+
+            else:
+                raise ValueError(f"Unknown constraint: {c}")
+
+        if out_constraints:
+            sp.set_constraint(out_constraints)
+
+    # ========================================================
     # Actual preprocessing steps
     # ========================================================
 
@@ -481,7 +594,7 @@ class Prep:
 
     @step(2)
     @requires("generate_slab")
-    def generate_slab(self):
+    def generate_slab(self, a=None):
         logger.info("Generating slab")
 
         """
@@ -528,7 +641,7 @@ class Prep:
         # ------------------------
         if self.software != "XTB":
             self.slab.calc = name_to_ase_software(self.software)(**self.software_kwargs)
-            self.freeze_bottom_half()
+            self.freeze_bottom_n_layers()
 
             dyn = BFGSLineSearch(self.slab, trajectory="slab.traj")
             dyn.run(fmax=self.fmax, steps=200)
@@ -575,3 +688,108 @@ class Prep:
         )
 
         return results
+
+    @step(4)
+    @requires("run_adsorbate_convergence", "ecut_values", "kmesh_values")
+    def run_convergence_adsorbate(
+        self,
+        ecut_values,
+        kmesh_values,
+        adsorbate=None,
+        height=1.0,
+        position="ontop",
+    ):
+        """
+        Run ecut and k-point convergence tests using adsorption energy.
+        """
+
+        logger.info("Starting adsorbate convergence test")
+        results = []
+
+        # -----------------------
+        # 0. Default adsorbate
+        # -----------------------
+        if adsorbate is None:
+            adsorbate = Atoms("H")
+            is_hydrogen = True
+        else:
+            is_hydrogen = False
+            if isinstance(adsorbate, str):
+                adsorbate = Atoms(adsorbate)
+
+        slab_clean = self.slab.copy()
+
+        for ecut in ecut_values:
+            for kpts in kmesh_values:
+
+                input_data = self.software_kwargs.copy()
+                input_data["ecutwfc"] = ecut
+                input_data["ecutrho"] = 4 * ecut
+
+                calc = Espresso(
+                    input_data=input_data,
+                    pseudopotentials=self.software_kwargs["pseudopotentials"],
+                    kpts=kpts,
+                    profile=None,
+                )
+
+                # -----------------------
+                # Bare slab
+                # -----------------------
+                slab = slab_clean.copy()
+                slab.calc = calc
+                E_slab = slab.get_potential_energy()
+
+                # -----------------------
+                # Slab + adsorbate
+                # -----------------------
+                slab_ads = slab_clean.copy()
+                add_adsorbate(
+                    slab_ads,
+                    adsorbate,
+                    height=height,
+                    position=position,
+                )
+                slab_ads.calc = calc
+                E_slab_ads = slab_ads.get_potential_energy()
+
+                # -----------------------
+                # Reference
+                # -----------------------
+                if is_hydrogen:
+                    ref = Atoms(
+                        "H2",
+                        positions=[[0, 0, 0], [0, 0, 0.74]],
+                        cell=[10, 10, 10],
+                        pbc=False,
+                    )
+                    ref.calc = calc
+                    E_ref = 0.5 * ref.get_potential_energy()
+                else:
+                    ref = adsorbate.copy()
+                    ref.cell = [10, 10, 10]
+                    ref.pbc = False
+                    ref.calc = calc
+                    E_ref = ref.get_potential_energy()
+
+                E_ads = E_slab_ads - E_slab - E_ref
+
+                logger.info(
+                    f"ecut={ecut} Ry | kpts={kpts} | E_ads={E_ads:.6f} eV"
+                )
+
+                results.append((ecut, kpts, E_ads))
+
+        self._record_step(
+            "run_convergence_adsorbate",
+            inputs={
+                "ecut_values": list(ecut_values),
+                "kmesh_values": list(kmesh_values),
+                "adsorbate": str(adsorbate),
+                "height": height,
+                "position": position,
+            },
+            outputs={"results": results},
+        )
+
+        return results          
