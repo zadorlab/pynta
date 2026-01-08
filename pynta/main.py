@@ -22,6 +22,7 @@ from fireworks.utilities.fw_serializers import load_object_from_file
 from fireworks.core.rocket_launcher import rapidfire
 from fireworks.core.fworker import FWorker
 import fireworks.fw_config
+import json
 import logging
 
 #logger
@@ -46,7 +47,7 @@ class Pynta:
         lattice_opt_software_kwargs={'kpts': (25,25,25), 'ecutwfc': 70, 'degauss':0.02, 'mixing_mode': 'plain'},
         reset_launchpad=False,queue_adapter_path=None,num_jobs=25,max_num_hfsp_opts=None,#max_num_hfsp_opts is mostly for fast testing
         Eharmtol=3.0,Eharmfiltertol=30.0,Nharmmin=5,frozen_layers=2,fmaxopt=0.05,fmaxirc=0.1,c=None,
-        surrogate_metal=None,sites=None,site_adjacency=None,nprocs_harm=1,postprocess=True,
+        surrogate_metal=None,sites_file_path=None,site_adjacency_file_path=None,nprocs_harm=1,postprocess=True,
         calculate_thermodynamic_references=True):
 
         self.surface_type = surface_type
@@ -151,14 +152,31 @@ class Pynta:
         self.fmaxopt = fmaxopt
         self.fmaxirc = fmaxirc
 
-        self.sites = sites
-        self.site_adjacency = site_adjacency
-        
+        self.sites_file_path = sites_file_path
+        self.site_adjacency_file_path = site_adjacency_file_path
+        # Read the JSON files directly
+        self.sites = self.load_json(self.sites_file_path) if self.sites_file_path else None
+        self.site_adjacency = self.load_json(self.site_adjacency_file_path) if self.site_adjacency_file_path else None
+      
         self.postprocess = postprocess
         self.calculate_thermodynamic_references = calculate_thermodynamic_references
 
         logger.info('Pynta class is initiated')
 
+    def load_json(self, file_path):
+        try:
+            with open(file_path, 'r') as file:
+                return json.load(file)
+        except FileNotFoundError:
+            print(f"The file {file_path} was not found.")
+            return None
+        except json.JSONDecodeError:
+            print(f"Error decoding JSON from the file {file_path}.")
+            return None
+        except Exception as e:
+            print(f"An error occurred: {e}")
+            return None
+    
     def generate_slab(self,skip_launch=False):
         """
         generates and optimizes a small scale slab that can be scaled to a large slab as needed
@@ -210,7 +228,9 @@ class Pynta:
                             surrogate_metal=self.surrogate_metal)
             self.sites = cas.get_sites()
             self.site_adjacency = cas.get_neighbor_site_list()
+            print('self.site_adjacency',cas.get_neighbor_site_list())
         else:
+            print('sites',self.sites)
             assert self.site_adjacency is not None 
             
         unique_site_lists,unique_site_pairs_lists,single_site_bond_params_lists,double_site_bond_params_lists = generate_unique_placements(full_slab,self.sites)
@@ -220,6 +240,10 @@ class Pynta:
         self.double_site_bond_params_lists = double_site_bond_params_lists
         self.double_sites_lists = unique_site_pairs_lists
 
+        print('unique_site_lists',unique_site_lists)
+        print('\nunique_site_pairs_lists',unique_site_pairs_lists)
+
+    
     def generate_mol_dict(self):
         """
         generates all unique Molecule objects based on the reactions and generates a dictionary
