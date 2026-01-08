@@ -1,71 +1,129 @@
-# preprocessing_input.py
-import numpy as np
+
+"""
+runprep.py
+
+Example driver script for preprocessing workflow.
+Safe to re-run: automatically resumes from provenance.json.
+"""
+
+from ase.io import read
 from preprocessing import Prep
 
-###
-def mypause(flag):
-    print("\033[31;49;1m {0:20s}\033[0m".format(flag))
+
+# ------------------------------------------------------------
+# Optional: user-defined slab builder
+# ------------------------------------------------------------
+
+def my_custom_slab_builder(
+    metal,
+    a,
+    repeats,
+    vacuum,
+    pbc,
+    c=None,
+):
+    """
+    Example user slab builder.
+    Must return an ase.Atoms object.
+    """
+    from ase import build
+
+    slab = build.fcc111(
+        metal,
+        size=repeats,
+        a=a,
+        vacuum=vacuum,
+    )
+    slab.center(axis=2)
+    slab.pbc = pbc
+    return slab
+
+
+# ------------------------------------------------------------
+# Main workflow
+# ------------------------------------------------------------
 
 def run():
-
     command = '/home/shikim/miniconda3/envs/pynta_env/bin/mpirun pw.x -input < PREFIX.pwi > PREFIX.pwo' #QE run command
 
     prep = Prep(
-        metal="Pd",
-        surface_type="fcc111",
-        a0=3.89,
-        software="Espresso",
+        # --------------------
+        # System definition
+        # --------------------
+        metal="Pt",
+        surface_type="fcc111",     # used if slab_builder not provided
+        repeats=(3, 3, 3),
+        vacuum=10.0,
         fmax=0.05,
-        vacuum=10,
-        software_kwargs={ # this keyword is to run convergence test
+        frozen_layers = 3,
+
+        # --------------------
+        # Workflow flags
+        # --------------------
+        #optimize_lattice=True,     # run lattice optimization
+        #generate_slab=True,        # build + optimize slab
+        #run_convergence_adsorbate = False,
+
+        # --------------------
+        # Optional user inputs
+        # --------------------
+        # a=3.89,                # uncomment to skip lattice optimization
+        # slab_builder=my_custom_slab_builder,  # comment out to use ASE builder
+
+        # --------------------
+        # Convergence parameters
+        # --------------------
+        ecut_values=range(30, 71, 10),
+        kmesh_values=[(2, 2, 1), (3, 3, 1), (4, 4, 1)],
+
+        # --------------------
+        # QE / ASE calculator inputs
+        # --------------------
+        software="Espresso",
+        software_kwargs={
             "kpts": (3, 3, 1),
             "ecutwfc": 40,
             "ecutrho": 160,
             "occupations": "smearing",
-            "pseudo_dir" : '/home/shikim/espresso/pseudo',
             "smearing": "marzari-vanderbilt",
             "degauss": 0.01,
-            "input_dft":"BEEF-VDW",
+            "input_dft": "BEEF-VDW",
             "nosym": True,
             "conv_thr": 1e-6,
+            "pseudo_dir" : '/home/shikim/espresso/pseudo',
             "pseudopotentials": {
-                "Pd": "pd_pbesol_v1.4.uspp.F.UPF",
+                "Pt": "Pt.pbe-spn-kjpaw_psl.1.0.0.UPF",
                 "H": "H.pbe-kjpaw_psl.1.0.0.UPF",
+            },
+            "command": command
+        },
+
+        lattice_opt_software_kwargs={
+            "kpts": (25, 25, 25),
+            "ecutwfc": 70,
+            "ecutrho": 280,
+            "degauss": 0.02,
+            "input_dft": "BEEF-VDW",
+            "mixing_mode": "plain",
+            "pseudo_dir" : '/home/shikim/espresso/pseudo',
+            "pseudopotentials": {
+                "Pt": "Pt.pbe-spn-kjpaw_psl.1.0.0.UPF",
             },
             'command':command
         },
-        lattice_opt_software_kwargs={ # this keyword is specifically for lattice constant optimization
-                'kpts': (25,25,25), # something large
-                'ecutwfc': 70,  # you can change this 
-                'degauss':0.02,
-                'input_dft':'BEEF-VDW', 
-                'mixing_mode': 'plain',
-                "pseudo_dir" : '/home/shikim/espresso/pseudo', 
-                "pseudopotentials": {
-                    "Pd": "pd_pbesol_v1.4.uspp.F.UPF",
-                    "H": "H.pbe-kjpaw_psl.1.0.0.UPF",
-            },
-            'command':command
-        }
     )
 
-#======== Conventional slab lattice constant opt + slab generation/optimization + convergence test =====#
-    prep.conventional_slab_opt_convergence(
-        ecut_values=range(30, 71, 10),
-        kmesh_values=[(2,2,1), (3,3,1), (4,4,1)],
-    )    
-#======== Custom surface generation + optimization + convergence test =====#
-    prep.slab = read("my_custom_slab.xyz") #slab path from Pynta preprocessing custom surface
-    prep.custom_slab_opt_convergence(
-        ecut_values=range(30, 71, 10),
-        kmesh_values=[(2,2,1), (3,3,1), (4,4,1)],
-    )
+    # --------------------------------------------------------
+    # Run workflow (restart-safe)
+    # --------------------------------------------------------
+    prep.discover_runnable_methods()
 
-    print("Preprocessing finished")
+    print("Preprocessing finished successfully")
 
-if __name__ == '__main__':
 
-    mypause("Before Run")
+# ------------------------------------------------------------
+# Entry point
+# ------------------------------------------------------------
+
+if __name__ == "__main__":
     run()
-    mypause("After  Run")
-
