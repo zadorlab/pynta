@@ -80,8 +80,6 @@ def generate_unique_sites(slab, sites, nslab, site_bond_cutoff, adsorbate_height
     )
 
 
-import json
-import numpy as np
 
 def write_trajectory_pynta(slab, cas, nslab, site_bond_cutoff, adsorbate_height, trajectory_filename="unique_sites.traj"):
     # Generate unique sites and geometries
