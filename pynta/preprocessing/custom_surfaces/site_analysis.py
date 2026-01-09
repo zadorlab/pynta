@@ -4,7 +4,10 @@ import yaml
 from ase import Atoms
 from ase.geometry import get_distances
 from ase.geometry.analysis import Analysis
+import copy
 
+import json
+from ase.io import Trajectory
 from pynta.utils import get_unique_sym_struct_index_clusters
 from pynta.mol import add_adsorbate_to_site
 from molecule.molecule import Molecule, Atom, Bond
@@ -61,7 +64,7 @@ def generate_unique_sites(slab, sites, nslab, site_bond_cutoff, adsorbate_height
         g = slab.copy()
         add_adsorbate_to_site(
             g,
-            adsorbate=Atoms("Ne"),
+            adsorbate=Atoms("He"),
             surf_ind=0,
             site=site,
             height=adsorbate_height
@@ -77,7 +80,117 @@ def generate_unique_sites(slab, sites, nslab, site_bond_cutoff, adsorbate_height
     )
 
 
-# ============================================================
+import json
+import numpy as np
+
+def write_trajectory_pynta(slab, cas, nslab, site_bond_cutoff, adsorbate_height, trajectory_filename="unique_sites.traj"):
+    # Generate unique sites and geometries
+    single_geoms, single_sites_lists = generate_unique_sites(
+        slab,
+        cas.get_sites(),
+        nslab,
+        site_bond_cutoff,
+        adsorbate_height
+    )
+
+    # Print the number of unique sites
+    print(f'There are {len(single_sites_lists)} unique sites out of {len(cas.get_sites())}.')
+
+    # Create a Trajectory object to write to the specified file
+    traj = Trajectory(trajectory_filename, "w")
+    
+    # Write each geometry to the trajectory
+    for g in single_geoms:
+        traj.write(g)
+    
+    # Close the trajectory file
+    traj.close()
+
+    # Save single_sites_lists to JSON
+    save_sites_to_json(single_sites_lists)
+
+def save_sites_to_json(single_sites_lists, filename='sites.json'):
+    """Save unique sites to a JSON file."""
+    
+    def process_data(data):
+        """Recursively convert NumPy types to native Python types and replace None with 'null'."""
+        if isinstance(data, dict):
+            return {key: process_data(value) for key, value in data.items()}
+        elif isinstance(data, list):
+            return [process_data(item) for item in data]
+        elif isinstance(data, np.ndarray):
+            return data.tolist()  # Convert NumPy array to list
+        elif isinstance(data, (np.int64, np.float64)):  # Check for NumPy numeric types
+            return data.item()  # Convert to native Python int or float
+        elif data is None:  # Check for None (Python's equivalent of JSON null)
+            return "null"  # Replace with the string "null"
+        else:
+            return data  # Return the data as is if it's already a native type
+
+    # Process the sites data
+    processed_sites_data = process_data(single_sites_lists)
+
+    # Save to JSON file
+    with open(filename, "w") as f:
+        json.dump(processed_sites_data, f, indent=4)
+
+    print(f"Sites data saved to '{filename}' with None replaced by 'null'.")
+
+
+def write_trajectory_for_acat(slab, cas, trajectory_filename):
+    # Create a Trajectory object to write to the specified file
+    traj = Trajectory(trajectory_filename, 'w')
+    
+    # Iterate over all unique sites
+    for index, site in enumerate(cas.get_unique_sites()):
+        # Create a deep copy of the original slab
+        my_slab = copy.deepcopy(slab)
+        
+        # Create a new Atom at the unique site's position
+        new_position = Atom('He', site["position"])
+        
+        # Append the new Atom to the slab
+        my_slab.append(new_position)
+        
+        # Write the current configuration to the trajectory
+        traj.write(my_slab)
+    
+    # Close the trajectory file
+    traj.close()
+
+
+
+def save_neighbor_site_list_to_json(cas, filename='neighbor_site_list.json'):
+    """Retrieve the neighbor site list from cas, convert NumPy types to native Python types, and save it to a JSON file."""
+    
+    def convert_numpy_types(data):
+        """Recursively convert NumPy types to native Python types."""
+        if isinstance(data, dict):
+            return {key: convert_numpy_types(value) for key, value in data.items()}
+        elif isinstance(data, list):
+            return [convert_numpy_types(item) for item in data]
+        elif isinstance(data, np.ndarray):
+            return data.tolist()  # Convert NumPy array to list
+        elif isinstance(data, (np.int64, np.float64)):  # Check for NumPy numeric types
+            return data.item()  # Convert to native Python int or float
+        else:
+            return data  # Return the data as is if it's already a native type
+
+    # Get the neighbor site list
+    neighbor_site_list = cas.get_neighbor_site_list()
+
+    # Convert NumPy types to native Python types
+    neighbor_site_list = convert_numpy_types(neighbor_site_list)
+
+    # Save the neighbor site list to a JSON file
+    with open(filename, 'w') as f:
+        json.dump(neighbor_site_list, f, indent=4)  # Use indent for pretty printing
+
+    print(f"Neighbor site list saved to '{filename}'.")
+
+
+# 
+# ===================================================
 # Graph construction (metals -> X)
 # ============================================================
 
@@ -171,7 +284,7 @@ def update_threefold_site_labels(single_sites_lists, clusters, geom_indices):
     type_map = {}
 
     for type_id, members in enumerate(clusters.values(), start=1):
-        label = f"3fold{type_id}"
+        label = f"site{type_id}"
         for graph_idx in members:
             type_map[geom_indices[graph_idx]] = label
 
