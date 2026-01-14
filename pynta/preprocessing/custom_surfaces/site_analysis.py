@@ -327,6 +327,69 @@ def update_threefold_site_labels(single_sites_lists, clusters, geom_indices):
 
     return type_map
 
+#def update_site_labels(single_sites_lists, clusters):
+#    # Create a mapping from cluster index to its representative site label
+#    site_label_mapping = {}
+#    
+#    # Debugging: Print the structure of clusters
+#    print("Clusters structure:", clusters)
+#    print("Single sites lists structure:", single_sites_lists)
+#
+#    for cluster_index, members in clusters.items():
+#        # Ensure members is a list of integers
+#        if not isinstance(members, list):
+#            print(f"Warning: Expected a list for members in cluster {cluster_index}, got {type(members)}")
+#            continue
+#        
+#        # Debugging: Print the first member being accessed
+#        print(f"Accessing member index: {members[0]} in single_sites_lists")
+#        
+#        # Get the site label from the first member of the cluster
+#        representative_site = single_sites_lists[members[0]][0]["site"]  # Access the first element of the inner list
+#        
+#        # Store the representative site label in the mapping
+#        site_label_mapping[cluster_index] = representative_site
+#        
+#        # Update the site label for all members in the cluster
+#        for member in members:
+#            single_sites_lists[member][0]["site"] = representative_site  # Access the first element of the inner list
+#
+#    return single_sites_lists, site_label_mapping
+
+def update_site_labels(single_sites_lists, clusters, trajectory_filename="unique_site_graph.traj"):
+    # Create a mapping from cluster index to its representative site label
+    site_label_mapping = {}
+    
+    # New list to hold the updated single_sites_lists with only the first member of each cluster
+    updated_sites_lists = []
+    
+    # Debugging: Print the structure of clusters
+    print("Clusters structure:", clusters)
+    print("Single sites lists structure:", single_sites_lists)
+
+    for cluster_index, members in clusters.items():
+        # Ensure members is a list of integers
+        if not isinstance(members, list):
+            print(f"Warning: Expected a list for members in cluster {cluster_index}, got {type(members)}")
+            continue
+        
+        # Get the first member of the cluster
+        first_member_index = members[0]
+        
+        # Get the site label from the first member of the cluster
+        representative_site = single_sites_lists[first_member_index][0]["site"]
+        
+        # Store the representative site label in the mapping
+        site_label_mapping[cluster_index] = representative_site
+        
+        # Add the first member to the updated list
+        updated_sites_lists.append(single_sites_lists[first_member_index])
+        
+        # Update the site label for all members in the cluster
+        for member in members:
+            single_sites_lists[member][0]["site"] = representative_site  # Access the first element of the inner list
+
+    return updated_sites_lists, site_label_mapping
 
 # ============================================================
 # json writer (EXACT as requested)
@@ -361,19 +424,27 @@ def write_sites_json(single_sites_lists, clusters, filename="sites_graph.json"):
         json.dump(json_data, f, indent=4)
         write_sites_json(single_sites_lists, clusters, "sites_graph.json")
 
-def write_trajectory_graph(single_sites_lists, clusters, trajectory_filename="unique_sites.traj"):
+def write_trajectory_graph(updated_sites_lists, clusters, trajectory_filename="unique_sites_graph.traj"):
     # Print the number of unique sites
-    print(f'There are {len(single_sites_lists)} unique sites out of {len(clusters)}.')
+    print(f'There are {len(updated_sites_lists)} unique sites out of {len(clusters)}.')
 
     # Create a Trajectory object to write to the specified file
     traj = Trajectory(trajectory_filename, "w")
-    
+
     # Write each geometry to the trajectory
-    for g in clusters:
-        traj.write(g)
-    
+    for site in updated_sites_lists:
+        # Assuming each site is a list containing a dictionary with atomic information
+        # Extract the relevant data to create an Atoms object
+        # Example: site[0] should contain the necessary data to create an Atoms object
+        # You may need to adjust this based on the actual structure of your data
+        atoms_data = site[0]  # Extract the first dictionary from the inner list
+        # Create an Atoms object (you need to adapt this based on your data structure)
+        atoms = Atoms(
+            symbols=atoms_data['composition'],  # Assuming 'composition' contains the symbols
+            positions=atoms_data['position'],    # Assuming 'position' contains the atomic positions
+            # Add other necessary parameters like cell, pbc, etc. if needed
+        )
+        traj.write(atoms)  # Write the Atoms object to the trajectory
+
     # Close the trajectory file
     traj.close()
-
-    # Save single_sites_lists to JSON
-    save_sites_to_json(single_sites_lists)
