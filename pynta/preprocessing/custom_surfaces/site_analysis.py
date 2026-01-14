@@ -67,8 +67,9 @@ def generate_unique_sites(slab, sites, nslab, site_bond_cutoff, adsorbate_height
             adsorbate=Atoms("He"),
             surf_ind=0,
             site=site,
-            height=adsorbate_height
-        )
+            height=adsorbate_height,
+            tilt_angle=25.24, 
+            offset=False)
         geoms.append(g)
         sites_per_geom.append([site])
 
@@ -107,6 +108,34 @@ def write_trajectory_pynta(slab, cas, nslab, site_bond_cutoff, adsorbate_height,
     # Save single_sites_lists to JSON
     save_sites_to_json(single_sites_lists)
 
+#def save_sites_to_json(single_sites_lists, filename='sites.json'):
+#    """Save unique sites to a JSON file."""
+#    
+#    def process_data(data):
+#        """Recursively convert NumPy types to native Python types and replace None with 'null'."""
+#        if isinstance(data, dict):
+#            return {key: process_data(value) for key, value in data.items()}
+#        elif isinstance(data, list):
+#            return [process_data(item) for item in data]
+#        elif isinstance(data, np.ndarray):
+#            return data.tolist()  # Convert NumPy array to list
+#        elif isinstance(data, (np.int64, np.float64)):  # Check for NumPy numeric types
+#            return data.item()  # Convert to native Python int or float
+#        elif data is None:  # Check for None (Python's equivalent of JSON null)
+#            return "null"  # Replace with the string "null"
+#        else:
+#            return data  # Return the data as is if it's already a native type
+#
+#    # Process the sites data
+#    processed_sites_data = process_data(single_sites_lists)
+#
+#    # Save to JSON file
+#    with open(filename, "w") as f:
+#        json.dump(processed_sites_data, f, indent=4)
+#
+#    print(f"Sites data saved to '{filename}' with None replaced by 'null'.")
+
+
 def save_sites_to_json(single_sites_lists, filename='sites.json'):
     """Save unique sites to a JSON file."""
     
@@ -125,8 +154,13 @@ def save_sites_to_json(single_sites_lists, filename='sites.json'):
         else:
             return data  # Return the data as is if it's already a native type
 
-    # Process the sites data
-    processed_sites_data = process_data(single_sites_lists)
+    # Flatten the input if it's a list of lists
+    if isinstance(single_sites_lists, list) and all(isinstance(item, list) for item in single_sites_lists):
+        # Flatten the list of lists into a single list of dictionaries
+        processed_sites_data = process_data([item for sublist in single_sites_lists for item in sublist])
+    else:
+        # If it's already a single list of dictionaries, process it directly
+        processed_sites_data = process_data(single_sites_lists)
 
     # Save to JSON file
     with open(filename, "w") as f:
@@ -226,16 +260,16 @@ def generate_graph_slab_fixed(atoms):
 
 
 # ============================================================
-# 3-fold classification
+# site classification
 # ============================================================
 
-def classify_threefold_sites(single_geoms, single_sites_lists):
+def classify_all_sites(single_geoms, single_sites_lists):
     admols = []
     geom_indices = []
 
     for i, (geom, sites) in enumerate(zip(single_geoms, single_sites_lists)):
         for s in sites:
-            if s["site"]: #== "3fold":
+            if s["site"]: 
                 admols.append(generate_graph_slab_fixed(geom))
                 geom_indices.append(i)
                 break
@@ -295,31 +329,51 @@ def update_threefold_site_labels(single_sites_lists, clusters, geom_indices):
 
 
 # ============================================================
-# YAML writer (EXACT as requested)
+# json writer (EXACT as requested)
 # ============================================================
 
-def write_sites_yaml(single_sites_lists, clusters, filename="sites.yaml"):
-    yaml_data = {
+
+def write_sites_json(single_sites_lists, clusters, filename="sites_graph.json"):
+    json_data = {
         "n_unique_geometries": len(single_sites_lists),
         "n_distinct_three_fold_types": len(clusters),
         "geometries": []
     }
 
-    for i, sites in enumerate(single_sites_lists):
-        entry = {
-            "geometry_index": i,
-            "sites": []
-        }
+    for sites in single_sites_lists:
         for s in sites:
-            entry["sites"].append({
+            entry = {
                 "site": s["site"],
-                "morphology": s.get("morphology"),
-                "indices": s.get("indices"),
-                "position": list(map(float, s.get("position", []))),
                 "surface": s.get("surface"),
-                "label": s.get("label")
-            })
-        yaml_data["geometries"].append(entry)
+                "morphology": s.get("morphology"),
+                "position": list(map(float, s.get("position", []))),
+                "normal": list(map(float, s.get("normal", []))),  # Assuming 'normal' is provided
+                "indices": list(map(int, s.get("indices", []))),  # Convert to int
+                "composition": s.get("composition", "null"),  # Default to "null" if not provided
+                "subsurf_index": s.get("subsurf_index", "null"),  # Default to "null" if not provided
+                "subsurf_element": s.get("subsurf_element", "null"),  # Default to "null" if not provided
+                "label": s.get("label", "null"),  # Default to "null" if not provided
+                "topology": list(map(int, s.get("topology", [])))  # Convert to int
+            }
+            json_data["geometries"].append(entry)
 
     with open(filename, "w") as f:
-        yaml.dump(yaml_data, f, sort_keys=False)
+        json.dump(json_data, f, indent=4)
+        write_sites_json(single_sites_lists, clusters, "sites_graph.json")
+
+def write_trajectory_graph(single_sites_lists, clusters, trajectory_filename="unique_sites.traj"):
+    # Print the number of unique sites
+    print(f'There are {len(single_sites_lists)} unique sites out of {len(clusters)}.')
+
+    # Create a Trajectory object to write to the specified file
+    traj = Trajectory(trajectory_filename, "w")
+    
+    # Write each geometry to the trajectory
+    for g in clusters:
+        traj.write(g)
+    
+    # Close the trajectory file
+    traj.close()
+
+    # Save single_sites_lists to JSON
+    save_sites_to_json(single_sites_lists)
