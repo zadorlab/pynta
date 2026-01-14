@@ -228,9 +228,9 @@ class Pynta:
                             surrogate_metal=self.surrogate_metal)
             self.sites = cas.get_sites()
             self.site_adjacency = cas.get_neighbor_site_list()
-            print('self.site_adjacency',cas.get_neighbor_site_list())
+            #print('self.site_adjacency',cas.get_neighbor_site_list())
         else:
-            print('sites',self.sites)
+            #print('sites',self.sites)
             assert self.site_adjacency is not None 
             
         unique_site_lists,unique_site_pairs_lists,single_site_bond_params_lists,double_site_bond_params_lists = generate_unique_placements(full_slab,self.sites)
