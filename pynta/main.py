@@ -488,14 +488,14 @@ class Pynta:
         if self.slab_path is None: #handle slab
             self.generate_slab()
 
+        #optimize slab
+        if optimize_slab:
+            self.optimize_slab()
+
         self.analyze_slab()
         self.generate_mol_dict()
         self.generate_atom_maps()
 
-        #optimize slab
-        if optimize_slab:
-            self.optimize_slab()
-            
         #adsorbate optimization
         if calculate_adsorbates:
             self.setup_adsorbates()
