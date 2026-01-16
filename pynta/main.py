@@ -476,7 +476,7 @@ class Pynta:
         else:
             launch_multiprocess(self.launchpad,self.fworker,"INFO","infinite",self.num_jobs,5)
 
-    def execute(self,calculate_adsorbates=True,
+    def execute(self,optimize_slab=False,calculate_adsorbates=True,
                 calculate_transition_states=True,launch=True):
         """
         generate and launch a Pynta Fireworks Workflow
@@ -492,6 +492,10 @@ class Pynta:
         self.generate_mol_dict()
         self.generate_atom_maps()
 
+        #optimize slab
+        if optimize_slab:
+            self.optimize_slab()
+            
         #adsorbate optimization
         if calculate_adsorbates:
             self.setup_adsorbates()
