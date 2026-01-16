@@ -218,6 +218,28 @@ class Pynta:
             self.slab = slab
             write(self.slab_path,slab)
 
+    def optimize_slab(self,skip_launch=False):
+        logger.info('Optimize slab')
+        slab = read(self.slab_path)
+        write(os.path.join(self.path,"slab_init.xyz"),slab)
+        self.slab_path = os.path.join(self.path,"slab.xyz")
+        if self.software != "XTB":
+            fwslab = optimize_firework(os.path.join(self.path,"slab_init.xyz"),self.software,"slab",
+                opt_method="BFGSLineSearch",socket=self.socket,software_kwargs=self.software_kwargs,
+                run_kwargs={"fmax" : self.fmaxopt},out_path=os.path.join(self.path,"slab.xyz"),constraints=["freeze up to {}".format(self.freeze_ind)],priority=1000)
+            wfslab = Workflow([fwslab], name=self.label+"_slab")
+            self.launchpad.add_wf(wfslab)
+            if skip_launch:
+                return
+            self.launch(single_job=True)
+            while not os.path.exists(self.slab_path): #wait until slab optimizes, this is required anyway and makes the rest of the code simpler
+                time.sleep(1)
+            self.slab = read(self.slab_path)
+        else: #testing
+            self.slab = slab
+            write(self.slab_path,slab)
+
+
     def analyze_slab(self):
         full_slab = self.slab
         
