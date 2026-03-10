@@ -453,6 +453,7 @@ def write_trajectory_graph(updated_sites_lists, clusters, trajectory_filename="u
 
 #============ vacancy detect ================
 
+<<<<<<< HEAD
 def _pbc_wrap_frac(df):
     """wrap fractional delta to [-0.5, 0.5)"""
     return df - np.round(df)
@@ -576,6 +577,8 @@ def detect_vacancy_sites_from_coordination(
 
     return defect_sites, atoms
 
+=======
+>>>>>>> d09ead41 (defect site detection)
 def _has_reasonable_cell(atoms, eps=1e-6):
     cell = atoms.cell.array
     return np.linalg.norm(cell[0]) > eps and np.linalg.norm(cell[1]) > eps
