@@ -4,6 +4,7 @@ import yaml
 from ase import Atoms
 from ase.geometry import get_distances
 from ase.geometry.analysis import Analysis
+from ase.neighborlist import NeighborList
 import copy
 from copy import deepcopy
 
@@ -453,7 +454,6 @@ def write_trajectory_graph(updated_sites_lists, clusters, trajectory_filename="u
 
 #============ vacancy detect ================
 
-<<<<<<< HEAD
 def _pbc_wrap_frac(df):
     """wrap fractional delta to [-0.5, 0.5)"""
     return df - np.round(df)
@@ -577,8 +577,6 @@ def detect_vacancy_sites_from_coordination(
 
     return defect_sites, atoms
 
-=======
->>>>>>> d09ead41 (defect site detection)
 def _has_reasonable_cell(atoms, eps=1e-6):
     cell = atoms.cell.array
     return np.linalg.norm(cell[0]) > eps and np.linalg.norm(cell[1]) > eps
@@ -817,7 +815,7 @@ def get_adsorbate_dist_from_center(atoms,nslab):
     return np.linalg.norm(adcenter - cell_center)
 
 #===fix=== ``
-def generate_unique_site_additions_vacancy(geo, sites, slab, nslab, xyz_path,
+def generate_unique_site_additions_vacancy(geo, sites, slab, nslab, site_bond_cutoff, xyz_path,
                                           site_bond_params_list=None,
                                           sites_list=None):
     if site_bond_params_list is None:
@@ -826,10 +824,24 @@ def generate_unique_site_additions_vacancy(geo, sites, slab, nslab, xyz_path,
         sites_list = []
 
     # --- NEW: detect defect/hole sites from the xyz and add to sites ---
-    defect_sites, _ = detect_defect_sites_from_xyz(xyz_path, nslab)
+    #defect_sites, _ = detect_defect_sites_from_xyz(xyz_path, nslab)
+    slab_for_detect = read(xyz_path)
+    defect_sites, _ = detect_vacancy_sites_from_coordination(slab_for_detect, nslab)
 
     # add defect sites if not already present (uses your existing sites_match)
     for ds in defect_sites:
+        ds = dict(ds)  # make sure it's a mutable copy
+
+        # REQUIRED for add_adsorbate_to_site()
+        ds.setdefault("normal", np.array([0.0, 0.0, 1.0]))
+
+        # REQUIRED for sites_match()
+        ds.setdefault("morphology", "defect")
+
+        # Optional: keep surface label consistent (if your other sites have it)
+        if "surface" not in ds and len(sites) > 0 and "surface" in sites[0]:
+            ds["surface"] = sites[0]["surface"]
+
         if not any(sites_match(ds, s, slab) for s in sites):
             sites = sites + [ds]
     # --- end NEW ---
@@ -846,7 +858,7 @@ def generate_unique_site_additions_vacancy(geo, sites, slab, nslab, xyz_path,
     site_tags = [he, ne, ar, kr, xe, rn]
     tag = site_tags[nads]
 
-    occ = get_occupied_sites(geo, sites, nslab)
+    occ = get_occupied_sites(geo, sites, nslab, site_bond_cutoff)
     unocc = [site for site in sites if not any(sites_match(site, osite, slab) for osite in occ)]
 
     site_bond_params_lists = [deepcopy(site_bond_params_list) for _ in range(len(unocc))]
