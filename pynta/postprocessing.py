@@ -1158,7 +1158,7 @@ longDesc = u"""{lib_long_desc}"""
         return line
     
 def get_species(path,adsorbates_path,metal,facet,slab,sites,site_adjacency,nslab,c_ref=0.0,o_ref=0.0,h_ref=0.0,
-               n_ref=0.0):
+               n_ref=0.0,delta_sidt=None):
     """
     Generate a dictionary of GasConfiguration/SurfaceConfiguration objects corresponding to a Pynta 
     species calculation
@@ -1223,14 +1223,14 @@ def get_species(path,adsorbates_path,metal,facet,slab,sites,site_adjacency,nslab
             if not gas_phase:
                 try:
                     spc = SurfaceConfiguration(atoms,slab,admol,vibdata,name,metal,facet,is_TS=False,sites_per_cell=1,
-                    c_ref=c_ref,o_ref=o_ref,h_ref=h_ref,n_ref=n_ref,valid=valid)
+                    c_ref=c_ref,o_ref=o_ref,h_ref=h_ref,n_ref=n_ref,valid=valid,delta_sidt=delta_sidt)
                     spc.run()
                 except (ValueError,AtomTypeError,UnboundLocalError):
                     spc = None
             else:
                 try:
                     spc = GasConfiguration(atoms,mol,vibdata,name,
-                    c_ref=c_ref,o_ref=o_ref,h_ref=h_ref,n_ref=n_ref,valid=valid)
+                    c_ref=c_ref,o_ref=o_ref,h_ref=h_ref,n_ref=n_ref,valid=valid,delta_sidt=delta_sidt)
                     spc.run()
                 except ValueError:
                     pass
@@ -1241,7 +1241,7 @@ def get_species(path,adsorbates_path,metal,facet,slab,sites,site_adjacency,nslab
     return species_dict 
                 
 def get_TS(path,adsorbates_path,metal,facet,slab,sites,site_adjacency,nslab,c_ref=0.0,o_ref=0.0,h_ref=0.0,n_ref=0.0,
-           allowed_structure_site_structures=None):
+           allowed_structure_site_structures=None,delta_sidt=None):
     """
     Generate a dictionary of GasConfiguration/SurfaceConfiguration objects corresponding to a Pynta 
     species calculation
@@ -1337,14 +1337,14 @@ def get_TS(path,adsorbates_path,metal,facet,slab,sites,site_adjacency,nslab,c_re
                      keep_binding_vdW_bonds=keep_binding_vdW_bonds,keep_vdW_surface_bonds=keep_vdW_surface_bonds)
             
             spc = SurfaceConfiguration(atoms,slab,admol,vibdata,os.path.split(path)[1],metal,facet,is_TS=True,sites_per_cell=1,
-                      c_ref=c_ref,o_ref=o_ref,h_ref=h_ref,n_ref=n_ref,valid=valid,valid_info=vinfo,)
+                      c_ref=c_ref,o_ref=o_ref,h_ref=h_ref,n_ref=n_ref,valid=valid,valid_info=vinfo,delta_sidt=delta_sidt)
             
             spc.run()
             
             ts_dict[k] = spc
         except (SiteOccupationException,TooManyElectronsException,ValueError,AtomTypeError,IndexError,KeyError):
             spc = SurfaceConfiguration(atoms,slab,None,vibdata,os.path.split(path)[1],metal,facet,is_TS=True,sites_per_cell=1,
-                      c_ref=c_ref,o_ref=o_ref,h_ref=h_ref,n_ref=n_ref,valid=valid,valid_info=vinfo,mol=target_TS)
+                      c_ref=c_ref,o_ref=o_ref,h_ref=h_ref,n_ref=n_ref,valid=valid,valid_info=vinfo,mol=target_TS,delta_sidt=delta_sidt)
             
             spc.run()
             
@@ -1353,7 +1353,7 @@ def get_TS(path,adsorbates_path,metal,facet,slab,sites,site_adjacency,nslab,c_re
     return ts_dict
 
 def get_kinetics(path,adsorbates_path,metal,facet,slab,sites,site_adjacency,nslab,site_density,config_dict=None,
-                c_ref=0.0,o_ref=0.0,h_ref=0.0,n_ref=0.0,allowed_structure_site_structures=None):
+                c_ref=0.0,o_ref=0.0,h_ref=0.0,n_ref=0.0,allowed_structure_site_structures=None,delta_sidt=None):
     """
     Generate a dictionary of GasConfiguration/SurfaceConfiguration objects corresponding to a Pynta 
     species calculation
@@ -1380,7 +1380,7 @@ def get_kinetics(path,adsorbates_path,metal,facet,slab,sites,site_adjacency,nsla
         return dict()
     
     ts_dict = get_TS(path,adsorbates_path,metal,facet,slab,sites,site_adjacency,nslab,
-                c_ref=c_ref,o_ref=o_ref,h_ref=h_ref,n_ref=n_ref,allowed_structure_site_structures=allowed_structure_site_structures)
+                c_ref=c_ref,o_ref=o_ref,h_ref=h_ref,n_ref=n_ref,allowed_structure_site_structures=allowed_structure_site_structures,delta_sidt=delta_sidt)
     
     with open(os.path.join(path,"info.json"),'r') as f:
         info = json.load(f)
@@ -1388,7 +1388,7 @@ def get_kinetics(path,adsorbates_path,metal,facet,slab,sites,site_adjacency,nsla
     if config_dict is None:
         config_dict = dict()
         for spc_name in np.unique(np.array(info["species_names"]+info["reverse_names"])):
-            spcs = get_species(os.path.join(adsorbates_path,spc_name),adsorbates_path,metal,facet,slab,sites,site_adjacency,nslab,c_ref=c_ref,o_ref=o_ref,h_ref=h_ref,n_ref=n_ref)
+            spcs = get_species(os.path.join(adsorbates_path,spc_name),adsorbates_path,metal,facet,slab,sites,site_adjacency,nslab,c_ref=c_ref,o_ref=o_ref,h_ref=h_ref,n_ref=n_ref,delta_sidt=delta_sidt)
             minspc = spcs[min({k:v for k,v in spcs.items() if v.valid},key=lambda x: spcs[x].energy)]
             config_dict[spc_name] = minspc
 
@@ -1508,7 +1508,7 @@ def get_reference_energies(adsorbates_path,nslab,check_finished=False):
     return c_ref,o_ref,h_ref,n_ref,finished_atoms
 
 def postprocess(path,metal,facet,sites,site_adjacency,repeats,slab_path=None,check_finished=False,get_all_configs=False,
-                allowed_structure_site_structures=None):
+                allowed_structure_site_structures=None,delta_sidt=None):
     """
     Postprocess Pynta run into GasConfiguration/SurfaceConfiguration/Kinetics objects
     Args:
