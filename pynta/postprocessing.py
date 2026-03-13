@@ -403,7 +403,8 @@ class GasConfiguration:
                  o_ref=0,
                  h_ref=0,
                  n_ref=0,
-                 valid=True):
+                 valid=True,
+                 delta_sidt=None):
         """
         Args:
             atoms (_type_): ase.Atoms object for configuration
@@ -436,7 +437,7 @@ class GasConfiguration:
                         'NH3': -38.563}  # heats of formation (0K) in kJ/mol from the ATcT database for the reference species, version 1.202
         self.dHrxnatct = {'H2-2H': 432.0680600, 'O2-2O': 493.6871,
                           'N2-2N': 941.165}  # Heats of the dissociation reactions in the gas phase from the ATcT database, version 1.202
-        
+        self.delta_sidt = delta_sidt
         self.atoms = atoms 
         self.mol = mol
         self.vibdata = vibdata 
@@ -462,8 +463,11 @@ class GasConfiguration:
         self.ZPE_energy_units = 'eV'
         
     def compute_heat_of_formation(self):
-        self.energy = self.DFT_energy + self.ZPE_energy
-
+        if self.delta_sidt:
+            self.energy = self.DFT_energy + self.ZPE_energy + self.delta_sidt.evaluate(self.mol)/96485.0
+        else:
+            self.energy = self.DFT_energy + self.ZPE_energy
+            
         self.dHrxndftgas = (self.energy - self.composition['C'] * self.Eref['CH4']
                             - self.composition['O'] * self.Eref['H2O']
                             - self.composition['N'] * self.Eref['NH3']
@@ -629,7 +633,8 @@ class SurfaceConfiguration:
                  cutoff_freq=100.0,
                  valid=True,
                  valid_info=None,
-                 mol=None):
+                 mol=None,
+                 delta_sidt=None):
 
         # start by defining some physical constants
         self.R = 8.3144621  # ideal Gas constant in J/mol-K
@@ -657,7 +662,7 @@ class SurfaceConfiguration:
                         'NH3': -38.563}  # heats of formation (0K) in kJ/mol from the ATcT database for the reference species, version 1.202
         self.dHrxnatct = {'H2-2H': 432.0680600, 'O2-2O': 493.6871,
                           'N2-2N': 941.165}  # Heats of the dissociation reactions in the gas phase from the ATcT database, version 1.202
-
+        self.delta_sidt = delta_sidt
         self.atoms = atoms
         self.slab = slab
         self.admol = admol
@@ -719,7 +724,10 @@ class SurfaceConfiguration:
         return to_dict(self)
         
     def compute_heat_of_formation(self):
-        self.energy = self.DFT_energy + self.ZPE_energy
+        if self.delta_sidt and self.admol is not None:
+            self.energy = self.DFT_energy + self.ZPE_energy + self.delta_sidt.evaluate(self.admol)/96485.0
+        else:
+            self.energy = self.DFT_energy + self.ZPE_energy
 
         self.dHrxndftgas = (self.energy_gas - self.composition['C'] * self.Eref['CH4']
                             - self.composition['O'] * self.Eref['H2O']
