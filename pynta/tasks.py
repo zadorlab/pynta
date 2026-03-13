@@ -633,6 +633,7 @@ class MolecularTSEstimate(FiretaskBase):
         reactant_names = rxn["reactant_names"]
         product_names = rxn["product_names"]
         rxn_name = rxn["reaction"]
+        family_name = rxn["reaction_family"]
 
         mol_dict = {name: Molecule().from_adjacency_list(adj.replace("multiplicity -187","")) for name,adj in self["name_to_adjlist_dict"].items()}
 
@@ -672,7 +673,8 @@ class MolecularTSEstimate(FiretaskBase):
         ts_dict["template_mol_map"] = template_mol_map
         ts_dict["reverse_names"] = reverse_names
         ts_dict["molecule_to_atom_maps"] = [{value:key for key,value in gratom_to_molecule_atom_maps[name].items()} for name in species_names]
-
+        ts_dict["family_name"] = family_name 
+        
         with open(os.path.join(ts_path,"info.json"),'w') as f:
             json.dump(ts_dict,f)
 
