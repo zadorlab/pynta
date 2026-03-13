@@ -1094,13 +1094,14 @@ class Kinetics:
                 
         self.krevs = krevs 
             
-    def generate_kinetics_entry(self):
+    def generate_kinetics_entry(self,duplicate=False):
         xyz = str(len(self.transition_state.atoms)) + "\n"
         for s,(x,y,z) in zip(self.transition_state.atoms.symbols,self.transition_state.atoms.positions):
             xyz += s + " " + str(x) + " " + str(y) + " " + str(z) + "\n"
         txt = '''entry(
     index = {index},
     label = "{rlabel}",
+    duplicate = {duplicate},
     kinetics = {kinetics},
     shortDesc = u"{short_desc}",
     longDesc = u"""{long_desc}""",
@@ -1108,6 +1109,7 @@ class Kinetics:
     facet = "{facet}",
 )'''
         txt = txt.format(rlabel=self.reaction_str,
+                        duplicate=duplicate,
                         kinetics=repr(self.arr_f),
                         short_desc="Computed using Pynta",
                         long_desc="Computed using Pynta\n" + self.family_comment + "\n" + xyz,
@@ -1616,41 +1618,59 @@ def write_rmg_libraries(path,spc_dict,spc_dict_thermo,ts_dict,metal,facet):
     thermo_text = ""
     spc_dictionary_txt = "vacantX\n1 X u0 p0 c0\n\n"
     for name,spc in spc_dict_thermo.items():
+        if isinstance(spc,list):
+            if len(spc) == 0:
+                continue
+            else:
+                minspc = spc[min({k:v for k,v in spc.items() if v.valid},key=lambda x: spc[x].energy)]
+        else:
+            minspc = spc
         if thermo_text == "":
             if isinstance(spc,SurfaceConfiguration):
-                thermo_text += spc.create_RMG_header("thermo_library","","")
+                thermo_text += minspc.create_RMG_header("thermo_library","","")
             else:
-                thermo_text += spc.create_RMG_header("thermo_library","","",metal,facet)
-        thermo_text += spc.rmg_species_text.replace("{index}",str(index))
+                thermo_text += minspc.create_RMG_header("thermo_library","","",metal,facet)
+        thermo_text += minspc.rmg_species_text.replace("{index}",str(index))
         index += 1
         thermo_text += "\n"
     
     for name,spc in spc_dict.items():
+        if isinstance(spc,list):
+            if len(spc) == 0:
+                continue
+            else:
+                minspc = spc[min({k:v for k,v in spc.items() if v.valid},key=lambda x: spc[x].energy)]
+        else:
+            minspc = spc
+        minspc = spc[min({k:v for k,v in spc.items() if v.valid},key=lambda x: spc[x].energy)]
         spc_dictionary_txt += name + "\n"
-        spc_dictionary_txt += spc.mol.to_adjacency_list()
+        spc_dictionary_txt += minspc.mol.to_adjacency_list()
         spc_dictionary_txt += "\n"
-
+    
     with open(os.path.join(path,"thermo_library.py"),'w') as f:
         f.write(thermo_text)
-
+    
     index = 0
     reaction_text = ""
     for ts,kinetics in ts_dict.items():
+        if len(kinetics) == 0:
+            continue
+        minkinind = min({k:v for k,v in kinetics.items() if v.valid},key=lambda x: kinetics[x].barrier_f)
+        kin = kinetics[minkinind]
         if reaction_text == "":
-            reaction_text += kinetics.create_RMG_header("reaction_library",lib_short_desc="",lib_long_desc="")
-        reaction_text += kinetics.rmg_kinetics_text.replace("{index}",str(index)) 
+            reaction_text += kin.create_RMG_header("reaction_library",lib_short_desc="",lib_long_desc="")
+        reaction_text += kin.rmg_kinetics_text.replace("{index}",str(index)) 
         index += 1
         reaction_text += "\n"
-
+    
     if os.path.exists(os.path.join(path,"reaction_library")):
         shutil.rmtree(os.path.join(path,"reaction_library"))
-
+    
     os.makedirs(os.path.join(path,"reaction_library"))
-
     
     with open(os.path.join(path,"reaction_library","reactions.py"),'w') as f:
         f.write(reaction_text)
-
+    
     with open(os.path.join(path,"reaction_library","dictionary.txt"),'w') as f:
         f.write(spc_dictionary_txt)
         
