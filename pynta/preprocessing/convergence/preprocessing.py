@@ -17,7 +17,6 @@ from ase.constraints import FixAtoms
 
 from pynta.utils import name_to_ase_software
 
-
 # ============================================================
 # Logging
 # ============================================================
@@ -96,9 +95,6 @@ def fit_lattice_constant_from_scan(
     a_opt : float
         Refined numerical minimum
     """
-
-    import numpy as np
-    from scipy import optimize as opt
 
     # ---- Optional, safe matplotlib import ----
     plotting_available = False
@@ -209,7 +205,142 @@ def fit_lattice_constant_from_scan(
 
     return a_interp, a_opt
 
+# ============================================================
+# Alloy lattice constant helpers (from lattice_constant.py)
+# ============================================================
 
+def infer_crystal_from_surface(surface_type, crystal=None):
+    """
+    surface_type examples: 'fcc111', 'fcc100', 'bcc110', 'hcp0001'
+    Returns crystal: 'fcc', 'bcc', or 'hcp'
+    """
+    if crystal is not None:
+        return crystal.lower()
+
+    st = surface_type.lower()
+    if st.startswith("fcc"):
+        return "fcc"
+    if st.startswith("bcc"):
+        return "bcc"
+    if st.startswith("hcp"):
+        return "hcp"
+    raise ValueError(
+        f"Cannot infer crystal from surface_type='{surface_type}'. Provide crystal explicitly."
+    )
+
+
+def minimal_cubic_repeat_for_fraction(xA, basis_atoms, maxrep=6, tol=1e-12):
+    """
+    Find smallest (n,n,n) repeat such that xA * (basis_atoms*n^3) is an integer.
+    basis_atoms = atoms in the cubic conventional cell:
+      - fcc: 4
+      - bcc: 2
+    """
+    for n in range(1, maxrep + 1):
+        N = basis_atoms * (n**3)
+        nA = xA * N
+        if abs(nA - round(nA)) < tol:
+            return (n, n, n), int(round(nA)), N
+    raise ValueError(
+        f"Cannot represent xA={xA} exactly with (n,n,n) up to n={maxrep}. "
+        "Increase maxrep or choose a different cell."
+    )
+
+
+def build_ordered_alloy_cubic(A, B, xA, crystal, a_guess, maxrep=6):
+    """
+    Deterministically build an ordered alloy on a cubic parent lattice (fcc or bcc),
+    using the smallest cubic supercell that exactly matches the requested fraction.
+
+    Returns
+    -------
+    atoms : ase.Atoms
+    sc : tuple (n,n,n)
+    counts : (nA, nB, N)
+    """
+    crystal = crystal.lower()
+    if crystal == "fcc":
+        basis_atoms = 4
+    elif crystal == "bcc":
+        basis_atoms = 2
+    else:
+        raise ValueError("Only 'fcc' and 'bcc' are supported by this ordered cubic alloy builder.")
+
+    sc, nA, N = minimal_cubic_repeat_for_fraction(xA, basis_atoms=basis_atoms, maxrep=maxrep)
+
+    atoms = bulk(A, crystalstructure=crystal, a=a_guess, cubic=True).repeat(sc)
+
+    # deterministic decoration: first nA sites are A, rest are B
+    symbols = [B] * N
+    for i in range(nA):
+        symbols[i] = A
+    atoms.set_chemical_symbols(symbols)
+    atoms.set_pbc(True)
+
+    return atoms, sc, (nA, N - nA, N)
+
+
+def optimize_a_by_energy_minimization(atoms0, calc, a_guess, da=0.10, scan_step=0.01):
+    """
+    Minimize energy vs lattice constant a for a cubic cell by isotropically scaling the cell.
+    """
+    cell0 = atoms0.get_cell().array
+    Lx0 = np.linalg.norm(cell0[0])
+
+    # estimate how many conventional cells along x (assumes atoms0 built from bulk(..., cubic=True).repeat(sc))
+    scx = int(round(Lx0 / a_guess))
+
+    def energy_at_a(a_target):
+        # scale factor relative to the current supercell x-length
+        s = (a_target * scx) / Lx0
+        atoms = atoms0.copy()
+        atoms.set_cell(atoms.get_cell() * s, scale_atoms=True)
+        atoms.calc = calc
+        return atoms.get_potential_energy()
+
+    avals = np.arange(a_guess - da, a_guess + da + 1e-12, scan_step)
+    Evals = np.array([energy_at_a(a) for a in avals])
+
+    inds = np.argsort(Evals)[:7] if len(Evals) >= 7 else np.argsort(Evals)
+    p = np.polyfit(avals[inds], Evals[inds], 2)
+    a_est = -p[1] / (2.0 * p[0])
+
+    out = opt.minimize_scalar(
+        energy_at_a,
+        method="bounded",
+        bounds=(a_est - 0.02, a_est + 0.02),
+        options={"xatol": 1e-4},
+    )
+
+    return {
+        "a0_A": float(out.x),
+        "Emin_eV": float(out.fun),
+        "success": bool(out.success),
+        "message": out.message,
+        "scan_avals_A": avals.tolist(),
+        "scan_Evals_eV": Evals.tolist(),
+    }
+
+
+def get_alloy_lattice_constant_min_energy(A, B, xA, surface_type, calc, a_guess,
+                                         crystal=None, maxrep=6, da=0.10, scan_step=0.01):
+    """
+    Convenience wrapper: infer crystal from surface_type, build ordered alloy, optimize a.
+    """
+    crystal = infer_crystal_from_surface(surface_type, crystal=crystal)
+    if crystal not in ("fcc", "bcc"):
+        raise ValueError("Only fcc/bcc are supported by get_alloy_lattice_constant_min_energy().")
+
+    atoms0, sc, counts = build_ordered_alloy_cubic(A, B, xA, crystal, a_guess, maxrep=maxrep)
+    optres = optimize_a_by_energy_minimization(atoms0, calc, a_guess, da=da, scan_step=scan_step)
+
+    return {
+        "crystal": crystal,
+        "surface_type": surface_type,
+        "supercell_repeat": sc,
+        "counts": {"nA": counts[0], "nB": counts[1], "N": counts[2]},
+        **optres,
+    }
 # ============================================================
 # Prep class
 # ============================================================
@@ -238,8 +369,12 @@ class Prep:
         lattice_opt_software_kwargs=None,
         path=None,
         frozen_layers = None,
+        alloy_A = None,
+        alloy_B = None,
+        alloy_xA = None,
+        alloy_maxrep = 6,
+        alloy_scan_step = 0.01,
         **kwargs,
-
     ):
 
         # ---- Detect user-provided arguments ----
@@ -260,7 +395,12 @@ class Prep:
             software_kwargs=software_kwargs,
             lattice_opt_software_kwargs=lattice_opt_software_kwargs,
             path=path,
-            frozen_layers = frozen_layers
+            frozen_layers = frozen_layers,
+            alloy_A = alloy_A,
+            alloy_B = alloy_B,
+            alloy_xA = alloy_xA,
+            alloy_maxrep = alloy_maxrep,
+            alloy_scan_step = alloy_scan_step
         )
 
         self.user_args = {
@@ -295,6 +435,13 @@ class Prep:
             self.nslab = len(read(self.slab))
         self.frozen_layers = frozen_layers
         self.freeze_ind = int((self.nslab/self.layers)*self.frozen_layers)
+
+        # ---- alloy lattice constant kwargs ----
+        self.alloy_A = alloy_A
+        self.alloy_B = alloy_B
+        self.alloy_xA = alloy_xA
+        self.alloy_maxrep = alloy_maxrep
+        self.alloy_scan_step = alloy_scan_step
 
 
         # ---- software_kwargs handling ----
@@ -341,6 +488,7 @@ class Prep:
             logger.info("Using user-provided lattice_opt_software_kwargs")
 
         self.path = path or os.getcwd()
+
 
         # ---- Load or initialize provenance ----
         self.provenance_file = "provenance.json"
@@ -402,6 +550,8 @@ class Prep:
                 if slab_file and os.path.exists(slab_file):
                     self.slab = read(slab_file)
 
+            if step["step"] == "calculate_alloy_lattice_parameters":
+                self.a = step["outputs"].get("lattice_constant", self.a)
     # --------------------------------------------------------
     # Workflow discovery & execution
     # --------------------------------------------------------
@@ -563,6 +713,65 @@ class Prep:
     # ========================================================
 
     @step(1)
+    @requires("optimize_alloy_lattice", "alloy_A", "alloy_B", "alloy_xA")
+    def calculate_alloy_lattice_parameters(self, da=0.1):
+        """
+        Determine fcc/bcc alloy lattice constant by:
+          - building a deterministic ordered alloy cell matching composition
+          - scanning + minimizing energy vs a
+        Sets self.a and records provenance.
+        """
+        logger.info("Optimizing ALLOY bulk lattice constant (ordered minimal cell)")
+
+        calc = name_to_ase_software(self.software)(**self.lattice_opt_software_kwargs)
+
+        res = get_alloy_lattice_constant_min_energy(
+            A=self.alloy_A,
+            B=self.alloy_B,
+            xA=self.alloy_xA,
+            surface_type=self.surface_type,
+            crystal=None,                 # inferred from surface_type unless you add an override
+            calc=calc,
+            a_guess=self.a0,
+            maxrep=self.alloy_maxrep,
+            da=da,
+            scan_step=self.alloy_scan_step,
+        )
+
+        if not res["success"]:
+            raise RuntimeError(f"Alloy lattice optimization failed: {res['message']}")
+
+        self.a = res["a0_A"]
+        logger.info(
+            f"Optimized alloy lattice constant: a = {self.a:.6f} Å "
+            f"(supercell={res['supercell_repeat']}, counts={res['counts']})"
+        )
+
+        self._record_step(
+            "calculate_alloy_lattice_parameters",
+            inputs={
+                "A": self.alloy_A,
+                "B": self.alloy_B,
+                "xA": self.alloy_xA,
+                "surface_type": self.surface_type,
+                "a_guess": self.a0,
+                "da": da,
+                "maxrep": self.alloy_maxrep,
+                "scan_step": self.alloy_scan_step,
+            },
+            outputs={
+                "lattice_constant": self.a,
+                "supercell_repeat": res["supercell_repeat"],
+                "counts": res["counts"],
+                "Emin_eV": res["Emin_eV"],
+                "scan_avals_A": res["scan_avals_A"],
+                "scan_Evals_eV": res["scan_Evals_eV"],
+            },
+        )
+
+        return self.a
+    
+    @step(2)
     @requires("optimize_lattice")
     def calculate_lattice_parameters(self, da=0.1):
         logger.info("Optimizing bulk lattice constant")
@@ -592,7 +801,7 @@ class Prep:
 
         return self.a
 
-    @step(2)
+    @step(3)
     @requires("generate_slab")
     def generate_slab(self, a=None):
         logger.info("Generating slab")
@@ -650,7 +859,7 @@ class Prep:
         return self.slab
 
 
-    @step(3)
+    @step(4)
     @requires("ecut_values", "kmesh_values")
     def run_convergence(self, ecut_values, kmesh_values):
         logger.info("Running convergence tests")
@@ -689,7 +898,7 @@ class Prep:
 
         return results
 
-    @step(4)
+    @step(5)
     @requires("run_adsorbate_convergence", "ecut_values", "kmesh_values")
     def run_convergence_adsorbate(
         self,
