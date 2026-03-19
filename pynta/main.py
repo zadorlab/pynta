@@ -480,6 +480,7 @@ class Pynta:
                 calculate_transition_states=True,launch=True):
         """
         generate and launch a Pynta Fireworks Workflow
+        if optimize_slab is true slab_init.xyz was given by the user and only optimization happens. User's slab should be renamed as slab_init.xyz
         if calculate_adsorbates is true generates firework jobs for adsorbates, otherwise assumes they are not needed
         if calculate_transition_states is true generates fireworks jobs for transition states, otherwise assumes they are not needed
         if launch is true launches the fireworks workflow in infinite mode...this generates a process that will continue to spawn jobs
