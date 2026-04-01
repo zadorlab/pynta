@@ -66,7 +66,7 @@ def generate_unique_sites(slab, sites, nslab, site_bond_cutoff, adsorbate_height
         g = slab.copy()
         add_adsorbate_to_site(
             g,
-            adsorbate=Atoms("He"),
+            adsorbate=Atoms("Ne"),
             surf_ind=0,
             site=site,
             height=adsorbate_height,
@@ -894,36 +894,33 @@ def get_adsorbate_dist_from_center(atoms,nslab):
 
 def generate_unique_site_additions_vacancy(
     geo, sites, slab, nslab, site_bond_cutoff, xyz_path,
+    get_sites,                          # <-- REQUIRED: function that returns site dicts for an Atoms
     site_bond_params_list=None,
     sites_list=None,
 
     # --- Noble gas selection ---
-    tag_symbol=None,          # e.g. "He","Ne","Ar","Kr","Xe","Rn"; None = auto-pick
+    tag_symbol=None,
 
     # --- Drop controls ---
     dz=0.1,
     max_drop=10.0,
     margin=0.25,
     min_clearance=1.3,
-    stable_steps=2,           # here used as "patience": stop after this many non-improving steps
-    noble_gases=("He", "Ne", "Ar", "Kr", "Xe", "Rn"),
+    stable_steps=2,                     # "patience": stop after this many non-improving cn steps
+    noble_gases=("Ne", "Ar", "Kr", "Xe", "Rn"),
 
     # --- Output controls ---
     save_all_drop_steps=True,
 ):
     """
-    Detect vacancy sites and add them to `sites`. For defect sites, place a noble gas at the
-    vacancy and drop it along -z until the coordination number (cn) reaches its maximum
-    (operationally: cn stops increasing for `stable_steps` steps). Records the whole trajectory.
-
-    cn := number of NON-noble-gas atoms within cutoff of the tag (can be large).
-
-    Returns (9-tuple):
-      geoms_unique,
-      site_bond_params_unique,
-      sites_unique,
-      stable_geoms, stable_params, stable_sites, stable_meta,
-      drop_geoms, drop_meta
+    Returns:
+      geom_all,                 # geoms_unique + maxcn_geoms
+      site_bond_params_all,     # placeholder list aligned with geom_all (empty params by default)
+      sites_lists_all,          # sites_lists_all[i] == get_sites(geom_all[i])
+      maxcn_geoms,
+      maxcn_meta,
+      drop_geoms,
+      drop_meta
     """
     if site_bond_params_list is None:
         site_bond_params_list = []
@@ -970,14 +967,8 @@ def generate_unique_site_additions_vacancy(
         return float(np.min(d))
 
     def _drop_until_max_cn_with_traj(base_atoms, i_tag, cutoff, defect_id):
-        """
-        Drop along -z, record frames/meta, stop when cn no longer improves for `stable_steps` steps.
-        Return best (max-cn) frame as found["max_cn"].
-        """
         atoms = base_atoms.copy()
-
-        frames = []
-        meta = []
+        frames, meta = [], []
 
         max_cn = -1
         best_atoms = None
@@ -1027,19 +1018,9 @@ def generate_unique_site_additions_vacancy(
         found = {"max_cn": best_atoms, "max_cn_value": int(max_cn), "best_step": int(best_step)}
         return found, frames, meta
 
-    # ---------- detect vacancies and merge into sites ----------
+    # ---------- detect vacancies (ONLY for locating where to drop) ----------
     slab_for_detect = read(xyz_path)
     defect_sites, _ = detect_vacancy_sites_from_coordination(slab_for_detect, nslab)
-
-    for ds in defect_sites:
-        ds = dict(ds)
-        ds.setdefault("normal", np.array([0.0, 0.0, 1.0]))
-        ds.setdefault("morphology", "defect")
-        ds.setdefault("site", "defect")
-        if "surface" not in ds and len(sites) > 0 and "surface" in sites[0]:
-            ds["surface"] = sites[0]["surface"]
-        if not any(sites_match(ds, s, slab) for s in sites):
-            sites = sites + [ds]
 
     # ---------- choose noble gas tag ----------
     allowed_tags = ("He", "Ne", "Ar", "Kr", "Xe", "Rn")
@@ -1052,120 +1033,85 @@ def generate_unique_site_additions_vacancy(
         sym = tag_symbol
     tag = Atoms(sym, positions=[[0, 0, 0]])
 
-    # ---------- coordination cutoff ----------
+    # ---------- cutoff for cn counting ----------
     d1 = _estimate_first_neighbor_distance(slab_for_detect)
-    cutoff = d1 + margin
+    cn_cutoff = d1 + margin
 
-    # ---------- compute unoccupied sites ----------
-    occ = get_occupied_sites(geo, sites, nslab, site_bond_cutoff)
-    unocc = [site for site in sites if not any(sites_match(site, osite, slab) for osite in occ)]
-
-    site_bond_params_lists = [deepcopy(site_bond_params_list) for _ in range(len(unocc))]
-    sites_lists = [deepcopy(sites_list) for _ in range(len(unocc))]
-
-    geoms = []
-
-    stable_geoms = []
-    stable_meta = []
-    stable_params = []
-    stable_sites = []
-
+    # ---------- build maxcn_geoms by dropping tag at each detected vacancy ----------
+    maxcn_geoms = []
+    maxcn_meta = []
     drop_geoms = []
     drop_meta = []
 
-    defect_counter = 0
+    for defect_id, ds in enumerate(defect_sites):
+        g0 = geo.copy()
+        tag_here = tag.copy()
+        tag_here.positions[:] = np.array(ds["position"], dtype=float)
+        g0 += tag_here
+        i_tag = len(g0) - 1
 
-    for i, site in enumerate(unocc):
-        geom = geo.copy()
-        is_defect = (site.get("site") == "defect") and (site.get("morphology") == "defect")
+        found, frames, meta = _drop_until_max_cn_with_traj(
+            g0, i_tag=i_tag, cutoff=cn_cutoff, defect_id=defect_id
+        )
 
-        if is_defect:
-            # place tag at vacancy position
-            tag_here = tag.copy()
-            tag_here.positions[:] = np.array(site["position"], dtype=float)
-            geom += tag_here
-            i_tag = len(geom) - 1
-
-            found, frames, meta = _drop_until_max_cn_with_traj(
-                geom, i_tag=i_tag, cutoff=cutoff, defect_id=defect_counter
-            )
-
+        if save_all_drop_steps:
             drop_geoms.extend(frames)
             drop_meta.extend(meta)
 
-            best = found["max_cn"]
-            best_cn = found["max_cn_value"]
-            best_step = found["best_step"]
-            cn, neigh = _tag_neighbors(best, i_tag, cutoff)
+        best = found["max_cn"]
+        maxcn_geoms.append(best)
+        maxcn_meta.append({
+            "defect_id": int(defect_id),
+            "max_cn": int(found["max_cn_value"]),
+            "best_step": int(found["best_step"]),
+            "site_pos": np.array(ds["position"]).tolist(),
+            "cn_cutoff": float(cn_cutoff),
+            "tag_symbol": sym,
+        })
 
-            stable_geoms.append(best)
-            stable_meta.append({
-                "defect_id": int(defect_counter),
-                "tag_symbol": sym,
-                "cn": int(cn),
-                "neighbor_indices": neigh,
-                "cutoff": float(cutoff),
-                "dz": float(dz),
-                "max_drop": float(max_drop),
-                "min_clearance": float(min_clearance),
-                "patience_steps": int(stable_steps),
-                "best_step": int(best_step),
-                "max_cn_value": int(best_cn),
-                "site_pos": np.array(site["position"]).tolist(),
-                "note": "max_cn_frame",
-            })
+    # ---------- "main" geoms: keep your original behavior for normal sites ----------
+    # Use original `sites` list (terrace sites) to generate site-tagged structures.
+    # IMPORTANT: we do NOT add ds as defect sites to `sites` anymore.
+    occ = get_occupied_sites(geo, sites, nslab, site_bond_cutoff)
+    unocc = [site for site in sites if not any(sites_match(site, osite, slab) for osite in occ)]
 
-            p2 = deepcopy(site_bond_params_list)
-            p2.append({"site_pos": np.array(site["position"]).tolist(),
-                       "ind": None, "k": 100.0, "deq": 0.0, "cn": int(cn)})
-            stable_params.append(p2)
-            stable_sites.append(deepcopy(sites_list) + [site])
+    geoms = []
+    for site in unocc:
+        g = geo.copy()
+        add_adsorbate_to_site(g, adsorbate=tag, surf_ind=0, site=site, height=1.5)
+        geoms.append(g)
 
-            defect_counter += 1
+    # reduce by symmetry like before
+    clusters = get_unique_sym_struct_index_clusters(geoms)
+    geoms_unique = [geoms[c[0]] for c in clusters]
 
-            # keep the initial vacancy-centered geometry in main list
-            geoms.append(geom)
+    # ---------- NEW: geom_all = geoms_unique + maxcn_geoms ----------
+    geom_all = geoms_unique + maxcn_geoms
 
-        else:
-            # unchanged behavior for normal sites
-            add_adsorbate_to_site(geom, adsorbate=tag, surf_ind=0, site=site, height=1.5)
-            geoms.append(geom)
+    # ---------- NEW: sites_lists are computed from get_sites(geom_all[i]) ----------
+    # This ensures morphology/site labels come from get_sites() (not "defect").
+    sites_lists_all = []
+    for atoms in geom_all:
+        sites_out = get_sites(atoms)     # <-- must return list[dict]
+        sites_lists_all.append(sites_out)
 
-        # bookkeeping for the main geoms list
-        pos = np.array(site["position"]).tolist()
-        params = {"site_pos": pos, "ind": None, "k": 100.0, "deq": 0.0}
-        site_bond_params_lists[i].append(params)
-        sites_lists[i].append(site)
-
-    # original symmetry selection for geoms
-    indclusters = get_unique_sym_struct_index_clusters(geoms)
-    inds = []
-    for cluster in indclusters:
-        min_dist = np.inf
-        indout = None
-        for ind in cluster:
-            d = get_adsorbate_dist_from_center(geoms[ind], nslab)
-            if d < min_dist:
-                indout = ind
-                min_dist = d
-        inds.append(indout)
-
-    geoms_unique = [geoms[ind] for ind in inds]
-    site_bond_params_unique = [site_bond_params_lists[ind] for ind in inds]
-    sites_unique = [sites_lists[ind] for ind in inds]
+    # If your downstream expects params aligned with images, create placeholders
+    site_bond_params_all = [deepcopy(site_bond_params_list) for _ in range(len(geom_all))]
 
     return (
-        geoms_unique,
-        site_bond_params_unique,
-        sites_unique,
-        stable_geoms, stable_params, stable_sites, stable_meta,
-        drop_geoms, drop_meta,
+        geom_all,
+        site_bond_params_all,
+        sites_lists_all,
+        maxcn_geoms,
+        maxcn_meta,
+        drop_geoms,
+        drop_meta,
     )
 
 from ase.io import write
 from ase.geometry import get_distances
 
-NOBLE_GASES = {"He", "Ne", "Ar", "Kr", "Xe", "Rn"}
+NOBLE_GASES = {"Ne", "Ar", "Kr", "Xe", "Rn"}
 
 def tag_index(atoms, noble_gases=NOBLE_GASES):
     """Return the index of the single noble-gas tag atom in this Atoms."""
