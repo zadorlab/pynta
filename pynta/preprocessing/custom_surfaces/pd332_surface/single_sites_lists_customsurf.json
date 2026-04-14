@@ -1,0 +1,243 @@
+[
+    {
+        "site": "bridge",
+        "surface": "CustomSurface",
+        "morphology": "subsurf",
+        "position": [
+            3.5697088200000002,
+            1.4745624199999994,
+            18.25133604
+        ],
+        "normal": NaN,
+        "indices": [
+            32,
+            35
+        ],
+        "composition": "PdPd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null",
+        "topology": [
+            32,
+            35
+        ]
+    },
+    {
+        "site": "ontop",
+        "surface": "CustomSurface",
+        "morphology": "terrace",
+        "position": [
+            12.49398087,
+            0.19026612,
+            17.464157080000003
+        ],
+        "normal": [
+            0.07976476,
+            -0.06802362,
+            0.99449
+        ],
+        "indices": [
+            36
+        ],
+        "composition": "Pd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null",
+        "topology": [
+            36
+        ]
+    },
+    {
+        "site": "bridge",
+        "surface": "CustomSurface",
+        "morphology": "sc-tc",
+        "position": [
+            11.15534006,
+            0.42809877,
+            17.67149478
+        ],
+        "normal": [
+            0.13245323,
+            -0.1129565,
+            0.98473193
+        ],
+        "indices": [
+            36,
+            37
+        ],
+        "composition": "PdPd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null",
+        "topology": [
+            36,
+            37
+        ]
+    },
+    {
+        "site": "3fold",
+        "surface": "CustomSurface",
+        "morphology": "sc-tc",
+        "position": [
+            11.30407793,
+            1.20501876,
+            17.740607340000004
+        ],
+        "normal": [
+            0.13245323,
+            -0.1129565,
+            0.98473193
+        ],
+        "indices": [
+            36,
+            37,
+            38
+        ],
+        "composition": "PdPdPd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null",
+        "topology": [
+            36,
+            37,
+            38
+        ]
+    },
+    {
+        "site": "3fold",
+        "surface": "CustomSurface",
+        "morphology": "sc-tc",
+        "position": [
+            -2.3798058786527214,
+            3.837033404315008,
+            17.60238221
+        ],
+        "normal": [
+            0.13245323,
+            -0.1129565,
+            0.98473193
+        ],
+        "indices": [
+            36,
+            37,
+            39
+        ],
+        "composition": "PdPdPd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null",
+        "topology": [
+            36,
+            37,
+            39
+        ]
+    },
+    {
+        "site": "bridge",
+        "surface": "CustomSurface",
+        "morphology": "terrace",
+        "position": [
+            -1.7848544086527198,
+            3.329657084315007,
+            17.464157080000003
+        ],
+        "normal": [
+            0.06648086,
+            -0.05669507,
+            0.99617567
+        ],
+        "indices": [
+            36,
+            39
+        ],
+        "composition": "PdPd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null",
+        "topology": [
+            36,
+            39
+        ]
+    },
+    {
+        "site": "3fold",
+        "surface": "CustomSurface",
+        "morphology": "terrace",
+        "position": [
+            0.8924272113472776,
+            1.0464636543150072,
+            17.679694380000008
+        ],
+        "normal": [
+            0.0,
+            -0.0,
+            1.0
+        ],
+        "indices": [
+            36,
+            39,
+            39
+        ],
+        "composition": "PdPdPd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null",
+        "topology": [
+            36,
+            39,
+            39
+        ]
+    },
+    {
+        "site": "ontop",
+        "surface": "CustomSurface",
+        "morphology": "step",
+        "position": [
+            9.81669925,
+            0.6659314199999999,
+            17.87883247
+        ],
+        "normal": [
+            0.05697912,
+            -0.04859196,
+            0.99719216
+        ],
+        "indices": [
+            37
+        ],
+        "composition": "Pd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null",
+        "topology": [
+            37
+        ]
+    },
+    {
+        "site": "bridge",
+        "surface": "CustomSurface",
+        "morphology": "step",
+        "position": [
+            -4.462136028652725,
+            3.8053223843150072,
+            17.87883247
+        ],
+        "normal": [
+            0.06648086,
+            -0.05669507,
+            0.99617567
+        ],
+        "indices": [
+            37,
+            38
+        ],
+        "composition": "PdPd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null",
+        "topology": [
+            37,
+            38
+        ]
+    }
+]
