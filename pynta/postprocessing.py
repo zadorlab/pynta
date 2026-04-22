@@ -1633,19 +1633,33 @@ def write_rmg_libraries(path,spc_dict,spc_dict_thermo,ts_dict,metal,facet):
         thermo_text += minspc.rmg_species_text.replace("{index}",str(index))
         index += 1
         thermo_text += "\n"
-    
-    for name,spc in spc_dict.items():
-        if isinstance(spc,list):
-            if len(spc) == 0:
+
+    for name, spc in spc_dict.items():
+        if isinstance(spc, dict):
+            valid = {k: v for k, v in spc.items() if v.valid}
+            if len(valid) == 0:
                 continue
-            else:
-                minspc = spc[min({k:v for k,v in spc.items() if v.valid},key=lambda x: spc[x].energy)]
-        else:
-            minspc = spc
-        minspc = spc[min({k:v for k,v in spc.items() if v.valid},key=lambda x: spc[x].energy)]
-        spc_dictionary_txt += name + "\n"
-        spc_dictionary_txt += minspc.mol.to_adjacency_list()
-        spc_dictionary_txt += "\n"
+            mink = min(valid, key=lambda k: spc[k].energy)
+            minspc = spc[mink]
+    else:
+        minspc = spc
+
+    spc_dictionary_txt += name + "\n"
+    spc_dictionary_txt += minspc.mol.to_adjacency_list()
+    spc_dictionary_txt += "\n"
+
+    #for name,spc in spc_dict.items():
+    #    if isinstance(spc,list):
+    #        if len(spc) == 0:
+    #            continue
+    #        else:
+    #            minspc = spc[min({k:v for k,v in spc.items() if v.valid},key=lambda x: spc[x].energy)]
+    #    else:
+    #        minspc = spc
+    #    minspc = spc[min({k:v for k,v in spc.items() if v.valid},key=lambda x: spc[x].energy)]
+    #    spc_dictionary_txt += name + "\n"
+    #    spc_dictionary_txt += minspc.mol.to_adjacency_list()
+    #    spc_dictionary_txt += "\n"
     
     with open(os.path.join(path,"thermo_library.py"),'w') as f:
         f.write(thermo_text)
