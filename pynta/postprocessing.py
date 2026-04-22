@@ -1666,16 +1666,35 @@ def write_rmg_libraries(path,spc_dict,spc_dict_thermo,ts_dict,metal,facet):
     
     index = 0
     reaction_text = ""
-    for ts,kinetics in ts_dict.items():
-        if len(kinetics) == 0:
-            continue
-        minkinind = min({k:v for k,v in kinetics.items() if v.valid},key=lambda x: kinetics[x].barrier_f)
-        kin = kinetics[minkinind]
+    for ts, kinetics in ts_dict.items():
+    # kinetics may be either a dict of Kinetics objects (get_all_configs=True)
+    # or a single Kinetics object (default behavior)
+        if isinstance(kinetics, dict):
+            valid = {k: v for k, v in kinetics.items() if v.valid}
+            if len(valid) == 0:
+                continue
+            mink = min(valid, key=lambda k: kinetics[k].barrier_f)
+            kin = kinetics[mink]
+        else:
+            kin = kinetics
+            if kin is None or (hasattr(kin, "valid") and not kin.valid):
+                continue
         if reaction_text == "":
-            reaction_text += kin.create_RMG_header("reaction_library",lib_short_desc="",lib_long_desc="")
-        reaction_text += kin.rmg_kinetics_text.replace("{index}",str(index)) 
+            reaction_text += kin.create_RMG_header("reaction_library", lib_short_desc="", lib_long_desc="")
+        reaction_text += kin.rmg_kinetics_text.replace("{index}", str(index))
         index += 1
         reaction_text += "\n"
+
+    #for ts,kinetics in ts_dict.items():
+    #    if len(kinetics) == 0:
+    #        continue
+    #    minkinind = min({k:v for k,v in kinetics.items() if v.valid},key=lambda x: kinetics[x].barrier_f)
+    #    kin = kinetics[minkinind]
+    #    if reaction_text == "":
+    #        reaction_text += kin.create_RMG_header("reaction_library",lib_short_desc="",lib_long_desc="")
+    #    reaction_text += kin.rmg_kinetics_text.replace("{index}",str(index)) 
+    #    index += 1
+    #    reaction_text += "\n"
     
     if os.path.exists(os.path.join(path,"reaction_library")):
         shutil.rmtree(os.path.join(path,"reaction_library"))
