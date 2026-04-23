@@ -190,6 +190,38 @@ class Pynta:
             print(f"An error occurred: {e}")
             return None
 
+    def _normalize_sites(self, sites_obj):
+
+        """
+        Accepts either:
+          (A) flat list of site dicts: [{"position":..., "site":..., ...}, ...]
+          (B) list of geometry dicts: [{"geom_index": i, "sites": [ {...}, {...} ]}, ...]
+        Returns a flat list of site dicts (format A). Format A should be ones that are directly loaded from the input sites=
+        """
+        if sites_obj is None:
+            return None
+    
+        # Case A: already a flat list of site dicts
+        if isinstance(sites_obj, list) and (len(sites_obj) == 0 or isinstance(sites_obj[0], dict)):
+            if len(sites_obj) > 0 and "position" in sites_obj[0]:
+                return sites_obj
+    
+            # Case B: list of {"geom_index":..., "sites":[...]}
+            if len(sites_obj) > 0 and "sites" in sites_obj[0]:
+                flat = []
+                for entry in sites_obj:
+                    if not isinstance(entry, dict) or "sites" not in entry:
+                        raise ValueError("Unexpected sites JSON structure; expected dicts with a 'sites' key.")
+                    if entry["sites"] is None:
+                        continue
+                    flat.extend(entry["sites"])
+                return flat
+    
+        raise ValueError(
+            "Unsupported sites format. Provide either a flat list of site dicts "
+            "or a list of {'geom_index':..., 'sites':[...]} dicts."
+        )
+
     def generate_slab(self,skip_launch=False):
         """
         generates and optimizes a small scale slab that can be scaled to a large slab as needed
@@ -249,6 +281,7 @@ class Pynta:
         # 1) If sites not provided directly but sites_file_path is given, load from file.
         elif self.sites_file_path is not None:
             self.sites = self.load_json(self.sites_file_path)
+            self.sites = self._normalize_sites(self.sites)   # added here
 
             if self.site_adjacency_file_path is None:
                 print("Provide site_adjacency_path")
