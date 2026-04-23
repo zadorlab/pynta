@@ -1,5 +1,5 @@
 from pynta.tasks import *
-from pynta.mol import get_adsorbate, generate_unique_site_additions, get_name,generate_unique_placements
+from pynta.mol import get_adsorbate, generate_unique_site_additions, get_name, generate_unique_placements
 from pynta.adsorbate import generate_adsorbate_guesses
 from pynta.coveragedependence import *
 from molecule.molecule import Molecule
@@ -22,39 +22,44 @@ from fireworks.utilities.fw_serializers import load_object_from_file
 from fireworks.core.rocket_launcher import rapidfire
 from fireworks.core.fworker import FWorker
 import fireworks.fw_config
+import json
 import logging
 
-#logger
+# logger
 logger = logging.getLogger(__name__)
 logging.basicConfig(filename='pynta.log', level=logging.INFO)
 
 
 class Pynta:
-    def __init__(self,path,rxns_file,surface_type,metal,label,launchpad_path=None,fworker_path=None,
-        vacuum=8.0,repeats=(3,3,4),slab_path=None,software="Espresso", pbc=(True,True,False),socket=False,queue=False,njobs_queue=0,a=None,
-        software_kwargs={'kpts': (3, 3, 1), 'tprnfor': True, 'occupations': 'smearing',
-                            'smearing':  'marzari-vanderbilt',
-                            'degauss': 0.01, 'ecutwfc': 40, 'nosym': True,
-                            'conv_thr': 1e-6, 'mixing_mode': 'local-TF',
-                            "pseudopotentials": {"Cu": 'Cu.pbe-spn-kjpaw_psl.1.0.0.UPF',"H": 'H.pbe-kjpaw_psl.1.0.0.UPF',"O": 'O.pbe-n-kjpaw_psl.1.0.0.UPF',"C": 'C.pbe-n-kjpaw_psl.1.0.0.UPF',"N": 'N.pbe-n-kjpaw_psl.1.0.0.UPF',
-                            }, },
-        software_kwargs_gas=None,
-        TS_opt_software_kwargs=None,
-        harm_f_software="TBLite",
-        harm_f_software_kwargs={"method": "GFN1-xTB","verbosity":0},
-        irc_mode="fixed", #choose irc mode: 'skip', 'relaxed', 'fixed'
-        lattice_opt_software_kwargs={'kpts': (25,25,25), 'ecutwfc': 70, 'degauss':0.02, 'mixing_mode': 'plain'},
-        reset_launchpad=False,queue_adapter_path=None,num_jobs=25,max_num_hfsp_opts=None,#max_num_hfsp_opts is mostly for fast testing
-        Eharmtol=3.0,Eharmfiltertol=30.0,Nharmmin=5,frozen_layers=2,fmaxopt=0.05,fmaxirc=0.1,c=None,
-        surrogate_metal=None,sites=None,site_adjacency=None,nprocs_harm=1,postprocess=True,
-        calculate_thermodynamic_references=True):
+    def __init__(self, path, rxns_file, surface_type, metal, label, launchpad_path=None, fworker_path=None,
+                 vacuum=8.0, repeats=(3, 3, 4), slab_path=None, software="Espresso", pbc=(True, True, False),
+                 socket=False, queue=False, njobs_queue=0, a=None,
+                 software_kwargs={'kpts': (3, 3, 1), 'tprnfor': True, 'occupations': 'smearing',
+                                  'smearing': 'marzari-vanderbilt',
+                                  'degauss': 0.01, 'ecutwfc': 40, 'nosym': True,
+                                  'conv_thr': 1e-6, 'mixing_mode': 'local-TF',
+                                  "pseudopotentials": {"Cu": 'Cu.pbe-spn-kjpaw_psl.1.0.0.UPF',
+                                                       "H": 'H.pbe-kjpaw_psl.1.0.0.UPF',
+                                                       "O": 'O.pbe-n-kjpaw_psl.1.0.0.UPF',
+                                                       "C": 'C.pbe-n-kjpaw_psl.1.0.0.UPF',
+                                                       "N": 'N.pbe-n-kjpaw_psl.1.0.0.UPF',
+                                                       }, },
+                 software_kwargs_gas=None,
+                 TS_opt_software_kwargs=None,
+                 harm_f_software="TBLite",
+                 harm_f_software_kwargs={"method": "GFN1-xTB", "verbosity": 0},
+                 irc_mode="fixed",  # choose irc mode: 'skip', 'relaxed', 'fixed'
+                 lattice_opt_software_kwargs={'kpts': (25, 25, 25), 'ecutwfc': 70, 'degauss': 0.02,
+                                              'mixing_mode': 'plain'},
+                 reset_launchpad=False, queue_adapter_path=None, num_jobs=25, max_num_hfsp_opts=None,
+                 Eharmtol=3.0, Eharmfiltertol=30.0, Nharmmin=5, frozen_layers=2, fmaxopt=0.05, fmaxirc=0.1, c=None,
+                 surrogate_metal=None,
+                 # NEW/UPDATED: allow direct dicts OR file paths
+                 sites=None, site_adjacency=None,
+                 sites_file_path=None, site_adjacency_file_path=None,
+                 nprocs_harm=1, postprocess=True,
+                 calculate_thermodynamic_references=True):
 
-        if isinstance(software,list): #SumCalculator
-            assert len(software) == len(software_kwargs)
-            assert len(software) == len(software_kwargs_gas)
-        if isinstance(harm_f_software,list): #SumCalculator
-            assert len(harm_f_software) == len(harm_f_software_kwargs)
-            
         self.surface_type = surface_type
         if launchpad_path:
             launchpad = LaunchPad.from_file(launchpad_path)
@@ -76,24 +81,22 @@ class Pynta:
         self.facet = metal + surface_type
         self.fws = []
         self.metal = metal
+
         if surrogate_metal is None:
             self.surrogate_metal = metal
         else:
             self.surrogate_metal = surrogate_metal
+
         self.adsorbate_fw_dict = dict()
         self.software_kwargs = software_kwargs
         self.irc_mode = irc_mode
 
         self.harm_f_software = harm_f_software
         self.harm_f_software_kwargs = harm_f_software_kwargs
-        self.nprocs_harm = nprocs_harm 
-        
-        if not isinstance(software,list):
-            if software.lower() == 'vasp':
-                self.pbc = (True,True,True)
-        else:
-            if any(s.lower() == 'vasp' for s in software):
-                self.pbc = (True,True,True)
+        self.nprocs_harm = nprocs_harm
+
+        if software.lower() == 'vasp':
+            self.pbc = (True, True, True)
 
         if software_kwargs_gas:
             self.software_kwargs_gas = software_kwargs_gas
@@ -107,30 +110,22 @@ class Pynta:
 
         self.software_kwargs_TS = deepcopy(software_kwargs)
         if TS_opt_software_kwargs:
-            for key,val in TS_opt_software_kwargs.items():
+            for key, val in TS_opt_software_kwargs.items():
                 self.software_kwargs_TS[key] = val
 
         self.lattice_opt_software_kwargs = deepcopy(software_kwargs)
-        if self.slab_path is None and lattice_opt_software_kwargs:
-            if not isinstance(lattice_opt_software_kwargs,list):
-                for key,val in lattice_opt_software_kwargs.items():
-                    self.lattice_opt_software_kwargs[key] = val
-            else:
-                self.lattice_opt_software_kwargs = [dict() for i in range(len(lattice_opt_software_kwargs))]
-                for i in range(len(lattice_opt_software_kwargs)):
-                    for key,val in lattice_opt_software_kwargs[i].items():
-                        self.lattice_opt_software_kwargs[i][key] = val
+        if lattice_opt_software_kwargs:
+            for key, val in lattice_opt_software_kwargs.items():
+                self.lattice_opt_software_kwargs[key] = val
 
         self.queue = queue
-        self.fworker = None
-        self.qadapter = None
         if fworker_path:
             self.fworker = FWorker.from_file(fworker_path)
         else:
             self.fworker = FWorker()
 
         self.rxns_file = rxns_file
-        with open(self.rxns_file,'r') as f:
+        with open(self.rxns_file, 'r') as f:
             targets = yaml.safe_load(f)
         rxns_list = []
         spcs_list = []
@@ -139,26 +134,29 @@ class Pynta:
                 rxns_list.append(v)
             else:
                 spcs_list.append(v)
-                
-        for i,r in enumerate(rxns_list):
+
+        for i, r in enumerate(rxns_list):
             r["index"] = i
-        
+
         self.rxns_list = rxns_list
         self.spcs_list = spcs_list
-        
+
         self.slab = read(self.slab_path) if self.slab_path else None
         self.njobs_queue = njobs_queue
         self.num_jobs = num_jobs
         self.label = label
         if queue:
             self.qadapter = load_object_from_file(queue_adapter_path)
+
         if self.slab_path is None:
             self.nslab = int(np.prod(np.array(self.repeats)))
         else:
             self.nslab = len(read(self.slab_path))
+
         self.layers = self.repeats[2]
         self.frozen_layers = frozen_layers
-        self.freeze_ind = int((self.nslab/self.layers)*self.frozen_layers)
+        self.freeze_ind = int((self.nslab / self.layers) * self.frozen_layers)
+
         self.mol_dict = None
         self.Eharmtol = Eharmtol
         self.Eharmfiltertol = Eharmfiltertol
@@ -167,13 +165,30 @@ class Pynta:
         self.fmaxopt = fmaxopt
         self.fmaxirc = fmaxirc
 
+        # UPDATED: allow direct dicts OR JSON file paths
         self.sites = sites
         self.site_adjacency = site_adjacency
-        
+        self.sites_file_path = sites_file_path
+        self.site_adjacency_file_path = site_adjacency_file_path
+
         self.postprocess = postprocess
         self.calculate_thermodynamic_references = calculate_thermodynamic_references
 
         logger.info('Pynta class is initiated')
+
+    def load_json(self, file_path):
+        try:
+            with open(file_path, 'r') as file:
+                return json.load(file)
+        except FileNotFoundError:
+            print(f"The file {file_path} was not found.")
+            return None
+        except json.JSONDecodeError:
+            print(f"Error decoding JSON from the file {file_path}.")
+            return None
+        except Exception as e:
+            print(f"An error occurred: {e}")
+            return None
 
     def generate_slab(self,skip_launch=False):
         """
