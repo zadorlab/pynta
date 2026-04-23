@@ -270,51 +270,51 @@ class Pynta:
             self.slab = slab
             write(self.slab_path,slab)
 
-def analyze_slab(self):
-    full_slab = self.slab
+    def analyze_slab(self):
+        full_slab = self.slab
 
-    # 0) If sites provided directly (e.g., dict), prefer them.
-    if self.sites is not None:
-        if self.site_adjacency is None and self.site_adjacency_file_path is not None:
+        # 0) If sites provided directly (e.g., dict), prefer them.
+        if self.sites is not None:
+            if self.site_adjacency is None and self.site_adjacency_file_path is not None:
+                self.site_adjacency = self.load_json(self.site_adjacency_file_path)
+
+            if self.site_adjacency is None:
+                raise ValueError(
+                    "self.sites was provided directly, but site_adjacency is missing. "
+                    "Provide self.site_adjacency or site_adjacency_file_path."
+                )
+
+            self.site_adjacency = self._normalize_site_adjacency(self.site_adjacency)  # <-- add here
+            self.sites = self._normalize_sites(self.sites)  # (recommended also add here)
+
+        # 1) If sites not provided directly but sites_file_path is given, load from file.
+        elif self.sites_file_path is not None:
+            self.sites = self.load_json(self.sites_file_path)
+            self.sites = self._normalize_sites(self.sites)
+
+            if self.site_adjacency_file_path is None:
+                print("Provide site_adjacency_path")
+                raise SystemExit(1)
+
             self.site_adjacency = self.load_json(self.site_adjacency_file_path)
+            if self.site_adjacency is None:
+                print("Provide site_adjacency_path")
+                raise SystemExit(1)
 
-        if self.site_adjacency is None:
-            raise ValueError(
-                "self.sites was provided directly, but site_adjacency is missing. "
-                "Provide self.site_adjacency or site_adjacency_file_path."
-            )
+            self.site_adjacency = self._normalize_site_adjacency(self.site_adjacency)  # <-- add here
 
-        self.site_adjacency = self._normalize_site_adjacency(self.site_adjacency)  # <-- add here
-        self.sites = self._normalize_sites(self.sites)  # (recommended also add here)
+        # 2) Otherwise do original ACAT autodetection.
+        else:
+            logging.info("Attempting to automatically detect sites based on metal and facet using ACAT")
+            cas = SlabAdsorptionSites(full_slab, self.surface_type, allow_6fold=False, composition_effect=False,
+                                      label_sites=True, surrogate_metal=self.surrogate_metal)
+            self.sites = cas.get_sites()
+            self.site_adjacency = cas.get_neighbor_site_list()
 
-    # 1) If sites not provided directly but sites_file_path is given, load from file.
-    elif self.sites_file_path is not None:
-        self.sites = self.load_json(self.sites_file_path)
-        self.sites = self._normalize_sites(self.sites)
+            self.site_adjacency = self._normalize_site_adjacency(self.site_adjacency)  # <-- optional (safe)
 
-        if self.site_adjacency_file_path is None:
-            print("Provide site_adjacency_path")
-            raise SystemExit(1)
-
-        self.site_adjacency = self.load_json(self.site_adjacency_file_path)
-        if self.site_adjacency is None:
-            print("Provide site_adjacency_path")
-            raise SystemExit(1)
-
-        self.site_adjacency = self._normalize_site_adjacency(self.site_adjacency)  # <-- add here
-
-    # 2) Otherwise do original ACAT autodetection.
-    else:
-        logging.info("Attempting to automatically detect sites based on metal and facet using ACAT")
-        cas = SlabAdsorptionSites(full_slab, self.surface_type, allow_6fold=False, composition_effect=False,
-                                  label_sites=True, surrogate_metal=self.surrogate_metal)
-        self.sites = cas.get_sites()
-        self.site_adjacency = cas.get_neighbor_site_list()
-
-        self.site_adjacency = self._normalize_site_adjacency(self.site_adjacency)  # <-- optional (safe)
-
-    unique_site_lists, unique_site_pairs_lists, single_site_bond_params_lists, double_site_bond_params_lists = \
-        generate_unique_placements(full_slab, self.sites)
+        unique_site_lists, unique_site_pairs_lists, single_site_bond_params_lists, double_site_bond_params_lists = \
+            generate_unique_placements(full_slab, self.sites)
 
         self.single_site_bond_params_lists = single_site_bond_params_lists
         self.single_sites_lists = unique_site_lists
@@ -578,6 +578,13 @@ def analyze_slab(self):
             self.generate_slab()
 
         self.analyze_slab()
+        print("len(sites):", len(self.sites))
+        print("adj size:", len(self.site_adjacency))
+        print("adj min/max key:", min(self.site_adjacency.keys()), max(self.site_adjacency.keys()))
+        
+        missing = [i for i in range(len(self.sites)) if i not in self.site_adjacency]
+        print("missing adjacency keys (first 50):", missing[:50], "count:", len(missing))
+
         self.generate_mol_dict()
         self.generate_atom_maps()
 
