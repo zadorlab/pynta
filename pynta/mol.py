@@ -323,14 +323,31 @@ def generate_unique_placements(slab,sites):
 
             fingerprint = (uni_site_fingerprint,site_fingerprint,round(xydist,3),round(zdist,3))
 
+            #if fingerprint in unique_site_pairs.keys():
+            #    current_sites = unique_site_pairs[fingerprint]
+            #    current_dist = np.linalg.norm(sum([s["position"][:1] for s in current_sites])/2-middle[:1])
+            #    possible_dist = np.linalg.norm((unique_site["position"][:1]+site["position"][:1])/2-middle[:1])
+            #    if possible_dist < current_dist:
+            #        unique_site_pairs[fingerprint] = [unique_site,site]
+            #else:
+            #    unique_site_pairs[fingerprint] = [unique_site,site]
+
             if fingerprint in unique_site_pairs.keys():
                 current_sites = unique_site_pairs[fingerprint]
-                current_dist = np.linalg.norm(sum([s["position"][:1] for s in current_sites])/2-middle[:1])
-                possible_dist = np.linalg.norm((unique_site["position"][:1]+site["position"][:1])/2-middle[:1])
+
+                current_xy = 0.5 * (np.asarray(current_sites[0]["position"][:2], dtype=float) +
+                                    np.asarray(current_sites[1]["position"][:2], dtype=float))
+                possible_xy = 0.5 * (np.asarray(unique_site["position"][:2], dtype=float) +
+                                     np.asarray(site["position"][:2], dtype=float))
+                middle_xy = np.asarray(middle[:2], dtype=float)
+
+                current_dist = np.linalg.norm(current_xy - middle_xy)
+                possible_dist = np.linalg.norm(possible_xy - middle_xy)
+
                 if possible_dist < current_dist:
-                    unique_site_pairs[fingerprint] = [unique_site,site]
+                    unique_site_pairs[fingerprint] = [unique_site, site]
             else:
-                unique_site_pairs[fingerprint] = [unique_site,site]
+                unique_site_pairs[fingerprint] = [unique_site, site]
 
     unique_site_pairs_lists = list(unique_site_pairs.values())
     unique_site_lists = [[unique_site] for unique_site in unique_single_sites]
