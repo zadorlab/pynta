@@ -110,6 +110,34 @@ def write_trajectory_pynta(slab, cas, nslab, site_bond_cutoff, adsorbate_height,
 #    save_sites_to_json(single_sites_lists)
     save_sites_to_json(all_sites)
 
+def save_sites_to_json(single_sits_lists, filename='sites.json'):
+    """Save data to a JSON file with robust type conversion."""
+    import json
+    import numpy as np
+
+    def process(x):
+        if isinstance(x, dict):
+            return {k: process(v) for k, v in x.items()}
+        if isinstance(x, list):
+            return [process(v) for v in x]
+        if isinstance(x, tuple):
+            return [process(v) for v in x]
+        if isinstance(x, np.ndarray):
+            return x.tolist()
+        if isinstance(x, (np.integer, np.floating)):
+            return x.item()
+        if x is None:
+            return "null"
+        if isinstance(x, (str, int, float, bool)):
+            return x
+        # fallback for objects like CustomSurface, ASE objects, etc.
+        return x.__class__.__name__
+
+    with open(filename, "w") as f:
+        json.dump(process(single_sits_lists), f, indent=4)
+
+    print(f"Sites data saved to '{filename}'.")
+
 #def save_sites_to_json(single_sites_lists, filename='sites.json'):
 #    """Save unique sites to a JSON file."""
 #    
@@ -128,47 +156,19 @@ def write_trajectory_pynta(slab, cas, nslab, site_bond_cutoff, adsorbate_height,
 #        else:
 #            return data  # Return the data as is if it's already a native type
 #
-#    # Process the sites data
-#    processed_sites_data = process_data(single_sites_lists)
+#    # Flatten the input if it's a list of lists
+#    if isinstance(single_sites_lists, list) and all(isinstance(item, list) for item in single_sites_lists):
+#        # Flatten the list of lists into a single list of dictionaries
+#        processed_sites_data = process_data([item for sublist in single_sites_lists for item in sublist])
+#    else:
+#        # If it's already a single list of dictionaries, process it directly
+#        processed_sites_data = process_data(single_sites_lists)
 #
 #    # Save to JSON file
 #    with open(filename, "w") as f:
 #        json.dump(processed_sites_data, f, indent=4)
 #
 #    print(f"Sites data saved to '{filename}' with None replaced by 'null'.")
-
-
-def save_sites_to_json(single_sites_lists, filename='sites.json'):
-    """Save unique sites to a JSON file."""
-    
-    def process_data(data):
-        """Recursively convert NumPy types to native Python types and replace None with 'null'."""
-        if isinstance(data, dict):
-            return {key: process_data(value) for key, value in data.items()}
-        elif isinstance(data, list):
-            return [process_data(item) for item in data]
-        elif isinstance(data, np.ndarray):
-            return data.tolist()  # Convert NumPy array to list
-        elif isinstance(data, (np.int64, np.float64)):  # Check for NumPy numeric types
-            return data.item()  # Convert to native Python int or float
-        elif data is None:  # Check for None (Python's equivalent of JSON null)
-            return "null"  # Replace with the string "null"
-        else:
-            return data  # Return the data as is if it's already a native type
-
-    # Flatten the input if it's a list of lists
-    if isinstance(single_sites_lists, list) and all(isinstance(item, list) for item in single_sites_lists):
-        # Flatten the list of lists into a single list of dictionaries
-        processed_sites_data = process_data([item for sublist in single_sites_lists for item in sublist])
-    else:
-        # If it's already a single list of dictionaries, process it directly
-        processed_sites_data = process_data(single_sites_lists)
-
-    # Save to JSON file
-    with open(filename, "w") as f:
-        json.dump(processed_sites_data, f, indent=4)
-
-    print(f"Sites data saved to '{filename}' with None replaced by 'null'.")
 
 
 def write_trajectory_for_acat(slab, cas, trajectory_filename):
@@ -1083,6 +1083,14 @@ def generate_unique_site_additions_vacancy(
             "tag_symbol": sym,
         })
 
+    # ---- ADD THIS HERE (after the loop) ----
+    # Keep only ONE defect geometry: the one with the highest max CN
+    if len(maxcn_meta) > 1:
+        best_j = int(np.argmax([m["max_cn"] for m in maxcn_meta]))
+        maxcn_geoms = [maxcn_geoms[best_j]]
+        maxcn_meta  = [maxcn_meta[best_j]]
+    # ---- end add ----
+
     # ---------- "main" geoms: keep your original behavior for normal sites ----------
     # Use original `sites` list (terrace sites) to generate site-tagged structures.
     # IMPORTANT: we do NOT add ds as defect sites to `sites` anymore.
@@ -1097,19 +1105,73 @@ def generate_unique_site_additions_vacancy(
 
     # reduce by symmetry like before
     clusters = get_unique_sym_struct_index_clusters(geoms)
-    geoms_unique = [geoms[c[0]] for c in clusters]
+    rep_inds = [c[0] for c in clusters]
+    geoms_unique = [geoms[i] for i in rep_inds]
+
+    # Representative sites corresponding to geoms_unique (one site per geometry)
+    unocc_rep_sites = [unocc[i] for i in rep_inds]
 
     # ---------- NEW: geom_all = geoms_unique + maxcn_geoms ----------
     geom_all = geoms_unique + maxcn_geoms
 
-    # ---------- NEW: sites_lists are computed from get_sites(geom_all[i]) ----------
-    # This ensures morphology/site labels come from get_sites() (not "defect").
+    # Build per-geometry "which site is this geometry?" mapping
     sites_lists_all = []
-    for i, atoms in enumerate(geom_all):
+    
+    # For geoms_unique: one entry per symmetry-unique terrace site
+    for i, s in enumerate(unocc_rep_sites):
+        s2 = dict(s)
+        if "topology" not in s2:
+            s2["topology"] = s2.get("indices", [])
+        if "surface" in s2 and s2["surface"] is not None and not isinstance(s2["surface"], str):
+            s2["surface"] = s2["surface"].__class__.__name__
+    
         sites_lists_all.append({
             "geom_index": i,
-            "sites": get_sites(atoms),
+            "sites": [s2],
         })
+    
+    # For maxcn_geoms: append ONCE per defect geometry (usually 1 after your "keep best" filter)
+    offset = len(geoms_unique)
+    for j, meta in enumerate(maxcn_meta):
+        s_def = {
+            "site": "defect",
+            "surface": "CustomSurface",
+            "morphology": "defect",
+            "position": meta["site_pos"],
+            "normal": [0.0, 0.0, 1.0],
+            "indices": [],
+            "composition": "null",
+            "subsurf_index": "null",
+            "subsurf_element": "null",
+            "label": meta.get("tag_symbol", "null"),
+            "topology": [],
+        }
+        sites_lists_all.append({
+            "geom_index": offset + j,
+            "sites": [s_def],
+        })
+
+#----old---
+    # reduce by symmetry like before    
+    #clusters = get_unique_sym_struct_index_clusters(geoms)
+    #geoms_unique = [geoms[c[0]] for c in clusters]
+
+    # ---------- NEW: geom_all = geoms_unique + maxcn_geoms ----------
+    #geom_all = geoms_unique + maxcn_geoms
+
+    # ---------- NEW: sites_lists are computed from get_sites(geom_all[i]) ----------
+    # This ensures morphology/site labels come from get_sites() (not "defect").
+    #sites_lists_all = []
+    #for i, atoms in enumerate(geom_all):
+    #    sites_lists_all.append({
+    #        "geom_index": i,
+    #        "sites": get_sites(atoms),
+    #    })
+    # Sites are slab-defined and identical for every geometry in geom_all, so store once.
+    #sites_lists_all = [{
+    #    "geom_index": 0,
+    #    "sites": get_sites(geo),   # clean slab
+    #}]
     # If your downstream expects params aligned with images, create placeholders
     site_bond_params_all = [deepcopy(site_bond_params_list) for _ in range(len(geom_all))]
 
