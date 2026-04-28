@@ -186,15 +186,57 @@ def generate_adsorbate_guesses(mol,ads,slab,mol_to_atoms_map,metal,
 
     outputs = Parallel(n_jobs=nprocs)(delayed(map_harmonically_forced)(inp) for inp in inputs)
     for i in range(len(outputs)):
-        geo_out,Eharm,_ = outputs[i]
+        geo_out, Eharm, _ = outputs[i]
         if geo_out:
-            del geo_out["constraints"]
-            del geo_out["forces"]
-            geo_out = Atoms(**geo_out)
-            geo_out.calc = None
-            geos_out.append(geo_out)
+            # Remove common non-constructor keys
+            geo_out.pop("constraints", None)
+            geo_out.pop("forces", None)
+
+            # Extract extras that Atoms(...) won't accept
+            mag = geo_out.pop("initial_magmoms", None)
+            energies = geo_out.pop("energies", None)
+
+            # Keep only keys that ASE Atoms(...) accepts
+            allowed = {
+                "symbols", "numbers",
+                "positions", "scaled_positions",
+                "cell", "pbc",
+                "tags", "masses",
+                "momenta", "charges",
+                "magmoms",
+                "constraint",   # note singular
+                "info",
+            }
+            atoms_kwargs = {k: v for k, v in geo_out.items() if k in allowed}
+
+            # (Optional) debug if something is being dropped
+            # dropped = sorted(set(geo_out) - set(atoms_kwargs))
+            # if dropped: print("Dropped keys:", dropped)
+
+            atoms = Atoms(**atoms_kwargs)
+
+            if mag is not None:
+                atoms.set_initial_magnetic_moments(mag)
+
+            # Store energies as metadata if you want to keep it
+            if energies is not None:
+                atoms.info["energies"] = energies
+
+            atoms.calc = None
+            geos_out.append(atoms)
             Eharms.append(Eharm)
             site_bond_params_lists_out.append(site_bond_params_lists[i])
+
+#    for i in range(len(outputs)):
+#        geo_out,Eharm,_ = outputs[i]
+#        if geo_out:
+#            del geo_out["constraints"]
+#            del geo_out["forces"]
+#            geo_out = Atoms(**geo_out)
+#            geo_out.calc = None
+#            geos_out.append(geo_out)
+#            Eharms.append(Eharm)
+#            site_bond_params_lists_out.append(site_bond_params_lists[i])
 
     print("optimized geometries")
     print(len(geos_out))
