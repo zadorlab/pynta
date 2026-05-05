@@ -654,6 +654,37 @@ class Prep:
 
         return self.a
 
+    @step(2.5)
+    def run_lattice_constant_scan(self, da=0.1, a_values=None):
+        logger.info("Running lattice constant scan")
+
+        if a_values is None:
+            a_values = np.arange(self.a0 - da, self.a0 + da + 0.001, 0.01)
+
+        energies = []
+        for a in a_values:
+            atoms = bulk(self.metal, "fcc", a=a, cubic=True)
+            calc = name_to_ase_software(self.software)(**self.lattice_opt_software_kwargs)
+            atoms.calc = calc
+            energies.append(atoms.get_potential_energy())
+
+        a_interp, a_opt = fit_lattice_constant_from_scan(
+            a_values, energies, n_fit=min(7, len(a_values)), bounds_width=da, show_plot=False, save_plot=False
+        )
+
+        self._record_step(
+            "run_lattice_constant_scan",
+            inputs={"a_values": list(a_values), "da": da},
+            outputs={
+                "a_values": list(a_values),
+                "energies": energies,
+                "a_interp": float(a_interp),
+                "a_opt": float(a_opt),
+            },
+        )
+
+        return {"a_values": list(a_values), "energies": energies, "a_interp": float(a_interp), "a_opt": float(a_opt)}
+
     @step(3)
     @requires("generate_slab")
     def generate_slab(self, a=None, slab_xyz="slab.xyz"):
