@@ -305,7 +305,7 @@ def filter_nonunique_TS_guess_indices(geoms,Es):
 def get_fmax(at):
     return np.max(np.abs([np.linalg.norm(at.get_forces()[i,:]) for i in range(at.get_forces().shape[0])]))
 
-def name_to_ase_software(software_name):
+def name_to_ase_software(software_name,module_name=None):
     """
     go from software_name to the associated
     ASE calculator constructor
@@ -313,6 +313,9 @@ def name_to_ase_software(software_name):
     if isinstance(software_name,list):
         return [name_to_ase_software(x) for x in software_name]
     
+    if module_name is None:
+        module_name = software_name
+        
     if software_name == "TBLite" or software_name == "XTB":
         module = import_module("tblite.ase")
         return getattr(module, "TBLite")
@@ -323,7 +326,7 @@ def name_to_ase_software(software_name):
         module = import_module("torch_dftd.torch_dftd3_calculator")
         return getattr(module, software_name)
     else:
-        module = import_module("ase.calculators."+software_name.lower())
+        module = import_module("ase.calculators."+module_name.lower())
         return getattr(module, software_name)
 
 def name_to_ase_opt(opt_name):
