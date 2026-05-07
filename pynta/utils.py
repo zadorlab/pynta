@@ -7,6 +7,7 @@ from ase.utils.structure_comparator import SymmetryEquivalenceCheck
 from ase.io import write, read
 import ase.constraints
 from ase.geometry import get_distances
+from ase.calculators.mixing import SumCalculator
 from copy import deepcopy
 from importlib import import_module
 import numpy as np
@@ -328,6 +329,24 @@ def name_to_ase_software(software_name,module_name=None):
     else:
         module = import_module("ase.calculators."+module_name.lower())
         return getattr(module, software_name)
+
+def to_ase_software(object_name,software_kwargs,module_name=None):
+    if module_name is None:
+        module_name = object_name
+    
+    software_kwargs = copy.deepcopy(software_kwargs)
+    software = name_to_ase_software(object_name,module_name=module_name)
+    
+    if not isinstance(software,list):
+        for k,v in software_kwargs.items():
+            if isinstance(v,dict) and "type" in v.keys():
+                typ = v["type"]
+                dv = {k:v for k,v in v.items() if k != "type"}
+                software_kwargs[k] = to_ase_software(typ,dv,module_name=module_name)
+        
+        return software(**software_kwargs) 
+    else:
+       return SumCalculator([to_ase_software(object_name[i],software_kwargs[i],module_name=module_name[i]) if module_name is not None else to_ase_software(object_name[i],software_kwargs[i]) for i in range(len(object_name))])
 
 def name_to_ase_opt(opt_name):
     """
