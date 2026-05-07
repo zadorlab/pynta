@@ -35,7 +35,7 @@ def sites_match(site1,site2,slab,tol=0.5):
     else:
         return True
     
-def get_occupied_sites(struct,sites,nslab,allowed_site_dict=dict(),site_bond_cutoff=2.5,
+def get_occupied_sites(struct,sites,nslab,allowed_site_dict=dict(),site_bond_cutoff=2.45,
                        site_bond_disruption_cutoff=0.5,cutoff_corrections={"ontop": 0.3}):
     """determine what sites are occupied by what atoms
 
@@ -310,9 +310,18 @@ def name_to_ase_software(software_name):
     go from software_name to the associated
     ASE calculator constructor
     """
+    if isinstance(software_name,list):
+        return [name_to_ase_software(x) for x in software_name]
+    
     if software_name == "TBLite" or software_name == "XTB":
         module = import_module("tblite.ase")
         return getattr(module, "TBLite")
+    elif software_name == "MACECalculator":
+        module = import_module("mace.calculators.mace")
+        return getattr(module, software_name)
+    elif software_name == "TorchDFTD3Calculator":
+        module = import_module("torch_dftd.torch_dftd3_calculator")
+        return getattr(module, software_name)
     else:
         module = import_module("ase.calculators."+software_name.lower())
         return getattr(module, software_name)

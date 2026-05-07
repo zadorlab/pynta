@@ -5,7 +5,8 @@ from ase.io import write, read
 from ase.io.trajectory import Trajectory
 from ase.calculators.socketio import SocketIOCalculator
 from ase.vibrations import Vibrations
-from molecule.molecule import Molecule
+from ase.calculators.mixing import SumCalculator
+from molecule.molecule import Molecule, Group, ATOMTYPES
 from sella import Sella, Constraints, IRC
 from fireworks import *
 from fireworks.core.rocket_launcher import rapidfire
@@ -15,6 +16,7 @@ from fireworks.utilities.fw_serializers import load_object_from_file
 from fireworks.core.fworker import FWorker
 import fireworks.fw_config
 from pysidt.sidt import *
+import pynta.models
 from pynta.transitionstate import get_unique_optimized_adsorbates,determine_TS_construction,get_unique_TS_structs,generate_constraints_harmonic_parameters,get_unique_TS_templates_site_pairings
 from pynta.utils import *
 from pynta.calculator import run_harmonically_forced, map_harmonically_forced, add_sella_constraint
@@ -35,6 +37,7 @@ import signal
 from contextlib import contextmanager
 from copy import deepcopy
 from joblib import Parallel, delayed
+import os 
 
 class OptimizationTask(FiretaskBase):
     def run_task(self, fw_spec):
@@ -99,7 +102,10 @@ class MolecularOptimizationTask(OptimizationTask):
             if "command" in software_kwargs.keys() and "{unixsocket}" in software_kwargs["command"]:
                 software_kwargs["command"] = software_kwargs["command"].format(unixsocket=unixsocket)
 
-        software = name_to_ase_software(self["software"])(**software_kwargs)
+        if not isinstance(self["software"],list):
+            software = name_to_ase_software(self["software"])(**software_kwargs)
+        else:
+            software = SumCalculator([name_to_ase_software(self["software"][i])(**software_kwargs[i]) for i in range(len(self["software"]))])
 
         opt_kwargs = deepcopy(self["opt_kwargs"]) if "opt_kwargs" in self.keys() else dict()
         opt_method = name_to_ase_opt(self["opt_method"]) if "opt_method" in self.keys() else BFGS
@@ -305,7 +311,11 @@ class MolecularOptimizationFailTask(OptimizationTask):
     def run_task(self, fw_spec):
         print(fw_spec)
         software_kwargs = deepcopy(self["software_kwargs"]) if "software_kwargs" in self.keys() else dict()
-        software = name_to_ase_software(self["software"])(**software_kwargs)
+        if not isinstance(self["software"],list):
+            software = name_to_ase_software(self["software"])(**software_kwargs)
+        else:
+            software = SumCalculator([name_to_ase_software(self["software"][i])(**software_kwargs[i]) for i in range(len(self["software"]))])
+
 
         opt_kwargs = deepcopy(self["opt_kwargs"]) if "opt_kwargs" in self.keys() else dict()
         opt_method = name_to_ase_opt(self["opt_method"]) if "opt_method" in self.keys() else BFGS
@@ -343,7 +353,11 @@ class MolecularEnergyTask(EnergyTask):
     optional_params = ["software_kwargs","energy_kwargs","ignore_errors"]
     def run_task(self, fw_spec):
         xyz = self['xyz']
-        software = name_to_ase_software(self["software"])
+        if not isinstance(self["software"],list):
+            software = name_to_ase_software(self["software"])(**software_kwargs)
+        else:
+            software = SumCalculator([name_to_ase_software(self["software"][i])(**software_kwargs[i]) for i in range(len(self["software"]))])
+
         label = self["label"]
         software_kwargs = deepcopy(self["software_kwargs"]) if "software_kwargs" in self.keys() else dict()
         energy_kwargs = deepcopy(self["energy_kwargs"]) if "energy_kwargs" in self.keys() else dict()
@@ -390,7 +404,11 @@ class MolecularVibrationsTask(VibrationTask):
         xyz = self['xyz']
         label = self["label"]
         software_kwargs = deepcopy(self["software_kwargs"]) if "software_kwargs" in self.keys() else dict()
-        software = name_to_ase_software(self["software"])(**software_kwargs)
+        if not isinstance(self["software"],list):
+            software = name_to_ase_software(self["software"])(**software_kwargs)
+        else:
+            software = SumCalculator([name_to_ase_software(self["software"][i])(**software_kwargs[i]) for i in range(len(self["software"]))])
+
         ignore_errors = deepcopy(self["ignore_errors"]) if "ignore_errors" in self.keys() else False
         socket = self["socket"] if "socket" in self.keys() else False
         if socket:
@@ -467,7 +485,7 @@ class MolecularVibrationsTask(VibrationTask):
 
 @explicit_serialize
 class MolecularAdsorbateEstimate(FiretaskBase):
-    required_params = ["mol","mol_name","slab_path","path","metal","facet","sites","site_adjacency",
+    required_params = ["mol","mol_name","slab_path","path","metal","facet","sites","site_adjacency","repeats",
                         "single_site_bond_params_lists", "single_sites_lists",
                         "double_site_bond_params_lists","double_sites_lists",
                         "vib_obj_dict","nslab","Eharmtol","Eharmfiltertol","Nharmmin","pbc",
@@ -478,7 +496,8 @@ class MolecularAdsorbateEstimate(FiretaskBase):
         spawn_jobs = self["spawn_jobs"] if "spawn_jobs" in self.keys() else False
         nprocs = self["nprocs"] if "nprocs" in self.keys() else 1
         path = self["path"]
-
+        repeats = self["repeats"]
+        
         mol = Molecule().from_adjacency_list(self["mol"])
         mol_name = self["mol_name"]
         
@@ -551,7 +570,7 @@ class MolecularAdsorbateEstimate(FiretaskBase):
                     "constraints": vib_constraints}
 
             cfw = collect_firework(previbxyzs,True,["vibrations_firework"],[vib_obj_dict],["vib.json"],[],parents=optfws2,label=mol_name,detour=False,
-                                   postprocess=postprocess,metal=metal,facet=facet,sites=self["sites"],site_adjacency=self["site_adjacency"],slab_path=slab_path)
+                                   postprocess=postprocess,metal=metal,facet=facet,sites=self["sites"],site_adjacency=self["site_adjacency"],repeats=self["repeats"],slab_path=slab_path)
             newwf = Workflow(optfws+optfws2+[cfw],name=mol_name+"_optvib")
             return FWAction(detours=newwf)
         else:
@@ -560,7 +579,7 @@ class MolecularAdsorbateEstimate(FiretaskBase):
 
 @explicit_serialize
 class MolecularTSEstimate(FiretaskBase):
-    required_params = ["rxn","ts_path","slab_path","adsorbates_path","rxns_file","path","metal","facet","sites","site_adjacency",
+    required_params = ["rxn","ts_path","slab_path","adsorbates_path","rxns_file","path","metal","facet","sites","site_adjacency","repeats",
                         "name_to_adjlist_dict", "gratom_to_molecule_atom_maps",
                         "gratom_to_molecule_surface_atom_maps","irc_mode",
                         "vib_obj_dict","opt_obj_dict","nslab","Eharmtol","Eharmfiltertol","Nharmmin","max_num_hfsp_opts","surrogate_metal",
@@ -579,6 +598,7 @@ class MolecularTSEstimate(FiretaskBase):
         facet = self["facet"]
         nslab = self["nslab"]
         sites = self["sites"]
+        repeats = self["repeats"]
         for s in sites:
             s["position"] = np.array(s["position"])
             s["normal"] = np.array(s["normal"])
@@ -615,6 +635,7 @@ class MolecularTSEstimate(FiretaskBase):
         reactant_names = rxn["reactant_names"]
         product_names = rxn["product_names"]
         rxn_name = rxn["reaction"]
+        family_name = rxn["reaction_family"]
 
         mol_dict = {name: Molecule().from_adjacency_list(adj.replace("multiplicity -187","")) for name,adj in self["name_to_adjlist_dict"].items()}
 
@@ -654,7 +675,8 @@ class MolecularTSEstimate(FiretaskBase):
         ts_dict["template_mol_map"] = template_mol_map
         ts_dict["reverse_names"] = reverse_names
         ts_dict["molecule_to_atom_maps"] = [{value:key for key,value in gratom_to_molecule_atom_maps[name].items()} for name in species_names]
-
+        ts_dict["family_name"] = family_name 
+        
         with open(os.path.join(ts_path,"info.json"),'w') as f:
             json.dump(ts_dict,f)
 
@@ -734,7 +756,7 @@ class MolecularTSEstimate(FiretaskBase):
                     "fw_generator_dicts": [self["opt_obj_dict"],[self["vib_obj_dict"],irc_obj_dict_forward,irc_obj_dict_reverse]],
                     "out_names": ["opt.xyz",["vib.json","irc_forward.traj","irc_reverse.traj"]],"future_check_symms": [True,False], "label": "TS"+str(index)+"_"+rxn_name,
                     "postprocess": postprocess, "metal": metal, "facet": facet, "sites": self["sites"], "site_adjacency": self["site_adjacency"],
-                    "slab_path": slab_path})
+                    "slab_path": slab_path, "repeats": repeats})
                 cfw = Firework([ctask],name="TS"+str(index)+"_"+rxn_name+"_collect",spec={"_allow_fizzled_parents": True, "_priority": 5})
                 newwf = Workflow([cfw],name='rxn_'+str(index)+str(rxn_name))
                 return FWAction(detours=newwf) #using detour allows us to inherit children from the original collect to the subsequent collects
@@ -743,24 +765,24 @@ class MolecularTSEstimate(FiretaskBase):
             else:
                 ctask = MolecularCollect({"xyzs":xyzsout,"check_symm":True,"fw_generators": ["optimize_firework",["vibrations_firework"]],
                         "fw_generator_dicts": [self["opt_obj_dict"],[self["vib_obj_dict"]]],
-                        "out_names": ["opt.xyz",["vib.json"]],"future_check_symms": [True,False], "label": "TS"+str(index)+"_"+rxn_name})
+                        "out_names": ["opt.xyz",["vib.json"]],"future_check_symms": [True,False], "label": "TS"+str(index)+"_"+rxn_name, "repeats": repeats})
                 cfw = Firework([ctask],name="TS"+str(index)+"_"+rxn_name+"_collect",spec={"_allow_fizzled_parents": True, "_priority": 5})
                 newwf = Workflow([cfw],name='rxn_'+str(index)+str(rxn_name))
                 return FWAction(detours=newwf) #using detour allows us to inherit children from the original collect to the subsequent collects
         else:
             return FWAction()
 
-def collect_firework(xyzs,check_symm,fw_generators,fw_generator_dicts,out_names,future_check_symms,parents=[],label="",allow_fizzled_parents=False,
+def collect_firework(xyzs,check_symm,fw_generators,fw_generator_dicts,out_names,future_check_symms,repeats,parents=[],label="",allow_fizzled_parents=False,
                      detour=True,postprocess=False,metal=None,facet=None,sites=None,site_adjacency=None,slab_path=None):
     task = MolecularCollect({"xyzs": xyzs, "check_symm": check_symm, "fw_generators": fw_generators,
         "fw_generator_dicts": fw_generator_dicts, "out_names": out_names, "future_check_symms": future_check_symms, "label": label, 
         "detour": detour, "postprocess": postprocess, "metal": metal, "facet": facet, "sites": sites, "site_adjacency": site_adjacency,
-        "slab_path": slab_path})
+        "slab_path": slab_path, "repeats": repeats})
     return Firework([task],parents=parents,name=label+"collect",spec={"_allow_fizzled_parents": allow_fizzled_parents,"_priority": 5})
 
 @explicit_serialize
 class MolecularCollect(CollectTask):
-    required_params = ["xyzs","check_symm","fw_generators","fw_generator_dicts","out_names","future_check_symms","label"]
+    required_params = ["xyzs","check_symm","fw_generators","fw_generator_dicts","out_names","future_check_symms","label","repeats"]
     optional_params = ["detour","postprocess","metal","facet","sites","site_adjacency","slab_path"]
     def run_task(self, fw_spec):
         xyzs = [xyz for xyz in self["xyzs"] if os.path.exists(xyz)] #if the associated task errored a file may not be present
@@ -780,6 +802,7 @@ class MolecularCollect(CollectTask):
         sites = self["sites"] if "sites" in self.keys() else None 
         site_adjacency = self["site_adjacency"] if "site_adjacency" in self.keys() else None 
         slab_path = self["slab_path"] if "slab_path" in self.keys() else None
+        repeats = self["repeats"] if "repeats" in self.keys() else None
         
         for i in range(len(fw_generators)):
             if not isinstance(fw_generators[i],list):
@@ -811,7 +834,7 @@ class MolecularCollect(CollectTask):
                     "fw_generators": fw_generators[1:],"fw_generator_dicts": fw_generator_dicts[1:],
                     "out_names": out_names[1:],"future_check_symms": future_check_symms[1:],"label": self["label"], 
                     "postprocess": postprocess, "metal": metal, "facet": facet, "sites": sites, "site_adjacency": site_adjacency,
-                    "slab_path": slab_path})
+                    "slab_path": slab_path, "repeats": repeats})
             cfw = Firework([task],parents=fws,name=self["label"]+"collect",spec={"_allow_fizzled_parents":True,"_priority": 4})
             newwf = Workflow(fws+[cfw],name=self["label"]+"collect"+str(-len(self["fw_generators"])))
             if detour:
@@ -820,7 +843,7 @@ class MolecularCollect(CollectTask):
                 return FWAction(additions=newwf)
         else: #last round 
             if postprocess:
-                pfw = postprocessing_firework(os.path.split(os.path.split(xyzs[0])[0])[0],metal,facet,sites,site_adjacency,slab_path,self["label"],parents=fws,
+                pfw = postprocessing_firework(os.path.split(os.path.split(xyzs[0])[0])[0],metal,facet,sites,site_adjacency,slab_path,self["label"],repeats,parents=fws,
                     priority=10, allow_fizzled_parents=True)
                 newwf = Workflow(fws+[pfw],name=self["label"]+"collectfinal")
                 if detour:
@@ -833,12 +856,12 @@ class MolecularCollect(CollectTask):
                 else:
                     return FWAction(additions=fws)
 
-def postprocessing_firework(path,metal,facet,sites,site_adjacency,slab_path,label,parents=[],priority=10,allow_fizzled_parents=False):
+def postprocessing_firework(path,metal,facet,sites,site_adjacency,slab_path,label,repeats,parents=[],priority=10,allow_fizzled_parents=False):
     """
     generates firework that marks the species/TS corresponding to path as complete and then postprocesses everything marked as complete 
     in the Pynta run
     """
-    d = {"path" : path, "metal": metal, "facet": facet, "sites": sites, "site_adjacency": site_adjacency, "slab_path": slab_path}
+    d = {"path" : path, "metal": metal, "facet": facet, "sites": sites, "site_adjacency": site_adjacency, "slab_path": slab_path, "repeats": repeats}
     
     t1 = PostprocessingTask(d)
     return Firework([t1],parents=parents,name=label+"_postprocessing",spec={"_allow_fizzled_parents": allow_fizzled_parents,"_priority": priority})
@@ -849,13 +872,14 @@ class PostprocessingTask(FiretaskBase):
     firework that marks the species/TS corresponding to path as complete and then postprocesses everything marked as complete 
     in the Pynta run
     """
-    required_params = ["path","metal","facet","sites","site_adjacency","slab_path"]
+    required_params = ["path","metal","facet","sites","site_adjacency","slab_path","repeats"]
     optional_params = []
     def run_task(self, fw_spec):
         path = self["path"]
         metal = self["metal"]
         facet = self["facet"]
         sites = self["sites"]
+        repeats = self["repeats"]
         for s in sites:
             s["position"] = np.array(s["position"])
             s["normal"] = np.array(s["normal"])
@@ -874,7 +898,7 @@ class PostprocessingTask(FiretaskBase):
         else:
             pynta_path = os.path.split(os.path.split(path)[0])[0]
             
-        spc_dict,ts_dict,spc_dict_thermo = postprocess(pynta_path,metal,facet,sites,site_adjacency,slab_path=slab_path,check_finished=True)
+        spc_dict,ts_dict,spc_dict_thermo = postprocess(pynta_path,metal,facet,sites,site_adjacency,slab_path=slab_path,repeats=repeats,check_finished=True)
         
         write_rmg_libraries(pynta_path,spc_dict,spc_dict_thermo,ts_dict,metal,facet)
     
@@ -946,7 +970,11 @@ class MolecularIRC(FiretaskBase):
             if "command" in software_kwargs.keys() and "{unixsocket}" in software_kwargs["command"]:
                 software_kwargs["command"] = software_kwargs["command"].format(unixsocket=unixsocket)
 
-        software = name_to_ase_software(self["software"])(**software_kwargs)
+        if not isinstance(self["software"],list):
+            software = name_to_ase_software(self["software"])(**software_kwargs)
+        else:
+            software = SumCalculator([name_to_ase_software(self["software"][i])(**software_kwargs[i]) for i in range(len(self["software"]))])
+
 
         opt_kwargs = deepcopy(self["opt_kwargs"]) if "opt_kwargs" in self.keys() else dict()
         run_kwargs = deepcopy(self["run_kwargs"]) if "run_kwargs" in self.keys() else dict()
@@ -1211,8 +1239,58 @@ class TrainCovdepModelTask(FiretaskBase):
         nslab = len(slab)
         allowed_structure_site_structures = generate_allowed_structure_site_structures(os.path.join(pynta_dir,"Adsorbates"),sites,site_adjacency,nslab,max_dist=np.inf)
         
-        ad_energy_dict = get_lowest_adsorbate_energies(os.path.join(pynta_dir,"Adsorbates"))
-        coad_Es = {coadname: get_adsorbate_energies(coad_paths[coadname])[0] for coadname in coadnames}
+        
+        nodes_file = os.path.join(os.path.split(pynta.models.__file__)[0],"finetuned_to_dft_delta_model.json")
+        nodes_isolated = read_nodes(nodes_file)
+        def bond_decomposition_adsorbate(mol):
+            pairs = []
+            bonds = mol.get_all_edges()
+            for bond in bonds:
+                if not (bond.atom1.is_surface_site() and bond.atom2.is_surface_site()):
+                    pairs.append((mol.atoms.index(bond.atom1), mol.atoms.index(bond.atom2)))
+
+            structs = []
+            for pair in pairs:
+                m = mol.copy(deep=True)
+                for ind in pair:
+                    m.atoms[ind].label = "*"
+                structs.append(m)
+
+            return structs
+            
+        sidt_finetuned_to_dft = MultiEvalSubgraphIsomorphicDecisionTreeRegressor(
+                    bond_decomposition_adsorbate,
+                    nodes=nodes_isolated,
+                    root_group = Group().from_adjacency_list("""1 * R u0 px cx {2,[vdW,R,S,D,T,Q]}
+                    2 * Rx u0 px cx {1,[vdW,R,S,D,T,Q]}"""),
+                    r=[ATOMTYPES[x] for x in ["C", "O", "H", "N", "X"]],
+                    r_bonds=[0, 0.05, 1, 2, 3, 4],
+                    r_un=[0],
+                    r_site=["","fcc","hcp","ontop","bridge"],
+                    fract_nodes_expand_per_iter=0.1,
+        )
+        
+        from pynta.coveragedependence import adsorbate_interaction_decomposition
+        nodes_file = os.path.join(os.path.split(pynta.models.__file__)[0],"finetuned_to_dft_delta_model.json")
+        nodes_covdep = read_nodes(nodes_file)
+        r_site = ["","ontop","bridge","hcp","fcc"]
+    
+        r_atoms = ["C","O","N","H","X"]
+        sidt_finetuned_to_covdep = MultiEvalSubgraphIsomorphicDecisionTreeRegressor([adsorbate_interaction_decomposition],
+                                                        nodes=nodes_covdep,
+                                                        r=[ATOMTYPES[x] for x in r_atoms],
+                                                        r_bonds=[1,2,3,4,0.05],
+                                                        r_un=[0],
+                                                        r_site=r_site,
+                                                        max_structures_to_generate_extensions=100,
+                                                        fract_nodes_expand_per_iter=0.025,
+                                                        iter_max=2,
+                                                        iter_item_cap=100,
+                                                        weigh_node_selection_by_occurrence=True,
+                                                        )
+
+        ad_energy_dict = get_lowest_adsorbate_energies(os.path.join(pynta_dir,"Adsorbates"),sidt_finetuned_to_dft=sidt_finetuned_to_dft)
+        coad_Es = {coadname: get_adsorbate_energies(coad_paths[coadname],sidt_finetuned_to_dft=sidt_finetuned_to_dft)[0] for coadname in coadnames}
 
         coadmol_E_dicts = dict()
         coadmol_stability_dicts = dict()
@@ -1277,7 +1355,7 @@ class TrainCovdepModelTask(FiretaskBase):
             init_config = Molecule().from_adjacency_list(adjlist,check_consistency=False)
             new_computed_configs.append(init_config)
             datum_E,datums_stability = process_calculation(d,ad_energy_dict,slab,metal,facet,sites,site_adjacency,pynta_dir,coadmol_E_dicts[coadname],max_dist=3.0,rxn_alignment_min=0.7,
-                coad_disruption_tol=1.1,out_file_name="out",init_file_name="init",vib_file_name="vib_vib",is_ad=None)
+                coad_disruption_tol=1.1,out_file_name="out",init_file_name="init",vib_file_name="vib_vib",is_ad=None,sidt_finetuned_to_dft=sidt_finetuned_to_dft,sidt_finetuned_to_covdep=sidt_finetuned_to_covdep)
             if datum_E:
                 new_datums_E.append(datum_E)
             if datum_E and not datum_E.mol.is_isomorphic(init_config,save_order=True):
@@ -1441,14 +1519,21 @@ class SelectCalculationsTask(FiretaskBase):
         for i,config in enumerate(configs_for_calculation):
             adname = None
             coadname = None
+            breaking = False
             for cname in coad_admol_to_config_for_calculation.keys():
                 for admol_name,config_list in coad_admol_to_config_for_calculation[cname].items():
                     if any(x is config for x in config_list):
                         adname = admol_name
                         coadname = cname
+                        breaking = True
                         break
-                else:
-                    raise ValueError
+                if breaking:
+                    break
+            else:
+                logging.error(config.to_adjacency_list())
+                logging.error(coad_admol_to_config_for_calculation.keys())
+                logging.error([[admol_name for admol_name,config_list in coad_admol_to_config_for_calculation[cname].items()] for cname in coad_admol_to_config_for_calculation.keys()])
+                raise ValueError
             
             partial_admol = admol_name_structure_dict[adname]
             admol_path = admol_name_path_dict[adname]

@@ -489,7 +489,7 @@ class UtilsTest(unittest.TestCase):
             "TS8": {'7': True, '17': True, '8': True, '15': True},
             "TS9": {'29': True, '42': True, '24': True, '15': True},
             "TS10": {'34': True, '27': True, '37': True, '5': True, '25': True},
-            "TS11": {'4': False, '12': False, '13': False},
+            "TS11": {'4': True, '12': True, '13': True},
             "TS12": {'21': True, '31': False, '30': False, '15': True, '25': False},
             "TS13": {'9': True, '11': True},
         }

@@ -49,6 +49,12 @@ class Pynta:
         surrogate_metal=None,sites=None,site_adjacency=None,nprocs_harm=1,postprocess=True,
         calculate_thermodynamic_references=True):
 
+        if isinstance(software,list): #SumCalculator
+            assert len(software) == len(software_kwargs)
+            assert len(software) == len(software_kwargs_gas)
+        if isinstance(harm_f_software,list): #SumCalculator
+            assert len(harm_f_software) == len(harm_f_software_kwargs)
+            
         self.surface_type = surface_type
         if launchpad_path:
             launchpad = LaunchPad.from_file(launchpad_path)
@@ -82,8 +88,12 @@ class Pynta:
         self.harm_f_software_kwargs = harm_f_software_kwargs
         self.nprocs_harm = nprocs_harm 
         
-        if software.lower() == 'vasp':
-            self.pbc = (True,True,True)
+        if not isinstance(software,list):
+            if software.lower() == 'vasp':
+                self.pbc = (True,True,True)
+        else:
+            if any(s.lower() == 'vasp' for s in software):
+                self.pbc = (True,True,True)
 
         if software_kwargs_gas:
             self.software_kwargs_gas = software_kwargs_gas
@@ -101,9 +111,15 @@ class Pynta:
                 self.software_kwargs_TS[key] = val
 
         self.lattice_opt_software_kwargs = deepcopy(software_kwargs)
-        if lattice_opt_software_kwargs:
-            for key,val in lattice_opt_software_kwargs.items():
-                self.lattice_opt_software_kwargs[key] = val
+        if self.slab_path is None and lattice_opt_software_kwargs:
+            if not isinstance(lattice_opt_software_kwargs,list):
+                for key,val in lattice_opt_software_kwargs.items():
+                    self.lattice_opt_software_kwargs[key] = val
+            else:
+                self.lattice_opt_software_kwargs = [dict() for i in range(len(lattice_opt_software_kwargs))]
+                for i in range(len(lattice_opt_software_kwargs)):
+                    for key,val in lattice_opt_software_kwargs[i].items():
+                        self.lattice_opt_software_kwargs[i][key] = val
 
         self.queue = queue
         self.fworker = None
@@ -325,7 +341,7 @@ class Pynta:
                 vib_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":software_kwargs,
                             "constraints": []}
     
-            adest_task = MolecularAdsorbateEstimate({"mol": mol.to_adjacency_list(),"mol_name": sm, "slab_path": self.slab_path,
+            adest_task = MolecularAdsorbateEstimate({"mol": mol.to_adjacency_list(),"mol_name": sm, "slab_path": self.slab_path,"repeats": self.repeats,
                     "path": self.path,"metal": self.metal,"facet": self.surface_type, "sites": self.sites, "site_adjacency": {str(k):v for k,v in self.site_adjacency.items()},
                     "single_site_bond_params_lists": self.single_site_bond_params_lists, "single_sites_lists": self.single_sites_lists,
                     "double_site_bond_params_lists": self.double_site_bond_params_lists, "double_sites_lists": self.double_sites_lists,
@@ -408,7 +424,7 @@ class Pynta:
                     "nslab":self.nslab,"Eharmtol":self.Eharmtol,"Eharmfiltertol":self.Eharmfiltertol,"Nharmmin":self.Nharmmin,
                     "max_num_hfsp_opts":self.max_num_hfsp_opts, "surrogate_metal":self.surrogate_metal,
                     "harm_f_software": self.harm_f_software, "harm_f_software_kwargs": self.harm_f_software_kwargs, "nprocs": self.nprocs_harm,
-                    "postprocess": self.postprocess})
+                    "postprocess": self.postprocess, "repeats": self.repeats})
             reactants = rxn["reactant_names"]
             products = rxn["product_names"]
             parents = []
@@ -454,8 +470,14 @@ class Pynta:
             #setup transition states
             self.setup_transition_states(adsorbates_finished=(not calculate_adsorbates))
 
-        wf = Workflow(self.fws, name=self.label)
-        self.launchpad.add_wf(wf)
+        if len(self.fws) > 1000 and ((not calculate_adsorbates and calculate_transition_states) or (calculate_adsorbates and not calculate_transition_states)):
+            for i,fw in enumerate(self.fws): #this size is difficult for fireworks so split up into individual independent workflows
+                wf = Workflow([fw],name=self.label+"-"+str(i))
+                self.launchpad.add_wf(wf)
+        else:
+            wf = Workflow(self.fws, name=self.label)
+            self.launchpad.add_wf(wf)
+            
 
         if launch:
             self.launch()
@@ -532,7 +554,7 @@ class CoverageDependence:
         
     def setup_pairs_calculations(self):
         tsdirs = [os.path.join(self.pynta_run_directory,t,ind) for t,ind in self.transition_states.items()]
-        outdirs_ad,outdirs_ts = setup_pair_opts_for_rxns(self.path,self.adsorbates,tsdirs,self.coadsorbates,self.surrogate_metal,self.surface_type,self.sites,self.site_adjacency,
+        outdirs_ad,outdirs_ts = setup_pair_opts_for_rxns(self.path,self.pynta_run_directory,self.adsorbates,tsdirs,self.coadsorbates,self.surrogate_metal,self.surface_type,self.sites,self.site_adjacency,
                                                          max_dist=self.max_dist,imag_freq_max=self.imag_freq_max)
         
         for d in outdirs_ad:
