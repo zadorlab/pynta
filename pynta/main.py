@@ -341,7 +341,7 @@ class Pynta:
                 vib_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":software_kwargs,
                             "constraints": []}
     
-            adest_task = MolecularAdsorbateEstimate({"mol": mol.to_adjacency_list(),"mol_name": sm, "slab_path": self.slab_path,
+            adest_task = MolecularAdsorbateEstimate({"mol": mol.to_adjacency_list(),"mol_name": sm, "slab_path": self.slab_path,"repeats": self.repeats,
                     "path": self.path,"metal": self.metal,"facet": self.surface_type, "sites": self.sites, "site_adjacency": {str(k):v for k,v in self.site_adjacency.items()},
                     "single_site_bond_params_lists": self.single_site_bond_params_lists, "single_sites_lists": self.single_sites_lists,
                     "double_site_bond_params_lists": self.double_site_bond_params_lists, "double_sites_lists": self.double_sites_lists,
@@ -424,7 +424,7 @@ class Pynta:
                     "nslab":self.nslab,"Eharmtol":self.Eharmtol,"Eharmfiltertol":self.Eharmfiltertol,"Nharmmin":self.Nharmmin,
                     "max_num_hfsp_opts":self.max_num_hfsp_opts, "surrogate_metal":self.surrogate_metal,
                     "harm_f_software": self.harm_f_software, "harm_f_software_kwargs": self.harm_f_software_kwargs, "nprocs": self.nprocs_harm,
-                    "postprocess": self.postprocess})
+                    "postprocess": self.postprocess, "repeats": self.repeats})
             reactants = rxn["reactant_names"]
             products = rxn["product_names"]
             parents = []

@@ -485,7 +485,7 @@ class MolecularVibrationsTask(VibrationTask):
 
 @explicit_serialize
 class MolecularAdsorbateEstimate(FiretaskBase):
-    required_params = ["mol","mol_name","slab_path","path","metal","facet","sites","site_adjacency",
+    required_params = ["mol","mol_name","slab_path","path","metal","facet","sites","site_adjacency","repeats",
                         "single_site_bond_params_lists", "single_sites_lists",
                         "double_site_bond_params_lists","double_sites_lists",
                         "vib_obj_dict","nslab","Eharmtol","Eharmfiltertol","Nharmmin","pbc",
@@ -496,7 +496,8 @@ class MolecularAdsorbateEstimate(FiretaskBase):
         spawn_jobs = self["spawn_jobs"] if "spawn_jobs" in self.keys() else False
         nprocs = self["nprocs"] if "nprocs" in self.keys() else 1
         path = self["path"]
-
+        repeats = self["repeats"]
+        
         mol = Molecule().from_adjacency_list(self["mol"])
         mol_name = self["mol_name"]
         
@@ -569,7 +570,7 @@ class MolecularAdsorbateEstimate(FiretaskBase):
                     "constraints": vib_constraints}
 
             cfw = collect_firework(previbxyzs,True,["vibrations_firework"],[vib_obj_dict],["vib.json"],[],parents=optfws2,label=mol_name,detour=False,
-                                   postprocess=postprocess,metal=metal,facet=facet,sites=self["sites"],site_adjacency=self["site_adjacency"],slab_path=slab_path)
+                                   postprocess=postprocess,metal=metal,facet=facet,sites=self["sites"],site_adjacency=self["site_adjacency"],repeats=self["repeats"],slab_path=slab_path)
             newwf = Workflow(optfws+optfws2+[cfw],name=mol_name+"_optvib")
             return FWAction(detours=newwf)
         else:
@@ -578,7 +579,7 @@ class MolecularAdsorbateEstimate(FiretaskBase):
 
 @explicit_serialize
 class MolecularTSEstimate(FiretaskBase):
-    required_params = ["rxn","ts_path","slab_path","adsorbates_path","rxns_file","path","metal","facet","sites","site_adjacency",
+    required_params = ["rxn","ts_path","slab_path","adsorbates_path","rxns_file","path","metal","facet","sites","site_adjacency","repeats",
                         "name_to_adjlist_dict", "gratom_to_molecule_atom_maps",
                         "gratom_to_molecule_surface_atom_maps","irc_mode",
                         "vib_obj_dict","opt_obj_dict","nslab","Eharmtol","Eharmfiltertol","Nharmmin","max_num_hfsp_opts","surrogate_metal",
@@ -597,6 +598,7 @@ class MolecularTSEstimate(FiretaskBase):
         facet = self["facet"]
         nslab = self["nslab"]
         sites = self["sites"]
+        repeats = self["repeats"]
         for s in sites:
             s["position"] = np.array(s["position"])
             s["normal"] = np.array(s["normal"])
@@ -754,7 +756,7 @@ class MolecularTSEstimate(FiretaskBase):
                     "fw_generator_dicts": [self["opt_obj_dict"],[self["vib_obj_dict"],irc_obj_dict_forward,irc_obj_dict_reverse]],
                     "out_names": ["opt.xyz",["vib.json","irc_forward.traj","irc_reverse.traj"]],"future_check_symms": [True,False], "label": "TS"+str(index)+"_"+rxn_name,
                     "postprocess": postprocess, "metal": metal, "facet": facet, "sites": self["sites"], "site_adjacency": self["site_adjacency"],
-                    "slab_path": slab_path})
+                    "slab_path": slab_path, "repeats": repeats})
                 cfw = Firework([ctask],name="TS"+str(index)+"_"+rxn_name+"_collect",spec={"_allow_fizzled_parents": True, "_priority": 5})
                 newwf = Workflow([cfw],name='rxn_'+str(index)+str(rxn_name))
                 return FWAction(detours=newwf) #using detour allows us to inherit children from the original collect to the subsequent collects
@@ -763,24 +765,24 @@ class MolecularTSEstimate(FiretaskBase):
             else:
                 ctask = MolecularCollect({"xyzs":xyzsout,"check_symm":True,"fw_generators": ["optimize_firework",["vibrations_firework"]],
                         "fw_generator_dicts": [self["opt_obj_dict"],[self["vib_obj_dict"]]],
-                        "out_names": ["opt.xyz",["vib.json"]],"future_check_symms": [True,False], "label": "TS"+str(index)+"_"+rxn_name})
+                        "out_names": ["opt.xyz",["vib.json"]],"future_check_symms": [True,False], "label": "TS"+str(index)+"_"+rxn_name, "repeats": repeats})
                 cfw = Firework([ctask],name="TS"+str(index)+"_"+rxn_name+"_collect",spec={"_allow_fizzled_parents": True, "_priority": 5})
                 newwf = Workflow([cfw],name='rxn_'+str(index)+str(rxn_name))
                 return FWAction(detours=newwf) #using detour allows us to inherit children from the original collect to the subsequent collects
         else:
             return FWAction()
 
-def collect_firework(xyzs,check_symm,fw_generators,fw_generator_dicts,out_names,future_check_symms,parents=[],label="",allow_fizzled_parents=False,
+def collect_firework(xyzs,check_symm,fw_generators,fw_generator_dicts,out_names,future_check_symms,repeats,parents=[],label="",allow_fizzled_parents=False,
                      detour=True,postprocess=False,metal=None,facet=None,sites=None,site_adjacency=None,slab_path=None):
     task = MolecularCollect({"xyzs": xyzs, "check_symm": check_symm, "fw_generators": fw_generators,
         "fw_generator_dicts": fw_generator_dicts, "out_names": out_names, "future_check_symms": future_check_symms, "label": label, 
         "detour": detour, "postprocess": postprocess, "metal": metal, "facet": facet, "sites": sites, "site_adjacency": site_adjacency,
-        "slab_path": slab_path})
+        "slab_path": slab_path, "repeats": repeats})
     return Firework([task],parents=parents,name=label+"collect",spec={"_allow_fizzled_parents": allow_fizzled_parents,"_priority": 5})
 
 @explicit_serialize
 class MolecularCollect(CollectTask):
-    required_params = ["xyzs","check_symm","fw_generators","fw_generator_dicts","out_names","future_check_symms","label"]
+    required_params = ["xyzs","check_symm","fw_generators","fw_generator_dicts","out_names","future_check_symms","label","repeats"]
     optional_params = ["detour","postprocess","metal","facet","sites","site_adjacency","slab_path"]
     def run_task(self, fw_spec):
         xyzs = [xyz for xyz in self["xyzs"] if os.path.exists(xyz)] #if the associated task errored a file may not be present
@@ -800,6 +802,7 @@ class MolecularCollect(CollectTask):
         sites = self["sites"] if "sites" in self.keys() else None 
         site_adjacency = self["site_adjacency"] if "site_adjacency" in self.keys() else None 
         slab_path = self["slab_path"] if "slab_path" in self.keys() else None
+        repeats = self["repeats"] if "repeats" in self.keys() else None
         
         for i in range(len(fw_generators)):
             if not isinstance(fw_generators[i],list):
@@ -831,7 +834,7 @@ class MolecularCollect(CollectTask):
                     "fw_generators": fw_generators[1:],"fw_generator_dicts": fw_generator_dicts[1:],
                     "out_names": out_names[1:],"future_check_symms": future_check_symms[1:],"label": self["label"], 
                     "postprocess": postprocess, "metal": metal, "facet": facet, "sites": sites, "site_adjacency": site_adjacency,
-                    "slab_path": slab_path})
+                    "slab_path": slab_path, "repeats": repeats})
             cfw = Firework([task],parents=fws,name=self["label"]+"collect",spec={"_allow_fizzled_parents":True,"_priority": 4})
             newwf = Workflow(fws+[cfw],name=self["label"]+"collect"+str(-len(self["fw_generators"])))
             if detour:
@@ -840,7 +843,7 @@ class MolecularCollect(CollectTask):
                 return FWAction(additions=newwf)
         else: #last round 
             if postprocess:
-                pfw = postprocessing_firework(os.path.split(os.path.split(xyzs[0])[0])[0],metal,facet,sites,site_adjacency,slab_path,self["label"],parents=fws,
+                pfw = postprocessing_firework(os.path.split(os.path.split(xyzs[0])[0])[0],metal,facet,sites,site_adjacency,slab_path,self["label"],repeats,parents=fws,
                     priority=10, allow_fizzled_parents=True)
                 newwf = Workflow(fws+[pfw],name=self["label"]+"collectfinal")
                 if detour:
@@ -853,12 +856,12 @@ class MolecularCollect(CollectTask):
                 else:
                     return FWAction(additions=fws)
 
-def postprocessing_firework(path,metal,facet,sites,site_adjacency,slab_path,label,parents=[],priority=10,allow_fizzled_parents=False):
+def postprocessing_firework(path,metal,facet,sites,site_adjacency,slab_path,label,repeats,parents=[],priority=10,allow_fizzled_parents=False):
     """
     generates firework that marks the species/TS corresponding to path as complete and then postprocesses everything marked as complete 
     in the Pynta run
     """
-    d = {"path" : path, "metal": metal, "facet": facet, "sites": sites, "site_adjacency": site_adjacency, "slab_path": slab_path}
+    d = {"path" : path, "metal": metal, "facet": facet, "sites": sites, "site_adjacency": site_adjacency, "slab_path": slab_path, "repeats": repeats}
     
     t1 = PostprocessingTask(d)
     return Firework([t1],parents=parents,name=label+"_postprocessing",spec={"_allow_fizzled_parents": allow_fizzled_parents,"_priority": priority})
@@ -869,13 +872,14 @@ class PostprocessingTask(FiretaskBase):
     firework that marks the species/TS corresponding to path as complete and then postprocesses everything marked as complete 
     in the Pynta run
     """
-    required_params = ["path","metal","facet","sites","site_adjacency","slab_path"]
+    required_params = ["path","metal","facet","sites","site_adjacency","slab_path","repeats"]
     optional_params = []
     def run_task(self, fw_spec):
         path = self["path"]
         metal = self["metal"]
         facet = self["facet"]
         sites = self["sites"]
+        repeats = self["repeats"]
         for s in sites:
             s["position"] = np.array(s["position"])
             s["normal"] = np.array(s["normal"])
@@ -894,7 +898,7 @@ class PostprocessingTask(FiretaskBase):
         else:
             pynta_path = os.path.split(os.path.split(path)[0])[0]
             
-        spc_dict,ts_dict,spc_dict_thermo = postprocess(pynta_path,metal,facet,sites,site_adjacency,slab_path=slab_path,check_finished=True)
+        spc_dict,ts_dict,spc_dict_thermo = postprocess(pynta_path,metal,facet,sites,site_adjacency,slab_path=slab_path,repeats=repeats,check_finished=True)
         
         write_rmg_libraries(pynta_path,spc_dict,spc_dict_thermo,ts_dict,metal,facet)
     
