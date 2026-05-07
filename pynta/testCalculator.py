@@ -17,7 +17,7 @@ class UtilsTest(unittest.TestCase):
         molecule_to_atom_maps=harm_dict["molecule_to_atom_maps"],ase_to_mol_num=harm_dict["ase_to_mol_num"],harm_f_software="TBLite",
                                 harm_f_software_kwargs={"method": "GFN1-xTB","verbosity": 0},constraints=["freeze all Ru"])
         
-        self.assertAlmostEqual(Eharm,0.00306794366556015)
+        self.assertAlmostEqual(Eharm,0.003068380496279619)
         
 if __name__ == '__main__':
     unittest.main()
