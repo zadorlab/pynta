@@ -9,7 +9,7 @@ from ase.data import reference_states,chemical_symbols
 from ase.build import bulk
 from ase.constraints import *
 from ase.calculators.mixing import SumCalculator
-from pynta.utils import name_to_ase_software
+from pynta.utils import to_ase_software
 from sella import Sella, Constraints
 import scipy.optimize as opt
 import copy
@@ -128,9 +128,17 @@ def run_harmonically_forced(atoms,atom_bond_potentials,site_bond_potentials,nsla
                 self.results["energy"] += energy
                 self.results["free_energy"] += energy
                 self.results["forces"] += forces
-            
-        hf = HarmonicallyForced(atom_bond_potentials=atom_bond_potentials,
-                                site_bond_potentials=site_bond_potentials,**harm_f_software_kwargs)
+        
+        hf_kwargs = harm_f_software_kwargs.copy()
+        hf_kwargs["atom_bond_potentials"] = atom_bond_potentials
+        hf_kwargs["site_bond_potentials"] = site_bond_potentials
+        for k,v in hf_kwargs.items():
+            if isinstance(v,dict) and "type" in v.keys():
+                typ = v["type"]
+                dv = {k:v for k,v in v.items() if k != "type"}
+                hf_kwargs[k] = to_ase_software(typ,dv,module_name=harm_f_software)
+        
+        hf = HarmonicallyForced(**hf_kwargs)
     else:
         class HarmonicallyForced(hfsoft[0]):
             def get_energy_forces(self):
@@ -156,9 +164,19 @@ def run_harmonically_forced(atoms,atom_bond_potentials,site_bond_potentials,nsla
                 self.results["energy"] += energy
                 self.results["free_energy"] += energy
                 self.results["forces"] += forces
-            
-        hf = SumCalculator([HarmonicallyForced(atom_bond_potentials=atom_bond_potentials,
-                                site_bond_potentials=site_bond_potentials,**harm_f_software_kwargs[0]),hfsoft[1](**harm_f_software_kwargs[1])])
+        
+        hf_kwargs = harm_f_software_kwargs[0].copy()
+        hf_kwargs["atom_bond_potentials"] = atom_bond_potentials
+        hf_kwargs["site_bond_potentials"] = site_bond_potentials
+        for k,v in hf_kwargs.items():
+            if isinstance(v,dict) and "type" in v.keys():
+                typ = v["type"]
+                dv = {k:v for k,v in v.items() if k != "type"}
+                hf_kwargs[k] = to_ase_software(typ,dv,module_name=harm_f_software)
+        
+        
+        hf = SumCalculator([HarmonicallyForced(**hf_kwargs),to_ase_software(harm_f_software[1],harm_f_software_kwargs[1])])
+        
     atoms.calc = hf
 
     opt = Sella(atoms,trajectory="xtbharm.traj",order=0)
@@ -349,8 +367,16 @@ def run_harmonically_forced_no_pbc(atoms,atom_bond_potentials,site_bond_potentia
                 self.results["free_energy"] += energy
                 self.results["forces"] += forces
             
-        hf = HarmonicallyForced(atom_bond_potentials=atom_bond_potentials,
-                                site_bond_potentials=site_bond_potentials,**harm_f_software_kwargs)
+        hf_kwargs = harm_f_software_kwargs.copy()
+        hf_kwargs["atom_bond_potentials"] = atom_bond_potentials
+        hf_kwargs["site_bond_potentials"] = site_bond_potentials
+        for k,v in hf_kwargs.items():
+            if isinstance(v,dict) and "type" in v.keys():
+                typ = v["type"]
+                dv = {k:v for k,v in v.items() if k != "type"}
+                hf_kwargs[k] = to_ase_software(typ,dv,module_name=harm_f_software)
+        
+        hf = HarmonicallyForced(**hf_kwargs)
     else:
         class HarmonicallyForced(hfsoft[0]):
             def get_energy_forces(self):
@@ -377,8 +403,16 @@ def run_harmonically_forced_no_pbc(atoms,atom_bond_potentials,site_bond_potentia
                 self.results["free_energy"] += energy
                 self.results["forces"] += forces
             
-        hf = SumCalculator([HarmonicallyForced(atom_bond_potentials=atom_bond_potentials,
-                                site_bond_potentials=site_bond_potentials,**harm_f_software_kwargs[0]),hfsoft[1](**harm_f_software_kwargs[1])])
+        hf_kwargs = harm_f_software_kwargs[0].copy()
+        hf_kwargs["atom_bond_potentials"] = atom_bond_potentials
+        hf_kwargs["site_bond_potentials"] = site_bond_potentials
+        for k,v in hf_kwargs.items():
+            if isinstance(v,dict) and "type" in v.keys():
+                typ = v["type"]
+                dv = {k:v for k,v in v.items() if k != "type"}
+                hf_kwargs[k] = to_ase_software(typ,dv,module_name=harm_f_software)
+        
+        hf = SumCalculator([HarmonicallyForced(**hf_kwargs),to_ase_software(harm_f_software[1],harm_f_software_kwargs[1])])
     
     bigad.set_constraint(out_constraints)
     bigad.calc = hf
@@ -473,9 +507,9 @@ def add_sella_constraint(cons,d):
 
 def get_lattice_parameters(metal,surface_type,software,software_kwargs,da=0.1,a0=None):
     if not isinstance(software,list):
-        soft = name_to_ase_software(software)(**software_kwargs)
+        soft = to_ase_software(software,software_kwargs)
     else:
-        soft = SumCalculator([name_to_ase_software(software[i])(**software_kwargs[i]) for i in range(len(software))])
+        soft = SumCalculator([to_ase_software(software[i],software_kwargs[i]) for i in range(len(software))])
     if surface_type != "hcp0001":
         options={"xatol":1e-4}
         def f(a):
