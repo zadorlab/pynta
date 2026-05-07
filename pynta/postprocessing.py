@@ -1642,7 +1642,6 @@ def write_rmg_libraries(path,spc_dict,spc_dict_thermo,ts_dict,metal,facet):
                 minspc = spc[min({k:v for k,v in spc.items() if v.valid},key=lambda x: spc[x].energy)]
         else:
             minspc = spc
-        minspc = spc[min({k:v for k,v in spc.items() if v.valid},key=lambda x: spc[x].energy)]
         spc_dictionary_txt += name + "\n"
         spc_dictionary_txt += minspc.mol.to_adjacency_list()
         spc_dictionary_txt += "\n"
@@ -1653,15 +1652,19 @@ def write_rmg_libraries(path,spc_dict,spc_dict_thermo,ts_dict,metal,facet):
     index = 0
     reaction_text = ""
     for ts,kinetics in ts_dict.items():
-        if len(kinetics) == 0:
-            continue
-        minkinind = min({k:v for k,v in kinetics.items() if v.valid},key=lambda x: kinetics[x].barrier_f)
-        kin = kinetics[minkinind]
+        if isinstance(kinetics,list):
+            if len(kinetics) == 0:
+                continue
+            minkinind = min({k:v for k,v in kinetics.items() if v.valid},key=lambda x: kinetics[x].barrier_f)
+            kin = kinetics[minkinind]
+        else:
+            kin = kinetics
+        
         if reaction_text == "":
             reaction_text += kin.create_RMG_header("reaction_library",lib_short_desc="",lib_long_desc="")
-        reaction_text += kin.rmg_kinetics_text.replace("{index}",str(index)) 
-        index += 1
-        reaction_text += "\n"
+            reaction_text += kin.rmg_kinetics_text.replace("{index}",str(index)) 
+            index += 1
+            reaction_text += "\n"
     
     if os.path.exists(os.path.join(path,"reaction_library")):
         shutil.rmtree(os.path.join(path,"reaction_library"))
