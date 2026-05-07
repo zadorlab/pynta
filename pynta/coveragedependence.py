@@ -99,7 +99,7 @@ def get_unstable_pairs(pairsdir,adsorbate_dir,sites,site_adjacency,nslab,max_dis
                         #gout.update(sort_atoms=False)
                     except (FindingPathError, SiteOccupationException, TooManyElectronsException):
                         continue
-                    except FailedFixBondsException: #Pynta is unable to understand the final structure in a resonance sense...definitely not isomorphic
+                    except (FailedFixBondsException, IndexError): #Pynta is unable to understand the final structure in a resonance sense...definitely not isomorphic
                         logging.error("Failed to fix bonds for structure: {}".format(p))
                         out_pairs.append(g.to_group())
                         if show:
@@ -1756,7 +1756,7 @@ def load_coverage_delta(d,ad_energy_dict,slab,metal,facet,sites,site_adjacency,t
             admol,neighbor_sites,ninds = generate_TS_2D(atoms, ts_info_path, metal, facet, sites, site_adjacency, len(slab), imag_freq_path=os.path.join(d,"vib.0.traj"), 
                                                         max_dist=np.inf, allowed_structure_site_structures=allowed_structure_site_structures,
                                                         keep_binding_vdW_bonds=keep_binding_vdW_bonds,keep_vdW_surface_bonds=keep_vdW_surface_bonds)
-        except (SiteOccupationException,TooManyElectronsException, ValueError, FailedFixBondsException) as e:
+        except (SiteOccupationException,TooManyElectronsException, ValueError, FailedFixBondsException, IndexError) as e:
             return None,None,None,None
         try:
             vibdata = get_vibdata(os.path.join(d,out_file_name+".xyz"),os.path.join(d,vib_file_name+".json"),len(slab))
