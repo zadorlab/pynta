@@ -192,7 +192,14 @@ def run_harmonically_forced(atoms,atom_bond_potentials,site_bond_potentials,nsla
     if not isinstance(hf,SumCalculator):
         Eharm,Fharm = atoms.calc.get_energy_forces()
     else:
-        Eharm,Fharm = atoms.calc.calcs[0].get_energy_forces()
+        # NEW — handles both old and new ASE API
+        if hasattr(atoms.calc, 'calcs'):
+            inner_calc = atoms.calc.calcs[0]
+        elif hasattr(atoms.calc, 'mixer'):
+            inner_calc = atoms.calc.mixer.calcs[0]
+        else:
+            raise AttributeError(f"Cannot find sub-calculators on {type(atoms.calc)}")
+        Eharm, Fharm = inner_calc.get_energy_forces()
 
     return atoms,Eharm,Fharm
 
