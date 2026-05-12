@@ -243,7 +243,7 @@ class MolecularOptimizationTask(OptimizationTask):
         try:
             converged = opt.converged()
         except TypeError:
-            converged = opt.converged(opt.atoms.get_forces())
+            converged = opt.converged(opt.atoms.get_forces().ravel())
 
         if not converged: #optimization has converged
             fmax = np.inf
