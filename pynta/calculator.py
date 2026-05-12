@@ -464,6 +464,9 @@ def map_harmonically_forced(input):
             d = {"harmonic energy": Eharm, "harmonic force": Fharm.tolist(),"atom_bond_potentials":atom_bond_potentials,
                  "site_bond_potentials":s_bond_potentials,"molecule_to_atom_maps":molecule_to_atom_maps,"ase_to_mol_num":ase_to_mol_num}
             json.dump(d,f)
+        for key, val in list(sp.arrays.items()):
+            if isinstance(val, list):
+                sp.arrays[key] = np.array(val)
         write(os.path.join(path,str(j),"xtb.xyz"),sp)
         xyz = os.path.join(path,str(j),"xtb.xyz")
         return (sp.todict(),Eharm,xyz)
