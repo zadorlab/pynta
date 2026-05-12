@@ -464,7 +464,17 @@ def map_harmonically_forced(input):
             d = {"harmonic energy": Eharm, "harmonic force": Fharm.tolist(),"atom_bond_potentials":atom_bond_potentials,
                  "site_bond_potentials":s_bond_potentials,"molecule_to_atom_maps":molecule_to_atom_maps,"ase_to_mol_num":ase_to_mol_num}
             json.dump(d,f)
-        write(os.path.join(path,str(j),"xtb.xyz"),sp)
+        # Write a geometry-only checkpoint. Rebuild a clean Atoms (numbers/positions/cell/pbc
+        # + tags) so ASE's extxyz writer cannot choke on a stray list-valued per-atom column.
+        # Constraints are intentionally NOT carried over: TS guesses can carry FixBondLength
+        # constraints (for preserved/spectator bonds) which ASE's extxyz writer cannot
+        # serialize and which trigger "'list' object has no attribute 'dtype'". The downstream
+        # optimize/collect tasks rebuild constraints from the firework spec (not from this
+        # file), and the harmonic energy/forces are saved in harm.json above and returned.
+        sp_out = Atoms(numbers=sp.get_atomic_numbers(), positions=sp.get_positions(),
+                       cell=sp.cell, pbc=sp.pbc)
+        sp_out.set_tags(sp.get_tags())
+        write(os.path.join(path,str(j),"xtb.xyz"),sp_out)
         xyz = os.path.join(path,str(j),"xtb.xyz")
         return (sp.todict(),Eharm,xyz)
     elif sp:
