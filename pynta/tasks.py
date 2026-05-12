@@ -240,7 +240,11 @@ class MolecularOptimizationTask(OptimizationTask):
                     else:
                         errors.append(e)
 
-        converged = opt.converged()
+        try:
+            converged = opt.converged()
+        except TypeError:
+            converged = opt.converged(opt.atoms.get_forces())
+
         if not converged: #optimization has converged
             fmax = np.inf
             try:
