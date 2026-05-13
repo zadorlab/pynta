@@ -672,7 +672,19 @@ def setup_pair_opts_for_rxns(targetdir,pynta_isolated_dir,adsorbates,tsdirs,coad
                                  max_dist=max_dist,imag_freq_max=imag_freq_max)
             for i,pair in enumerate(pairs):
                 os.makedirs(os.path.join(namedir,str(i)))
-                write(os.path.join(namedir,str(i),"init.xyz"), pair)
+                # Remove stale per-atom arrays with wrong length (ASE extxyz compatibility)
+                for key in list(pair.arrays.keys()):
+                    if key in ('positions', 'numbers'):
+                        continue
+                    if len(pair.arrays[key]) != len(pair):
+                        del pair.arrays[key]
+                for key in list(pair.info.keys()):
+                    val = pair.info[key]
+                    if hasattr(val, '__len__') and len(val) != len(pair):
+                        del pair.info[key]
+                pair_to_write = pair.copy()
+                pair_to_write.calc = None
+                write(os.path.join(namedir,str(i),"init.xyz"), pair_to_write)
                 if not is_ts:
                     moldict = {"adjlist": pairmols[i].to_adjacency_list(),"xyz": pairxyzs[i], "coadname": s[1]}
                 else:
@@ -897,7 +909,19 @@ def generate_coadsorbed_xyzs(outdir,ad_xyzs,ts_xyzs,slabxyz,pairsdir,ads_dir,
                         d = {"adjlist": mol2D.to_adjacency_list(),
                             "xyz": ts_xyz}
                         json.dump(d,f)
-                    write(os.path.join(outdir,ts_name,coadname,str(i),"init.xyz"),atoms[i])
+                    # Remove stale per-atom arrays with wrong length (ASE extxyz compatibility)
+                    for key in list(pair.arrays.keys()):
+                        if key in ('positions', 'numbers'):
+                            continue
+                        if len(pair.arrays[key]) != len(pair):
+                            del pair.arrays[key]
+                    for key in list(pair.info.keys()):
+                        val = pair.info[key]
+                        if hasattr(val, '__len__') and len(val) != len(pair):
+                            del pair.info[key]
+                    atoms_to_write = atoms[i].copy()
+                    atoms_to_write.calc = None
+                    write(os.path.join(outdir,ts_name,coadname,str(i),"init.xyz"),atoms_to_write)
                     outxyzsts.append(os.path.join(outdir,ts_name,coadname,str(i),"init.xyz"))
         
         for j,ad_xyz in enumerate(ad_xyzs):
@@ -932,7 +956,19 @@ def generate_coadsorbed_xyzs(outdir,ad_xyzs,ts_xyzs,slabxyz,pairsdir,ads_dir,
                         d = {"adjlist": mol2D.to_adjacency_list(),
                             "xyz": ad_xyz}
                         json.dump(d,f)
-                    write(os.path.join(outdir,ad_name,coadname,str(i),"init.xyz"),atoms[i])
+                    # Remove stale per-atom arrays with wrong length (ASE extxyz compatibility)
+                    for key in list(pair.arrays.keys()):
+                        if key in ('positions', 'numbers'):
+                            continue
+                        if len(pair.arrays[key]) != len(pair):
+                            del pair.arrays[key]
+                    for key in list(pair.info.keys()):
+                        val = pair.info[key]
+                        if hasattr(val, '__len__') and len(val) != len(pair):
+                            del pair.info[key]
+                    atoms_to_write = atoms[i].copy()
+                    atoms_to_write.calc = None
+                    write(os.path.join(outdir,ad_name,coadname,str(i),"init.xyz"),atoms_to_write)
                     outxyzsad.append(os.path.join(outdir,ad_name,coadname,str(i),"init.xyz"))
         
     return outatoms,outmol2Dsad,outmol2Dsts,outxyzsad,outxyzsts
