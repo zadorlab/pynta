@@ -573,7 +573,8 @@ class CoverageDependence:
         
             fwvib = vibrations_firework(os.path.join(os.path.split(d)[0],"out.xyz"),
                                         self.software,"vib",software_kwargs=self.software_kwargs,parents=[fwopt2],
-                                        constraints=["freeze up to "+str(self.nslab)])
+                                        constraints=["freeze up to "+str(self.nslab)],
+                                        ignore_errors=True)
             self.pairs_fws.append(fwopt)
             self.pairs_fws.append(fwopt2)
             self.pairs_fws.append(fwvib)
@@ -589,7 +590,8 @@ class CoverageDependence:
             
             fwvib = vibrations_firework(os.path.join(os.path.split(d)[0],"out.xyz"),
                                         self.software,"vib",software_kwargs=self.software_kwargs,parents=[fwopt],
-                                        constraints=["freeze up to "+str(self.nslab)])
+                                        constraints=["freeze up to "+str(self.nslab)],
+                                        ignore_errors=True)
             self.pairs_fws.append(fwopt)
             self.pairs_fws.append(fwvib)
             

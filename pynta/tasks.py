@@ -83,8 +83,14 @@ def optimize_firework(xyz,software,label,opt_method=None,sella=None,socket=False
     t1 = MolecularOptimizationTask(d)
     directory = os.path.dirname(xyz)
     if out_path is None: out_path = os.path.join(directory,label+".xyz")
-    t2 = FileTransferTask({'files': [{'src': label+'.xyz', 'dest': out_path}, {'src': label+'.traj', 'dest': os.path.join(directory,label+".traj")}],
-            'mode': 'copy', 'ignore_errors' : ignore_errors})
+    t2 = FileTransferTask({'files': [
+        {'src': label+'.xyz', 'dest': out_path}, 
+        {'src': label+'.traj', 'dest': os.path.join(directory, label+".traj")},
+        {'src': label+'_convergence.json', 'dest': os.path.join(directory, label+'_convergence.json')}
+    ],
+    'mode': 'copy', 'ignore_errors': ignore_errors})
+
+
     return Firework([t1,t2],parents=parents,name=label+"opt",spec={"_allow_fizzled_parents": allow_fizzled_parents,"_priority": priority})
 
 @explicit_serialize
@@ -298,9 +304,17 @@ class MolecularOptimizationTask(OptimizationTask):
         if converged:
             if self["software"] == "XTB" and "initial_charges" in sp.arrays.keys():
                 del sp.arrays["initial_charges"]
-            write(label+".xyz", sp)
-        else:
-            return FWAction(stored_data={"error": errors,"converged": converged})
+
+        with open(label + "_not_converged", "w") as f:
+            f.write("not converged")
+
+        # Write regardless of convergence so downstream tasks can proceed
+        sp_to_write = sp.copy()
+        sp_to_write.calc = None
+        for key in list(sp_to_write.arrays.keys()):
+            if key not in ('positions', 'numbers') and len(sp_to_write.arrays[key]) != len(sp_to_write):
+                del sp_to_write.arrays[key]
+        write(label+".xyz", sp_to_write)
 
         return FWAction(stored_data={"error": errors,"converged": converged})
 
