@@ -1748,13 +1748,6 @@ def load_coverage_delta(d,ad_energy_dict,slab,metal,facet,sites,site_adjacency,t
     
     atoms = read(os.path.join(d,out_file_name+".xyz"))
 
-    # Check convergence - if not converged, skip this datum
-    conv_path = os.path.join(d, out_file_name+"_convergence.json")
-    if os.path.exists(conv_path):
-        with open(conv_path) as f:
-            if not json.load(f)["converged"]:
-                return None, None, None, None
-    
     if not is_ts:
         try:
             admol,neighbor_sites,ninds = generate_adsorbate_2D(atoms, sites, site_adjacency, len(slab), max_dist=np.inf, cut_off_num=None, 
