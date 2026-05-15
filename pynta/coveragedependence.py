@@ -1560,7 +1560,7 @@ def add_ad_to_site(admol,coad,site):
     return admolout
     
 def get_configurations(admol, coad, coad_stable_sites, tree_interaction_classifier=None, coadmol_stability_dict=None, unstable_groups=None,
-                       tree_interaction_regressor=None, tree_atom_regressor=None, coadmol_E_dict=None, energy_tol=None):
+                       tree_interaction_regressor=None, tree_atom_regressor=None, coadmol_E_dict=None, energy_tol=None, max_coadsorbates=None):
     empty_sites = [a for a in admol.atoms if a.is_surface_site() and a.site in coad_stable_sites and not any([not a2.is_surface_site() for a2 in a.bonds.keys()])]
     print("empty sites")
     print(len(empty_sites))
@@ -1569,7 +1569,8 @@ def get_configurations(admol, coad, coad_stable_sites, tree_interaction_classifi
     outmols_split = [[admol]]
     lowest_energy_surface_bond_dict = dict()
     print(len(outmols))
-    for i in range(len(empty_sites)):
+    n_iter = len(empty_sites) if max_coadsorbates is None else min(max_coadsorbates, len(empty_sites))
+    for i in range(n_iter):
         newoutmols = []
         for m in outmols_split[i]: #all configurations with a fixed number of co-adsorbates (highest number hit yet)
             for sind in empty_site_inds:

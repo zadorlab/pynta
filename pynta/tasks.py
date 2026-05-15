@@ -1182,12 +1182,14 @@ class CalculateConfigurationEnergiesTask(FiretaskBase):
 
 def train_covdep_model_firework(path,admol_name_path_dict,admol_name_structure_dict,sites,site_adjacency,
                                 pynta_dir, metal, facet, slab_path, calculation_directories, coadnames,
-                                coad_stable_sites, software, software_kwargs, software_kwargs_TS, freeze_ind, fmaxopt,  parents=[],Ncalc_per_iter=6,iter=0,max_iters=6,concern_energy_tol=None,ignore_errors=False):
+                                coad_stable_sites, software, software_kwargs, software_kwargs_TS, freeze_ind, 
+                                fmaxopt, parents=[],Ncalc_per_iter=6,iter=0,max_iters=6,concern_energy_tol=None,
+                                ignore_errors=False, max_coadsorbates=None):
     d = {"path": path, "admol_name_path_dict": admol_name_path_dict, "admol_name_structure_dict": {k : v.to_adjacency_list() for k,v in admol_name_structure_dict.items()},
          "sites": sites, "site_adjacency": {str(k):v for k,v in site_adjacency.items()}, "pynta_dir": pynta_dir, "metal": metal, "facet": facet, "slab_path": slab_path,
          "calculation_directories": calculation_directories, "coadnames": coadnames, "coad_stable_sites": coad_stable_sites, 
         "Ncalc_per_iter": Ncalc_per_iter, "iter": iter, "max_iters": max_iters, "software": software, "software_kwargs": software_kwargs, "software_kwargs_TS": software_kwargs_TS, "freeze_ind": freeze_ind, 
-        "fmaxopt": fmaxopt, "concern_energy_tol": concern_energy_tol, "ignore_errors": ignore_errors}
+        "fmaxopt": fmaxopt, "concern_energy_tol": concern_energy_tol, "ignore_errors": ignore_errors, "max_coadsorbates": max_coadsorbates}
     t1 = TrainCovdepModelTask(d)
     return Firework([t1],parents=parents,name="Training Model "+str(iter),spec={"_allow_fizzled_parents":True, "_priority": 4})
 
@@ -1196,11 +1198,12 @@ class TrainCovdepModelTask(FiretaskBase):
     required_params = ["path","admol_name_path_dict","admol_name_structure_dict","sites","site_adjacency", "pynta_dir", "metal", "facet",
                        "slab_path", "calculation_directories", "coadnames", "coad_stable_sites", "Ncalc_per_iter", "iter", "max_iters", "software", 
                        "software_kwargs", "software_kwargs_TS", "freeze_ind", "fmaxopt"]
-    optional_params = ["concern_energy_tol","ignore_errors"]
+    optional_params = ["concern_energy_tol","ignore_errors", "max_coadsorbates"]
     def run_task(self, fw_spec):
         path = self["path"]
         admol_name_path_dict = self["admol_name_path_dict"]
         admol_name_structure_dict = {k: Molecule().from_adjacency_list(v,check_consistency=False) for k,v in self["admol_name_structure_dict"].items()}
+        max_coadsorbates = self["max_coadsorbates"] if "max_coadsorbates" in self.keys() else None
         sites = []
         for site in self["sites"]:
             site["normal"] = np.array(site["normal"])
@@ -1319,7 +1322,7 @@ class TrainCovdepModelTask(FiretaskBase):
             for coadname in coadnames:
                 for admol_name,admol in admol_name_structure_dict.items():
                     configs = get_configurations(admol, coad_simples[coadname], coad_stable_sites[coadname],  coadmol_stability_dict=coadmol_stability_dicts[coadname], unstable_groups=unstable_pairs,
-                        coadmol_E_dict=coadmol_E_dicts[coadname])
+                        coadmol_E_dict=coadmol_E_dicts[coadname], max_coadsorbates=max_coadsorbates)
                     
                     with open(os.path.join(path,"Configurations",admol_name+"_"+coadname+".json"),'w') as f:
                         json.dump([x.to_adjacency_list() for x in configs],f)
