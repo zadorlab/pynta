@@ -6,6 +6,7 @@ from ase.io.trajectory import Trajectory
 from ase.calculators.socketio import SocketIOCalculator
 from ase.vibrations import Vibrations
 from ase.calculators.mixing import SumCalculator
+from ase.calculators.singlepoint import SinglePointCalculator
 from molecule.molecule import Molecule, Group, ATOMTYPES
 from sella import Sella, Constraints, IRC
 from fireworks import *
@@ -303,9 +304,14 @@ class MolecularOptimizationTask(OptimizationTask):
         if converged:
             if self["software"] == "XTB" and "initial_charges" in sp.arrays.keys():
                 del sp.arrays["initial_charges"]
-
+            
+            # Cache the energy before detaching calculator
+            energy = sp.get_potential_energy()
+            forces = sp.get_forces() if hasattr(sp.calc, 'get_forces') else None
+            
             sp_to_write = sp.copy()
-            sp_to_write.calc = None
+            sp_to_write.calc = SinglePointCalculator(sp_to_write, energy=energy, forces=forces)
+            
             for key in list(sp_to_write.arrays.keys()):
                 if key not in ('positions', 'numbers') and len(sp_to_write.arrays[key]) != len(sp_to_write):
                     del sp_to_write.arrays[key]
