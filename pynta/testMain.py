@@ -25,12 +25,12 @@ class MainTest(unittest.TestCase):
         cls.covdep_path = os.path.join(pynta_path,"test","covdeptest")
         cls.launchpath_covdep = os.path.join(cls.covdep_path,"launches")
 
-    # Ensure launch paths exist as directories (clean up if they're files)
-    for p in (cls.launchpath, cls.launchpath_covdep):
-        if os.path.isfile(p):
-            os.remove(p)
-        if not os.path.isdir(p):
-            os.makedirs(p, exist_ok=True)
+        # Ensure launch paths exist as directories (clean up if they're files)
+        for p in (cls.launchpath, cls.launchpath_covdep):
+            if os.path.isfile(p):
+                os.remove(p)
+            if not os.path.isdir(p):
+                os.makedirs(p, exist_ok=True)
 
     @classmethod
     def tearDownClass(cls):
