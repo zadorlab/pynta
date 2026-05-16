@@ -25,6 +25,13 @@ class MainTest(unittest.TestCase):
         cls.covdep_path = os.path.join(pynta_path,"test","covdeptest")
         cls.launchpath_covdep = os.path.join(cls.covdep_path,"launches")
 
+    # Ensure launch paths exist as directories (clean up if they're files)
+    for p in (cls.launchpath, cls.launchpath_covdep):
+        if os.path.isfile(p):
+            os.remove(p)
+        if not os.path.isdir(p):
+            os.makedirs(p, exist_ok=True)
+
     @classmethod
     def tearDownClass(cls):
         """A function that is run ONCE after all unit tests in this class."""
@@ -34,7 +41,7 @@ class MainTest(unittest.TestCase):
         fnames = os.listdir(cls.launchpath)
         for n in fnames:
             pv = os.path.join(cls.launchpath,n)
-            if os.path.isfile(pv) and n.split(".")[-1] != ".yaml":
+            if os.path.isfile(pv) and n.split(".")[-1] != "yaml":
                 os.remove(pv)
             else:
                 shutil.rmtree(pv)
