@@ -34,8 +34,10 @@ def get_unstable_pairs(pairsdir,adsorbate_dir,sites,site_adjacency,nslab,max_dis
     for pair in os.listdir(pairsdir):
         if not "_" in pair or pair[0] == ".":
             continue
-        adname = pair.split("_")[0]
-        coadname = pair.split("_")[1]
+        #adname = pair.split("_")[0]
+        #coadname = pair.split("_")[1]
+        adname = pair.rsplit("_", 1)[0]
+        coadname = pair.rsplit("_", 1)[1]
         info_coad_path = os.path.join(adsorbate_dir,coadname,"info.json")
         with open(info_coad_path,'r') as f:
             info_coad = json.load(f)
@@ -121,7 +123,8 @@ def copy_stable_pairs(pairsdir,sites,site_adjacency,nslab,max_dist=3.0):
     count = 0
     coadname_dict = {"O=[Pt]": 1, "N#[Pt]": 1, "O[Pt]": 2, "[Pt]": 1}
     for pair in os.listdir(pairsdir):
-        coadname = pair.split("_")[1]
+        #coadname = pair.split("_")[1]
+        coadname = pair.rsplit("_", 1)[1]
         for num in os.listdir(os.path.join(pairsdir,pair)):
             p = os.path.join(pairsdir,pair,num) 
             if num.isdigit() and os.path.isdir(p):
@@ -660,7 +663,8 @@ def setup_pair_opts_for_rxns(targetdir,pynta_isolated_dir,adsorbates,tsdirs,coad
         if not is_ts:
             name = "_".join(s)
         else:
-            name = "_".join([os.path.split(os.path.split(s[0])[0])[1],s[1]])
+            #name = "_".join([os.path.split(os.path.split(s[0])[0])[1],s[1]])
+            name = "_".join([os.path.split(os.path.split(s[0])[0])[1], os.path.split(s[0])[1], s[1]])
         namedir = os.path.join(pairdir,name)
         if not os.path.exists(namedir):
             os.makedirs(namedir)
