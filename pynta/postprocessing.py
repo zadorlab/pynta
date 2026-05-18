@@ -1720,23 +1720,41 @@ def get_reaction_energy_correction(Ncoad_energy_dict,ts_dict,ts_name,coad_name,i
     return product_correction - reactant_correction
 
 def extract_covdep_data(path,pynta_path,ts_dict,metal,facet,sites,site_adjacency,nslab,coad_names):
-    admol_name_path_dict = {k: os.path.join(pynta_path,k,v,"opt.xyz") for k,v in ts_dict.items()}
+    # Backward-compatible: single-string values use original TS name as key,
+    # list values create compound keys like "TS2_286"
+    admol_name_path_dict = {}
+    for k, inds in ts_dict.items():
+        if isinstance(inds, str):
+            admol_name_path_dict[k] = os.path.join(pynta_path, k, inds, "opt.xyz")
+        else:
+            for ind in inds:
+                admol_name_path_dict[f"{k}_{ind}"] = os.path.join(pynta_path, k, ind, "opt.xyz")
+    
     admol_name_structure_dict = dict()
     ads = [x for x in os.listdir(os.path.join(pynta_path,"Adsorbates")) if x[0] != "."]
     allowed_structure_site_structures = generate_allowed_structure_site_structures(os.path.join(pynta_path,"Adsorbates"),sites,site_adjacency,nslab,max_dist=np.inf)
 
-    for ts in ts_dict.keys():
-        info_path = os.path.join(pynta_path,ts,"info.json")
-        atoms = read(admol_name_path_dict[ts])
-        st,_,_ = generate_TS_2D(atoms, info_path,  metal, facet, sites, site_adjacency, nslab,
-                max_dist=np.inf, allowed_structure_site_structures=allowed_structure_site_structures)
-        admol_name_structure_dict[ts] = st
-        with open(info_path,"r") as f:
+    for ts_key, ts_xyz_path in list(admol_name_path_dict.items()):
+        # Only process entries that correspond to TS configs (not adsorbates added later).
+        # If ts_key has format "TSn" it's a backward-compat single-config; if "TSn_index" extract base name.
+        if ts_key in ts_dict:
+            ts = ts_key
+        else:
+            ts = ts_key.rsplit("_", 1)[0]
+            if ts not in ts_dict:
+                continue
+        
+        info_path = os.path.join(pynta_path, ts, "info.json")
+        atoms = read(ts_xyz_path)
+        st, _, _ = generate_TS_2D(atoms, info_path, metal, facet, sites, site_adjacency, nslab,
+                                  max_dist=np.inf, allowed_structure_site_structures=allowed_structure_site_structures)
+        admol_name_structure_dict[ts_key] = st
+        with open(info_path, "r") as f:
             info = json.load(f)
-            for name in info["species_names"]+info["reverse_names"]:
+            for name in info["species_names"] + info["reverse_names"]:
                 if name not in ads:
                     ads.append(name)
-
+    
     for ad in ads:
         p = os.path.join(pynta_path,"Adsorbates",ad)
         with open(os.path.join(p,"info.json")) as f:
@@ -1851,16 +1869,14 @@ def extract_covdep_data(path,pynta_path,ts_dict,metal,facet,sites,site_adjacency
             files = os.listdir(iter_path)
             for file in files:
                 if file.startswith("Ncoad_energy_"):
-                    spfile = file.split("_")
-                    coad_name = spfile[-1].split(".")[0]
-                    name = spfile[-2]
+                    coad_name = file.rsplit("_", 1)[1].rsplit(".", 1)[0]
+                    name = file[len("Ncoad_energy_"):].rsplit("_", 1)[0]
                     with open(os.path.join(iter_path,file),'r') as f:
                         out = {int(k): v for k,v in json.load(f).items()}
                     Ncoad_energy_dict[coad_name][i][name] = out
                 elif file.startswith("Ncoad_config_"):
-                    spfile = file.split("_")
-                    coad_name = spfile[-1].split(".")[0]
-                    name = spfile[-2]
+                    coad_name = file.rsplit("_", 1)[1].rsplit(".", 1)[0]
+                    name = file[len("Ncoad_config_"):].rsplit("_", 1)[0]
                     with open(os.path.join(iter_path,file),'r') as f:
                         out = {int(k): v for k,v in json.load(f).items()}
                     for k in out.keys():
@@ -1869,7 +1885,7 @@ def extract_covdep_data(path,pynta_path,ts_dict,metal,facet,sites,site_adjacency
                         else:
                             out[k] = [Molecule().from_adjacency_list(out[k],check_consistency=False)]
                     Ncoad_config_dict[coad_name][i][name] = out
-                    
+            
             i += 1
             iter_path = os.path.join(path,"Iterations",str(i))
 
