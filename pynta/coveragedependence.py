@@ -1393,7 +1393,7 @@ class CoverageDependenceRegressor(MultiEvalSubgraphIsomorphicDecisionTreeRegress
             
         logging.info("# nodes: {}".format(len(self.nodes)))
         
-def train_sidt_cov_dep_regressor(pairs_datums,sampling_datums,r_site=None,
+def train_sidt_cov_dep_regressor(pairs_datums,sampling_datums,r_site=None,r_morph=None,r_un=None,r_lone_pairs=None,
                                 r_atoms=None,node_fract_training=0.7):
 
     if r_site is None:
@@ -1432,8 +1432,10 @@ def train_sidt_cov_dep_regressor(pairs_datums,sampling_datums,r_site=None,
                                                    nodes=pairnodes,
                                                    r=[ATOMTYPES[x] for x in r_atoms],
                                                    r_bonds=[1,2,3,0.05],
-                                                   r_un=[0],
+                                                   r_un=r_un,
+                                                   #r_lone_pairs=r_lone_pairs, #available in next pysidt release
                                                    r_site=r_site,
+                                                   r_morph=r_morph,
                                                    max_structures_to_generate_extensions=100,
                                                    fract_nodes_expand_per_iter=0.025,
                                                    iter_max=2,
@@ -1445,8 +1447,9 @@ def train_sidt_cov_dep_regressor(pairs_datums,sampling_datums,r_site=None,
                                                    nodes=pairnodes,
                                                    r=[ATOMTYPES[x] for x in r_atoms],
                                                    r_bonds=[1,2,3,0.05],
-                                                   r_un=[0],
+                                                   r_un=r_un,
                                                    r_site=r_site,
+                                                   r_morph=r_morph,
                                                    max_structures_to_generate_extensions=100,
                                                    fract_nodes_expand_per_iter=0.025,
                                                    iter_max=2,
