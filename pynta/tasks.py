@@ -1243,11 +1243,11 @@ class TrainCovdepModelTask(FiretaskBase):
         nslab = len(slab)
         allowed_structure_site_structures = generate_allowed_structure_site_structures(os.path.join(pynta_dir,"Adsorbates"),sites,site_adjacency,nslab,max_dist=np.inf)
         
-        r_site = [""] + list(set([site["site"] for site in sites]))
-        r_morph = [""] + list(set([site["morphology"] for site in sites]))
-        r_atoms = list(set([a.element.symbol for admol in admol_name_structure_dict.keys() for a in admol.atoms]))
-        r_un = list(set([a.radical_electrons for admol in admol_name_structure_dict.keys() for a in admol.atoms]))
-        r_lone_pairs = list(set([a.lone_pairs for admol in admol_name_structure_dict.keys() for a in admol.atoms]))
+        r_site = list(set([a.site for admol in admol_name_structure_dict.values() for a in admol.atoms]))
+        r_morph = list(set([a.morphology for admol in admol_name_structure_dict.values() for a in admol.atoms]))
+        r_atoms = list(set([a.element.symbol for admol in admol_name_structure_dict.values() for a in admol.atoms]))
+        r_un = list(set([a.radical_electrons for admol in admol_name_structure_dict.values() for a in admol.atoms]))
+        r_lone_pairs = list(set([a.lone_pairs for admol in admol_name_structure_dict.values() for a in admol.atoms]))
         
         nodes_file = os.path.join(os.path.split(pynta.models.__file__)[0],"finetuned_to_dft_delta_model.json")
         nodes_isolated = read_nodes(nodes_file)
