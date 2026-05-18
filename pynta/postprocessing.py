@@ -1551,7 +1551,7 @@ def postprocess(path,metal,facet,sites,site_adjacency,repeats,slab_path=None,che
         if check_finished and not os.path.exists(os.path.join(path,"Adsorbates",name,"complete.sgnl")):
             continue # not ready to process this species yet
         spcs = get_species(os.path.join(path,"Adsorbates",name),os.path.join(path,"Adsorbates"),metal,facet,slab,sites,site_adjacency,
-                           nslab,c_ref=c_ref,o_ref=o_ref,h_ref=h_ref,n_ref=n_ref)
+                           nslab,c_ref=c_ref,o_ref=o_ref,h_ref=h_ref,n_ref=n_ref,delta_sidt=delta_sidt)
         
         reference_missing = False
         if len(spcs) > 0:
@@ -1587,7 +1587,7 @@ def postprocess(path,metal,facet,sites,site_adjacency,repeats,slab_path=None,che
             
         try:
             kinetics = get_kinetics(os.path.join(path,ts),os.path.join(path,"Adsorbates"),metal,facet,slab,sites,site_adjacency,nslab,site_density,config_dict=spc_dict_for_kinetics,
-                                   c_ref=c_ref,o_ref=o_ref,h_ref=h_ref,n_ref=n_ref,allowed_structure_site_structures=allowed_structure_site_structures)
+                                   c_ref=c_ref,o_ref=o_ref,h_ref=h_ref,n_ref=n_ref,allowed_structure_site_structures=allowed_structure_site_structures,delta_sidt=delta_sidt)
         except KeyError: #species required isn't in spc_dict yet
             continue
             
