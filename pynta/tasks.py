@@ -1243,6 +1243,11 @@ class TrainCovdepModelTask(FiretaskBase):
         nslab = len(slab)
         allowed_structure_site_structures = generate_allowed_structure_site_structures(os.path.join(pynta_dir,"Adsorbates"),sites,site_adjacency,nslab,max_dist=np.inf)
         
+        r_site = list(set([a.site for admol in admol_name_structure_dict.values() for a in admol.atoms]))
+        r_morph = list(set([a.morphology for admol in admol_name_structure_dict.values() for a in admol.atoms]))
+        r_atoms = list(set([a.element.symbol for admol in admol_name_structure_dict.values() for a in admol.atoms]))
+        r_un = list(set([a.radical_electrons for admol in admol_name_structure_dict.values() for a in admol.atoms]))
+        r_lone_pairs = list(set([a.lone_pairs for admol in admol_name_structure_dict.values() for a in admol.atoms]))
         
         nodes_file = os.path.join(os.path.split(pynta.models.__file__)[0],"finetuned_to_dft_delta_model.json")
         nodes_isolated = read_nodes(nodes_file)
@@ -1267,25 +1272,25 @@ class TrainCovdepModelTask(FiretaskBase):
                     nodes=nodes_isolated,
                     root_group = Group().from_adjacency_list("""1 * R u0 px cx {2,[vdW,R,S,D,T,Q]}
                     2 * Rx u0 px cx {1,[vdW,R,S,D,T,Q]}"""),
-                    r=[ATOMTYPES[x] for x in ["C", "O", "H", "N", "X"]],
+                    r=[ATOMTYPES[x] for x in r_atoms],
                     r_bonds=[0, 0.05, 1, 2, 3, 4],
-                    r_un=[0],
-                    r_site=["","fcc","hcp","ontop","bridge"],
+                    r_un=r_un,
+                    r_site=r_site,
+                    r_morph=r_morph,
                     fract_nodes_expand_per_iter=0.1,
         )
         
         from pynta.coveragedependence import adsorbate_interaction_decomposition
         nodes_file = os.path.join(os.path.split(pynta.models.__file__)[0],"finetuned_to_dft_delta_model.json")
         nodes_covdep = read_nodes(nodes_file)
-        r_site = ["","ontop","bridge","hcp","fcc"]
-    
-        r_atoms = ["C","O","N","H","X"]
+        
         sidt_finetuned_to_covdep = MultiEvalSubgraphIsomorphicDecisionTreeRegressor([adsorbate_interaction_decomposition],
                                                         nodes=nodes_covdep,
                                                         r=[ATOMTYPES[x] for x in r_atoms],
                                                         r_bonds=[1,2,3,4,0.05],
-                                                        r_un=[0],
+                                                        r_un=r_un,
                                                         r_site=r_site,
+                                                        r_morph=r_morph,
                                                         max_structures_to_generate_extensions=100,
                                                         fract_nodes_expand_per_iter=0.025,
                                                         iter_max=2,
@@ -1383,8 +1388,8 @@ class TrainCovdepModelTask(FiretaskBase):
             
         Nconfigs = len(admol_name_structure_dict)
         Ncoads = 1
-        tree = train_sidt_cov_dep_regressor(pairs_datums,sampling_datums,r_site=None,
-                            r_atoms=None,node_fract_training=0.7)
+        tree = train_sidt_cov_dep_regressor(pairs_datums,sampling_datums,r_site=r_site,r_morph=r_morph,
+                            r_atoms=r_atoms,r_un=r_un,r_lone_pairs=r_lone_pairs,node_fract_training=0.7)
         
         tree_file = os.path.join(path,"Iterations",str(iter),"regressor.json")
         write_nodes(tree,tree_file)
