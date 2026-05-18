@@ -605,70 +605,26 @@ class CoverageDependence:
         self.fws.extend(self.pairs_fws)
     
     def setup_active_learning_loop(self):
-        #admol_name_path_dict = {k: os.path.join(self.pynta_run_directory,k,v,"opt.xyz") for k,v in self.transition_states.items()}
         admol_name_path_dict = {}
         for k, inds in self.transition_states.items():
             if isinstance(inds, str):
-                inds = [inds]
-            for ind in inds:
-                admol_name_path_dict[f"{k}_{ind}"] = os.path.join(self.pynta_run_directory, k, ind, "opt.xyz")
+                admol_name_path_dict[k] = os.path.join(self.pynta_run_directory, k, inds, "opt.xyz")
+            else:
+                for ind in inds:
+                    admol_name_path_dict[f"{k}_{ind}"] = os.path.join(self.pynta_run_directory, k, ind, "opt.xyz")
         admol_name_structure_dict = dict()
         ads = list(set(self.adsorbates + self.coadsorbates))
         allowed_structure_site_structures = generate_allowed_structure_site_structures(os.path.join(self.pynta_run_directory,"Adsorbates"),self.sites,self.site_adjacency,self.nslab,max_dist=np.inf)
 
-#        for ts in self.transition_states.keys():
-#            info_path = os.path.join(self.pynta_run_directory,ts,"info.json")
-#            with open(info_path,'r') as f:
-#                info = json.load(f)
-#            reactants = Molecule().from_adjacency_list(info["reactants"])
-#            products = Molecule().from_adjacency_list(info["products"])
-#            keep_binding_vdW_bonds_in_reactants=False
-#            keep_vdW_surface_bonds_in_reactants=False
-#            mol = reactants
-#            for bd in mol.get_all_edges():
-#                if bd.order == 0:
-#                    if bd.atom1.is_surface_site() or bd.atom2.is_surface_site():
-#                        keep_binding_vdW_bonds_in_reactants = True
-#                        m = mol.copy(deep=True)
-#                        b = m.get_bond(m.atoms[mol.atoms.index(bd.atom1)],m.atoms[mol.atoms.index(bd.atom2)])
-#                        m.remove_bond(b)
-#                        out = m.split()
-#                        if len(out) == 1: #vdW bond is not only thing connecting adsorbate to surface
-#                            keep_vdW_surface_bonds_in_reactants = True
-#            keep_binding_vdW_bonds_in_products=False
-#            keep_vdW_surface_bonds_in_products=False
-#            mol = products
-#            for bd in mol.get_all_edges():
-#                if bd.order == 0:
-#                    if bd.atom1.is_surface_site() or bd.atom2.is_surface_site():
-#                        keep_binding_vdW_bonds_in_products = True
-#                        m = mol.copy(deep=True)
-#                        b = m.get_bond(m.atoms[mol.atoms.index(bd.atom1)],m.atoms[mol.atoms.index(bd.atom2)])
-#                        m.remove_bond(b)
-#                        out = m.split()
-#                        if len(out) == 1: #vdW bond is not only thing connecting adsorbate to surface
-#                            keep_vdW_surface_bonds_in_products = True
-#            
-#            keep_binding_vdW_bonds = keep_binding_vdW_bonds_in_reactants and keep_binding_vdW_bonds_in_products
-#            keep_vdW_surface_bonds = keep_vdW_surface_bonds_in_reactants and keep_vdW_surface_bonds_in_products
-#            
-#            atoms = read(admol_name_path_dict[ts])
-#            st,_,_ = generate_TS_2D(atoms, info_path,  self.metal, self.surface_type, self.sites, self.site_adjacency, self.nslab,
-#                     max_dist=np.inf, allowed_structure_site_structures=allowed_structure_site_structures,
-#                     keep_binding_vdW_bonds=keep_binding_vdW_bonds,keep_vdW_surface_bonds=keep_vdW_surface_bonds)
-#            admol_name_structure_dict[ts] = st
-#            with open(info_path,"r") as f:
-#                info = json.load(f)
-#                for name in info["species_names"]+info["reverse_names"]:
-#                    if name not in ads:
-#                        ads.append(name)
-
         for ts_key, ts_xyz_path in list(admol_name_path_dict.items()):
             # admol_name_path_dict may later contain adsorbate entries too;
             # only process entries that correspond to TS configs.
-            ts = ts_key.rsplit("_", 1)[0]
-            if ts not in self.transition_states:
-                continue
+            if ts_key in self.transition_states:
+                ts = ts_key  # single-string case, key == TS name
+            else:
+                ts = ts_key.rsplit("_", 1)[0]
+                if ts not in self.transition_states:
+                    continue
             
             info_path = os.path.join(self.pynta_run_directory, ts, "info.json")
             with open(info_path, 'r') as f:
