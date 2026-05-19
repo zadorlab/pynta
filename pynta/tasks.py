@@ -1267,7 +1267,7 @@ class TrainCovdepModelTask(FiretaskBase):
 
             return structs
             
-        sidt_finetuned_to_dft = MultiEvalSubgraphIsomorphicDecisionTreeRegressor(
+        sidt_isolated_delta = MultiEvalSubgraphIsomorphicDecisionTreeRegressor(
                     bond_decomposition_adsorbate,
                     nodes=nodes_isolated,
                     root_group = Group().from_adjacency_list("""1 * R u0 px cx {2,[vdW,R,S,D,T,Q]}
@@ -1284,7 +1284,7 @@ class TrainCovdepModelTask(FiretaskBase):
         nodes_file = os.path.join(os.path.split(pynta.models.__file__)[0],"finetuned_to_dft_delta_model.json")
         nodes_covdep = read_nodes(nodes_file)
         
-        sidt_finetuned_to_covdep = MultiEvalSubgraphIsomorphicDecisionTreeRegressor([adsorbate_interaction_decomposition],
+        sidt_covdep_delta = MultiEvalSubgraphIsomorphicDecisionTreeRegressor([adsorbate_interaction_decomposition],
                                                         nodes=nodes_covdep,
                                                         r=[ATOMTYPES[x] for x in r_atoms],
                                                         r_bonds=[1,2,3,4,0.05],
@@ -1298,8 +1298,8 @@ class TrainCovdepModelTask(FiretaskBase):
                                                         weigh_node_selection_by_occurrence=True,
                                                         )
 
-        ad_energy_dict = get_lowest_adsorbate_energies(os.path.join(pynta_dir,"Adsorbates"),sidt_finetuned_to_dft=sidt_finetuned_to_dft)
-        coad_Es = {coadname: get_adsorbate_energies(coad_paths[coadname],sidt_finetuned_to_dft=sidt_finetuned_to_dft)[0] for coadname in coadnames}
+        ad_energy_dict = get_lowest_adsorbate_energies(os.path.join(pynta_dir,"Adsorbates"),sidt_isolated_delta=sidt_isolated_delta)
+        coad_Es = {coadname: get_adsorbate_energies(coad_paths[coadname],sidt_isolated_delta=sidt_isolated_delta)[0] for coadname in coadnames}
 
         coadmol_E_dicts = dict()
         coadmol_stability_dicts = dict()
@@ -1364,7 +1364,7 @@ class TrainCovdepModelTask(FiretaskBase):
             init_config = Molecule().from_adjacency_list(adjlist,check_consistency=False)
             new_computed_configs.append(init_config)
             datum_E,datums_stability = process_calculation(d,ad_energy_dict,slab,metal,facet,sites,site_adjacency,pynta_dir,coadmol_E_dicts[coadname],max_dist=3.0,rxn_alignment_min=0.7,
-                coad_disruption_tol=1.1,out_file_name="out",init_file_name="init",vib_file_name="vib_vib",is_ad=None,sidt_finetuned_to_dft=sidt_finetuned_to_dft,sidt_finetuned_to_covdep=sidt_finetuned_to_covdep)
+                coad_disruption_tol=1.1,out_file_name="out",init_file_name="init",vib_file_name="vib_vib",is_ad=None,sidt_isolated_delta=sidt_isolated_delta,sidt_covdep_delta=sidt_covdep_delta)
             if datum_E:
                 new_datums_E.append(datum_E)
             if datum_E and not datum_E.mol.is_isomorphic(init_config,save_order=True):
