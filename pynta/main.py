@@ -526,6 +526,8 @@ class CoverageDependence:
         self.sidt_isolated_delta_model = sidt_isolated_delta_model
         self.sidt_covdep_delta_model = sidt_covdep_delta_model
         
+        self.collate_isolated_structures()
+        
         if launchpad_path:
             launchpad = LaunchPad.from_file(launchpad_path)
         else:
@@ -607,7 +609,7 @@ class CoverageDependence:
             
         self.fws.extend(self.pairs_fws)
     
-    def setup_active_learning_loop(self):
+    def collate_isolated_structures(self):
         admol_name_path_dict = {}
         for k, inds in self.transition_states.items():
             if isinstance(inds, str):
@@ -702,14 +704,17 @@ class CoverageDependence:
                 st,_,_ = generate_adsorbate_2D(atoms, self.sites, self.site_adjacency, self.nslab, max_dist=np.inf, allowed_structure_site_structures=allowed_structure_site_structures,
                                                keep_binding_vdW_bonds=keep_binding_vdW_bonds,keep_vdW_surface_bonds=keep_vdW_surface_bonds)
                 admol_name_structure_dict[ad] = st
-                
+        
+        self.admol_name_path_dict = admol_name_path_dict
+        self.admol_name_structure_dict = admol_name_structure_dict
+    def setup_active_learning_loop(self):
         calculation_directories = [] #identify pairs directories
         for p1 in os.listdir(os.path.join(self.path,"pairs")):
             for p2 in os.listdir(os.path.join(self.path,"pairs",p1)):
                 calculation_directories.append(os.path.join(self.path,"pairs",p1,p2))
         
         
-        fw = train_covdep_model_firework(self.path,admol_name_path_dict,admol_name_structure_dict,self.sites,self.site_adjacency,
+        fw = train_covdep_model_firework(self.path,self.admol_name_path_dict,self.admol_name_structure_dict,self.sites,self.site_adjacency,
                                 self.pynta_run_directory, self.metal, self.surface_type, self.slab_path, calculation_directories, self.coadsorbates, 
                                 self.coad_stable_sites, self.software, self.software_kwargs, self.software_kwargs_TS, self.freeze_ind, self.fmaxopt,
                                 parents=self.fws[:], max_iters=self.max_iters,
