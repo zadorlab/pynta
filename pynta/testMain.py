@@ -138,10 +138,13 @@ class MainTest(unittest.TestCase):
         site_adjacency = cas.get_neighbor_site_list()
 
         covdep = CoverageDependence(self.covdep_path,metal,facet,(3,3,4),pynta_path,software="XTB",software_kwargs={"method": "GFN1-xTB","verbosity":0},
-                                    label=name,sites=sites,site_adjacency=site_adjacency,coad_stable_sites={"O=[Pt]":["fcc"],"[Pt]":["fcc"]},adsorbates=["CO[Pt]"],transition_states={"TS0":"9"},
+                                    label=name,sites=sites,site_adjacency=site_adjacency,
+                                    adsorbates=["CO[Pt]"],transition_states={"TS0":"9"},
                                     coadsorbates=["O=[Pt]","[Pt]"],
                         frozen_layers=4,fmaxopt=0.05,Ncalc_per_iter=1,launchpad_path=lpad_name,max_iters=1,
-                                max_dist=1.0,imag_freq_max=np.inf,num_jobs=1)
+                                max_dist=1.0,imag_freq_max=np.inf,num_jobs=1,coad_selection_E_diff_tol=0.01)
+        
+        self.assertDictEqual(covdep.coad_stable_sites,{"O=[Pt]":[("fcc","terrace")],"[Pt]":[("fcc","terrace")]})
         
         covdep.execute(run_pairs=False, run_active_learning=True, launch=False)
         

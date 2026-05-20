@@ -1564,7 +1564,7 @@ def add_ad_to_site(admol,coad,site):
     
 def get_configurations(admol, coad, coad_stable_sites, tree_interaction_classifier=None, coadmol_stability_dict=None, unstable_groups=None,
                        tree_interaction_regressor=None, tree_atom_regressor=None, coadmol_E_dict=None, energy_tol=None, max_coadsorbates=None):
-    empty_sites = [a for a in admol.atoms if a.is_surface_site() and a.site in coad_stable_sites and not any([not a2.is_surface_site() for a2 in a.bonds.keys()])]
+    empty_sites = [a for a in admol.atoms if a.is_surface_site() and (a.site,a.morphology) in coad_stable_sites and not any([not a2.is_surface_site() for a2 in a.bonds.keys()])]
     print("empty sites")
     print(len(empty_sites))
     empty_site_inds = [admol.atoms.index(s) for s in empty_sites]
@@ -1644,7 +1644,7 @@ def get_cov_energies_configs_concern_tree(tree_interaction_regressor, configs, c
     Ncoad_config_dict = dict()
     config_to_Eunctr = dict()
     configs_of_concern = {}
-    Nempty = len([a for a in configs[0].atoms if a.is_surface_site() and a.site in coad_stable_sites])
+    Nempty = len([a for a in configs[0].atoms if a.is_surface_site() and (a.site,a.morphology) in coad_stable_sites])
     for i,m in enumerate(configs):
         Ncoad = len([a for a in m.atoms if a.is_surface_site() and any(not a2.is_surface_site() for a2 in a.bonds.keys())]) - Ncoad_isolated
 
@@ -1691,7 +1691,7 @@ def get_cov_energies(tree_interaction_regressor, configs, coad_stable_sites, Nco
                      stability_datums=None):
     Ncoad_energy_dict = dict()
     Ncoad_config_dict = dict()
-    Nempty = len([a for a in configs[0].atoms if a.is_surface_site() and a.site in coad_stable_sites])
+    Nempty = len([a for a in configs[0].atoms if a.is_surface_site() and (a.site,a.morphology) in coad_stable_sites])
     for m in configs:
         Ncoad = len([a for a in m.atoms if a.is_surface_site() and any(not a2.is_surface_site() for a2 in a.bonds.keys())]) - Ncoad_isolated
 
@@ -1720,7 +1720,7 @@ def get_cov_energies(tree_interaction_regressor, configs, coad_stable_sites, Nco
 def get_configs_of_concern(tree_interaction_regressor,configs,coad_stable_sites,Ncoad_energy_dict,Nocc_isolated,concern_energy_tol,tree_atom_regressor=None,
                            coadmol_E_dict=None):
     configs_of_concern = {}
-    Nempty = len([a for a in configs[0].atoms if a.is_surface_site() and a.site in coad_stable_sites])
+    Nempty = len([a for a in configs[0].atoms if a.is_surface_site() and (a.site,a.morphology) in coad_stable_sites])
     for m in configs:
         Ncoad = len([a for a in m.atoms if a.is_surface_site() and any(not a2.is_surface_site() for a2 in a.bonds.keys())]) - Nocc_isolated
         if tree_atom_regressor is not None:
