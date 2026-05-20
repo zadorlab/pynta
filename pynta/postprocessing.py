@@ -1913,6 +1913,8 @@ def analyze_covdep_sample_data(config_name,coad_name,Ncoad_energy_dict,path,pynt
     for k in range(len(Ncoad_energy_dict[coad_name])):
         if os.path.exists(os.path.join(path,"Iterations",str(k),"Samples")):
             for i in os.listdir(os.path.join(path,"Iterations",str(k),"Samples")):
+                if not os.path.isdir(os.path.join(path,"Iterations",str(k),"Samples",i)):
+                    continue
                 infopath = os.path.join(path,"Iterations",str(k),"Samples",i,"info.json")
                 with open(infopath,"r") as f:
                     info = json.load(f)
