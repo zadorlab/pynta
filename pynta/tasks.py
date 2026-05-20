@@ -1190,12 +1190,14 @@ def train_covdep_model_firework(path,admol_name_path_dict,admol_name_structure_d
                                 pynta_dir, metal, facet, slab_path, calculation_directories, coadnames,
                                 coad_stable_sites, software, software_kwargs, software_kwargs_TS, freeze_ind, 
                                 fmaxopt, parents=[],Ncalc_per_iter=6,iter=0,max_iters=6,concern_energy_tol=None,
-                                ignore_errors=False, max_coadsorbates=None):
+                                ignore_errors=False, max_coadsorbates=None,sidt_isolated_delta_model=None,
+                                sidt_covdep_delta_model=None):
     d = {"path": path, "admol_name_path_dict": admol_name_path_dict, "admol_name_structure_dict": {k : v.to_adjacency_list() for k,v in admol_name_structure_dict.items()},
          "sites": sites, "site_adjacency": {str(k):v for k,v in site_adjacency.items()}, "pynta_dir": pynta_dir, "metal": metal, "facet": facet, "slab_path": slab_path,
          "calculation_directories": calculation_directories, "coadnames": coadnames, "coad_stable_sites": coad_stable_sites, 
         "Ncalc_per_iter": Ncalc_per_iter, "iter": iter, "max_iters": max_iters, "software": software, "software_kwargs": software_kwargs, "software_kwargs_TS": software_kwargs_TS, "freeze_ind": freeze_ind, 
-        "fmaxopt": fmaxopt, "concern_energy_tol": concern_energy_tol, "ignore_errors": ignore_errors, "max_coadsorbates": max_coadsorbates}
+        "fmaxopt": fmaxopt, "concern_energy_tol": concern_energy_tol, "ignore_errors": ignore_errors, "max_coadsorbates": max_coadsorbates,
+        "sidt_isolated_delta_model": sidt_isolated_delta_model, "sidt_covdep_delta_model": sidt_covdep_delta_model}
     t1 = TrainCovdepModelTask(d)
     return Firework([t1],parents=parents,name="Training Model "+str(iter),spec={"_allow_fizzled_parents":True, "_priority": 4})
 
@@ -1204,7 +1206,7 @@ class TrainCovdepModelTask(FiretaskBase):
     required_params = ["path","admol_name_path_dict","admol_name_structure_dict","sites","site_adjacency", "pynta_dir", "metal", "facet",
                        "slab_path", "calculation_directories", "coadnames", "coad_stable_sites", "Ncalc_per_iter", "iter", "max_iters", "software", 
                        "software_kwargs", "software_kwargs_TS", "freeze_ind", "fmaxopt"]
-    optional_params = ["concern_energy_tol","ignore_errors", "max_coadsorbates"]
+    optional_params = ["concern_energy_tol","ignore_errors", "max_coadsorbates","sidt_isolated_delta_model","sidt_covdep_delta_model"]
     def run_task(self, fw_spec):
         path = self["path"]
         admol_name_path_dict = self["admol_name_path_dict"]
@@ -1235,6 +1237,58 @@ class TrainCovdepModelTask(FiretaskBase):
         fmaxopt = self["fmaxopt"]
         max_iters = self["max_iters"]
         
+        if "sidt_isolated_delta_model" in self.keys() and self["sidt_isolated_delta_model"] is not None:
+            nodes_isolated = read_nodes(self["sidt_isolated_delta_model"])
+            def bond_decomposition_adsorbate(mol):
+                pairs = []
+                bonds = mol.get_all_edges()
+                for bond in bonds:
+                    if not (bond.atom1.is_surface_site() and bond.atom2.is_surface_site()):
+                        pairs.append((mol.atoms.index(bond.atom1), mol.atoms.index(bond.atom2)))
+
+                structs = []
+                for pair in pairs:
+                    m = mol.copy(deep=True)
+                    for ind in pair:
+                        m.atoms[ind].label = "*"
+                    structs.append(m)
+
+                return structs
+            
+            sidt_isolated_delta = MultiEvalSubgraphIsomorphicDecisionTreeRegressor(
+                    bond_decomposition_adsorbate,
+                    nodes=nodes_isolated,
+                    root_group = Group().from_adjacency_list("""1 * R u0 px cx {2,[vdW,R,S,D,T,Q]}
+                    2 * Rx u0 px cx {1,[vdW,R,S,D,T,Q]}"""),
+                    r=[ATOMTYPES[x] for x in r_atoms],
+                    r_bonds=[0, 0.05, 1, 2, 3, 4],
+                    r_un=r_un,
+                    r_site=r_site,
+                    r_morph=r_morph,
+                    fract_nodes_expand_per_iter=0.1,
+            )
+        else:
+            sidt_isolated_delta = None 
+        
+        if "sidt_covdep_delta_model" in self.keys() and self["sidt_covdep_delta_model"] is not None:
+            from pynta.coveragedependence import adsorbate_interaction_decomposition
+            nodes_covdep = read_nodes(self["sidt_covdep_delta_model"])
+            sidt_covdep_delta = MultiEvalSubgraphIsomorphicDecisionTreeRegressor([adsorbate_interaction_decomposition],
+                                                        nodes=nodes_covdep,
+                                                        r=[ATOMTYPES[x] for x in r_atoms],
+                                                        r_bonds=[1,2,3,4,0.05],
+                                                        r_un=r_un,
+                                                        r_site=r_site,
+                                                        r_morph=r_morph,
+                                                        max_structures_to_generate_extensions=100,
+                                                        fract_nodes_expand_per_iter=0.025,
+                                                        iter_max=2,
+                                                        iter_item_cap=100,
+                                                        weigh_node_selection_by_occurrence=True,
+                                                        )
+        else:
+            sidt_covdep_delta = None
+        
         coads = [admol_name_structure_dict[coadname] for coadname in coadnames]
         coad_simples = {coadname: remove_slab(coads[i]) for i,coadname in enumerate(coadnames)}
         
@@ -1248,58 +1302,9 @@ class TrainCovdepModelTask(FiretaskBase):
         r_atoms = list(set([a.element.symbol for admol in admol_name_structure_dict.values() for a in admol.atoms]))
         r_un = list(set([a.radical_electrons for admol in admol_name_structure_dict.values() for a in admol.atoms]))
         r_lone_pairs = list(set([a.lone_pairs for admol in admol_name_structure_dict.values() for a in admol.atoms]))
-        
-        nodes_file = os.path.join(os.path.split(pynta.models.__file__)[0],"finetuned_to_dft_delta_model.json")
-        nodes_isolated = read_nodes(nodes_file)
-        def bond_decomposition_adsorbate(mol):
-            pairs = []
-            bonds = mol.get_all_edges()
-            for bond in bonds:
-                if not (bond.atom1.is_surface_site() and bond.atom2.is_surface_site()):
-                    pairs.append((mol.atoms.index(bond.atom1), mol.atoms.index(bond.atom2)))
 
-            structs = []
-            for pair in pairs:
-                m = mol.copy(deep=True)
-                for ind in pair:
-                    m.atoms[ind].label = "*"
-                structs.append(m)
-
-            return structs
-            
-        sidt_finetuned_to_dft = MultiEvalSubgraphIsomorphicDecisionTreeRegressor(
-                    bond_decomposition_adsorbate,
-                    nodes=nodes_isolated,
-                    root_group = Group().from_adjacency_list("""1 * R u0 px cx {2,[vdW,R,S,D,T,Q]}
-                    2 * Rx u0 px cx {1,[vdW,R,S,D,T,Q]}"""),
-                    r=[ATOMTYPES[x] for x in r_atoms],
-                    r_bonds=[0, 0.05, 1, 2, 3, 4],
-                    r_un=r_un,
-                    r_site=r_site,
-                    r_morph=r_morph,
-                    fract_nodes_expand_per_iter=0.1,
-        )
-        
-        from pynta.coveragedependence import adsorbate_interaction_decomposition
-        nodes_file = os.path.join(os.path.split(pynta.models.__file__)[0],"finetuned_to_dft_delta_model.json")
-        nodes_covdep = read_nodes(nodes_file)
-        
-        sidt_finetuned_to_covdep = MultiEvalSubgraphIsomorphicDecisionTreeRegressor([adsorbate_interaction_decomposition],
-                                                        nodes=nodes_covdep,
-                                                        r=[ATOMTYPES[x] for x in r_atoms],
-                                                        r_bonds=[1,2,3,4,0.05],
-                                                        r_un=r_un,
-                                                        r_site=r_site,
-                                                        r_morph=r_morph,
-                                                        max_structures_to_generate_extensions=100,
-                                                        fract_nodes_expand_per_iter=0.025,
-                                                        iter_max=2,
-                                                        iter_item_cap=100,
-                                                        weigh_node_selection_by_occurrence=True,
-                                                        )
-
-        ad_energy_dict = get_lowest_adsorbate_energies(os.path.join(pynta_dir,"Adsorbates"),sidt_finetuned_to_dft=sidt_finetuned_to_dft)
-        coad_Es = {coadname: get_adsorbate_energies(coad_paths[coadname],sidt_finetuned_to_dft=sidt_finetuned_to_dft)[0] for coadname in coadnames}
+        ad_energy_dict = get_lowest_adsorbate_energies(os.path.join(pynta_dir,"Adsorbates"),sidt_isolated_delta=sidt_isolated_delta)
+        coad_Es = {coadname: get_adsorbate_energies(coad_paths[coadname],sidt_isolated_delta=sidt_isolated_delta)[0] for coadname in coadnames}
 
         coadmol_E_dicts = dict()
         coadmol_stability_dicts = dict()
@@ -1364,7 +1369,7 @@ class TrainCovdepModelTask(FiretaskBase):
             init_config = Molecule().from_adjacency_list(adjlist,check_consistency=False)
             new_computed_configs.append(init_config)
             datum_E,datums_stability = process_calculation(d,ad_energy_dict,slab,metal,facet,sites,site_adjacency,pynta_dir,coadmol_E_dicts[coadname],max_dist=3.0,rxn_alignment_min=0.7,
-                coad_disruption_tol=1.1,out_file_name="out",init_file_name="init",vib_file_name="vib_vib",is_ad=None,sidt_finetuned_to_dft=sidt_finetuned_to_dft,sidt_finetuned_to_covdep=sidt_finetuned_to_covdep)
+                coad_disruption_tol=1.1,out_file_name="out",init_file_name="init",vib_file_name="vib_vib",is_ad=None,sidt_isolated_delta=sidt_isolated_delta,sidt_covdep_delta=sidt_covdep_delta)
             if datum_E:
                 new_datums_E.append(datum_E)
             if datum_E and not datum_E.mol.is_isomorphic(init_config,save_order=True):
