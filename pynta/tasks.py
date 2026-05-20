@@ -1237,7 +1237,7 @@ class TrainCovdepModelTask(FiretaskBase):
         fmaxopt = self["fmaxopt"]
         max_iters = self["max_iters"]
         
-        if "sidt_isolated_delta_model" in self.keys():
+        if "sidt_isolated_delta_model" in self.keys() and self["sidt_isolated_delta_model"] is not None:
             nodes_isolated = read_nodes(self["sidt_isolated_delta_model"])
             def bond_decomposition_adsorbate(mol):
                 pairs = []
@@ -1270,7 +1270,7 @@ class TrainCovdepModelTask(FiretaskBase):
         else:
             sidt_isolated_delta = None 
         
-        if "sidt_covdep_delta_model" in self.keys():
+        if "sidt_covdep_delta_model" in self.keys() and self["sidt_covdep_delta_model"] is not None:
             from pynta.coveragedependence import adsorbate_interaction_decomposition
             nodes_covdep = read_nodes(self["sidt_covdep_delta_model"])
             sidt_covdep_delta = MultiEvalSubgraphIsomorphicDecisionTreeRegressor([adsorbate_interaction_decomposition],
