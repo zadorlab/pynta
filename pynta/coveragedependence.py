@@ -1762,26 +1762,27 @@ def load_coverage_delta(d,ad_energy_dict,slab,metal,facet,sites,site_adjacency,t
 
         logging.error(admol.to_adjacency_list())
         split_structs = split_adsorbed_structures(admol)
+        
         try:
             vibdata = get_vibdata(os.path.join(d,out_file_name+".xyz"),os.path.join(d,vib_file_name+".json"),len(slab))
-
-            Ecad = atoms.get_potential_energy() - slab.get_potential_energy() + vibdata.get_zero_point_energy() + sidt_isolated_delta.evaluate(admol)/96485.0 + sidt_covdep_delta.evaluate(admol)/96485.0 
-    
-            Esep = 0.0
-            for split_struct in split_structs:
-                # if not split_struct.contains_surface_site(): #if gas phase species don't extract
-                #     return None,None,None,None
-                for ad,E in ad_energy_dict.items():
-                    if split_struct.is_isomorphic(ad,save_order=True):
-                        Esep += E
-                        break
-                else:
-                    logging.error("no matching adsorbate for {}".format(split_struct.to_smiles()))
-                    return None,None,None,None
+        except FileNotFoundError:
+            return admol,neighbor_sites,ninds,None
             
-            dE = Ecad - Esep
-        except:
-            dE = None
+        Ecad = atoms.get_potential_energy() - slab.get_potential_energy() + vibdata.get_zero_point_energy() + 0.0 if sidt_isolated_delta is None else sidt_isolated_delta.evaluate(admol)/96485.0 + 0.0 if sidt_covdep_delta is None else sidt_covdep_delta.evaluate(admol)/96485.0 
+
+        Esep = 0.0
+        for split_struct in split_structs:
+            # if not split_struct.contains_surface_site(): #if gas phase species don't extract
+            #     return None,None,None,None
+            for ad,E in ad_energy_dict.items():
+                if split_struct.is_isomorphic(ad,save_order=True):
+                    Esep += E
+                    break
+            else:
+                logging.error("no matching adsorbate for {}".format(split_struct.to_smiles()))
+                return None,None,None,None
+        
+        dE = Ecad - Esep
     else:
         if ts_pynta_dir is None:
             xyz = info["xyz"]
