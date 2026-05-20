@@ -484,11 +484,11 @@ class Pynta:
 
 
 class CoverageDependence:
-    def __init__(self,path,metal,surface_type,repeats,pynta_run_directory,software,software_kwargs,label,sites,site_adjacency,coad_stable_sites,adsorbates=[],transition_states=dict(),coadsorbates=[],
+    def __init__(self,path,metal,surface_type,repeats,pynta_run_directory,software,software_kwargs,label,sites,site_adjacency,coad_stable_sites=None,adsorbates=[],transition_states=dict(),coadsorbates=[],
                  max_dist=3.0,frozen_layers=2,fmaxopt=0.05,Ncalc_per_iter=6,TS_opt_software_kwargs=None,launchpad_path=None,
                  fworker_path=None,queue=False,njobs_queue=0,reset_launchpad=False,queue_adapter_path=None,
                  num_jobs=25,surrogate_metal=None,concern_energy_tol=None,max_iters=np.inf,imag_freq_max=150.0,max_coadsorbates=None,
-                 sidt_isolated_delta_model=None,sidt_covdep_delta_model=None):
+                 sidt_isolated_delta_model=None,sidt_covdep_delta_model=None,coad_selection_E_diff_tol=0.1):
         self.path = path
         self.metal = metal
         self.repeats = repeats
@@ -497,7 +497,6 @@ class CoverageDependence:
         self.pairs_directory = os.path.join(self.path,"pairs")
         self.slab_path = os.path.join(self.pynta_run_directory,"slab.xyz")
         self.adsorbates_path = os.path.join(self.pynta_run_directory,"Adsorbates")
-        self.coad_stable_sites = coad_stable_sites
         self.software = software
         self.software_kwargs = software_kwargs
         self.surface_type = surface_type
@@ -525,9 +524,15 @@ class CoverageDependence:
         self.max_coadsorbates = max_coadsorbates
         self.sidt_isolated_delta_model = sidt_isolated_delta_model
         self.sidt_covdep_delta_model = sidt_covdep_delta_model
+        self.coad_selection_E_diff_tol = coad_selection_E_diff_tol
         
         self.collate_isolated_structures()
         
+        if coad_stable_sites:
+            self.coad_stable_sites = coad_stable_sites
+        else:
+            self.identify_coadsorbate_site_targets()
+
         if launchpad_path:
             launchpad = LaunchPad.from_file(launchpad_path)
         else:
@@ -707,6 +712,67 @@ class CoverageDependence:
         
         self.admol_name_path_dict = admol_name_path_dict
         self.admol_name_structure_dict = admol_name_structure_dict
+
+    def identify_coadsorbate_site_targets(self):
+        coads = [self.admol_name_structure_dict[coadname] for coadname in self.coadsorbates]
+        coad_simples = {coadname: remove_slab(coads[i]) for i,coadname in enumerate(self.coadsorbates)}
+        
+        coad_paths = {coadname: os.path.join(self.pynta_run_directory,"Adsorbates",coadname) for coadname in self.coadsorbates}
+        slab = read(self.slab_path)
+        nslab = len(slab)
+        allowed_structure_site_structures = generate_allowed_structure_site_structures(os.path.join(self.pynta_run_directory,"Adsorbates"),self.sites,self.site_adjacency,nslab,max_dist=np.inf)
+        
+        ad_energy_dict = get_lowest_adsorbate_energies(os.path.join(self.pynta_run_directory,"Adsorbates"))
+        coad_Es = {coadname: get_adsorbate_energies(coad_paths[coadname])[0] for coadname in self.coadsorbates}
+
+        coadmol_E_dicts = dict()
+        coadmol_stability_dicts = dict()
+        for coadname in self.coadsorbates:
+            coad_path = coad_paths[coadname]
+            coadmol_E_dict = dict()
+            coadmol_stability_dict = dict()
+            for p in os.listdir(coad_path):
+                if p == "info.json" or (p not in coad_Es[coadname].keys()):
+                    continue
+                admol_init,neighbor_sites_init,ninds_init = generate_adsorbate_2D(read(os.path.join(coad_path,p,p+"_init.xyz")),self.sites,self.site_adjacency,nslab,max_dist=np.inf,allowed_structure_site_structures=allowed_structure_site_structures)
+                admol,neighbor_sites,ninds = generate_adsorbate_2D(read(os.path.join(coad_path,p,p+".xyz")),self.sites,self.site_adjacency,nslab,max_dist=np.inf,allowed_structure_site_structures=allowed_structure_site_structures)
+                out_struct = split_adsorbed_structures(admol,clear_site_info=False)[0]
+                out_struct_init = split_adsorbed_structures(admol_init,clear_site_info=False)[0]
+                coadmol_E_dict[out_struct] = coad_Es[coadname][p]
+                if admol_init.is_isomorphic(admol,save_order=True):
+                    coadmol_stability_dict[out_struct_init] = True
+                else:
+                    coadmol_stability_dict[out_struct_init] = False
+            coadmol_E_dicts[coadname] = coadmol_E_dict
+            coadmol_stability_dicts[coadname] = coadmol_stability_dict
+        
+        snum = self.repeats[0]*self.repeats[1] #number of sites in one monolayer
+        coad_stable_sites = dict()
+        
+        for coadname in self.coadsorbates:
+            coad_stable_sites[coadname] = []
+            site_morph_to_energy_dict = dict()
+            for st,E in coadmol_E_dict.items():
+                satom = [a for a in st.atoms if a.is_surface_site()][0]
+                site_morph = (satom.site,satom.morphology)
+                if site_morph not in site_morph_to_energy_dict.keys() or site_morph_to_energy_dict[site_morph] > E:
+                    site_morph_to_energy_dict[site_morph] = E
+            
+            sorted_site_morph = sorted(site_morph_to_energy_dict.keys(), key=lambda x: site_morph_to_energy_dict[x])
+            Nsites_inc = 0
+            Emin = site_morph_to_energy_dict[sorted_site_morph[0]]
+            Elast = Emin
+            for site_morph in sorted_site_morph:
+                if Nsites_inc < snum or abs(Elast - site_morph_to_energy_dict[site_morph]) < self.coad_selection_E_diff_tol:
+                    coad_stable_sites[coadname].append(site_morph)
+                    Nsites_inc += len([site for site in self.sites if (site["site"],site["morphology"]) == site_morph])
+                    Elast = site_morph_to_energy_dict[site_morph]
+                else:
+                    break
+        
+        self.coad_stable_sites = coad_stable_sites
+
+            
     def setup_active_learning_loop(self):
         calculation_directories = [] #identify pairs directories
         for p1 in os.listdir(os.path.join(self.path,"pairs")):
