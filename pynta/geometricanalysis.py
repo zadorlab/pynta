@@ -1162,7 +1162,7 @@ def get_adsorbate_geometries(adsorbate_path,mol,sites,atom_to_molecule_surface_a
 
     return adsorbates
 
-def get_lowest_adsorbate_energies(adsorbates_path,sidt_finetuned_to_dft=None):
+def get_lowest_adsorbate_energies(adsorbates_path,sidt_isolated_delta=None):
     """
     load the adsorbates geometries find the lowest energy correct structure and the 2D representation
     """
@@ -1174,7 +1174,7 @@ def get_lowest_adsorbate_energies(adsorbates_path,sidt_finetuned_to_dft=None):
         with open(os.path.join(path,"info.json"),"r") as f:
             info = json.load(f)
             mol = Molecule().from_adjacency_list(info["adjlist"])
-        Es = get_adsorbate_energies(path,sidt_finetuned_to_dft=sidt_finetuned_to_dft)[0]
+        Es = get_adsorbate_energies(path,sidt_isolated_delta=sidt_isolated_delta)[0]
         ad_energy_dict[mol] = np.inf
         for E in Es.values():
             if E < ad_energy_dict[mol]:
@@ -1193,11 +1193,11 @@ def extract_pair_graph(atoms,sites,site_adjacency,nslab,max_dist,cut_off_num=Non
                                                        max_dist=max_dist,cut_off_num=cut_off_num,allowed_structure_site_structures=allowed_structure_site_structures)
     return reduce_graph_to_pairs(admol)
 
-def get_adsorbate_energies(ad_path,atom_corrections=None,include_zpe=True,sidt_finetuned_to_dft=None):
+def get_adsorbate_energies(ad_path,atom_corrections=None,include_zpe=True,sidt_isolated_delta=None):
     """
     get ZPE corrected adsorbate energies
     """
-    if sidt_finetuned_to_dft:
+    if sidt_isolated_delta:
         metal = "Pt" #specify the metal
         facet = "fcc111" #specify the facet
         repeats = (3,3,4) #specify 
@@ -1239,7 +1239,7 @@ def get_adsorbate_energies(ad_path,atom_corrections=None,include_zpe=True,sidt_f
         if not (os.path.exists(optdir) and os.path.exists(freqdir)):
             continue
         sp = read(optdir)
-        if sidt_finetuned_to_dft:
+        if sidt_isolated_delta:
             if mol.contains_surface_site():
                 keep_binding_vdW_bonds = False
                 keep_vdW_surface_bonds = False
@@ -1260,11 +1260,11 @@ def get_adsorbate_energies(ad_path,atom_corrections=None,include_zpe=True,sidt_f
                     admol = None
                     
                 if admol:
-                    dE = sidt_finetuned_to_dft.evaluate(admol)/96485.0 
+                    dE = sidt_isolated_delta.evaluate(admol)/96485.0 
                 else:
                     dE = 0.0
             else:
-                dE = sidt_finetuned_to_dft.evaluate(mol)/96485.0 
+                dE = sidt_isolated_delta.evaluate(mol)/96485.0 
         else:
             dE = 0.0
         

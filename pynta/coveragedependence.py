@@ -34,8 +34,8 @@ def get_unstable_pairs(pairsdir,adsorbate_dir,sites,site_adjacency,nslab,max_dis
     for pair in os.listdir(pairsdir):
         if not "_" in pair or pair[0] == ".":
             continue
-        adname = pair.split("_")[0]
-        coadname = pair.split("_")[1]
+        adname = pair.rsplit("_", 1)[0]
+        coadname = pair.rsplit("_", 1)[1]
         info_coad_path = os.path.join(adsorbate_dir,coadname,"info.json")
         with open(info_coad_path,'r') as f:
             info_coad = json.load(f)
@@ -121,7 +121,7 @@ def copy_stable_pairs(pairsdir,sites,site_adjacency,nslab,max_dist=3.0):
     count = 0
     coadname_dict = {"O=[Pt]": 1, "N#[Pt]": 1, "O[Pt]": 2, "[Pt]": 1}
     for pair in os.listdir(pairsdir):
-        coadname = pair.split("_")[1]
+        coadname = pair.rsplit("_", 1)[1]
         for num in os.listdir(os.path.join(pairsdir,pair)):
             p = os.path.join(pairsdir,pair,num) 
             if num.isdigit() and os.path.isdir(p):
@@ -660,7 +660,7 @@ def setup_pair_opts_for_rxns(targetdir,pynta_isolated_dir,adsorbates,tsdirs,coad
         if not is_ts:
             name = "_".join(s)
         else:
-            name = "_".join([os.path.split(os.path.split(s[0])[0])[1],s[1]])
+            name = "_".join([os.path.split(os.path.split(s[0])[0])[1], os.path.split(s[0])[1], s[1]])
         namedir = os.path.join(pairdir,name)
         if not os.path.exists(namedir):
             os.makedirs(namedir)
@@ -672,7 +672,19 @@ def setup_pair_opts_for_rxns(targetdir,pynta_isolated_dir,adsorbates,tsdirs,coad
                                  max_dist=max_dist,imag_freq_max=imag_freq_max)
             for i,pair in enumerate(pairs):
                 os.makedirs(os.path.join(namedir,str(i)))
-                write(os.path.join(namedir,str(i),"init.xyz"), pair)
+                # Remove stale per-atom arrays with wrong length (ASE extxyz compatibility)
+                for key in list(pair.arrays.keys()):
+                    if key in ('positions', 'numbers'):
+                        continue
+                    if len(pair.arrays[key]) != len(pair):
+                        del pair.arrays[key]
+                for key in list(pair.info.keys()):
+                    val = pair.info[key]
+                    if hasattr(val, '__len__') and len(val) != len(pair):
+                        del pair.info[key]
+                pair_to_write = pair.copy()
+                pair_to_write.calc = None
+                write(os.path.join(namedir,str(i),"init.xyz"), pair_to_write)
                 if not is_ts:
                     moldict = {"adjlist": pairmols[i].to_adjacency_list(),"xyz": pairxyzs[i], "coadname": s[1]}
                 else:
@@ -897,7 +909,19 @@ def generate_coadsorbed_xyzs(outdir,ad_xyzs,ts_xyzs,slabxyz,pairsdir,ads_dir,
                         d = {"adjlist": mol2D.to_adjacency_list(),
                             "xyz": ts_xyz}
                         json.dump(d,f)
-                    write(os.path.join(outdir,ts_name,coadname,str(i),"init.xyz"),atoms[i])
+                    # Remove stale per-atom arrays with wrong length (ASE extxyz compatibility)
+                    for key in list(pair.arrays.keys()):
+                        if key in ('positions', 'numbers'):
+                            continue
+                        if len(pair.arrays[key]) != len(pair):
+                            del pair.arrays[key]
+                    for key in list(pair.info.keys()):
+                        val = pair.info[key]
+                        if hasattr(val, '__len__') and len(val) != len(pair):
+                            del pair.info[key]
+                    atoms_to_write = atoms[i].copy()
+                    atoms_to_write.calc = None
+                    write(os.path.join(outdir,ts_name,coadname,str(i),"init.xyz"),atoms_to_write)
                     outxyzsts.append(os.path.join(outdir,ts_name,coadname,str(i),"init.xyz"))
         
         for j,ad_xyz in enumerate(ad_xyzs):
@@ -932,7 +956,19 @@ def generate_coadsorbed_xyzs(outdir,ad_xyzs,ts_xyzs,slabxyz,pairsdir,ads_dir,
                         d = {"adjlist": mol2D.to_adjacency_list(),
                             "xyz": ad_xyz}
                         json.dump(d,f)
-                    write(os.path.join(outdir,ad_name,coadname,str(i),"init.xyz"),atoms[i])
+                    # Remove stale per-atom arrays with wrong length (ASE extxyz compatibility)
+                    for key in list(pair.arrays.keys()):
+                        if key in ('positions', 'numbers'):
+                            continue
+                        if len(pair.arrays[key]) != len(pair):
+                            del pair.arrays[key]
+                    for key in list(pair.info.keys()):
+                        val = pair.info[key]
+                        if hasattr(val, '__len__') and len(val) != len(pair):
+                            del pair.info[key]
+                    atoms_to_write = atoms[i].copy()
+                    atoms_to_write.calc = None
+                    write(os.path.join(outdir,ad_name,coadname,str(i),"init.xyz"),atoms_to_write)
                     outxyzsad.append(os.path.join(outdir,ad_name,coadname,str(i),"init.xyz"))
         
     return outatoms,outmol2Dsad,outmol2Dsts,outxyzsad,outxyzsts
@@ -1357,7 +1393,7 @@ class CoverageDependenceRegressor(MultiEvalSubgraphIsomorphicDecisionTreeRegress
             
         logging.info("# nodes: {}".format(len(self.nodes)))
         
-def train_sidt_cov_dep_regressor(pairs_datums,sampling_datums,r_site=None,
+def train_sidt_cov_dep_regressor(pairs_datums,sampling_datums,r_site=None,r_morph=None,r_un=None,r_lone_pairs=None,
                                 r_atoms=None,node_fract_training=0.7):
 
     if r_site is None:
@@ -1396,8 +1432,10 @@ def train_sidt_cov_dep_regressor(pairs_datums,sampling_datums,r_site=None,
                                                    nodes=pairnodes,
                                                    r=[ATOMTYPES[x] for x in r_atoms],
                                                    r_bonds=[1,2,3,0.05],
-                                                   r_un=[0],
+                                                   r_un=r_un,
+                                                   #r_lone_pairs=r_lone_pairs, #available in next pysidt release
                                                    r_site=r_site,
+                                                   r_morph=r_morph,
                                                    max_structures_to_generate_extensions=100,
                                                    fract_nodes_expand_per_iter=0.025,
                                                    iter_max=2,
@@ -1409,8 +1447,9 @@ def train_sidt_cov_dep_regressor(pairs_datums,sampling_datums,r_site=None,
                                                    nodes=pairnodes,
                                                    r=[ATOMTYPES[x] for x in r_atoms],
                                                    r_bonds=[1,2,3,0.05],
-                                                   r_un=[0],
+                                                   r_un=r_un,
                                                    r_site=r_site,
+                                                   r_morph=r_morph,
                                                    max_structures_to_generate_extensions=100,
                                                    fract_nodes_expand_per_iter=0.025,
                                                    iter_max=2,
@@ -1524,7 +1563,7 @@ def add_ad_to_site(admol,coad,site):
     return admolout
     
 def get_configurations(admol, coad, coad_stable_sites, tree_interaction_classifier=None, coadmol_stability_dict=None, unstable_groups=None,
-                       tree_interaction_regressor=None, tree_atom_regressor=None, coadmol_E_dict=None, energy_tol=None):
+                       tree_interaction_regressor=None, tree_atom_regressor=None, coadmol_E_dict=None, energy_tol=None, max_coadsorbates=None):
     empty_sites = [a for a in admol.atoms if a.is_surface_site() and a.site in coad_stable_sites and not any([not a2.is_surface_site() for a2 in a.bonds.keys()])]
     print("empty sites")
     print(len(empty_sites))
@@ -1533,7 +1572,8 @@ def get_configurations(admol, coad, coad_stable_sites, tree_interaction_classifi
     outmols_split = [[admol]]
     lowest_energy_surface_bond_dict = dict()
     print(len(outmols))
-    for i in range(len(empty_sites)):
+    n_iter = len(empty_sites) if max_coadsorbates is None else min(max_coadsorbates, len(empty_sites))
+    for i in range(n_iter):
         newoutmols = []
         for m in outmols_split[i]: #all configurations with a fixed number of co-adsorbates (highest number hit yet)
             for sind in empty_site_inds:
@@ -1698,7 +1738,7 @@ def get_configs_of_concern(tree_interaction_regressor,configs,coad_stable_sites,
 
 def load_coverage_delta(d,ad_energy_dict,slab,metal,facet,sites,site_adjacency,ts_pynta_dir=None,allowed_structure_site_structures=None,
                        out_file_name="out",vib_file_name="vib",is_ad=None,keep_binding_vdW_bonds=False,keep_vdW_surface_bonds=False,
-                       sidt_finetuned_to_dft=None,sidt_finetuned_to_covdep=None):
+                       sidt_isolated_delta=None,sidt_covdep_delta=None):
 
     try:
         info = json.load(open(os.path.join(d,"info.json")))
@@ -1711,7 +1751,7 @@ def load_coverage_delta(d,ad_energy_dict,slab,metal,facet,sites,site_adjacency,t
         is_ts = not is_ad
     
     atoms = read(os.path.join(d,out_file_name+".xyz"))
-    
+
     if not is_ts:
         try:
             admol,neighbor_sites,ninds = generate_adsorbate_2D(atoms, sites, site_adjacency, len(slab), max_dist=np.inf, cut_off_num=None, 
@@ -1725,7 +1765,7 @@ def load_coverage_delta(d,ad_energy_dict,slab,metal,facet,sites,site_adjacency,t
         try:
             vibdata = get_vibdata(os.path.join(d,out_file_name+".xyz"),os.path.join(d,vib_file_name+".json"),len(slab))
 
-            Ecad = atoms.get_potential_energy() - slab.get_potential_energy() + vibdata.get_zero_point_energy() + sidt_finetuned_to_dft.evaluate(admol)/96485.0 + sidt_finetuned_to_covdep.evaluate(admol)/96485.0 
+            Ecad = atoms.get_potential_energy() - slab.get_potential_energy() + vibdata.get_zero_point_energy() + sidt_isolated_delta.evaluate(admol)/96485.0 + sidt_covdep_delta.evaluate(admol)/96485.0 
     
             Esep = 0.0
             for split_struct in split_structs:
@@ -1763,12 +1803,11 @@ def load_coverage_delta(d,ad_energy_dict,slab,metal,facet,sites,site_adjacency,t
         except FileNotFoundError:
             return admol,neighbor_sites,ninds,None
         
-        Ecad = atoms.get_potential_energy() - slab.get_potential_energy() + vibdata.get_zero_point_energy() + sidt_finetuned_to_dft.evaluate(admol)/96485.0 + sidt_finetuned_to_covdep.evaluate(admol)/96485.0 
+        Ecad = atoms.get_potential_energy() - slab.get_potential_energy() + vibdata.get_zero_point_energy() + 0.0 if sidt_isolated_delta is None else sidt_isolated_delta.evaluate(admol)/96485.0 + 0.0 if sidt_covdep_delta is None else sidt_covdep_delta.evaluate(admol)/96485.0 
         
-        
-        ts = read(xyz)
+        ts = read(xyz) #isolated TS
         ts_vibdata = get_vibdata(xyz,os.path.join(os.path.split(xyz)[0],"vib.json_vib.json"),len(slab))
-        Ets = ts.get_potential_energy() - slab.get_potential_energy()  + ts_vibdata.get_zero_point_energy() + sidt_finetuned_to_dft.evaluate(admol)/96485.0 
+        Ets = ts.get_potential_energy() - slab.get_potential_energy()  + ts_vibdata.get_zero_point_energy() + 0.0 if sidt_isolated_delta is None else sidt_isolated_delta.evaluate(admol)/96485.0 
         
         num_ts_atoms = len(ts) - len(slab)
         
@@ -1826,7 +1865,7 @@ def tagsites(atoms,sites):
 
 def extract_sample(d,ad_energy_dict,slab,metal,facet,sites,site_adjacency,pynta_dir,max_dist=3.0,rxn_alignment_min=0.7,
                    coad_disruption_tol=1.1,out_file_name="out",init_file_name="init",vib_file_name="vib",is_ad=None,
-                  use_allowed_site_structures=True,sidt_finetuned_to_dft=None,sidt_finetuned_to_covdep=None):
+                  use_allowed_site_structures=True,sidt_isolated_delta=None,sidt_covdep_delta=None):
     out_dict = dict()
     
     atoms_init = read(os.path.join(d,init_file_name+".xyz"))
@@ -1908,7 +1947,7 @@ def extract_sample(d,ad_energy_dict,slab,metal,facet,sites,site_adjacency,pynta_
                                             ts_pynta_dir=pynta_dir,allowed_structure_site_structures=allowed_structure_site_structures,
                                                        out_file_name=out_file_name,vib_file_name=vib_file_name,is_ad=is_ad,
                                                        keep_binding_vdW_bonds=keep_binding_vdW_bonds,keep_vdW_surface_bonds=keep_vdW_surface_bonds,
-                                                       sidt_finetuned_to_dft=sidt_finetuned_to_dft,sidt_finetuned_to_covdep=sidt_finetuned_to_covdep)
+                                                       sidt_isolated_delta=sidt_isolated_delta,sidt_covdep_delta=sidt_covdep_delta)
     
     
     if is_ad:
@@ -2005,7 +2044,7 @@ def extract_sample(d,ad_energy_dict,slab,metal,facet,sites,site_adjacency,pynta_
 
 def process_calculation(d,ad_energy_dict,slab,metal,facet,sites,site_adjacency,pynta_dir,coadmol_E_dict,max_dist=3.0,rxn_alignment_min=0.7,
                     coad_disruption_tol=1.1,out_file_name="out",init_file_name="init",vib_file_name="vib",is_ad=None,
-                    sidt_finetuned_to_dft=None,sidt_finetuned_to_covdep=None):
+                    sidt_isolated_delta=None,sidt_covdep_delta=None):
     
     datums_stability = []
     datum_E = None
@@ -2013,7 +2052,7 @@ def process_calculation(d,ad_energy_dict,slab,metal,facet,sites,site_adjacency,p
     outdict = extract_sample(d,ad_energy_dict,slab,metal,facet,sites,site_adjacency,pynta_dir,max_dist=max_dist,rxn_alignment_min=rxn_alignment_min,
                     coad_disruption_tol=coad_disruption_tol,
                     out_file_name=out_file_name,init_file_name=init_file_name,vib_file_name=vib_file_name,is_ad=is_ad,
-                    sidt_finetuned_to_dft=sidt_finetuned_to_dft,sidt_finetuned_to_covdep=sidt_finetuned_to_covdep)
+                    sidt_isolated_delta=sidt_isolated_delta,sidt_covdep_delta=sidt_covdep_delta)
     
     if outdict["init_info"]:
         mol_init = Molecule().from_adjacency_list(outdict["init_info"],check_consistency=False)

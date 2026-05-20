@@ -6,6 +6,7 @@ from ase.io.trajectory import Trajectory
 from ase.calculators.socketio import SocketIOCalculator
 from ase.vibrations import Vibrations
 from ase.calculators.mixing import SumCalculator
+from ase.calculators.singlepoint import SinglePointCalculator
 from molecule.molecule import Molecule, Group, ATOMTYPES
 from sella import Sella, Constraints, IRC
 from fireworks import *
@@ -83,8 +84,13 @@ def optimize_firework(xyz,software,label,opt_method=None,sella=None,socket=False
     t1 = MolecularOptimizationTask(d)
     directory = os.path.dirname(xyz)
     if out_path is None: out_path = os.path.join(directory,label+".xyz")
-    t2 = FileTransferTask({'files': [{'src': label+'.xyz', 'dest': out_path}, {'src': label+'.traj', 'dest': os.path.join(directory,label+".traj")}],
-            'mode': 'copy', 'ignore_errors' : ignore_errors})
+    t2 = FileTransferTask({'files': [
+        {'src': label+'.xyz', 'dest': out_path}, 
+        {'src': label+'.traj', 'dest': os.path.join(directory, label+".traj")},
+    ],
+    'mode': 'copy', 'ignore_errors': ignore_errors})
+
+
     return Firework([t1,t2],parents=parents,name=label+"opt",spec={"_allow_fizzled_parents": allow_fizzled_parents,"_priority": priority})
 
 @explicit_serialize
@@ -102,11 +108,8 @@ class MolecularOptimizationTask(OptimizationTask):
             if "command" in software_kwargs.keys() and "{unixsocket}" in software_kwargs["command"]:
                 software_kwargs["command"] = software_kwargs["command"].format(unixsocket=unixsocket)
 
-        if not isinstance(self["software"],list):
-            software = name_to_ase_software(self["software"])(**software_kwargs)
-        else:
-            software = SumCalculator([name_to_ase_software(self["software"][i])(**software_kwargs[i]) for i in range(len(self["software"]))])
-
+        software = to_ase_software(self["software"],software_kwargs)
+       
         opt_kwargs = deepcopy(self["opt_kwargs"]) if "opt_kwargs" in self.keys() else dict()
         opt_method = name_to_ase_opt(self["opt_method"]) if "opt_method" in self.keys() else BFGS
         run_kwargs = deepcopy(self["run_kwargs"]) if "run_kwargs" in self.keys() else dict()
@@ -243,7 +246,11 @@ class MolecularOptimizationTask(OptimizationTask):
                     else:
                         errors.append(e)
 
-        converged = opt.converged()
+        try:
+            converged = opt.converged()
+        except TypeError:
+            converged = opt.converged(opt.atoms.get_forces().ravel())
+
         if not converged: #optimization has converged
             fmax = np.inf
             try:
@@ -297,9 +304,18 @@ class MolecularOptimizationTask(OptimizationTask):
         if converged:
             if self["software"] == "XTB" and "initial_charges" in sp.arrays.keys():
                 del sp.arrays["initial_charges"]
-            write(label+".xyz", sp)
-        else:
-            return FWAction(stored_data={"error": errors,"converged": converged})
+            
+            # Cache the energy before detaching calculator
+            energy = sp.get_potential_energy()
+            forces = sp.get_forces() if hasattr(sp.calc, 'get_forces') else None
+            
+            sp_to_write = sp.copy()
+            sp_to_write.calc = SinglePointCalculator(sp_to_write, energy=energy, forces=forces)
+            
+            for key in list(sp_to_write.arrays.keys()):
+                if key not in ('positions', 'numbers') and len(sp_to_write.arrays[key]) != len(sp_to_write):
+                    del sp_to_write.arrays[key]
+            write(label+".xyz", sp_to_write)
 
         return FWAction(stored_data={"error": errors,"converged": converged})
 
@@ -311,11 +327,8 @@ class MolecularOptimizationFailTask(OptimizationTask):
     def run_task(self, fw_spec):
         print(fw_spec)
         software_kwargs = deepcopy(self["software_kwargs"]) if "software_kwargs" in self.keys() else dict()
-        if not isinstance(self["software"],list):
-            software = name_to_ase_software(self["software"])(**software_kwargs)
-        else:
-            software = SumCalculator([name_to_ase_software(self["software"][i])(**software_kwargs[i]) for i in range(len(self["software"]))])
-
+        
+        software = to_ase_software(self["software"],software_kwargs)
 
         opt_kwargs = deepcopy(self["opt_kwargs"]) if "opt_kwargs" in self.keys() else dict()
         opt_method = name_to_ase_opt(self["opt_method"]) if "opt_method" in self.keys() else BFGS
@@ -353,11 +366,7 @@ class MolecularEnergyTask(EnergyTask):
     optional_params = ["software_kwargs","energy_kwargs","ignore_errors"]
     def run_task(self, fw_spec):
         xyz = self['xyz']
-        if not isinstance(self["software"],list):
-            software = name_to_ase_software(self["software"])(**software_kwargs)
-        else:
-            software = SumCalculator([name_to_ase_software(self["software"][i])(**software_kwargs[i]) for i in range(len(self["software"]))])
-
+        software = to_ase_software(self["software"],software_kwargs)
         label = self["label"]
         software_kwargs = deepcopy(self["software_kwargs"]) if "software_kwargs" in self.keys() else dict()
         energy_kwargs = deepcopy(self["energy_kwargs"]) if "energy_kwargs" in self.keys() else dict()
@@ -404,11 +413,7 @@ class MolecularVibrationsTask(VibrationTask):
         xyz = self['xyz']
         label = self["label"]
         software_kwargs = deepcopy(self["software_kwargs"]) if "software_kwargs" in self.keys() else dict()
-        if not isinstance(self["software"],list):
-            software = name_to_ase_software(self["software"])(**software_kwargs)
-        else:
-            software = SumCalculator([name_to_ase_software(self["software"][i])(**software_kwargs[i]) for i in range(len(self["software"]))])
-
+        software = to_ase_software(self["software"],software_kwargs)
         ignore_errors = deepcopy(self["ignore_errors"]) if "ignore_errors" in self.keys() else False
         socket = self["socket"] if "socket" in self.keys() else False
         if socket:
@@ -970,11 +975,7 @@ class MolecularIRC(FiretaskBase):
             if "command" in software_kwargs.keys() and "{unixsocket}" in software_kwargs["command"]:
                 software_kwargs["command"] = software_kwargs["command"].format(unixsocket=unixsocket)
 
-        if not isinstance(self["software"],list):
-            software = name_to_ase_software(self["software"])(**software_kwargs)
-        else:
-            software = SumCalculator([name_to_ase_software(self["software"][i])(**software_kwargs[i]) for i in range(len(self["software"]))])
-
+        software = to_ase_software(self["software"],software_kwargs)
 
         opt_kwargs = deepcopy(self["opt_kwargs"]) if "opt_kwargs" in self.keys() else dict()
         run_kwargs = deepcopy(self["run_kwargs"]) if "run_kwargs" in self.keys() else dict()
@@ -1187,12 +1188,16 @@ class CalculateConfigurationEnergiesTask(FiretaskBase):
 
 def train_covdep_model_firework(path,admol_name_path_dict,admol_name_structure_dict,sites,site_adjacency,
                                 pynta_dir, metal, facet, slab_path, calculation_directories, coadnames,
-                                coad_stable_sites, software, software_kwargs, software_kwargs_TS, freeze_ind, fmaxopt,  parents=[],Ncalc_per_iter=6,iter=0,max_iters=6,concern_energy_tol=None,ignore_errors=False):
+                                coad_stable_sites, software, software_kwargs, software_kwargs_TS, freeze_ind, 
+                                fmaxopt, parents=[],Ncalc_per_iter=6,iter=0,max_iters=6,concern_energy_tol=None,
+                                ignore_errors=False, max_coadsorbates=None,sidt_isolated_delta_model=None,
+                                sidt_covdep_delta_model=None):
     d = {"path": path, "admol_name_path_dict": admol_name_path_dict, "admol_name_structure_dict": {k : v.to_adjacency_list() for k,v in admol_name_structure_dict.items()},
          "sites": sites, "site_adjacency": {str(k):v for k,v in site_adjacency.items()}, "pynta_dir": pynta_dir, "metal": metal, "facet": facet, "slab_path": slab_path,
          "calculation_directories": calculation_directories, "coadnames": coadnames, "coad_stable_sites": coad_stable_sites, 
         "Ncalc_per_iter": Ncalc_per_iter, "iter": iter, "max_iters": max_iters, "software": software, "software_kwargs": software_kwargs, "software_kwargs_TS": software_kwargs_TS, "freeze_ind": freeze_ind, 
-        "fmaxopt": fmaxopt, "concern_energy_tol": concern_energy_tol, "ignore_errors": ignore_errors}
+        "fmaxopt": fmaxopt, "concern_energy_tol": concern_energy_tol, "ignore_errors": ignore_errors, "max_coadsorbates": max_coadsorbates,
+        "sidt_isolated_delta_model": sidt_isolated_delta_model, "sidt_covdep_delta_model": sidt_covdep_delta_model}
     t1 = TrainCovdepModelTask(d)
     return Firework([t1],parents=parents,name="Training Model "+str(iter),spec={"_allow_fizzled_parents":True, "_priority": 4})
 
@@ -1201,11 +1206,12 @@ class TrainCovdepModelTask(FiretaskBase):
     required_params = ["path","admol_name_path_dict","admol_name_structure_dict","sites","site_adjacency", "pynta_dir", "metal", "facet",
                        "slab_path", "calculation_directories", "coadnames", "coad_stable_sites", "Ncalc_per_iter", "iter", "max_iters", "software", 
                        "software_kwargs", "software_kwargs_TS", "freeze_ind", "fmaxopt"]
-    optional_params = ["concern_energy_tol","ignore_errors"]
+    optional_params = ["concern_energy_tol","ignore_errors", "max_coadsorbates","sidt_isolated_delta_model","sidt_covdep_delta_model"]
     def run_task(self, fw_spec):
         path = self["path"]
         admol_name_path_dict = self["admol_name_path_dict"]
         admol_name_structure_dict = {k: Molecule().from_adjacency_list(v,check_consistency=False) for k,v in self["admol_name_structure_dict"].items()}
+        max_coadsorbates = self["max_coadsorbates"] if "max_coadsorbates" in self.keys() else None
         sites = []
         for site in self["sites"]:
             site["normal"] = np.array(site["normal"])
@@ -1231,6 +1237,58 @@ class TrainCovdepModelTask(FiretaskBase):
         fmaxopt = self["fmaxopt"]
         max_iters = self["max_iters"]
         
+        if "sidt_isolated_delta_model" in self.keys() and self["sidt_isolated_delta_model"] is not None:
+            nodes_isolated = read_nodes(self["sidt_isolated_delta_model"])
+            def bond_decomposition_adsorbate(mol):
+                pairs = []
+                bonds = mol.get_all_edges()
+                for bond in bonds:
+                    if not (bond.atom1.is_surface_site() and bond.atom2.is_surface_site()):
+                        pairs.append((mol.atoms.index(bond.atom1), mol.atoms.index(bond.atom2)))
+
+                structs = []
+                for pair in pairs:
+                    m = mol.copy(deep=True)
+                    for ind in pair:
+                        m.atoms[ind].label = "*"
+                    structs.append(m)
+
+                return structs
+            
+            sidt_isolated_delta = MultiEvalSubgraphIsomorphicDecisionTreeRegressor(
+                    bond_decomposition_adsorbate,
+                    nodes=nodes_isolated,
+                    root_group = Group().from_adjacency_list("""1 * R u0 px cx {2,[vdW,R,S,D,T,Q]}
+                    2 * Rx u0 px cx {1,[vdW,R,S,D,T,Q]}"""),
+                    r=[ATOMTYPES[x] for x in r_atoms],
+                    r_bonds=[0, 0.05, 1, 2, 3, 4],
+                    r_un=r_un,
+                    r_site=r_site,
+                    r_morph=r_morph,
+                    fract_nodes_expand_per_iter=0.1,
+            )
+        else:
+            sidt_isolated_delta = None 
+        
+        if "sidt_covdep_delta_model" in self.keys() and self["sidt_covdep_delta_model"] is not None:
+            from pynta.coveragedependence import adsorbate_interaction_decomposition
+            nodes_covdep = read_nodes(self["sidt_covdep_delta_model"])
+            sidt_covdep_delta = MultiEvalSubgraphIsomorphicDecisionTreeRegressor([adsorbate_interaction_decomposition],
+                                                        nodes=nodes_covdep,
+                                                        r=[ATOMTYPES[x] for x in r_atoms],
+                                                        r_bonds=[1,2,3,4,0.05],
+                                                        r_un=r_un,
+                                                        r_site=r_site,
+                                                        r_morph=r_morph,
+                                                        max_structures_to_generate_extensions=100,
+                                                        fract_nodes_expand_per_iter=0.025,
+                                                        iter_max=2,
+                                                        iter_item_cap=100,
+                                                        weigh_node_selection_by_occurrence=True,
+                                                        )
+        else:
+            sidt_covdep_delta = None
+        
         coads = [admol_name_structure_dict[coadname] for coadname in coadnames]
         coad_simples = {coadname: remove_slab(coads[i]) for i,coadname in enumerate(coadnames)}
         
@@ -1239,58 +1297,14 @@ class TrainCovdepModelTask(FiretaskBase):
         nslab = len(slab)
         allowed_structure_site_structures = generate_allowed_structure_site_structures(os.path.join(pynta_dir,"Adsorbates"),sites,site_adjacency,nslab,max_dist=np.inf)
         
-        
-        nodes_file = os.path.join(os.path.split(pynta.models.__file__)[0],"finetuned_to_dft_delta_model.json")
-        nodes_isolated = read_nodes(nodes_file)
-        def bond_decomposition_adsorbate(mol):
-            pairs = []
-            bonds = mol.get_all_edges()
-            for bond in bonds:
-                if not (bond.atom1.is_surface_site() and bond.atom2.is_surface_site()):
-                    pairs.append((mol.atoms.index(bond.atom1), mol.atoms.index(bond.atom2)))
+        r_site = list(set([a.site for admol in admol_name_structure_dict.values() for a in admol.atoms]))
+        r_morph = list(set([a.morphology for admol in admol_name_structure_dict.values() for a in admol.atoms]))
+        r_atoms = list(set([a.element.symbol for admol in admol_name_structure_dict.values() for a in admol.atoms]))
+        r_un = list(set([a.radical_electrons for admol in admol_name_structure_dict.values() for a in admol.atoms]))
+        r_lone_pairs = list(set([a.lone_pairs for admol in admol_name_structure_dict.values() for a in admol.atoms]))
 
-            structs = []
-            for pair in pairs:
-                m = mol.copy(deep=True)
-                for ind in pair:
-                    m.atoms[ind].label = "*"
-                structs.append(m)
-
-            return structs
-            
-        sidt_finetuned_to_dft = MultiEvalSubgraphIsomorphicDecisionTreeRegressor(
-                    bond_decomposition_adsorbate,
-                    nodes=nodes_isolated,
-                    root_group = Group().from_adjacency_list("""1 * R u0 px cx {2,[vdW,R,S,D,T,Q]}
-                    2 * Rx u0 px cx {1,[vdW,R,S,D,T,Q]}"""),
-                    r=[ATOMTYPES[x] for x in ["C", "O", "H", "N", "X"]],
-                    r_bonds=[0, 0.05, 1, 2, 3, 4],
-                    r_un=[0],
-                    r_site=["","fcc","hcp","ontop","bridge"],
-                    fract_nodes_expand_per_iter=0.1,
-        )
-        
-        from pynta.coveragedependence import adsorbate_interaction_decomposition
-        nodes_file = os.path.join(os.path.split(pynta.models.__file__)[0],"finetuned_to_dft_delta_model.json")
-        nodes_covdep = read_nodes(nodes_file)
-        r_site = ["","ontop","bridge","hcp","fcc"]
-    
-        r_atoms = ["C","O","N","H","X"]
-        sidt_finetuned_to_covdep = MultiEvalSubgraphIsomorphicDecisionTreeRegressor([adsorbate_interaction_decomposition],
-                                                        nodes=nodes_covdep,
-                                                        r=[ATOMTYPES[x] for x in r_atoms],
-                                                        r_bonds=[1,2,3,4,0.05],
-                                                        r_un=[0],
-                                                        r_site=r_site,
-                                                        max_structures_to_generate_extensions=100,
-                                                        fract_nodes_expand_per_iter=0.025,
-                                                        iter_max=2,
-                                                        iter_item_cap=100,
-                                                        weigh_node_selection_by_occurrence=True,
-                                                        )
-
-        ad_energy_dict = get_lowest_adsorbate_energies(os.path.join(pynta_dir,"Adsorbates"),sidt_finetuned_to_dft=sidt_finetuned_to_dft)
-        coad_Es = {coadname: get_adsorbate_energies(coad_paths[coadname],sidt_finetuned_to_dft=sidt_finetuned_to_dft)[0] for coadname in coadnames}
+        ad_energy_dict = get_lowest_adsorbate_energies(os.path.join(pynta_dir,"Adsorbates"),sidt_isolated_delta=sidt_isolated_delta)
+        coad_Es = {coadname: get_adsorbate_energies(coad_paths[coadname],sidt_isolated_delta=sidt_isolated_delta)[0] for coadname in coadnames}
 
         coadmol_E_dicts = dict()
         coadmol_stability_dicts = dict()
@@ -1324,7 +1338,7 @@ class TrainCovdepModelTask(FiretaskBase):
             for coadname in coadnames:
                 for admol_name,admol in admol_name_structure_dict.items():
                     configs = get_configurations(admol, coad_simples[coadname], coad_stable_sites[coadname],  coadmol_stability_dict=coadmol_stability_dicts[coadname], unstable_groups=unstable_pairs,
-                        coadmol_E_dict=coadmol_E_dicts[coadname])
+                        coadmol_E_dict=coadmol_E_dicts[coadname], max_coadsorbates=max_coadsorbates)
                     
                     with open(os.path.join(path,"Configurations",admol_name+"_"+coadname+".json"),'w') as f:
                         json.dump([x.to_adjacency_list() for x in configs],f)
@@ -1355,7 +1369,7 @@ class TrainCovdepModelTask(FiretaskBase):
             init_config = Molecule().from_adjacency_list(adjlist,check_consistency=False)
             new_computed_configs.append(init_config)
             datum_E,datums_stability = process_calculation(d,ad_energy_dict,slab,metal,facet,sites,site_adjacency,pynta_dir,coadmol_E_dicts[coadname],max_dist=3.0,rxn_alignment_min=0.7,
-                coad_disruption_tol=1.1,out_file_name="out",init_file_name="init",vib_file_name="vib_vib",is_ad=None,sidt_finetuned_to_dft=sidt_finetuned_to_dft,sidt_finetuned_to_covdep=sidt_finetuned_to_covdep)
+                coad_disruption_tol=1.1,out_file_name="out",init_file_name="init",vib_file_name="vib_vib",is_ad=None,sidt_isolated_delta=sidt_isolated_delta,sidt_covdep_delta=sidt_covdep_delta)
             if datum_E:
                 new_datums_E.append(datum_E)
             if datum_E and not datum_E.mol.is_isomorphic(init_config,save_order=True):
@@ -1379,8 +1393,8 @@ class TrainCovdepModelTask(FiretaskBase):
             
         Nconfigs = len(admol_name_structure_dict)
         Ncoads = 1
-        tree = train_sidt_cov_dep_regressor(pairs_datums,sampling_datums,r_site=None,
-                            r_atoms=None,node_fract_training=0.7)
+        tree = train_sidt_cov_dep_regressor(pairs_datums,sampling_datums,r_site=r_site,r_morph=r_morph,
+                            r_atoms=r_atoms,r_un=r_un,r_lone_pairs=r_lone_pairs,node_fract_training=0.7)
         
         tree_file = os.path.join(path,"Iterations",str(iter),"regressor.json")
         write_nodes(tree,tree_file)
