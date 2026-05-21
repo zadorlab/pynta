@@ -757,8 +757,7 @@ class CoverageDependence:
                 satom = [a for a in st.atoms if a.is_surface_site()][0]
                 site_morph = (satom.site,satom.morphology)
                 if site_morph not in site_morph_to_energy_dict.keys() or site_morph_to_energy_dict[site_morph] > E:
-                    site_morph_to_energy_dict[site_morph] = E
-            
+                    site_morph_to_energy_dict[site_morph] = E * 1.0/(96.48530749925793*1000.0) #convert from J/mol to eV
             sorted_site_morph = sorted(site_morph_to_energy_dict.keys(), key=lambda x: site_morph_to_energy_dict[x])
             Nsites_inc = 0
             Emin = site_morph_to_energy_dict[sorted_site_morph[0]]
