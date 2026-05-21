@@ -759,6 +759,7 @@ class CoverageDependence:
         coad_stable_sites = dict()
         
         for coadname in self.coadsorbates:
+            coadmol_E_dict = coadmol_E_dicts[coadname]
             coad_stable_sites[coadname] = []
             site_morph_to_energy_dict = dict()
             for st,E in coadmol_E_dict.items():
