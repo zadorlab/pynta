@@ -492,10 +492,10 @@ class CoverageDependence:
         self.path = path
         self.metal = metal
         self.repeats = repeats
+        self.nslab = len(read(os.path.join(pynta_run_directory,"slab.xyz")))
         self.pynta_run_directory = pynta_run_directory
         self.pairs_directory = os.path.join(self.path,"pairs")
         self.slab_path = os.path.join(self.pynta_run_directory,"slab.xyz")
-        self.nslab = len(read(os.path.join(pynta_run_directory,"slab.xyz")))
         self.adsorbates_path = os.path.join(self.pynta_run_directory,"Adsorbates")
         self.software = software
         self.software_kwargs = software_kwargs
@@ -739,7 +739,15 @@ class CoverageDependence:
                 admol,neighbor_sites,ninds = generate_adsorbate_2D(read(os.path.join(coad_path,p,p+".xyz")),self.sites,self.site_adjacency,nslab,max_dist=np.inf,allowed_structure_site_structures=allowed_structure_site_structures)
                 out_struct = split_adsorbed_structures(admol,clear_site_info=False)[0]
                 out_struct_init = split_adsorbed_structures(admol_init,clear_site_info=False)[0]
-                coadmol_E_dict[out_struct] = coad_Es[coadname][p]
+                coad_E = coad_Es[coadname][p]
+                for st,E in coadmol_E_dict.items():
+                    if out_struct.is_isomorphic(st,save_order=True):
+                        if coad_E < E:
+                            coadmol_E_dict[st] = coad_E
+                        break
+                else:
+                    coadmol_E_dict[out_struct] = coad_E
+                
                 if admol_init.is_isomorphic(admol,save_order=True):
                     coadmol_stability_dict[out_struct_init] = True
                 else:
@@ -751,14 +759,14 @@ class CoverageDependence:
         coad_stable_sites = dict()
         
         for coadname in self.coadsorbates:
+            coadmol_E_dict = coadmol_E_dicts[coadname]
             coad_stable_sites[coadname] = []
             site_morph_to_energy_dict = dict()
             for st,E in coadmol_E_dict.items():
                 satom = [a for a in st.atoms if a.is_surface_site()][0]
                 site_morph = (satom.site,satom.morphology)
                 if site_morph not in site_morph_to_energy_dict.keys() or site_morph_to_energy_dict[site_morph] > E:
-                    site_morph_to_energy_dict[site_morph] = E
-            
+                    site_morph_to_energy_dict[site_morph] = E * 1.0/(96.48530749925793*1000.0) #convert from J/mol to eV
             sorted_site_morph = sorted(site_morph_to_energy_dict.keys(), key=lambda x: site_morph_to_energy_dict[x])
             Nsites_inc = 0
             Emin = site_morph_to_energy_dict[sorted_site_morph[0]]
