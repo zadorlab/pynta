@@ -142,7 +142,7 @@ class MainTest(unittest.TestCase):
                                     adsorbates=["CO[Pt]"],transition_states={"TS0":"9"},
                                     coadsorbates=["O=[Pt]","[Pt]"],
                         frozen_layers=4,fmaxopt=0.05,Ncalc_per_iter=1,launchpad_path=lpad_name,max_iters=1,
-                                max_dist=1.0,imag_freq_max=np.inf,num_jobs=1,coad_selection_E_diff_tol=0.01)
+                                max_dist=1.0,imag_freq_max=np.inf,num_jobs=1,coad_selection_E_diff_tol=0.00000001)
         
         self.assertDictEqual(covdep.coad_stable_sites,{"O=[Pt]":[("fcc","terrace")],"[Pt]":[("fcc","terrace")]})
         
