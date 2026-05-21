@@ -739,7 +739,15 @@ class CoverageDependence:
                 admol,neighbor_sites,ninds = generate_adsorbate_2D(read(os.path.join(coad_path,p,p+".xyz")),self.sites,self.site_adjacency,nslab,max_dist=np.inf,allowed_structure_site_structures=allowed_structure_site_structures)
                 out_struct = split_adsorbed_structures(admol,clear_site_info=False)[0]
                 out_struct_init = split_adsorbed_structures(admol_init,clear_site_info=False)[0]
-                coadmol_E_dict[out_struct] = coad_Es[coadname][p]
+                coad_E = coad_Es[coadname][p]
+                for st,E in coadmol_E_dict.items():
+                    if out_struct.is_isomorphic(st,save_order=True):
+                        if coad_E < E:
+                            coadmol_E_dict[st] = coad_E
+                        break
+                else:
+                    coadmol_E_dict[out_struct] = coad_E
+                
                 if admol_init.is_isomorphic(admol,save_order=True):
                     coadmol_stability_dict[out_struct_init] = True
                 else:
