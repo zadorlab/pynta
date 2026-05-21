@@ -492,10 +492,10 @@ class CoverageDependence:
         self.path = path
         self.metal = metal
         self.repeats = repeats
-        self.nslab = np.product(repeats)
         self.pynta_run_directory = pynta_run_directory
         self.pairs_directory = os.path.join(self.path,"pairs")
         self.slab_path = os.path.join(self.pynta_run_directory,"slab.xyz")
+        self.nslab = len(read(os.path.join(pynta_run_directory,"slab.xyz")))
         self.adsorbates_path = os.path.join(self.pynta_run_directory,"Adsorbates")
         self.software = software
         self.software_kwargs = software_kwargs
