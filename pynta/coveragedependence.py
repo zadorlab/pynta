@@ -1566,13 +1566,10 @@ def get_configurations(admol, coad, coad_stable_sites, tree_interaction_classifi
                        tree_interaction_regressor=None, tree_atom_regressor=None, coadmol_E_dict=None, energy_tol=None, max_coadsorbates=None):
     coad_stable_sites_set = set(tuple(x) if not isinstance(x, str) else x for x in coad_stable_sites)
     empty_sites = [a for a in admol.atoms if a.is_surface_site() and (a.site,a.morphology) in coad_stable_sites_set and not any([not a2.is_surface_site() for a2 in a.bonds.keys()])]
-    print("empty sites")
-    print(len(empty_sites))
     empty_site_inds = [admol.atoms.index(s) for s in empty_sites]
     outmols = [admol]
     outmols_split = [[admol]]
     lowest_energy_surface_bond_dict = dict()
-    print(len(outmols))
     n_iter = len(empty_sites) if max_coadsorbates is None else min(max_coadsorbates, len(empty_sites))
     for i in range(n_iter):
         newoutmols = []
