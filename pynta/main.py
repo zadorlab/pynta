@@ -419,7 +419,7 @@ class Pynta:
                     "rxns_file": self.rxns_file,"path": self.path,"metal": self.metal,"facet": self.surface_type, "sites": self.sites, "site_adjacency": {str(k):v for k,v in self.site_adjacency.items()},
                     "out_path": ts_path, "irc_mode": self.irc_mode,
                     "spawn_jobs": True, "opt_obj_dict": opt_obj_dict, "vib_obj_dict": vib_obj_dict, "IRC_obj_dict": IRC_obj_dict,
-                    "nprocs": 48, "name_to_adjlist_dict": self.name_to_adjlist_dict,
+                    "name_to_adjlist_dict": self.name_to_adjlist_dict,
                     "gratom_to_molecule_atom_maps":{sm: {str(k):v for k,v in d.items()} for sm,d in self.gratom_to_molecule_atom_maps.items()},
                     "gratom_to_molecule_surface_atom_maps":{sm: {str(k):v for k,v in d.items()} for sm,d in self.gratom_to_molecule_surface_atom_maps.items()},
                     "nslab":self.nslab,"Eharmtol":self.Eharmtol,"Eharmfiltertol":self.Eharmfiltertol,"Nharmmin":self.Nharmmin,
@@ -433,7 +433,10 @@ class Pynta:
                 for m in reactants+products:
                     parents.append(self.adsorbate_fw_dict[m])
                 
-            fw = Firework([ts_task],parents=parents,name="TS"+str(i)+"est",spec={"_allow_fizzled_parents": True,"_priority": 10})
+            ts_spec = {"_allow_fizzled_parents": True, "_priority": 10}
+            if self.nprocs_harm > 1:
+                ts_spec["_queueadapter"] = {"ntasks": self.nprocs_harm}
+            fw = Firework([ts_task],parents=parents,name="TS"+str(i)+"est",spec=ts_spec)
             self.fws.append(fw)
 
     def launch(self,single_job=False):
