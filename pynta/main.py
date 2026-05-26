@@ -356,7 +356,10 @@ class Pynta:
                     "postprocess": self.postprocess,
                      })
             
-            fw = Firework([adest_task],parents=[],name="Adguess"+sm,spec={"_priority": 10})
+            adguess_spec = {"_priority": 10}
+            if self.nprocs_harm > 1:
+                adguess_spec["_queueadapter"] = {"ntasks": self.nprocs_harm}
+            fw = Firework([adest_task],parents=[],name="Adguess"+sm,spec=adguess_spec)
             self.adsorbate_fw_dict[sm] = fw
             self.fws.append(fw)
 
