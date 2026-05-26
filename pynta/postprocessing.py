@@ -1642,12 +1642,12 @@ def write_rmg_libraries(path,spc_dict,spc_dict_thermo,ts_dict,metal,facet):
                 continue
             mink = min(valid, key=lambda k: spc[k].energy)
             minspc = spc[mink]
-    else:
-        minspc = spc
+        else:
+            minspc = spc
 
-    spc_dictionary_txt += name + "\n"
-    spc_dictionary_txt += minspc.mol.to_adjacency_list()
-    spc_dictionary_txt += "\n"
+        spc_dictionary_txt += name + "\n"
+        spc_dictionary_txt += minspc.mol.to_adjacency_list()
+        spc_dictionary_txt += "\n"
 
     #for name,spc in spc_dict.items():
     #    if isinstance(spc,list):
