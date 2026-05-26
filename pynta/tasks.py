@@ -587,7 +587,7 @@ class MolecularTSEstimate(FiretaskBase):
     required_params = ["rxn","ts_path","slab_path","adsorbates_path","rxns_file","path","metal","facet","sites","site_adjacency","repeats",
                         "name_to_adjlist_dict", "gratom_to_molecule_atom_maps",
                         "gratom_to_molecule_surface_atom_maps","irc_mode",
-                        "vib_obj_dict","opt_obj_dict","nslab","Eharmtol","Eharmfiltertol","Nharmmin","max_num_hfsp_opts","surrogate_metal",
+                        "vib_obj_dict","opt_obj_dict","nslab","Eharmtol","Eharmfiltertol","Nharmmin","max_num_hfsp_opts","max_dist_hfsp","surrogate_metal",
                         "harm_f_software", "harm_f_software_kwargs"]
     optional_params = ["out_path","spawn_jobs","nprocs","IRC_obj_dict","postprocess"]
     def run_task(self, fw_spec):
@@ -613,6 +613,7 @@ class MolecularTSEstimate(FiretaskBase):
         Eharmfiltertol = self["Eharmfiltertol"]
         Nharmmin = self["Nharmmin"]
         max_num_hfsp_opts = self["max_num_hfsp_opts"]
+        max_dist_hfsp = self["max_dist_hfsp"]
         slab_path = self["slab_path"]
         surrogate_metal = self["surrogate_metal"]
         slab = read(slab_path)
@@ -722,8 +723,18 @@ class MolecularTSEstimate(FiretaskBase):
         print("number of TS guesses with empty sites and multiple mappings:")
         print(len(tsstructs_out))
 
-        if max_num_hfsp_opts:
-            inds = index_site_bond_potential_lists_by_site_distances(site_bond_potential_lists)[:max_num_hfsp_opts].tolist()
+        if max_num_hfsp_opts or max_dist_hfsp:
+            sorted_inds = index_site_bond_potential_lists_by_site_distances(site_bond_potential_lists).tolist()
+            if max_dist_hfsp:
+                max_dists = [get_max_site_dist(site_bond_potential_lists[i]) for i in sorted_inds]
+                dist_inds = [sorted_inds[k] for k,d in enumerate(max_dists) if d <= max_dist_hfsp]
+            else:
+                dist_inds = sorted_inds
+            if max_num_hfsp_opts:
+                count_inds = sorted_inds[:max_num_hfsp_opts]
+            else:
+                count_inds = sorted_inds
+            inds = dist_inds if len(dist_inds) <= len(count_inds) else count_inds
             tsstructs_out = [tsstructs_out[ind] for ind in inds]
             atom_bond_potential_lists = [atom_bond_potential_lists[ind] for ind in inds]
             site_bond_potential_lists = [site_bond_potential_lists[ind] for ind in inds]
