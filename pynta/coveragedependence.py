@@ -1766,7 +1766,9 @@ def load_coverage_delta(d,ad_energy_dict,slab,metal,facet,sites,site_adjacency,t
         except FileNotFoundError:
             return admol,neighbor_sites,ninds,None
             
-        Ecad = atoms.get_potential_energy() - slab.get_potential_energy() + vibdata.get_zero_point_energy() + 0.0 if sidt_isolated_delta is None else sidt_isolated_delta.evaluate(admol)/96485.0 + 0.0 if sidt_covdep_delta is None else sidt_covdep_delta.evaluate(admol)/96485.0 
+        Ecad = (atoms.get_potential_energy() - slab.get_potential_energy() + vibdata.get_zero_point_energy()
+                + (0.0 if sidt_isolated_delta is None else sidt_isolated_delta.evaluate(admol)/96485.0)
+                + (0.0 if sidt_covdep_delta is None else sidt_covdep_delta.evaluate(admol)/96485.0))
 
         Esep = 0.0
         for split_struct in split_structs:
@@ -1802,11 +1804,14 @@ def load_coverage_delta(d,ad_energy_dict,slab,metal,facet,sites,site_adjacency,t
         except FileNotFoundError:
             return admol,neighbor_sites,ninds,None
         
-        Ecad = atoms.get_potential_energy() - slab.get_potential_energy() + vibdata.get_zero_point_energy() + 0.0 if sidt_isolated_delta is None else sidt_isolated_delta.evaluate(admol)/96485.0 + 0.0 if sidt_covdep_delta is None else sidt_covdep_delta.evaluate(admol)/96485.0 
-        
+        Ecad = (atoms.get_potential_energy() - slab.get_potential_energy() + vibdata.get_zero_point_energy()
+                + (0.0 if sidt_isolated_delta is None else sidt_isolated_delta.evaluate(admol)/96485.0)
+                + (0.0 if sidt_covdep_delta is None else sidt_covdep_delta.evaluate(admol)/96485.0))
+
         ts = read(xyz) #isolated TS
         ts_vibdata = get_vibdata(xyz,os.path.join(os.path.split(xyz)[0],"vib.json_vib.json"),len(slab))
-        Ets = ts.get_potential_energy() - slab.get_potential_energy()  + ts_vibdata.get_zero_point_energy() + 0.0 if sidt_isolated_delta is None else sidt_isolated_delta.evaluate(admol)/96485.0 
+        Ets = (ts.get_potential_energy() - slab.get_potential_energy() + ts_vibdata.get_zero_point_energy()
+               + (0.0 if sidt_isolated_delta is None else sidt_isolated_delta.evaluate(admol)/96485.0))
         
         num_ts_atoms = len(ts) - len(slab)
         
