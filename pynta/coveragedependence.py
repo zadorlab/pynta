@@ -1601,10 +1601,10 @@ def get_configurations(admol, coad, coad_stable_sites, tree_interaction_classifi
                         if tree_atom_regressor is not None:
                             E = tree_atom_regressor.evaluate(m) + tree_interaction_regressor.evaluate(m)
                         elif coadmol_E_dict is not None:
-                            E = get_atom_centered_correction(m,coadmol_E_dict) + tree_interaction_regressor.evaluate(m)
+                            E = get_atom_centered_correction(m,coadmol_E_dict)*96.48530749925793*1000.0 + tree_interaction_regressor.evaluate(m)
                         else:
                             raise ValueError
-    
+
                         Nsurfbonds = len([b for b in m.get_all_edges() if (b.atom1.is_surface_site() and not b.atom2.is_surface_site()) or (b.atom2.is_surface_site() and not b.atom1.is_surface_site())])
                         if Nsurfbonds not in lowest_energy_surface_bond_dict.keys() or lowest_energy_surface_bond_dict[Nsurfbonds] > E:
                             lowest_energy_surface_bond_dict[Nsurfbonds] = E
@@ -1659,10 +1659,10 @@ def get_cov_energies_configs_concern_tree(tree_interaction_regressor, configs, c
             E = tree_atom_regressor.evaluate(m) + Einteraction
         elif coadmol_E_dict is not None:
             Einteraction,std,tr = tree_interaction_regressor.evaluate(m,trace=True, estimate_uncertainty=True)
-            E = get_atom_centered_correction(m,coadmol_E_dict) + Einteraction
+            E = get_atom_centered_correction(m,coadmol_E_dict)*96.48530749925793*1000.0 + Einteraction
         else:
             raise ValueError
-        
+
         config_to_Eunctr[i] = (m,E,std,tr)
         
         if Ncoad not in Ncoad_energy_dict.keys():
@@ -1696,7 +1696,7 @@ def get_cov_energies(tree_interaction_regressor, configs, coad_stable_sites, Nco
         if tree_atom_regressor is not None:
             E = tree_atom_regressor.evaluate(m) + tree_interaction_regressor.evaluate(m)
         elif coadmol_E_dict is not None:
-            E = get_atom_centered_correction(m,coadmol_E_dict) + tree_interaction_regressor.evaluate(m)
+            E = get_atom_centered_correction(m,coadmol_E_dict)*96.48530749925793*1000.0 + tree_interaction_regressor.evaluate(m)
         else:
             raise ValueError
         if Ncoad not in Ncoad_energy_dict.keys():
@@ -1726,7 +1726,7 @@ def get_configs_of_concern(tree_interaction_regressor,configs,coad_stable_sites,
             E = tree_atom_regressor.evaluate(m) + Einteraction
         elif coadmol_E_dict is not None:
             Einteraction,std,tr = tree_interaction_regressor.evaluate(m,trace=True, estimate_uncertainty=True)
-            E = get_atom_centered_correction(m,coadmol_E_dict) + Einteraction
+            E = get_atom_centered_correction(m,coadmol_E_dict)*96.48530749925793*1000.0 + Einteraction
         else:
             raise ValueError
         if Ncoad_energy_dict[Ncoad] + concern_energy_tol > E:
@@ -2077,7 +2077,7 @@ def process_calculation(d,ad_energy_dict,slab,metal,facet,sites,site_adjacency,p
                         skip = True
                 if not skip:
                     try:
-                        datum_E = Datum(mol_out,outdict["dE"]*96.48530749925793*1000.0 - get_atom_centered_correction(mol_out,coadmol_E_dict)) #eV to J/mol
+                        datum_E = Datum(mol_out,(outdict["dE"] - get_atom_centered_correction(mol_out,coadmol_E_dict))*96.48530749925793*1000.0) #eV to J/mol
                         datums_stability.append(Datum(mol_out,True))
                     except KeyError:
                         pass
