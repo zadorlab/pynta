@@ -1817,6 +1817,10 @@ def extract_covdep_data(path,pynta_path,ts_dict,metal,facet,sites,site_adjacency
         Ncoad_energy_dict[coad_name] = dict()
         Ncoad_config_dict[coad_name] = dict()
         while os.path.exists(iter_path):
+            if not os.path.exists(os.path.join(iter_path,"regressor.json")):
+                i += 1
+                iter_path = os.path.join(path,"Iterations",str(i))
+                continue
             nodes = read_nodes(os.path.join(iter_path,"regressor.json"))
             root = [n for n in nodes.values() if n.parent is None][0]
             tree = MultiEvalSubgraphIsomorphicDecisionTreeRegressor([adsorbate_interaction_decomposition],
@@ -1859,6 +1863,13 @@ def extract_covdep_data(path,pynta_path,ts_dict,metal,facet,sites,site_adjacency
         i = 0
         iter_path = os.path.join(path,"Iterations",str(i))
         while os.path.exists(iter_path):
+            if not os.path.exists(os.path.join(iter_path,"regressor.json")):
+                for cn in coad_names:
+                    Ncoad_energy_dict[cn].pop(i, None)
+                    Ncoad_config_dict[cn].pop(i, None)
+                i += 1
+                iter_path = os.path.join(path,"Iterations",str(i))
+                continue
             nodes = read_nodes(os.path.join(iter_path,"regressor.json"))
             root = [n for n in nodes.values() if n.parent is None][0]
             tree = MultiEvalSubgraphIsomorphicDecisionTreeRegressor([adsorbate_interaction_decomposition],
