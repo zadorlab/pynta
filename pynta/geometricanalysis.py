@@ -1104,10 +1104,11 @@ def get_unique_adsorbate_geometries(adsorbate_path,mol,sites,site_adjacency,atom
         for i,fm in enumerate(filtered_mols):
             if fm.is_isomorphic(m,save_order=True):
                 if filtered_energies[i] > ase_atoms[j].get_potential_energy():
-                    filtered_mols[i] = m 
+                    filtered_mols[i] = m
                     filtered_geoms[i] = ase_atoms[j]
                     filtered_energies[i] = ase_atoms[j].get_potential_energy()
                     filtered_xyzs[i] = geoms[j]
+                break
         else:
             filtered_mols.append(m)
             filtered_geoms.append(ase_atoms[j])
