@@ -1966,14 +1966,14 @@ def analyze_covdep_sample_data(config_name,coad_name,Ncoad_energy_dict,path,pynt
                             if config_name not in ts_dict.keys() and config_name != coad_name: #adsorbate that is not the co-adsorbate
                                 Ecorr = (datum_E.value-Ncoad_energy_dict[coad_name][len(Ncoad_energy_dict)-1][coad_name][Ncoad-1])*to_eV
                             elif config_name not in ts_dict.keys() and config_name == coad_name: #co-adsorbate
-                                Ecorr = Ncoad_energy_dict[coad_name][k][config_name][Ncoad-1]/Ncoad*to_eV
+                                Ecorr = (datum_E.value - Ncoad_energy_dict[coad_name][k][config_name][Ncoad-1]/Ncoad)*to_eV
                             else: #TS
                                 assert reactant_names is not None
                                 Ncoad_reactants = reactant_names.count(coad_name)
                                 if Ncoad-Ncoad_reactants <= 0:
                                     Ecorr = 0.0
                                 else:
-                                    Ecorr = (datum_E.values-Ncoad_energy_dict[coad_name][len(Ncoad_energy_dict[coad_name])-1][coad_name][Ncoad-1]/Ncoad*(Ncoad-Ncoad_reactants))*to_eV
+                                    Ecorr = (datum_E.value-Ncoad_energy_dict[coad_name][len(Ncoad_energy_dict[coad_name])-1][coad_name][Ncoad-1]/Ncoad*(Ncoad-Ncoad_reactants))*to_eV
 
                             config_E_correction.append(Ecorr)
                         else:
