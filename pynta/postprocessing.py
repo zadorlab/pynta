@@ -1964,7 +1964,7 @@ def analyze_covdep_sample_data(config_name,coad_name,Ncoad_energy_dict,path,pynt
                             config_mols.append(datum_E.mol)
                             Ncoad = len(split_adsorbed_structures(datum_E.mol)) - 1
                             if config_name not in ts_dict.keys() and config_name != coad_name: #adsorbate that is not the co-adsorbate
-                                Ecorr = (datum_E.value-Ncoad_energy_dict[coad_name][len(Ncoad_energy_dict)-1][coad_name][Ncoad-1])*to_eV
+                                Ecorr = (datum_E.value-Ncoad_energy_dict[coad_name][len(Ncoad_energy_dict[coad_name])-1][coad_name][Ncoad-1])*to_eV
                             elif config_name not in ts_dict.keys() and config_name == coad_name: #co-adsorbate
                                 Ecorr = (datum_E.value - Ncoad_energy_dict[coad_name][k][config_name][Ncoad-1]/Ncoad)*to_eV
                             else: #TS
