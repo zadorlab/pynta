@@ -498,7 +498,7 @@ def generate_pair_geometries(adpath1,adpath2,slabpath,metal,facet,sites,site_adj
 #                 print(bd)
 #                 print(dist)
                 raise e
-            amol = deepcopy(ad12Ds[j])
+            amol = deepcopy(ad12Ds[ad1_inds[i]])
             satom = amol.atoms[ind]
             m2 = deepcopy(mol2)
             admol2 = m2.get_desorbed_molecules()[0]
@@ -1678,8 +1678,8 @@ def get_cov_energies_configs_concern_tree(tree_interaction_regressor, configs, c
                 Ncoad_config_dict[Ncoad] = [Ncoad_config_dict[Ncoad], m.to_adjacency_list()]
     
     for i in config_to_Eunctr.keys():
-        Ncoad = len([a for a in m.atoms if a.is_surface_site() and any(not a2.is_surface_site() for a2 in a.bonds.keys())]) - Ncoad_isolated
         m,E,std,tr = config_to_Eunctr[i]
+        Ncoad = len([a for a in m.atoms if a.is_surface_site() and any(not a2.is_surface_site() for a2 in a.bonds.keys())]) - Ncoad_isolated
         if ((concern_energy_tol is None) or (Ncoad_energy_dict[Ncoad] + concern_energy_tol > E)):
             configs_of_concern[i] = (m,E,tr,std)
     
