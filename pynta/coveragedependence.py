@@ -2116,11 +2116,11 @@ def get_configs_for_calculation(configs_of_concern_by_coad_admol,Ncoad_energy_by
                     else:
                         group_to_occurence_admol[grp] = np.exp(-(E-Emin)/(8.314*T))
                         N += 1
-            for g,n in group_to_occurence_admol.items():
+            for grp,n in group_to_occurence_admol.items():
                 if grp in group_to_occurence:
                     group_to_occurence[grp] += n/N
                 else:
-                    group_to_occurence[grp] = n/N 
+                    group_to_occurence[grp] = n/N
                     
     concern_groups = list(group_to_occurence.keys()) #selected ordering
         
@@ -2160,7 +2160,7 @@ def get_configs_for_calculation(configs_of_concern_by_coad_admol,Ncoad_energy_by
                     group_fract_for_calculation.append(group_fract)
                     maxval = np.linalg.norm(sum(group_fract_for_calculation) * group_to_weight, ord=1)
                 else:
-                    group_fract = config_to_group_fract[j]
+                    group_fract = config_to_group_fract[ind]
                     g_old_sum = sum(group_fract_for_calculation)
                     maxarglocal = None
                     maxvallocal = maxval
