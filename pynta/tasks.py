@@ -1462,21 +1462,22 @@ class TrainCovdepModelTask(FiretaskBase):
             if os.path.exists(datum_path):
                 with open(datum_path) as f:
                     cached = json.load(f)
-                if cached.get("valid"):
-                    if cached.get("datum_E") is not None:
-                        datum_E = Datum(Molecule().from_adjacency_list(cached["datum_E"]["mol"], check_consistency=False),
-                                        cached["datum_E"]["value"])
-                    else:
-                        datum_E = None
-                else:
-                    datum_E = None
+                if cached.get("valid") and cached.get("datum_E") is not None:
+                    datum_E = Datum(Molecule().from_adjacency_list(cached["datum_E"]["mol"], check_consistency=False),
+                                    cached["datum_E"]["value"])
+                    new_datums_E.append(datum_E)
+                    # original behavior appends datum_E.mol when init != out (the isomorphism check);
+                    # process_calculation records that as a value=false entry in datums_stability,
+                    # so checking for one is equivalent and avoids the isomorphism call entirely.
+                    if any(not ds["value"] for ds in cached.get("datums_stability", [])):
+                        new_computed_configs.append(datum_E.mol)
             else:
                 datum_E,datums_stability = process_calculation(d,ad_energy_dict,slab,metal,facet,sites,site_adjacency,pynta_dir,coadmol_E_dicts[coadname],max_dist=3.0,rxn_alignment_min=0.7,
                     coad_disruption_tol=1.1,out_file_name="out",init_file_name="init",vib_file_name="vib_vib",is_ad=None,sidt_isolated_delta=sidt_isolated_delta,sidt_covdep_delta=sidt_covdep_delta)
-            if datum_E:
-                new_datums_E.append(datum_E)
-            if datum_E and not datum_E.mol.is_isomorphic(init_config,save_order=True):
-                new_computed_configs.append(datum_E.mol)
+                if datum_E:
+                    new_datums_E.append(datum_E)
+                if datum_E and not datum_E.mol.is_isomorphic(init_config,save_order=True):
+                    new_computed_configs.append(datum_E.mol)
         
         if not os.path.exists(os.path.join(path,"Iterations",str(iter))):
             os.makedirs(os.path.join(path,"Iterations",str(iter)))
