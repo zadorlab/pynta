@@ -2144,23 +2144,13 @@ def get_configs_for_calculation(configs_of_concern_by_coad_admol,Ncoad_energy_by
     #sort lower numbers of coadsorbates first, larger numbers of coadsorbates later
     bond_count_key = lambda x: len([bd for bd in x.get_all_edges() if (bd.atom1.is_surface_site() and not bd.atom2.is_surface_site()) or (bd.atom2.is_surface_site() and not bd.atom1.is_surface_site())])
     is_ts = lambda x: any(bd.get_order_str() == 'R' for bd in x.get_all_edges())
+    sorted_config_list = sorted(config_list[:], key=bond_count_key)
+
     if ts_frac is not None:
-        sorted_by_bond = sorted(config_list[:], key=bond_count_key)
-        sorted_config_list = []
-        for _, bond_group in itertools.groupby(sorted_by_bond, key=bond_count_key):
-            bond_group_list = list(bond_group)
-            ts_group = [c for c in bond_group_list if is_ts(c)]
-            non_ts_group = [c for c in bond_group_list if not is_ts(c)]
-            ti, ni = 0, 0
-            while ti < len(ts_group) or ni < len(non_ts_group):
-                if ti < len(ts_group) and (ni >= len(non_ts_group) or ti / (ti + ni + 1e-9) < ts_frac):
-                    sorted_config_list.append(ts_group[ti])
-                    ti += 1
-                else:
-                    sorted_config_list.append(non_ts_group[ni])
-                    ni += 1
-    else:
-        sorted_config_list = sorted(config_list[:], key=bond_count_key)
+        ts_quota = int(round(Ncalc_per_iter * ts_frac))
+        non_ts_quota = Ncalc_per_iter - ts_quota
+    ts_count = 0
+    non_ts_count = 0
 
     for q in range(calculation_selection_iterations): #loop the greedy optimization a number of times to get close to local min
         for config in sorted_config_list:
@@ -2176,17 +2166,29 @@ def get_configs_for_calculation(configs_of_concern_by_coad_admol,Ncoad_energy_by
                     if config.is_isomorphic(c,save_order=True):
                         break
                 else:
-                    if len(configs_for_calculation) < Ncalc_per_iter:
+                    if ts_frac is not None:
+                        config_is_ts = is_ts(config)
+                        slot_available = (config_is_ts and ts_count < ts_quota) or \
+                                         ((not config_is_ts) and non_ts_count < non_ts_quota)
+                    else:
+                        slot_available = len(configs_for_calculation) < Ncalc_per_iter
+
+                    if slot_available:
                         configs_for_calculation = configs_for_calculation + [config]
                         group_fract = config_to_group_fract[ind]
                         group_fract_for_calculation.append(group_fract)
                         maxval = np.linalg.norm(sum(group_fract_for_calculation) * group_to_weight, ord=1)
+                        if ts_frac is not None:
+                            if config_is_ts:
+                                ts_count += 1
+                            else:
+                                non_ts_count += 1
                     else:
                         group_fract = config_to_group_fract[ind]
                         g_old_sum = sum(group_fract_for_calculation)
                         maxarglocal = None
                         maxvallocal = maxval
-                        for i in range(Ncalc_per_iter):
+                        for i in range(len(configs_for_calculation)):
                             if ts_frac is not None and is_ts(config) != is_ts(configs_for_calculation[i]):
                                 continue
                             val = np.linalg.norm((g_old_sum - group_fract_for_calculation[i] + group_fract) * group_to_weight, ord=1)
