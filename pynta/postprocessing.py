@@ -1697,10 +1697,19 @@ def write_rmg_libraries(path,spc_dict,spc_dict_thermo,ts_dict,metal,facet):
     #    index += 1
     #    reaction_text += "\n"
     
-    if os.path.exists(os.path.join(path,"reaction_library")):
-        shutil.rmtree(os.path.join(path,"reaction_library"))
+    #if os.path.exists(os.path.join(path,"reaction_library")):
+    #    shutil.rmtree(os.path.join(path,"reaction_library"))
+    #
+    #os.makedirs(os.path.join(path,"reaction_library"))
     
-    os.makedirs(os.path.join(path,"reaction_library"))
+    target_path = os.path.join(path, "reaction_library")
+
+    if os.path.islink(target_path):
+        os.unlink(target_path)  # Safely remove the symbolic link
+    elif os.path.exists(target_path):
+        shutil.rmtree(target_path)  # Safely remove an actual directory
+    
+    os.makedirs(target_path)
     
     with open(os.path.join(path,"reaction_library","reactions.py"),'w') as f:
         f.write(reaction_text)
