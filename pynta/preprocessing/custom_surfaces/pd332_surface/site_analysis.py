@@ -145,7 +145,7 @@ def save_sites_to_json(single_sites_lists, filename='sites.json'):
     def process_data(data):
         """Recursively convert NumPy types to native Python types and replace None with 'null'."""
         if isinstance(data, dict):
-            return {key: process_data(value) for key, value in data.items()}
+            return {key: process_data(value) for key, value in data.items() if key != 'surface'}
         elif isinstance(data, list):
             return [process_data(item) for item in data]
         elif isinstance(data, np.ndarray):
@@ -315,6 +315,13 @@ def cluster_isomorphic_graphs(admols):
     return iso_mat, clusters
 
 
+def cluster_unique_site_graphs(single_geoms, single_sites_lists):
+    """Cluster generated site geometries using strict graph isomorphism."""
+    admols, geom_indices = classify_all_sites(single_geoms, single_sites_lists)
+    iso_mat, clusters = cluster_isomorphic_graphs(admols)
+    return iso_mat, clusters, geom_indices, admols
+
+
 def update_threefold_site_labels(single_sites_lists, clusters, geom_indices):
     type_map = {}
 
@@ -425,7 +432,7 @@ def write_sites_json(single_sites_lists, clusters, filename="sites_graph.json"):
 
     with open(filename, "w") as f:
         json.dump(json_data, f, indent=4)
-        write_sites_json(single_sites_lists, clusters, "sites_graph.json")
+
 
 def write_trajectory_graph(updated_sites_lists, clusters, trajectory_filename="unique_sites_graph.traj"):
     # Print the number of unique sites
