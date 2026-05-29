@@ -2182,22 +2182,22 @@ def get_configs_for_calculation(configs_of_concern_by_coad_admol,Ncoad_energy_by
                         group_fract_for_calculation.append(group_fract)
                         maxval = np.linalg.norm(sum(group_fract_for_calculation) * group_to_weight, ord=1)
                     else:
-                    group_fract = config_to_group_fract[ind]
-                    g_old_sum = sum(group_fract_for_calculation)
-                    maxarglocal = None
-                    maxvallocal = maxval
-                    for i in range(Ncalc_per_iter):
-                        if ts_frac is not None and is_ts(config) != is_ts(configs_for_calculation[i]):
-                            continue
-                        val = np.linalg.norm((g_old_sum - group_fract_for_calculation[i] + group_fract) * group_to_weight, ord=1)
-                        if val > maxvallocal:
-                            maxarglocal = i
-                            maxvallocal = val
-                            
-                    if maxarglocal is not None:
-                        group_fract_for_calculation[maxarglocal] = group_fract
-                        configs_for_calculation[maxarglocal] = config
-                        maxval = maxvallocal
+                        group_fract = config_to_group_fract[ind]
+                        g_old_sum = sum(group_fract_for_calculation)
+                        maxarglocal = None
+                        maxvallocal = maxval
+                        for i in range(Ncalc_per_iter):
+                            if ts_frac is not None and is_ts(config) != is_ts(configs_for_calculation[i]):
+                                continue
+                            val = np.linalg.norm((g_old_sum - group_fract_for_calculation[i] + group_fract) * group_to_weight, ord=1)
+                            if val > maxvallocal:
+                                maxarglocal = i
+                                maxvallocal = val
+
+                        if maxarglocal is not None:
+                            group_fract_for_calculation[maxarglocal] = group_fract
+                            configs_for_calculation[maxarglocal] = config
+                            maxval = maxvallocal
 
     coad_admol_to_config_for_calculation = {coadname: dict() for coadname in coadnames}
     
