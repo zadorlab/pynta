@@ -10,6 +10,7 @@ from acat.adsorption_sites import SlabAdsorptionSites
 from acat.adsorbate_coverage import SlabAdsorbateCoverage
 from acat.settings import site_heights, adsorbate_molecule
 import os
+import json
 import time
 import yaml
 from copy import deepcopy
@@ -582,46 +583,94 @@ class CoverageDependence:
                 tsdirs.append(os.path.join(self.pynta_run_directory, t, ind))
         outdirs_ad,outdirs_ts = setup_pair_opts_for_rxns(self.path,self.pynta_run_directory,self.adsorbates,tsdirs,self.coadsorbates,self.surrogate_metal,self.surface_type,self.sites,self.site_adjacency,
                                                          max_dist=self.max_dist,imag_freq_max=self.imag_freq_max)
-        
+
+        ad_energy_dict_path, coadmol_E_dict_paths = self._cache_covdep_dicts()
+
         for d in outdirs_ad:
+            pair_dir = os.path.split(d)[0]
+            with open(os.path.join(pair_dir, "info.json")) as _f:
+                coadname = json.load(_f)["coadname"]
             fwopt = optimize_firework(d,
                             self.software,"weakopt",
                             opt_method="MDMin",opt_kwargs={'dt': 0.05,"trajectory": "weakopt.traj"},software_kwargs=self.software_kwargs,order=0,
                             run_kwargs={"fmax" : 0.5, "steps" : 30},parents=[],
                               constraints=["freeze up to {}".format(self.freeze_ind)],
                             ignore_errors=True, metal=self.metal, facet=self.surface_type, priority=3)
-            fwopt2 = optimize_firework(os.path.join(os.path.split(d)[0],"weakopt.xyz"),
+            fwopt2 = optimize_firework(os.path.join(pair_dir,"weakopt.xyz"),
                             self.software,"out",
                             opt_method="QuasiNewton",opt_kwargs={"trajectory": "out.traj"},software_kwargs=self.software_kwargs,order=0,
                             run_kwargs={"fmax" : self.fmaxopt, "steps" : 70},parents=[fwopt],
                               constraints=["freeze up to {}".format(self.freeze_ind)],
                             ignore_errors=True, metal=self.metal, facet=self.surface_type, priority=2)
-        
-            fwvib = vibrations_firework(os.path.join(os.path.split(d)[0],"out.xyz"),
+
+            fwvib = vibrations_firework(os.path.join(pair_dir,"out.xyz"),
                                         self.software,"vib",software_kwargs=self.software_kwargs,parents=[fwopt2],
                                         constraints=["freeze up to "+str(self.nslab)],
                                         ignore_errors=True)
+            fwextract = extract_datum_firework(pair_dir, self.pynta_run_directory, self.slab_path,
+                                               self.metal, self.surface_type, self.sites, self.site_adjacency,
+                                               ad_energy_dict_path, coadmol_E_dict_paths[coadname], is_ad=True,
+                                               parents=[fwvib], ignore_errors=True)
             self.pairs_fws.append(fwopt)
             self.pairs_fws.append(fwopt2)
             self.pairs_fws.append(fwvib)
-        
+            self.pairs_fws.append(fwextract)
+
         for d in outdirs_ts:
+            pair_dir = os.path.split(d)[0]
+            with open(os.path.join(pair_dir, "info.json")) as _f:
+                coadname = json.load(_f)["coadname"]
             fwopt = optimize_firework(d,
-                            self.software,"out", sella=True, 
+                            self.software,"out", sella=True,
                             opt_kwargs={"trajectory": "out.traj"},software_kwargs=self.software_kwargs_TS,
                             order=1,
                             run_kwargs={"fmax" : self.fmaxopt, "steps" : 70},parents=[],
                               constraints=["freeze up to {}".format(self.freeze_ind)],
                             ignore_errors=True, metal=self.metal, facet=self.surface_type, priority=3)
-            
-            fwvib = vibrations_firework(os.path.join(os.path.split(d)[0],"out.xyz"),
+
+            fwvib = vibrations_firework(os.path.join(pair_dir,"out.xyz"),
                                         self.software,"vib",software_kwargs=self.software_kwargs,parents=[fwopt],
                                         constraints=["freeze up to "+str(self.nslab)],
                                         ignore_errors=True)
+            fwextract = extract_datum_firework(pair_dir, self.pynta_run_directory, self.slab_path,
+                                               self.metal, self.surface_type, self.sites, self.site_adjacency,
+                                               ad_energy_dict_path, coadmol_E_dict_paths[coadname], is_ad=False,
+                                               parents=[fwvib], ignore_errors=True)
             self.pairs_fws.append(fwopt)
             self.pairs_fws.append(fwvib)
-            
+            self.pairs_fws.append(fwextract)
+
         self.fws.extend(self.pairs_fws)
+
+    def _cache_covdep_dicts(self):
+        """Build ad_energy_dict and coadmol_E_dict_<coadname> JSON caches at self.path
+        for use by ExtractDatumTask workers. Skips work if files already exist."""
+        ad_energy_dict_path = os.path.join(self.path, "ad_energy_dict.json")
+        coadmol_E_dict_paths = {coadname: os.path.join(self.path, "coadmol_E_dict_" + coadname + ".json")
+                                for coadname in self.coadsorbates}
+        if os.path.exists(ad_energy_dict_path) and all(os.path.exists(p) for p in coadmol_E_dict_paths.values()):
+            return ad_energy_dict_path, coadmol_E_dict_paths
+
+        ad_energy_dict = get_lowest_adsorbate_energies(self.adsorbates_path)
+        with open(ad_energy_dict_path, "w") as f:
+            json.dump({m.to_adjacency_list(): v for m,v in ad_energy_dict.items()}, f)
+
+        coad_paths = {coadname: os.path.join(self.adsorbates_path, coadname) for coadname in self.coadsorbates}
+        for coadname in self.coadsorbates:
+            if os.path.exists(coadmol_E_dict_paths[coadname]):
+                continue
+            coad_Es = get_adsorbate_energies(coad_paths[coadname])[0]
+            coadmol_E_dict = dict()
+            for p in os.listdir(coad_paths[coadname]):
+                if p == "info.json" or (p not in coad_Es.keys()):
+                    continue
+                admol,_,_ = generate_adsorbate_2D(read(os.path.join(coad_paths[coadname],p,p+".xyz")),
+                                                  self.sites, self.site_adjacency, self.nslab, max_dist=np.inf)
+                out_struct = split_adsorbed_structures(admol, clear_site_info=False)[0]
+                coadmol_E_dict[out_struct] = coad_Es[p]
+            with open(coadmol_E_dict_paths[coadname], "w") as f:
+                json.dump({m.to_adjacency_list(): v for m,v in coadmol_E_dict.items()}, f)
+        return ad_energy_dict_path, coadmol_E_dict_paths
     
     def collate_isolated_structures(self):
         admol_name_path_dict = {}

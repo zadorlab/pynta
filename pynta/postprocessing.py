@@ -1952,9 +1952,25 @@ def analyze_covdep_sample_data(config_name,coad_name,Ncoad_energy_dict,path,pynt
                 if ts_name == config_name or compound == config_name:
                 #if os.path.split(os.path.split(os.path.split(info["xyz"])[0])[0])[1] == config_name:
                     d = os.path.join(path,"Iterations",str(k),"Samples",i)
-                    datum_E,datums_stability = process_calculation(d,ad_energy_dict,slab,metal,facet,sites,site_adjacency,pynta_path,coadmol_E_dict[coad_name],max_dist=3.0,rxn_alignment_min=0.7,
-                    coad_disruption_tol=1.1,out_file_name="out",init_file_name="init",vib_file_name="vib_vib",
-                    is_ad=not (config_name in ts_dict.keys() or any(config_name.startswith(t + "_") for t in ts_dict.keys())))
+                    datum_path = os.path.join(d, "datum.json")
+                    if os.path.exists(datum_path):
+                        with open(datum_path) as f:
+                            cached = json.load(f)
+                        if cached.get("valid"):
+                            if cached.get("datum_E") is not None:
+                                datum_E = Datum(Molecule().from_adjacency_list(cached["datum_E"]["mol"], check_consistency=False),
+                                                cached["datum_E"]["value"])
+                            else:
+                                datum_E = None
+                            datums_stability = [Datum(Molecule().from_adjacency_list(ds["mol"], check_consistency=False), ds["value"])
+                                                for ds in cached.get("datums_stability", [])]
+                        else:
+                            datum_E = None
+                            datums_stability = []
+                    else:
+                        datum_E,datums_stability = process_calculation(d,ad_energy_dict,slab,metal,facet,sites,site_adjacency,pynta_path,coadmol_E_dict[coad_name],max_dist=3.0,rxn_alignment_min=0.7,
+                        coad_disruption_tol=1.1,out_file_name="out",init_file_name="init",vib_file_name="vib_vib",
+                        is_ad=not (config_name in ts_dict.keys() or any(config_name.startswith(t + "_") for t in ts_dict.keys())))
                     xyz = os.path.join(path,"Iterations",str(k),"Samples",i,"out.xyz")
                     if os.path.exists(xyz):
                         config_xyzs.append(xyz)

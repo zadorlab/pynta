@@ -1197,6 +1197,85 @@ class CalculateConfigurationEnergiesTask(FiretaskBase):
 
         return FWAction()
 
+def extract_datum_firework(d, pynta_dir, slab_path, metal, facet, sites, site_adjacency,
+                           ad_energy_dict_path, coadmol_E_dict_path, is_ad, parents=[], ignore_errors=True):
+    spec = {
+        "d": d,
+        "pynta_dir": pynta_dir,
+        "slab_path": slab_path,
+        "metal": metal,
+        "facet": facet,
+        "sites": sites,
+        "site_adjacency": {str(k): v for k,v in site_adjacency.items()} if isinstance(site_adjacency, dict) else site_adjacency,
+        "ad_energy_dict_path": ad_energy_dict_path,
+        "coadmol_E_dict_path": coadmol_E_dict_path,
+        "is_ad": is_ad,
+        "ignore_errors": ignore_errors,
+    }
+    t = ExtractDatumTask(spec)
+    return Firework([t], parents=parents,
+                    name="Extract Datum "+os.path.basename(d.rstrip("/")),
+                    spec={"_priority": 1, "_allow_fizzled_parents": True})
+
+@explicit_serialize
+class ExtractDatumTask(FiretaskBase):
+    required_params = ["d", "pynta_dir", "slab_path", "metal", "facet", "sites", "site_adjacency",
+                       "ad_energy_dict_path", "coadmol_E_dict_path", "is_ad"]
+    optional_params = ["ignore_errors"]
+
+    def run_task(self, fw_spec):
+        d = self["d"]
+        pynta_dir = self["pynta_dir"]
+        slab_path = self["slab_path"]
+        metal = self["metal"]
+        facet = self["facet"]
+        is_ad = self["is_ad"]
+        ignore_errors = self["ignore_errors"] if "ignore_errors" in self.keys() else True
+
+        sites = []
+        for site in self["sites"]:
+            site = dict(site)
+            site["normal"] = np.array(site["normal"])
+            site["position"] = np.array(site["position"])
+            site["indices"] = tuple(site["indices"])
+            sites.append(site)
+        site_adjacency = {int(k):[int(x) for x in v] for k,v in self["site_adjacency"].items()}
+
+        slab = read(slab_path)
+
+        with open(self["ad_energy_dict_path"]) as f:
+            ad_energy_dict = {Molecule().from_adjacency_list(k,check_consistency=False): v
+                              for k,v in json.load(f).items()}
+        with open(self["coadmol_E_dict_path"]) as f:
+            coadmol_E_dict = {Molecule().from_adjacency_list(k,check_consistency=False): v
+                              for k,v in json.load(f).items()}
+
+        out = {"valid": False}
+        try:
+            datum_E, datums_stability = process_calculation(d, ad_energy_dict, slab, metal, facet, sites,
+                                                            site_adjacency, pynta_dir, coadmol_E_dict,
+                                                            max_dist=3.0, rxn_alignment_min=0.7,
+                                                            coad_disruption_tol=1.1,
+                                                            out_file_name="out", init_file_name="init",
+                                                            vib_file_name="vib_vib", is_ad=is_ad)
+            out["valid"] = True
+            if datum_E is not None:
+                out["datum_E"] = {"mol": datum_E.mol.to_adjacency_list(), "value": float(datum_E.value)}
+            else:
+                out["datum_E"] = None
+            out["datums_stability"] = [{"mol": ds.mol.to_adjacency_list(), "value": bool(ds.value)}
+                                       for ds in datums_stability]
+        except Exception as e:
+            if not ignore_errors:
+                raise
+            out["valid"] = False
+            out["reason"] = type(e).__name__
+
+        with open(os.path.join(d, "datum.json"), "w") as f:
+            json.dump(out, f)
+
+        return FWAction()
+
 def train_covdep_model_firework(path,admol_name_path_dict,admol_name_structure_dict,sites,site_adjacency,
                                 pynta_dir, metal, facet, slab_path, calculation_directories, coadnames,
                                 coad_stable_sites, software, software_kwargs, software_kwargs_TS, freeze_ind,
@@ -1379,8 +1458,21 @@ class TrainCovdepModelTask(FiretaskBase):
             coadname = info["coadname"]
             init_config = Molecule().from_adjacency_list(adjlist,check_consistency=False)
             new_computed_configs.append(init_config)
-            datum_E,datums_stability = process_calculation(d,ad_energy_dict,slab,metal,facet,sites,site_adjacency,pynta_dir,coadmol_E_dicts[coadname],max_dist=3.0,rxn_alignment_min=0.7,
-                coad_disruption_tol=1.1,out_file_name="out",init_file_name="init",vib_file_name="vib_vib",is_ad=None,sidt_isolated_delta=sidt_isolated_delta,sidt_covdep_delta=sidt_covdep_delta)
+            datum_path = os.path.join(d, "datum.json")
+            if os.path.exists(datum_path):
+                with open(datum_path) as f:
+                    cached = json.load(f)
+                if cached.get("valid"):
+                    if cached.get("datum_E") is not None:
+                        datum_E = Datum(Molecule().from_adjacency_list(cached["datum_E"]["mol"], check_consistency=False),
+                                        cached["datum_E"]["value"])
+                    else:
+                        datum_E = None
+                else:
+                    datum_E = None
+            else:
+                datum_E,datums_stability = process_calculation(d,ad_energy_dict,slab,metal,facet,sites,site_adjacency,pynta_dir,coadmol_E_dicts[coadname],max_dist=3.0,rxn_alignment_min=0.7,
+                    coad_disruption_tol=1.1,out_file_name="out",init_file_name="init",vib_file_name="vib_vib",is_ad=None,sidt_isolated_delta=sidt_isolated_delta,sidt_covdep_delta=sidt_covdep_delta)
             if datum_E:
                 new_datums_E.append(datum_E)
             if datum_E and not datum_E.mol.is_isomorphic(init_config,save_order=True):
@@ -1511,7 +1603,20 @@ class SelectCalculationsTask(FiretaskBase):
             
             coadmol_E_dicts[coadname] = coadmol_E_dict
             coadmol_stability_dicts[coadname] = coadmol_stability_dict
-        
+
+        #cache ad_energy_dict and per-coadname coadmol_E_dict to disk so per-sample
+        #ExtractDatumTask workers don't rebuild them (rebuild requires generate_adsorbate_2D
+        #with max_dist=np.inf on every adsorbate -- slow)
+        ad_energy_dict_path = os.path.join(path, "ad_energy_dict.json")
+        with open(ad_energy_dict_path, "w") as f:
+            json.dump({m.to_adjacency_list(): v for m,v in ad_energy_dict.items()}, f)
+        coadmol_E_dict_paths = {}
+        for coadname in coadnames:
+            p = os.path.join(path, "coadmol_E_dict_" + coadname + ".json")
+            with open(p, "w") as f:
+                json.dump({m.to_adjacency_list(): v for m,v in coadmol_E_dicts[coadname].items()}, f)
+            coadmol_E_dict_paths[coadname] = p
+
         #load configurations and Ncoad_energies
         configs_of_concern_by_coad_admol = dict()
         Ncoad_energy_by_coad_admol = dict()
@@ -1574,6 +1679,7 @@ class SelectCalculationsTask(FiretaskBase):
             with open(os.path.join(os.path.split(init_path)[0],'info.json'),'w') as f:
                 json.dump(json_out,f)
             
+            sample_dir = os.path.split(init_path)[0]
             if not any(bd.get_order_str() == 'R' for bd in config.get_all_edges()):
                 fwopt = optimize_firework(init_path,
                         software,"weakopt",
@@ -1581,30 +1687,36 @@ class SelectCalculationsTask(FiretaskBase):
                         run_kwargs={"fmax" : 0.5, "steps" : 30},parents=[],
                             constraints=["freeze up to {}".format(freeze_ind)],
                         ignore_errors=True, metal=metal, facet=facet, priority=3)
-                fwopt2 = optimize_firework(os.path.join(os.path.split(init_path)[0],"weakopt.xyz"),
+                fwopt2 = optimize_firework(os.path.join(sample_dir,"weakopt.xyz"),
                                 software,"out",
                                 opt_method="QuasiNewton",opt_kwargs={"trajectory": "out.traj"},software_kwargs=software_kwargs,order=0,
                                 run_kwargs={"fmax" : fmaxopt, "steps" : 70},parents=[fwopt],
                                 constraints=["freeze up to {}".format(freeze_ind)],
                                 ignore_errors=True, metal=metal, facet=facet, priority=2)
-            
-                fwvib = vibrations_firework(os.path.join(os.path.split(init_path)[0],"out.xyz"),
+
+                fwvib = vibrations_firework(os.path.join(sample_dir,"out.xyz"),
                                             software,"vib",software_kwargs=software_kwargs,parents=[fwopt2],
                                             constraints=["freeze up to "+str(nslab)])
-                sample_fws.extend([fwopt,fwopt2,fwvib])
+                fwextract = extract_datum_firework(sample_dir, pynta_dir, slab_path, metal, facet, sites, site_adjacency,
+                                                   ad_energy_dict_path, coadmol_E_dict_paths[coadname], is_ad=True,
+                                                   parents=[fwvib], ignore_errors=True)
+                sample_fws.extend([fwopt,fwopt2,fwvib,fwextract])
             else:
                 fwopt = optimize_firework(init_path,
-                        software,"out", sella=True, 
+                        software,"out", sella=True,
                         opt_kwargs={"trajectory": "out.traj"},software_kwargs=software_kwargs_TS,
                         order=1,
                         run_kwargs={"fmax" : fmaxopt, "steps" : 70},parents=[],
                             constraints=["freeze up to {}".format(freeze_ind)],
                         ignore_errors=True, metal=metal, facet=facet, priority=3)
-        
-                fwvib = vibrations_firework(os.path.join(os.path.split(init_path)[0],"out.xyz"),
+
+                fwvib = vibrations_firework(os.path.join(sample_dir,"out.xyz"),
                                             software,"vib",software_kwargs=software_kwargs,parents=[fwopt],
                                             constraints=["freeze up to "+str(nslab)])
-                sample_fws.extend([fwopt,fwvib])
+                fwextract = extract_datum_firework(sample_dir, pynta_dir, slab_path, metal, facet, sites, site_adjacency,
+                                                   ad_energy_dict_path, coadmol_E_dict_paths[coadname], is_ad=False,
+                                                   parents=[fwvib], ignore_errors=True)
+                sample_fws.extend([fwopt,fwvib,fwextract])
             
         tfw = train_covdep_model_firework(path,admol_name_path_dict,admol_name_structure_dict,sites,site_adjacency,
                             pynta_dir, metal, facet, slab_path, calculation_directories, coadnames,
