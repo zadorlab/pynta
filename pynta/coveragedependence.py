@@ -2091,7 +2091,7 @@ def process_calculation(d,ad_energy_dict,slab,metal,facet,sites,site_adjacency,p
     return datum_E,datums_stability
 
 def get_configs_for_calculation(configs_of_concern_by_coad_admol,Ncoad_energy_by_coad_admol,admol_name_structure_dict,coadnames,
-                                computed_configs,tree_regressor,Ncalc_per_iter,T=5000.0,calculation_selection_iterations=10):
+                                computed_configs,tree_regressor,Ncalc_per_iter,T=5000.0,calculation_selection_iterations=10,ts_frac=None):
     group_to_occurence = dict()
     configs_of_concern = []
     for coadname in coadnames:
@@ -2142,7 +2142,25 @@ def get_configs_for_calculation(configs_of_concern_by_coad_admol,Ncoad_energy_by
     maxval = 0.0
     config_list = [x[0] for x in configs_of_concern]
     #sort lower numbers of coadsorbates first, larger numbers of coadsorbates later
-    sorted_config_list = sorted(config_list[:], key = lambda x: len([bd for bd in x.get_all_edges() if (bd.atom1.is_surface_site() and not bd.atom2.is_surface_site()) or (bd.atom2.is_surface_site() and not bd.atom1.is_surface_site())]))
+    bond_count_key = lambda x: len([bd for bd in x.get_all_edges() if (bd.atom1.is_surface_site() and not bd.atom2.is_surface_site()) or (bd.atom2.is_surface_site() and not bd.atom1.is_surface_site())])
+    is_ts = lambda x: any(bd.get_order_str() == 'R' for bd in x.get_all_edges())
+    if ts_frac is not None:
+        sorted_by_bond = sorted(config_list[:], key=bond_count_key)
+        sorted_config_list = []
+        for _, bond_group in itertools.groupby(sorted_by_bond, key=bond_count_key):
+            bond_group_list = list(bond_group)
+            ts_group = [c for c in bond_group_list if is_ts(c)]
+            non_ts_group = [c for c in bond_group_list if not is_ts(c)]
+            ti, ni = 0, 0
+            while ti < len(ts_group) or ni < len(non_ts_group):
+                if ti < len(ts_group) and (ni >= len(non_ts_group) or ti / (ti + ni + 1e-9) < ts_frac):
+                    sorted_config_list.append(ts_group[ti])
+                    ti += 1
+                else:
+                    sorted_config_list.append(non_ts_group[ni])
+                    ni += 1
+    else:
+        sorted_config_list = sorted(config_list[:], key=bond_count_key)
 
     for q in range(calculation_selection_iterations): #loop the greedy optimization a number of times to get close to local min
         for config in sorted_config_list:
@@ -2169,6 +2187,8 @@ def get_configs_for_calculation(configs_of_concern_by_coad_admol,Ncoad_energy_by
                     maxarglocal = None
                     maxvallocal = maxval
                     for i in range(Ncalc_per_iter):
+                        if ts_frac is not None and is_ts(config) != is_ts(configs_for_calculation[i]):
+                            continue
                         val = np.linalg.norm((g_old_sum - group_fract_for_calculation[i] + group_fract) * group_to_weight, ord=1)
                         if val > maxvallocal:
                             maxarglocal = i
