@@ -206,21 +206,45 @@ def get_octet_deviation(atom):
         return 8 - (atom.lone_pairs*2 + 2*sum(x.order for x in atom.bonds.values() if x.order >= 0.5))
     
 
-def choose_bond_to_fix(symbols,octets,orders,bonded_to_surface):
-    atom_order = [["X"],["C","Si"],["N","P"],["O","S"]]
+#def choose_bond_to_fix(symbols,octets,orders,bonded_to_surface):
+#    atom_order = [["X"],["C","Si"],["N","P"],["O","S"]]
+#    priority = []
+#    for i in range(len(symbols)):
+#        sym = symbols[i]
+#        if (sym != "X" and octets[i] <= 0) or orders[i] == "R":
+#            priority.append(0)
+#        else:
+#            for j,atoms in enumerate(atom_order):
+#                if sym in atoms:
+#                    if not bonded_to_surface[i]:
+#                        priority.append(j+11)
+#                    else:
+#                        priority.append(j+1)
+#    return np.argmax(priority),np.max(priority)
+
+def choose_bond_to_fix(symbols, octets, orders, bonded_to_surface):
+    atom_order = [["X"], ["C", "Si"], ["N", "P"], ["O", "S"]]
     priority = []
     for i in range(len(symbols)):
         sym = symbols[i]
         if (sym != "X" and octets[i] <= 0) or orders[i] == "R":
             priority.append(0)
         else:
-            for j,atoms in enumerate(atom_order):
+            matched = False
+            for j, atoms in enumerate(atom_order):
                 if sym in atoms:
+                    matched = True
                     if not bonded_to_surface[i]:
-                        priority.append(j+11)
+                        priority.append(j + 11)
                     else:
-                        priority.append(j+1)
-    return np.argmax(priority),np.max(priority)
+                        priority.append(j + 1)
+                    break # Break inner loop once matched
+            
+            # If the atom wasn't found in atom_order (e.g., H, metals)
+            if not matched:
+                priority.append(0) 
+                
+    return np.argmax(priority), np.max(priority)
 
 class TooManyElectronsException(Exception):
     pass
