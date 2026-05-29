@@ -1385,8 +1385,7 @@ class TrainCovdepModelTask(FiretaskBase):
         coad_paths = {coadname: os.path.join(pynta_dir,"Adsorbates",coadname) for coadname in coadnames}
         slab = read(slab_path)
         nslab = len(slab)
-        allowed_structure_site_structures = generate_allowed_structure_site_structures(os.path.join(pynta_dir,"Adsorbates"),sites,site_adjacency,nslab,max_dist=np.inf)
-        
+
         r_site = list(set([a.site for admol in admol_name_structure_dict.values() for a in admol.atoms]))
         r_morph = list(set([a.morphology for admol in admol_name_structure_dict.values() for a in admol.atoms]))
         r_atoms = list(set([a.element.symbol for admol in admol_name_structure_dict.values() for a in admol.atoms]))
@@ -1396,26 +1395,42 @@ class TrainCovdepModelTask(FiretaskBase):
         ad_energy_dict = get_lowest_adsorbate_energies(os.path.join(pynta_dir,"Adsorbates"),sidt_isolated_delta=sidt_isolated_delta)
         coad_Es = {coadname: get_adsorbate_energies(coad_paths[coadname],sidt_isolated_delta=sidt_isolated_delta)[0] for coadname in coadnames}
 
+        # If coadmol_E_dict JSON caches exist AND Configurations/ exists, we can skip the expensive
+        # generate_allowed_structure_site_structures + coadmol_E/stability_dict rebuild. The stability
+        # dict is only consulted when Configurations/ is being built; the E dict is loaded from cache
+        # (lookups in it use is_isomorphic, so JSON-rehydrated Molecule keys are equivalent).
+        coadmol_E_dict_paths = {coadname: os.path.join(path, "coadmol_E_dict_" + coadname + ".json") for coadname in coadnames}
+        configs_dir_exists = os.path.exists(os.path.join(path, "Configurations"))
+        all_E_caches_exist = all(os.path.exists(p) for p in coadmol_E_dict_paths.values())
+
         coadmol_E_dicts = dict()
         coadmol_stability_dicts = dict()
-        for coadname in coadnames:
-            coad_path = coad_paths[coadname]
-            coadmol_E_dict = dict()
-            coadmol_stability_dict = dict()
-            for p in os.listdir(coad_path):
-                if p == "info.json" or (p not in coad_Es[coadname].keys()):
-                    continue
-                admol_init,neighbor_sites_init,ninds_init = generate_adsorbate_2D(read(os.path.join(coad_path,p,p+"_init.xyz")),sites,site_adjacency,nslab,max_dist=np.inf,allowed_structure_site_structures=allowed_structure_site_structures)
-                admol,neighbor_sites,ninds = generate_adsorbate_2D(read(os.path.join(coad_path,p,p+".xyz")),sites,site_adjacency,nslab,max_dist=np.inf,allowed_structure_site_structures=allowed_structure_site_structures)
-                out_struct = split_adsorbed_structures(admol,clear_site_info=False)[0]
-                out_struct_init = split_adsorbed_structures(admol_init,clear_site_info=False)[0]
-                coadmol_E_dict[out_struct] = coad_Es[coadname][p]
-                if admol_init.is_isomorphic(admol,save_order=True):
-                    coadmol_stability_dict[out_struct_init] = True
-                else:
-                    coadmol_stability_dict[out_struct_init] = False
-            coadmol_E_dicts[coadname] = coadmol_E_dict
-            coadmol_stability_dicts[coadname] = coadmol_stability_dict
+        if configs_dir_exists and all_E_caches_exist:
+            for coadname in coadnames:
+                with open(coadmol_E_dict_paths[coadname]) as f:
+                    coadmol_E_dicts[coadname] = {Molecule().from_adjacency_list(k, check_consistency=False): v
+                                                 for k,v in json.load(f).items()}
+            allowed_structure_site_structures = None
+        else:
+            allowed_structure_site_structures = generate_allowed_structure_site_structures(os.path.join(pynta_dir,"Adsorbates"),sites,site_adjacency,nslab,max_dist=np.inf)
+            for coadname in coadnames:
+                coad_path = coad_paths[coadname]
+                coadmol_E_dict = dict()
+                coadmol_stability_dict = dict()
+                for p in os.listdir(coad_path):
+                    if p == "info.json" or (p not in coad_Es[coadname].keys()):
+                        continue
+                    admol_init,neighbor_sites_init,ninds_init = generate_adsorbate_2D(read(os.path.join(coad_path,p,p+"_init.xyz")),sites,site_adjacency,nslab,max_dist=np.inf,allowed_structure_site_structures=allowed_structure_site_structures)
+                    admol,neighbor_sites,ninds = generate_adsorbate_2D(read(os.path.join(coad_path,p,p+".xyz")),sites,site_adjacency,nslab,max_dist=np.inf,allowed_structure_site_structures=allowed_structure_site_structures)
+                    out_struct = split_adsorbed_structures(admol,clear_site_info=False)[0]
+                    out_struct_init = split_adsorbed_structures(admol_init,clear_site_info=False)[0]
+                    coadmol_E_dict[out_struct] = coad_Es[coadname][p]
+                    if admol_init.is_isomorphic(admol,save_order=True):
+                        coadmol_stability_dict[out_struct_init] = True
+                    else:
+                        coadmol_stability_dict[out_struct_init] = False
+                coadmol_E_dicts[coadname] = coadmol_E_dict
+                coadmol_stability_dicts[coadname] = coadmol_stability_dict
 
         if not os.path.exists(os.path.join(path,"Configurations")):
             info_paths = {adname: os.path.join(os.path.split(os.path.split(p)[0])[0],"info.json") for adname,p in admol_name_path_dict.items()}
