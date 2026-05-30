@@ -1998,22 +1998,28 @@ def analyze_covdep_sample_data(config_name,coad_name,Ncoad_energy_dict,path,pynt
             config_xyzs.append(xyz)
             configs_3D.append(read(xyz))
             if datum_E is not None:
-                config_Es.append(datum_E.value*to_eV)
-                config_mols.append(datum_E.mol)
                 Ncoad = len(split_adsorbed_structures(datum_E.mol)) - 1
-                if config_name not in ts_dict.keys() and config_name != coad_name: #adsorbate that is not the co-adsorbate
-                    Ecorr = (datum_E.value-Ncoad_energy_dict[coad_name][len(Ncoad_energy_dict[coad_name])-1][coad_name][Ncoad-1])*to_eV
-                elif config_name not in ts_dict.keys() and config_name == coad_name: #co-adsorbate
-                    Ecorr = (datum_E.value - Ncoad_energy_dict[coad_name][k][config_name][Ncoad-1]/Ncoad)*to_eV
-                else: #TS
-                    assert reactant_names is not None
-                    Ncoad_reactants = reactant_names.count(coad_name)
-                    if Ncoad-Ncoad_reactants <= 0:
-                        Ecorr = 0.0
-                    else:
-                        Ecorr = (datum_E.value-Ncoad_energy_dict[coad_name][len(Ncoad_energy_dict[coad_name])-1][coad_name][Ncoad-1]/Ncoad*(Ncoad-Ncoad_reactants))*to_eV
+                last_iter = len(Ncoad_energy_dict[coad_name])-1
+                # Skip degenerate cases: e.g., a pair where MACE collapsed two adsorbates
+                # into one fragment (Ncoad=0), or coverages not represented in the model.
+                if Ncoad < 1 or (Ncoad-1) not in Ncoad_energy_dict[coad_name][last_iter][coad_name]:
+                    config_Es.append(None)
+                else:
+                    config_Es.append(datum_E.value*to_eV)
+                    config_mols.append(datum_E.mol)
+                    if config_name not in ts_dict.keys() and config_name != coad_name: #adsorbate that is not the co-adsorbate
+                        Ecorr = (datum_E.value-Ncoad_energy_dict[coad_name][last_iter][coad_name][Ncoad-1])*to_eV
+                    elif config_name not in ts_dict.keys() and config_name == coad_name: #co-adsorbate
+                        Ecorr = (datum_E.value - Ncoad_energy_dict[coad_name][k][config_name][Ncoad-1]/Ncoad)*to_eV
+                    else: #TS
+                        assert reactant_names is not None
+                        Ncoad_reactants = reactant_names.count(coad_name)
+                        if Ncoad-Ncoad_reactants <= 0:
+                            Ecorr = 0.0
+                        else:
+                            Ecorr = (datum_E.value-Ncoad_energy_dict[coad_name][last_iter][coad_name][Ncoad-1]/Ncoad*(Ncoad-Ncoad_reactants))*to_eV
 
-                config_E_correction.append(Ecorr)
+                    config_E_correction.append(Ecorr)
             else:
                 config_Es.append(None)
 
