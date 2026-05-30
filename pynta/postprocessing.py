@@ -1930,69 +1930,91 @@ def analyze_covdep_lowest_energy(Ncoad_config_dict,iter_configs,config_name,coad
 
 def analyze_covdep_sample_data(config_name,coad_name,Ncoad_energy_dict,path,pynta_path,
                                slab,metal,facet,sites,site_adjacency,ad_energy_dict,ts_dict,coadmol_E_dict,reactant_names=None):
-    
+
     to_eV = 1.0/(96.48530749925793*1000.0) #converts from J/mol to eV
     configs_3D = []
     config_Es = []
     config_E_correction = []
     config_xyzs = []
     config_mols = []
-    for k in range(len(Ncoad_energy_dict[coad_name])):
-        if os.path.exists(os.path.join(path,"Iterations",str(k),"Samples")):
-            for i in os.listdir(os.path.join(path,"Iterations",str(k),"Samples")):
-                if not os.path.isdir(os.path.join(path,"Iterations",str(k),"Samples",i)):
-                    continue
-                infopath = os.path.join(path,"Iterations",str(k),"Samples",i,"info.json")
-                with open(infopath,"r") as f:
-                    info = json.load(f)
-                xyz_parent = os.path.split(os.path.split(info["xyz"])[0])
-                ts_name = os.path.split(xyz_parent[0])[1]  # e.g. "TS2"
-                ts_index = xyz_parent[1]  # e.g. "286"
-                compound = f"{ts_name}_{ts_index}"
-                if ts_name == config_name or compound == config_name:
-                #if os.path.split(os.path.split(os.path.split(info["xyz"])[0])[0])[1] == config_name:
-                    d = os.path.join(path,"Iterations",str(k),"Samples",i)
-                    datum_path = os.path.join(d, "datum.json")
-                    if os.path.exists(datum_path):
-                        with open(datum_path) as f:
-                            cached = json.load(f)
-                        if cached.get("valid"):
-                            if cached.get("datum_E") is not None:
-                                datum_E = Datum(Molecule().from_adjacency_list(cached["datum_E"]["mol"], check_consistency=False),
-                                                cached["datum_E"]["value"])
-                            else:
-                                datum_E = None
-                            datums_stability = [Datum(Molecule().from_adjacency_list(ds["mol"], check_consistency=False), ds["value"])
-                                                for ds in cached.get("datums_stability", [])]
-                        else:
-                            datum_E = None
-                            datums_stability = []
-                    else:
-                        datum_E,datums_stability = process_calculation(d,ad_energy_dict,slab,metal,facet,sites,site_adjacency,pynta_path,coadmol_E_dict[coad_name],max_dist=3.0,rxn_alignment_min=0.7,
-                        coad_disruption_tol=1.1,out_file_name="out",init_file_name="init",vib_file_name="vib_vib",
-                        is_ad=not (config_name in ts_dict.keys() or any(config_name.startswith(t + "_") for t in ts_dict.keys())))
-                    xyz = os.path.join(path,"Iterations",str(k),"Samples",i,"out.xyz")
-                    if os.path.exists(xyz):
-                        config_xyzs.append(xyz)
-                        configs_3D.append(read(xyz))
-                        if datum_E is not None:
-                            config_Es.append(datum_E.value*to_eV)
-                            config_mols.append(datum_E.mol)
-                            Ncoad = len(split_adsorbed_structures(datum_E.mol)) - 1
-                            if config_name not in ts_dict.keys() and config_name != coad_name: #adsorbate that is not the co-adsorbate
-                                Ecorr = (datum_E.value-Ncoad_energy_dict[coad_name][len(Ncoad_energy_dict[coad_name])-1][coad_name][Ncoad-1])*to_eV
-                            elif config_name not in ts_dict.keys() and config_name == coad_name: #co-adsorbate
-                                Ecorr = (datum_E.value - Ncoad_energy_dict[coad_name][k][config_name][Ncoad-1]/Ncoad)*to_eV
-                            else: #TS
-                                assert reactant_names is not None
-                                Ncoad_reactants = reactant_names.count(coad_name)
-                                if Ncoad-Ncoad_reactants <= 0:
-                                    Ecorr = 0.0
-                                else:
-                                    Ecorr = (datum_E.value-Ncoad_energy_dict[coad_name][len(Ncoad_energy_dict[coad_name])-1][coad_name][Ncoad-1]/Ncoad*(Ncoad-Ncoad_reactants))*to_eV
 
-                            config_E_correction.append(Ecorr)
-                        else:
-                            config_Es.append(None)
-                            
+    # Collect (sample_dir, iter_index_for_Ecorr_lookup, restrict_to_coad) tuples.
+    # Pair calcs (single coadsorbate, lowest coverage) are treated as iter 0 data.
+    sample_dirs = []
+    pairs_root = os.path.join(path, "pairs")
+    if os.path.exists(pairs_root):
+        for pair_name in os.listdir(pairs_root):
+            pair_dir = os.path.join(pairs_root, pair_name)
+            if not os.path.isdir(pair_dir):
+                continue
+            for i in os.listdir(pair_dir):
+                d = os.path.join(pair_dir, i)
+                if not os.path.isdir(d):
+                    continue
+                sample_dirs.append((d, 0, True))
+    for k in range(len(Ncoad_energy_dict[coad_name])):
+        samples_path = os.path.join(path,"Iterations",str(k),"Samples")
+        if os.path.exists(samples_path):
+            for i in os.listdir(samples_path):
+                d = os.path.join(samples_path, i)
+                if os.path.isdir(d):
+                    sample_dirs.append((d, k, False))
+
+    for d, k, restrict_to_coad in sample_dirs:
+        infopath = os.path.join(d, "info.json")
+        if not os.path.exists(infopath):
+            continue
+        with open(infopath, "r") as f:
+            info = json.load(f)
+        if restrict_to_coad and info.get("coadname") != coad_name:
+            continue
+        xyz_parent = os.path.split(os.path.split(info["xyz"])[0])
+        ts_name = os.path.split(xyz_parent[0])[1]
+        ts_index = xyz_parent[1]
+        compound = f"{ts_name}_{ts_index}"
+        if not (ts_name == config_name or compound == config_name):
+            continue
+        datum_path = os.path.join(d, "datum.json")
+        if os.path.exists(datum_path):
+            with open(datum_path) as f:
+                cached = json.load(f)
+            if cached.get("valid"):
+                if cached.get("datum_E") is not None:
+                    datum_E = Datum(Molecule().from_adjacency_list(cached["datum_E"]["mol"], check_consistency=False),
+                                    cached["datum_E"]["value"])
+                else:
+                    datum_E = None
+                datums_stability = [Datum(Molecule().from_adjacency_list(ds["mol"], check_consistency=False), ds["value"])
+                                    for ds in cached.get("datums_stability", [])]
+            else:
+                datum_E = None
+                datums_stability = []
+        else:
+            datum_E,datums_stability = process_calculation(d,ad_energy_dict,slab,metal,facet,sites,site_adjacency,pynta_path,coadmol_E_dict[coad_name],max_dist=3.0,rxn_alignment_min=0.7,
+            coad_disruption_tol=1.1,out_file_name="out",init_file_name="init",vib_file_name="vib_vib",
+            is_ad=not (config_name in ts_dict.keys() or any(config_name.startswith(t + "_") for t in ts_dict.keys())))
+        xyz = os.path.join(d, "out.xyz")
+        if os.path.exists(xyz):
+            config_xyzs.append(xyz)
+            configs_3D.append(read(xyz))
+            if datum_E is not None:
+                config_Es.append(datum_E.value*to_eV)
+                config_mols.append(datum_E.mol)
+                Ncoad = len(split_adsorbed_structures(datum_E.mol)) - 1
+                if config_name not in ts_dict.keys() and config_name != coad_name: #adsorbate that is not the co-adsorbate
+                    Ecorr = (datum_E.value-Ncoad_energy_dict[coad_name][len(Ncoad_energy_dict[coad_name])-1][coad_name][Ncoad-1])*to_eV
+                elif config_name not in ts_dict.keys() and config_name == coad_name: #co-adsorbate
+                    Ecorr = (datum_E.value - Ncoad_energy_dict[coad_name][k][config_name][Ncoad-1]/Ncoad)*to_eV
+                else: #TS
+                    assert reactant_names is not None
+                    Ncoad_reactants = reactant_names.count(coad_name)
+                    if Ncoad-Ncoad_reactants <= 0:
+                        Ecorr = 0.0
+                    else:
+                        Ecorr = (datum_E.value-Ncoad_energy_dict[coad_name][len(Ncoad_energy_dict[coad_name])-1][coad_name][Ncoad-1]/Ncoad*(Ncoad-Ncoad_reactants))*to_eV
+
+                config_E_correction.append(Ecorr)
+            else:
+                config_Es.append(None)
+
     return configs_3D,config_Es,config_E_correction,config_xyzs,config_mols
