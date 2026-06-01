@@ -1171,13 +1171,9 @@ def generate_unique_site_additions_vacancy(
         add_adsorbate_to_site(g, adsorbate=tag, surf_ind=0, site=site, height=1.5)
         geoms.append(g)
 
-    # reduce by symmetry like before
-    clusters = get_unique_sym_struct_index_clusters(geoms)
-    rep_inds = [c[0] for c in clusters]
-    geoms_unique = [geoms[i] for i in rep_inds]
-
-    # Representative sites corresponding to geoms_unique (one site per geometry)
-    unocc_rep_sites = [unocc[i] for i in rep_inds]
+    # all terrace sites, no symmetry reduction
+    geoms_unique = geoms
+    unocc_rep_sites = unocc
 
     # ---------- NEW: geom_all = geoms_unique + maxcn_geoms ----------
     geom_all = geoms_unique + maxcn_geoms
