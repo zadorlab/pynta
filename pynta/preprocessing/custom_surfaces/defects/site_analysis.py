@@ -82,6 +82,30 @@ def generate_unique_sites(slab, sites, nslab, site_bond_cutoff, adsorbate_height
     )
 
 
+def generate_all_sites(slab, sites, nslab, site_bond_cutoff, adsorbate_height):
+    """Like generate_unique_sites but returns every unoccupied site without symmetry reduction."""
+    occ = get_occupied_sites(slab, sites, nslab, site_bond_cutoff)
+    unocc = [s for s in sites if not any(sites_match(s, o, slab) for o in occ)]
+
+    geoms = []
+    sites_per_geom = []
+
+    for site in unocc:
+        g = slab.copy()
+        add_adsorbate_to_site(
+            g,
+            adsorbate=Atoms("Ne"),
+            surf_ind=0,
+            site=site,
+            height=adsorbate_height,
+            tilt_angle=25.24,
+            offset=False)
+        geoms.append(g)
+        sites_per_geom.append([site])
+
+    return geoms, sites_per_geom
+
+
 
 def write_trajectory_pynta(slab, cas, nslab, site_bond_cutoff, adsorbate_height, trajectory_filename="unique_sites.traj"):
     # Generate unique sites and geometries
@@ -176,7 +200,7 @@ def write_trajectory_for_acat(slab, cas, trajectory_filename):
     traj = Trajectory(trajectory_filename, 'w')
     
     # Iterate over all unique sites
-    for index, site in enumerate(cas.get_unique_sites()):
+    for site in cas.get_unique_sites():
         # Create a deep copy of the original slab
         my_slab = copy.deepcopy(slab)
         
@@ -335,7 +359,7 @@ def update_site_labels_by_graph_and_type(single_sites_lists, clusters, geom_indi
         return None, None
 
     key_to_label = {}
-    label_counter = 1
+    label_counter = 0
     geom_to_label = {}
 
     for cluster_id, members in enumerate(clusters.values()):
@@ -1328,7 +1352,7 @@ def workflow_no_defect_unique_sites(
     cas = SlabAdsorptionSites(slab, surface_string, composition_effect=True)
     all_sites = cas.get_sites()
 
-    single_geoms, single_sites_lists = generate_unique_sites(
+    single_geoms, single_sites_lists = generate_all_sites(
         slab, all_sites, nslab, site_bond_cutoff, adsorbate_height
     )
 
@@ -1385,7 +1409,7 @@ def workflow_no_defect_unique_sites(
     cas = SlabAdsorptionSites(slab, surface_string, composition_effect=True)
     all_sites = cas.get_sites()
 
-    single_geoms, single_sites_lists = generate_unique_sites(
+    single_geoms, single_sites_lists = generate_all_sites(
         slab, all_sites, nslab, site_bond_cutoff, adsorbate_height
     )
 
