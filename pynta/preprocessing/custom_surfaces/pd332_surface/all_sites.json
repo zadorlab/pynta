@@ -1,0 +1,3194 @@
+[
+    {
+        "site": "ontop",
+        "morphology": "corner",
+        "position": [
+            -6.12594863,
+            7.62862505,
+            26.30981953
+        ],
+        "normal": [
+            0.1228088,
+            -0.10473168,
+            0.98688868
+        ],
+        "indices": [
+            56
+        ],
+        "composition": "Pd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "bridge",
+        "morphology": "corner",
+        "position": [
+            -5.681328280000002,
+            6.32517272,
+            26.12137338
+        ],
+        "normal": [
+            -0.07134294,
+            0.06084149,
+            0.99559455
+        ],
+        "indices": [
+            56,
+            57
+        ],
+        "composition": "PdPd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "hcp",
+        "morphology": "tc-cc-h",
+        "position": [
+            -4.92466509,
+            6.604167,
+            26.05855796
+        ],
+        "normal": [
+            0.1195882,
+            -0.1019851,
+            0.98757162
+        ],
+        "indices": [
+            56,
+            57,
+            59
+        ],
+        "composition": "PdPdPd",
+        "subsurf_index": 33,
+        "subsurf_element": "Pd",
+        "label": "null"
+    },
+    {
+        "site": "fcc",
+        "morphology": "tc-cc-h",
+        "position": [
+            -6.437991470000001,
+            6.04617844,
+            26.18418878
+        ],
+        "normal": [
+            0.11958817,
+            -0.10198511,
+            0.98757162
+        ],
+        "indices": [
+            56,
+            57,
+            62
+        ],
+        "composition": "PdPdPd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "bridge",
+        "morphology": "corner",
+        "position": [
+            -5.213264020000001,
+            8.69884263,
+            26.30981953
+        ],
+        "normal": [
+            0.12280879,
+            -0.1047317,
+            0.98688868
+        ],
+        "indices": [
+            56,
+            58
+        ],
+        "composition": "PdPd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "fcc",
+        "morphology": "tc-cc-h",
+        "position": [
+            -4.612622250000002,
+            8.18661361,
+            26.18418872
+        ],
+        "normal": [
+            0.11958819,
+            -0.10198515,
+            0.98757161
+        ],
+        "indices": [
+            56,
+            58,
+            59
+        ],
+        "composition": "PdPdPd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "hcp",
+        "morphology": "tc-cc-h",
+        "position": [
+            -5.81363458,
+            9.21084034,
+            26.442340599999998
+        ],
+        "normal": [
+            0.12602717,
+            -0.10747633,
+            0.9861876
+        ],
+        "indices": [
+            56,
+            58,
+            67
+        ],
+        "composition": "PdPdPd",
+        "subsurf_index": 42,
+        "subsurf_element": "Pd",
+        "label": "null"
+    },
+    {
+        "site": "bridge",
+        "morphology": "corner",
+        "position": [
+            -4.768643670000001,
+            7.39539031,
+            26.12137332
+        ],
+        "normal": [
+            -0.07134295,
+            0.06084147,
+            0.99559455
+        ],
+        "indices": [
+            56,
+            59
+        ],
+        "composition": "PdPd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "bridge",
+        "morphology": "corner",
+        "position": [
+            -7.038633240000001,
+            6.55840746,
+            26.309819549999997
+        ],
+        "normal": [
+            0.12280881,
+            -0.10473168,
+            0.98688868
+        ],
+        "indices": [
+            56,
+            62
+        ],
+        "composition": "PdPd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "hcp",
+        "morphology": "tc-cc-h",
+        "position": [
+            -7.639003780000001,
+            7.07040516,
+            26.442340599999998
+        ],
+        "normal": [
+            0.12602716,
+            -0.1074763,
+            0.98618761
+        ],
+        "indices": [
+            56,
+            62,
+            65
+        ],
+        "composition": "PdPdPd",
+        "subsurf_index": 40,
+        "subsurf_element": "Pd",
+        "label": "null"
+    },
+    {
+        "site": "bridge",
+        "morphology": "tc-cc-h",
+        "position": [
+            -7.482846750000001,
+            7.86151281,
+            26.5086011
+        ],
+        "normal": [
+            -0.02745328,
+            0.02341223,
+            0.90616741
+        ],
+        "indices": [
+            56,
+            65
+        ],
+        "composition": "PdPd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "fcc",
+        "morphology": "tc-cc-h",
+        "position": [
+            -7.326689729999999,
+            8.65262046,
+            26.57486165
+        ],
+        "normal": [
+            0.12602715,
+            -0.10747634,
+            0.98618761
+        ],
+        "indices": [
+            56,
+            65,
+            67
+        ],
+        "composition": "PdPdPd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "bridge",
+        "morphology": "tc-cc-h",
+        "position": [
+            -6.57016216,
+            8.93173041,
+            26.50860114
+        ],
+        "normal": [
+            -0.02745328,
+            0.02341223,
+            0.90616741
+        ],
+        "indices": [
+            56,
+            67
+        ],
+        "composition": "PdPd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "ontop",
+        "morphology": "corner",
+        "position": [
+            -5.236707939999999,
+            5.02172039,
+            25.93292724
+        ],
+        "normal": [
+            -0.29368145,
+            0.25045241,
+            0.92251005
+        ],
+        "indices": [
+            57
+        ],
+        "composition": "Pd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "bridge",
+        "morphology": "corner",
+        "position": [
+            -4.324023320000001,
+            6.09193798,
+            25.93292718
+        ],
+        "normal": [
+            -0.29368146,
+            0.25045239,
+            0.92251005
+        ],
+        "indices": [
+            57,
+            59
+        ],
+        "composition": "PdPd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "hcp",
+        "morphology": "sc-cc-h",
+        "position": [
+            -3.974886370000001,
+            5.79419299,
+            26.575056389999997
+        ],
+        "normal": [
+            -0.6190707,
+            0.5279453,
+            0.58139937
+        ],
+        "indices": [
+            57,
+            59,
+            73
+        ],
+        "composition": "PdPdPd",
+        "subsurf_index": 49,
+        "subsurf_element": "Pd",
+        "label": "null"
+    },
+    {
+        "site": "bridge",
+        "morphology": "corner",
+        "position": [
+            0.707464019999999,
+            13.81669573,
+            26.12137341
+        ],
+        "normal": [
+            -0.07134294,
+            0.06084149,
+            0.99559455
+        ],
+        "indices": [
+            57,
+            62
+        ],
+        "composition": "PdPd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "hcp",
+        "morphology": "tc-cc-h",
+        "position": [
+            0.551442599999999,
+            13.02547244,
+            26.058557999999998
+        ],
+        "normal": [
+            0.11958816,
+            -0.10198515,
+            0.98757162
+        ],
+        "indices": [
+            57,
+            62,
+            63
+        ],
+        "composition": "PdPdPd",
+        "subsurf_index": 39,
+        "subsurf_element": "Pd",
+        "label": "null"
+    },
+    {
+        "site": "bridge",
+        "morphology": "corner",
+        "position": [
+            1.1520843799999994,
+            12.51324342,
+            25.93292722
+        ],
+        "normal": [
+            -0.29368145,
+            0.2504524,
+            0.92251005
+        ],
+        "indices": [
+            57,
+            63
+        ],
+        "composition": "PdPd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "hcp",
+        "morphology": "sc-cc-h",
+        "position": [
+            1.5012213099999987,
+            12.21549842,
+            26.57505652
+        ],
+        "normal": [
+            -0.61907076,
+            0.5279453,
+            0.58139931
+        ],
+        "indices": [
+            57,
+            63,
+            79
+        ],
+        "composition": "PdPdPd",
+        "subsurf_index": 55,
+        "subsurf_element": "Pd",
+        "label": "null"
+    },
+    {
+        "site": "bridge",
+        "morphology": "sc-cc-h",
+        "position": [
+            -4.256660200000001,
+            5.1102117,
+            26.896121039999997
+        ],
+        "normal": [
+            -0.02745328,
+            0.02341223,
+            0.90616741
+        ],
+        "indices": [
+            57,
+            73
+        ],
+        "composition": "PdPd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "fcc",
+        "morphology": "sc-cc-h",
+        "position": [
+            -4.538434050000002,
+            4.42623041,
+            27.217185729999997
+        ],
+        "normal": [
+            -0.61907069,
+            0.52794534,
+            0.58139935
+        ],
+        "indices": [
+            57,
+            73,
+            79
+        ],
+        "composition": "PdPdPd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "bridge",
+        "morphology": "sc-cc-h",
+        "position": [
+            2.1321320799999994,
+            12.6017347,
+            26.896121179999998
+        ],
+        "normal": [
+            -0.02745328,
+            0.02341223,
+            0.90616741
+        ],
+        "indices": [
+            57,
+            79
+        ],
+        "composition": "PdPd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "ontop",
+        "morphology": "corner",
+        "position": [
+            -4.300579420000001,
+            9.76906021,
+            26.30981953
+        ],
+        "normal": [
+            0.12280878,
+            -0.10473171,
+            0.98688868
+        ],
+        "indices": [
+            58
+        ],
+        "composition": "Pd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "bridge",
+        "morphology": "corner",
+        "position": [
+            -3.855959059999999,
+            8.46560789,
+            26.12137332
+        ],
+        "normal": [
+            -0.07134296,
+            0.06084146,
+            0.99559455
+        ],
+        "indices": [
+            58,
+            59
+        ],
+        "composition": "PdPd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "hcp",
+        "morphology": "tc-cc-h",
+        "position": [
+            -3.0992958699999997,
+            8.74460216,
+            26.05855796
+        ],
+        "normal": [
+            0.11958814,
+            -0.10198517,
+            0.98757162
+        ],
+        "indices": [
+            58,
+            59,
+            61
+        ],
+        "composition": "PdPdPd",
+        "subsurf_index": 35,
+        "subsurf_element": "Pd",
+        "label": "null"
+    },
+    {
+        "site": "bridge",
+        "morphology": "corner",
+        "position": [
+            -3.3878948,
+            10.83927776,
+            26.30981962
+        ],
+        "normal": [
+            0.12280878,
+            -0.1047317,
+            0.98688868
+        ],
+        "indices": [
+            58,
+            60
+        ],
+        "composition": "PdPd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "fcc",
+        "morphology": "tc-cc-h",
+        "position": [
+            -2.7872530300000005,
+            10.32704874,
+            26.18418883
+        ],
+        "normal": [
+            0.11958814,
+            -0.10198519,
+            0.98757162
+        ],
+        "indices": [
+            58,
+            60,
+            61
+        ],
+        "composition": "PdPdPd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "hcp",
+        "morphology": "tc-cc-h",
+        "position": [
+            -3.98826535,
+            11.35127549,
+            26.44234063
+        ],
+        "normal": [
+            0.12602708,
+            -0.10747634,
+            0.98618762
+        ],
+        "indices": [
+            58,
+            60,
+            69
+        ],
+        "composition": "PdPdPd",
+        "subsurf_index": 44,
+        "subsurf_element": "Pd",
+        "label": "null"
+    },
+    {
+        "site": "bridge",
+        "morphology": "corner",
+        "position": [
+            -2.9432744600000014,
+            9.53582546,
+            26.121373389999995
+        ],
+        "normal": [
+            -0.07134297,
+            0.06084146,
+            0.99559455
+        ],
+        "indices": [
+            58,
+            61
+        ],
+        "composition": "PdPd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "bridge",
+        "morphology": "tc-cc-h",
+        "position": [
+            -5.657477560000002,
+            10.00194799,
+            26.50860114
+        ],
+        "normal": [
+            -0.02745328,
+            0.02341223,
+            0.90616741
+        ],
+        "indices": [
+            58,
+            67
+        ],
+        "composition": "PdPd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "fcc",
+        "morphology": "tc-cc-h",
+        "position": [
+            -5.501320520000001,
+            10.79305564,
+            26.57486165
+        ],
+        "normal": [
+            0.12602717,
+            -0.1074763,
+            0.98618761
+        ],
+        "indices": [
+            58,
+            67,
+            69
+        ],
+        "composition": "PdPdPd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "bridge",
+        "morphology": "tc-cc-h",
+        "position": [
+            -4.744792930000001,
+            11.07216558,
+            26.5086011
+        ],
+        "normal": [
+            -0.02745328,
+            0.02341223,
+            0.90616741
+        ],
+        "indices": [
+            58,
+            69
+        ],
+        "composition": "PdPd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "ontop",
+        "morphology": "corner",
+        "position": [
+            -3.4113387000000013,
+            7.16215557,
+            25.932927109999998
+        ],
+        "normal": [
+            -0.29368147,
+            0.25045238,
+            0.92251005
+        ],
+        "indices": [
+            59
+        ],
+        "composition": "Pd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "bridge",
+        "morphology": "corner",
+        "position": [
+            -2.4986540999999995,
+            8.23237314,
+            25.93292718
+        ],
+        "normal": [
+            -0.29368147,
+            0.25045238,
+            0.92251005
+        ],
+        "indices": [
+            59,
+            61
+        ],
+        "composition": "PdPd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "hcp",
+        "morphology": "sc-cc-h",
+        "position": [
+            -2.1495171600000003,
+            7.93462814,
+            26.575056479999997
+        ],
+        "normal": [
+            -0.61907077,
+            0.52794528,
+            0.58139931
+        ],
+        "indices": [
+            59,
+            61,
+            75
+        ],
+        "composition": "PdPdPd",
+        "subsurf_index": 51,
+        "subsurf_element": "Pd",
+        "label": "null"
+    },
+    {
+        "site": "bridge",
+        "morphology": "sc-cc-h",
+        "position": [
+            -3.3439755800000004,
+            6.18042929,
+            26.896120969999995
+        ],
+        "normal": [
+            -0.02745328,
+            0.02341223,
+            0.90616741
+        ],
+        "indices": [
+            59,
+            73
+        ],
+        "composition": "PdPd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "fcc",
+        "morphology": "sc-cc-h",
+        "position": [
+            -2.713064820000001,
+            6.56666558,
+            27.217185669999996
+        ],
+        "normal": [
+            -0.61907078,
+            0.52794525,
+            0.58139933
+        ],
+        "indices": [
+            59,
+            73,
+            75
+        ],
+        "composition": "PdPdPd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "bridge",
+        "morphology": "sc-cc-h",
+        "position": [
+            -2.4312909999999994,
+            7.25064686,
+            26.8961211
+        ],
+        "normal": [
+            -0.02745328,
+            0.02341223,
+            0.90616741
+        ],
+        "indices": [
+            59,
+            75
+        ],
+        "composition": "PdPd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "ontop",
+        "morphology": "corner",
+        "position": [
+            -2.4752101799999995,
+            11.90949532,
+            26.3098197
+        ],
+        "normal": [
+            0.12280878,
+            -0.1047317,
+            0.98688868
+        ],
+        "indices": [
+            60
+        ],
+        "composition": "Pd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "bridge",
+        "morphology": "corner",
+        "position": [
+            -2.030589830000002,
+            10.60604301,
+            26.121373479999995
+        ],
+        "normal": [
+            -0.07134296,
+            0.06084146,
+            0.99559455
+        ],
+        "indices": [
+            60,
+            61
+        ],
+        "composition": "PdPd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "hcp",
+        "morphology": "tc-cc-h",
+        "position": [
+            -1.2739266300000018,
+            10.88503729,
+            26.05855805
+        ],
+        "normal": [
+            0.11958822,
+            -0.10198515,
+            0.98757161
+        ],
+        "indices": [
+            60,
+            61,
+            63
+        ],
+        "composition": "PdPdPd",
+        "subsurf_index": 37,
+        "subsurf_element": "Pd",
+        "label": "null"
+    },
+    {
+        "site": "bridge",
+        "morphology": "corner",
+        "position": [
+            -1.5625255600000003,
+            12.9797129,
+            26.30981964
+        ],
+        "normal": [
+            0.1228088,
+            -0.10473169,
+            0.98688868
+        ],
+        "indices": [
+            60,
+            62
+        ],
+        "composition": "PdPd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "fcc",
+        "morphology": "tc-cc-h",
+        "position": [
+            -0.9618837800000007,
+            12.46748388,
+            26.18418882
+        ],
+        "normal": [
+            0.11958823,
+            -0.10198513,
+            0.98757161
+        ],
+        "indices": [
+            60,
+            62,
+            63
+        ],
+        "composition": "PdPdPd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "hcp",
+        "morphology": "tc-cc-h",
+        "position": [
+            -2.1628961,
+            13.49171062,
+            26.44234069
+        ],
+        "normal": [
+            0.12602718,
+            -0.10747629,
+            0.98618761
+        ],
+        "indices": [
+            60,
+            62,
+            71
+        ],
+        "composition": "PdPdPd",
+        "subsurf_index": 46,
+        "subsurf_element": "Pd",
+        "label": "null"
+    },
+    {
+        "site": "bridge",
+        "morphology": "corner",
+        "position": [
+            -1.1179052000000005,
+            11.67626058,
+            26.121373439999996
+        ],
+        "normal": [
+            -0.07134295,
+            0.06084147,
+            0.99559455
+        ],
+        "indices": [
+            60,
+            63
+        ],
+        "composition": "PdPd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "bridge",
+        "morphology": "tc-cc-h",
+        "position": [
+            -3.8321083199999997,
+            12.14238314,
+            26.50860118
+        ],
+        "normal": [
+            -0.02745328,
+            0.02341223,
+            0.90616741
+        ],
+        "indices": [
+            60,
+            69
+        ],
+        "composition": "PdPd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "fcc",
+        "morphology": "tc-cc-h",
+        "position": [
+            -3.675951270000002,
+            12.93349078,
+            26.57486172
+        ],
+        "normal": [
+            0.12602708,
+            -0.10747632,
+            0.98618762
+        ],
+        "indices": [
+            60,
+            69,
+            71
+        ],
+        "composition": "PdPdPd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "bridge",
+        "morphology": "tc-cc-h",
+        "position": [
+            -2.919423680000001,
+            13.21260069,
+            26.50860125
+        ],
+        "normal": [
+            -0.02745328,
+            0.02341223,
+            0.90616741
+        ],
+        "indices": [
+            60,
+            71
+        ],
+        "composition": "PdPd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "ontop",
+        "morphology": "corner",
+        "position": [
+            -1.5859694899999992,
+            9.3025907,
+            25.93292725
+        ],
+        "normal": [
+            -0.29368147,
+            0.25045238,
+            0.92251005
+        ],
+        "indices": [
+            61
+        ],
+        "composition": "Pd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "bridge",
+        "morphology": "corner",
+        "position": [
+            -0.6732848600000009,
+            10.37280827,
+            25.93292722
+        ],
+        "normal": [
+            -0.29368146,
+            0.25045239,
+            0.92251005
+        ],
+        "indices": [
+            61,
+            63
+        ],
+        "composition": "PdPd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "hcp",
+        "morphology": "sc-cc-h",
+        "position": [
+            -0.32414792000000103,
+            10.07506329,
+            26.575056489999998
+        ],
+        "normal": [
+            -0.61907073,
+            0.52794532,
+            0.58139933
+        ],
+        "indices": [
+            61,
+            63,
+            77
+        ],
+        "composition": "PdPdPd",
+        "subsurf_index": 53,
+        "subsurf_element": "Pd",
+        "label": "null"
+    },
+    {
+        "site": "bridge",
+        "morphology": "sc-cc-h",
+        "position": [
+            -1.5186063900000004,
+            8.32086443,
+            26.89612116
+        ],
+        "normal": [
+            -0.02745328,
+            0.02341223,
+            0.90616741
+        ],
+        "indices": [
+            61,
+            75
+        ],
+        "composition": "PdPd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "fcc",
+        "morphology": "sc-cc-h",
+        "position": [
+            -0.8876956099999987,
+            8.70710073,
+            27.21718579
+        ],
+        "normal": [
+            -0.61907073,
+            0.52794531,
+            0.58139933
+        ],
+        "indices": [
+            61,
+            75,
+            77
+        ],
+        "composition": "PdPdPd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "bridge",
+        "morphology": "sc-cc-h",
+        "position": [
+            -0.605921769999999,
+            9.391082010000002,
+            26.896121139999998
+        ],
+        "normal": [
+            -0.02745328,
+            0.02341223,
+            0.90616741
+        ],
+        "indices": [
+            61,
+            77
+        ],
+        "composition": "PdPd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "ontop",
+        "morphology": "corner",
+        "position": [
+            -0.649840939999999,
+            14.04993047,
+            26.30981958
+        ],
+        "normal": [
+            0.12280881,
+            -0.10473167,
+            0.98688868
+        ],
+        "indices": [
+            62
+        ],
+        "composition": "Pd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "bridge",
+        "morphology": "corner",
+        "position": [
+            -0.20522057999999957,
+            12.74647816,
+            26.12137338
+        ],
+        "normal": [
+            -0.07134294,
+            0.06084148,
+            0.99559455
+        ],
+        "indices": [
+            62,
+            63
+        ],
+        "composition": "PdPd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "bridge",
+        "morphology": "tc-cc-h",
+        "position": [
+            -1.0940544500000016,
+            15.353035819999999,
+            26.50860113
+        ],
+        "normal": [
+            -0.02745328,
+            0.02341223,
+            0.90616741
+        ],
+        "indices": [
+            62,
+            65
+        ],
+        "composition": "PdPd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "fcc",
+        "morphology": "tc-cc-h",
+        "position": [
+            -1.8505820300000013,
+            15.0739259,
+            26.57486169
+        ],
+        "normal": [
+            0.12602718,
+            -0.10747629,
+            0.98618761
+        ],
+        "indices": [
+            62,
+            65,
+            71
+        ],
+        "composition": "PdPdPd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "bridge",
+        "morphology": "tc-cc-h",
+        "position": [
+            -2.0067390599999997,
+            14.28281826,
+            26.50860119
+        ],
+        "normal": [
+            -0.02745328,
+            0.02341223,
+            0.90616741
+        ],
+        "indices": [
+            62,
+            71
+        ],
+        "composition": "PdPd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "ontop",
+        "morphology": "corner",
+        "position": [
+            0.2393997799999991,
+            11.443025850000001,
+            25.93292719
+        ],
+        "normal": [
+            -0.29368145,
+            0.2504524,
+            0.92251005
+        ],
+        "indices": [
+            63
+        ],
+        "composition": "Pd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "bridge",
+        "morphology": "sc-cc-h",
+        "position": [
+            0.3067628699999991,
+            10.46129958,
+            26.89612111
+        ],
+        "normal": [
+            -0.02745328,
+            0.02341223,
+            0.90616741
+        ],
+        "indices": [
+            63,
+            77
+        ],
+        "composition": "PdPd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "fcc",
+        "morphology": "sc-cc-h",
+        "position": [
+            0.93767364,
+            10.84753586,
+            27.217185779999998
+        ],
+        "normal": [
+            -0.61907076,
+            0.5279453,
+            0.58139931
+        ],
+        "indices": [
+            63,
+            77,
+            79
+        ],
+        "composition": "PdPdPd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "bridge",
+        "morphology": "sc-cc-h",
+        "position": [
+            1.2194474800000004,
+            11.531517130000001,
+            26.89612116
+        ],
+        "normal": [
+            -0.02745328,
+            0.02341223,
+            0.90616741
+        ],
+        "indices": [
+            63,
+            79
+        ],
+        "composition": "PdPd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "ontop",
+        "morphology": "terrace",
+        "position": [
+            0.30729164999999997,
+            2.14233924,
+            27.11925352
+        ],
+        "normal": [
+            0.12757614,
+            -0.1087973,
+            0.98584354
+        ],
+        "indices": [
+            64
+        ],
+        "composition": "Pd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "bridge",
+        "morphology": "terrace",
+        "position": [
+            -9.28599199,
+            9.3992402,
+            26.913318099999998
+        ],
+        "normal": [
+            0.12783171,
+            -0.10901524,
+            0.98578635
+        ],
+        "indices": [
+            64,
+            65
+        ],
+        "composition": "PdPd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "hcp",
+        "morphology": "terrace",
+        "position": [
+            -8.52878655,
+            9.67777206,
+            26.84467298
+        ],
+        "normal": [
+            0.13014636,
+            -0.11098921,
+            0.98526307
+        ],
+        "indices": [
+            64,
+            65,
+            67
+        ],
+        "composition": "PdPdPd",
+        "subsurf_index": 41,
+        "subsurf_element": "Pd",
+        "label": "null"
+    },
+    {
+        "site": "fcc",
+        "morphology": "terrace",
+        "position": [
+            -0.003666679999999987,
+            0.55896778,
+            26.98196325
+        ],
+        "normal": [
+            0.1301464,
+            -0.1109892,
+            0.98526307
+        ],
+        "indices": [
+            64,
+            65,
+            70
+        ],
+        "composition": "PdPdPd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "bridge",
+        "morphology": "terrace",
+        "position": [
+            1.21997626,
+            3.21255684,
+            27.11925356
+        ],
+        "normal": [
+            0.12757614,
+            -0.1087973,
+            0.98584353
+        ],
+        "indices": [
+            64,
+            66
+        ],
+        "composition": "PdPd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "fcc",
+        "morphology": "terrace",
+        "position": [
+            1.82170252,
+            2.69940295,
+            26.98196329
+        ],
+        "normal": [
+            0.13014636,
+            -0.11098922,
+            0.98526307
+        ],
+        "indices": [
+            64,
+            66,
+            67
+        ],
+        "composition": "PdPdPd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "hcp",
+        "morphology": "sc-tc-h",
+        "position": [
+            0.62336031,
+            3.72135263,
+            27.24984734
+        ],
+        "normal": [
+            0.12500437,
+            -0.10660412,
+            0.98641242
+        ],
+        "indices": [
+            64,
+            66,
+            74
+        ],
+        "composition": "PdPdPd",
+        "subsurf_index": 50,
+        "subsurf_element": "Pd",
+        "label": "null"
+    },
+    {
+        "site": "bridge",
+        "morphology": "terrace",
+        "position": [
+            -8.3733074,
+            10.4694578,
+            26.913318129999997
+        ],
+        "normal": [
+            0.1278317,
+            -0.10901525,
+            0.98578635
+        ],
+        "indices": [
+            64,
+            67
+        ],
+        "composition": "PdPd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "bridge",
+        "morphology": "terrace",
+        "position": [
+            -0.60539297,
+            1.07212168,
+            27.11925354
+        ],
+        "normal": [
+            0.12757615,
+            -0.1087973,
+            0.98584353
+        ],
+        "indices": [
+            64,
+            70
+        ],
+        "composition": "PdPd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "hcp",
+        "morphology": "sc-tc-h",
+        "position": [
+            -1.2020088999999998,
+            1.58091746,
+            27.249847349999996
+        ],
+        "normal": [
+            0.12500442,
+            -0.10660411,
+            0.98641242
+        ],
+        "indices": [
+            64,
+            70,
+            72
+        ],
+        "composition": "PdPdPd",
+        "subsurf_index": 48,
+        "subsurf_element": "Pd",
+        "label": "null"
+    },
+    {
+        "site": "bridge",
+        "morphology": "sc-tc-h",
+        "position": [
+            -1.0439745600000006,
+            2.37042414,
+            27.315144239999995
+        ],
+        "normal": [
+            -0.02745328,
+            0.02341223,
+            0.90616741
+        ],
+        "indices": [
+            64,
+            72
+        ],
+        "composition": "PdPd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "fcc",
+        "morphology": "sc-tc-h",
+        "position": [
+            -0.8859402300000001,
+            3.15993083,
+            27.38044113
+        ],
+        "normal": [
+            0.12500442,
+            -0.1066041,
+            0.98641242
+        ],
+        "indices": [
+            64,
+            72,
+            74
+        ],
+        "composition": "PdPdPd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "bridge",
+        "morphology": "sc-tc-h",
+        "position": [
+            -0.13128995999999973,
+            3.44064172,
+            27.315144209999996
+        ],
+        "normal": [
+            -0.02745328,
+            0.02341223,
+            0.90616741
+        ],
+        "indices": [
+            64,
+            74
+        ],
+        "composition": "PdPd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "ontop",
+        "morphology": "terrace",
+        "position": [
+            -8.839744870000002,
+            8.09440057,
+            26.70738268
+        ],
+        "normal": [
+            0.12808726,
+            -0.10923316,
+            0.98572906
+        ],
+        "indices": [
+            65
+        ],
+        "composition": "Pd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "bridge",
+        "morphology": "terrace",
+        "position": [
+            -7.927060280000002,
+            9.16461817,
+            26.70738271
+        ],
+        "normal": [
+            0.12808726,
+            -0.10923317,
+            0.98572905
+        ],
+        "indices": [
+            65,
+            67
+        ],
+        "composition": "PdPd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "bridge",
+        "morphology": "terrace",
+        "position": [
+            -2.8971996900000003,
+            16.89076324,
+            26.913318119999996
+        ],
+        "normal": [
+            0.12783172,
+            -0.10901524,
+            0.98578635
+        ],
+        "indices": [
+            65,
+            70
+        ],
+        "composition": "PdPd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "hcp",
+        "morphology": "terrace",
+        "position": [
+            -3.052678860000001,
+            16.09907751,
+            26.84467301
+        ],
+        "normal": [
+            0.1301464,
+            -0.11098917,
+            0.98526307
+        ],
+        "indices": [
+            65,
+            70,
+            71
+        ],
+        "composition": "PdPdPd",
+        "subsurf_index": 47,
+        "subsurf_element": "Pd",
+        "label": "null"
+    },
+    {
+        "site": "bridge",
+        "morphology": "terrace",
+        "position": [
+            -2.450952570000001,
+            15.58592361,
+            26.70738274
+        ],
+        "normal": [
+            0.12808725,
+            -0.10923316,
+            0.98572906
+        ],
+        "indices": [
+            65,
+            71
+        ],
+        "composition": "PdPd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "ontop",
+        "morphology": "terrace",
+        "position": [
+            2.13266086,
+            4.28277444,
+            27.1192536
+        ],
+        "normal": [
+            0.12757615,
+            -0.1087973,
+            0.98584353
+        ],
+        "indices": [
+            66
+        ],
+        "composition": "Pd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "bridge",
+        "morphology": "terrace",
+        "position": [
+            -7.460622789999999,
+            11.5396754,
+            26.913318169999997
+        ],
+        "normal": [
+            0.12783171,
+            -0.10901525,
+            0.98578635
+        ],
+        "indices": [
+            66,
+            67
+        ],
+        "composition": "PdPd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "hcp",
+        "morphology": "terrace",
+        "position": [
+            -6.703417339999998,
+            11.81820725,
+            26.844673
+        ],
+        "normal": [
+            0.13014642,
+            -0.1109892,
+            0.98526306
+        ],
+        "indices": [
+            66,
+            67,
+            69
+        ],
+        "composition": "PdPdPd",
+        "subsurf_index": 43,
+        "subsurf_element": "Pd",
+        "label": "null"
+    },
+    {
+        "site": "bridge",
+        "morphology": "terrace",
+        "position": [
+            3.04534546,
+            5.35299201,
+            27.11925355
+        ],
+        "normal": [
+            0.12757615,
+            -0.10879732,
+            0.98584353
+        ],
+        "indices": [
+            66,
+            68
+        ],
+        "composition": "PdPd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "fcc",
+        "morphology": "terrace",
+        "position": [
+            3.64707174,
+            4.83983812,
+            26.98196326
+        ],
+        "normal": [
+            0.13014642,
+            -0.11098919,
+            0.98526307
+        ],
+        "indices": [
+            66,
+            68,
+            69
+        ],
+        "composition": "PdPdPd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "hcp",
+        "morphology": "sc-tc-h",
+        "position": [
+            2.4487295300000005,
+            5.86178779,
+            27.24984738
+        ],
+        "normal": [
+            0.12500446,
+            -0.10660411,
+            0.98641241
+        ],
+        "indices": [
+            66,
+            68,
+            76
+        ],
+        "composition": "PdPdPd",
+        "subsurf_index": 52,
+        "subsurf_element": "Pd",
+        "label": "null"
+    },
+    {
+        "site": "bridge",
+        "morphology": "terrace",
+        "position": [
+            -6.547938170000002,
+            12.60989299,
+            26.913318139999998
+        ],
+        "normal": [
+            0.1278317,
+            -0.10901525,
+            0.98578635
+        ],
+        "indices": [
+            66,
+            69
+        ],
+        "composition": "PdPd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "bridge",
+        "morphology": "sc-tc-h",
+        "position": [
+            0.7813946399999998,
+            4.51085932,
+            27.315144249999996
+        ],
+        "normal": [
+            -0.02745328,
+            0.02341223,
+            0.90616741
+        ],
+        "indices": [
+            66,
+            74
+        ],
+        "composition": "PdPd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "fcc",
+        "morphology": "sc-tc-h",
+        "position": [
+            0.9394289900000001,
+            5.300366,
+            27.380441179999995
+        ],
+        "normal": [
+            0.12500437,
+            -0.10660414,
+            0.98641242
+        ],
+        "indices": [
+            66,
+            74,
+            76
+        ],
+        "composition": "PdPdPd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "bridge",
+        "morphology": "sc-tc-h",
+        "position": [
+            1.6940792599999999,
+            5.5810769,
+            27.315144319999998
+        ],
+        "normal": [
+            -0.02745328,
+            0.02341223,
+            0.90616741
+        ],
+        "indices": [
+            66,
+            76
+        ],
+        "composition": "PdPd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "ontop",
+        "morphology": "terrace",
+        "position": [
+            -7.014375689999999,
+            10.23483577,
+            26.70738274
+        ],
+        "normal": [
+            0.12808726,
+            -0.10923318,
+            0.98572905
+        ],
+        "indices": [
+            67
+        ],
+        "composition": "Pd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "bridge",
+        "morphology": "terrace",
+        "position": [
+            -6.101691069999999,
+            11.30505336,
+            26.7073827
+        ],
+        "normal": [
+            0.12808724,
+            -0.10923318,
+            0.98572906
+        ],
+        "indices": [
+            67,
+            69
+        ],
+        "composition": "PdPd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "ontop",
+        "morphology": "terrace",
+        "position": [
+            3.9580300700000004,
+            6.423209580000001,
+            27.1192535
+        ],
+        "normal": [
+            0.12757616,
+            -0.10879733,
+            0.98584353
+        ],
+        "indices": [
+            68
+        ],
+        "composition": "Pd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "bridge",
+        "morphology": "terrace",
+        "position": [
+            -5.635253570000001,
+            13.680110560000001,
+            26.913318079999996
+        ],
+        "normal": [
+            0.1278317,
+            -0.10901526,
+            0.98578635
+        ],
+        "indices": [
+            68,
+            69
+        ],
+        "composition": "PdPd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "hcp",
+        "morphology": "terrace",
+        "position": [
+            -4.87804811,
+            13.9586424,
+            26.84467299
+        ],
+        "normal": [
+            0.13014633,
+            -0.11098922,
+            0.98526307
+        ],
+        "indices": [
+            68,
+            69,
+            71
+        ],
+        "composition": "PdPdPd",
+        "subsurf_index": 45,
+        "subsurf_element": "Pd",
+        "label": "null"
+    },
+    {
+        "site": "bridge",
+        "morphology": "terrace",
+        "position": [
+            4.8707147,
+            7.4934271400000005,
+            27.11925353
+        ],
+        "normal": [
+            0.12757616,
+            -0.10879731,
+            0.98584353
+        ],
+        "indices": [
+            68,
+            70
+        ],
+        "composition": "PdPd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "fcc",
+        "morphology": "terrace",
+        "position": [
+            5.47244099,
+            6.98027325,
+            26.98196329
+        ],
+        "normal": [
+            0.13014633,
+            -0.1109892,
+            0.98526308
+        ],
+        "indices": [
+            68,
+            70,
+            71
+        ],
+        "composition": "PdPdPd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "hcp",
+        "morphology": "sc-tc-h",
+        "position": [
+            4.27409877,
+            8.00222293,
+            27.249847409999997
+        ],
+        "normal": [
+            0.12500447,
+            -0.1066042,
+            0.9864124
+        ],
+        "indices": [
+            68,
+            70,
+            78
+        ],
+        "composition": "PdPdPd",
+        "subsurf_index": 54,
+        "subsurf_element": "Pd",
+        "label": "null"
+    },
+    {
+        "site": "bridge",
+        "morphology": "terrace",
+        "position": [
+            -4.72256894,
+            14.75032812,
+            26.91331815
+        ],
+        "normal": [
+            0.1278317,
+            -0.10901525,
+            0.98578635
+        ],
+        "indices": [
+            68,
+            71
+        ],
+        "composition": "PdPd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "bridge",
+        "morphology": "sc-tc-h",
+        "position": [
+            2.606763869999999,
+            6.65129447,
+            27.315144259999997
+        ],
+        "normal": [
+            -0.02745328,
+            0.02341223,
+            0.90616741
+        ],
+        "indices": [
+            68,
+            76
+        ],
+        "composition": "PdPd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "fcc",
+        "morphology": "sc-tc-h",
+        "position": [
+            2.764798219999999,
+            7.44080114,
+            27.380441239999996
+        ],
+        "normal": [
+            0.12500444,
+            -0.10660421,
+            0.9864124
+        ],
+        "indices": [
+            68,
+            76,
+            78
+        ],
+        "composition": "PdPdPd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "bridge",
+        "morphology": "sc-tc-h",
+        "position": [
+            3.5194484900000003,
+            7.72151204,
+            27.315144339999996
+        ],
+        "normal": [
+            -0.02745328,
+            0.02341223,
+            0.90616741
+        ],
+        "indices": [
+            68,
+            78
+        ],
+        "composition": "PdPd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "ontop",
+        "morphology": "terrace",
+        "position": [
+            -5.189006450000001,
+            12.37527095,
+            26.70738267
+        ],
+        "normal": [
+            0.12808723,
+            -0.10923318,
+            0.98572906
+        ],
+        "indices": [
+            69
+        ],
+        "composition": "Pd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "bridge",
+        "morphology": "terrace",
+        "position": [
+            -4.276321820000001,
+            13.4454885,
+            26.70738274
+        ],
+        "normal": [
+            0.12808723,
+            -0.10923317,
+            0.98572906
+        ],
+        "indices": [
+            69,
+            71
+        ],
+        "composition": "PdPd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "ontop",
+        "morphology": "terrace",
+        "position": [
+            5.783399329999999,
+            8.56364471,
+            27.11925356
+        ],
+        "normal": [
+            0.12757617,
+            -0.1087973,
+            0.98584353
+        ],
+        "indices": [
+            70
+        ],
+        "composition": "Pd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "bridge",
+        "morphology": "terrace",
+        "position": [
+            -3.8098843100000006,
+            15.82054568,
+            26.913318179999997
+        ],
+        "normal": [
+            0.12783171,
+            -0.10901524,
+            0.98578635
+        ],
+        "indices": [
+            70,
+            71
+        ],
+        "composition": "PdPd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "bridge",
+        "morphology": "sc-tc-h",
+        "position": [
+            5.34481774,
+            9.86194717,
+            27.315144259999997
+        ],
+        "normal": [
+            -0.02745328,
+            0.02341223,
+            0.90616741
+        ],
+        "indices": [
+            70,
+            72
+        ],
+        "composition": "PdPd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "fcc",
+        "morphology": "sc-tc-h",
+        "position": [
+            4.590167459999999,
+            9.58123628,
+            27.380441229999995
+        ],
+        "normal": [
+            0.12500449,
+            -0.10660409,
+            0.98641241
+        ],
+        "indices": [
+            70,
+            72,
+            78
+        ],
+        "composition": "PdPdPd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "bridge",
+        "morphology": "sc-tc-h",
+        "position": [
+            4.4321331200000005,
+            8.791729600000002,
+            27.31514437
+        ],
+        "normal": [
+            -0.02745328,
+            0.02341223,
+            0.90616741
+        ],
+        "indices": [
+            70,
+            78
+        ],
+        "composition": "PdPd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "ontop",
+        "morphology": "terrace",
+        "position": [
+            -3.3636371900000013,
+            14.51570606,
+            26.7073828
+        ],
+        "normal": [
+            0.12808723,
+            -0.10923316,
+            0.98572906
+        ],
+        "indices": [
+            71
+        ],
+        "composition": "Pd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "ontop",
+        "morphology": "step",
+        "position": [
+            -2.3952407699999996,
+            2.59850904,
+            27.51103496
+        ],
+        "normal": [
+            0.11809954,
+            -0.10071556,
+            0.987881
+        ],
+        "indices": [
+            72
+        ],
+        "composition": "Pd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "bridge",
+        "morphology": "step",
+        "position": [
+            -2.8359266199999995,
+            3.89860603,
+            27.6851749
+        ],
+        "normal": [
+            -0.07622783,
+            0.06500736,
+            0.99496903
+        ],
+        "indices": [
+            72,
+            73
+        ],
+        "composition": "PdPd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "hcp",
+        "morphology": "sc-tc-h",
+        "position": [
+            -2.08057494,
+            4.17871875,
+            27.62712823
+        ],
+        "normal": [
+            0.11118459,
+            -0.09481851,
+            0.98926611
+        ],
+        "indices": [
+            72,
+            73,
+            74
+        ],
+        "composition": "PdPdPd",
+        "subsurf_index": 49,
+        "subsurf_element": "Pd",
+        "label": "null"
+    },
+    {
+        "site": "fcc",
+        "morphology": "sc-tc-h",
+        "position": [
+            -3.59127832,
+            3.61849329,
+            27.743221639999998
+        ],
+        "normal": [
+            0.11118468,
+            -0.09481848,
+            0.9892661
+        ],
+        "indices": [
+            72,
+            73,
+            79
+        ],
+        "composition": "PdPdPd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "bridge",
+        "morphology": "step",
+        "position": [
+            -1.4825561700000003,
+            3.66872662,
+            27.511034929999997
+        ],
+        "normal": [
+            0.11809951,
+            -0.10071558,
+            0.987881
+        ],
+        "indices": [
+            72,
+            74
+        ],
+        "composition": "PdPd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "bridge",
+        "morphology": "step",
+        "position": [
+            3.993551529999998,
+            10.09003206,
+            27.51103507
+        ],
+        "normal": [
+            0.11809953,
+            -0.10071558,
+            0.987881
+        ],
+        "indices": [
+            72,
+            78
+        ],
+        "composition": "PdPd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "hcp",
+        "morphology": "sc-tc-h",
+        "position": [
+            3.395532739999999,
+            10.60002418,
+            27.627128419999995
+        ],
+        "normal": [
+            0.11118468,
+            -0.09481851,
+            0.9892661
+        ],
+        "indices": [
+            72,
+            78,
+            79
+        ],
+        "composition": "PdPdPd",
+        "subsurf_index": 55,
+        "subsurf_element": "Pd",
+        "label": "null"
+    },
+    {
+        "site": "bridge",
+        "morphology": "step",
+        "position": [
+            3.55286566,
+            11.39012903,
+            27.68517504
+        ],
+        "normal": [
+            -0.07622783,
+            0.06500737,
+            0.99496902
+        ],
+        "indices": [
+            72,
+            79
+        ],
+        "composition": "PdPd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "ontop",
+        "morphology": "step",
+        "position": [
+            -3.2766124699999994,
+            5.19870301,
+            27.85931483
+        ],
+        "normal": [
+            -0.29759841,
+            0.25379279,
+            0.92033929
+        ],
+        "indices": [
+            73
+        ],
+        "composition": "Pd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "bridge",
+        "morphology": "step",
+        "position": [
+            -1.9232420199999996,
+            4.96882361,
+            27.68517486
+        ],
+        "normal": [
+            -0.07622786,
+            0.06500733,
+            0.99496902
+        ],
+        "indices": [
+            73,
+            74
+        ],
+        "composition": "PdPd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "fcc",
+        "morphology": "sc-tc-h",
+        "position": [
+            -1.7659091100000006,
+            5.75892846,
+            27.7432216
+        ],
+        "normal": [
+            0.11118457,
+            -0.09481863,
+            0.9892661
+        ],
+        "indices": [
+            73,
+            74,
+            75
+        ],
+        "composition": "PdPdPd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "bridge",
+        "morphology": "step",
+        "position": [
+            -2.36392788,
+            6.26892058,
+            27.859314959999995
+        ],
+        "normal": [
+            -0.29759842,
+            0.25379277,
+            0.92033929
+        ],
+        "indices": [
+            73,
+            75
+        ],
+        "composition": "PdPd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "bridge",
+        "morphology": "step",
+        "position": [
+            -4.1892971,
+            4.12848542,
+            27.85931498
+        ],
+        "normal": [
+            -0.2975984,
+            0.2537928,
+            0.92033929
+        ],
+        "indices": [
+            73,
+            79
+        ],
+        "composition": "PdPd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "ontop",
+        "morphology": "step",
+        "position": [
+            -0.5698715700000005,
+            4.73894421,
+            27.5110349
+        ],
+        "normal": [
+            0.11809948,
+            -0.10071561,
+            0.987881
+        ],
+        "indices": [
+            74
+        ],
+        "composition": "Pd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "bridge",
+        "morphology": "step",
+        "position": [
+            -1.010557430000001,
+            6.03904118,
+            27.68517499
+        ],
+        "normal": [
+            -0.07622788,
+            0.06500731,
+            0.99496902
+        ],
+        "indices": [
+            74,
+            75
+        ],
+        "composition": "PdPd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "hcp",
+        "morphology": "sc-tc-h",
+        "position": [
+            -0.2552057300000004,
+            6.31915391,
+            27.627128339999995
+        ],
+        "normal": [
+            0.11118461,
+            -0.09481862,
+            0.9892661
+        ],
+        "indices": [
+            74,
+            75,
+            76
+        ],
+        "composition": "PdPdPd",
+        "subsurf_index": 51,
+        "subsurf_element": "Pd",
+        "label": "null"
+    },
+    {
+        "site": "bridge",
+        "morphology": "step",
+        "position": [
+            0.34281304999999945,
+            5.80916178,
+            27.51103496
+        ],
+        "normal": [
+            0.11809949,
+            -0.10071562,
+            0.987881
+        ],
+        "indices": [
+            74,
+            76
+        ],
+        "composition": "PdPd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "ontop",
+        "morphology": "step",
+        "position": [
+            -1.45124329,
+            7.33913816,
+            27.859315079999995
+        ],
+        "normal": [
+            -0.29759844,
+            0.25379275,
+            0.92033929
+        ],
+        "indices": [
+            75
+        ],
+        "composition": "Pd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "bridge",
+        "morphology": "step",
+        "position": [
+            -0.09787280999999959,
+            7.10925876,
+            27.685175059999995
+        ],
+        "normal": [
+            -0.07622787,
+            0.0650073,
+            0.99496903
+        ],
+        "indices": [
+            75,
+            76
+        ],
+        "composition": "PdPd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "fcc",
+        "morphology": "sc-tc-h",
+        "position": [
+            0.05946010999999934,
+            7.899363609999999,
+            27.74322171
+        ],
+        "normal": [
+            0.11118463,
+            -0.09481855,
+            0.9892661
+        ],
+        "indices": [
+            75,
+            76,
+            77
+        ],
+        "composition": "PdPdPd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "bridge",
+        "morphology": "step",
+        "position": [
+            -0.5385586699999997,
+            8.40935574,
+            27.859315059999997
+        ],
+        "normal": [
+            -0.29759844,
+            0.25379277,
+            0.92033928
+        ],
+        "indices": [
+            75,
+            77
+        ],
+        "composition": "PdPd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "ontop",
+        "morphology": "step",
+        "position": [
+            1.25549767,
+            6.87937936,
+            27.51103503
+        ],
+        "normal": [
+            0.1180995,
+            -0.10071562,
+            0.987881
+        ],
+        "indices": [
+            76
+        ],
+        "composition": "Pd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "bridge",
+        "morphology": "step",
+        "position": [
+            0.8148118099999995,
+            8.17947634,
+            27.68517503
+        ],
+        "normal": [
+            -0.07622787,
+            0.06500732,
+            0.99496902
+        ],
+        "indices": [
+            76,
+            77
+        ],
+        "composition": "PdPd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "hcp",
+        "morphology": "sc-tc-h",
+        "position": [
+            1.5701635099999995,
+            8.459589060000003,
+            27.627128409999997
+        ],
+        "normal": [
+            0.11118455,
+            -0.09481857,
+            0.98926611
+        ],
+        "indices": [
+            76,
+            77,
+            78
+        ],
+        "composition": "PdPdPd",
+        "subsurf_index": 53,
+        "subsurf_element": "Pd",
+        "label": "null"
+    },
+    {
+        "site": "bridge",
+        "morphology": "step",
+        "position": [
+            2.168182289999998,
+            7.949596919999999,
+            27.5110351
+        ],
+        "normal": [
+            0.11809951,
+            -0.10071562,
+            0.987881
+        ],
+        "indices": [
+            76,
+            78
+        ],
+        "composition": "PdPd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "ontop",
+        "morphology": "step",
+        "position": [
+            0.3741259499999995,
+            9.47957332,
+            27.859315029999998
+        ],
+        "normal": [
+            -0.29759844,
+            0.25379279,
+            0.92033928
+        ],
+        "indices": [
+            77
+        ],
+        "composition": "Pd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "bridge",
+        "morphology": "step",
+        "position": [
+            1.7274964300000002,
+            9.24969391,
+            27.685175099999995
+        ],
+        "normal": [
+            -0.07622786,
+            0.06500733,
+            0.99496903
+        ],
+        "indices": [
+            77,
+            78
+        ],
+        "composition": "PdPd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "fcc",
+        "morphology": "sc-tc-h",
+        "position": [
+            1.8848293499999997,
+            10.03979874,
+            27.74322178
+        ],
+        "normal": [
+            0.11118455,
+            -0.09481855,
+            0.98926611
+        ],
+        "indices": [
+            77,
+            78,
+            79
+        ],
+        "composition": "PdPdPd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "bridge",
+        "morphology": "step",
+        "position": [
+            1.2868105599999997,
+            10.549790870000002,
+            27.859315079999995
+        ],
+        "normal": [
+            -0.29759842,
+            0.2537928,
+            0.92033928
+        ],
+        "indices": [
+            77,
+            79
+        ],
+        "composition": "PdPd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "ontop",
+        "morphology": "step",
+        "position": [
+            3.0808669099999997,
+            9.01981449,
+            27.51103518
+        ],
+        "normal": [
+            0.11809952,
+            -0.10071561,
+            0.987881
+        ],
+        "indices": [
+            78
+        ],
+        "composition": "Pd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "bridge",
+        "morphology": "step",
+        "position": [
+            2.64018105,
+            10.319911460000002,
+            27.685175159999996
+        ],
+        "normal": [
+            -0.07622784,
+            0.06500734,
+            0.99496903
+        ],
+        "indices": [
+            78,
+            79
+        ],
+        "composition": "PdPd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "ontop",
+        "morphology": "step",
+        "position": [
+            2.1994951799999996,
+            11.62000842,
+            27.85931513
+        ],
+        "normal": [
+            -0.2975984,
+            0.25379282,
+            0.92033928
+        ],
+        "indices": [
+            79
+        ],
+        "composition": "Pd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    }
+]

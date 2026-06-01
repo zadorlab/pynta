@@ -1,824 +1,668 @@
 [
     {
         "site": "ontop",
-        "surface": "fcc332",
         "morphology": "corner",
         "position": [
-            -7.13941764,
-            2.47345955,
-            15.805455510000002
+            -6.12594863,
+            7.62862505,
+            26.30981953
         ],
         "normal": [
-            -0.32444284,
-            0.27668579,
-            0.90453403
+            0.1228088,
+            -0.10473168,
+            0.98688868
         ],
         "indices": [
-            28
+            56
         ],
         "composition": "Pd",
         "subsurf_index": "null",
         "subsurf_element": "null",
-        "label": "null",
-        "topology": [
-            28
-        ]
+        "label": "null"
     },
     {
         "site": "bridge",
-        "surface": "fcc332",
         "morphology": "corner",
         "position": [
-            -8.47805845,
-            2.7112922,
-            16.01279321
+            -5.681328280000002,
+            6.32517272,
+            26.12137338
         ],
         "normal": [
-            -0.07647191,
-            0.06521547,
-            0.99493668
+            -0.07134294,
+            0.06084149,
+            0.99559455
         ],
         "indices": [
-            28,
-            29
+            56,
+            57
         ],
         "composition": "PdPd",
         "subsurf_index": "null",
         "subsurf_element": "null",
-        "label": "null",
-        "topology": [
-            28,
-            29
-        ]
+        "label": "null"
+    },
+    {
+        "site": "hcp",
+        "morphology": "tc-cc-h",
+        "position": [
+            -4.92466509,
+            6.604167,
+            26.05855796
+        ],
+        "normal": [
+            0.1195882,
+            -0.1019851,
+            0.98757162
+        ],
+        "indices": [
+            56,
+            57,
+            59
+        ],
+        "composition": "PdPdPd",
+        "subsurf_index": 33,
+        "subsurf_element": "Pd",
+        "label": "null"
     },
     {
         "site": "fcc",
-        "surface": "fcc332",
         "morphology": "tc-cc-h",
         "position": [
-            -8.32932058,
-            3.48821219,
-            16.08190577
+            -6.437991470000001,
+            6.04617844,
+            26.18418878
         ],
         "normal": [
-            0.13245323,
-            -0.1129565,
-            0.98473193
+            0.11958817,
+            -0.10198511,
+            0.98757162
         ],
         "indices": [
-            28,
-            29,
-            30
+            56,
+            57,
+            62
         ],
         "composition": "PdPdPd",
         "subsurf_index": "null",
         "subsurf_element": "null",
-        "label": "null",
-        "topology": [
-            28,
-            29,
-            30
-        ]
-    },
-    {
-        "site": "hcp",
-        "surface": "fcc332",
-        "morphology": "tc-cc-h",
-        "position": [
-            8.329320579626785,
-            1.93437221,
-            15.943680640000002
-        ],
-        "normal": [
-            0.13245323,
-            -0.1129565,
-            0.98473193
-        ],
-        "indices": [
-            28,
-            29,
-            31
-        ],
-        "composition": "PdPdPd",
-        "subsurf_index": 98,
-        "subsurf_element": "Pd",
-        "label": "null",
-        "topology": [
-            28,
-            29,
-            31
-        ]
+        "label": "null"
     },
     {
         "site": "bridge",
-        "surface": "fcc332",
         "morphology": "corner",
         "position": [
-            -6.246990439999999,
-            3.5199232099999986,
-            15.805455510000002
+            -5.213264020000001,
+            8.69884263,
+            26.30981953
         ],
         "normal": [
-            -0.32444284,
-            0.27668579,
-            0.90453403
+            0.12280879,
+            -0.1047317,
+            0.98688868
         ],
         "indices": [
-            28,
-            31
+            56,
+            58
         ],
         "composition": "PdPd",
         "subsurf_index": "null",
         "subsurf_element": "null",
-        "label": "null",
-        "topology": [
-            28,
-            31
-        ]
+        "label": "null"
     },
     {
         "site": "hcp",
-        "surface": "fcc332",
+        "morphology": "tc-cc-h",
+        "position": [
+            -5.81363458,
+            9.21084034,
+            26.442340599999998
+        ],
+        "normal": [
+            0.12602717,
+            -0.10747633,
+            0.9861876
+        ],
+        "indices": [
+            56,
+            58,
+            67
+        ],
+        "composition": "PdPdPd",
+        "subsurf_index": 42,
+        "subsurf_element": "Pd",
+        "label": "null"
+    },
+    {
+        "site": "bridge",
+        "morphology": "tc-cc-h",
+        "position": [
+            -7.482846750000001,
+            7.86151281,
+            26.5086011
+        ],
+        "normal": [
+            -0.02745328,
+            0.02341223,
+            0.90616741
+        ],
+        "indices": [
+            56,
+            65
+        ],
+        "composition": "PdPd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "fcc",
+        "morphology": "tc-cc-h",
+        "position": [
+            -7.326689729999999,
+            8.65262046,
+            26.57486165
+        ],
+        "normal": [
+            0.12602715,
+            -0.10747634,
+            0.98618761
+        ],
+        "indices": [
+            56,
+            65,
+            67
+        ],
+        "composition": "PdPdPd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "ontop",
+        "morphology": "corner",
+        "position": [
+            -5.236707939999999,
+            5.02172039,
+            25.93292724
+        ],
+        "normal": [
+            -0.29368145,
+            0.25045241,
+            0.92251005
+        ],
+        "indices": [
+            57
+        ],
+        "composition": "Pd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "bridge",
+        "morphology": "corner",
+        "position": [
+            -4.324023320000001,
+            6.09193798,
+            25.93292718
+        ],
+        "normal": [
+            -0.29368146,
+            0.25045239,
+            0.92251005
+        ],
+        "indices": [
+            57,
+            59
+        ],
+        "composition": "PdPd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "hcp",
         "morphology": "sc-cc-h",
         "position": [
-            9.221747779626785,
-            1.17330774,
-            16.49658116
+            -3.974886370000001,
+            5.79419299,
+            26.575056389999997
         ],
         "normal": [
-            -0.66226618,
-            0.5647825,
-            0.49236596
+            -0.6190707,
+            0.5279453,
+            0.58139937
         ],
         "indices": [
-            28,
-            31,
-            37
+            57,
+            59,
+            73
         ],
         "composition": "PdPdPd",
-        "subsurf_index": 146,
+        "subsurf_index": 49,
         "subsurf_element": "Pd",
-        "label": "null",
-        "topology": [
-            28,
-            31,
-            37
-        ]
+        "label": "null"
     },
     {
         "site": "bridge",
-        "surface": "fcc332",
         "morphology": "sc-cc-h",
         "position": [
-            9.816699249626785,
-            1.56969548,
-            16.842143990000004
+            -4.256660200000001,
+            5.1102117,
+            26.896121039999997
         ],
         "normal": [
-            -0.66226618,
-            0.5647825,
-            0.49236596
+            -0.02745328,
+            0.02341223,
+            0.90616741
         ],
         "indices": [
-            28,
-            37
+            57,
+            73
         ],
         "composition": "PdPd",
         "subsurf_index": "null",
         "subsurf_element": "null",
-        "label": "null",
-        "topology": [
-            28,
-            37
-        ]
+        "label": "null"
     },
     {
         "site": "fcc",
-        "surface": "fcc332",
         "morphology": "sc-cc-h",
         "position": [
-            10.411650719626786,
-            1.9660832299999995,
-            17.18770682
+            -4.538434050000002,
+            4.42623041,
+            27.217185729999997
         ],
         "normal": [
-            -0.66226618,
-            0.5647825,
-            0.49236596
+            -0.61907069,
+            0.52794534,
+            0.58139935
         ],
         "indices": [
-            28,
-            37,
-            38
+            57,
+            73,
+            79
         ],
         "composition": "PdPdPd",
         "subsurf_index": "null",
         "subsurf_element": "null",
-        "label": "null",
-        "topology": [
-            28,
-            37,
-            38
-        ]
+        "label": "null"
     },
     {
         "site": "ontop",
-        "surface": "fcc332",
-        "morphology": "corner",
+        "morphology": "terrace",
         "position": [
-            7.139417639999997,
-            2.94912485,
-            16.220130900000004
+            0.30729164999999997,
+            2.14233924,
+            27.11925352
         ],
         "normal": [
-            0.13245323,
-            -0.1129565,
-            0.98473193
+            0.12757614,
+            -0.1087973,
+            0.98584354
         ],
         "indices": [
-            29
+            64
         ],
         "composition": "Pd",
         "subsurf_index": "null",
         "subsurf_element": "null",
-        "label": "null",
-        "topology": [
-            29
-        ]
+        "label": "null"
     },
     {
         "site": "bridge",
-        "surface": "fcc332",
-        "morphology": "corner",
+        "morphology": "terrace",
         "position": [
-            6.246990430000001,
-            1.9026612,
-            16.220130900000004
+            -9.28599199,
+            9.3992402,
+            26.913318099999998
         ],
         "normal": [
-            0.13245323,
-            -0.1129565,
-            0.98473193
+            0.12783171,
+            -0.10901524,
+            0.98578635
         ],
         "indices": [
-            29,
-            30
+            64,
+            65
         ],
         "composition": "PdPd",
         "subsurf_index": "null",
         "subsurf_element": "null",
-        "label": "null",
-        "topology": [
-            29,
-            30
-        ]
+        "label": "null"
     },
     {
         "site": "hcp",
-        "surface": "fcc332",
-        "morphology": "tc-cc-h",
+        "morphology": "terrace",
         "position": [
-            5.652038959999999,
-            2.4100375099999995,
-            16.35835603
+            -8.52878655,
+            9.67777206,
+            26.84467298
         ],
         "normal": [
-            0.13245323,
-            -0.1129565,
-            0.98473193
+            0.13014636,
+            -0.11098921,
+            0.98526307
         ],
         "indices": [
-            29,
-            30,
-            32
+            64,
+            65,
+            67
         ],
         "composition": "PdPdPd",
-        "subsurf_index": 23,
+        "subsurf_index": 41,
         "subsurf_element": "Pd",
-        "label": "null",
-        "topology": [
-            29,
-            30,
-            32
-        ]
-    },
-    {
-        "site": "bridge",
-        "surface": "fcc332",
-        "morphology": "tc-cc-h",
-        "position": [
-            5.80077683,
-            3.1869575,
-            16.4274686
-        ],
-        "normal": [
-            0.13245323,
-            -0.1129565,
-            0.98473193
-        ],
-        "indices": [
-            29,
-            32
-        ],
-        "composition": "PdPd",
-        "subsurf_index": "null",
-        "subsurf_element": "null",
-        "label": "null",
-        "topology": [
-            29,
-            32
-        ]
+        "label": "null"
     },
     {
         "site": "fcc",
-        "surface": "fcc332",
-        "morphology": "tc-cc-h",
+        "morphology": "terrace",
         "position": [
-            -11.00660219037322,
-            3.96387749,
-            16.49658116
+            -0.003666679999999987,
+            0.55896778,
+            26.98196325
         ],
         "normal": [
-            0.13245323,
-            -0.1129565,
-            0.98473193
+            0.1301464,
+            -0.1109892,
+            0.98526307
         ],
         "indices": [
-            29,
-            32,
-            35
+            64,
+            65,
+            70
         ],
         "composition": "PdPdPd",
         "subsurf_index": "null",
         "subsurf_element": "null",
-        "label": "null",
-        "topology": [
-            29,
-            32,
-            35
-        ]
-    },
-    {
-        "site": "ontop",
-        "surface": "fcc332",
-        "morphology": "terrace",
-        "position": [
-            4.46213602,
-            3.42479015,
-            16.63480629
-        ],
-        "normal": [
-            0.13245324,
-            -0.1129565,
-            0.98473193
-        ],
-        "indices": [
-            32
-        ],
-        "composition": "Pd",
-        "subsurf_index": "null",
-        "subsurf_element": "null",
-        "label": "null",
-        "topology": [
-            32
-        ]
+        "label": "null"
     },
     {
         "site": "bridge",
-        "surface": "fcc332",
         "morphology": "terrace",
         "position": [
-            3.12349522,
-            3.6626228,
-            16.842143990000004
+            1.21997626,
+            3.21255684,
+            27.11925356
         ],
         "normal": [
-            0.13245324,
-            -0.1129565,
-            0.98473193
+            0.12757614,
+            -0.1087973,
+            0.98584353
         ],
         "indices": [
-            32,
-            33
+            64,
+            66
         ],
         "composition": "PdPd",
         "subsurf_index": "null",
         "subsurf_element": "null",
-        "label": "null",
-        "topology": [
-            32,
-            33
-        ]
-    },
-    {
-        "site": "fcc",
-        "surface": "fcc332",
-        "morphology": "terrace",
-        "position": [
-            -0.297475739025944,
-            0.25368816431500785,
-            16.91125656
-        ],
-        "normal": [
-            0.13245324,
-            -0.1129565,
-            0.98473193
-        ],
-        "indices": [
-            32,
-            33,
-            34
-        ],
-        "composition": "PdPdPd",
-        "subsurf_index": "null",
-        "subsurf_element": "null",
-        "label": "null",
-        "topology": [
-            32,
-            33,
-            34
-        ]
+        "label": "null"
     },
     {
         "site": "hcp",
-        "surface": "fcc332",
-        "morphology": "terrace",
-        "position": [
-            2.9747573499999995,
-            2.885702809999999,
-            16.77303142
-        ],
-        "normal": [
-            0.13245324,
-            -0.1129565,
-            0.98473193
-        ],
-        "indices": [
-            32,
-            33,
-            35
-        ],
-        "composition": "PdPdPd",
-        "subsurf_index": 22,
-        "subsurf_element": "Pd",
-        "label": "null",
-        "topology": [
-            32,
-            33,
-            35
-        ]
-    },
-    {
-        "site": "bridge",
-        "surface": "fcc332",
-        "morphology": "terrace",
-        "position": [
-            3.56970882,
-            2.3783265,
-            16.63480629
-        ],
-        "normal": [
-            0.13245324,
-            -0.1129565,
-            0.98473193
-        ],
-        "indices": [
-            32,
-            35
-        ],
-        "composition": "PdPd",
-        "subsurf_index": "null",
-        "subsurf_element": "null",
-        "label": "null",
-        "topology": [
-            32,
-            35
-        ]
-    },
-    {
-        "site": "ontop",
-        "surface": "fcc332",
-        "morphology": "terrace",
-        "position": [
-            1.7848544099999994,
-            3.90045545,
-            17.04948169
-        ],
-        "normal": [
-            0.13245324,
-            -0.1129565,
-            0.98473193
-        ],
-        "indices": [
-            33
-        ],
-        "composition": "Pd",
-        "subsurf_index": "null",
-        "subsurf_element": "null",
-        "label": "null",
-        "topology": [
-            33
-        ]
-    },
-    {
-        "site": "bridge",
-        "surface": "fcc332",
-        "morphology": "terrace",
-        "position": [
-            0.8924272000000009,
-            2.85399179,
-            17.04948169
-        ],
-        "normal": [
-            0.13245324,
-            -0.1129565,
-            0.98473193
-        ],
-        "indices": [
-            33,
-            34
-        ],
-        "composition": "PdPd",
-        "subsurf_index": "null",
-        "subsurf_element": "null",
-        "label": "null",
-        "topology": [
-            33,
-            34
-        ]
-    },
-    {
-        "site": "hcp",
-        "surface": "fcc332",
         "morphology": "sc-tc-h",
         "position": [
-            0.29747573999999904,
-            3.3613681099999986,
-            17.18770682
+            0.62336031,
+            3.72135263,
+            27.24984734
         ],
         "normal": [
-            0.13245323,
-            -0.1129565,
-            0.98473193
+            0.12500437,
+            -0.10660412,
+            0.98641242
         ],
         "indices": [
-            33,
-            34,
-            36
+            64,
+            66,
+            74
         ],
         "composition": "PdPdPd",
-        "subsurf_index": 27,
+        "subsurf_index": 50,
         "subsurf_element": "Pd",
-        "label": "null",
-        "topology": [
-            33,
-            34,
-            36
-        ]
+        "label": "null"
     },
     {
         "site": "bridge",
-        "surface": "fcc332",
         "morphology": "sc-tc-h",
         "position": [
-            0.4462136000000005,
-            4.1382881,
-            17.25681938
+            -1.0439745600000006,
+            2.37042414,
+            27.315144239999995
         ],
         "normal": [
-            0.13245323,
-            -0.1129565,
-            0.98473193
+            -0.02745328,
+            0.02341223,
+            0.90616741
         ],
         "indices": [
-            33,
-            36
+            64,
+            72
         ],
         "composition": "PdPd",
         "subsurf_index": "null",
         "subsurf_element": "null",
-        "label": "null",
-        "topology": [
-            33,
-            36
-        ]
+        "label": "null"
     },
     {
         "site": "fcc",
-        "surface": "fcc332",
         "morphology": "sc-tc-h",
         "position": [
-            13.981359541347278,
-            0.7293534543150074,
-            17.32593195
+            -0.8859402300000001,
+            3.15993083,
+            27.38044113
         ],
         "normal": [
-            0.13245323,
-            -0.1129565,
-            0.98473193
+            0.12500442,
+            -0.1066041,
+            0.98641242
         ],
         "indices": [
-            33,
-            36,
-            39
+            64,
+            72,
+            74
         ],
         "composition": "PdPdPd",
         "subsurf_index": "null",
         "subsurf_element": "null",
-        "label": "null",
-        "topology": [
-            33,
-            36,
-            39
-        ]
+        "label": "null"
     },
     {
         "site": "ontop",
-        "surface": "fcc332",
-        "morphology": "step",
+        "morphology": "terrace",
         "position": [
-            12.49398087,
-            0.19026612,
-            17.464157080000003
+            -8.839744870000002,
+            8.09440057,
+            26.70738268
         ],
         "normal": [
-            0.13245323,
-            -0.1129565,
-            0.98473193
+            0.12808726,
+            -0.10923316,
+            0.98572906
         ],
         "indices": [
-            36
+            65
         ],
         "composition": "Pd",
         "subsurf_index": "null",
         "subsurf_element": "null",
-        "label": "null",
-        "topology": [
-            36
-        ]
+        "label": "null"
     },
     {
         "site": "bridge",
-        "surface": "fcc332",
-        "morphology": "step",
+        "morphology": "terrace",
         "position": [
-            11.15534006,
-            0.42809877,
-            17.67149478
+            -7.927060280000002,
+            9.16461817,
+            26.70738271
         ],
         "normal": [
-            -0.07647191,
-            0.06521547,
-            0.99493668
+            0.12808726,
+            -0.10923317,
+            0.98572905
         ],
         "indices": [
-            36,
-            37
+            65,
+            67
         ],
         "composition": "PdPd",
         "subsurf_index": "null",
         "subsurf_element": "null",
-        "label": "null",
-        "topology": [
-            36,
-            37
-        ]
+        "label": "null"
     },
     {
-        "site": "fcc",
-        "surface": "fcc332",
-        "morphology": "sc-tc-h",
+        "site": "ontop",
+        "morphology": "step",
         "position": [
-            11.30407793,
-            1.20501876,
-            17.740607340000004
+            -2.3952407699999996,
+            2.59850904,
+            27.51103496
         ],
         "normal": [
-            0.13245323,
-            -0.1129565,
-            0.98473193
+            0.11809954,
+            -0.10071556,
+            0.987881
         ],
         "indices": [
-            36,
-            37,
-            38
+            72
         ],
-        "composition": "PdPdPd",
+        "composition": "Pd",
         "subsurf_index": "null",
         "subsurf_element": "null",
-        "label": "null",
-        "topology": [
-            36,
-            37,
-            38
-        ]
+        "label": "null"
+    },
+    {
+        "site": "bridge",
+        "morphology": "step",
+        "position": [
+            -2.8359266199999995,
+            3.89860603,
+            27.6851749
+        ],
+        "normal": [
+            -0.07622783,
+            0.06500736,
+            0.99496903
+        ],
+        "indices": [
+            72,
+            73
+        ],
+        "composition": "PdPd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
     },
     {
         "site": "hcp",
-        "surface": "fcc332",
         "morphology": "sc-tc-h",
         "position": [
-            -2.3798058786527214,
-            3.837033404315008,
-            17.60238221
+            -2.08057494,
+            4.17871875,
+            27.62712823
         ],
         "normal": [
-            0.13245323,
-            -0.1129565,
-            0.98473193
+            0.11118459,
+            -0.09481851,
+            0.98926611
         ],
         "indices": [
-            36,
-            37,
-            39
+            72,
+            73,
+            74
         ],
         "composition": "PdPdPd",
-        "subsurf_index": 66,
+        "subsurf_index": 49,
         "subsurf_element": "Pd",
-        "label": "null",
-        "topology": [
-            36,
-            37,
-            39
-        ]
+        "label": "null"
+    },
+    {
+        "site": "fcc",
+        "morphology": "sc-tc-h",
+        "position": [
+            -3.59127832,
+            3.61849329,
+            27.743221639999998
+        ],
+        "normal": [
+            0.11118468,
+            -0.09481848,
+            0.9892661
+        ],
+        "indices": [
+            72,
+            73,
+            79
+        ],
+        "composition": "PdPdPd",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
     },
     {
         "site": "bridge",
-        "surface": "fcc332",
         "morphology": "step",
         "position": [
-            -1.7848544086527198,
-            3.329657084315007,
-            17.464157080000003
+            -1.4825561700000003,
+            3.66872662,
+            27.511034929999997
         ],
         "normal": [
-            0.13245323,
-            -0.1129565,
-            0.98473193
+            0.11809951,
+            -0.10071558,
+            0.987881
         ],
         "indices": [
-            36,
-            39
+            72,
+            74
         ],
         "composition": "PdPd",
         "subsurf_index": "null",
         "subsurf_element": "null",
-        "label": "null",
-        "topology": [
-            36,
-            39
-        ]
+        "label": "null"
     },
     {
         "site": "ontop",
-        "surface": "fcc332",
         "morphology": "step",
         "position": [
-            9.81669925,
-            0.6659314199999999,
-            17.87883247
+            -3.2766124699999994,
+            5.19870301,
+            27.85931483
         ],
         "normal": [
-            -0.32444284,
-            0.27668579,
-            0.90453403
+            -0.29759841,
+            0.25379279,
+            0.92033929
         ],
         "indices": [
-            37
+            73
         ],
         "composition": "Pd",
         "subsurf_index": "null",
         "subsurf_element": "null",
-        "label": "null",
-        "topology": [
-            37
-        ]
+        "label": "null"
     },
     {
         "site": "bridge",
-        "surface": "fcc332",
         "morphology": "step",
         "position": [
-            -4.462136028652725,
-            3.8053223843150072,
-            17.87883247
+            -2.36392788,
+            6.26892058,
+            27.859314959999995
         ],
         "normal": [
-            -0.32444284,
-            0.27668579,
-            0.90453403
+            -0.29759842,
+            0.25379277,
+            0.92033929
         ],
         "indices": [
-            37,
-            38
+            73,
+            75
         ],
         "composition": "PdPd",
         "subsurf_index": "null",
         "subsurf_element": "null",
-        "label": "null",
-        "topology": [
-            37,
-            38
-        ]
+        "label": "null"
     }
 ]
