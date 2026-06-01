@@ -1344,6 +1344,7 @@ def workflow_no_defect_unique_sites(
     # graph clustering for sites_graph.json
     admols, geom_indices = classify_all_sites(single_geoms, single_sites_lists)
     iso_mat, clusters = cluster_isomorphic_graphs(admols)
+    update_site_labels_by_graph_and_type(single_sites_lists, clusters, geom_indices)
     write_sites_json(single_sites_lists, clusters, filename=sites_graph_json)
 
     if verbose:
@@ -1398,6 +1399,7 @@ def workflow_no_defect_unique_sites(
 
     admols, geom_indices = classify_all_sites(single_geoms, single_sites_lists)
     iso_mat, clusters = cluster_isomorphic_graphs(admols)
+    update_site_labels_by_graph_and_type(single_sites_lists, clusters, geom_indices)
     write_sites_json(single_sites_lists, clusters, filename=sites_graph_json)
 
     if verbose:
