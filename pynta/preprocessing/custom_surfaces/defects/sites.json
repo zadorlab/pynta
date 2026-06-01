@@ -1,0 +1,1253 @@
+[
+    {
+        "site": "ontop",
+        "surface": "fcc332",
+        "morphology": "corner",
+        "position": [
+            12.4732020101307,
+            7.2014807237825424,
+            19.00418576
+        ],
+        "normal": [
+            -3.534e-05,
+            8.6e-07,
+            1.0
+        ],
+        "indices": [
+            27
+        ],
+        "composition": "Pt",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "bridge",
+        "surface": "fcc332",
+        "morphology": "sc-cc-h",
+        "position": [
+            5.5437671933769,
+            7.201426523782543,
+            19.00491345
+        ],
+        "normal": [
+            2e-08,
+            0.0,
+            0.99999993
+        ],
+        "indices": [
+            27,
+            28
+        ],
+        "composition": "PtPt",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "fcc",
+        "surface": "fcc332",
+        "morphology": "sc-cc-h",
+        "position": [
+            1.38594787,
+            0.80021856,
+            19.0051173
+        ],
+        "normal": [
+            -0.00052499,
+            -0.00025474,
+            0.99999983
+        ],
+        "indices": [
+            27,
+            28,
+            30
+        ],
+        "composition": "PtPtPt",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "hcp",
+        "surface": "fcc332",
+        "morphology": "sc-cc-h",
+        "position": [
+            5.54380319,
+            6.401239709999999,
+            19.00512687
+        ],
+        "normal": [
+            -0.00052496,
+            0.00026669,
+            0.99999983
+        ],
+        "indices": [
+            27,
+            28,
+            34
+        ],
+        "composition": "PtPtPt",
+        "subsurf_index": 25,
+        "subsurf_element": "Pt",
+        "label": "null"
+    },
+    {
+        "site": "bridge",
+        "surface": "fcc332",
+        "morphology": "corner",
+        "position": [
+            11.087290113376898,
+            7.2014228237825435,
+            19.00481188
+        ],
+        "normal": [
+            0.00010248,
+            2.781e-05,
+            0.99999999
+        ],
+        "indices": [
+            27,
+            29
+        ],
+        "composition": "PtPt",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "fcc",
+        "surface": "fcc332",
+        "morphology": "tc-cc-h",
+        "position": [
+            6.92954038,
+            0.8001711499999999,
+            19.005027450000004
+        ],
+        "normal": [
+            0.00045179,
+            -0.00026939,
+            0.99999986
+        ],
+        "indices": [
+            27,
+            29,
+            32
+        ],
+        "composition": "PtPtPt",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "hcp",
+        "surface": "fcc332",
+        "morphology": "tc-cc-h",
+        "position": [
+            11.087255839999997,
+            6.401278,
+            19.00502061
+        ],
+        "normal": [
+            0.00045177,
+            0.00026084,
+            0.99999986
+        ],
+        "indices": [
+            27,
+            29,
+            33
+        ],
+        "composition": "PtPtPt",
+        "subsurf_index": 24,
+        "subsurf_element": "Pt",
+        "label": "null"
+    },
+    {
+        "site": "bridge",
+        "surface": "fcc332",
+        "morphology": "tc-cc-h",
+        "position": [
+            9.0084374267538,
+            1.20039159,
+            19.004855380000002
+        ],
+        "normal": [
+            2e-08,
+            0.0,
+            0.99999993
+        ],
+        "indices": [
+            27,
+            30
+        ],
+        "composition": "PtPt",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "hcp",
+        "surface": "fcc332",
+        "morphology": "tc-cc-h",
+        "position": [
+            8.31549717,
+            1.60048356,
+            19.00505645
+        ],
+        "normal": [
+            -2.394e-05,
+            -0.00054401,
+            0.99999985
+        ],
+        "indices": [
+            27,
+            30,
+            32
+        ],
+        "composition": "PtPtPt",
+        "subsurf_index": 18,
+        "subsurf_element": "Pt",
+        "label": "null"
+    },
+    {
+        "site": "bridge",
+        "surface": "fcc332",
+        "morphology": "tc-cc-h",
+        "position": [
+            7.622515389999999,
+            1.20032418,
+            19.004822170000004
+        ],
+        "normal": [
+            2e-08,
+            0.0,
+            0.99999993
+        ],
+        "indices": [
+            27,
+            32
+        ],
+        "composition": "PtPt",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "bridge",
+        "surface": "fcc332",
+        "morphology": "corner",
+        "position": [
+            11.7801946567538,
+            6.00123455,
+            19.00481191
+        ],
+        "normal": [
+            5.691e-05,
+            8.474e-05,
+            0.99999999
+        ],
+        "indices": [
+            27,
+            33
+        ],
+        "composition": "PtPt",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "fcc",
+        "surface": "fcc332",
+        "morphology": "tc-cc-h",
+        "position": [
+            4.15770434,
+            5.60111172,
+            19.00505918
+        ],
+        "normal": [
+            -4.169e-05,
+            0.00054576,
+            0.99999985
+        ],
+        "indices": [
+            27,
+            33,
+            34
+        ],
+        "composition": "PtPtPt",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "bridge",
+        "surface": "fcc332",
+        "morphology": "tc-cc-h",
+        "position": [
+            4.85075073,
+            6.0011734,
+            19.00486974
+        ],
+        "normal": [
+            2e-08,
+            0.0,
+            0.99999993
+        ],
+        "indices": [
+            27,
+            34
+        ],
+        "composition": "PtPt",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "ontop",
+        "surface": "fcc332",
+        "morphology": "step",
+        "position": [
+            6.9299081133769,
+            7.201372333782543,
+            19.00564114
+        ],
+        "normal": [
+            -0.00020489,
+            5.988e-05,
+            0.99999998
+        ],
+        "indices": [
+            28
+        ],
+        "composition": "Pt",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "bridge",
+        "surface": "fcc332",
+        "morphology": "sc-cc-h",
+        "position": [
+            8.3156431633769,
+            7.201368623782543,
+            19.005539580000004
+        ],
+        "normal": [
+            2e-08,
+            0.0,
+            0.99999993
+        ],
+        "indices": [
+            28,
+            29
+        ],
+        "composition": "PtPt",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "fcc",
+        "surface": "fcc332",
+        "morphology": "sc-cc-h",
+        "position": [
+            4.15785295,
+            0.80007992,
+            19.005599050000004
+        ],
+        "normal": [
+            7.329e-05,
+            -7.432e-05,
+            0.99999999
+        ],
+        "indices": [
+            28,
+            29,
+            31
+        ],
+        "composition": "PtPtPt",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "hcp",
+        "surface": "fcc332",
+        "morphology": "sc-cc-h",
+        "position": [
+            8.315644479999998,
+            6.4012542,
+            19.005781130000003
+        ],
+        "normal": [
+            7.329e-05,
+            0.0003019,
+            0.99999995
+        ],
+        "indices": [
+            28,
+            29,
+            35
+        ],
+        "composition": "PtPtPt",
+        "subsurf_index": 26,
+        "subsurf_element": "Pt",
+        "label": "null"
+    },
+    {
+        "site": "bridge",
+        "surface": "fcc332",
+        "morphology": "sc-tc-h",
+        "position": [
+            2.07900261,
+            1.2003374,
+            19.00558307
+        ],
+        "normal": [
+            2e-08,
+            0.0,
+            0.99999993
+        ],
+        "indices": [
+            28,
+            30
+        ],
+        "composition": "PtPt",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "hcp",
+        "surface": "fcc332",
+        "morphology": "sc-tc-h",
+        "position": [
+            2.77195116,
+            1.6003923299999998,
+            19.00562804
+        ],
+        "normal": [
+            -6.962e-05,
+            8.18e-06,
+            1.0
+        ],
+        "indices": [
+            28,
+            30,
+            31
+        ],
+        "composition": "PtPtPt",
+        "subsurf_index": 19,
+        "subsurf_element": "Pt",
+        "label": "null"
+    },
+    {
+        "site": "bridge",
+        "surface": "fcc332",
+        "morphology": "step",
+        "position": [
+            3.46498426,
+            1.20018734,
+            19.00567957
+        ],
+        "normal": [
+            -9.582e-05,
+            3.449e-05,
+            0.99999999
+        ],
+        "indices": [
+            28,
+            31
+        ],
+        "composition": "PtPt",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "bridge",
+        "surface": "fcc332",
+        "morphology": "sc-tc-h",
+        "position": [
+            6.23689166,
+            6.0011192,
+            19.00559743
+        ],
+        "normal": [
+            2e-08,
+            0.0,
+            0.99999993
+        ],
+        "indices": [
+            28,
+            34
+        ],
+        "composition": "PtPt",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "fcc",
+        "surface": "fcc332",
+        "morphology": "sc-tc-h",
+        "position": [
+            6.92981014,
+            5.60108791,
+            19.005819700000004
+        ],
+        "normal": [
+            -0.00025636,
+            0.0001116,
+            0.99999996
+        ],
+        "indices": [
+            28,
+            34,
+            35
+        ],
+        "composition": "PtPtPt",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "bridge",
+        "surface": "fcc332",
+        "morphology": "step",
+        "position": [
+            7.622777609999999,
+            6.00119884,
+            19.0059527
+        ],
+        "normal": [
+            -9.137e-05,
+            2.497e-05,
+            1.0
+        ],
+        "indices": [
+            28,
+            35
+        ],
+        "composition": "PtPt",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "ontop",
+        "surface": "fcc332",
+        "morphology": "corner",
+        "position": [
+            9.7013782133769,
+            7.201364913782544,
+            19.005438010000002
+        ],
+        "normal": [
+            0.00024031,
+            5.476e-05,
+            0.99999997
+        ],
+        "indices": [
+            29
+        ],
+        "composition": "Pt",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "bridge",
+        "surface": "fcc332",
+        "morphology": "sc-cc-h",
+        "position": [
+            4.850719299999998,
+            1.20018363,
+            19.005578
+        ],
+        "normal": [
+            2e-08,
+            0.0,
+            0.99999993
+        ],
+        "indices": [
+            29,
+            31
+        ],
+        "composition": "PtPt",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "hcp",
+        "surface": "fcc332",
+        "morphology": "sc-cc-h",
+        "position": [
+            5.543685089999999,
+            1.60034492,
+            19.00553819
+        ],
+        "normal": [
+            9.359e-05,
+            -6.26e-05,
+            0.99999999
+        ],
+        "indices": [
+            29,
+            31,
+            32
+        ],
+        "composition": "PtPtPt",
+        "subsurf_index": 20,
+        "subsurf_element": "Pt",
+        "label": "null"
+    },
+    {
+        "site": "bridge",
+        "surface": "fcc332",
+        "morphology": "tc-cc-h",
+        "position": [
+            6.2366035,
+            1.20026628,
+            19.0054483
+        ],
+        "normal": [
+            2e-08,
+            0.0,
+            0.99999993
+        ],
+        "indices": [
+            29,
+            32
+        ],
+        "composition": "PtPt",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "bridge",
+        "surface": "fcc332",
+        "morphology": "corner",
+        "position": [
+            10.39428276,
+            6.00117664,
+            19.005438040000005
+        ],
+        "normal": [
+            0.00019473,
+            0.00011169,
+            0.99999997
+        ],
+        "indices": [
+            29,
+            33
+        ],
+        "composition": "PtPt",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "fcc",
+        "surface": "fcc332",
+        "morphology": "sc-cc-h",
+        "position": [
+            9.701404209999998,
+            5.60112621,
+            19.00571344
+        ],
+        "normal": [
+            0.0002981,
+            0.00017212,
+            0.99999994
+        ],
+        "indices": [
+            29,
+            33,
+            35
+        ],
+        "composition": "PtPtPt",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "bridge",
+        "surface": "fcc332",
+        "morphology": "sc-cc-h",
+        "position": [
+            9.00851266,
+            6.001195129999999,
+            19.005851130000003
+        ],
+        "normal": [
+            2e-08,
+            0.0,
+            0.99999993
+        ],
+        "indices": [
+            29,
+            35
+        ],
+        "composition": "PtPt",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "ontop",
+        "surface": "fcc332",
+        "morphology": "terrace",
+        "position": [
+            9.7014607267538,
+            2.40080231,
+            19.005525
+        ],
+        "normal": [
+            -6.9e-05,
+            -0.00019531,
+            0.99999998
+        ],
+        "indices": [
+            30
+        ],
+        "composition": "Pt",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "bridge",
+        "surface": "fcc332",
+        "morphology": "sc-tc-h",
+        "position": [
+            2.77186662,
+            2.4006522499999994,
+            19.005621500000004
+        ],
+        "normal": [
+            2e-08,
+            0.0,
+            0.99999993
+        ],
+        "indices": [
+            30,
+            31
+        ],
+        "composition": "PtPt",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "fcc",
+        "surface": "fcc332",
+        "morphology": "sc-cc-h",
+        "position": [
+            2.7717816,
+            3.20076429,
+            19.00556035
+        ],
+        "normal": [
+            -6.961e-05,
+            7.641e-05,
+            0.99999999
+        ],
+        "indices": [
+            30,
+            31,
+            33
+        ],
+        "composition": "PtPtPt",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "bridge",
+        "surface": "fcc332",
+        "morphology": "terrace",
+        "position": [
+            8.31553869,
+            2.4007349,
+            19.00549179
+        ],
+        "normal": [
+            -6.6e-06,
+            -0.00021191,
+            0.99999998
+        ],
+        "indices": [
+            30,
+            32
+        ],
+        "composition": "PtPt",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "fcc",
+        "surface": "fcc332",
+        "morphology": "sc-tc-h",
+        "position": [
+            8.31557483,
+            3.20083171,
+            19.00574928
+        ],
+        "normal": [
+            -2.395e-05,
+            -0.00032182,
+            0.99999995
+        ],
+        "indices": [
+            30,
+            32,
+            35
+        ],
+        "composition": "PtPtPt",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "bridge",
+        "surface": "fcc332",
+        "morphology": "tc-cc-h",
+        "position": [
+            10.3943240067538,
+            3.60089534,
+            19.00548154
+        ],
+        "normal": [
+            2e-08,
+            0.0,
+            0.99999993
+        ],
+        "indices": [
+            30,
+            33
+        ],
+        "composition": "PtPt",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "hcp",
+        "surface": "fcc332",
+        "morphology": "sc-cc-h",
+        "position": [
+            9.701431709999998,
+            4.00093867,
+            19.00574244
+        ],
+        "normal": [
+            0.00029809,
+            -0.00013588,
+            0.99999995
+        ],
+        "indices": [
+            30,
+            33,
+            35
+        ],
+        "composition": "PtPtPt",
+        "subsurf_index": 21,
+        "subsurf_element": "Pt",
+        "label": "null"
+    },
+    {
+        "site": "bridge",
+        "surface": "fcc332",
+        "morphology": "sc-tc-h",
+        "position": [
+            9.00855392,
+            3.60091382,
+            19.005894620000003
+        ],
+        "normal": [
+            2e-08,
+            0.0,
+            0.99999993
+        ],
+        "indices": [
+            30,
+            35
+        ],
+        "composition": "PtPt",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "ontop",
+        "surface": "fcc332",
+        "morphology": "step",
+        "position": [
+            4.15784827,
+            2.40050219,
+            19.00571799
+        ],
+        "normal": [
+            1.326e-05,
+            9.1e-06,
+            1.0
+        ],
+        "indices": [
+            31
+        ],
+        "composition": "Pt",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "bridge",
+        "surface": "fcc332",
+        "morphology": "sc-tc-h",
+        "position": [
+            5.54373246,
+            2.40058484,
+            19.00558829
+        ],
+        "normal": [
+            2e-08,
+            0.0,
+            0.99999993
+        ],
+        "indices": [
+            31,
+            32
+        ],
+        "composition": "PtPt",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "fcc",
+        "surface": "fcc332",
+        "morphology": "sc-tc-h",
+        "position": [
+            5.54378004,
+            3.2006785799999995,
+            19.00557676
+        ],
+        "normal": [
+            9.359e-05,
+            1.44e-05,
+            1.0
+        ],
+        "indices": [
+            31,
+            32,
+            34
+        ],
+        "composition": "PtPtPt",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "bridge",
+        "surface": "fcc332",
+        "morphology": "sc-cc-h",
+        "position": [
+            3.46472991,
+            3.60074528,
+            19.00557803
+        ],
+        "normal": [
+            2e-08,
+            0.0,
+            0.99999993
+        ],
+        "indices": [
+            31,
+            33
+        ],
+        "composition": "PtPt",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "hcp",
+        "surface": "fcc332",
+        "morphology": "sc-cc-h",
+        "position": [
+            4.15777834,
+            4.00078554,
+            19.005569920000003
+        ],
+        "normal": [
+            -4.171e-05,
+            9.252e-05,
+            0.99999999
+        ],
+        "indices": [
+            31,
+            33,
+            34
+        ],
+        "composition": "PtPtPt",
+        "subsurf_index": 22,
+        "subsurf_element": "Pt",
+        "label": "null"
+    },
+    {
+        "site": "bridge",
+        "surface": "fcc332",
+        "morphology": "sc-tc-h",
+        "position": [
+            4.85086173,
+            3.60068413,
+            19.00563585
+        ],
+        "normal": [
+            2e-08,
+            0.0,
+            0.99999993
+        ],
+        "indices": [
+            31,
+            34
+        ],
+        "composition": "PtPt",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "ontop",
+        "surface": "fcc332",
+        "morphology": "terrace",
+        "position": [
+            6.929616649999999,
+            2.40066749,
+            19.00545858
+        ],
+        "normal": [
+            5.579e-05,
+            -0.00022851,
+            0.99999997
+        ],
+        "indices": [
+            32
+        ],
+        "composition": "Pt",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "bridge",
+        "surface": "fcc332",
+        "morphology": "terrace",
+        "position": [
+            6.23674592,
+            3.60076678,
+            19.005506140000005
+        ],
+        "normal": [
+            -5.773e-05,
+            -4.398e-05,
+            1.0
+        ],
+        "indices": [
+            32,
+            34
+        ],
+        "composition": "PtPt",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "hcp",
+        "surface": "fcc332",
+        "morphology": "sc-tc-h",
+        "position": [
+            6.929712989999999,
+            4.00085297,
+            19.005758850000003
+        ],
+        "normal": [
+            -0.00025634,
+            -0.00018763,
+            0.99999995
+        ],
+        "indices": [
+            32,
+            34,
+            35
+        ],
+        "composition": "PtPtPt",
+        "subsurf_index": 23,
+        "subsurf_element": "Pt",
+        "label": "null"
+    },
+    {
+        "site": "bridge",
+        "surface": "fcc332",
+        "morphology": "sc-tc-h",
+        "position": [
+            7.62263188,
+            3.60084642,
+            19.005861410000005
+        ],
+        "normal": [
+            2e-08,
+            0.0,
+            0.99999993
+        ],
+        "indices": [
+            32,
+            35
+        ],
+        "composition": "PtPt",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "ontop",
+        "surface": "fcc332",
+        "morphology": "corner",
+        "position": [
+            11.0871872967538,
+            4.80098837,
+            19.005438070000004
+        ],
+        "normal": [
+            0.00014916,
+            0.00016863,
+            0.99999997
+        ],
+        "indices": [
+            33
+        ],
+        "composition": "Pt",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "bridge",
+        "surface": "fcc332",
+        "morphology": "tc-cc-h",
+        "position": [
+            4.15774337,
+            4.80092722,
+            19.005495890000002
+        ],
+        "normal": [
+            2e-08,
+            0.0,
+            0.99999993
+        ],
+        "indices": [
+            33,
+            34
+        ],
+        "composition": "PtPt",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "bridge",
+        "surface": "fcc332",
+        "morphology": "sc-cc-h",
+        "position": [
+            9.7014172,
+            4.80100686,
+            19.005851160000002
+        ],
+        "normal": [
+            2e-08,
+            0.0,
+            0.99999993
+        ],
+        "indices": [
+            33,
+            35
+        ],
+        "composition": "PtPt",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "ontop",
+        "surface": "fcc332",
+        "morphology": "terrace",
+        "position": [
+            5.5438752,
+            4.80086607,
+            19.00555371
+        ],
+        "normal": [
+            -0.00017124,
+            0.00014056,
+            0.99999998
+        ],
+        "indices": [
+            34
+        ],
+        "composition": "Pt",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "bridge",
+        "surface": "fcc332",
+        "morphology": "sc-tc-h",
+        "position": [
+            6.92976116,
+            4.8009457,
+            19.00590898
+        ],
+        "normal": [
+            2e-08,
+            0.0,
+            0.99999993
+        ],
+        "indices": [
+            34,
+            35
+        ],
+        "composition": "PtPt",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    },
+    {
+        "site": "ontop",
+        "surface": "fcc332",
+        "morphology": "step",
+        "position": [
+            8.315647109999999,
+            4.80102534,
+            19.00626425
+        ],
+        "normal": [
+            2.214e-05,
+            -9.95e-06,
+            1.0
+        ],
+        "indices": [
+            35
+        ],
+        "composition": "Pt",
+        "subsurf_index": "null",
+        "subsurf_element": "null",
+        "label": "null"
+    }
+]
