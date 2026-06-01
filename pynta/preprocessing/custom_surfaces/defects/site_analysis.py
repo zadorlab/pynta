@@ -1498,8 +1498,18 @@ def workflow_defect_vacancy_drop(
     write(traj_geom_all, geom_all)
     write(traj_drop, drop_geoms)
     write(traj_maxcn, maxcn_geoms)
+
+    # Apply graph-isomorphism labels before saving
+    # sites_lists_all has structure [{"geom_index": i, "sites": [site_dict]}, ...]
+    # classify_all_sites expects [[site_dict], [site_dict], ...]
+    single_sites_lists = [entry["sites"] for entry in sites_lists_all]
+    admols, geom_indices = classify_all_sites(geom_all, single_sites_lists)
+    _, clusters = cluster_isomorphic_graphs(admols)
+    update_site_labels_by_graph_and_type(single_sites_lists, clusters, geom_indices)
+    # single_sites_lists is updated in-place, so sites_lists_all reflects the new labels
+
     save_sites_to_json(sites_lists_all, filename=json_geom_all_sites)
-    
+
     if verbose:
         print(f"[defect] Number of identified sites: {len(sites_lists_all)}")
         print(f"Wrote: {traj_geom_all}")
