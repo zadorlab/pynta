@@ -106,6 +106,20 @@ def generate_all_sites(slab, sites, nslab, site_bond_cutoff, adsorbate_height):
     return geoms, sites_per_geom
 
 
+def _reduce_to_representatives(single_geoms, single_sites_lists):
+    """Return one geometry and site-list per distinct site label (first occurrence)."""
+    seen = {}
+    for i, sites in enumerate(single_sites_lists):
+        for s in sites:
+            label = s.get("site")
+            if label and label not in seen:
+                seen[label] = i
+    rep_indices = sorted(seen.values())
+    return (
+        [single_geoms[i] for i in rep_indices],
+        [single_sites_lists[i] for i in rep_indices],
+    )
+
 
 def write_trajectory_pynta(slab, cas, nslab, site_bond_cutoff, adsorbate_height, trajectory_filename="unique_sites.traj"):
     # Generate unique sites and geometries
@@ -1335,54 +1349,86 @@ def workflow_no_defect_unique_sites(
     nslab,
     adsorbate_height=1.0,
     site_bond_cutoff=1.5,
-    surface_string="fcc111",
+    surface="fcc111",          # str (e.g. "fcc111") or CustomSurface instance
     traj_filename="unique_sites.traj",
     sites_json="sites.json",
+    labeled_sites_json="labeled_sites.json",
     neighbor_json="neighbor_site_list.json",
-    sites_graph_json="sites_graph.json",
     verbose=True,
 ):
     """
-    No-defect workflow:
-      - build ACAT sites using surface_string
-      - generate symmetry-unique adsorbate-tagged geometries (He)
-      - write traj
-      - write sites.json + neighbor_site_list.json
-      - write sites_graph.json (graph-isomorphism clustering)
+    No-defect workflow.
+
+    `surface` can be:
+      - a conventional ACAT surface string ("fcc111", "fcc332", ...)
+      - an ACAT CustomSurface instance
+
+    In both cases the pipeline is:
+      1. Get all ACAT sites → sites.json
+      2. Generate one tagged geometry per unoccupied site
+      3. Build RMG graphs, cluster by isomorphism + (site, morphology)
+      4. Assign labels: 3fold0, 3fold1, bridge0, ...
+      5. Reduce to one representative per distinct label → labeled_sites.json + traj
     """
     from ase.io.trajectory import Trajectory
-    from acat.adsorption_sites import SlabAdsorptionSites
+    from acat.settings import CustomSurface
 
-    cas = SlabAdsorptionSites(slab, surface_string, composition_effect=True)
+    use_custom = isinstance(surface, CustomSurface)
+    if use_custom:
+        cas = SlabAdsorptionSites(slab, surface=surface, composition_effect=True)
+    else:
+        cas = SlabAdsorptionSites(slab, surface, composition_effect=True)
+
     all_sites = cas.get_sites()
+    save_sites_to_json(all_sites, filename=sites_json)
+    save_neighbor_site_list_to_json(cas, filename=neighbor_json)
 
     single_geoms, single_sites_lists = generate_all_sites(
         slab, all_sites, nslab, site_bond_cutoff, adsorbate_height
     )
 
+    # graph clustering + label assignment
+    admols, geom_indices = classify_all_sites(single_geoms, single_sites_lists)
+    _, clusters = cluster_isomorphic_graphs(admols)
+    _, key_to_label = update_site_labels_by_graph_and_type(
+        single_sites_lists, clusters, geom_indices
+    )
+
+    # reduce: one representative geometry per distinct label
+    rep_geoms, rep_sites = _reduce_to_representatives(single_geoms, single_sites_lists)
+
     traj = Trajectory(traj_filename, "w")
-    for g in single_geoms:
+    for g in rep_geoms:
         traj.write(g)
     traj.close()
 
-    # plain sites + neighbor list
-    save_sites_to_json(all_sites, filename=sites_json)
-    save_neighbor_site_list_to_json(cas, filename=neighbor_json)
-
-    # graph clustering for sites_graph.json
-    admols, geom_indices = classify_all_sites(single_geoms, single_sites_lists)
-    iso_mat, clusters = cluster_isomorphic_graphs(admols)
-    update_site_labels_by_graph_and_type(single_sites_lists, clusters, geom_indices)
-    write_sites_json(single_sites_lists, clusters, filename=sites_graph_json)
+    labeled_sites_data = [
+        {"geom_index": i, "sites": sites}
+        for i, sites in enumerate(rep_sites)
+    ]
+    save_sites_to_json(labeled_sites_data, filename=labeled_sites_json)
 
     if verbose:
-        print(f"There are {len(single_sites_lists)} unique sites out of {len(all_sites)}.")
+        surface_type = "CustomSurface" if use_custom else f'"{surface}"'
+        print(f"Surface             : {surface_type}")
+        print(f"Total ACAT sites    : {len(all_sites)}")
+        print(f"Distinct labels     : {len(rep_geoms)}")
+        print()
+        label_to_key = {v: k for k, v in key_to_label.items()}
+        print(f"  {'Label':<12} {'Original site':<14} Morphology")
+        print(f"  {'-'*44}")
+        for entry in rep_sites:
+            for s in entry:
+                label = s.get("site", "")
+                _, orig_site, morph = label_to_key.get(label, (None, "", ""))
+                print(f"  {label:<12} {orig_site:<14} {morph}")
+        print()
         print(f"Wrote: {traj_filename}")
         print(f"Wrote: {sites_json}")
         print(f"Wrote: {neighbor_json}")
-        print(f"Wrote: {sites_graph_json}")
+        print(f"Wrote: {labeled_sites_json}")
 
-    return single_geoms, single_sites_lists, clusters
+    return rep_geoms, rep_sites, clusters
 
 # ============================================================
 # Workflows (for clean notebooks)
@@ -1398,48 +1444,6 @@ def workflow_detect_vacancies(slab, nslab, verbose=True):
     return defect_sites
 
 
-def workflow_no_defect_unique_sites(
-    slab, nslab,
-    adsorbate_height=1.0,
-    site_bond_cutoff=1.5,
-    surface_string="fcc332",
-    traj_filename="unique_sites.traj",
-    sites_json="sites.json",
-    neighbor_json="neighbor_site_list.json",
-    sites_graph_json="sites_graph.json",
-    verbose=True,
-):
-
-    cas = SlabAdsorptionSites(slab, surface_string, composition_effect=True)
-    all_sites = cas.get_sites()
-
-    single_geoms, single_sites_lists = generate_all_sites(
-        slab, all_sites, nslab, site_bond_cutoff, adsorbate_height
-    )
-
-    traj = Trajectory(traj_filename, "w")
-    for g in single_geoms:
-        traj.write(g)
-    traj.close()
-
-    save_sites_to_json(all_sites, filename=sites_json)
-    save_neighbor_site_list_to_json(cas, filename=neighbor_json)
-
-    admols, geom_indices = classify_all_sites(single_geoms, single_sites_lists)
-    iso_mat, clusters = cluster_isomorphic_graphs(admols)
-    update_site_labels_by_graph_and_type(single_sites_lists, clusters, geom_indices)
-    write_sites_json(single_sites_lists, clusters, filename=sites_graph_json)
-
-    if verbose:
-        print(f"There are {len(single_sites_lists)} unique sites out of {len(all_sites)}.")
-        print(f"Wrote: {traj_filename}")
-        print(f"Wrote: {sites_json}")
-        print(f"Wrote: {neighbor_json}")
-        print(f"Wrote: {sites_graph_json}")
-
-    return single_geoms, single_sites_lists, clusters
-
-
 def workflow_defect_vacancy_drop(
     slab, nslab, xyz_path, surface_obj,
     site_bond_cutoff=1.5,
@@ -1453,18 +1457,19 @@ def workflow_defect_vacancy_drop(
     traj_geom_all="geom_all.traj",
     traj_drop="drop_steps.traj",
     traj_maxcn="maxcn_geoms.xyz",
-    json_geom_all_sites="geom_all_sites_lists.json",
+    sites_json="sites.json",
+    labeled_sites_json="labeled_sites.json",
     neighbor_json="neighbor_site_list.json",
     verbose=True,
 ):
-    from acat.adsorption_sites import SlabAdsorptionSites
     from ase.io import write
 
     geo = slab.copy()
     cas = SlabAdsorptionSites(slab, surface=surface_obj, composition_effect=True)
     sites = cas.get_sites()
 
-    # write neighbor list json
+    # all raw ACAT sites + neighbor list
+    save_sites_to_json(sites, filename=sites_json)
     save_neighbor_site_list_to_json(cas, filename=neighbor_json)
 
     # rebuild CAS per-geometry to compute sites lists
@@ -1499,23 +1504,28 @@ def workflow_defect_vacancy_drop(
     write(traj_drop, drop_geoms)
     write(traj_maxcn, maxcn_geoms)
 
-    # Apply graph-isomorphism labels before saving
-    # sites_lists_all has structure [{"geom_index": i, "sites": [site_dict]}, ...]
-    # classify_all_sites expects [[site_dict], [site_dict], ...]
+    # apply graph-isomorphism labels before saving
+    # sites_lists_all: [{"geom_index": i, "sites": [site_dict]}, ...]
+    # classify_all_sites expects: [[site_dict], ...]
     single_sites_lists = [entry["sites"] for entry in sites_lists_all]
     admols, geom_indices = classify_all_sites(geom_all, single_sites_lists)
     _, clusters = cluster_isomorphic_graphs(admols)
     update_site_labels_by_graph_and_type(single_sites_lists, clusters, geom_indices)
-    # single_sites_lists is updated in-place, so sites_lists_all reflects the new labels
+    # single_sites_lists updated in-place → sites_lists_all reflects new labels
 
-    save_sites_to_json(sites_lists_all, filename=json_geom_all_sites)
+    # reduce to one representative per distinct label
+    rep_geoms, rep_site_lists = _reduce_to_representatives(geom_all, single_sites_lists)
+    rep_data = [{"geom_index": i, "sites": s} for i, s in enumerate(rep_site_lists)]
+    save_sites_to_json(rep_data, filename=labeled_sites_json)
 
     if verbose:
-        print(f"[defect] Number of identified sites: {len(sites_lists_all)}")
+        print(f"[defect] Total sites          : {len(sites_lists_all)}")
+        print(f"[defect] Distinct labels      : {len(rep_geoms)}")
         print(f"Wrote: {traj_geom_all}")
         print(f"Wrote: {traj_drop}")
         print(f"Wrote: {traj_maxcn}")
-        print(f"Wrote: {json_geom_all_sites}")
+        print(f"Wrote: {sites_json}")
+        print(f"Wrote: {labeled_sites_json}")
         print(f"Wrote: {neighbor_json}")
 
     return geom_all, sites_lists_all, maxcn_geoms, maxcn_meta, drop_geoms, drop_meta
@@ -1526,7 +1536,6 @@ def workflow_auto(
     n_layers=4,
     adsorbate_height=1.0,
     site_bond_cutoff=1.5,
-    surface_string_no_defect="fcc332",
     tag_symbol="Ne",
     dz=0.1,
     stable_steps=3,
@@ -1537,7 +1546,7 @@ def workflow_auto(
     verbose=True,
 ):
     from ase.io import read
-    from acat.settings import CustomSurface  # matches what you used in the notebook
+    from acat.settings import CustomSurface
 
     slab = read(xyz_path)
     nslab = len(slab)
@@ -1551,7 +1560,7 @@ def workflow_auto(
             nslab=nslab,
             adsorbate_height=adsorbate_height,
             site_bond_cutoff=site_bond_cutoff,
-            surface_string=surface_string_no_defect,
+            surface=surface_obj,
             verbose=verbose,
         )
     else:
