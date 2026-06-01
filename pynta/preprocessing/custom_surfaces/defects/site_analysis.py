@@ -314,6 +314,50 @@ def cluster_isomorphic_graphs(admols):
     return iso_mat, clusters
 
 
+def update_site_labels_by_graph_and_type(single_sites_lists, clusters, geom_indices):
+    """
+    Assign site1, site2, ... labels to all sites.
+
+    Two sites receive the same label iff:
+      1. Their local slab graphs are isomorphic (same cluster).
+      2. They share the same "site" value.
+      3. They share the same "morphology" value.
+
+    Returns
+    -------
+    geom_to_label : dict  {geom_idx: label_string}
+    key_to_label  : dict  {(cluster_id, site, morphology): label_string}
+    """
+    def _first_site_morph(geom_idx):
+        for s in single_sites_lists[geom_idx]:
+            if s.get("site"):
+                return s.get("site"), s.get("morphology")
+        return None, None
+
+    key_to_label = {}
+    label_counter = 1
+    geom_to_label = {}
+
+    for cluster_id, members in enumerate(clusters.values()):
+        for graph_idx in members:
+            geom_idx = geom_indices[graph_idx]
+            site_val, morph_val = _first_site_morph(geom_idx)
+            key = (cluster_id, site_val, morph_val)
+            if key not in key_to_label:
+                key_to_label[key] = f"site{label_counter}"
+                label_counter += 1
+            geom_to_label[geom_idx] = key_to_label[key]
+
+    for geom_idx, sites in enumerate(single_sites_lists):
+        label = geom_to_label.get(geom_idx)
+        if label is not None:
+            for s in sites:
+                if s.get("site"):
+                    s["site"] = label
+
+    return geom_to_label, key_to_label
+
+
 def update_threefold_site_labels(single_sites_lists, clusters, geom_indices):
     type_map = {}
 
