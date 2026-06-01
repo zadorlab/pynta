@@ -1335,7 +1335,7 @@ def workflow_no_defect_unique_sites(
     nslab,
     adsorbate_height=1.0,
     site_bond_cutoff=1.5,
-    surface_string="fcc332",
+    surface_string="fcc111",
     traj_filename="unique_sites.traj",
     sites_json="sites.json",
     neighbor_json="neighbor_site_list.json",
