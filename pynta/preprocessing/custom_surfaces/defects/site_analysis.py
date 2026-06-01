@@ -340,12 +340,17 @@ def cluster_isomorphic_graphs(admols):
 
 def update_site_labels_by_graph_and_type(single_sites_lists, clusters, geom_indices):
     """
-    Assign site1, site2, ... labels to all sites.
+    Assign labels of the form {site_type}{N} (e.g. "3fold0", "3fold1", "bridge0").
 
     Two sites receive the same label iff:
       1. Their local slab graphs are isomorphic (same cluster).
       2. They share the same "site" value.
       3. They share the same "morphology" value.
+
+    N counts distinct graph clusters per (site_type, morphology) pair, starting
+    from 0. Sites with the same graph get the same N; different graphs increment N.
+    This preserves the original site-type name so downstream tools (e.g. Pynta)
+    can still distinguish site types while knowing which are truly equivalent.
 
     Returns
     -------
@@ -358,8 +363,8 @@ def update_site_labels_by_graph_and_type(single_sites_lists, clusters, geom_indi
                 return s.get("site"), s.get("morphology")
         return None, None
 
-    key_to_label = {}
-    label_counter = 0
+    type_counters = {}   # (site_val, morph_val) -> next available integer
+    key_to_label  = {}   # (cluster_id, site_val, morph_val) -> label
     geom_to_label = {}
 
     for cluster_id, members in enumerate(clusters.values()):
@@ -368,8 +373,11 @@ def update_site_labels_by_graph_and_type(single_sites_lists, clusters, geom_indi
             site_val, morph_val = _first_site_morph(geom_idx)
             key = (cluster_id, site_val, morph_val)
             if key not in key_to_label:
-                key_to_label[key] = f"site{label_counter}"
-                label_counter += 1
+                type_key = (site_val, morph_val)
+                n = type_counters.get(type_key, 0)
+                type_counters[type_key] = n + 1
+                prefix = site_val if site_val else "site"
+                key_to_label[key] = f"{prefix}{n}"
             geom_to_label[geom_idx] = key_to_label[key]
 
     for geom_idx, sites in enumerate(single_sites_lists):
