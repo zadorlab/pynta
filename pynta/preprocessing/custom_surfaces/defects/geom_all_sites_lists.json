@@ -203,6 +203,40 @@
                 "surface": "CustomSurface",
                 "morphology": "terrace",
                 "position": [
+                    11.087255839999994,
+                    6.401278,
+                    19.00502061
+                ],
+                "normal": [
+                    0.00045177,
+                    0.00026084,
+                    0.99999986
+                ],
+                "indices": [
+                    27,
+                    29,
+                    32
+                ],
+                "composition": "PtPtPt",
+                "subsurf_index": "null",
+                "subsurf_element": "null",
+                "label": "null",
+                "topology": [
+                    27,
+                    29,
+                    32
+                ]
+            }
+        ]
+    },
+    {
+        "geom_index": 7,
+        "sites": [
+            {
+                "site": "3fold",
+                "surface": "CustomSurface",
+                "morphology": "terrace",
+                "position": [
                     8.315497166623102,
                     1.6004835562174573,
                     19.00505645
@@ -230,7 +264,7 @@
         ]
     },
     {
-        "geom_index": 7,
+        "geom_index": 8,
         "sites": [
             {
                 "site": "ontop",
@@ -260,7 +294,7 @@
         ]
     },
     {
-        "geom_index": 8,
+        "geom_index": 9,
         "sites": [
             {
                 "site": "bridge",
@@ -292,7 +326,7 @@
         ]
     },
     {
-        "geom_index": 9,
+        "geom_index": 10,
         "sites": [
             {
                 "site": "bridge",
@@ -324,7 +358,7 @@
         ]
     },
     {
-        "geom_index": 10,
+        "geom_index": 11,
         "sites": [
             {
                 "site": "3fold",
@@ -358,7 +392,7 @@
         ]
     },
     {
-        "geom_index": 11,
+        "geom_index": 12,
         "sites": [
             {
                 "site": "bridge",
@@ -390,7 +424,7 @@
         ]
     },
     {
-        "geom_index": 12,
+        "geom_index": 13,
         "sites": [
             {
                 "site": "3fold",
@@ -424,7 +458,7 @@
         ]
     },
     {
-        "geom_index": 13,
+        "geom_index": 14,
         "sites": [
             {
                 "site": "bridge",
@@ -456,7 +490,7 @@
         ]
     },
     {
-        "geom_index": 14,
+        "geom_index": 15,
         "sites": [
             {
                 "site": "3fold",
@@ -490,7 +524,7 @@
         ]
     },
     {
-        "geom_index": 15,
+        "geom_index": 16,
         "sites": [
             {
                 "site": "bridge",
@@ -522,7 +556,7 @@
         ]
     },
     {
-        "geom_index": 16,
+        "geom_index": 17,
         "sites": [
             {
                 "site": "ontop",
@@ -552,7 +586,7 @@
         ]
     },
     {
-        "geom_index": 17,
+        "geom_index": 18,
         "sites": [
             {
                 "site": "bridge",
@@ -584,39 +618,41 @@
         ]
     },
     {
-        "geom_index": 18,
+        "geom_index": 19,
         "sites": [
             {
-                "site": "bridge",
+                "site": "3fold",
                 "surface": "CustomSurface",
                 "morphology": "terrace",
                 "position": [
-                    10.39428276,
-                    6.00117664,
-                    19.005438040000012
+                    9.701404209999998,
+                    5.60112621,
+                    19.00571344
                 ],
                 "normal": [
-                    0.0002523,
-                    0.00015007,
-                    0.99999996
+                    0.0002981,
+                    0.00017212,
+                    0.99999994
                 ],
                 "indices": [
                     29,
-                    32
+                    32,
+                    34
                 ],
-                "composition": "PtPt",
+                "composition": "PtPtPt",
                 "subsurf_index": "null",
                 "subsurf_element": "null",
                 "label": "null",
                 "topology": [
                     29,
-                    32
+                    32,
+                    34
                 ]
             }
         ]
     },
     {
-        "geom_index": 19,
+        "geom_index": 20,
         "sites": [
             {
                 "site": "ontop",
@@ -646,7 +682,39 @@
         ]
     },
     {
-        "geom_index": 20,
+        "geom_index": 21,
+        "sites": [
+            {
+                "site": "bridge",
+                "surface": "CustomSurface",
+                "morphology": "terrace",
+                "position": [
+                    8.31553869,
+                    2.4007349,
+                    19.00549179
+                ],
+                "normal": [
+                    -1.53e-05,
+                    -0.00028189,
+                    0.99999996
+                ],
+                "indices": [
+                    30,
+                    31
+                ],
+                "composition": "PtPt",
+                "subsurf_index": "null",
+                "subsurf_element": "null",
+                "label": "null",
+                "topology": [
+                    30,
+                    31
+                ]
+            }
+        ]
+    },
+    {
+        "geom_index": 22,
         "sites": [
             {
                 "site": "bridge",
@@ -678,37 +746,71 @@
         ]
     },
     {
-        "geom_index": 21,
+        "geom_index": 23,
+        "sites": [
+            {
+                "site": "3fold",
+                "surface": "CustomSurface",
+                "morphology": "terrace",
+                "position": [
+                    9.701431709999996,
+                    4.00093867,
+                    19.00574244
+                ],
+                "normal": [
+                    0.00029809,
+                    -0.00013588,
+                    0.99999995
+                ],
+                "indices": [
+                    30,
+                    32,
+                    34
+                ],
+                "composition": "PtPtPt",
+                "subsurf_index": "null",
+                "subsurf_element": "null",
+                "label": "null",
+                "topology": [
+                    30,
+                    32,
+                    34
+                ]
+            }
+        ]
+    },
+    {
+        "geom_index": 24,
         "sites": [
             {
                 "site": "ontop",
                 "surface": "CustomSurface",
                 "morphology": "terrace",
                 "position": [
-                    11.0871873,
-                    4.80098837,
-                    19.00543807000001
+                    6.929616649999997,
+                    2.40066749,
+                    19.00545858
                 ],
                 "normal": [
-                    0.00019915,
-                    0.00017703,
-                    0.99999996
+                    3.689e-05,
+                    -0.00033071,
+                    0.99999994
                 ],
                 "indices": [
-                    32
+                    31
                 ],
                 "composition": "Pt",
                 "subsurf_index": "null",
                 "subsurf_element": "null",
                 "label": "null",
                 "topology": [
-                    32
+                    31
                 ]
             }
         ]
     },
     {
-        "geom_index": 22,
+        "geom_index": 25,
         "sites": [
             {
                 "site": "ontop",
@@ -738,7 +840,7 @@
         ]
     },
     {
-        "geom_index": 23,
+        "geom_index": 26,
         "sites": [
             {
                 "site": "defect",
