@@ -207,10 +207,13 @@ def save_sites_to_json(single_sits_lists, filename='sites.json'):
         if isinstance(x, np.ndarray):
             return x.tolist()
         if isinstance(x, (np.integer, np.floating)):
-            return x.item()
+            v = x.item()
+            return None if (isinstance(v, float) and (v != v)) else v  # NaN → null
         if x is None:
-            return "null"
-        if isinstance(x, (str, int, float, bool)):
+            return None
+        if isinstance(x, float):
+            return None if (x != x) else x  # NaN → null
+        if isinstance(x, (str, int, bool)):
             return x
         # fallback for objects like CustomSurface, ASE objects, etc.
         return x.__class__.__name__
