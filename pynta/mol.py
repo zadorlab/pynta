@@ -118,7 +118,7 @@ def get_site_bond_length(sitetype,atomtype=None,metal=None):
         return site_bond_length_dict[(sitetype,None,None)]
 
 def add_adsorbate_to_site(atoms, adsorbate, surf_ind, site, height=None,
-                          orientation=None, tilt_angle=0., offset=True):
+                          orientation=None, tilt_angle=0., offset=True, tilt=True):
     """The base function for adding one adsorbate to a site.
     Site must include information of 'normal' and 'position'.
     Useful for adding adsorbate to multiple sites or adding
@@ -175,7 +175,7 @@ def add_adsorbate_to_site(atoms, adsorbate, surf_ind, site, height=None,
     ads.translate(-bondpos)
     z = -1. if adsorbate in ['CH','NH','OH','SH'] else 1.
     ads.rotate(np.asarray([0., 0., z]) - bondpos, normal)
-    if tilt_angle > 0.:
+    if tilt and tilt_angle > 0.:
         pvec = np.cross(np.random.rand(3) - ads[0].position, normal)
         ads.rotate(tilt_angle, pvec, center=ads[0].position)
 
