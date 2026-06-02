@@ -106,6 +106,50 @@ def generate_all_sites(slab, sites, nslab, site_bond_cutoff, adsorbate_height):
     return geoms, sites_per_geom
 
 
+def suggest_n_layers(slab, dz=0.5, verbose=True):
+    """
+    Estimate the number of atomic layers in a slab by clustering z-coordinates.
+
+    Atoms within `dz` Angstroms of each other in z are grouped into the same
+    layer. The count of distinct groups is the suggested n_layers value for
+    ACAT's CustomSurface.
+
+    Parameters
+    ----------
+    slab    : ASE Atoms
+    dz      : z-tolerance (Å) for grouping atoms into the same layer
+    verbose : print layer summary
+
+    Returns
+    -------
+    n_layers : int
+    """
+    import numpy as np
+
+    z_sorted = np.sort(slab.get_positions()[:, 2])
+    layers = []
+    current = [z_sorted[0]]
+    for zi in z_sorted[1:]:
+        if zi - current[-1] < dz:
+            current.append(zi)
+        else:
+            layers.append(current)
+            current = [zi]
+    layers.append(current)
+
+    n_layers = len(layers)
+
+    if verbose:
+        print(f"Suggested n_layers = {n_layers}")
+        print()
+        print(f"  {'Layer':>6}  {'z mean (Å)':>10}  {'n atoms':>7}")
+        print(f"  {'─'*30}")
+        for i, layer in enumerate(layers):
+            print(f"  {i+1:>6}  {np.mean(layer):>10.3f}  {len(layer):>7}")
+
+    return n_layers
+
+
 def _reduce_to_representatives(single_geoms, single_sites_lists):
     """Return one geometry and site-list per distinct site label (first occurrence)."""
     seen = {}
