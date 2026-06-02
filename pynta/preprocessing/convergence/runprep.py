@@ -3,7 +3,7 @@
 runprep.py
 
 Example driver script for preprocessing workflow.
-Safe to re-run: automatically resumes from provenance.json.
+Safe to re-run: automatically resumes from prep_convergence.json.
 """
 
 from ase.io import read
@@ -55,14 +55,25 @@ def run():
         repeats=(3, 3, 3),
         vacuum=10.0,
         fmax=0.05,
-        frozen_layers = 3,
+        frozen_layers=3,
 
         # --------------------
         # Workflow flags
         # --------------------
         #optimize_lattice=True,     # run lattice optimization
         #generate_slab=True,        # build + optimize slab
-        #run_convergence_adsorbate = False,
+        #run_convergence_adsorbate=False,
+
+        # --------------------
+        # Alloy parameters (optional)
+        # --------------------
+        #alloy_path=None,           # path to pre-built alloy structure file
+        #alloy_A="Pt",              # majority element
+        #alloy_B="Au",              # minority element
+        #alloy_xA=0.75,             # fraction of A (e.g. 0.75 = 75% Pt)
+        #alloy_maxrep=6,
+        #alloy_scan_step=0.01,
+        #optimize_alloy_lattice=True,
 
         # --------------------
         # Optional user inputs
@@ -116,7 +127,7 @@ def run():
     # --------------------------------------------------------
     # Run workflow (restart-safe)
     # --------------------------------------------------------
-    prep.discover_runnable_methods()
+    prep.run_selected()
 
     print("Preprocessing finished successfully")
 
