@@ -13,8 +13,7 @@ from ase.io import Trajectory, read, write
 from pynta.utils import get_unique_sym_struct_index_clusters
 from pynta.mol import add_adsorbate_to_site
 from molecule.molecule import Molecule, Atom, Bond
-
-
+from acat.adsorption_sites import SlabAdsorptionSites
 
 # ============================================================
 # Site / geometry utilities
@@ -66,7 +65,7 @@ def generate_unique_sites(slab, sites, nslab, site_bond_cutoff, adsorbate_height
         g = slab.copy()
         add_adsorbate_to_site(
             g,
-            adsorbate=Atoms("He"),
+            adsorbate=Atoms("Ne"),
             surf_ind=0,
             site=site,
             height=adsorbate_height,
@@ -82,6 +81,44 @@ def generate_unique_sites(slab, sites, nslab, site_bond_cutoff, adsorbate_height
         [sites_per_geom[c[0]] for c in clusters]
     )
 
+
+def generate_all_sites(slab, sites, nslab, site_bond_cutoff, adsorbate_height):
+    """Like generate_unique_sites but returns every unoccupied site without symmetry reduction."""
+    occ = get_occupied_sites(slab, sites, nslab, site_bond_cutoff)
+    unocc = [s for s in sites if not any(sites_match(s, o, slab) for o in occ)]
+
+    geoms = []
+    sites_per_geom = []
+
+    for site in unocc:
+        g = slab.copy()
+        add_adsorbate_to_site(
+            g,
+            adsorbate=Atoms("Ne"),
+            surf_ind=0,
+            site=site,
+            height=adsorbate_height,
+            tilt_angle=25.24,
+            offset=False)
+        geoms.append(g)
+        sites_per_geom.append([site])
+
+    return geoms, sites_per_geom
+
+
+def _reduce_to_representatives(single_geoms, single_sites_lists):
+    """Return one geometry and site-list per distinct site label (first occurrence)."""
+    seen = {}
+    for i, sites in enumerate(single_sites_lists):
+        for s in sites:
+            label = s.get("site")
+            if label and label not in seen:
+                seen[label] = i
+    rep_indices = sorted(seen.values())
+    return (
+        [single_geoms[i] for i in rep_indices],
+        [single_sites_lists[i] for i in rep_indices],
+    )
 
 
 def write_trajectory_pynta(slab, cas, nslab, site_bond_cutoff, adsorbate_height, trajectory_filename="unique_sites.traj"):
@@ -111,6 +148,34 @@ def write_trajectory_pynta(slab, cas, nslab, site_bond_cutoff, adsorbate_height,
 #    save_sites_to_json(single_sites_lists)
     save_sites_to_json(all_sites)
 
+def save_sites_to_json(single_sits_lists, filename='sites.json'):
+    """Save data to a JSON file with robust type conversion."""
+    import json
+    import numpy as np
+
+    def process(x):
+        if isinstance(x, dict):
+            return {k: process(v) for k, v in x.items()}
+        if isinstance(x, list):
+            return [process(v) for v in x]
+        if isinstance(x, tuple):
+            return [process(v) for v in x]
+        if isinstance(x, np.ndarray):
+            return x.tolist()
+        if isinstance(x, (np.integer, np.floating)):
+            return x.item()
+        if x is None:
+            return "null"
+        if isinstance(x, (str, int, float, bool)):
+            return x
+        # fallback for objects like CustomSurface, ASE objects, etc.
+        return x.__class__.__name__
+
+    with open(filename, "w") as f:
+        json.dump(process(single_sits_lists), f, indent=4)
+
+    print(f"Sites data saved to '{filename}'.")
+
 #def save_sites_to_json(single_sites_lists, filename='sites.json'):
 #    """Save unique sites to a JSON file."""
 #    
@@ -129,8 +194,13 @@ def write_trajectory_pynta(slab, cas, nslab, site_bond_cutoff, adsorbate_height,
 #        else:
 #            return data  # Return the data as is if it's already a native type
 #
-#    # Process the sites data
-#    processed_sites_data = process_data(single_sites_lists)
+#    # Flatten the input if it's a list of lists
+#    if isinstance(single_sites_lists, list) and all(isinstance(item, list) for item in single_sites_lists):
+#        # Flatten the list of lists into a single list of dictionaries
+#        processed_sites_data = process_data([item for sublist in single_sites_lists for item in sublist])
+#    else:
+#        # If it's already a single list of dictionaries, process it directly
+#        processed_sites_data = process_data(single_sites_lists)
 #
 #    # Save to JSON file
 #    with open(filename, "w") as f:
@@ -139,45 +209,12 @@ def write_trajectory_pynta(slab, cas, nslab, site_bond_cutoff, adsorbate_height,
 #    print(f"Sites data saved to '{filename}' with None replaced by 'null'.")
 
 
-def save_sites_to_json(single_sites_lists, filename='sites.json'):
-    """Save unique sites to a JSON file."""
-    
-    def process_data(data):
-        """Recursively convert NumPy types to native Python types and replace None with 'null'."""
-        if isinstance(data, dict):
-            return {key: process_data(value) for key, value in data.items() if key != 'surface'}
-        elif isinstance(data, list):
-            return [process_data(item) for item in data]
-        elif isinstance(data, np.ndarray):
-            return data.tolist()  # Convert NumPy array to list
-        elif isinstance(data, (np.int64, np.float64)):  # Check for NumPy numeric types
-            return data.item()  # Convert to native Python int or float
-        elif data is None:  # Check for None (Python's equivalent of JSON null)
-            return "null"  # Replace with the string "null"
-        else:
-            return data  # Return the data as is if it's already a native type
-
-    # Flatten the input if it's a list of lists
-    if isinstance(single_sites_lists, list) and all(isinstance(item, list) for item in single_sites_lists):
-        # Flatten the list of lists into a single list of dictionaries
-        processed_sites_data = process_data([item for sublist in single_sites_lists for item in sublist])
-    else:
-        # If it's already a single list of dictionaries, process it directly
-        processed_sites_data = process_data(single_sites_lists)
-
-    # Save to JSON file
-    with open(filename, "w") as f:
-        json.dump(processed_sites_data, f, indent=4)
-
-    print(f"Sites data saved to '{filename}' with None replaced by 'null'.")
-
-
 def write_trajectory_for_acat(slab, cas, trajectory_filename):
     # Create a Trajectory object to write to the specified file
     traj = Trajectory(trajectory_filename, 'w')
     
     # Iterate over all unique sites
-    for index, site in enumerate(cas.get_unique_sites()):
+    for site in cas.get_unique_sites():
         # Create a deep copy of the original slab
         my_slab = copy.deepcopy(slab)
         
@@ -315,11 +352,56 @@ def cluster_isomorphic_graphs(admols):
     return iso_mat, clusters
 
 
-def cluster_unique_site_graphs(single_geoms, single_sites_lists):
-    """Cluster generated site geometries using strict graph isomorphism."""
-    admols, geom_indices = classify_all_sites(single_geoms, single_sites_lists)
-    iso_mat, clusters = cluster_isomorphic_graphs(admols)
-    return iso_mat, clusters, geom_indices, admols
+def update_site_labels_by_graph_and_type(single_sites_lists, clusters, geom_indices):
+    """
+    Assign labels of the form {site_type}{N} (e.g. "3fold0", "3fold1", "bridge0").
+
+    Two sites receive the same label iff:
+      1. Their local slab graphs are isomorphic (same cluster).
+      2. They share the same "site" value.
+      3. They share the same "morphology" value.
+
+    N counts distinct graph clusters per (site_type, morphology) pair, starting
+    from 0. Sites with the same graph get the same N; different graphs increment N.
+    This preserves the original site-type name so downstream tools (e.g. Pynta)
+    can still distinguish site types while knowing which are truly equivalent.
+
+    Returns
+    -------
+    geom_to_label : dict  {geom_idx: label_string}
+    key_to_label  : dict  {(cluster_id, site, morphology): label_string}
+    """
+    def _first_site_morph(geom_idx):
+        for s in single_sites_lists[geom_idx]:
+            if s.get("site"):
+                return s.get("site"), s.get("morphology")
+        return None, None
+
+    type_counters = {}   # (site_val, morph_val) -> next available integer
+    key_to_label  = {}   # (cluster_id, site_val, morph_val) -> label
+    geom_to_label = {}
+
+    for cluster_id, members in enumerate(clusters.values()):
+        for graph_idx in members:
+            geom_idx = geom_indices[graph_idx]
+            site_val, morph_val = _first_site_morph(geom_idx)
+            key = (cluster_id, site_val, morph_val)
+            if key not in key_to_label:
+                type_key = (site_val, morph_val)
+                n = type_counters.get(type_key, 0)
+                type_counters[type_key] = n + 1
+                prefix = site_val if site_val else "site"
+                key_to_label[key] = f"{prefix}{n}"
+            geom_to_label[geom_idx] = key_to_label[key]
+
+    for geom_idx, sites in enumerate(single_sites_lists):
+        label = geom_to_label.get(geom_idx)
+        if label is not None:
+            for s in sites:
+                if s.get("site"):
+                    s["site"] = label
+
+    return geom_to_label, key_to_label
 
 
 def update_threefold_site_labels(single_sites_lists, clusters, geom_indices):
@@ -407,32 +489,47 @@ def update_site_labels(single_sites_lists, clusters, trajectory_filename="unique
 
 
 def write_sites_json(single_sites_lists, clusters, filename="sites_graph.json"):
+    def to_py(x):
+        import numpy as np
+        if isinstance(x, np.ndarray):
+            return x.tolist()
+        if isinstance(x, (np.integer, np.floating)):
+            return x.item()
+        if isinstance(x, tuple):
+            return [to_py(v) for v in x]
+        if isinstance(x, list):
+            return [to_py(v) for v in x]
+        if isinstance(x, dict):
+            return {k: to_py(v) for k, v in x.items()}
+        if x is None:
+            return "null"
+        return x
+
     json_data = {
-        "n_unique_geometries": len(single_sites_lists),
-        "n_distinct_three_fold_types": len(clusters),
+        "n_unique_geometries": int(len(single_sites_lists)),
+        "n_distinct_three_fold_types": int(len(clusters)),
         "geometries": []
     }
 
     for sites in single_sites_lists:
         for s in sites:
             entry = {
-                "site": s["site"],
-                "surface": s.get("surface"),
-                "morphology": s.get("morphology"),
-                "position": list(map(float, s.get("position", []))),
-                "normal": list(map(float, s.get("normal", []))),  # Assuming 'normal' is provided
-                "indices": list(map(int, s.get("indices", []))),  # Convert to int
-                "composition": s.get("composition", "null"),  # Default to "null" if not provided
-                "subsurf_index": s.get("subsurf_index", "null"),  # Default to "null" if not provided
-                "subsurf_element": s.get("subsurf_element", "null"),  # Default to "null" if not provided
-                "label": s.get("label", "null"),  # Default to "null" if not provided
-                "topology": list(map(int, s.get("topology", [])))  # Convert to int
+                "site": s.get("site"),
+                "surface": s.get("surface", "null"),
+                "morphology": s.get("morphology", "null"),
+                "position": to_py(s.get("position", [])),
+                "normal": to_py(s.get("normal", [])),
+                "indices": to_py(s.get("indices", [])),
+                "composition": s.get("composition", "null"),
+                "subsurf_index": to_py(s.get("subsurf_index", "null")),
+                "subsurf_element": s.get("subsurf_element", "null"),
+                "label": s.get("label", "null"),
+                "topology": to_py(s.get("topology", [])),
             }
-            json_data["geometries"].append(entry)
+            json_data["geometries"].append(to_py(entry))
 
     with open(filename, "w") as f:
         json.dump(json_data, f, indent=4)
-
 
 def write_trajectory_graph(updated_sites_lists, clusters, trajectory_filename="unique_sites_graph.traj"):
     # Print the number of unique sites
@@ -822,79 +919,830 @@ def get_adsorbate_dist_from_center(atoms,nslab):
     return np.linalg.norm(adcenter - cell_center)
 
 #===fix=== ``
-def generate_unique_site_additions_vacancy(geo, sites, slab, nslab, site_bond_cutoff, xyz_path,
-                                          site_bond_params_list=None,
-                                          sites_list=None):
+#def generate_unique_site_additions_vacancy(geo, sites, slab, nslab, site_bond_cutoff, xyz_path,
+#                                          site_bond_params_list=None,
+#                                          sites_list=None):
+#    if site_bond_params_list is None:
+#        site_bond_params_list = []
+#    if sites_list is None:
+#        sites_list = []
+#
+#    # --- NEW: detect defect/hole sites from the xyz and add to sites ---
+#    #defect_sites, _ = detect_defect_sites_from_xyz(xyz_path, nslab)
+#    slab_for_detect = read(xyz_path)
+#    defect_sites, _ = detect_vacancy_sites_from_coordination(slab_for_detect, nslab)
+#
+#    # add defect sites if not already present (uses your existing sites_match)
+#    for ds in defect_sites:
+#        ds = dict(ds)  # make sure it's a mutable copy
+#
+#        # REQUIRED for add_adsorbate_to_site()
+#        ds.setdefault("normal", np.array([0.0, 0.0, 1.0]))
+#
+#        # REQUIRED for sites_match()
+#        ds.setdefault("morphology", "defect")
+#
+#        # Optional: keep surface label consistent (if your other sites have it)
+#        if "surface" not in ds and len(sites) > 0 and "surface" in sites[0]:
+#            ds["surface"] = sites[0]["surface"]
+#
+#        if not any(sites_match(ds, s, slab) for s in sites):
+#            sites = sites + [ds]
+#    # --- end NEW ---
+#
+#    nads = len(geo) - nslab
+#
+#    # label sites with unique noble gas atoms
+#    he = Atoms('He', positions=[[0, 0, 0]])
+#    ne = Atoms('Ne', positions=[[0, 0, 0]])
+#    ar = Atoms('Ar', positions=[[0, 0, 0]])
+#    kr = Atoms('Kr', positions=[[0, 0, 0]])
+#    xe = Atoms('Xe', positions=[[0, 0, 0]])
+#    rn = Atoms('Rn', positions=[[0, 0, 0]])
+#    site_tags = [he, ne, ar, kr, xe, rn]
+#    tag = site_tags[nads]
+#
+#    occ = get_occupied_sites(geo, sites, nslab, site_bond_cutoff)
+#    unocc = [site for site in sites if not any(sites_match(site, osite, slab) for osite in occ)]
+#
+#    site_bond_params_lists = [deepcopy(site_bond_params_list) for _ in range(len(unocc))]
+#    sites_lists = [deepcopy(sites_list) for _ in range(len(unocc))]
+#
+#    geoms = []
+#    for i, site in enumerate(unocc):
+#        geom = geo.copy()
+#        add_adsorbate_to_site(geom, adsorbate=tag, surf_ind=0, site=site, height=1.5)
+#
+#        pos = np.array(site["position"]).tolist()
+#        params = {"site_pos": pos, "ind": None, "k": 100.0, "deq": 0.0}
+#        site_bond_params_lists[i].append(params)
+#        sites_lists[i].append(site)
+#        geoms.append(geom)
+#
+#    indclusters = get_unique_sym_struct_index_clusters(geoms)
+#
+#    inds = []
+#    for cluster in indclusters:        
+#        min_dist = np.inf
+#        indout = None
+#        for ind in cluster:
+#            d = get_adsorbate_dist_from_center(geoms[ind], nslab)
+#            if d < min_dist:
+#                indout = ind
+#                min_dist = d
+#        inds.append(indout)
+#
+#    return ([geoms[ind] for ind in inds],
+#            [site_bond_params_lists[ind] for ind in inds],
+#            [sites_lists[ind] for ind in inds])
+
+def generate_unique_site_additions_vacancy(
+    geo, sites, slab, nslab, site_bond_cutoff, xyz_path,
+    get_sites,                          # <-- REQUIRED: function that returns site dicts for an Atoms
+    site_bond_params_list=None,
+    sites_list=None,
+
+    # --- Noble gas selection ---
+    tag_symbol=None,
+
+    # --- Drop controls ---
+    dz=0.1,
+    max_drop=10.0,
+    margin=0.25,
+    min_clearance=1.3,
+    stable_steps=2,                     # "patience": stop after this many non-improving cn steps
+    noble_gases=("Ne", "Ar", "Kr", "Xe", "Rn"),
+
+    # --- Output controls ---
+    save_all_drop_steps=True,
+):
+    """
+    Returns:
+      geom_all,                 # geoms_unique + maxcn_geoms
+      site_bond_params_all,     # placeholder list aligned with geom_all (empty params by default)
+      sites_lists_all,          # sites_lists_all[i] == get_sites(geom_all[i])
+      maxcn_geoms,
+      maxcn_meta,
+      drop_geoms,
+      drop_meta
+    """
     if site_bond_params_list is None:
         site_bond_params_list = []
     if sites_list is None:
         sites_list = []
 
-    # --- NEW: detect defect/hole sites from the xyz and add to sites ---
-    #defect_sites, _ = detect_defect_sites_from_xyz(xyz_path, nslab)
+    import numpy as np
+    from copy import deepcopy
+    from ase.io import read
+    from ase import Atoms
+    from ase.neighborlist import NeighborList
+    from ase.geometry import get_distances
+
+    # ---------- helpers ----------
+    def _estimate_first_neighbor_distance(atoms):
+        idx = [i for i, a in enumerate(atoms) if a.symbol not in noble_gases]
+        if len(idx) < 2:
+            return 3.0
+        pos = atoms.positions[idx]
+        _, dmat = get_distances(pos, pos, cell=atoms.cell, pbc=atoms.pbc)
+        dmat = np.array(dmat)
+        np.fill_diagonal(dmat, np.inf)
+        nn = np.min(dmat, axis=1)
+        nn = nn[np.isfinite(nn)]
+        return float(np.median(nn)) if len(nn) else 3.0
+
+    def _build_nl(atoms, cutoff):
+        nl = NeighborList([cutoff] * len(atoms), self_interaction=False, bothways=True, skin=0.0)
+        nl.update(atoms)
+        return nl
+
+    def _tag_neighbors(atoms, i_tag, cutoff):
+        nl = _build_nl(atoms, cutoff)
+        neigh, _ = nl.get_neighbors(i_tag)
+        neigh = [j for j in neigh if atoms[j].symbol not in noble_gases]
+        return len(neigh), [int(x) for x in neigh]
+
+    def _min_dist_to_non_noble(atoms, i_tag):
+        idx = [j for j, a in enumerate(atoms) if j != i_tag and a.symbol not in noble_gases]
+        if not idx:
+            return np.inf
+        _, d = get_distances(atoms.positions[i_tag:i_tag+1], atoms.positions[idx],
+                             cell=atoms.cell, pbc=atoms.pbc)
+        return float(np.min(d))
+
+    def _drop_until_max_cn_with_traj(base_atoms, i_tag, cutoff, defect_id):
+        atoms = base_atoms.copy()
+        frames, meta = [], []
+
+        max_cn = -1
+        best_atoms = None
+        best_step = None
+        no_improve = 0
+
+        nsteps = int(max_drop / dz) + 1
+        for step in range(nsteps):
+            cn, neigh = _tag_neighbors(atoms, i_tag, cutoff)
+            mind = _min_dist_to_non_noble(atoms, i_tag)
+            z = float(atoms.positions[i_tag, 2])
+
+            if save_all_drop_steps:
+                frames.append(atoms.copy())
+                meta.append({
+                    "defect_id": int(defect_id),
+                    "step": int(step),
+                    "z": float(z),
+                    "cn": int(cn),
+                    "neighbor_indices": neigh,
+                    "min_dist": float(mind),
+                    "cutoff": float(cutoff),
+                    "dz": float(dz),
+                })
+
+            if mind < min_clearance:
+                break
+
+            if cn > max_cn:
+                max_cn = int(cn)
+                best_atoms = atoms.copy()
+                best_step = int(step)
+                no_improve = 0
+            else:
+                no_improve += 1
+
+            if no_improve >= stable_steps:
+                break
+
+            atoms.positions[i_tag, 2] -= dz
+
+        if best_atoms is None:
+            best_atoms = atoms.copy()
+            best_step = 0
+            max_cn, _ = _tag_neighbors(best_atoms, i_tag, cutoff)
+
+        found = {"max_cn": best_atoms, "max_cn_value": int(max_cn), "best_step": int(best_step)}
+        return found, frames, meta
+
+    # ---------- detect vacancies (ONLY for locating where to drop) ----------
     slab_for_detect = read(xyz_path)
     defect_sites, _ = detect_vacancy_sites_from_coordination(slab_for_detect, nslab)
 
-    # add defect sites if not already present (uses your existing sites_match)
-    for ds in defect_sites:
-        ds = dict(ds)  # make sure it's a mutable copy
+    # ---------- choose noble gas tag ----------
+    allowed_tags = ("He", "Ne", "Ar", "Kr", "Xe", "Rn")
+    if tag_symbol is None:
+        nads = len(geo) - nslab
+        sym = allowed_tags[nads % len(allowed_tags)]
+    else:
+        if tag_symbol not in allowed_tags:
+            raise ValueError(f"tag_symbol must be one of {allowed_tags}, got {tag_symbol!r}")
+        sym = tag_symbol
+    tag = Atoms(sym, positions=[[0, 0, 0]])
 
-        # REQUIRED for add_adsorbate_to_site()
-        ds.setdefault("normal", np.array([0.0, 0.0, 1.0]))
+    # ---------- cutoff for cn counting ----------
+    d1 = _estimate_first_neighbor_distance(slab_for_detect)
+    cn_cutoff = d1 + margin
 
-        # REQUIRED for sites_match()
-        ds.setdefault("morphology", "defect")
+    # ---------- build maxcn_geoms by dropping tag at each detected vacancy ----------
+    maxcn_geoms = []
+    maxcn_meta = []
+    drop_geoms = []
+    drop_meta = []
 
-        # Optional: keep surface label consistent (if your other sites have it)
-        if "surface" not in ds and len(sites) > 0 and "surface" in sites[0]:
-            ds["surface"] = sites[0]["surface"]
+    for defect_id, ds in enumerate(defect_sites):
+        g0 = geo.copy()
+        tag_here = tag.copy()
+        tag_here.positions[:] = np.array(ds["position"], dtype=float)
+        g0 += tag_here
+        i_tag = len(g0) - 1
 
-        if not any(sites_match(ds, s, slab) for s in sites):
-            sites = sites + [ds]
-    # --- end NEW ---
+        found, frames, meta = _drop_until_max_cn_with_traj(
+            g0, i_tag=i_tag, cutoff=cn_cutoff, defect_id=defect_id
+        )
 
-    nads = len(geo) - nslab
+        if save_all_drop_steps:
+            drop_geoms.extend(frames)
+            drop_meta.extend(meta)
 
-    # label sites with unique noble gas atoms
-    he = Atoms('He', positions=[[0, 0, 0]])
-    ne = Atoms('Ne', positions=[[0, 0, 0]])
-    ar = Atoms('Ar', positions=[[0, 0, 0]])
-    kr = Atoms('Kr', positions=[[0, 0, 0]])
-    xe = Atoms('Xe', positions=[[0, 0, 0]])
-    rn = Atoms('Rn', positions=[[0, 0, 0]])
-    site_tags = [he, ne, ar, kr, xe, rn]
-    tag = site_tags[nads]
+        best = found["max_cn"]
+        maxcn_geoms.append(best)
+        maxcn_meta.append({
+            "defect_id": int(defect_id),
+            "max_cn": int(found["max_cn_value"]),
+            "best_step": int(found["best_step"]),
+            "site_pos": np.array(ds["position"]).tolist(),
+            "cn_cutoff": float(cn_cutoff),
+            "tag_symbol": sym,
+        })
 
+    # ---- ADD THIS HERE (after the loop) ----
+    # Keep only ONE defect geometry: the one with the highest max CN
+    if len(maxcn_meta) > 1:
+        best_j = int(np.argmax([m["max_cn"] for m in maxcn_meta]))
+        maxcn_geoms = [maxcn_geoms[best_j]]
+        maxcn_meta  = [maxcn_meta[best_j]]
+    # ---- end add ----
+
+    # ---------- "main" geoms: keep your original behavior for normal sites ----------
+    # Use original `sites` list (terrace sites) to generate site-tagged structures.
+    # IMPORTANT: we do NOT add ds as defect sites to `sites` anymore.
     occ = get_occupied_sites(geo, sites, nslab, site_bond_cutoff)
     unocc = [site for site in sites if not any(sites_match(site, osite, slab) for osite in occ)]
 
-    site_bond_params_lists = [deepcopy(site_bond_params_list) for _ in range(len(unocc))]
-    sites_lists = [deepcopy(sites_list) for _ in range(len(unocc))]
-
     geoms = []
-    for i, site in enumerate(unocc):
-        geom = geo.copy()
-        add_adsorbate_to_site(geom, adsorbate=tag, surf_ind=0, site=site, height=1.5)
+    for site in unocc:
+        g = geo.copy()
+        add_adsorbate_to_site(g, adsorbate=tag, surf_ind=0, site=site, height=1.5)
+        geoms.append(g)
 
-        pos = np.array(site["position"]).tolist()
-        params = {"site_pos": pos, "ind": None, "k": 100.0, "deq": 0.0}
-        site_bond_params_lists[i].append(params)
-        sites_lists[i].append(site)
-        geoms.append(geom)
+    # all terrace sites, no symmetry reduction
+    geoms_unique = geoms
+    unocc_rep_sites = unocc
 
-    indclusters = get_unique_sym_struct_index_clusters(geoms)
+    # ---------- NEW: geom_all = geoms_unique + maxcn_geoms ----------
+    geom_all = geoms_unique + maxcn_geoms
 
-    inds = []
-    for cluster in indclusters:        
-        min_dist = np.inf
-        indout = None
-        for ind in cluster:
-            d = get_adsorbate_dist_from_center(geoms[ind], nslab)
-            if d < min_dist:
-                indout = ind
-                min_dist = d
-        inds.append(indout)
+    # Build per-geometry "which site is this geometry?" mapping
+    sites_lists_all = []
+    
+    # For geoms_unique: one entry per symmetry-unique terrace site
+    for i, s in enumerate(unocc_rep_sites):
+        s2 = dict(s)
+        if "topology" not in s2:
+            s2["topology"] = s2.get("indices", [])
+        if "surface" in s2 and s2["surface"] is not None and not isinstance(s2["surface"], str):
+            s2["surface"] = s2["surface"].__class__.__name__
+    
+        sites_lists_all.append({
+            "geom_index": i,
+            "sites": [s2],
+        })
+    
+    # For maxcn_geoms: append ONCE per defect geometry (usually 1 after your "keep best" filter)
+    offset = len(geoms_unique)
+    for j, meta in enumerate(maxcn_meta):
+        s_def = {
+            "site": "defect",
+            "surface": "CustomSurface",
+            "morphology": "defect",
+            "position": meta["site_pos"],
+            "normal": [0.0, 0.0, 1.0],
+            "indices": [],
+            "composition": "null",
+            "subsurf_index": "null",
+            "subsurf_element": "null",
+            "label": meta.get("tag_symbol", "null"),
+            "topology": [],
+        }
+        sites_lists_all.append({
+            "geom_index": offset + j,
+            "sites": [s_def],
+        })
 
-    return ([geoms[ind] for ind in inds],
-            [site_bond_params_lists[ind] for ind in inds],
-            [sites_lists[ind] for ind in inds])
+#----old---
+    # reduce by symmetry like before    
+    #clusters = get_unique_sym_struct_index_clusters(geoms)
+    #geoms_unique = [geoms[c[0]] for c in clusters]
+
+    # ---------- NEW: geom_all = geoms_unique + maxcn_geoms ----------
+    #geom_all = geoms_unique + maxcn_geoms
+
+    # ---------- NEW: sites_lists are computed from get_sites(geom_all[i]) ----------
+    # This ensures morphology/site labels come from get_sites() (not "defect").
+    #sites_lists_all = []
+    #for i, atoms in enumerate(geom_all):
+    #    sites_lists_all.append({
+    #        "geom_index": i,
+    #        "sites": get_sites(atoms),
+    #    })
+    # Sites are slab-defined and identical for every geometry in geom_all, so store once.
+    #sites_lists_all = [{
+    #    "geom_index": 0,
+    #    "sites": get_sites(geo),   # clean slab
+    #}]
+    # If your downstream expects params aligned with images, create placeholders
+    site_bond_params_all = [deepcopy(site_bond_params_list) for _ in range(len(geom_all))]
+
+    return (
+        geom_all,
+        site_bond_params_all,
+        sites_lists_all,
+        maxcn_geoms,
+        maxcn_meta,
+        drop_geoms,
+        drop_meta,
+    )
+
+NOBLE_GASES = {"Ne", "Ar", "Kr", "Xe", "Rn"}
+
+def tag_index(atoms, noble_gases=NOBLE_GASES):
+    """Return the index of the single noble-gas tag atom in this Atoms."""
+    inds = [i for i, a in enumerate(atoms) if a.symbol in noble_gases]
+    if len(inds) != 1:
+        raise ValueError(f"Expected exactly 1 noble gas tag atom, found {len(inds)}")
+    return inds[0]
+
+def unique_drop_frames_by_tag_position(frames, tol=0.25, noble_gases=NOBLE_GASES):
+    """
+    Keep only frames that have unique tag positions (PBC-aware), within tol (Å).
+    frames: list[ase.Atoms] for ONE defect_id (same cell/pbc).
+    """
+    if not frames:
+        return []
+
+    uniq = []
+    for at in frames:
+        it = tag_index(at, noble_gases=noble_gases)
+        keep = True
+        for u in uniq:
+            iu = tag_index(u, noble_gases=noble_gases)
+            _, d = get_distances([at.positions[it]], [u.positions[iu]],
+                                 cell=at.cell, pbc=at.pbc)
+            if float(d) < tol:
+                keep = False
+                break
+        if keep:
+            uniq.append(at)
+    return uniq
+
+def write_unique_sites_with_drop_traj(drop_geoms, drop_meta, out_traj="vacancy_unique_sites_with_drop.traj",
+                                     tol=0.25, noble_gases=NOBLE_GASES):
+    """
+    Build a trajectory of UNIQUE sites encountered during noble-gas dropping into vacancy,
+    including inside the defect. Uniqueness is based on tag position under PBC.
+
+    drop_geoms, drop_meta come from generate_unique_site_additions_vacancy().
+    """
+    defect_ids = sorted({m["defect_id"] for m in drop_meta})
+    all_unique = []
+
+    for did in defect_ids:
+        inds = [i for i, m in enumerate(drop_meta) if m["defect_id"] == did]
+        frames = [drop_geoms[i] for i in inds]
+
+        uniq_frames = unique_drop_frames_by_tag_position(frames, tol=tol, noble_gases=noble_gases)
+
+        for k, at in enumerate(uniq_frames):
+            at2 = at.copy()
+            at2.info["defect_id"] = int(did)
+            at2.info["drop_unique_id"] = int(k)
+            all_unique.append(at2)
+
+    write(out_traj, all_unique)
+    return all_unique
+
+# ============================================================
+# High-level workflows (keeps notebooks clean)
+# ============================================================
+
+def workflow_detect_vacancies(slab, nslab, verbose=True):
+    """Detect vacancy sites and optionally print a summary."""
+    defect_sites, _ = detect_vacancy_sites_from_coordination(slab, nslab)
+    if verbose:
+        print(f"Found {len(defect_sites)} defect site(s)")
+        for s in defect_sites:
+            x, y, z = s["position"]
+            print(f"{s.get('name','defect')}: x={x:.3f}  y={y:.3f}  z={z:.3f}  site={s.get('site')}")
+    return defect_sites
+
+
+def workflow_no_defect_unique_sites(
+    slab,
+    nslab,
+    adsorbate_height=1.0,
+    site_bond_cutoff=1.5,
+    surface="fcc111",          # str (e.g. "fcc111") or CustomSurface instance
+    traj_filename="unique_sites.traj",
+    sites_json="sites.json",
+    labeled_sites_json="labeled_sites.json",
+    neighbor_json="neighbor_site_list.json",
+    verbose=True,
+):
+    """
+    No-defect workflow.
+
+    `surface` can be:
+      - a conventional ACAT surface string ("fcc111", "fcc332", ...)
+      - an ACAT CustomSurface instance
+
+    In both cases the pipeline is:
+      1. Get all ACAT sites → sites.json
+      2. Generate one tagged geometry per unoccupied site
+      3. Build RMG graphs, cluster by isomorphism + (site, morphology)
+      4. Assign labels: 3fold0, 3fold1, bridge0, ...
+      5. Reduce to one representative per distinct label → labeled_sites.json + traj
+    """
+    from ase.io.trajectory import Trajectory
+    from acat.settings import CustomSurface
+
+    use_custom = isinstance(surface, CustomSurface)
+    if use_custom:
+        cas = SlabAdsorptionSites(slab, surface=surface, composition_effect=True)
+    else:
+        cas = SlabAdsorptionSites(slab, surface, composition_effect=True)
+
+    all_sites = cas.get_sites()
+    save_sites_to_json(all_sites, filename=sites_json)
+    save_neighbor_site_list_to_json(cas, filename=neighbor_json)
+
+    single_geoms, single_sites_lists = generate_all_sites(
+        slab, all_sites, nslab, site_bond_cutoff, adsorbate_height
+    )
+
+    # graph clustering + label assignment
+    admols, geom_indices = classify_all_sites(single_geoms, single_sites_lists)
+    _, clusters = cluster_isomorphic_graphs(admols)
+    _, key_to_label = update_site_labels_by_graph_and_type(
+        single_sites_lists, clusters, geom_indices
+    )
+
+    # reduce: one representative geometry per distinct label
+    rep_geoms, rep_sites = _reduce_to_representatives(single_geoms, single_sites_lists)
+
+    traj = Trajectory(traj_filename, "w")
+    for g in rep_geoms:
+        traj.write(g)
+    traj.close()
+
+    labeled_sites_data = [
+        {"geom_index": i, "sites": sites}
+        for i, sites in enumerate(rep_sites)
+    ]
+    save_sites_to_json(labeled_sites_data, filename=labeled_sites_json)
+
+    if verbose:
+        surface_type = "CustomSurface" if use_custom else f'"{surface}"'
+        print(f"Surface             : {surface_type}")
+        print(f"Total ACAT sites    : {len(all_sites)}")
+        print(f"Distinct labels     : {len(rep_geoms)}")
+        print()
+        label_to_key = {v: k for k, v in key_to_label.items()}
+        print(f"  {'Label':<12} {'Original site':<14} Morphology")
+        print(f"  {'-'*44}")
+        for entry in rep_sites:
+            for s in entry:
+                label = s.get("site", "")
+                _, orig_site, morph = label_to_key.get(label, (None, "", ""))
+                print(f"  {label:<12} {orig_site:<14} {morph}")
+        print()
+        print(f"Wrote: {traj_filename}")
+        print(f"Wrote: {sites_json}")
+        print(f"Wrote: {neighbor_json}")
+        print(f"Wrote: {labeled_sites_json}")
+
+    return rep_geoms, rep_sites, clusters
+
+# ============================================================
+# Workflows (for clean notebooks)
+# ============================================================
+
+def workflow_detect_vacancies(slab, nslab, verbose=True):
+    defect_sites, _ = detect_vacancy_sites_from_coordination(slab, nslab)
+    if verbose:
+        print(f"Found {len(defect_sites)} defect site(s)")
+        for s in defect_sites:
+            x, y, z = s["position"]
+            print(f"{s.get('name','defect')}: x={x:.3f}  y={y:.3f}  z={z:.3f}  site={s.get('site')}")
+    return defect_sites
+
+
+def workflow_defect_vacancy_drop(
+    slab, nslab, xyz_path, surface_obj,
+    site_bond_cutoff=1.5,
+    tag_symbol="Ne",
+    dz=0.1,
+    stable_steps=3,
+    max_drop=10.0,
+    margin=0.25,
+    min_clearance=1.3,
+    save_all_drop_steps=True,
+    traj_geom_all="geom_all.traj",
+    traj_drop="drop_steps.traj",
+    traj_maxcn="maxcn_geoms.xyz",
+    sites_json="sites.json",
+    labeled_sites_json="labeled_sites.json",
+    neighbor_json="neighbor_site_list.json",
+    verbose=True,
+):
+    from ase.io import write
+
+    geo = slab.copy()
+    cas = SlabAdsorptionSites(slab, surface=surface_obj, composition_effect=True)
+    sites = cas.get_sites()
+
+    # all raw ACAT sites + neighbor list
+    save_sites_to_json(sites, filename=sites_json)
+    save_neighbor_site_list_to_json(cas, filename=neighbor_json)
+
+    # rebuild CAS per-geometry to compute sites lists
+    my_get_sites = lambda atoms: SlabAdsorptionSites(
+        atoms[:nslab].copy(), surface=surface_obj, composition_effect=True
+    ).get_sites()
+
+    (geom_all,
+     params_all,
+     sites_lists_all,
+     maxcn_geoms,
+     maxcn_meta,
+     drop_geoms,
+     drop_meta) = generate_unique_site_additions_vacancy(
+        geo=geo,
+        sites=sites,
+        slab=slab,
+        nslab=nslab,
+        site_bond_cutoff=site_bond_cutoff,
+        xyz_path=xyz_path,
+        get_sites=my_get_sites,
+        tag_symbol=tag_symbol,
+        dz=dz,
+        stable_steps=stable_steps,
+        max_drop=max_drop,
+        margin=margin,
+        min_clearance=min_clearance,
+        save_all_drop_steps=save_all_drop_steps,
+    )
+
+    write(traj_geom_all, geom_all)
+    write(traj_drop, drop_geoms)
+    write(traj_maxcn, maxcn_geoms)
+
+    # apply graph-isomorphism labels before saving
+    # sites_lists_all: [{"geom_index": i, "sites": [site_dict]}, ...]
+    # classify_all_sites expects: [[site_dict], ...]
+    single_sites_lists = [entry["sites"] for entry in sites_lists_all]
+    admols, geom_indices = classify_all_sites(geom_all, single_sites_lists)
+    _, clusters = cluster_isomorphic_graphs(admols)
+    update_site_labels_by_graph_and_type(single_sites_lists, clusters, geom_indices)
+    # single_sites_lists updated in-place → sites_lists_all reflects new labels
+
+    # reduce to one representative per distinct label
+    rep_geoms, rep_site_lists = _reduce_to_representatives(geom_all, single_sites_lists)
+    rep_data = [{"geom_index": i, "sites": s} for i, s in enumerate(rep_site_lists)]
+    save_sites_to_json(rep_data, filename=labeled_sites_json)
+
+    if verbose:
+        print(f"[defect] Total sites          : {len(sites_lists_all)}")
+        print(f"[defect] Distinct labels      : {len(rep_geoms)}")
+        print(f"Wrote: {traj_geom_all}")
+        print(f"Wrote: {traj_drop}")
+        print(f"Wrote: {traj_maxcn}")
+        print(f"Wrote: {sites_json}")
+        print(f"Wrote: {labeled_sites_json}")
+        print(f"Wrote: {neighbor_json}")
+
+    return geom_all, sites_lists_all, maxcn_geoms, maxcn_meta, drop_geoms, drop_meta
+
+
+def workflow_auto(
+    xyz_path,
+    n_layers=4,
+    adsorbate_height=1.0,
+    site_bond_cutoff=1.5,
+    facet=None,            # e.g. "fcc111", "fcc332" — uses ACAT string; None → CustomSurface
+    tag_symbol="Ne",
+    dz=0.1,
+    stable_steps=3,
+    max_drop=10.0,
+    margin=0.25,
+    min_clearance=1.3,
+    save_all_drop_steps=True,
+    verbose=True,
+):
+    from ase.io import read
+    from acat.settings import CustomSurface
+
+    slab = read(xyz_path)
+    nslab = len(slab)
+    surface_obj = CustomSurface(slab, n_layers=n_layers)
+
+    # surface passed to no-defect workflow: explicit facet string OR CustomSurface
+    surface_no_defect = facet if facet is not None else surface_obj
+
+    defect_sites = workflow_detect_vacancies(slab, nslab, verbose=verbose)
+
+    if len(defect_sites) == 0:
+        return workflow_no_defect_unique_sites(
+            slab=slab,
+            nslab=nslab,
+            adsorbate_height=adsorbate_height,
+            site_bond_cutoff=site_bond_cutoff,
+            surface=surface_no_defect,
+            verbose=verbose,
+        )
+    else:
+        return workflow_defect_vacancy_drop(
+            slab=slab,
+            nslab=nslab,
+            xyz_path=xyz_path,
+            surface_obj=surface_obj,
+            site_bond_cutoff=site_bond_cutoff,
+            tag_symbol=tag_symbol,
+            dz=dz,
+            stable_steps=stable_steps,
+            max_drop=max_drop,
+            margin=margin,
+            min_clearance=min_clearance,
+            save_all_drop_steps=save_all_drop_steps,
+            verbose=verbose,
+        )
+
+
+# ============================================================
+# Visualization
+# ============================================================
+
+def visualize_labeled_sites(
+    labeled_sites_json="labeled_sites.json",
+    sites_json="sites.json",
+    traj_file=None,
+):
+    """
+    Load labeled_sites.json, re-run the graph pipeline, and display:
+      - Figure 1 : one RMG graph per unique site label
+      - Figure 2 : pairwise isomorphism matrix
+      - Summary  : total ACAT sites vs. unique sites, label table
+
+    Parameters
+    ----------
+    labeled_sites_json : path to labeled_sites.json written by workflow_auto
+    sites_json         : path to sites.json (raw ACAT sites, for total count)
+    traj_file          : traj to load geometries from; None → auto-detect
+                         (tries geom_all.traj then unique_sites.traj)
+    """
+    import json, re
+    import networkx as nx
+    import matplotlib.pyplot as plt
+    import matplotlib.patches as mpatches
+    from ase.io import read
+
+    # ── load geometries ───────────────────────────────────────────────────────
+    if traj_file is not None:
+        geoms = read(traj_file, index=":")
+    else:
+        try:
+            geoms = read("geom_all.traj", index=":")
+        except Exception:
+            geoms = read("unique_sites.traj", index=":")
+
+    # ── load labeled sites ────────────────────────────────────────────────────
+    with open(labeled_sites_json) as f:
+        raw = json.load(f)
+
+    try:
+        with open(sites_json) as f:
+            n_total_acat = len(json.load(f))
+    except Exception:
+        n_total_acat = None
+
+    single_sites_lists = [entry["sites"] for entry in raw]
+
+    # ── graph pipeline ────────────────────────────────────────────────────────
+    admols, geom_indices = classify_all_sites(geoms, single_sites_lists)
+    iso_mat, clusters    = cluster_isomorphic_graphs(admols)
+    _, key_to_label      = update_site_labels_by_graph_and_type(
+        single_sites_lists, clusters, geom_indices
+    )
+    save_sites_to_json(raw, filename=labeled_sites_json)
+
+    label_to_key = {v: k for k, v in key_to_label.items()}
+
+    def _sort_key(lbl):
+        m = re.match(r'^(.*?)(\d+)$', lbl)
+        return (m.group(1), int(m.group(2))) if m else (lbl, 0)
+
+    labels_sorted = sorted(label_to_key, key=_sort_key)
+
+    # one representative admol per label
+    label_to_admol = {}
+    for graph_idx, geom_idx in enumerate(geom_indices):
+        for s in single_sites_lists[geom_idx]:
+            label = s.get("site")
+            if label and label not in label_to_admol:
+                label_to_admol[label] = admols[graph_idx]
+                break
+
+    # ── RMG mol → networkx graph ──────────────────────────────────────────────
+    def rmg_to_nx(mol):
+        G = nx.Graph()
+        atom_to_idx = {a: i for i, a in enumerate(mol.atoms)}
+        for i, atom in enumerate(mol.atoms):
+            sym = atom.element.symbol if hasattr(atom.element, "symbol") else str(atom.element)
+            G.add_node(i, element=sym)
+        for i, atom in enumerate(mol.atoms):
+            for other in atom.edges:
+                j = atom_to_idx[other]
+                if i < j:
+                    G.add_edge(i, j)
+        return G
+
+    ELEM_COLOR = {
+        "X": "#aaaaaa", "Ne": "#00bfff", "Li": "#ffd700",
+        "C": "#404040", "O": "#e04040", "N": "#4040e0", "H": "#eeeeee",
+    }
+
+    def node_colors(G):
+        return [ELEM_COLOR.get(G.nodes[n]["element"], "#cccccc") for n in G.nodes()]
+
+    # ── Figure 1 : one graph per label ───────────────────────────────────────
+    n      = len(labels_sorted)
+    ncols  = min(5, n)
+    nrows  = (n + ncols - 1) // ncols
+    fig, axes = plt.subplots(nrows, ncols, figsize=(4 * ncols, 4 * nrows), squeeze=False)
+    axes_flat = axes.flatten()
+
+    for ax, label in zip(axes_flat, labels_sorted):
+        mol = label_to_admol.get(label)
+        if mol is None:
+            ax.set_visible(False)
+            continue
+        G   = rmg_to_nx(mol)
+        pos = nx.kamada_kawai_layout(G)
+        nx.draw_networkx_edges(G, pos, ax=ax, edge_color="#666666", width=1.5, alpha=0.7)
+        nx.draw_networkx_nodes(G, pos, ax=ax, node_color=node_colors(G),
+                               node_size=300, edgecolors="#333333", linewidths=0.8)
+        nx.draw_networkx_labels(G, pos, ax=ax,
+                                labels={nd: G.nodes[nd]["element"] for nd in G.nodes()},
+                                font_size=6)
+        _, orig_site, morph = label_to_key[label]
+        ax.set_title(f"{label}\n{orig_site} | {morph}", fontsize=8)
+        ax.axis("off")
+
+    for ax in axes_flat[n:]:
+        ax.set_visible(False)
+
+    legend_patches = [mpatches.Patch(color=c, label=e) for e, c in ELEM_COLOR.items()]
+    fig.legend(handles=legend_patches, loc="lower center", ncol=len(ELEM_COLOR),
+               fontsize=8, frameon=False, bbox_to_anchor=(0.5, -0.01))
+    plt.suptitle(
+        "One graph per unique site label\n"
+        "(same label  ⟺  isomorphic graph + same site type + same morphology)",
+        fontsize=11,
+    )
+    plt.tight_layout()
+    plt.show()
+
+    # ── Figure 2 : isomorphism matrix ────────────────────────────────────────
+    n_g = len(admols)
+    _, ax2 = plt.subplots(figsize=(max(5, n_g * 0.28), max(4, n_g * 0.28)))
+    im = ax2.imshow(iso_mat.astype(float), cmap="Blues", vmin=0, vmax=1, aspect="auto")
+    ax2.set_title("Graph isomorphism matrix  (dark = isomorphic pair)", fontsize=11)
+    ax2.set_xlabel("Site index")
+    ax2.set_ylabel("Site index")
+    plt.colorbar(im, ax=ax2, shrink=0.7, label="isomorphic (1=yes)")
+    plt.tight_layout()
+    plt.show()
+
+    # ── Summary ───────────────────────────────────────────────────────────────
+    n_unique = len(labels_sorted)
+    print("=" * 54)
+    if n_total_acat is not None:
+        print(f"  Total ACAT sites (sites.json)    : {n_total_acat}")
+    print(f"  Unique sites     (labeled_sites) : {n_unique}")
+    print()
+    print("  Each distinct label = one unique site environment.")
+    print("  'Unique sites' = distinct labels (same thing).")
+    print("=" * 54)
+    print()
+    print(f"  {'Label':<12} {'Original site':<14} Morphology")
+    print(f"  {'─' * 44}")
+    for label in labels_sorted:
+        _, site_val, morph_val = label_to_key[label]
+        print(f"  {label:<12} {site_val:<14} {morph_val}")

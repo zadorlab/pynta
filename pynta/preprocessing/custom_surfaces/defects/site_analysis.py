@@ -1583,3 +1583,166 @@ def workflow_auto(
             save_all_drop_steps=save_all_drop_steps,
             verbose=verbose,
         )
+
+
+# ============================================================
+# Visualization
+# ============================================================
+
+def visualize_labeled_sites(
+    labeled_sites_json="labeled_sites.json",
+    sites_json="sites.json",
+    traj_file=None,
+):
+    """
+    Load labeled_sites.json, re-run the graph pipeline, and display:
+      - Figure 1 : one RMG graph per unique site label
+      - Figure 2 : pairwise isomorphism matrix
+      - Summary  : total ACAT sites vs. unique sites, label table
+
+    Parameters
+    ----------
+    labeled_sites_json : path to labeled_sites.json written by workflow_auto
+    sites_json         : path to sites.json (raw ACAT sites, for total count)
+    traj_file          : traj to load geometries from; None → auto-detect
+                         (tries geom_all.traj then unique_sites.traj)
+    """
+    import json, re
+    import networkx as nx
+    import matplotlib.pyplot as plt
+    import matplotlib.patches as mpatches
+    from ase.io import read
+
+    # ── load geometries ───────────────────────────────────────────────────────
+    if traj_file is not None:
+        geoms = read(traj_file, index=":")
+    else:
+        try:
+            geoms = read("geom_all.traj", index=":")
+        except Exception:
+            geoms = read("unique_sites.traj", index=":")
+
+    # ── load labeled sites ────────────────────────────────────────────────────
+    with open(labeled_sites_json) as f:
+        raw = json.load(f)
+
+    try:
+        with open(sites_json) as f:
+            n_total_acat = len(json.load(f))
+    except Exception:
+        n_total_acat = None
+
+    single_sites_lists = [entry["sites"] for entry in raw]
+
+    # ── graph pipeline ────────────────────────────────────────────────────────
+    admols, geom_indices = classify_all_sites(geoms, single_sites_lists)
+    iso_mat, clusters    = cluster_isomorphic_graphs(admols)
+    _, key_to_label      = update_site_labels_by_graph_and_type(
+        single_sites_lists, clusters, geom_indices
+    )
+    save_sites_to_json(raw, filename=labeled_sites_json)
+
+    label_to_key = {v: k for k, v in key_to_label.items()}
+
+    def _sort_key(lbl):
+        m = re.match(r'^(.*?)(\d+)$', lbl)
+        return (m.group(1), int(m.group(2))) if m else (lbl, 0)
+
+    labels_sorted = sorted(label_to_key, key=_sort_key)
+
+    # one representative admol per label
+    label_to_admol = {}
+    for graph_idx, geom_idx in enumerate(geom_indices):
+        for s in single_sites_lists[geom_idx]:
+            label = s.get("site")
+            if label and label not in label_to_admol:
+                label_to_admol[label] = admols[graph_idx]
+                break
+
+    # ── RMG mol → networkx graph ──────────────────────────────────────────────
+    def rmg_to_nx(mol):
+        G = nx.Graph()
+        atom_to_idx = {a: i for i, a in enumerate(mol.atoms)}
+        for i, atom in enumerate(mol.atoms):
+            sym = atom.element.symbol if hasattr(atom.element, "symbol") else str(atom.element)
+            G.add_node(i, element=sym)
+        for i, atom in enumerate(mol.atoms):
+            for other in atom.edges:
+                j = atom_to_idx[other]
+                if i < j:
+                    G.add_edge(i, j)
+        return G
+
+    ELEM_COLOR = {
+        "X": "#aaaaaa", "Ne": "#00bfff", "Li": "#ffd700",
+        "C": "#404040", "O": "#e04040", "N": "#4040e0", "H": "#eeeeee",
+    }
+
+    def node_colors(G):
+        return [ELEM_COLOR.get(G.nodes[n]["element"], "#cccccc") for n in G.nodes()]
+
+    # ── Figure 1 : one graph per label ───────────────────────────────────────
+    n      = len(labels_sorted)
+    ncols  = min(5, n)
+    nrows  = (n + ncols - 1) // ncols
+    fig, axes = plt.subplots(nrows, ncols, figsize=(4 * ncols, 4 * nrows), squeeze=False)
+    axes_flat = axes.flatten()
+
+    for ax, label in zip(axes_flat, labels_sorted):
+        mol = label_to_admol.get(label)
+        if mol is None:
+            ax.set_visible(False)
+            continue
+        G   = rmg_to_nx(mol)
+        pos = nx.kamada_kawai_layout(G)
+        nx.draw_networkx_edges(G, pos, ax=ax, edge_color="#666666", width=1.5, alpha=0.7)
+        nx.draw_networkx_nodes(G, pos, ax=ax, node_color=node_colors(G),
+                               node_size=300, edgecolors="#333333", linewidths=0.8)
+        nx.draw_networkx_labels(G, pos, ax=ax,
+                                labels={nd: G.nodes[nd]["element"] for nd in G.nodes()},
+                                font_size=6)
+        _, orig_site, morph = label_to_key[label]
+        ax.set_title(f"{label}\n{orig_site} | {morph}", fontsize=8)
+        ax.axis("off")
+
+    for ax in axes_flat[n:]:
+        ax.set_visible(False)
+
+    legend_patches = [mpatches.Patch(color=c, label=e) for e, c in ELEM_COLOR.items()]
+    fig.legend(handles=legend_patches, loc="lower center", ncol=len(ELEM_COLOR),
+               fontsize=8, frameon=False, bbox_to_anchor=(0.5, -0.01))
+    plt.suptitle(
+        "One graph per unique site label\n"
+        "(same label  ⟺  isomorphic graph + same site type + same morphology)",
+        fontsize=11,
+    )
+    plt.tight_layout()
+    plt.show()
+
+    # ── Figure 2 : isomorphism matrix ────────────────────────────────────────
+    n_g = len(admols)
+    _, ax2 = plt.subplots(figsize=(max(5, n_g * 0.28), max(4, n_g * 0.28)))
+    im = ax2.imshow(iso_mat.astype(float), cmap="Blues", vmin=0, vmax=1, aspect="auto")
+    ax2.set_title("Graph isomorphism matrix  (dark = isomorphic pair)", fontsize=11)
+    ax2.set_xlabel("Site index")
+    ax2.set_ylabel("Site index")
+    plt.colorbar(im, ax=ax2, shrink=0.7, label="isomorphic (1=yes)")
+    plt.tight_layout()
+    plt.show()
+
+    # ── Summary ───────────────────────────────────────────────────────────────
+    n_unique = len(labels_sorted)
+    print("=" * 54)
+    if n_total_acat is not None:
+        print(f"  Total ACAT sites (sites.json)    : {n_total_acat}")
+    print(f"  Unique sites     (labeled_sites) : {n_unique}")
+    print()
+    print("  Each distinct label = one unique site environment.")
+    print("  'Unique sites' = distinct labels (same thing).")
+    print("=" * 54)
+    print()
+    print(f"  {'Label':<12} {'Original site':<14} Morphology")
+    print(f"  {'─' * 44}")
+    for label in labels_sorted:
+        _, site_val, morph_val = label_to_key[label]
+        print(f"  {label:<12} {site_val:<14} {morph_val}")
