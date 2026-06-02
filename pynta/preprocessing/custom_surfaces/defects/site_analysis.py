@@ -1536,6 +1536,7 @@ def workflow_auto(
     n_layers=4,
     adsorbate_height=1.0,
     site_bond_cutoff=1.5,
+    facet=None,            # e.g. "fcc111", "fcc332" — uses ACAT string; None → CustomSurface
     tag_symbol="Ne",
     dz=0.1,
     stable_steps=3,
@@ -1552,6 +1553,9 @@ def workflow_auto(
     nslab = len(slab)
     surface_obj = CustomSurface(slab, n_layers=n_layers)
 
+    # surface passed to no-defect workflow: explicit facet string OR CustomSurface
+    surface_no_defect = facet if facet is not None else surface_obj
+
     defect_sites = workflow_detect_vacancies(slab, nslab, verbose=verbose)
 
     if len(defect_sites) == 0:
@@ -1560,7 +1564,7 @@ def workflow_auto(
             nslab=nslab,
             adsorbate_height=adsorbate_height,
             site_bond_cutoff=site_bond_cutoff,
-            surface=surface_obj,
+            surface=surface_no_defect,
             verbose=verbose,
         )
     else:
