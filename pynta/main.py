@@ -502,6 +502,7 @@ class CoverageDependence:
         self.repeats = repeats
         self.pynta_run_directory = pynta_run_directory
         self.pairs_directory = os.path.join(self.path,"pairs")
+        os.makedirs(os.path.join(self.path,"fw_logs"),exist_ok=True)  # FireWorks qadapter logdir: create if missing, leave alone if present
         self.slab_path = os.path.join(self.pynta_run_directory,"slab.xyz")
         self.nslab = len(read(os.path.join(pynta_run_directory,"slab.xyz")))
         self.adsorbates_path = os.path.join(self.pynta_run_directory,"Adsorbates")
@@ -866,7 +867,20 @@ class CoverageDependence:
         else:
             launch_multiprocess(self.launchpad,self.fworker,"INFO","infinite",self.num_jobs,5)
     
-    def execute(self,run_pairs=True,run_active_learning=True,launch=False):
+    def execute(self,run_pairs=True,run_active_learning=True,launch=False,refresh_caches=True):
+        if refresh_caches:
+            # Remove cached reference/energy JSONs so they are rebuilt from the
+            # (presumably now-converged) isolated calculations. Guards against training on
+            # datums computed against a stale reference (e.g. an adsorbate guess still
+            # relaxing when the cache was first written). Pass refresh_caches=False to
+            # resume a run without rebuilding these.
+            stale_caches = [os.path.join(self.path,"ad_energy_dict.json"),
+                            os.path.join(self.path,"pairs_datums.json")]
+            stale_caches += [os.path.join(self.path,"coadmol_E_dict_"+c+".json") for c in self.coadsorbates]
+            for f in stale_caches:
+                if os.path.exists(f):
+                    logging.info("refresh_caches: removing stale cache {}".format(f))
+                    os.remove(f)
         if run_pairs:
             self.setup_pairs_calculations()
         if run_active_learning:
