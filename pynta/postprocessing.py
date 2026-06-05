@@ -1705,9 +1705,12 @@ def write_rmg_libraries(path,spc_dict,spc_dict_thermo,ts_dict,metal,facet):
     target_path = os.path.join(path, "reaction_library")
 
     if os.path.islink(target_path):
-        os.unlink(target_path)  # Safely remove the symbolic link
+        os.unlink(target_path)
     elif os.path.exists(target_path):
-        shutil.rmtree(target_path)  # Safely remove an actual directory
+        try:
+            shutil.rmtree(target_path)
+        except OSError:
+            os.unlink(target_path)
     
     os.makedirs(target_path)
     
