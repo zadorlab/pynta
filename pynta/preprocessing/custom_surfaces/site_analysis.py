@@ -487,32 +487,34 @@ def update_site_labels_by_graph_and_type(single_sites_lists, clusters, geom_indi
     Two sites receive the same label iff:
       1. Their local slab graphs are isomorphic (same cluster).
       2. They share the same "site" value.
+      3. They share the same "morphology" value.
 
-    N counts distinct graph clusters per site_type, starting from 0. Morphology
-    is ignored in the label so that "3fold_terrace" and "3fold_step" with
-    different graphs become "3fold0" and "3fold1" rather than
-    "3fold_terrace0" and "3fold_step0".
+    N counts distinct (cluster, site, morphology) triplets per site_type,
+    starting from 0.  Morphology is kept as a differentiator so that
+    "3fold_terrace" and "3fold_sc-tc" always produce distinct labels even
+    when they land in the same isomorphic cluster — but the morphology name
+    does NOT appear in the label string itself.
 
     Returns
     -------
     geom_to_label : dict  {geom_idx: label_string}
-    key_to_label  : dict  {(cluster_id, site): label_string}
+    key_to_label  : dict  {(cluster_id, site, morphology): label_string}
     """
-    def _first_site(geom_idx):
+    def _first_site_morph(geom_idx):
         for s in single_sites_lists[geom_idx]:
             if s.get("site"):
-                return s.get("site")
-        return None
+                return s.get("site"), s.get("morphology")
+        return None, None
 
     type_counters = {}   # site_val -> next available integer
-    key_to_label  = {}   # (cluster_id, site_val) -> label
+    key_to_label  = {}   # (cluster_id, site_val, morph_val) -> label
     geom_to_label = {}
 
     for cluster_id, members in enumerate(clusters.values()):
         for graph_idx in members:
             geom_idx = geom_indices[graph_idx]
-            site_val = _first_site(geom_idx)
-            key = (cluster_id, site_val)
+            site_val, morph_val = _first_site_morph(geom_idx)
+            key = (cluster_id, site_val, morph_val)
             if key not in key_to_label:
                 n = type_counters.get(site_val, 0)
                 type_counters[site_val] = n + 1
