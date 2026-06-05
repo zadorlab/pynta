@@ -642,7 +642,7 @@ class MolecularTSEstimate(FiretaskBase):
         reactant_names = rxn["reactant_names"]
         product_names = rxn["product_names"]
         rxn_name = rxn["reaction"]
-        family_name = rxn["reaction_family"]
+        family_name = rxn.get("reaction_family")
 
         mol_dict = {name: Molecule().from_adjacency_list(adj.replace("multiplicity -187","")) for name,adj in self["name_to_adjlist_dict"].items()}
 
@@ -715,7 +715,7 @@ class MolecularTSEstimate(FiretaskBase):
         
         tsstructs_out,constraint_lists,atom_bond_potential_lists,site_bond_potential_lists = generate_constraints_harmonic_parameters(
                                             unique_tsstructs,unique_tsmols,label_site_mappings,adsorbates,slab,reactants,
-                                             products,rxn["reaction_family"],template_reversed=(not forward),
+                                             products,rxn.get("reaction_family"),template_reversed=(not forward),
                                             ordered_names=species_names,reverse_names=reverse_names,
                                             mol_dict=mol_dict,gratom_to_molecule_atom_maps=gratom_to_molecule_atom_maps,
                                             gratom_to_molecule_surface_atom_maps=gratom_to_molecule_surface_atom_maps,
