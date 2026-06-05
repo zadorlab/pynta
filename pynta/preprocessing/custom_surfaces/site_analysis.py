@@ -399,6 +399,87 @@ def cluster_isomorphic_graphs(admols):
     return iso_mat, clusters
 
 
+def _classify_defect_sites_by_cn_and_graph(cn_geoms, cn_site_dicts):
+    """
+    Deduplicate CN>0 void-probe geometries for labeled_sites.json:
+
+      1. Group by coordination number (cn key in each site dict).
+      2. Within each CN group, cluster by RMG graph isomorphism.
+      3. In each isomorphic cluster keep the geometry whose probe is
+         closest to the median probe position of the cluster.
+
+    Returns
+    -------
+    rep_geoms : list[Atoms]
+    rep_sites : list[dict]   — site dicts with site="defect", morphology="defect"
+    """
+    if not cn_geoms:
+        return [], []
+
+    from collections import defaultdict
+
+    _NOBLE = {"He", "Ne", "Ar", "Kr", "Xe", "Rn"}
+
+    def _probe_pos(atoms):
+        for i, a in enumerate(atoms):
+            if a.symbol in _NOBLE:
+                return atoms.positions[i].copy()
+        return np.zeros(3)
+
+    # group frame indices by CN
+    cn_groups = defaultdict(list)
+    for k, s in enumerate(cn_site_dicts):
+        cn_groups[s.get("cn", 0)].append(k)
+
+    rep_geoms, rep_sites = [], []
+
+    for cn_val in sorted(cn_groups.keys()):
+        members = cn_groups[cn_val]
+
+        if len(members) == 1:
+            rep_geoms.append(cn_geoms[members[0]])
+            rep_sites.append(cn_site_dicts[members[0]])
+            continue
+
+        # build RMG graph for each frame in this CN group
+        admols = [generate_graph_slab_fixed(cn_geoms[i]) for i in members]
+
+        # union-find isomorphism clustering
+        parent = list(range(len(admols)))
+
+        def find(x):
+            while parent[x] != x:
+                parent[x] = parent[parent[x]]
+                x = parent[x]
+            return x
+
+        for i in range(len(admols)):
+            for j in range(i + 1, len(admols)):
+                if admols[i].is_isomorphic(admols[j], strict=True):
+                    ri, rj = find(i), find(j)
+                    if ri != rj:
+                        parent[rj] = ri
+
+        iso_clusters = defaultdict(list)
+        for i in range(len(admols)):
+            iso_clusters[find(i)].append(i)
+
+        for cluster_local in iso_clusters.values():
+            orig = [members[li] for li in cluster_local]
+            probe_positions = np.array([_probe_pos(cn_geoms[oi]) for oi in orig])
+            median_pos = np.median(probe_positions, axis=0)
+            dists = np.linalg.norm(probe_positions - median_pos, axis=1)
+            best = orig[int(np.argmin(dists))]
+
+            g = cn_geoms[best].copy()
+            s = dict(cn_site_dicts[best])
+            s["position"] = probe_positions[int(np.argmin(dists))].tolist()
+            rep_geoms.append(g)
+            rep_sites.append(s)
+
+    return rep_geoms, rep_sites
+
+
 def update_site_labels_by_graph_and_type(single_sites_lists, clusters, geom_indices):
     """
     Assign labels of the form {site_type}{N} (e.g. "3fold0", "3fold1", "bridge0").
@@ -406,37 +487,35 @@ def update_site_labels_by_graph_and_type(single_sites_lists, clusters, geom_indi
     Two sites receive the same label iff:
       1. Their local slab graphs are isomorphic (same cluster).
       2. They share the same "site" value.
-      3. They share the same "morphology" value.
 
-    N counts distinct graph clusters per (site_type, morphology) pair, starting
-    from 0. Sites with the same graph get the same N; different graphs increment N.
-    This preserves the original site-type name so downstream tools (e.g. Pynta)
-    can still distinguish site types while knowing which are truly equivalent.
+    N counts distinct graph clusters per site_type, starting from 0. Morphology
+    is ignored in the label so that "3fold_terrace" and "3fold_step" with
+    different graphs become "3fold0" and "3fold1" rather than
+    "3fold_terrace0" and "3fold_step0".
 
     Returns
     -------
     geom_to_label : dict  {geom_idx: label_string}
-    key_to_label  : dict  {(cluster_id, site, morphology): label_string}
+    key_to_label  : dict  {(cluster_id, site): label_string}
     """
-    def _first_site_morph(geom_idx):
+    def _first_site(geom_idx):
         for s in single_sites_lists[geom_idx]:
             if s.get("site"):
-                return s.get("site"), s.get("morphology")
-        return None, None
+                return s.get("site")
+        return None
 
-    type_counters = {}   # (site_val, morph_val) -> next available integer
-    key_to_label  = {}   # (cluster_id, site_val, morph_val) -> label
+    type_counters = {}   # site_val -> next available integer
+    key_to_label  = {}   # (cluster_id, site_val) -> label
     geom_to_label = {}
 
     for cluster_id, members in enumerate(clusters.values()):
         for graph_idx in members:
             geom_idx = geom_indices[graph_idx]
-            site_val, morph_val = _first_site_morph(geom_idx)
-            key = (cluster_id, site_val, morph_val)
+            site_val = _first_site(geom_idx)
+            key = (cluster_id, site_val)
             if key not in key_to_label:
-                type_key = (site_val, morph_val)
-                n = type_counters.get(type_key, 0)
-                type_counters[type_key] = n + 1
+                n = type_counters.get(site_val, 0)
+                type_counters[site_val] = n + 1
                 prefix = site_val if site_val else "site"
                 key_to_label[key] = f"{prefix}{n}"
             geom_to_label[geom_idx] = key_to_label[key]
@@ -1551,23 +1630,79 @@ def workflow_defect_vacancy_drop(
     write(traj_drop, drop_geoms)
     write(traj_maxcn, maxcn_geoms)
 
-    # apply graph-isomorphism labels before saving
-    # sites_lists_all: [{"geom_index": i, "sites": [site_dict]}, ...]
-    # classify_all_sites expects: [[site_dict], ...]
+    # ── collect all unique probe positions where CN > 0 ──────────────────────
+    # Replace the single maxcn entry with every distinct void position that has
+    # at least one slab neighbour — each becomes a candidate adsorption site.
+    _NOBLE = {"He", "Ne", "Ar", "Kr", "Xe", "Rn"}
+
+    def _probe_pos(atoms):
+        idx = [i for i, a in enumerate(atoms) if a.symbol in _NOBLE]
+        return atoms.positions[idx[0]].copy() if idx else None
+
+    n_terrace       = len(geom_all) - len(maxcn_geoms)
+    geom_all        = list(geom_all[:n_terrace])
+    sites_lists_all = [e for e in sites_lists_all if e["geom_index"] < n_terrace]
+
+    # ── step 1: collect unique CN>0 frames (coarse dedup by probe distance) ──
+    cn_geoms, cn_site_dicts = [], []
+    for f, m in zip(drop_geoms, drop_meta):
+        if m.get("cn", 0) <= 0:
+            continue
+        pos_f = _probe_pos(f)
+        if pos_f is None:
+            continue
+        keep = True
+        for u in cn_geoms:
+            pos_u = _probe_pos(u)
+            if pos_u is not None:
+                _, d = get_distances([pos_f], [pos_u], cell=f.cell, pbc=f.pbc)
+                if float(d) < 0.25:
+                    keep = False
+                    break
+        if not keep:
+            continue
+        cn_geoms.append(f.copy())
+        cn_site_dicts.append({
+            "site":            "defect",
+            "surface":         "CustomSurface",
+            "morphology":      "defect",
+            "cn":              int(m["cn"]),
+            "position":        pos_f.tolist(),
+            "normal":          [0.0, 0.0, 1.0],
+            "indices":         [],
+            "composition":     "null",
+            "subsurf_index":   "null",
+            "subsurf_element": "null",
+            "label":           f'cn{int(m["cn"])}',
+            "topology":        [],
+        })
+
+    # ── step 2: group by CN, compare graphs within each group, keep median ───
+    rep_geoms, rep_sites = _classify_defect_sites_by_cn_and_graph(
+        cn_geoms, cn_site_dicts
+    )
+
+    offset = len(geom_all)
+    for k, (g, s) in enumerate(zip(rep_geoms, rep_sites)):
+        geom_all.append(g)
+        sites_lists_all.append({"geom_index": offset + k, "sites": [s]})
+    # ── end collect ──────────────────────────────────────────────────────────
+
+    # build RMG graph for each geometry, cluster by isomorphism, assign labels
     single_sites_lists = [entry["sites"] for entry in sites_lists_all]
     admols, geom_indices = classify_all_sites(geom_all, single_sites_lists)
     _, clusters = cluster_isomorphic_graphs(admols)
     update_site_labels_by_graph_and_type(single_sites_lists, clusters, geom_indices)
-    # single_sites_lists updated in-place → sites_lists_all reflects new labels
 
-    # reduce to one representative per distinct label
+    # reduce to one representative per distinct label → labeled_sites.json
     rep_geoms, rep_site_lists = _reduce_to_representatives(geom_all, single_sites_lists)
     rep_data = [{"geom_index": i, "sites": s} for i, s in enumerate(rep_site_lists)]
     save_sites_to_json(rep_data, filename=labeled_sites_json)
 
     if verbose:
-        print(f"[defect] Total sites          : {len(sites_lists_all)}")
-        print(f"[defect] Distinct labels      : {len(rep_geoms)}")
+        print(f"[defect] CN>0 unique void sites : {len(cn_geoms)}")
+        print(f"[defect] Total sites            : {len(sites_lists_all)}")
+        print(f"[defect] Distinct labels        : {len(rep_geoms)}")
         print(f"Wrote: {traj_geom_all}")
         print(f"Wrote: {traj_drop}")
         print(f"Wrote: {traj_maxcn}")
