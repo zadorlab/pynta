@@ -1562,6 +1562,66 @@ def add_ad_to_site(admol,coad,site):
     
     return admolout
     
+def get_unique_adsorbate_admols(adsorbate_path, sites, site_adjacency, nslab,
+                                allowed_structure_site_structures=None, imag_freq_max=150.0,
+                                energy_cutoff=0.0):
+    """Return the unique stable 2D adsorbate structures (admols) for an adsorbate, one per
+    distinct stable binding-site arrangement.
+
+    This mirrors the multi-site adsorbate set the pair calculations explore
+    (get_unique_adsorbate_geometries). get_configurations only decorates a single base
+    structure with coadsorbates and never moves the adsorbate, so seeding it with every
+    unique adsorbate geometry is what lets the coverage candidate set contain
+    adsorbate-site arrangements that become favorable once a coadsorbate is present.
+
+    energy_cutoff : float or None
+        If set, only keep adsorbate geometries whose energy is within energy_cutoff (eV)
+        of the lowest-energy stable geometry. energy_cutoff=0.0 keeps only the single
+        lowest-energy site (the original single-base behavior); None keeps all unique
+        stable geometries.
+    """
+    with open(os.path.join(adsorbate_path, "info.json")) as f:
+        info = json.load(f)
+    mol = Molecule().from_adjacency_list(info["adjlist"])
+    atom_to_molecule_surface_atom_map = {int(k): int(v)
+                                         for k, v in info["gratom_to_molecule_surface_atom_map"].items()}
+
+    # vdW bond handling consistent with the base-structure generation in main.py
+    keep_binding_vdW_bonds = False
+    keep_vdW_surface_bonds = False
+    for bd in mol.get_all_edges():
+        if bd.order == 0 and (bd.atom1.is_surface_site() or bd.atom2.is_surface_site()):
+            keep_binding_vdW_bonds = True
+            m = mol.copy(deep=True)
+            b = m.get_bond(m.atoms[mol.atoms.index(bd.atom1)], m.atoms[mol.atoms.index(bd.atom2)])
+            m.remove_bond(b)
+            if len(m.split()) == 1:
+                keep_vdW_surface_bonds = True
+
+    geoms = get_unique_adsorbate_geometries(adsorbate_path, mol, sites, site_adjacency,
+                                            atom_to_molecule_surface_atom_map, nslab,
+                                            imag_freq_max=imag_freq_max)
+
+    # Optionally restrict to geometries within energy_cutoff (eV) of the lowest. The
+    # geometries share the same slab, so differences in total potential energy are
+    # meaningful relative site energies.
+    if energy_cutoff is not None and geoms:
+        energies = [g.get_potential_energy() for g in geoms]
+        emin = min(energies)
+        geoms = [g for g, e in zip(geoms, energies) if e - emin <= energy_cutoff]
+
+    admols = []
+    for geo in geoms:
+        try:
+            st, _, _ = generate_adsorbate_2D(geo, sites, site_adjacency, nslab, max_dist=np.inf,
+                                             allowed_structure_site_structures=allowed_structure_site_structures,
+                                             keep_binding_vdW_bonds=keep_binding_vdW_bonds,
+                                             keep_vdW_surface_bonds=keep_vdW_surface_bonds)
+        except Exception:
+            continue
+        admols.append(st)
+    return admols
+
 def get_configurations(admol, coad, coad_stable_sites, tree_interaction_classifier=None, coadmol_stability_dict=None, unstable_groups=None,
                        tree_interaction_regressor=None, tree_atom_regressor=None, coadmol_E_dict=None, energy_tol=None, max_coadsorbates=None):
     coad_stable_sites_set = set(tuple(x) if not isinstance(x, str) else x for x in coad_stable_sites)
