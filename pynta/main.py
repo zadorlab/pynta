@@ -496,7 +496,8 @@ class CoverageDependence:
                  max_dist=3.0,frozen_layers=2,fmaxopt=0.05,Ncalc_per_iter=6,TS_opt_software_kwargs=None,launchpad_path=None,
                  fworker_path=None,queue=False,njobs_queue=0,reset_launchpad=False,queue_adapter_path=None,
                  num_jobs=25,surrogate_metal=None,concern_energy_tol=None,max_iters=np.inf,imag_freq_max=150.0,max_coadsorbates=None,
-                 sidt_isolated_delta_model=None,sidt_covdep_delta_model=None,coad_selection_E_diff_tol=0.1,iter=0,ts_frac=None):
+                 sidt_isolated_delta_model=None,sidt_covdep_delta_model=None,coad_selection_E_diff_tol=0.1,iter=0,ts_frac=None,
+                 adsorbate_site_energy_cutoff=0.0):
         self.path = path
         self.metal = metal
         self.repeats = repeats
@@ -536,6 +537,7 @@ class CoverageDependence:
         self.sidt_covdep_delta_model = sidt_covdep_delta_model
         self.coad_selection_E_diff_tol = coad_selection_E_diff_tol
         self.ts_frac = ts_frac
+        self.adsorbate_site_energy_cutoff = adsorbate_site_energy_cutoff
 
         self.collate_isolated_structures()
         
@@ -852,7 +854,8 @@ class CoverageDependence:
                                 self.coad_stable_sites, self.software, self.software_kwargs, self.software_kwargs_TS, self.freeze_ind, self.fmaxopt,
                                 parents=self.fws[:], max_iters=self.max_iters,
                                 Ncalc_per_iter=self.Ncalc_per_iter,iter=self.iter,concern_energy_tol=self.concern_energy_tol,ignore_errors=True,max_coadsorbates=self.max_coadsorbates,
-                                sidt_isolated_delta_model=self.sidt_isolated_delta_model,sidt_covdep_delta_model=self.sidt_covdep_delta_model,ts_frac=self.ts_frac)
+                                sidt_isolated_delta_model=self.sidt_isolated_delta_model,sidt_covdep_delta_model=self.sidt_covdep_delta_model,ts_frac=self.ts_frac,
+                                adsorbate_site_energy_cutoff=self.adsorbate_site_energy_cutoff)
 
         self.fws.append(fw)
     

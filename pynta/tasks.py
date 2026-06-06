@@ -22,7 +22,7 @@ from pynta.transitionstate import get_unique_optimized_adsorbates,determine_TS_c
 from pynta.utils import *
 from pynta.calculator import run_harmonically_forced, map_harmonically_forced, add_sella_constraint
 from pynta.mol import *
-from pynta.coveragedependence import get_unstable_pairs, mol_to_atoms, get_configs_for_calculation, get_cov_energies_configs_concern_tree, get_configurations, train_sidt_cov_dep_regressor, process_calculation
+from pynta.coveragedependence import get_unstable_pairs, mol_to_atoms, get_configs_for_calculation, get_cov_energies_configs_concern_tree, get_configurations, get_unique_adsorbate_admols, train_sidt_cov_dep_regressor, process_calculation
 from pynta.geometricanalysis import *
 from pynta.adsorbate import construct_initial_guess_files
 from pynta.postprocessing import postprocess, write_rmg_libraries
@@ -1281,13 +1281,14 @@ def train_covdep_model_firework(path,admol_name_path_dict,admol_name_structure_d
                                 coad_stable_sites, software, software_kwargs, software_kwargs_TS, freeze_ind,
                                 fmaxopt, parents=[],Ncalc_per_iter=6,iter=0,max_iters=6,concern_energy_tol=None,
                                 ignore_errors=False, max_coadsorbates=None,sidt_isolated_delta_model=None,
-                                sidt_covdep_delta_model=None,ts_frac=None):
+                                sidt_covdep_delta_model=None,ts_frac=None,adsorbate_site_energy_cutoff=0.0):
     d = {"path": path, "admol_name_path_dict": admol_name_path_dict, "admol_name_structure_dict": {k : v.to_adjacency_list() for k,v in admol_name_structure_dict.items()},
          "sites": sites, "site_adjacency": {str(k):v for k,v in site_adjacency.items()}, "pynta_dir": pynta_dir, "metal": metal, "facet": facet, "slab_path": slab_path,
          "calculation_directories": calculation_directories, "coadnames": coadnames, "coad_stable_sites": coad_stable_sites,
         "Ncalc_per_iter": Ncalc_per_iter, "iter": iter, "max_iters": max_iters, "software": software, "software_kwargs": software_kwargs, "software_kwargs_TS": software_kwargs_TS, "freeze_ind": freeze_ind,
         "fmaxopt": fmaxopt, "concern_energy_tol": concern_energy_tol, "ignore_errors": ignore_errors, "max_coadsorbates": max_coadsorbates,
-        "sidt_isolated_delta_model": sidt_isolated_delta_model, "sidt_covdep_delta_model": sidt_covdep_delta_model, "ts_frac": ts_frac}
+        "sidt_isolated_delta_model": sidt_isolated_delta_model, "sidt_covdep_delta_model": sidt_covdep_delta_model, "ts_frac": ts_frac,
+        "adsorbate_site_energy_cutoff": adsorbate_site_energy_cutoff}
     t1 = TrainCovdepModelTask(d)
     return Firework([t1],parents=parents,name="Training Model "+str(iter),spec={"_allow_fizzled_parents":True, "_priority": 4})
 
@@ -1296,12 +1297,13 @@ class TrainCovdepModelTask(FiretaskBase):
     required_params = ["path","admol_name_path_dict","admol_name_structure_dict","sites","site_adjacency", "pynta_dir", "metal", "facet",
                        "slab_path", "calculation_directories", "coadnames", "coad_stable_sites", "Ncalc_per_iter", "iter", "max_iters", "software", 
                        "software_kwargs", "software_kwargs_TS", "freeze_ind", "fmaxopt"]
-    optional_params = ["concern_energy_tol","ignore_errors", "max_coadsorbates","sidt_isolated_delta_model","sidt_covdep_delta_model","ts_frac"]
+    optional_params = ["concern_energy_tol","ignore_errors", "max_coadsorbates","sidt_isolated_delta_model","sidt_covdep_delta_model","ts_frac","adsorbate_site_energy_cutoff"]
     def run_task(self, fw_spec):
         path = self["path"]
         admol_name_path_dict = self["admol_name_path_dict"]
         admol_name_structure_dict = {k: Molecule().from_adjacency_list(v,check_consistency=False) for k,v in self["admol_name_structure_dict"].items()}
         max_coadsorbates = self["max_coadsorbates"] if "max_coadsorbates" in self.keys() else None
+        adsorbate_site_energy_cutoff = self["adsorbate_site_energy_cutoff"] if "adsorbate_site_energy_cutoff" in self.keys() else 0.0
         sites = []
         for site in self["sites"]:
             site["normal"] = np.array(site["normal"])
@@ -1442,9 +1444,29 @@ class TrainCovdepModelTask(FiretaskBase):
             os.makedirs(os.path.join(path,"Configurations"))
             for coadname in coadnames:
                 for admol_name,admol in admol_name_structure_dict.items():
-                    configs = get_configurations(admol, coad_simples[coadname], coad_stable_sites[coadname],  coadmol_stability_dict=coadmol_stability_dicts[coadname], unstable_groups=unstable_pairs,
-                        coadmol_E_dict=coadmol_E_dicts[coadname], max_coadsorbates=max_coadsorbates)
-                    
+                    # Seed get_configurations with every unique stable adsorbate geometry
+                    # (the same multi-site set the pairs explore), not just the single
+                    # lowest-energy base. Without this the candidate set fixes the adsorbate
+                    # at one site and only varies coadsorbates, so adsorbate-site
+                    # arrangements that become favorable under coverage are never enumerated.
+                    # TSs have a single geometry, so they keep their single base structure.
+                    ad_dir = os.path.join(pynta_dir, "Adsorbates", admol_name)
+                    if os.path.isdir(ad_dir):
+                        base_admols = get_unique_adsorbate_admols(ad_dir, sites, site_adjacency, nslab,
+                            allowed_structure_site_structures=allowed_structure_site_structures,
+                            energy_cutoff=adsorbate_site_energy_cutoff)
+                        if not base_admols:
+                            base_admols = [admol]
+                    else:
+                        base_admols = [admol]
+
+                    # concatenate across base structures; duplicate configs are harmless
+                    # (the per-coverage minimum is unaffected) and avoids an O(n^2) dedup
+                    configs = []
+                    for base in base_admols:
+                        configs.extend(get_configurations(base, coad_simples[coadname], coad_stable_sites[coadname],  coadmol_stability_dict=coadmol_stability_dicts[coadname], unstable_groups=unstable_pairs,
+                            coadmol_E_dict=coadmol_E_dicts[coadname], max_coadsorbates=max_coadsorbates))
+
                     with open(os.path.join(path,"Configurations",admol_name+"_"+coadname+".json"),'w') as f:
                         json.dump([x.to_adjacency_list() for x in configs],f)
         
