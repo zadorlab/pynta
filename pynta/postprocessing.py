@@ -1360,7 +1360,8 @@ def get_kinetics(path,adsorbates_path,metal,facet,slab,sites,site_adjacency,nsla
         config_dict = dict()
         for spc_name in np.unique(np.array(info["species_names"]+info["reverse_names"])):
             spcs = get_species(os.path.join(adsorbates_path,spc_name),adsorbates_path,metal,facet,slab,sites,site_adjacency,nslab,c_ref=c_ref,o_ref=o_ref,h_ref=h_ref,n_ref=n_ref)
-            minspc = spcs[min({k:v for k,v in spcs.items() if v.valid},key=lambda x: spcs[x].energy)]
+            #minspc = spcs[min({k:v for k,v in spcs.items() if v.valid},key=lambda x: spcs[x].energy)]
+            minspc = spcs[min({k:v for k,v in spcs.items()},key=lambda x: spcs[x].energy)]
             config_dict[spc_name] = minspc
 
 
