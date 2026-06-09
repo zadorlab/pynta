@@ -1710,7 +1710,10 @@ def write_rmg_libraries(path,spc_dict,spc_dict_thermo,ts_dict,metal,facet):
         try:
             shutil.rmtree(target_path)
         except OSError:
-            os.unlink(target_path)
+            if os.path.islink(target_path):
+                os.unlink(target_path)
+            else:
+                raise
     
     os.makedirs(target_path)
     
