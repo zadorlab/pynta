@@ -249,7 +249,7 @@ def write_sites_json(single_sites_lists, clusters, filename="sites_graph.json"):
                 "surface": s.get("surface", "null"),
                 "morphology": s.get("morphology", "null"),
                 "position": to_py(s.get("position", [])),
-                "normal": to_py(s.get("normal", [])),
+                "normal": to_py(s.get("normal") or [0.0, 0.0, 1.0]),
                 "indices": to_py(s.get("indices", [])),
                 "composition": s.get("composition", "null"),
                 "subsurf_index": to_py(s.get("subsurf_index", "null")),
