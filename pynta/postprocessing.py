@@ -1703,6 +1703,10 @@ def write_rmg_libraries(path,spc_dict,spc_dict_thermo,ts_dict,metal,facet):
     #os.makedirs(os.path.join(path,"reaction_library"))
     
     target_path = os.path.join(path, "reaction_library")
+    
+    print(f"target_path: {target_path}")
+    print(f"islink: {os.path.islink(target_path)}")
+    print(f"exists: {os.path.exists(target_path)}")
 
     if os.path.islink(target_path):
         os.unlink(target_path)
