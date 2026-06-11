@@ -19,6 +19,7 @@ from pynta.coveragedependence import mol_to_atoms, process_calculation
 from pysidt.sidt import *
 import logging 
 from molecule.exceptions import AtomTypeError
+import glob 
 
 eV_to_Jmol = 9.648328e4
 
@@ -1391,6 +1392,7 @@ def get_kinetics(path,adsorbates_path,metal,facet,slab,sites,site_adjacency,nsla
         config_dict = dict()
         for spc_name in np.unique(np.array(info["species_names"]+info["reverse_names"])):
             spcs = get_species(os.path.join(adsorbates_path,spc_name),adsorbates_path,metal,facet,slab,sites,site_adjacency,nslab,c_ref=c_ref,o_ref=o_ref,h_ref=h_ref,n_ref=n_ref,delta_sidt=delta_sidt)
+#            minspc = spcs[min({k:v for k,v in spcs.items()},key=lambda x: spcs[x].energy)]
             minspc = spcs[min({k:v for k,v in spcs.items() if v.valid},key=lambda x: spcs[x].energy)]
             config_dict[spc_name] = minspc
 
@@ -2024,3 +2026,104 @@ def analyze_covdep_sample_data(config_name,coad_name,Ncoad_energy_dict,path,pynt
                 config_Es.append(None)
 
     return configs_3D,config_Es,config_E_correction,config_xyzs,config_mols
+
+
+def write_all_kinetics(path, metal, facet, slab, sites, site_adjacency,
+                       nslab, site_density, c_ref=0.0, o_ref=0.0,
+                       h_ref=0.0, n_ref=0.0, log_name="rate_coefficients.log",
+                       ts_glob="TS*", verbose=True, **get_kinetics_kwargs):
+    """Collect valid kinetics across all TS directories under `path`.
+
+    Runs get_kinetics on every directory matching `ts_glob`, keeps the
+    valid configurations, writes a consolidated log, and returns the
+    aggregated results. TS directories whose get_kinetics call raises a
+    ValueError (e.g. a reference adsorbate with no valid configurations)
+    are skipped rather than aborting the whole run.
+
+    Parameters
+    ----------
+    path : str
+        Run directory containing the TS* subdirectories and Adsorbates/.
+    log_name : str
+        Name of the consolidated log written into `path`.
+    ts_glob : str
+        Glob pattern for the transition-state directories.
+    verbose : bool
+        If True, print a summary table and the list of skipped TS dirs.
+    **get_kinetics_kwargs
+        Forwarded to get_kinetics (e.g. delta_sidt,
+        allowed_structure_site_structures).
+
+    Returns
+    -------
+    all_valid_kinetics : dict
+        {ts_name: {index: kin}} for every TS with >=1 valid config.
+    min_kin_index : dict
+        {ts_name: index of the lowest-barrier valid configuration}.
+    skipped : list
+        TS names skipped because get_kinetics raised a ValueError.
+    """
+    adsorbates_path = os.path.join(path, "Adsorbates")
+
+    all_valid_kinetics = {}
+    min_kin_index = {}
+    skipped = []
+
+    ts_dirs = sorted(glob.glob(os.path.join(path, ts_glob)))
+    log_path = os.path.join(path, log_name)
+
+    with open(log_path, "w") as f:
+        for ts_path in ts_dirs:
+            ts_name = os.path.basename(ts_path)
+
+            try:
+                kinetics = get_kinetics(
+                    ts_path, adsorbates_path, metal, facet, slab, sites,
+                    site_adjacency, nslab, site_density,
+                    c_ref=c_ref, o_ref=o_ref, h_ref=h_ref, n_ref=n_ref,
+                    **get_kinetics_kwargs,
+                )
+            except ValueError as e:
+                if verbose:
+                    print("Skipping {}: {}".format(ts_name, e))
+                skipped.append(ts_name)
+                continue
+
+            valid = {ind: kin for ind, kin in kinetics.items() if kin.valid}
+            if not valid:
+                continue
+            all_valid_kinetics[ts_name] = valid
+
+            minkinind = min(valid, key=lambda i: valid[i].barrier_f)
+            min_kin_index[ts_name] = minkinind
+
+            f.write("=" * 60 + "\n")
+            f.write("TS: {}\n".format(ts_name))
+            f.write("=" * 60 + "\n")
+            for ind, kin in valid.items():
+                marker = "  <-- lowest barrier" if ind == minkinind else ""
+                f.write("Index: {}{}\n".format(ind, marker))
+                f.write("Reaction: {}\n".format(kin.reaction_str))
+                f.write("arr_f: {}\n".format(repr(kin.arr_f)))
+                f.write("arr_r: {}\n".format(repr(kin.arr_r)))
+                f.write("\n")
+
+    if verbose:
+        print("Saved kinetics log to {}".format(log_path))
+        print()
+        print("{:<24} {:>8} {:>10} {:>14}".format(
+            "TS", "n_valid", "min_index", "min_barrier"))
+        print("-" * 58)
+        for ts_name, valid in all_valid_kinetics.items():
+            mi = min_kin_index[ts_name]
+            print("{:<24} {:>8} {:>10} {:>14.4g}".format(
+                ts_name, len(valid), mi, valid[mi].barrier_f))
+        print("-" * 58)
+        print("{:<24} {:>8}".format(
+            "TOTAL", sum(len(v) for v in all_valid_kinetics.values())))
+        if skipped:
+            print()
+            print("Skipped {} TS dir(s): {}".format(
+                len(skipped), ", ".join(skipped)))
+
+    return all_valid_kinetics, min_kin_index, skipped
