@@ -464,11 +464,18 @@ def map_harmonically_forced(input):
             d = {"harmonic energy": Eharm, "harmonic force": Fharm.tolist(),"atom_bond_potentials":atom_bond_potentials,
                  "site_bond_potentials":s_bond_potentials,"molecule_to_atom_maps":molecule_to_atom_maps,"ase_to_mol_num":ase_to_mol_num}
             json.dump(d,f)
-        for container in (sp.arrays, sp.info):
-            for key in list(container.keys()):
-                if isinstance(container[key], list):
-                    container[key] = np.array(container[key])
-        write(os.path.join(path,str(j),"xtb.xyz"),sp)
+        # Write a geometry-only checkpoint. Rebuild a clean Atoms (numbers/positions/cell/pbc
+        # + tags + constraints) so ASE's extxyz writer cannot choke on a stray list-valued
+        # per-atom column (from arrays/info/calc results); the harmonic energy and forces are
+        # saved in harm.json above and returned below. Downstream consumers (read(xyz) in the
+        # optimize/collect tasks) only use positions/numbers/cell and rebuild constraints from
+        # the firework spec, so dropping info/extra arrays here is safe.
+        sp_out = Atoms(numbers=sp.get_atomic_numbers(), positions=sp.get_positions(),
+                       cell=sp.cell, pbc=sp.pbc)
+        sp_out.set_tags(sp.get_tags())
+        if sp.constraints:
+            sp_out.set_constraint(sp.constraints)
+        write(os.path.join(path,str(j),"xtb.xyz"),sp_out)
         xyz = os.path.join(path,str(j),"xtb.xyz")
         return (sp.todict(),Eharm,xyz)
     elif sp:
