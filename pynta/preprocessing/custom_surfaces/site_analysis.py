@@ -1931,11 +1931,10 @@ def visualize_labeled_sites(
         _, site_val, morph_val = label_to_key[label]
         print(f"  {label:<12} {site_val:<14} {morph_val}")
 
-# Add this to site_analysis.py (it reuses classify_all_sites + cluster_isomorphic_graphs
-# that already live in that module). Then call it from a new notebook cell after Cell 12.
-
-# Add this to site_analysis.py (it reuses classify_all_sites + cluster_isomorphic_graphs
-# already in that module). Call it from a new notebook cell after Cell 12.
+# Add to site_analysis.py (reuses classify_all_sites + cluster_isomorphic_graphs).
+# Shape = site type (ontop=circle, bridge=square, 3fold=triangle);
+# colour = equivalence (grey=unique, coloured+number=shared via graph isomorphism).
+# Legends sit at the bottom in two rows, like the ACAT scatter plots.
 
 def plot_site_equivalence_xy(
     labeled_sites_json="labeled_sites.json",
@@ -1944,29 +1943,20 @@ def plot_site_equivalence_xy(
     clusters=None,
     geom_indices=None,
     single_sites_lists=None,
+    title="All sites — same vs different (graph isomorphism)",
     save_path="site_equivalence.png",
 ):
     """
-    Single-panel 'same vs different' map for all site types at once.
+    Single-panel same-vs-different map.
+      grey marker            = unique environment (different from every other
+                               site of its type)
+      coloured marker        = shares its environment with same-shape markers
+                               of the same colour (these are 'the same' site)
+    'Same' = isomorphic slab+probe graphs (classify_all_sites ->
+    cluster_isomorphic_graphs). Pass clusters / geom_indices /
+    single_sites_lists to reuse values from visualize_labeled_sites.
 
-    Marker SHAPE encodes site type; COLOUR encodes equivalence:
-        grey marker            = unique environment (different from every other
-                                 site of its type)
-        coloured+numbered      = shares its environment with the same-coloured
-                                 markers of the same shape (these are 'the same'
-                                 site); the number is the graph-cluster id.
-
-    'Same' is decided by the SAME graph-isomorphism clustering your pipeline
-    already uses (classify_all_sites -> cluster_isomorphic_graphs): two sites
-    are the same iff their slab+probe graphs are isomorphic.
-
-    Only site types present in `site_types` AND in the data are drawn. Pass
-    clusters / geom_indices / single_sites_lists to reuse values from
-    visualize_labeled_sites and skip recomputation.
-
-    Returns
-    -------
-    report : dict  {site_type: {"n_sites", "n_distinct", "duplicate_groups"}}
+    Returns report dict {site_type: {"n_sites","n_distinct","duplicate_groups"}}.
     """
     import json
     from collections import defaultdict, Counter
@@ -1979,13 +1969,11 @@ def plot_site_equivalence_xy(
 
     MARKER = {"ontop": "o", "bridge": "s", "3fold": "^", "4fold": "D", "defect": "X"}
 
-    # ── load sites if not supplied ────────────────────────────────────────────
     if single_sites_lists is None:
         with open(labeled_sites_json) as f:
             raw = json.load(f)
         single_sites_lists = [entry["sites"] for entry in raw]
 
-    # ── derive clusters via the existing graph pipeline if not supplied ───────
     if clusters is None or geom_indices is None:
         if traj_file is not None:
             geoms = read(traj_file, index=":")
@@ -1997,15 +1985,13 @@ def plot_site_equivalence_xy(
         admols, geom_indices = classify_all_sites(geoms, single_sites_lists)
         _, clusters = cluster_isomorphic_graphs(admols)
 
-    # graph_idx -> cluster_id, then geom_idx -> cluster_id
     graph_to_cluster = {}
     for cid, members in enumerate(clusters.values()):
         for graph_idx in members:
             graph_to_cluster[graph_idx] = cid
     geom_to_cluster = {geom_indices[gi]: cid for gi, cid in graph_to_cluster.items()}
 
-    # representative site per geom -> (type, label, x, y, cluster_id)
-    records = []
+    records = []  # (type, label, x, y, cluster_id)
     for geom_idx, sites in enumerate(single_sites_lists):
         cid = geom_to_cluster.get(geom_idx)
         if cid is None:
@@ -2017,15 +2003,11 @@ def plot_site_equivalence_xy(
                 break
 
     present = [t for t in site_types if any(r[0] == t for r in records)]
-
-    # count members per (type, cluster) so 'shared' = same type + same cluster, n>1
     tc_counts = Counter((t, cid) for (t, _, _, _, cid) in records)
-
     GROUP_COLORS = (list(plt.cm.tab10.colors) + list(plt.cm.Set2.colors)
                     + list(plt.cm.tab20.colors))
 
-    # ── plot ──────────────────────────────────────────────────────────────────
-    fig, ax = plt.subplots(figsize=(8, 7.5))
+    fig, ax = plt.subplots(figsize=(7.5, 7))
     gi = 0
     group_color = {}
     for (t, lab, x, y, cid) in records:
@@ -2033,41 +2015,38 @@ def plot_site_equivalence_xy(
             continue
         mk = MARKER.get(t, "P")
         if tc_counts[(t, cid)] == 1:
-            ax.scatter(x, y, marker=mk, color="#d9d9d9", s=110,
-                       edgecolors="#999", linewidths=0.8, zorder=2)
+            ax.scatter(x, y, marker=mk, color="#d9d9d9", s=45,
+                       alpha=0.9, edgecolors="none", zorder=2)
         else:
             if (t, cid) not in group_color:
                 group_color[(t, cid)] = GROUP_COLORS[gi % len(GROUP_COLORS)]
                 gi += 1
-            ax.scatter(x, y, marker=mk, color=group_color[(t, cid)], s=150,
-                       edgecolors="k", linewidths=1.4, zorder=3)
-            ax.text(x, y, str(cid), fontsize=6.5, ha="center", va="center", zorder=4)
+            ax.scatter(x, y, marker=mk, color=group_color[(t, cid)], s=45,
+                       alpha=0.95, edgecolors="none", zorder=3)
 
     ax.set_xlabel("x (Å)"); ax.set_ylabel("y (Å)")
     ax.set_aspect("equal")
     ax.spines[["top", "right"]].set_visible(False)
+    ax.set_title(title, fontsize=12, fontweight="bold")
 
-    shape_legend = [mlines.Line2D([], [], marker=MARKER.get(t, "P"), color="w",
-                    markerfacecolor="#bbb", markeredgecolor="#555", markersize=11, label=t)
-                    for t in present]
-    state_legend = [
+    # ── two bottom rows: site type, then equivalence (like ACAT plots) ────────
+    type_handles = [mlines.Line2D([], [], marker=MARKER.get(t, "P"), color="w",
+                    markerfacecolor="#bbb", markeredgecolor="#555",
+                    markersize=9, label=t) for t in present]
+    state_handles = [
         mlines.Line2D([], [], marker="o", color="w", markerfacecolor="#d9d9d9",
-                      markeredgecolor="#999", markersize=11, label="unique (different)"),
+                      markeredgecolor="#999", markersize=9, label="unique (different)"),
         mlines.Line2D([], [], marker="o", color="w", markerfacecolor="#e0709a",
-                      markeredgecolor="k", markersize=11, label="shared (same as #-match)"),
+                      markeredgecolor="none", markersize=9, label="shared (same colour = same site)"),
     ]
-    leg1 = ax.legend(handles=shape_legend, title="site type", loc="lower center",
-                     bbox_to_anchor=(0.5, -0.05), frameon=False)
-    ax.add_artist(leg1)
-    ax.legend(handles=state_legend, title="equivalence", loc="lower center",
-              bbox_to_anchor=(1.01, 0.55), frameon=False)
-    ax.set_title("All sites — same vs different (graph isomorphism)",
-                 fontsize=12, fontweight="bold")
+    fig.legend(handles=type_handles, loc="lower center", ncol=len(present),
+               frameon=False, fontsize=10, bbox_to_anchor=(0.5, -0.02))
+    fig.legend(handles=state_handles, loc="lower center", ncol=2,
+               frameon=False, fontsize=10, bbox_to_anchor=(0.5, -0.08))
     plt.tight_layout()
     plt.savefig(save_path, dpi=150, bbox_inches="tight")
     plt.show()
 
-    # ── report + verdict ───────────────────────────────────────────────────────
     report = {}
     for t in present:
         by_cluster = defaultdict(list)
