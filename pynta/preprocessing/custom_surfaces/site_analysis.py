@@ -2035,9 +2035,9 @@ def plot_site_equivalence_xy(
                     markersize=9, label=t) for t in present]
     state_handles = [
         mlines.Line2D([], [], marker="o", color="w", markerfacecolor="#d9d9d9",
-                      markeredgecolor="#999", markersize=9, label="unique (different)"),
+                      markeredgecolor="#999", markersize=12, label="unique (different)"),
         mlines.Line2D([], [], marker="o", color="w", markerfacecolor="#e0709a",
-                      markeredgecolor="none", markersize=9, label="shared (same colour = same site)"),
+                      markeredgecolor="none", markersize=12, label="shared (same colour = same site)"),
     ]
     fig.legend(handles=type_handles, loc="lower center", ncol=len(present),
                frameon=False, fontsize=10, bbox_to_anchor=(0.5, -0.02))
@@ -2069,3 +2069,67 @@ def plot_site_equivalence_xy(
     print("=" * 60)
     print(f"Saved: {save_path}")
     return report
+
+# Add to site_analysis.py. Call from the notebook as:
+#   sa.scatter_sites(all_sites, xyz_path=xyz_path)
+# Same visual format as plot_site_equivalence_xy (markers, size, bottom legend).
+
+def scatter_sites(site_list, label=None, xyz_path=None, save_path="site_positions.png",
+                  show=True):
+    """
+    Plot all sites in the x-y plane; shape + colour encode site type
+    (ontop=circle, bridge=square, 3fold=triangle, ...), matching
+    plot_site_equivalence_xy.
+
+    Accepts either a flat list of site dicts (sites.json) or the nested
+    [{geom_index, sites:[...]}, ...] form (labeled_sites.json) — it flattens
+    automatically. Title falls back to `label`, then `xyz_path`, then a default.
+    """
+    import matplotlib.pyplot as plt
+    import matplotlib.lines as mlines
+
+    def _stype(name):
+        return (name or "").rstrip("0123456789")   # 'bridge00' or plain 'bridge'
+
+    # flatten nested labeled_sites.json entries if present
+    flat = []
+    for item in site_list:
+        if isinstance(item, dict) and "sites" in item and "position" not in item:
+            flat.extend(item["sites"])
+        else:
+            flat.append(item)
+
+    color_map = {
+        "ontop": "#4C72B0", "bridge": "#55A868", "3fold": "#CCB974",
+        "4fold": "#64B5CD", "defect": "#C44E52",
+    }
+    marker_map = {
+        "ontop": "o", "bridge": "s", "3fold": "^", "4fold": "D", "defect": "X",
+    }
+    present = [k for k in color_map if any(_stype(s.get("site", "")) == k for s in flat)]
+
+    fig, ax = plt.subplots(figsize=(7.5, 7))
+    for site in flat:
+        t = _stype(site.get("site", ""))
+        x, y = site["position"][0], site["position"][1]
+        ax.scatter(x, y, color=color_map.get(t, "#999999"),
+                   marker=marker_map.get(t, "o"), s=45, alpha=0.9, edgecolors="none")
+
+    ax.set_title(label or xyz_path or "Site positions (x-y plane)",
+                 fontsize=12, fontweight="bold")
+    ax.set_xlabel("x (Å)"); ax.set_ylabel("y (Å)")
+    ax.set_aspect("equal")
+    ax.spines[["top", "right"]].set_visible(False)
+
+    legend_handles = [
+        mlines.Line2D([], [], marker=marker_map[k], color="w", markerfacecolor=color_map[k],
+                      markeredgecolor="none", markersize=9, label=k)
+        for k in present
+    ]
+    fig.legend(handles=legend_handles, loc="lower center", ncol=max(len(present), 1),
+               frameon=False, fontsize=10, bbox_to_anchor=(0.5, -0.05))
+    plt.tight_layout()
+    plt.savefig(save_path, dpi=150, bbox_inches="tight")
+    if show:
+        plt.show()
+    print(f"Saved: {save_path}")
