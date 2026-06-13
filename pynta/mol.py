@@ -713,8 +713,20 @@ def get_bond_lengths_sites(mol,ads,atom_map,surf_atom_map,nslab,sites,site_adjac
 def get_name(mol):
     try:
         return mol.to_smiles()
-    except:
-        return mol.to_adjacency_list().replace("\n"," ")[:-1].replace(' ','')
+    except Exception:
+        # SMILES cannot encode a van der Waals (order-0) bond, so to_smiles() fails for
+        # vdW-bound species even with a working backend. Drop the vdW contacts (and any
+        # now-isolated surface sites) and name the remaining fragment(s) by SMILES, tagged
+        # "-vdW", instead of dumping the full adjacency list.
+        try:
+            m = mol.copy(deep=True)
+            for bd in [b for b in m.get_all_edges() if b.is_van_der_waals()]:
+                m.remove_bond(bd)
+            for a in [a for a in m.atoms if a.is_surface_site() and len(a.bonds) == 0]:
+                m.remove_atom(a)
+            return "+".join(sorted(f.to_smiles() for f in m.split())) + "-vdW"
+        except Exception:
+            return mol.to_adjacency_list().replace("\n"," ")[:-1].replace(' ','')
 
 
 def remove_slab(mol,remove_slab_bonds=False,update_atomtypes=True,clear_site_info=False):
