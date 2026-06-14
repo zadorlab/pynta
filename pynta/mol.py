@@ -715,16 +715,36 @@ def get_name(mol):
         return mol.to_smiles()
     except Exception:
         # SMILES cannot encode a van der Waals (order-0) bond, so to_smiles() fails for
-        # vdW-bound species even with a working backend. Drop the vdW contacts (and any
-        # now-isolated surface sites) and name the remaining fragment(s) by SMILES, tagged
-        # "-vdW", instead of dumping the full adjacency list.
+        # vdW-bound species even with a working backend. Represent each vdW contact as a
+        # dative single bond (the binding atom donates a lone pair to the surface) so the
+        # binding atom(s) are preserved in the name -- this distinguishes e.g. HONH2 bound
+        # via N vs via O, and handles bidentate (one dative bond per contact) -- then tag
+        # "-vdW". Names come out charged but unique and SMILES-valid, e.g. "[NH3+][Pt]-vdW".
+        # RMG cannot perceive an atomtype for the metal-coordinated charged atom (a benign
+        # error), so logging is silenced across the conversion. Falls back to the adjacency
+        # list only if even that fails.
+        import logging as _logging
         try:
             m = mol.copy(deep=True)
             for bd in [b for b in m.get_all_edges() if b.is_van_der_waals()]:
-                m.remove_bond(bd)
-            for a in [a for a in m.atoms if a.is_surface_site() and len(a.bonds) == 0]:
-                m.remove_atom(a)
-            return "+".join(sorted(f.to_smiles() for f in m.split())) + "-vdW"
+                site = bd.atom1 if bd.atom1.is_surface_site() else bd.atom2
+                other = bd.atom2 if bd.atom1.is_surface_site() else bd.atom1
+                bd.set_order_str("S")
+                if other.lone_pairs > 0:
+                    other.lone_pairs -= 1
+                    other.charge += 1
+                    site.charge -= 1
+            _prev = _logging.root.manager.disable
+            _logging.disable(_logging.ERROR)
+            try:
+                try:
+                    m.update()
+                except Exception:
+                    pass
+                s = m.to_smiles()
+            finally:
+                _logging.disable(_prev)
+            return s + "-vdW"
         except Exception:
             return mol.to_adjacency_list().replace("\n"," ")[:-1].replace(' ','')
 
