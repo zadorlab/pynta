@@ -711,18 +711,22 @@ def estimate_deq_k(sidt,labels,dwell,tsmol):
             a.label = ""
     
     logv,tr = sidt.evaluate(mol,trace=True)
-    
+
     if tr == "Root":
         logging.warning("Bond factor estimation used Root group in SIDT")
-    
-    v = np.exp(logv)
-    
+
+    v_raw = np.exp(logv)
+
     if surface_bond:
-        v = max(v,1.0) #don't allow surface bond stretches to be smaller than 1.0
-        return dwell*(v-1.0),100.0
+        v = max(v_raw,1.0) #don't allow surface bond stretches to be smaller than 1.0
+        deq = dwell*(v-1.0)
     else:
-        v = max(v,1.1) #require covalent bond stretches to be at least 1.1
-        return dwell*v,100.0
+        v = min(max(v_raw,1.1),1.4) #covalent bond stretch in [1.1,1.4]: TS bonds rarely exceed ~1.4x equilibrium
+        deq = dwell*v
+    #diagnostic: see exactly what target each broken/forming bond gets (grep "[deq_k]")
+    logging.info("[deq_k] labels=%s surface=%s dwell=%.3f v_raw=%.3f v=%.3f deq=%.3f node=%s",
+                 sorted(labels), surface_bond, dwell, v_raw, v, deq, tr)
+    return deq,100.0
 
 def estimate_deq_k_fixed_surf_bond(labels,dwell,tsmol):
     """
