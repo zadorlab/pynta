@@ -721,7 +721,7 @@ def estimate_deq_k(sidt,labels,dwell,tsmol):
         v = max(v_raw,1.0) #don't allow surface bond stretches to be smaller than 1.0
         deq = dwell*(v-1.0)
     else:
-        v = min(max(v_raw,1.1),1.4) #covalent bond stretch in [1.1,1.4]: TS bonds rarely exceed ~1.4x equilibrium
+        v = max(v_raw,1.1) #require covalent bond stretches to be at least 1.1
         deq = dwell*v
     #diagnostic: see exactly what target each broken/forming bond gets (grep "[deq_k]")
     logging.info("[deq_k] labels=%s surface=%s dwell=%.3f v_raw=%.3f v=%.3f deq=%.3f node=%s",
