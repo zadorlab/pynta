@@ -10,6 +10,7 @@ from acat.adsorption_sites import SlabAdsorptionSites
 from acat.adsorbate_coverage import SlabAdsorbateCoverage
 from acat.settings import site_heights, adsorbate_molecule
 import os
+import shutil
 import json
 import time
 import yaml
@@ -494,6 +495,178 @@ class Pynta:
             self.launchpad.add_wf(wf)
             
 
+        if launch:
+            self.launch()
+
+    def refine(self,reoptimize_software,reoptimize_software_kwargs,reoptimize_software_kwargs_gas=None,
+               reoptimize_selection=-1.0,reoptimize_socket=False,launch=True):
+        """
+        Second-level refinement stage: re-optimize selected results of a finished (cheap, e.g. MACE)
+        Pynta run with a higher-level calculator (e.g. DFT/VASP), seeding from the already-optimized
+        geometries. Only opt + vibrations are run (no IRC). Reads the finished Adsorbates/, TS*/ and
+        slab.xyz from disk; writes results to parallel directories Adsorbates_dft/, TS*_dft/ and
+        slab_dft.xyz so the original (cheap) results stay intact and the refined results can be
+        postprocessed with the same tools.
+
+        Args:
+            reoptimize_software: software name for the refinement calculator (e.g. "Vasp" or "VaspInteractive")
+            reoptimize_software_kwargs: software_kwargs for slab/adsorbate/TS refinement
+            reoptimize_software_kwargs_gas: software_kwargs for gas-phase references; defaults to
+                reoptimize_software_kwargs (with a warning, since gas usually needs different settings)
+            reoptimize_selection: which configurations to refine, applied per species (by config energy)
+                and per reaction (by forward barrier):
+                    < 0   -> all valid configurations (default, -1.0)
+                    == 0  -> only the lowest (energy/barrier) valid configuration
+                    > 0   -> all valid configurations within this many eV of the lowest
+                Gas-phase reference species always refine only their lowest valid configuration.
+            reoptimize_socket: whether to use a SocketIOCalculator for the refinement jobs (default False;
+                must be False for software="VaspInteractive")
+            launch: whether to launch the refinement workflow immediately
+        """
+        from pynta.postprocessing import postprocess, GasConfiguration
+
+        if reoptimize_software == "VaspInteractive" and reoptimize_socket:
+            raise ValueError("reoptimize_software='VaspInteractive' is incompatible with "
+                             "reoptimize_socket=True; use reoptimize_socket=False (set nsw in "
+                             "reoptimize_software_kwargs >= the optimizer's max steps).")
+        if reoptimize_software_kwargs_gas is None:
+            logger.warning("refine(): reoptimize_software_kwargs_gas not provided; reusing "
+                           "reoptimize_software_kwargs for gas-phase references. Gas-phase DFT "
+                           "usually needs different settings (e.g. gamma-only k-points).")
+            reoptimize_software_kwargs_gas = reoptimize_software_kwargs
+
+        #--- guard: require a finished cheap run to refine ---
+        adsorbates_path = os.path.join(self.path,"Adsorbates")
+        slab_file = self.slab_path if self.slab_path else os.path.join(self.path,"slab.xyz")
+        ts_dirs = sorted([d for d in os.listdir(self.path)
+                          if d.startswith("TS") and not d.endswith("_dft")
+                          and os.path.isdir(os.path.join(self.path,d))])
+        ad_names = []
+        if os.path.isdir(adsorbates_path):
+            ad_names = [d for d in os.listdir(adsorbates_path) if os.path.isdir(os.path.join(adsorbates_path,d))]
+        if len(ad_names) == 0:
+            raise FileNotFoundError("refine(): no completed Adsorbates/ found in {}. Run the cheap "
+                                    "(e.g. MACE) Pynta workflow to completion first, and make sure "
+                                    "you reconstructed Pynta with the same path/label and "
+                                    "reset_launchpad=False.".format(self.path))
+        if len(ts_dirs) == 0:
+            raise FileNotFoundError("refine(): no TS* directories found in {}. Run the cheap (e.g. "
+                                    "MACE) Pynta workflow to completion first.".format(self.path))
+        if not os.path.exists(slab_file):
+            raise FileNotFoundError("refine(): slab file not found at {}.".format(slab_file))
+
+        #--- rebuild the in-memory state refine needs (no jobs are launched here) ---
+        if self.slab is None:
+            self.slab = read(slab_file)
+            self.slab_path = slab_file
+        if self.sites is None or self.site_adjacency is None:
+            self.analyze_slab()
+
+        #--- read finished results: all configs per species, all kinetics per TS ---
+        spc_dict,ts_dict,_ = postprocess(self.path,self.metal,self.facet,self.sites,self.site_adjacency,
+                                         self.repeats,get_all_configs=True)
+
+        def _select(configs,value_fn,lowest_only=False):
+            valid = {k:v for k,v in configs.items() if v.valid}
+            if len(valid) == 0:
+                return []
+            if lowest_only or reoptimize_selection == 0.0:
+                return [min(valid,key=lambda k: value_fn(valid[k]))]
+            if reoptimize_selection < 0:
+                return list(valid.keys())
+            vmin = min(value_fn(v) for v in valid.values())
+            return [k for k,v in valid.items() if value_fn(v) - vmin <= reoptimize_selection]
+
+        fws = []
+
+        #--- slab (fixed cell, same frozen layers) ---
+        slab_dft_dir = os.path.join(self.path,"slab_dft")
+        os.makedirs(slab_dft_dir,exist_ok=True)
+        slab_seed = os.path.join(slab_dft_dir,"slab_init.xyz")
+        write(slab_seed,read(slab_file))
+        fws.append(optimize_firework(slab_seed,reoptimize_software,"slab",opt_method="BFGSLineSearch",
+                   socket=reoptimize_socket,software_kwargs=reoptimize_software_kwargs,
+                   run_kwargs={"fmax": self.fmaxopt},out_path=os.path.join(self.path,"slab_dft.xyz"),
+                   constraints=["freeze up to {}".format(self.freeze_ind)],ignore_errors=True,priority=1000))
+
+        #--- adsorbates and gas-phase references ---
+        for name,configs in spc_dict.items():
+            if len(configs) == 0:
+                continue
+            is_gas = isinstance(list(configs.values())[0],GasConfiguration)
+            inds = _select(configs,lambda c: c.energy,lowest_only=is_gas)
+            if len(inds) == 0:
+                continue
+            src_spc_dir = os.path.join(adsorbates_path,name)
+            dft_spc_dir = os.path.join(self.path,"Adsorbates_dft",name)
+            os.makedirs(dft_spc_dir,exist_ok=True)
+            if os.path.exists(os.path.join(src_spc_dir,"info.json")):
+                shutil.copy(os.path.join(src_spc_dir,"info.json"),os.path.join(dft_spc_dir,"info.json"))
+            if is_gas:
+                opt_constraints = []
+                vib_constraints = []
+                sw_kwargs = reoptimize_software_kwargs_gas
+            else:
+                opt_constraints = ["freeze up to {}".format(self.freeze_ind)]
+                vib_constraints = ["freeze up to "+str(self.nslab)]
+                sw_kwargs = reoptimize_software_kwargs
+            for ind in inds:
+                src_geom = os.path.join(src_spc_dir,ind,ind+".xyz")
+                if not os.path.exists(src_geom):
+                    continue
+                d = os.path.join(dft_spc_dir,ind)
+                os.makedirs(d,exist_ok=True)
+                seed = os.path.join(d,ind+"_init.xyz")
+                write(seed,read(src_geom))
+                fwopt = optimize_firework(seed,reoptimize_software,ind,sella=True,order=0,
+                        socket=reoptimize_socket,software_kwargs=sw_kwargs,
+                        run_kwargs={"fmax": self.fmaxopt, "steps": 70},constraints=opt_constraints,
+                        out_path=os.path.join(d,ind+".xyz"),ignore_errors=True,
+                        metal=self.metal,facet=self.surface_type,allow_fizzled_parents=True)
+                fwvib = vibrations_firework(os.path.join(d,ind+".xyz"),reoptimize_software,"vib.json",
+                        software_kwargs=sw_kwargs,parents=[fwopt],out_path=d,
+                        constraints=vib_constraints,socket=reoptimize_socket,ignore_errors=True)
+                fws.append(fwopt)
+                fws.append(fwvib)
+
+        #--- transition states (saddle opt + vib, no IRC) ---
+        for ts,kinetics in ts_dict.items():
+            if len(kinetics) == 0:
+                continue
+            inds = _select(kinetics,lambda k: k.barrier_f)
+            if len(inds) == 0:
+                continue
+            src_ts_dir = os.path.join(self.path,ts)
+            dft_ts_dir = os.path.join(self.path,ts+"_dft")
+            os.makedirs(dft_ts_dir,exist_ok=True)
+            if os.path.exists(os.path.join(src_ts_dir,"info.json")):
+                shutil.copy(os.path.join(src_ts_dir,"info.json"),os.path.join(dft_ts_dir,"info.json"))
+            for ind in inds:
+                src_geom = os.path.join(src_ts_dir,ind,"opt.xyz")
+                if not os.path.exists(src_geom):
+                    continue
+                d = os.path.join(dft_ts_dir,ind)
+                os.makedirs(d,exist_ok=True)
+                seed = os.path.join(d,"opt_init.xyz")
+                write(seed,read(src_geom))
+                fwopt = optimize_firework(seed,reoptimize_software,"opt",sella=True,order=1,
+                        socket=reoptimize_socket,software_kwargs=reoptimize_software_kwargs,
+                        run_kwargs={"fmax": self.fmaxopt, "steps": 70},
+                        constraints=["freeze up to {}".format(self.freeze_ind)],
+                        out_path=os.path.join(d,"opt.xyz"),ignore_errors=True,
+                        metal=self.metal,facet=self.surface_type,allow_fizzled_parents=True)
+                fwvib = vibrations_firework(os.path.join(d,"opt.xyz"),reoptimize_software,"vib.json",
+                        software_kwargs=reoptimize_software_kwargs,parents=[fwopt],out_path=d,
+                        constraints=["freeze up to "+str(self.nslab)],socket=reoptimize_socket,
+                        ignore_errors=True)
+                fws.append(fwopt)
+                fws.append(fwvib)
+
+        logger.info("refine(): built {} refinement fireworks ({} TS dirs, {} species)".format(
+            len(fws),len(ts_dict),len(spc_dict)))
+
+        wf = Workflow(fws,name=self.label+"_dft")
+        self.launchpad.add_wf(wf)
         if launch:
             self.launch()
 
