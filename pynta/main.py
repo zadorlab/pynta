@@ -478,6 +478,12 @@ class Pynta:
         self.generate_mol_dict()
         self.generate_atom_maps()
 
+        #record the harmonic-filter parameters so postprocessing (e.g. plot_eharm) can show the
+        #cutoffs automatically without re-entering them by hand
+        with open(os.path.join(self.path,"harm_parameters.json"),'w') as f:
+            json.dump({"Eharmtol": self.Eharmtol, "Eharmfiltertol": self.Eharmfiltertol,
+                       "Nharmmin": self.Nharmmin},f)
+
         #adsorbate optimization
         if calculate_adsorbates:
             self.setup_adsorbates()

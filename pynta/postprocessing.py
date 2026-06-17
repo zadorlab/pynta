@@ -23,7 +23,30 @@ import glob
 
 eV_to_Jmol = 9.648328e4
 
-def plot_eharm(path,Eharmtol=3.0,Eharmfiltertol=30.0):
+def load_harm_parameters(path):
+    """Load the harmonic-filter parameters (Eharmtol, Eharmfiltertol, Nharmmin) that a Pynta run
+    wrote to harm_parameters.json. Looks in path and its parent (so passing a TS/adsorbate guess
+    directory works as well as the run root). Returns an empty dict if not found."""
+    for p in [os.path.join(path,"harm_parameters.json"),
+              os.path.join(os.path.dirname(os.path.normpath(path)),"harm_parameters.json")]:
+        if os.path.exists(p):
+            with open(p) as f:
+                return json.load(f)
+    return dict()
+
+def plot_eharm(path,Eharmtol=None,Eharmfiltertol=None,Nharmmin=None):
+    """Plot the harmonic energies of the guesses in path along with the selection cutoffs.
+    Eharmtol/Eharmfiltertol/Nharmmin default to the values the Pynta run saved in
+    harm_parameters.json (falling back to 3.0/30.0/None if absent); pass explicit values to override.
+    """
+    params = load_harm_parameters(path)
+    if Eharmtol is None:
+        Eharmtol = params.get("Eharmtol",3.0)
+    if Eharmfiltertol is None:
+        Eharmfiltertol = params.get("Eharmfiltertol",30.0)
+    if Nharmmin is None:
+        Nharmmin = params.get("Nharmmin",None)
+
     eharms = []
     guess_dirs = os.listdir(path)
     for guess in guess_dirs:
@@ -33,6 +56,9 @@ def plot_eharm(path,Eharmtol=3.0,Eharmfiltertol=30.0):
                 eharms.append(out["harmonic energy"])
         except:
             pass
+    if len(eharms) == 0:
+        logging.warning("plot_eharm: no harm.json files found in {}".format(path))
+        return
     eharms = sorted(eharms)
     eharmmin = np.min(eharms)
 
@@ -40,8 +66,11 @@ def plot_eharm(path,Eharmtol=3.0,Eharmfiltertol=30.0):
     plt.xlabel("TS Guess in Order of Increasing Energy")
     plt.ylabel("Harmonic Energy [eV]")
     plt.yscale("log")
-    plt.plot(range(len(eharms)),np.ones(len(eharms))*eharmmin*Eharmtol)
-    plt.plot(range(len(eharms)),np.ones(len(eharms))*eharmmin*Eharmfiltertol)
+    plt.axhline(eharmmin*Eharmtol,ls="--",color="C1",label="Eharmtol ({:g}x min): keep all below".format(Eharmtol))
+    plt.axhline(eharmmin*Eharmfiltertol,ls="--",color="C2",label="Eharmfiltertol ({:g}x min): drop above".format(Eharmfiltertol))
+    if Nharmmin is not None:
+        plt.axvline(Nharmmin-0.5,ls=":",color="C3",label="Nharmmin ({:d}): min kept".format(int(Nharmmin)))
+    plt.legend()
 
 def get_opt_dirs(path):
     opt_dirs = []
