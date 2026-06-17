@@ -28,3 +28,6 @@ dependencies:
   - mace-torch >=0.3.12
   - orjson
   - python-lmdb
+  #Optional: only needed for software="VaspInteractive" (a persistent-process VASP calculator).
+  #Not installed by default since not everyone runs VASP. To enable, install separately:
+  #  pip install vasp-interactive   (see https://github.com/ulissigroup/vasp-interactive)

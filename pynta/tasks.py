@@ -51,6 +51,19 @@ def finalize_calc(atoms):
         except Exception:
             pass
 
+def check_socket_software(software_name,socket):
+    """Guard against incompatible calculator/socket combinations. VaspInteractive keeps the VASP
+    process alive across steps by itself and must not be wrapped in pynta's SocketIOCalculator
+    (which keeps the process alive by a different mechanism). main.py raises the same error at
+    workflow-construction time; this is a defensive check for fireworks built directly."""
+    if software_name == "VaspInteractive" and socket:
+        raise ValueError(
+            "software='VaspInteractive' is incompatible with socket=True: both keep the "
+            "calculator process alive across steps, but by different mechanisms. "
+            "Use VaspInteractive with socket=False (set nsw in software_kwargs >= the "
+            "optimizer's max steps), or use software='Vasp' with socket=True."
+        )
+
 class OptimizationTask(FiretaskBase):
     def run_task(self, fw_spec):
         raise NotImplementedError
@@ -113,6 +126,7 @@ class MolecularOptimizationTask(OptimizationTask):
         errors = []
         software_kwargs = deepcopy(self["software_kwargs"]) if "software_kwargs" in self.keys() else dict()
         socket = self["socket"] if "socket" in self.keys() else False
+        check_socket_software(self["software"],socket)
         if socket:
             unixsocket = "ase_"+self["software"].lower()+"_"+self["label"]+"_"+self["xyz"].replace("/","_").replace(".","_")
             socket_address = os.path.join("/tmp","ipi_"+unixsocket)
@@ -433,6 +447,7 @@ class MolecularVibrationsTask(VibrationTask):
         software = to_ase_software(self["software"],software_kwargs)
         ignore_errors = deepcopy(self["ignore_errors"]) if "ignore_errors" in self.keys() else False
         socket = self["socket"] if "socket" in self.keys() else False
+        check_socket_software(self["software"],socket)
         if socket:
             unixsocket = "ase_"+self["software"].lower()+"_"+self["label"]+"_"+self["xyz"].replace("/","_").replace(".","_")
             socket_address = os.path.join("/tmp","ipi_"+unixsocket)
@@ -1000,6 +1015,7 @@ class MolecularIRC(FiretaskBase):
         errors = []
         software_kwargs = deepcopy(self["software_kwargs"]) if "software_kwargs" in self.keys() else dict()
         socket = self["socket"] if "socket" in self.keys() else False
+        check_socket_software(self["software"],socket)
         if socket:
             unixsocket = "ase_"+self["software"].lower()+"_"+self["label"]+"_"+self["xyz"].replace("/","_").replace(".","_")
             socket_address = os.path.join("/tmp","ipi_"+unixsocket)

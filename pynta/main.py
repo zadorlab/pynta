@@ -72,6 +72,13 @@ class Pynta:
         self.c = c
         self.software = software
         self.socket = socket
+        if self.software == "VaspInteractive" and self.socket:
+            raise ValueError(
+                "software='VaspInteractive' is incompatible with socket=True: both keep the "
+                "calculator process alive across steps, but by different mechanisms. "
+                "Use VaspInteractive with socket=False (set nsw in software_kwargs >= the "
+                "optimizer's max steps), or use software='Vasp' with socket=True."
+            )
         self.repeats = repeats
         self.path = os.getcwd() if path is None else path
         self.facet = metal + surface_type

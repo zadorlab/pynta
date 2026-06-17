@@ -327,7 +327,15 @@ def name_to_ase_software(software_name,module_name=None):
         module = import_module("torch_dftd.torch_dftd3_calculator")
         return getattr(module, software_name)
     elif software_name == "VaspInteractive":
-        module = import_module("vasp_interactive")
+        try:
+            module = import_module("vasp_interactive")
+        except ImportError as e:
+            raise ImportError(
+                "software='VaspInteractive' requires the optional 'vasp-interactive' package, "
+                "which is not installed. Install it with `pip install vasp-interactive` "
+                "(see https://github.com/ulissigroup/vasp-interactive). It is an optional "
+                "dependency, so pynta does not install it by default."
+            ) from e
         return getattr(module, "VaspInteractive")
     else:
         module = import_module("ase.calculators."+module_name.lower())
