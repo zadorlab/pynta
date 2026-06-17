@@ -46,7 +46,7 @@ def plot_eharm(path,Eharmtol=None,Eharmfiltertol=None,Nharmmin=None):
     if Eharmfiltertol is None:
         Eharmfiltertol = params.get("Eharmfiltertol",30.0)
     if Nharmmin is None:
-        Nharmmin = params.get("Nharmmin",None)
+        Nharmmin = params.get("Nharmmin",5)
 
     eharms = []
     guess_dirs = os.listdir(path)
