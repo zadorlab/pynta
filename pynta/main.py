@@ -76,6 +76,7 @@ class Pynta:
         self.socket = socket
         self.repeats = repeats
         self.path = os.getcwd() if path is None else path
+        os.makedirs(os.path.join(self.path,"fw_logs"),exist_ok=True)  # FireWorks qadapter logdir: create if missing, leave alone if present
         self.facet = metal + surface_type
         self.fws = []
         self.metal = metal
