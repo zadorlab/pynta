@@ -3,6 +3,7 @@ from ase.io.trajectory import Trajectory
 from ase.visualize import view
 import json
 import os
+import shutil
 import numpy as np
 import matplotlib.pyplot as plt
 from ase.vibrations import VibrationsData
@@ -71,6 +72,68 @@ def plot_eharm(path,Eharmtol=None,Eharmfiltertol=None,Nharmmin=None):
     if Nharmmin is not None:
         plt.axvline(Nharmmin-0.5,ls=":",color="C3",label="Nharmmin ({:d}): min kept".format(int(Nharmmin)))
     plt.legend()
+
+def extract_ts_structures(ts_path,out_dir=None,kinetics=None,use_all=False,only_valid=True):
+    """
+    Collect the optimized TS geometries, optimization trajectories and IRC trajectories of a TS
+    directory into a single folder of (multi-frame) .xyz files for easy visualization (e.g. in OVITO).
+    The xtb/HFSP guess is not exported separately because it is the first frame of the optimization
+    trajectory anyway.
+
+    Args:
+        ts_path: path to a TS directory of a Pynta run (e.g. .../TS3)
+        out_dir: output folder; defaults to "<TS name>_vis"
+        kinetics: dict mapping guess index -> Kinetics (from get_kinetics); required unless
+            use_all=True and only_valid=False
+        use_all: if True, scan every guess folder on disk (works mid-run, ignores kinetics);
+            if False, use only the indices present in kinetics
+        only_valid: if True, restrict to indices where kinetics[ind].valid is True (entries not
+            present in kinetics, e.g. mid-run folders, are dropped)
+
+    Returns:
+        out_dir
+    """
+    ts = os.path.basename(os.path.normpath(ts_path))
+    if out_dir is None:
+        out_dir = ts + "_vis"
+    os.makedirs(out_dir,exist_ok=True)
+
+    def _traj(src,out):
+        if os.path.exists(src):
+            write(out,list(Trajectory(src)))   # multi-frame .traj -> .xyz
+
+    def _copy(src,out):
+        if os.path.exists(src):                # guard: file may not exist yet mid-run
+            shutil.copy(src,out)
+
+    def _is_valid(ind):
+        key = ind
+        if kinetics is not None and key not in kinetics and isinstance(key,str) and key.isdigit():
+            key = int(key)                     # normalize folder-name str -> kinetics int key
+        return kinetics is not None and kinetics.get(key) is not None and kinetics[key].valid
+
+    if use_all:
+        inds = sorted([d for d in os.listdir(ts_path) if os.path.isdir(os.path.join(ts_path,d))],
+                      key=lambda d: int(d) if d.isdigit() else float("inf"))
+    else:
+        if kinetics is None:
+            raise ValueError("extract_ts_structures: kinetics is required when use_all=False")
+        inds = [k for k in kinetics]
+
+    if only_valid:
+        if kinetics is None:
+            raise ValueError("extract_ts_structures: kinetics is required when only_valid=True")
+        inds = [ind for ind in inds if _is_valid(ind)]
+
+    for ind in inds:
+        d = os.path.join(ts_path,str(ind))
+        _copy(os.path.join(d,"opt.xyz"),          os.path.join(out_dir,"{}_{}_opt.xyz".format(ts,ind)))
+        _traj(os.path.join(d,"opt.xyz.traj"),     os.path.join(out_dir,"{}_{}_opttraj.xyz".format(ts,ind)))
+        _traj(os.path.join(d,"irc_forward.traj"), os.path.join(out_dir,"{}_{}_IRC1.xyz".format(ts,ind)))
+        _traj(os.path.join(d,"irc_reverse.traj"), os.path.join(out_dir,"{}_{}_IRC2.xyz".format(ts,ind)))
+
+    print("wrote {} ({} folders scanned)".format(out_dir,len(inds)))
+    return out_dir
 
 def get_opt_dirs(path):
     opt_dirs = []
