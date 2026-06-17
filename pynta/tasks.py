@@ -40,6 +40,17 @@ from copy import deepcopy
 from joblib import Parallel, delayed
 import os 
 
+def finalize_calc(atoms):
+    """Cleanly stop a persistent calculator process (e.g. VaspInteractive keeps a live VASP
+    process alive across ionic steps and must be finalized once the run is done). This is a
+    no-op for calculators without a finalize() method, so it is safe to call for any software."""
+    calc = getattr(atoms, "calc", None)
+    if calc is not None and hasattr(calc, "finalize"):
+        try:
+            calc.finalize()
+        except Exception:
+            pass
+
 class OptimizationTask(FiretaskBase):
     def run_task(self, fw_spec):
         raise NotImplementedError
@@ -246,6 +257,8 @@ class MolecularOptimizationTask(OptimizationTask):
                     else:
                         errors.append(e)
 
+        finalize_calc(sp)  #stop a persistent calc (e.g. VaspInteractive) now the optimization is done; results are cached
+
         try:
             converged = opt.converged()
         except TypeError:
@@ -341,6 +354,7 @@ class MolecularOptimizationFailTask(OptimizationTask):
         sp.calc = software
         opt = opt_method(sp,trajectory=label+".traj")
         opt.run(fmax=0.02,steps=2)
+        finalize_calc(sp)
 
         if not opt.converged():
             fw = restart_opt_firework(self,fw_spec["_tasks"])
@@ -372,6 +386,7 @@ class MolecularEnergyTask(EnergyTask):
         energy_kwargs = deepcopy(self["energy_kwargs"]) if "energy_kwargs" in self.keys() else dict()
         ignore_errors = deepcopy(self["ignore_errors"]) if "ignore_errors" in self.keys() else False
 
+        sp = None
         try:
             sp = read(xyz)
             sp.calc = software(**software_kwargs)
@@ -383,6 +398,8 @@ class MolecularEnergyTask(EnergyTask):
                 raise e
             else:
                 return FWAction(stored_data={"error": e}, exit=True)
+        finally:
+            finalize_calc(sp)
 
         return FWAction()
 
@@ -425,6 +442,7 @@ class MolecularVibrationsTask(VibrationTask):
         if socket and os.path.exists(socket_address):
             os.unlink(socket_address)
 
+        sp = None
         try:
             sp = read(xyz)
             sp.calc = SocketIOCalculator(software,log=sys.stdout,unixsocket=unixsocket) if socket else software
@@ -485,6 +503,8 @@ class MolecularVibrationsTask(VibrationTask):
                 raise e
             else:
                 return FWAction(stored_data={"error": e}, exit=True)
+        finally:
+            finalize_calc(sp)
 
         return FWAction()
 
@@ -1063,6 +1083,8 @@ class MolecularIRC(FiretaskBase):
                         raise e
                     else:
                         errors.append(e)
+
+        finalize_calc(sp)
 
         if not opt.converged():
             e = ValueError
