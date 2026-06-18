@@ -118,7 +118,7 @@ def get_site_bond_length(sitetype,atomtype=None,metal=None):
         return site_bond_length_dict[(sitetype,None,None)]
 
 def add_adsorbate_to_site(atoms, adsorbate, surf_ind, site, height=None,
-                          orientation=None, tilt_angle=0.):
+                          orientation=None, tilt_angle=0., offset=True, tilt=True):
     """The base function for adding one adsorbate to a site.
     Site must include information of 'normal' and 'position'.
     Useful for adding adsorbate to multiple sites or adding
@@ -175,7 +175,7 @@ def add_adsorbate_to_site(atoms, adsorbate, surf_ind, site, height=None,
     ads.translate(-bondpos)
     z = -1. if adsorbate in ['CH','NH','OH','SH'] else 1.
     ads.rotate(np.asarray([0., 0., z]) - bondpos, normal)
-    if tilt_angle > 0.:
+    if tilt and tilt_angle > 0.:
         pvec = np.cross(np.random.rand(3) - ads[0].position, normal)
         ads.rotate(tilt_angle, pvec, center=ads[0].position)
 
@@ -218,11 +218,12 @@ def add_adsorbate_to_site(atoms, adsorbate, surf_ind, site, height=None,
 
     ads.translate(pos - bondpos)
     # Randomly offsetting atoms to avoid highly symmetric structures
-    for atom in ads:
-        x_trans = random.choice([-0.05, 0.05])
-        y_trans = random.choice([-0.05, 0.05])
-        atom.position[0] += x_trans
-        atom.position[1] += y_trans
+    if offset:
+        for atom in ads:
+            x_trans = random.choice([-0.05, 0.05])
+            y_trans = random.choice([-0.05, 0.05])
+            atom.position[0] += x_trans
+            atom.position[1] += y_trans
 
     atoms += ads
     if ads.get_chemical_formula() == 'H2':
@@ -247,7 +248,7 @@ def place_adsorbate_covdep(ads,slab,atom_surf_inds,sites,metal):
         return geo,h1,h2
     else:
         raise ValueError
-    
+   
 def get_unique_sites(site_list, cell, unique_composition=False,
                          unique_subsurf=False,
                          return_signatures=False,
@@ -325,12 +326,30 @@ def generate_unique_placements(slab,sites):
 
             if fingerprint in unique_site_pairs.keys():
                 current_sites = unique_site_pairs[fingerprint]
-                current_dist = np.linalg.norm(sum([s["position"][:1] for s in current_sites])/2-middle[:1])
-                possible_dist = np.linalg.norm((unique_site["position"][:1]+site["position"][:1])/2-middle[:1])
+                print("current_sites", current_sites)
+            
+                # Calculate current_dist using the average of the first coordinates
+                average_current_position = np.mean([s["position"][0] for s in current_sites])
+                current_dist = np.abs(average_current_position - middle[0])
+            
+                # Calculate possible_dist using the average of the first coordinates of unique_site and site
+                possible_dist = np.abs((unique_site["position"][0] + site["position"][0]) / 2 - middle[0])
+            
+                # Compare distances
                 if possible_dist < current_dist:
-                    unique_site_pairs[fingerprint] = [unique_site,site]
+                    unique_site_pairs[fingerprint] = [unique_site, site]
             else:
-                unique_site_pairs[fingerprint] = [unique_site,site]
+                unique_site_pairs[fingerprint] = [unique_site, site]
+
+#            if fingerprint in unique_site_pairs.keys():
+#                current_sites = unique_site_pairs[fingerprint]
+#                print("current_sites", current_sites)
+#                current_dist = np.linalg.norm(sum([s["position"][:1] for s in current_sites])/2-middle[:1])
+#                possible_dist = np.linalg.norm((unique_site["position"][:1]+site["position"][:1])/2-middle[:1])
+#                if possible_dist < current_dist:
+#                    unique_site_pairs[fingerprint] = [unique_site,site]
+#            else:
+#                unique_site_pairs[fingerprint] = [unique_site,site]
 
     unique_site_pairs_lists = list(unique_site_pairs.values())
     unique_site_lists = [[unique_site] for unique_site in unique_single_sites]
