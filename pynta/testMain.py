@@ -27,6 +27,8 @@ class MainTest(unittest.TestCase):
 
         # Ensure launch paths exist as directories (clean up if they're files)
         for p in (cls.launchpath, cls.launchpath_covdep):
+            if os.path.isfile(p):
+                os.remove(p)
             if not os.path.isdir(p):
                 os.makedirs(p, exist_ok=True)
 
