@@ -7,11 +7,11 @@ dependencies:
   - python =3.9
   - matplotlib
   - spglib
-  - ase =3.22.1
+  - ase
   - scipy >=1.1.0
   - numpy
   - pyyaml
-  - sella >=2.2.1
+  - sella >=2.4.2
   - jax =0.3
   - sphinx
   - fireworks
@@ -25,6 +25,6 @@ dependencies:
   - ruamel.yaml < 0.18
   - flask =2.2.5
   #MACE related packages
-  - pymace >=0.3.12
+  - mace-torch >=0.3.12
   - orjson
   - python-lmdb

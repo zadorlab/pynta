@@ -7,6 +7,7 @@ from ase.utils.structure_comparator import SymmetryEquivalenceCheck
 from ase.io import write, read
 import ase.constraints
 from ase.geometry import get_distances
+from ase.calculators.mixing import SumCalculator
 from copy import deepcopy
 from importlib import import_module
 import numpy as np
@@ -305,7 +306,7 @@ def filter_nonunique_TS_guess_indices(geoms,Es):
 def get_fmax(at):
     return np.max(np.abs([np.linalg.norm(at.get_forces()[i,:]) for i in range(at.get_forces().shape[0])]))
 
-def name_to_ase_software(software_name):
+def name_to_ase_software(software_name,module_name=None):
     """
     go from software_name to the associated
     ASE calculator constructor
@@ -313,6 +314,9 @@ def name_to_ase_software(software_name):
     if isinstance(software_name,list):
         return [name_to_ase_software(x) for x in software_name]
     
+    if module_name is None:
+        module_name = software_name
+        
     if software_name == "TBLite" or software_name == "XTB":
         module = import_module("tblite.ase")
         return getattr(module, "TBLite")
@@ -323,8 +327,26 @@ def name_to_ase_software(software_name):
         module = import_module("torch_dftd.torch_dftd3_calculator")
         return getattr(module, software_name)
     else:
-        module = import_module("ase.calculators."+software_name.lower())
+        module = import_module("ase.calculators."+module_name.lower())
         return getattr(module, software_name)
+
+def to_ase_software(object_name,software_kwargs,module_name=None):
+    if module_name is None:
+        module_name = object_name
+    
+    software_kwargs = copy.deepcopy(software_kwargs)
+    software = name_to_ase_software(object_name,module_name=module_name)
+    
+    if not isinstance(software,list):
+        for k,v in software_kwargs.items():
+            if isinstance(v,dict) and "type" in v.keys():
+                typ = v["type"]
+                dv = {k:v for k,v in v.items() if k != "type"}
+                software_kwargs[k] = to_ase_software(typ,dv,module_name=module_name)
+        
+        return software(**software_kwargs) 
+    else:
+       return SumCalculator([to_ase_software(object_name[i],software_kwargs[i],module_name=module_name[i]) if module_name is not None else to_ase_software(object_name[i],software_kwargs[i]) for i in range(len(object_name))])
 
 def name_to_ase_opt(opt_name):
     """
