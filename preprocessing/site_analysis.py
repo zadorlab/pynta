@@ -151,6 +151,9 @@ def lone_pairs_for(sym):
 
 
 def generate_graph_slab_fixed(atoms):
+    if not all(atoms.pbc[:2]) and _has_reasonable_cell(atoms):
+        atoms = atoms.copy()
+        atoms.pbc = (True, True, False)
     analysis = Analysis(atoms)
     adj = analysis.adjacency_matrix[0]
 
@@ -751,6 +754,8 @@ def workflow_auto(
 
     slab = read(xyz_path)
     nslab = len(slab)
+    if not any(slab.pbc) and _has_reasonable_cell(slab):
+        slab.pbc = (True, True, False)
     surface_obj = CustomSurface(slab, n_layers=n_layers)
 
     defect_sites, _ = detect_vacancy_sites_from_coordination(slab, nslab)
