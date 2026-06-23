@@ -497,7 +497,7 @@ class CoverageDependence:
                  fworker_path=None,queue=False,njobs_queue=0,reset_launchpad=False,queue_adapter_path=None,
                  num_jobs=25,surrogate_metal=None,concern_energy_tol=None,max_iters=np.inf,imag_freq_max=150.0,max_coadsorbates=None,
                  sidt_isolated_delta_model=None,sidt_covdep_delta_model=None,coad_selection_E_diff_tol=0.1,iter=0,ts_frac=None,
-                 adsorbate_site_energy_cutoff=0.0):
+                 adsorbate_site_energy_cutoff=0.0,config_generation="enumerate",mc_kwargs=None):
         self.path = path
         self.metal = metal
         self.repeats = repeats
@@ -538,6 +538,13 @@ class CoverageDependence:
         self.coad_selection_E_diff_tol = coad_selection_E_diff_tol
         self.ts_frac = ts_frac
         self.adsorbate_site_energy_cutoff = adsorbate_site_energy_cutoff
+        # candidate generation for the active-learning loop: "enumerate" (the original
+        # exhaustive get_configurations) or "mc" (Metropolis MC over the SIDT model, for
+        # coverages/slabs where enumeration is intractable). mc_kwargs are forwarded to the
+        # MC sampler (n_steps, T, lam, p_local, n_jobs, seed).
+        assert config_generation in ("enumerate", "mc"), config_generation
+        self.config_generation = config_generation
+        self.mc_kwargs = mc_kwargs if mc_kwargs is not None else dict()
 
         self.collate_isolated_structures()
         
@@ -855,7 +862,8 @@ class CoverageDependence:
                                 parents=self.fws[:], max_iters=self.max_iters,
                                 Ncalc_per_iter=self.Ncalc_per_iter,iter=self.iter,concern_energy_tol=self.concern_energy_tol,ignore_errors=True,max_coadsorbates=self.max_coadsorbates,
                                 sidt_isolated_delta_model=self.sidt_isolated_delta_model,sidt_covdep_delta_model=self.sidt_covdep_delta_model,ts_frac=self.ts_frac,
-                                adsorbate_site_energy_cutoff=self.adsorbate_site_energy_cutoff)
+                                adsorbate_site_energy_cutoff=self.adsorbate_site_energy_cutoff,
+                                config_generation=self.config_generation,mc_kwargs=self.mc_kwargs)
 
         self.fws.append(fw)
     
