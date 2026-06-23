@@ -6,16 +6,22 @@ This is the MC front-end that replaces the enumerative configuration listing
 regimes where enumeration is impossible (higher coverage on moderate slabs). It works
 purely on the 2D adsorbate-site graph (``admol``):
 
-  * a configuration is the base structure (central adsorbate/TS) decorated with a fixed
-    number ``Ncoad`` of copies of a single coadsorbate on stable sites;
-  * the MC state is just the SET of base-graph site indices currently holding a coad, so
-    it is hashable (cheap dedup/memoization) and independent of atom-identity bookkeeping;
+  * a configuration is a base structure (one valid central adsorbate/TS site arrangement)
+    decorated with a fixed number ``Ncoad`` of copies of a single coadsorbate on stable sites;
+  * the central species is given as a LIST of valid base arrangements (all stable adsorbate
+    geometries / all valid saddles). The MC explores the joint space of (which central
+    arrangement, which sites hold a coadsorbate), so the central species can "hop" between
+    arrangements rather than each chain being stuck on one;
+  * the MC state is ``(base_idx, set of occupied coadsorbate-site ranks)`` -- hashable, cheap to
+    dedup, and independent of atom-identity bookkeeping. Site "ranks" are the canonical order of
+    surface-site atoms, shared across all base arrangements (same slab/site graph);
   * energies/uncertainties come from the trained SIDT regressor exactly as in
     ``get_cov_energies`` (E = atom-centered + interaction, both in J/mol);
-  * moves are canonical relocations (move one coad occupied->empty, preserving Ncoad),
-    mostly to a nearby empty site with an occasional global jump;
+  * two move types, canonical in #coadsorbates: a coadsorbate relocation (move one coad
+    occupied->empty, mostly nearby with an occasional global jump) and, with probability
+    ``p_central``, a central hop (swap to another valid central arrangement, keeping the coads);
   * acceptance is Metropolis on the uncertainty-corrected energy ``E_corr = E - lambda*sigma``
-    with an annealed temperature ``T`` and exploration weight ``lambda``.
+    with a within-chain annealed temperature ``T`` and exploration weight ``lambda``.
 
 The visited (validly-evaluated) configurations are returned as a pool of
 ``(admol, E, sigma, trace)`` tuples, which the existing ``get_configs_for_calculation``
@@ -52,32 +58,35 @@ def get_stable_empty_site_inds(base_admol, coad_stable_sites):
 
 
 class CanonicalCoverageMC:
-    """Canonical (fixed-Ncoad) Metropolis MC over coadsorbate placements on a fixed base admol.
+    """Canonical (fixed-Ncoad) Metropolis MC over coadsorbate placements, with central hopping.
 
     Args:
-        base_admol: the base 2D structure (central adsorbate/TS on the slab, no coadsorbates)
-        coad: the coadsorbate Molecule to place (single species per sampler)
-        coad_stable_sites: iterable of (site, morphology) tuples (or strings) that are stable
-            coadsorbate sites
+        base_admols: list of valid central arrangements (all stable adsorbate geometries / all
+            valid saddles). A single Molecule is accepted and wrapped in a list. All must be built
+            on the same slab/site ordering (checked).
+        coad: the (slab-free) coadsorbate Molecule to place
+        coad_stable_sites: stable coadsorbate (site, morphology) list
         tree_interaction_regressor: trained SIDT interaction regressor; queried with
             ``evaluate(m, trace=True, estimate_uncertainty=True) -> (E, sigma, trace)``
-        tree_atom_regressor: optional atom-centered (1-body) regressor; if given E uses it
-        coadmol_E_dict: optional atom-centered correction dict; used if tree_atom_regressor is None
-        unstable_pairs: list of unstable-pair Groups (from the pair calculations); proposals
-            matching one are rejected. If falsy, no stability filtering is applied.
-        is_ts: whether the base structure is a transition state (affects validity splitting)
+        tree_atom_regressor / coadmol_E_dict: atom-centered (1-body) energy source (one required)
+        unstable_pairs: list of unstable-pair Groups; proposals matching one are rejected. Falsy
+            disables stability filtering.
+        is_ts: whether the base structures are transition states (affects validity splitting)
         local_radius: site-graph hop radius defining a "nearby" empty site for local moves
-        seed: optional RNG seed for reproducibility
+        seed: optional base RNG seed
     """
 
-    def __init__(self, base_admol, coad, coad_stable_sites, tree_interaction_regressor,
+    def __init__(self, base_admols, coad, coad_stable_sites, tree_interaction_regressor,
                  tree_atom_regressor=None, coadmol_E_dict=None, unstable_pairs=None,
                  is_ts=False, local_radius=2, seed=None):
         if tree_atom_regressor is None and coadmol_E_dict is None:
             raise ValueError("provide either tree_atom_regressor or coadmol_E_dict")
-        self.base_admol = base_admol
+        if not isinstance(base_admols, (list, tuple)):
+            base_admols = [base_admols]
+        if len(base_admols) == 0:
+            raise ValueError("base_admols is empty")
+        self.base_admols = list(base_admols)
         self.coad = coad
-        self.coad_stable_sites = coad_stable_sites
         self.tree_interaction_regressor = tree_interaction_regressor
         self.tree_atom_regressor = tree_atom_regressor
         self.coadmol_E_dict = coadmol_E_dict
@@ -85,24 +94,57 @@ class CanonicalCoverageMC:
         self.is_ts = is_ts
         self.local_radius = local_radius
         self.seed = seed
+        self._coad_set = _coad_stable_sites_set(coad_stable_sites)
 
-        self.stable_inds = get_stable_empty_site_inds(base_admol, coad_stable_sites)
-        if len(self.stable_inds) == 0:
-            raise ValueError("no empty stable coadsorbate sites found on the base structure")
+        # canonical site ranks: the ordered surface-site atoms, assumed consistent across bases
+        # (same slab/sites -> same site atoms in the same order, with adsorbate atoms appended)
+        self._site_inds = [[i for i, a in enumerate(b.atoms) if a.is_surface_site()]
+                           for b in self.base_admols]
+        self.nsites = len(self._site_inds[0])
+        for b, si in enumerate(self._site_inds):
+            if len(si) != self.nsites:
+                raise ValueError("base structures have inconsistent surface-site counts "
+                                 "({} vs {} for base {})".format(len(si), self.nsites, b))
+        self._site_sm = [(self.base_admols[0].atoms[self._site_inds[0][k]].site,
+                          self.base_admols[0].atoms[self._site_inds[0][k]].morphology)
+                         for k in range(self.nsites)]
+        for b, si in enumerate(self.base_admols):
+            for k in range(self.nsites):
+                a = self.base_admols[b].atoms[self._site_inds[b][k]]
+                if (a.site, a.morphology) != self._site_sm[k]:
+                    raise ValueError("site ordering differs across base structures at rank "
+                                     "{} (base {})".format(k, b))
+
+        # per-base: ranks occupied by the central species, and stable-empty ranks for coads
+        self._central_ranks = []
+        self._stable_empty = []
+        for b, base in enumerate(self.base_admols):
+            occ_ranks = set()
+            for k, idx in enumerate(self._site_inds[b]):
+                if any(not a2.is_surface_site() for a2 in base.atoms[idx].bonds.keys()):
+                    occ_ranks.add(k)
+            self._central_ranks.append(occ_ranks)
+            self._stable_empty.append(set(k for k in range(self.nsites)
+                                          if self._site_sm[k] in self._coad_set
+                                          and k not in occ_ranks))
+        if all(len(se) == 0 for se in self._stable_empty):
+            raise ValueError("no empty stable coadsorbate sites on any base structure")
+
         self._dist = self._build_site_distances()
 
     # ------------------------------------------------------------------ graph helpers
     def _build_site_distances(self):
-        """BFS site-to-site hop distances on the base lattice graph, from every stable site to
-        every site. Returns {stable_ind: {site_ind: hops}}. Paths may pass through occupied or
-        central-species sites, which is the correct lattice distance."""
-        base = self.base_admol
-        site_inds = [i for i, a in enumerate(base.atoms) if a.is_surface_site()]
-        atom_to_ind = {base.atoms[i]: i for i in site_inds}
-        nbrs = {i: [atom_to_ind[a2] for a2 in base.atoms[i].bonds.keys()
-                    if a2.is_surface_site()] for i in site_inds}
+        """BFS site-rank hop distances on the lattice site graph (base-independent; uses base 0).
+        Returns {rank: {rank: hops}} from every stable-empty rank."""
+        base = self.base_admols[0]
+        si = self._site_inds[0]
+        atom_to_idx = {base.atoms[i]: i for i in si}
+        idx_to_rank = {si[k]: k for k in range(self.nsites)}
+        nbrs = {k: [idx_to_rank[atom_to_idx[a2]] for a2 in base.atoms[si[k]].bonds.keys()
+                    if a2.is_surface_site()] for k in range(self.nsites)}
+        stable_ranks = set().union(*self._stable_empty)
         dist = {}
-        for s in self.stable_inds:
+        for s in stable_ranks:
             d = {s: 0}
             q = deque([s])
             while q:
@@ -114,23 +156,24 @@ class CanonicalCoverageMC:
             dist[s] = d
         return dist
 
-    def _empty(self, occ):
-        return [i for i in self.stable_inds if i not in occ]
+    def _empty(self, base_idx, occ):
+        return [k for k in self._stable_empty[base_idx] if k not in occ]
 
-    def _nearby_empty(self, sind, occ):
-        d = self._dist[sind]
-        return [i for i in self.stable_inds
-                if i not in occ and d.get(i, np.inf) <= self.local_radius]
+    def _nearby_empty(self, base_idx, o_rank, occ):
+        d = self._dist.get(o_rank, {})
+        return [k for k in self._stable_empty[base_idx]
+                if k not in occ and d.get(k, np.inf) <= self.local_radius]
 
     # ------------------------------------------------------------------ config build/eval
-    def build_config(self, occ):
-        """Build the admol for an occupancy set by adding a coadsorbate to each occupied site.
-        Site indices are preserved across add_ad_to_site (coad atoms are appended), so
-        base_admol.atoms[sind] remains the correct site throughout. May raise on a placement
-        that fails to form a valid molecule; callers treat that as an invalid proposal."""
-        m = self.base_admol
-        for sind in occ:
-            m = add_ad_to_site(m, self.coad, m.atoms[sind])
+    def build_config(self, base_idx, occ):
+        """Build the admol for (base_idx, occ) by adding a coadsorbate at each occupied rank of the
+        chosen base. Site ranks map to base-atom indices via self._site_inds[base_idx]; those
+        indices survive add_ad_to_site (coad atoms are appended). May raise on a bad placement;
+        callers treat that as an invalid proposal."""
+        m = self.base_admols[base_idx]
+        si = self._site_inds[base_idx]
+        for rank in occ:
+            m = add_ad_to_site(m, self.coad, m.atoms[si[rank]])
         return m
 
     def energy(self, m):
@@ -146,24 +189,28 @@ class CanonicalCoverageMC:
     def is_valid(self, m):
         if not self.unstable_pairs:
             return True
-        return configuration_is_valid(m, self.base_admol, self.is_ts, self.unstable_pairs)
+        return configuration_is_valid(m, self.base_admols[0], self.is_ts, self.unstable_pairs)
 
     # ------------------------------------------------------------------ initialization
     def _greedy_valid_state(self, Ncoad, rng, max_restarts=200):
-        """Greedily place Ncoad coadsorbates on empty sites, keeping the config valid at each
-        step. Restarts on a dead end. Returns (occ_set, admol)."""
+        """Greedily build a valid (base_idx, occ) with len(occ)==Ncoad. Returns (base_idx, occ, admol)."""
+        viable = [b for b in range(len(self.base_admols)) if len(self._stable_empty[b]) >= Ncoad]
+        if not viable:
+            raise RuntimeError("no base structure can host Ncoad={} coadsorbates "
+                               "(max stable sites {})".format(Ncoad, max(len(se) for se in self._stable_empty)))
         for _ in range(max_restarts):
+            b = rng.choice(viable)
             occ = set()
-            m = self.base_admol
+            m = self.base_admols[b]
             stuck = False
             while len(occ) < Ncoad:
-                empties = self._empty(occ)
-                rng.shuffle(empties)
+                cands = list(self._stable_empty[b] - occ)
+                rng.shuffle(cands)
                 placed = False
-                for e in empties:
+                for e in cands:
                     cand = occ | {e}
                     try:
-                        mc = self.build_config(cand)
+                        mc = self.build_config(b, cand)
                     except Exception:
                         continue
                     if self.is_valid(mc):
@@ -173,118 +220,126 @@ class CanonicalCoverageMC:
                     stuck = True
                     break
             if not stuck and len(occ) == Ncoad:
-                return occ, m
-        raise RuntimeError("could not build a valid starting configuration with Ncoad={} "
-                           "(stable sites available: {})".format(Ncoad, len(self.stable_inds)))
+                return b, occ, m
+        raise RuntimeError("could not build a valid starting configuration with Ncoad={}".format(Ncoad))
 
     # ------------------------------------------------------------------ the sampler
-    def run(self, Ncoad, n_steps=10000, T=(2000.0, 300.0), lam=(1.0, 0.0), p_local=0.8, seed=None):
+    def run(self, Ncoad, n_steps=10000, T=(2000.0, 300.0), lam=(1.0, 0.0),
+            p_local=0.8, p_central=0.1, seed=None):
         """Run canonical Metropolis MC at fixed Ncoad with within-chain annealing.
 
-        Annealing happens WITHIN each MC run (T cooled T_start->T_end, lam start->end over the
-        chain); the temperature is not cooled between AL rounds.
+        Annealing happens WITHIN the chain (T cooled T_start->T_end, lam start->end); it is not
+        cooled between AL rounds.
 
         Args:
             Ncoad: number of coadsorbates (fixed throughout the chain)
             n_steps: number of MC steps
-            T: temperature in K; a (T_start, T_end) tuple is geometrically annealed over the
-                chain, a scalar is held constant
-            lam: uncertainty weight in E_corr = E - lam*sigma; a (lam_start, lam_end) tuple is
-                linearly annealed over the chain, a scalar is held constant
-            p_local: probability a relocation targets a nearby (within local_radius) empty site
-                rather than any empty site
-            seed: RNG seed for this chain (defaults to the sampler's seed); set distinct seeds
-                for independent parallel chains
+            T: temperature in K; (T_start, T_end) tuple geometrically annealed, scalar held constant
+            lam: weight in E_corr = E - lam*sigma; (start, end) tuple linearly annealed, scalar constant
+            p_local: probability a coad relocation targets a nearby (within local_radius) empty site
+            p_central: probability a step is a central hop (swap to another valid central
+                arrangement) rather than a coad relocation; only active with >1 base structure
+            seed: RNG seed for this chain (defaults to the sampler's seed)
 
-        Returns a dict with: Ncoad, best=(admol, E), pool=[(admol, E, sigma, trace), ...]
-        (unique validly-evaluated configs, the candidate set for selection), and run
-        diagnostics (n_steps, n_accept, accept_frac, n_unique, Emin).
+        Returns a dict with: Ncoad, best=(admol, E), pool=[(admol, E, sigma, trace), ...] (unique
+        validly-evaluated configs), and diagnostics (n_steps, n_accept, accept_frac, n_central,
+        n_central_accept, n_unique, Emin).
         """
-        if Ncoad > len(self.stable_inds):
-            raise ValueError("Ncoad={} exceeds available stable sites ({})".format(
-                Ncoad, len(self.stable_inds)))
         rng = random.Random(self.seed if seed is None else seed)
         T0, T1 = (T, T) if np.isscalar(T) else T
         l0, l1 = (lam, lam) if np.isscalar(lam) else lam
+        nbases = len(self.base_admols)
 
-        occ, m_cur = self._greedy_valid_state(Ncoad, rng)
+        b, occ, m_cur = self._greedy_valid_state(Ncoad, rng)
         E_cur, s_cur, tr_cur = self.energy(m_cur)
 
-        visited = {}  # frozenset(occ) -> (admol, E, sigma, trace)
+        visited = {}  # (base_idx, frozenset(occ)) -> (admol, E, sigma, trace)
 
-        def record(occ_set, m, E, s, tr):
-            k = frozenset(occ_set)
+        def record(b_, occ_, m, E, s, tr):
+            k = (b_, frozenset(occ_))
             if k not in visited:
                 visited[k] = (m, E, s, tr)
 
-        record(occ, m_cur, E_cur, s_cur, tr_cur)
+        record(b, occ, m_cur, E_cur, s_cur, tr_cur)
 
         n_accept = 0
+        n_central = 0
+        n_central_accept = 0
         for step in range(n_steps):
             f = step / max(n_steps - 1, 1)
             Tk = T0 * (T1 / T0) ** f if (T0 > 0 and T1 > 0) else (T0 + (T1 - T0) * f)
             lam_s = l0 + (l1 - l0) * f
 
-            # propose a canonical relocation: move one coad from an occupied to an empty site
-            o = rng.choice(tuple(occ))
-            if rng.random() < p_local:
-                cands = self._nearby_empty(o, occ) or self._empty(occ)
+            do_central = (nbases > 1 and Ncoad > 0 and rng.random() < p_central)
+            if do_central:
+                # central hop: swap to another valid central arrangement, keeping the coads
+                b_new = rng.choice([x for x in range(nbases) if x != b])
+                if not all(k in self._stable_empty[b_new] for k in occ):
+                    continue  # coad placement collides with the new central arrangement
+                occ_new = set(occ)
             else:
-                cands = self._empty(occ)
-            if not cands:
-                continue
-            e = rng.choice(cands)
-            new_occ = (occ - {o}) | {e}
+                # coad relocation (canonical: preserves #coads)
+                o = rng.choice(tuple(occ))
+                if rng.random() < p_local:
+                    cands = self._nearby_empty(b, o, occ) or self._empty(b, occ)
+                else:
+                    cands = self._empty(b, occ)
+                if not cands:
+                    continue
+                e = rng.choice(cands)
+                b_new = b
+                occ_new = (occ - {o}) | {e}
 
             try:
-                m_new = self.build_config(new_occ)
+                m_new = self.build_config(b_new, occ_new)
             except Exception:
                 continue
             if not self.is_valid(m_new):
                 continue
 
             E_new, s_new, tr_new = self.energy(m_new)
-            record(new_occ, m_new, E_new, s_new, tr_new)  # keep every validly-evaluated proposal
+            record(b_new, occ_new, m_new, E_new, s_new, tr_new)
+            if do_central:
+                n_central += 1
 
             dEcorr = (E_new - lam_s * s_new) - (E_cur - lam_s * s_cur)
             if dEcorr <= 0 or rng.random() < np.exp(-dEcorr / (R * Tk)):
-                occ, m_cur, E_cur, s_cur, tr_cur = new_occ, m_new, E_new, s_new, tr_new
+                b, occ, m_cur, E_cur, s_cur, tr_cur = b_new, occ_new, m_new, E_new, s_new, tr_new
                 n_accept += 1
+                if do_central:
+                    n_central_accept += 1
 
         pool = list(visited.values())
         best = min(pool, key=lambda v: v[1])
         return {"Ncoad": Ncoad, "best": (best[0], best[1]), "pool": pool,
                 "n_steps": n_steps, "n_accept": n_accept,
                 "accept_frac": n_accept / n_steps if n_steps else 0.0,
+                "n_central": n_central, "n_central_accept": n_central_accept,
                 "n_unique": len(pool), "Emin": best[1]}
 
     def scan_coverages(self, Ncoads=None, max_coadsorbates=None, n_jobs=1, **run_kwargs):
-        """Run an MC chain at each coverage level and assemble per-coverage minima plus a
-        combined candidate pool. The per-coverage chains are independent (same SIDT model,
-        different fixed Ncoad), so they can run in parallel.
+        """Run an MC chain at each coverage level (one sampler explores all base arrangements via
+        central hops) and assemble per-coverage minima plus a combined candidate pool.
 
         Args:
-            Ncoads: coverage levels to sample; defaults to 1..len(stable_inds)
-            max_coadsorbates: cap on Ncoad (avoid unreachably high coverages); applied to the
-                default range or as a filter on an explicit Ncoads
-            n_jobs: parallel workers for the per-coverage chains (joblib); 1 runs serially.
-                Requires the sampler (base admol, coadsorbate, regressor) to be picklable.
-            **run_kwargs: forwarded to run() (n_steps, T, lam, p_local)
+            Ncoads: coverage levels (number of coadsorbates) to sample; defaults to 1..max hostable
+            max_coadsorbates: cap on Ncoad
+            n_jobs: joblib workers for the independent per-coverage chains
+            **run_kwargs: forwarded to run() (n_steps, T, lam, p_local, p_central)
 
         Returns a dict with Ncoad_energy_dict / Ncoad_config_dict (per-coverage best energy and
-        config adjacency list), a combined ``pool`` for selection, and per-Ncoad ``results``.
+        config adjacency list), a combined ``pool``, and per-Ncoad ``results``.
         """
+        max_possible = max(len(se) for se in self._stable_empty)
         if Ncoads is None:
-            top = len(self.stable_inds)
+            top = max_possible
             if max_coadsorbates is not None:
                 top = min(top, max_coadsorbates)
             Ncoads = list(range(1, top + 1))
         else:
-            Ncoads = list(Ncoads)
-            if max_coadsorbates is not None:
-                Ncoads = [N for N in Ncoads if N <= max_coadsorbates]
+            Ncoads = [N for N in Ncoads
+                      if (max_coadsorbates is None or N <= max_coadsorbates) and N <= max_possible]
 
-        # distinct per-coverage seeds -> independent (and reproducible) chains when a base seed is set
         seeds = [None if self.seed is None else self.seed + N for N in Ncoads]
 
         if n_jobs == 1:
@@ -303,45 +358,44 @@ class CanonicalCoverageMC:
             Ncoad_energy_dict[N] = r["best"][1]
             Ncoad_config_dict[N] = r["best"][0].to_adjacency_list()
             pool.extend(r["pool"])
-            logging.info("coverage_mc: Ncoad=%d Emin=%.1f J/mol unique=%d accept=%.2f",
-                         N, r["Emin"], r["n_unique"], r["accept_frac"])
+            logging.info("coverage_mc: Ncoad=%d Emin=%.1f J/mol unique=%d accept=%.2f central=%d/%d",
+                         N, r["Emin"], r["n_unique"], r["accept_frac"],
+                         r["n_central_accept"], r["n_central"])
         return {"results": results, "Ncoad_energy_dict": Ncoad_energy_dict,
                 "Ncoad_config_dict": Ncoad_config_dict, "pool": pool}
 
 
 def mc_cov_energies_configs_concern(base_admols, coad, coad_stable_sites, tree_interaction_regressor,
-                                    Nocc_isolated, concern_energy_tol=None, coadmol_E_dict=None,
+                                    Nocc_isolated=None, concern_energy_tol=None, coadmol_E_dict=None,
                                     tree_atom_regressor=None, unstable_pairs=None, is_ts=False,
                                     max_coadsorbates=None, n_jobs=1, seed=None, local_radius=2,
                                     **mc_run_kwargs):
     """MC analogue of ``get_cov_energies_configs_concern_tree`` (coveragedependence.py).
 
-    Drop-in replacement: returns ``(Ncoad_energy_dict, Ncoad_config_dict, configs_of_concern)``
-    in the SAME shapes, so the enumerative pieces downstream (CalculateConfigurationEnergiesTask
-    serialization, SelectCalculationsTask, get_configs_for_calculation) work unchanged. Instead of
-    scanning a pre-enumerated config list, it runs canonical Metropolis MC over the SIDT tree for
-    each base structure and pools the visited configurations.
+    Drop-in replacement: returns ``(Ncoad_energy_dict, Ncoad_config_dict, configs_of_concern)`` in
+    the SAME shapes, so the enumerative pieces downstream (CalculateConfigurationEnergiesTask
+    serialization, SelectCalculationsTask, get_configs_for_calculation) work unchanged. Runs ONE
+    canonical-MC sampler that explores all base central arrangements (via central hops) and pools
+    visited configurations per coverage.
 
     Args:
-        base_admols: list of base structures (central adsorbate/TS site arrangements) to seed MC,
-            i.e. what ``get_unique_adsorbate_admols`` returns. MC relocates coadsorbates only, so
-            exploring multiple central-site arrangements requires one chain set per base.
+        base_admols: list of valid central arrangements (all stable adsorbate geometries / all
+            valid saddles) -- the central species can hop among these during sampling
         coad: the (slab-free) coadsorbate Molecule
         coad_stable_sites: stable coadsorbate (site, morphology) list
         tree_interaction_regressor: trained SIDT interaction regressor
-        Nocc_isolated: number of sites occupied by the central species in the base (coverage Ncoad
-            of a config = #occupied sites - Nocc_isolated)
-        concern_energy_tol: configs within this many J/mol of their coverage's minimum are flagged
+        Nocc_isolated: accepted for API compatibility but unused -- coverage is the #coadsorbates
+            placed (len(occ)), which is robust to central arrangements occupying different site counts
+        concern_energy_tol: configs within this many J/mol of their coverage's MC minimum are flagged
             "of concern" (the candidate set for selection); None keeps all visited
         coadmol_E_dict / tree_atom_regressor: atom-centered (1-body) energy source (one required)
-        unstable_pairs: unstable-pair Groups for validity filtering (passed to the sampler)
+        unstable_pairs: unstable-pair Groups for validity filtering
         is_ts: whether the base structures are transition states
         max_coadsorbates: cap on coverage
         n_jobs: joblib workers for the per-coverage chains
-        seed: base RNG seed (offset per base structure for independent chains)
-        local_radius: site-graph hop radius for local moves (a relocation's "nearby" empty sites
-            are those within this many site-to-site hops; default 2 = roughly 1st/2nd neighbors)
-        **mc_run_kwargs: forwarded to CanonicalCoverageMC.run (n_steps, T, lam, p_local)
+        seed: base RNG seed
+        local_radius: site-graph hop radius for local moves (hops, not Angstrom; default 2)
+        **mc_run_kwargs: forwarded to run (n_steps, T, lam, p_local, p_central)
 
     Returns:
         Ncoad_energy_dict: {Ncoad: min energy [J/mol]}
@@ -349,26 +403,21 @@ def mc_cov_energies_configs_concern(base_admols, coad, coad_stable_sites, tree_i
         configs_of_concern: {i: (admol, E, trace, sigma)} (same value order as the enumerative
             function, which CalculateConfigurationEnergiesTask serializes as [adjlist, E, trace, sigma])
     """
-    Ncoad_energy_dict = {}
-    Ncoad_config_dict = {}
-    pool_all = []  # (admol, E, sigma, trace)
-    for b, base in enumerate(base_admols):
-        mc = CanonicalCoverageMC(base, coad, coad_stable_sites, tree_interaction_regressor,
-                                 tree_atom_regressor=tree_atom_regressor, coadmol_E_dict=coadmol_E_dict,
-                                 unstable_pairs=unstable_pairs, is_ts=is_ts, local_radius=local_radius,
-                                 seed=None if seed is None else seed + 1000 * b)
-        res = mc.scan_coverages(max_coadsorbates=max_coadsorbates, n_jobs=n_jobs, **mc_run_kwargs)
-        for N, E in res["Ncoad_energy_dict"].items():
-            if N not in Ncoad_energy_dict or E < Ncoad_energy_dict[N]:
-                Ncoad_energy_dict[N] = E
-                Ncoad_config_dict[N] = res["Ncoad_config_dict"][N]
-        pool_all.extend(res["pool"])
+    mc = CanonicalCoverageMC(base_admols, coad, coad_stable_sites, tree_interaction_regressor,
+                             tree_atom_regressor=tree_atom_regressor, coadmol_E_dict=coadmol_E_dict,
+                             unstable_pairs=unstable_pairs, is_ts=is_ts, local_radius=local_radius,
+                             seed=seed)
+    res = mc.scan_coverages(max_coadsorbates=max_coadsorbates, n_jobs=n_jobs, **mc_run_kwargs)
 
+    Ncoad_energy_dict = res["Ncoad_energy_dict"]
+    Ncoad_config_dict = res["Ncoad_config_dict"]
     configs_of_concern = {}
-    for i, (m, E, sigma, tr) in enumerate(pool_all):
-        Ncoad = len([a for a in m.atoms if a.is_surface_site()
-                     and any(not a2.is_surface_site() for a2 in a.bonds.keys())]) - Nocc_isolated
-        if concern_energy_tol is None or Ncoad_energy_dict[Ncoad] + concern_energy_tol > E:
-            configs_of_concern[i] = (m, E, tr, sigma)
+    i = 0
+    for N, r in res["results"].items():
+        Emin = Ncoad_energy_dict[N]
+        for (m, E, sigma, tr) in r["pool"]:
+            if concern_energy_tol is None or Emin + concern_energy_tol > E:
+                configs_of_concern[i] = (m, E, tr, sigma)
+                i += 1
 
     return Ncoad_energy_dict, Ncoad_config_dict, configs_of_concern
