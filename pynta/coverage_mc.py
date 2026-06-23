@@ -312,7 +312,8 @@ class CanonicalCoverageMC:
 def mc_cov_energies_configs_concern(base_admols, coad, coad_stable_sites, tree_interaction_regressor,
                                     Nocc_isolated, concern_energy_tol=None, coadmol_E_dict=None,
                                     tree_atom_regressor=None, unstable_pairs=None, is_ts=False,
-                                    max_coadsorbates=None, n_jobs=1, seed=None, **mc_run_kwargs):
+                                    max_coadsorbates=None, n_jobs=1, seed=None, local_radius=2,
+                                    **mc_run_kwargs):
     """MC analogue of ``get_cov_energies_configs_concern_tree`` (coveragedependence.py).
 
     Drop-in replacement: returns ``(Ncoad_energy_dict, Ncoad_config_dict, configs_of_concern)``
@@ -338,6 +339,8 @@ def mc_cov_energies_configs_concern(base_admols, coad, coad_stable_sites, tree_i
         max_coadsorbates: cap on coverage
         n_jobs: joblib workers for the per-coverage chains
         seed: base RNG seed (offset per base structure for independent chains)
+        local_radius: site-graph hop radius for local moves (a relocation's "nearby" empty sites
+            are those within this many site-to-site hops; default 2 = roughly 1st/2nd neighbors)
         **mc_run_kwargs: forwarded to CanonicalCoverageMC.run (n_steps, T, lam, p_local)
 
     Returns:
@@ -352,7 +355,7 @@ def mc_cov_energies_configs_concern(base_admols, coad, coad_stable_sites, tree_i
     for b, base in enumerate(base_admols):
         mc = CanonicalCoverageMC(base, coad, coad_stable_sites, tree_interaction_regressor,
                                  tree_atom_regressor=tree_atom_regressor, coadmol_E_dict=coadmol_E_dict,
-                                 unstable_pairs=unstable_pairs, is_ts=is_ts,
+                                 unstable_pairs=unstable_pairs, is_ts=is_ts, local_radius=local_radius,
                                  seed=None if seed is None else seed + 1000 * b)
         res = mc.scan_coverages(max_coadsorbates=max_coadsorbates, n_jobs=n_jobs, **mc_run_kwargs)
         for N, E in res["Ncoad_energy_dict"].items():
