@@ -307,3 +307,65 @@ class CanonicalCoverageMC:
                          N, r["Emin"], r["n_unique"], r["accept_frac"])
         return {"results": results, "Ncoad_energy_dict": Ncoad_energy_dict,
                 "Ncoad_config_dict": Ncoad_config_dict, "pool": pool}
+
+
+def mc_cov_energies_configs_concern(base_admols, coad, coad_stable_sites, tree_interaction_regressor,
+                                    Nocc_isolated, concern_energy_tol=None, coadmol_E_dict=None,
+                                    tree_atom_regressor=None, unstable_pairs=None, is_ts=False,
+                                    max_coadsorbates=None, n_jobs=1, seed=None, **mc_run_kwargs):
+    """MC analogue of ``get_cov_energies_configs_concern_tree`` (coveragedependence.py).
+
+    Drop-in replacement: returns ``(Ncoad_energy_dict, Ncoad_config_dict, configs_of_concern)``
+    in the SAME shapes, so the enumerative pieces downstream (CalculateConfigurationEnergiesTask
+    serialization, SelectCalculationsTask, get_configs_for_calculation) work unchanged. Instead of
+    scanning a pre-enumerated config list, it runs canonical Metropolis MC over the SIDT tree for
+    each base structure and pools the visited configurations.
+
+    Args:
+        base_admols: list of base structures (central adsorbate/TS site arrangements) to seed MC,
+            i.e. what ``get_unique_adsorbate_admols`` returns. MC relocates coadsorbates only, so
+            exploring multiple central-site arrangements requires one chain set per base.
+        coad: the (slab-free) coadsorbate Molecule
+        coad_stable_sites: stable coadsorbate (site, morphology) list
+        tree_interaction_regressor: trained SIDT interaction regressor
+        Nocc_isolated: number of sites occupied by the central species in the base (coverage Ncoad
+            of a config = #occupied sites - Nocc_isolated)
+        concern_energy_tol: configs within this many J/mol of their coverage's minimum are flagged
+            "of concern" (the candidate set for selection); None keeps all visited
+        coadmol_E_dict / tree_atom_regressor: atom-centered (1-body) energy source (one required)
+        unstable_pairs: unstable-pair Groups for validity filtering (passed to the sampler)
+        is_ts: whether the base structures are transition states
+        max_coadsorbates: cap on coverage
+        n_jobs: joblib workers for the per-coverage chains
+        seed: base RNG seed (offset per base structure for independent chains)
+        **mc_run_kwargs: forwarded to CanonicalCoverageMC.run (n_steps, T, lam, p_local)
+
+    Returns:
+        Ncoad_energy_dict: {Ncoad: min energy [J/mol]}
+        Ncoad_config_dict: {Ncoad: adjacency list of the min-energy config}
+        configs_of_concern: {i: (admol, E, trace, sigma)} (same value order as the enumerative
+            function, which CalculateConfigurationEnergiesTask serializes as [adjlist, E, trace, sigma])
+    """
+    Ncoad_energy_dict = {}
+    Ncoad_config_dict = {}
+    pool_all = []  # (admol, E, sigma, trace)
+    for b, base in enumerate(base_admols):
+        mc = CanonicalCoverageMC(base, coad, coad_stable_sites, tree_interaction_regressor,
+                                 tree_atom_regressor=tree_atom_regressor, coadmol_E_dict=coadmol_E_dict,
+                                 unstable_pairs=unstable_pairs, is_ts=is_ts,
+                                 seed=None if seed is None else seed + 1000 * b)
+        res = mc.scan_coverages(max_coadsorbates=max_coadsorbates, n_jobs=n_jobs, **mc_run_kwargs)
+        for N, E in res["Ncoad_energy_dict"].items():
+            if N not in Ncoad_energy_dict or E < Ncoad_energy_dict[N]:
+                Ncoad_energy_dict[N] = E
+                Ncoad_config_dict[N] = res["Ncoad_config_dict"][N]
+        pool_all.extend(res["pool"])
+
+    configs_of_concern = {}
+    for i, (m, E, sigma, tr) in enumerate(pool_all):
+        Ncoad = len([a for a in m.atoms if a.is_surface_site()
+                     and any(not a2.is_surface_site() for a2 in a.bonds.keys())]) - Nocc_isolated
+        if concern_energy_tol is None or Ncoad_energy_dict[Ncoad] + concern_energy_tol > E:
+            configs_of_concern[i] = (m, E, tr, sigma)
+
+    return Ncoad_energy_dict, Ncoad_config_dict, configs_of_concern
