@@ -84,8 +84,7 @@ class CanonicalCoverageMC:
         self.unstable_pairs = unstable_pairs
         self.is_ts = is_ts
         self.local_radius = local_radius
-        if seed is not None:
-            random.seed(seed)
+        self.seed = seed
 
         self.stable_inds = get_stable_empty_site_inds(base_admol, coad_stable_sites)
         if len(self.stable_inds) == 0:
@@ -150,7 +149,7 @@ class CanonicalCoverageMC:
         return configuration_is_valid(m, self.base_admol, self.is_ts, self.unstable_pairs)
 
     # ------------------------------------------------------------------ initialization
-    def _greedy_valid_state(self, Ncoad, max_restarts=200):
+    def _greedy_valid_state(self, Ncoad, rng, max_restarts=200):
         """Greedily place Ncoad coadsorbates on empty sites, keeping the config valid at each
         step. Restarts on a dead end. Returns (occ_set, admol)."""
         for _ in range(max_restarts):
@@ -159,7 +158,7 @@ class CanonicalCoverageMC:
             stuck = False
             while len(occ) < Ncoad:
                 empties = self._empty(occ)
-                random.shuffle(empties)
+                rng.shuffle(empties)
                 placed = False
                 for e in empties:
                     cand = occ | {e}
@@ -179,18 +178,23 @@ class CanonicalCoverageMC:
                            "(stable sites available: {})".format(Ncoad, len(self.stable_inds)))
 
     # ------------------------------------------------------------------ the sampler
-    def run(self, Ncoad, n_steps=10000, T=(2000.0, 300.0), lam=(1.0, 0.0), p_local=0.8):
-        """Run canonical Metropolis MC at fixed Ncoad with annealed T and lambda.
+    def run(self, Ncoad, n_steps=10000, T=(2000.0, 300.0), lam=(1.0, 0.0), p_local=0.8, seed=None):
+        """Run canonical Metropolis MC at fixed Ncoad with within-chain annealing.
+
+        Annealing happens WITHIN each MC run (T cooled T_start->T_end, lam start->end over the
+        chain); the temperature is not cooled between AL rounds.
 
         Args:
             Ncoad: number of coadsorbates (fixed throughout the chain)
             n_steps: number of MC steps
-            T: temperature in K; a (T_start, T_end) tuple is geometrically annealed, a scalar
-                is held constant
+            T: temperature in K; a (T_start, T_end) tuple is geometrically annealed over the
+                chain, a scalar is held constant
             lam: uncertainty weight in E_corr = E - lam*sigma; a (lam_start, lam_end) tuple is
-                linearly annealed, a scalar is held constant
+                linearly annealed over the chain, a scalar is held constant
             p_local: probability a relocation targets a nearby (within local_radius) empty site
                 rather than any empty site
+            seed: RNG seed for this chain (defaults to the sampler's seed); set distinct seeds
+                for independent parallel chains
 
         Returns a dict with: Ncoad, best=(admol, E), pool=[(admol, E, sigma, trace), ...]
         (unique validly-evaluated configs, the candidate set for selection), and run
@@ -199,10 +203,11 @@ class CanonicalCoverageMC:
         if Ncoad > len(self.stable_inds):
             raise ValueError("Ncoad={} exceeds available stable sites ({})".format(
                 Ncoad, len(self.stable_inds)))
+        rng = random.Random(self.seed if seed is None else seed)
         T0, T1 = (T, T) if np.isscalar(T) else T
         l0, l1 = (lam, lam) if np.isscalar(lam) else lam
 
-        occ, m_cur = self._greedy_valid_state(Ncoad)
+        occ, m_cur = self._greedy_valid_state(Ncoad, rng)
         E_cur, s_cur, tr_cur = self.energy(m_cur)
 
         visited = {}  # frozenset(occ) -> (admol, E, sigma, trace)
@@ -221,14 +226,14 @@ class CanonicalCoverageMC:
             lam_s = l0 + (l1 - l0) * f
 
             # propose a canonical relocation: move one coad from an occupied to an empty site
-            o = random.choice(tuple(occ))
-            if random.random() < p_local:
+            o = rng.choice(tuple(occ))
+            if rng.random() < p_local:
                 cands = self._nearby_empty(o, occ) or self._empty(occ)
             else:
                 cands = self._empty(occ)
             if not cands:
                 continue
-            e = random.choice(cands)
+            e = rng.choice(cands)
             new_occ = (occ - {o}) | {e}
 
             try:
@@ -242,7 +247,7 @@ class CanonicalCoverageMC:
             record(new_occ, m_new, E_new, s_new, tr_new)  # keep every validly-evaluated proposal
 
             dEcorr = (E_new - lam_s * s_new) - (E_cur - lam_s * s_cur)
-            if dEcorr <= 0 or random.random() < np.exp(-dEcorr / (R * Tk)):
+            if dEcorr <= 0 or rng.random() < np.exp(-dEcorr / (R * Tk)):
                 occ, m_cur, E_cur, s_cur, tr_cur = new_occ, m_new, E_new, s_new, tr_new
                 n_accept += 1
 
@@ -253,21 +258,47 @@ class CanonicalCoverageMC:
                 "accept_frac": n_accept / n_steps if n_steps else 0.0,
                 "n_unique": len(pool), "Emin": best[1]}
 
-    def scan_coverages(self, Ncoads=None, **run_kwargs):
+    def scan_coverages(self, Ncoads=None, max_coadsorbates=None, n_jobs=1, **run_kwargs):
         """Run an MC chain at each coverage level and assemble per-coverage minima plus a
-        combined candidate pool. ``Ncoads`` defaults to 1..len(stable_inds).
+        combined candidate pool. The per-coverage chains are independent (same SIDT model,
+        different fixed Ncoad), so they can run in parallel.
+
+        Args:
+            Ncoads: coverage levels to sample; defaults to 1..len(stable_inds)
+            max_coadsorbates: cap on Ncoad (avoid unreachably high coverages); applied to the
+                default range or as a filter on an explicit Ncoads
+            n_jobs: parallel workers for the per-coverage chains (joblib); 1 runs serially.
+                Requires the sampler (base admol, coadsorbate, regressor) to be picklable.
+            **run_kwargs: forwarded to run() (n_steps, T, lam, p_local)
 
         Returns a dict with Ncoad_energy_dict / Ncoad_config_dict (per-coverage best energy and
         config adjacency list), a combined ``pool`` for selection, and per-Ncoad ``results``.
         """
         if Ncoads is None:
-            Ncoads = range(1, len(self.stable_inds) + 1)
+            top = len(self.stable_inds)
+            if max_coadsorbates is not None:
+                top = min(top, max_coadsorbates)
+            Ncoads = list(range(1, top + 1))
+        else:
+            Ncoads = list(Ncoads)
+            if max_coadsorbates is not None:
+                Ncoads = [N for N in Ncoads if N <= max_coadsorbates]
+
+        # distinct per-coverage seeds -> independent (and reproducible) chains when a base seed is set
+        seeds = [None if self.seed is None else self.seed + N for N in Ncoads]
+
+        if n_jobs == 1:
+            runs = [self.run(N, seed=s, **run_kwargs) for N, s in zip(Ncoads, seeds)]
+        else:
+            from joblib import Parallel, delayed
+            runs = Parallel(n_jobs=n_jobs)(
+                delayed(self.run)(N, seed=s, **run_kwargs) for N, s in zip(Ncoads, seeds))
+
         results = {}
         Ncoad_energy_dict = {}
         Ncoad_config_dict = {}
         pool = []
-        for N in Ncoads:
-            r = self.run(N, **run_kwargs)
+        for N, r in zip(Ncoads, runs):
             results[N] = r
             Ncoad_energy_dict[N] = r["best"][1]
             Ncoad_config_dict[N] = r["best"][0].to_adjacency_list()
