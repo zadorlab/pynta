@@ -1622,6 +1622,110 @@ def get_unique_adsorbate_admols(adsorbate_path, sites, site_adjacency, nslab,
         admols.append(st)
     return admols
 
+def get_unique_TS_admols(ts_path, adsorbates_path, metal, facet, sites, site_adjacency, nslab,
+                         allowed_structure_site_structures=None, valid_only=True):
+    """TS analogue of get_unique_adsorbate_admols: return [(atoms, admol)] for the valid saddle
+    configurations of a TS. Each valid saddle is a distinct optimized 3D structure that cannot be
+    reconstructed from the 2D graph, so we keep both the 3D atoms and the 2D admol. Used to seed
+    the coverage MC with every valid central TS arrangement and to rebuild a selected config from
+    the matching saddle template (mol_to_atoms)."""
+    if not os.path.exists(os.path.join(ts_path, "info.json")):
+        return []
+    if allowed_structure_site_structures is None:
+        allowed_structure_site_structures = generate_allowed_structure_site_structures(
+            adsorbates_path, sites, site_adjacency, nslab, max_dist=np.inf)
+    valid_dict, valid_info = validate_TS_configs(ts_path, sites, site_adjacency, nslab, irc_concern_len=8)
+    with open(os.path.join(ts_path, "info.json")) as f:
+        info = json.load(f)
+    reactants = Molecule().from_adjacency_list(info["reactants"])
+    products = Molecule().from_adjacency_list(info["products"])
+
+    def _vdw_flags(mol):
+        kb = False
+        ks = False
+        for bd in mol.get_all_edges():
+            if bd.order == 0 and (bd.atom1.is_surface_site() or bd.atom2.is_surface_site()):
+                kb = True
+                m = mol.copy(deep=True)
+                b = m.get_bond(m.atoms[mol.atoms.index(bd.atom1)], m.atoms[mol.atoms.index(bd.atom2)])
+                m.remove_bond(b)
+                if len(m.split()) == 1:
+                    ks = True
+        return kb, ks
+    kb_r, ks_r = _vdw_flags(reactants)
+    kb_p, ks_p = _vdw_flags(products)
+    keep_binding_vdW_bonds = kb_r and kb_p
+    keep_vdW_surface_bonds = ks_r and ks_p
+
+    out = []
+    for k, is_valid in valid_dict.items():
+        if valid_only and not is_valid:
+            continue
+        dopt = os.path.join(ts_path, k, "opt.xyz")
+        if not os.path.exists(dopt):
+            continue
+        atoms = read(dopt)
+        try:
+            admol, _, _ = generate_TS_2D(atoms, os.path.join(ts_path, "info.json"), metal, facet,
+                                         sites, site_adjacency, nslab,
+                                         imag_freq_path=os.path.join(ts_path, k, "vib.0.traj"),
+                                         max_dist=np.inf,
+                                         allowed_structure_site_structures=allowed_structure_site_structures,
+                                         keep_binding_vdW_bonds=keep_binding_vdW_bonds,
+                                         keep_vdW_surface_bonds=keep_vdW_surface_bonds)
+        except Exception:
+            continue
+        out.append((atoms, admol))
+    return out
+
+def get_central_templates(name, is_ts, pynta_dir, metal, facet, sites, site_adjacency, nslab,
+                          allowed_structure_site_structures=None, energy_cutoff=None):
+    """Return [(atoms, admol)] for all valid base arrangements of a central species: all valid TS
+    saddles, or all stable adsorbate geometries within energy_cutoff (None = all) of the lowest.
+    These are the 3D templates the coverage MC decorates and that mol_to_atoms uses to rebuild a
+    selected config from the SAME central arrangement it came from. (A single template only covers
+    configs whose central sits on its sites, which is why we need the full list.)"""
+    if is_ts:
+        ts_path = os.path.join(pynta_dir, name)
+        if not os.path.isdir(ts_path):
+            ts_path = os.path.join(pynta_dir, name.rsplit("_", 1)[0])
+        return get_unique_TS_admols(ts_path, os.path.join(pynta_dir, "Adsorbates"), metal, facet,
+                                    sites, site_adjacency, nslab, allowed_structure_site_structures)
+
+    ad_path = os.path.join(pynta_dir, "Adsorbates", name)
+    with open(os.path.join(ad_path, "info.json")) as f:
+        info = json.load(f)
+    mol = Molecule().from_adjacency_list(info["adjlist"])
+    atom_to_molecule_surface_atom_map = {int(k): int(v)
+                                         for k, v in info["gratom_to_molecule_surface_atom_map"].items()}
+    keep_binding_vdW_bonds = False
+    keep_vdW_surface_bonds = False
+    for bd in mol.get_all_edges():
+        if bd.order == 0 and (bd.atom1.is_surface_site() or bd.atom2.is_surface_site()):
+            keep_binding_vdW_bonds = True
+            m = mol.copy(deep=True)
+            b = m.get_bond(m.atoms[mol.atoms.index(bd.atom1)], m.atoms[mol.atoms.index(bd.atom2)])
+            m.remove_bond(b)
+            if len(m.split()) == 1:
+                keep_vdW_surface_bonds = True
+    geoms = get_unique_adsorbate_geometries(ad_path, mol, sites, site_adjacency,
+                                            atom_to_molecule_surface_atom_map, nslab)
+    if energy_cutoff is not None and geoms:
+        energies = [g.get_potential_energy() for g in geoms]
+        emin = min(energies)
+        geoms = [g for g, e in zip(geoms, energies) if e - emin <= energy_cutoff]
+    out = []
+    for geo in geoms:
+        try:
+            st, _, _ = generate_adsorbate_2D(geo, sites, site_adjacency, nslab, max_dist=np.inf,
+                                             allowed_structure_site_structures=allowed_structure_site_structures,
+                                             keep_binding_vdW_bonds=keep_binding_vdW_bonds,
+                                             keep_vdW_surface_bonds=keep_vdW_surface_bonds)
+        except Exception:
+            continue
+        out.append((geo, st))
+    return out
+
 def get_configurations(admol, coad, coad_stable_sites, tree_interaction_classifier=None, coadmol_stability_dict=None, unstable_groups=None,
                        tree_interaction_regressor=None, tree_atom_regressor=None, coadmol_E_dict=None, energy_tol=None, max_coadsorbates=None):
     coad_stable_sites_set = set(tuple(x) if not isinstance(x, str) else x for x in coad_stable_sites)

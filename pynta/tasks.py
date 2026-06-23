@@ -22,7 +22,7 @@ from pynta.transitionstate import get_unique_optimized_adsorbates,determine_TS_c
 from pynta.utils import *
 from pynta.calculator import run_harmonically_forced, map_harmonically_forced, add_sella_constraint
 from pynta.mol import *
-from pynta.coveragedependence import get_unstable_pairs, mol_to_atoms, get_configs_for_calculation, get_cov_energies_configs_concern_tree, get_configurations, get_unique_adsorbate_admols, train_sidt_cov_dep_regressor, process_calculation
+from pynta.coveragedependence import get_unstable_pairs, mol_to_atoms, get_configs_for_calculation, get_cov_energies_configs_concern_tree, get_configurations, get_unique_adsorbate_admols, get_central_templates, train_sidt_cov_dep_regressor, process_calculation
 from pynta.geometricanalysis import *
 from pynta.adsorbate import construct_initial_guess_files
 from pynta.postprocessing import postprocess, write_rmg_libraries
@@ -1475,15 +1475,16 @@ class TrainCovdepModelTask(FiretaskBase):
             if allowed_structure_site_structures is None:
                 allowed_structure_site_structures = generate_allowed_structure_site_structures(os.path.join(pynta_dir,"Adsorbates"),sites,site_adjacency,nslab,max_dist=np.inf)
             for admol_name,admol in admol_name_structure_dict.items():
-                ad_dir = os.path.join(pynta_dir, "Adsorbates", admol_name)
-                if os.path.isdir(ad_dir):
-                    base_admols = get_unique_adsorbate_admols(ad_dir, sites, site_adjacency, nslab,
+                # all valid central arrangements (adsorbate geometries / TS saddles); MC hops among them
+                is_ts_name = any(bd.get_order_str() == 'R' for bd in admol.get_all_edges())
+                try:
+                    templates = get_central_templates(admol_name, is_ts_name, pynta_dir, metal, facet,
+                        sites, site_adjacency, nslab,
                         allowed_structure_site_structures=allowed_structure_site_structures,
                         energy_cutoff=adsorbate_site_energy_cutoff)
-                    if not base_admols:
-                        base_admols = [admol]
-                else:
-                    base_admols = [admol]
+                except Exception:
+                    templates = []
+                base_admols = [t_admol for _, t_admol in templates] or [admol]
                 base_admols_by_name[admol_name] = base_admols
         elif not os.path.exists(os.path.join(path,"Configurations")):
             info_paths = {adname: os.path.join(os.path.split(os.path.split(p)[0])[0],"info.json") for adname,p in admol_name_path_dict.items()}
@@ -1748,6 +1749,7 @@ class SelectCalculationsTask(FiretaskBase):
         assert len(configs_for_calculation) > 0, configs_for_calculation
         sample_fws = []
         calculation_directories = []
+        template_cache = {}  # adname -> [(partial_atoms, partial_admol)] central-arrangement templates
         for i,config in enumerate(configs_for_calculation):
             adname = None
             coadname = None
@@ -1767,10 +1769,31 @@ class SelectCalculationsTask(FiretaskBase):
                 logging.error([[admol_name for admol_name,config_list in coad_admol_to_config_for_calculation[cname].items()] for cname in coad_admol_to_config_for_calculation.keys()])
                 raise ValueError
             
-            partial_admol = admol_name_structure_dict[adname]
+            # Build the 3D init from the matching central template. With central hopping (and the
+            # enumerate multi-base case) the config's central may be any valid arrangement, so try
+            # each base template and use the first mol_to_atoms can build from -- the one whose
+            # central arrangement matches the config.
+            if adname not in template_cache:
+                is_ts_name = any(bd.get_order_str() == 'R' for bd in admol_name_structure_dict[adname].get_all_edges())
+                try:
+                    template_cache[adname] = get_central_templates(adname, is_ts_name, pynta_dir, metal, facet,
+                        sites, site_adjacency, nslab,
+                        allowed_structure_site_structures=allowed_structure_site_structures)
+                except Exception:
+                    template_cache[adname] = []
+                if not template_cache[adname]:
+                    template_cache[adname] = [(read(admol_name_path_dict[adname]), admol_name_structure_dict[adname])]
             admol_path = admol_name_path_dict[adname]
-            partial_atoms = read(admol_path)
-            init_atoms = mol_to_atoms(config,slab,sites,metal,partial_atoms=partial_atoms,partial_admol=partial_admol)
+            init_atoms = None
+            for partial_atoms, partial_admol in template_cache[adname]:
+                try:
+                    init_atoms = mol_to_atoms(config,slab,sites,metal,partial_atoms=partial_atoms,partial_admol=partial_admol)
+                    break
+                except Exception:
+                    continue
+            if init_atoms is None:
+                logging.error("could not build 3D geometry for selected config (no matching central template); skipping")
+                continue
             os.makedirs(os.path.join(path,"Iterations",str(iter),"Samples",str(i)))
             init_path = os.path.join(path,"Iterations",str(iter),"Samples",str(i),"init.xyz")
             write(init_path,init_atoms)
