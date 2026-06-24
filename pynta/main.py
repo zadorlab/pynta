@@ -16,6 +16,7 @@ import yaml
 from copy import deepcopy
 import numpy as np
 from pynta.calculator import get_lattice_parameters
+from pynta.utils import save_slab_sites, load_slab_sites
 from fireworks import LaunchPad, Workflow
 from fireworks.queue.queue_launcher import rapidfire as rapidfirequeue
 from fireworks.features.multi_launcher import launch_multiprocess
@@ -237,6 +238,13 @@ class Pynta:
         self.single_sites_lists = unique_site_lists
         self.double_site_bond_params_lists = double_site_bond_params_lists
         self.double_sites_lists = unique_site_pairs_lists
+
+        # persist the sites so coverage dependence and postprocessing reuse the exact same set
+        # (same ordering) instead of re-deriving them with ACAT
+        try:
+            save_slab_sites(self.path, self.sites, self.site_adjacency)
+        except Exception as e:
+            logger.warning("could not save slab sites to {}: {}".format(self.path, e))
 
     def generate_mol_dict(self):
         """
@@ -492,7 +500,7 @@ class Pynta:
 
 
 class CoverageDependence:
-    def __init__(self,path,metal,surface_type,repeats,pynta_run_directory,software,software_kwargs,label,sites,site_adjacency,coad_stable_sites=None,adsorbates=[],transition_states=dict(),coadsorbates=[],
+    def __init__(self,path,metal,surface_type,repeats,pynta_run_directory,software,software_kwargs,label,sites=None,site_adjacency=None,coad_stable_sites=None,adsorbates=[],transition_states=dict(),coadsorbates=[],
                  max_dist=3.0,frozen_layers=2,fmaxopt=0.05,Ncalc_per_iter=6,TS_opt_software_kwargs=None,launchpad_path=None,
                  fworker_path=None,queue=False,njobs_queue=0,reset_launchpad=False,queue_adapter_path=None,
                  num_jobs=25,surrogate_metal=None,concern_energy_tol=None,max_iters=np.inf,imag_freq_max=150.0,max_coadsorbates=None,
@@ -511,6 +519,10 @@ class CoverageDependence:
         self.software_kwargs = software_kwargs
         self.surface_type = surface_type
         self.facet = metal + surface_type
+        # default to the sites the isolated run saved, so covdep never re-derives them with ACAT
+        # (avoids site-ordering drift vs the run and ACAT get_labels failures on open surfaces)
+        if sites is None or site_adjacency is None:
+            sites, site_adjacency = load_slab_sites(self.pynta_run_directory)
         self.sites = sites
         self.site_adjacency = site_adjacency
         self.Ncalc_per_iter = Ncalc_per_iter

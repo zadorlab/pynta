@@ -389,6 +389,58 @@ def clean_pynta_path(path,save_initial_guess=True):
     if os.path.exists(os.path.join(path,"thermo_library.py")):
         os.remove(os.path.join(path,"thermo_library.py"))
 
+def save_slab_sites(path, sites, site_adjacency):
+    """Persist the ACAT-derived sites + site_adjacency for a slab to JSON in ``path`` (sites.json,
+    site_adjacency.json), so coverage dependence and postprocessing reuse the EXACT same set (and
+    ordering) instead of re-deriving them with ACAT -- which can reorder sites or fail get_labels on
+    open/stepped surfaces. numpy arrays/tuples are made JSON-safe; load with load_slab_sites."""
+    import json
+    def _jsonify(o):
+        if isinstance(o, np.ndarray):
+            return o.tolist()
+        if isinstance(o, np.integer):
+            return int(o)
+        if isinstance(o, np.floating):
+            return float(o)
+        if isinstance(o, dict):
+            return {k: _jsonify(v) for k, v in o.items()}
+        if isinstance(o, (list, tuple)):
+            return [_jsonify(v) for v in o]
+        return o
+    with open(os.path.join(path, "sites.json"), "w") as f:
+        json.dump(_jsonify(sites), f)
+    with open(os.path.join(path, "site_adjacency.json"), "w") as f:
+        json.dump({int(k): [int(x) for x in v] for k, v in site_adjacency.items()}, f)
+
+def load_slab_sites(path):
+    """Load sites + site_adjacency saved by save_slab_sites (falling back to the legacy
+    single_sites_lists.json / neighbor_site_list.json names if present), converting position/normal
+    back to numpy arrays and indices to tuples. Use this everywhere instead of re-running
+    SlabAdsorptionSites so the whole pipeline shares one site definition. Returns (sites, site_adjacency)."""
+    import json
+    sites_file = os.path.join(path, "sites.json")
+    if not os.path.exists(sites_file) and os.path.exists(os.path.join(path, "single_sites_lists.json")):
+        sites_file = os.path.join(path, "single_sites_lists.json")
+    adj_file = os.path.join(path, "site_adjacency.json")
+    if not os.path.exists(adj_file) and os.path.exists(os.path.join(path, "neighbor_site_list.json")):
+        adj_file = os.path.join(path, "neighbor_site_list.json")
+    if not os.path.exists(sites_file) or not os.path.exists(adj_file):
+        raise FileNotFoundError(
+            "no saved sites in {} (looked for sites.json/site_adjacency.json and the legacy "
+            "single_sites_lists.json/neighbor_site_list.json). Pass sites/site_adjacency explicitly, "
+            "or re-run the isolated workflow with current pynta so it saves them.".format(path))
+    with open(sites_file) as f:
+        sites = json.load(f)
+    for s in sites:
+        s["position"] = np.array(s["position"])
+        if s.get("normal") is not None:
+            s["normal"] = np.array(s["normal"])
+        if s.get("indices") is not None:
+            s["indices"] = tuple(s["indices"])
+    with open(adj_file) as f:
+        site_adjacency = {int(k): v for k, v in json.load(f).items()}
+    return sites, site_adjacency
+
 def construct_constraint(d):
     """
     construct a constrain from a dictionary that is the input to the constraint
