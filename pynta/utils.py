@@ -441,6 +441,36 @@ def load_slab_sites(path):
         site_adjacency = {int(k): v for k, v in json.load(f).items()}
     return sites, site_adjacency
 
+def write_sites_xyz(slab, sites, out_xyz="sites.xyz", marker_height=0.0, by="site"):
+    """Write the slab + one marker atom per adsorption site to an xyz so the sites can be viewed
+    spatially (e.g. to check whether nearby sites are genuinely distinct or near-duplicates). The
+    marker element encodes the site category (by="site" | "morphology" | "label") so a viewer colors
+    them; a legend (marker element -> category) is printed. marker_height raises markers in z.
+    Returns (atoms, legend)."""
+    marker_pool = ["H","He","Li","Be","B","C","N","F","Ne","Na","Mg","Al","Si","P","S","Cl","Ar","K","Ca","Sc"]
+    def _cat(s):
+        if by == "morphology":
+            return s.get("morphology", "?")
+        if by == "label":
+            return str(s.get("label", "?"))
+        return s.get("site", "?")
+    cats = [_cat(s) for s in sites]
+    legend = {c: marker_pool[i % len(marker_pool)] for i, c in enumerate(sorted(set(cats)))}
+    symbols = [legend[c] for c in cats]
+    positions = []
+    for s in sites:
+        p = np.array(s["position"], dtype=float).copy()
+        p[2] += marker_height
+        positions.append(p)
+    atoms = slab.copy()
+    if positions:
+        atoms += Atoms(symbols=symbols, positions=positions)
+    write(out_xyz, atoms)
+    print("wrote {} (slab + {} site markers). legend (marker element -> {} category):".format(out_xyz, len(sites), by))
+    for c, e in sorted(legend.items(), key=lambda kv: kv[1]):
+        print("  {:3s} -> {}".format(e, c))
+    return atoms, legend
+
 def construct_constraint(d):
     """
     construct a constrain from a dictionary that is the input to the constraint
