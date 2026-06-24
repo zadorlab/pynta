@@ -466,15 +466,15 @@ def build_admol_from_occ(base_admol, coad, occ_ranks):
 
 
 def write_mc_chain_xyz(path, pynta_run_directory, central, coadname, Ncoad, sites, site_adjacency,
-                       metal, surface_type, iteration=None, adsorbate_site_energy_cutoff=0.0,
+                       metal, facet, iteration=None, adsorbate_site_energy_cutoff=0.0,
                        out_xyz=None, slab=None, allowed_structure_site_structures=None):
     """Render a SAVED MC chain to a multi-frame .xyz (one frame per recorded step) for visualization.
 
-    Needs only RUN INPUTS (the same things the covdep run was given) -- no MC hyperparameters
-    (T/lam/p_local/p_central/local_radius): the chain is already determined, this just turns each
-    2D config into 3D. Reads Iterations/<iter>/mc_chain_<central>_<coad>.json, rebuilds the central
-    base arrangements (get_central_templates -> must match the run, so pass the run's
-    adsorbate_site_energy_cutoff), and places coadsorbates via mol_to_atoms.
+    Needs only RUN INPUTS (the same things the covdep run / postprocess was given) -- no MC
+    hyperparameters (T/lam/p_local/p_central/local_radius): the chain is already determined, this
+    just turns each 2D config into 3D. Reads Iterations/<iter>/mc_chain_<central>_<coad>.json,
+    rebuilds the central base arrangements (get_central_templates -> must match the run, so pass the
+    run's adsorbate_site_energy_cutoff), and places coadsorbates via mol_to_atoms.
 
     Args:
         path: covdep run directory
@@ -482,7 +482,8 @@ def write_mc_chain_xyz(path, pynta_run_directory, central, coadname, Ncoad, site
         central: central species admol_name (e.g. "TS0_21" or an adsorbate SMILES)
         coadname: coadsorbate name
         Ncoad: which coverage's chain to render
-        sites, site_adjacency, metal, surface_type: run inputs
+        sites, site_adjacency, metal, facet: run inputs (facet is the ACAT surface type the run
+            used, e.g. "fcc111" -- same variable the covdep postprocess already defines)
         iteration: which Iterations/<i>/; defaults to the latest present
         adsorbate_site_energy_cutoff: must match the run (defines the base-arrangement set/order)
         out_xyz: output path; defaults to mc_chain_<central>_<coad>_N<Ncoad>_iter<i>.xyz
@@ -490,7 +491,6 @@ def write_mc_chain_xyz(path, pynta_run_directory, central, coadname, Ncoad, site
 
     Returns (frames, energies): list of ase.Atoms and the per-frame energies [J/mol].
     """
-    facet = metal + surface_type
     if iteration is None:
         iters = [int(d) for d in os.listdir(os.path.join(path, "Iterations")) if d.isdigit()]
         iteration = max(iters)
