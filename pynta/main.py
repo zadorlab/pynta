@@ -497,7 +497,7 @@ class CoverageDependence:
                  fworker_path=None,queue=False,njobs_queue=0,reset_launchpad=False,queue_adapter_path=None,
                  num_jobs=25,surrogate_metal=None,concern_energy_tol=None,max_iters=np.inf,imag_freq_max=150.0,max_coadsorbates=None,
                  sidt_isolated_delta_model=None,sidt_covdep_delta_model=None,coad_selection_E_diff_tol=0.1,iter=0,ts_frac=None,
-                 adsorbate_site_energy_cutoff=0.0,config_generation="enumerate",mc_kwargs=None):
+                 adsorbate_site_energy_cutoff="default",config_generation="enumerate",mc_kwargs=None):
         self.path = path
         self.metal = metal
         self.repeats = repeats
@@ -537,14 +537,21 @@ class CoverageDependence:
         self.sidt_covdep_delta_model = sidt_covdep_delta_model
         self.coad_selection_E_diff_tol = coad_selection_E_diff_tol
         self.ts_frac = ts_frac
-        self.adsorbate_site_energy_cutoff = adsorbate_site_energy_cutoff
         # candidate generation for the active-learning loop: "enumerate" (the original
         # exhaustive get_configurations) or "mc" (Metropolis MC over the SIDT model, for
         # coverages/slabs where enumeration is intractable). mc_kwargs are forwarded to the
-        # MC sampler (n_steps, T, lam, p_local, n_jobs, seed).
+        # MC sampler (n_steps, T, lam, p_local, p_central, local_radius, n_jobs, seed).
         assert config_generation in ("enumerate", "mc"), config_generation
         self.config_generation = config_generation
         self.mc_kwargs = mc_kwargs if mc_kwargs is not None else dict()
+        # which central-adsorbate site arrangements to include. "default" picks per mode: MC uses
+        # None (all stable site arrangements) so the central adsorbate can hop across sites; the
+        # enumerate path keeps the original lowest-site-only behavior (0.0). Override explicitly with
+        # None (all), 0.0 (lowest only), or a positive eV window. (TS central species always use all
+        # valid saddles regardless of this.)
+        if adsorbate_site_energy_cutoff == "default":
+            adsorbate_site_energy_cutoff = None if config_generation == "mc" else 0.0
+        self.adsorbate_site_energy_cutoff = adsorbate_site_energy_cutoff
 
         self.collate_isolated_structures()
         

@@ -466,7 +466,7 @@ def build_admol_from_occ(base_admol, coad, occ_ranks):
 
 
 def write_mc_chain_xyz(path, pynta_run_directory, central, coadname, Ncoad, sites, site_adjacency,
-                       metal, facet, iteration=None, adsorbate_site_energy_cutoff=0.0,
+                       metal, facet, iteration=None, adsorbate_site_energy_cutoff=None,
                        out_xyz=None, slab=None, allowed_structure_site_structures=None):
     """Render a SAVED MC chain to a multi-frame .xyz (one frame per recorded step) for visualization.
 
