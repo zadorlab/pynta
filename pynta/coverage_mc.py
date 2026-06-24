@@ -31,13 +31,18 @@ untouched and only runs on the downselected configs.
 See the enumerative counterpart in ``coveragedependence.py``.
 """
 
+import os
+import json
 import numpy as np
 import random
 import logging
 from collections import deque
+from ase.io import read, write
 
 from pynta.coveragedependence import (add_ad_to_site, configuration_is_valid,
-                                       get_atom_centered_correction)
+                                       get_atom_centered_correction, get_central_templates,
+                                       remove_slab, mol_to_atoms,
+                                       generate_allowed_structure_site_structures)
 
 R = 8.314  # J/mol/K, matches the Boltzmann weighting used elsewhere in covdep
 EV_TO_JMOL = 96.48530749925793 * 1000.0  # eV -> J/mol, matches get_cov_energies
@@ -225,7 +230,7 @@ class CanonicalCoverageMC:
 
     # ------------------------------------------------------------------ the sampler
     def run(self, Ncoad, n_steps=10000, T=(2000.0, 300.0), lam=(1.0, 0.0),
-            p_local=0.8, p_central=0.1, seed=None):
+            p_local=0.8, p_central=0.1, seed=None, record_trajectory=False):
         """Run canonical Metropolis MC at fixed Ncoad with within-chain annealing.
 
         Annealing happens WITHIN the chain (T cooled T_start->T_end, lam start->end); it is not
@@ -240,10 +245,14 @@ class CanonicalCoverageMC:
             p_central: probability a step is a central hop (swap to another valid central
                 arrangement) rather than a coad relocation; only active with >1 base structure
             seed: RNG seed for this chain (defaults to the sampler's seed)
+            record_trajectory: if True, also return "trajectory": the ORDERED chain as a list of
+                (base_idx, sorted occupied-site-rank tuple, E_cur) after each evaluated step
+                (state repeats on a rejected move). Rebuild a frame with build_config(base_idx, occ)
+                and mol_to_atoms for 3D visualization. Off by default (memory).
 
         Returns a dict with: Ncoad, best=(admol, E), pool=[(admol, E, sigma, trace), ...] (unique
-        validly-evaluated configs), and diagnostics (n_steps, n_accept, accept_frac, n_central,
-        n_central_accept, n_unique, Emin).
+        validly-evaluated configs), diagnostics (n_steps, n_accept, accept_frac, n_central,
+        n_central_accept, n_unique, Emin), and trajectory (None unless record_trajectory).
         """
         rng = random.Random(self.seed if seed is None else seed)
         T0, T1 = (T, T) if np.isscalar(T) else T
@@ -261,6 +270,8 @@ class CanonicalCoverageMC:
                 visited[k] = (m, E, s, tr)
 
         record(b, occ, m_cur, E_cur, s_cur, tr_cur)
+
+        traj = [(b, tuple(sorted(occ)), E_cur)] if record_trajectory else None
 
         n_accept = 0
         n_central = 0
@@ -309,13 +320,16 @@ class CanonicalCoverageMC:
                 if do_central:
                     n_central_accept += 1
 
+            if record_trajectory:
+                traj.append((b, tuple(sorted(occ)), E_cur))
+
         pool = list(visited.values())
         best = min(pool, key=lambda v: v[1])
         return {"Ncoad": Ncoad, "best": (best[0], best[1]), "pool": pool,
                 "n_steps": n_steps, "n_accept": n_accept,
                 "accept_frac": n_accept / n_steps if n_steps else 0.0,
                 "n_central": n_central, "n_central_accept": n_central_accept,
-                "n_unique": len(pool), "Emin": best[1]}
+                "n_unique": len(pool), "Emin": best[1], "trajectory": traj}
 
     def scan_coverages(self, Ncoads=None, max_coadsorbates=None, n_jobs=1, **run_kwargs):
         """Run an MC chain at each coverage level (one sampler explores all base arrangements via
@@ -369,7 +383,7 @@ def mc_cov_energies_configs_concern(base_admols, coad, coad_stable_sites, tree_i
                                     Nocc_isolated=None, concern_energy_tol=None, coadmol_E_dict=None,
                                     tree_atom_regressor=None, unstable_pairs=None, is_ts=False,
                                     max_coadsorbates=None, n_jobs=1, seed=None, local_radius=2,
-                                    **mc_run_kwargs):
+                                    chain_max_frames=500, **mc_run_kwargs):
     """MC analogue of ``get_cov_energies_configs_concern_tree`` (coveragedependence.py).
 
     Drop-in replacement: returns ``(Ncoad_energy_dict, Ncoad_config_dict, configs_of_concern)`` in
@@ -403,28 +417,119 @@ def mc_cov_energies_configs_concern(base_admols, coad, coad_stable_sites, tree_i
         configs_of_concern: {i: (admol, E, trace, sigma)} (same value order as the enumerative
             function, which CalculateConfigurationEnergiesTask serializes as [adjlist, E, trace, sigma])
         diagnostics: {Ncoad: {Emin, n_steps, n_accept, accept_frac, n_unique, n_central,
-            n_central_accept}} -- per-coverage MC health, persisted for inspection (the enumerative
-            function returns only the first three values)
+            n_central_accept}} -- per-coverage MC health, persisted for inspection
+        chains: {Ncoad: [[base_idx, [occ ranks], E], ...]} -- the strided ordered MC walk per
+            coverage (capped at chain_max_frames), for visualization via write_mc_chain_xyz
+        (the enumerative function returns only the first three values)
     """
     mc = CanonicalCoverageMC(base_admols, coad, coad_stable_sites, tree_interaction_regressor,
                              tree_atom_regressor=tree_atom_regressor, coadmol_E_dict=coadmol_E_dict,
                              unstable_pairs=unstable_pairs, is_ts=is_ts, local_radius=local_radius,
                              seed=seed)
-    res = mc.scan_coverages(max_coadsorbates=max_coadsorbates, n_jobs=n_jobs, **mc_run_kwargs)
+    res = mc.scan_coverages(max_coadsorbates=max_coadsorbates, n_jobs=n_jobs,
+                            record_trajectory=True, **mc_run_kwargs)
 
     Ncoad_energy_dict = res["Ncoad_energy_dict"]
     Ncoad_config_dict = res["Ncoad_config_dict"]
     configs_of_concern = {}
     diagnostics = {}
+    chains = {}
     i = 0
     for N, r in res["results"].items():
         Emin = Ncoad_energy_dict[N]
         diagnostics[N] = {"Emin": r["Emin"], "n_steps": r["n_steps"], "n_accept": r["n_accept"],
                           "accept_frac": r["accept_frac"], "n_unique": r["n_unique"],
                           "n_central": r["n_central"], "n_central_accept": r["n_central_accept"]}
+        # strided, capped chain for visualization: [(base_idx, [occ ranks], E), ...]
+        traj = r.get("trajectory") or []
+        if chain_max_frames and len(traj) > chain_max_frames:
+            stride = (len(traj) + chain_max_frames - 1) // chain_max_frames
+            traj = traj[::stride]
+        chains[N] = [[b, list(occ), E] for (b, occ, E) in traj]
         for (m, E, sigma, tr) in r["pool"]:
             if concern_energy_tol is None or Emin + concern_energy_tol > E:
                 configs_of_concern[i] = (m, E, tr, sigma)
                 i += 1
 
-    return Ncoad_energy_dict, Ncoad_config_dict, configs_of_concern, diagnostics
+    return Ncoad_energy_dict, Ncoad_config_dict, configs_of_concern, diagnostics, chains
+
+
+def build_admol_from_occ(base_admol, coad, occ_ranks):
+    """Rebuild a config admol from a base arrangement + occupied site ranks (the chain's compact
+    representation). Mirrors CanonicalCoverageMC.build_config but standalone, so rendering a saved
+    chain needs no sampler/MC state."""
+    site_inds = [i for i, a in enumerate(base_admol.atoms) if a.is_surface_site()]
+    m = base_admol
+    for rank in occ_ranks:
+        m = add_ad_to_site(m, coad, m.atoms[site_inds[rank]])
+    return m
+
+
+def write_mc_chain_xyz(path, pynta_run_directory, central, coadname, Ncoad, sites, site_adjacency,
+                       metal, surface_type, iteration=None, adsorbate_site_energy_cutoff=0.0,
+                       out_xyz=None, slab=None, allowed_structure_site_structures=None):
+    """Render a SAVED MC chain to a multi-frame .xyz (one frame per recorded step) for visualization.
+
+    Needs only RUN INPUTS (the same things the covdep run was given) -- no MC hyperparameters
+    (T/lam/p_local/p_central/local_radius): the chain is already determined, this just turns each
+    2D config into 3D. Reads Iterations/<iter>/mc_chain_<central>_<coad>.json, rebuilds the central
+    base arrangements (get_central_templates -> must match the run, so pass the run's
+    adsorbate_site_energy_cutoff), and places coadsorbates via mol_to_atoms.
+
+    Args:
+        path: covdep run directory
+        pynta_run_directory: the isolated pynta run (slab, Adsorbates/, TS*/)
+        central: central species admol_name (e.g. "TS0_21" or an adsorbate SMILES)
+        coadname: coadsorbate name
+        Ncoad: which coverage's chain to render
+        sites, site_adjacency, metal, surface_type: run inputs
+        iteration: which Iterations/<i>/; defaults to the latest present
+        adsorbate_site_energy_cutoff: must match the run (defines the base-arrangement set/order)
+        out_xyz: output path; defaults to mc_chain_<central>_<coad>_N<Ncoad>_iter<i>.xyz
+        slab, allowed_structure_site_structures: optional precomputed inputs
+
+    Returns (frames, energies): list of ase.Atoms and the per-frame energies [J/mol].
+    """
+    facet = metal + surface_type
+    if iteration is None:
+        iters = [int(d) for d in os.listdir(os.path.join(path, "Iterations")) if d.isdigit()]
+        iteration = max(iters)
+    chain_file = os.path.join(path, "Iterations", str(iteration), "mc_chain_" + central + "_" + coadname + ".json")
+    with open(chain_file) as f:
+        chains = json.load(f)
+    if str(Ncoad) not in chains:
+        raise KeyError("no chain for Ncoad={} in {} (have {})".format(Ncoad, chain_file, list(chains.keys())))
+    chain = chains[str(Ncoad)]
+
+    if slab is None:
+        slab = read(os.path.join(pynta_run_directory, "slab.xyz"))
+    nslab = len(slab)
+    if allowed_structure_site_structures is None:
+        allowed_structure_site_structures = generate_allowed_structure_site_structures(
+            os.path.join(pynta_run_directory, "Adsorbates"), sites, site_adjacency, nslab, max_dist=np.inf)
+
+    is_ts = central.startswith("TS")
+    templates = get_central_templates(central, is_ts, pynta_run_directory, metal, facet, sites,
+                                      site_adjacency, nslab,
+                                      allowed_structure_site_structures=allowed_structure_site_structures,
+                                      energy_cutoff=adsorbate_site_energy_cutoff)
+    coad_templates = get_central_templates(coadname, False, pynta_run_directory, metal, facet, sites,
+                                           site_adjacency, nslab,
+                                           allowed_structure_site_structures=allowed_structure_site_structures,
+                                           energy_cutoff=None)
+    coad_simple = remove_slab(coad_templates[0][1])
+
+    frames = []
+    energies = []
+    for entry in chain:
+        b, occ, E = entry[0], entry[1], entry[2]
+        admol = build_admol_from_occ(templates[b][1], coad_simple, occ)
+        atoms = mol_to_atoms(admol, slab, sites, metal,
+                             partial_atoms=templates[b][0], partial_admol=templates[b][1])
+        frames.append(atoms)
+        energies.append(E)
+
+    if out_xyz is None:
+        out_xyz = "mc_chain_{}_{}_N{}_iter{}.xyz".format(central, coadname, Ncoad, iteration)
+    write(out_xyz, frames)
+    return frames, energies
