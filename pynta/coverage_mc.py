@@ -489,7 +489,8 @@ def write_mc_chain_xyz(path, pynta_run_directory, central, coadname, Ncoad, site
         out_xyz: output path; defaults to mc_chain_<central>_<coad>_N<Ncoad>_iter<i>.xyz
         slab, allowed_structure_site_structures: optional precomputed inputs
 
-    Returns (frames, energies): list of ase.Atoms and the per-frame energies [J/mol].
+    Returns (out_xyz, frames, energies): the written path (auto-named with the resolved iteration
+    unless out_xyz was given), the list of ase.Atoms, and the per-frame energies [J/mol].
     """
     if iteration is None:
         iters = [int(d) for d in os.listdir(os.path.join(path, "Iterations")) if d.isdigit()]
@@ -537,4 +538,4 @@ def write_mc_chain_xyz(path, pynta_run_directory, central, coadname, Ncoad, site
     if out_xyz is None:
         out_xyz = "mc_chain_{}_{}_N{}_iter{}.xyz".format(central, coadname, Ncoad, iteration)
     write(out_xyz, frames)
-    return frames, energies
+    return out_xyz, frames, energies
