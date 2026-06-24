@@ -1149,17 +1149,14 @@ def calculate_configruation_energies_firework(admol_name,tree_file,path,coadname
          "coad_adjlist": coad_adjlist,"unstable_pairs_path": unstable_pairs_path,"is_ts": is_ts,
          "max_coadsorbates": max_coadsorbates}
     t1 = CalculateConfigurationEnergiesTask(d)
-    if out_path is None: 
-        out_path_energy = os.path.join(os.path.split(tree_file)[0],"Ncoad_energy_"+admol_name+"_"+coadname+".json")
-        out_path_config = os.path.join(os.path.split(tree_file)[0],"Ncoad_config_"+admol_name+"_"+coadname+".json")
-        out_path_concern = os.path.join(os.path.split(tree_file)[0],"configs_of_concern_"+admol_name+"_"+coadname+".json")
-    else:
-        out_path_energy = os.path.join(out_path,"Ncoad_energy_"+admol_name+"_"+coadname+".json")
-        out_path_config = os.path.join(out_path,"Ncoad_config_"+admol_name+"_"+coadname+".json")
-        out_path_concern = os.path.join(out_path,"configs_of_concern_"+admol_name+"_"+coadname+".json")
-    t2 = FileTransferTask({'files': [{'src': "Ncoad_energy_"+admol_name+"_"+coadname+".json", 'dest': out_path_energy},
-                                     {'src': "Ncoad_config_"+admol_name+"_"+coadname+".json", 'dest': out_path_config},
-                                     {'src': "configs_of_concern_"+admol_name+"_"+coadname+".json", 'dest': out_path_concern}], 'mode': 'copy', 'ignore_errors': ignore_errors})
+    out_dir = os.path.split(tree_file)[0] if out_path is None else out_path
+    files = [{'src': "Ncoad_energy_"+admol_name+"_"+coadname+".json", 'dest': os.path.join(out_dir,"Ncoad_energy_"+admol_name+"_"+coadname+".json")},
+             {'src': "Ncoad_config_"+admol_name+"_"+coadname+".json", 'dest': os.path.join(out_dir,"Ncoad_config_"+admol_name+"_"+coadname+".json")},
+             {'src': "configs_of_concern_"+admol_name+"_"+coadname+".json", 'dest': os.path.join(out_dir,"configs_of_concern_"+admol_name+"_"+coadname+".json")}]
+    if config_generation == "mc":  # MC writes a per-coverage health diagnostics file too
+        diag_name = "mc_diagnostics_"+admol_name+"_"+coadname+".json"
+        files.append({'src': diag_name, 'dest': os.path.join(out_dir, diag_name)})
+    t2 = FileTransferTask({'files': files, 'mode': 'copy', 'ignore_errors': ignore_errors})
     return Firework([t1,t2],parents=parents,name=admol_name+"_"+coadname+"_energies"+str(iter))
 
 @explicit_serialize
@@ -1184,13 +1181,14 @@ class CalculateConfigurationEnergiesTask(FiretaskBase):
             tree = MultiEvalSubgraphIsomorphicDecisionTreeRegressor([adsorbate_interaction_decomposition],
                                                         nodes=nodes)
 
+            mc_diagnostics = None
             if config_generation == "mc":
                 from pynta.coverage_mc import mc_cov_energies_configs_concern
                 base_admols = [Molecule().from_adjacency_list(m,check_consistency=False) for m in (self["base_admols"] or [])]
                 coad = Molecule().from_adjacency_list(self["coad_adjlist"],check_consistency=False)
                 with open(self["unstable_pairs_path"]) as f:
                     unstable_pairs = [Group().from_adjacency_list(x) for x in json.load(f)]
-                Ncoad_energy_dict,Ncoad_config_dict,configs_of_concern_admol = mc_cov_energies_configs_concern(
+                Ncoad_energy_dict,Ncoad_config_dict,configs_of_concern_admol,mc_diagnostics = mc_cov_energies_configs_concern(
                     base_admols, coad, coad_stable_sites, tree, Nocc_isolated,
                     concern_energy_tol=concern_energy_tol, coadmol_E_dict=coadmol_E_dict,
                     unstable_pairs=unstable_pairs, is_ts=self["is_ts"],
@@ -1208,6 +1206,9 @@ class CalculateConfigurationEnergiesTask(FiretaskBase):
                 json.dump(Ncoad_config_dict,f)
             with open("configs_of_concern_"+admol_name+"_"+coadname+".json",'w') as f:
                 json.dump([tuple([v[0].to_adjacency_list(),v[1],v[2],v[3]]) for v in configs_of_concern_admol.values()],f)
+            if mc_diagnostics is not None:
+                with open("mc_diagnostics_"+admol_name+"_"+coadname+".json",'w') as f:
+                    json.dump(mc_diagnostics,f)
                 
         except Exception as e:
             if not ignore_errors:

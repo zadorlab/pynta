@@ -402,6 +402,9 @@ def mc_cov_energies_configs_concern(base_admols, coad, coad_stable_sites, tree_i
         Ncoad_config_dict: {Ncoad: adjacency list of the min-energy config}
         configs_of_concern: {i: (admol, E, trace, sigma)} (same value order as the enumerative
             function, which CalculateConfigurationEnergiesTask serializes as [adjlist, E, trace, sigma])
+        diagnostics: {Ncoad: {Emin, n_steps, n_accept, accept_frac, n_unique, n_central,
+            n_central_accept}} -- per-coverage MC health, persisted for inspection (the enumerative
+            function returns only the first three values)
     """
     mc = CanonicalCoverageMC(base_admols, coad, coad_stable_sites, tree_interaction_regressor,
                              tree_atom_regressor=tree_atom_regressor, coadmol_E_dict=coadmol_E_dict,
@@ -412,12 +415,16 @@ def mc_cov_energies_configs_concern(base_admols, coad, coad_stable_sites, tree_i
     Ncoad_energy_dict = res["Ncoad_energy_dict"]
     Ncoad_config_dict = res["Ncoad_config_dict"]
     configs_of_concern = {}
+    diagnostics = {}
     i = 0
     for N, r in res["results"].items():
         Emin = Ncoad_energy_dict[N]
+        diagnostics[N] = {"Emin": r["Emin"], "n_steps": r["n_steps"], "n_accept": r["n_accept"],
+                          "accept_frac": r["accept_frac"], "n_unique": r["n_unique"],
+                          "n_central": r["n_central"], "n_central_accept": r["n_central_accept"]}
         for (m, E, sigma, tr) in r["pool"]:
             if concern_energy_tol is None or Emin + concern_energy_tol > E:
                 configs_of_concern[i] = (m, E, tr, sigma)
                 i += 1
 
-    return Ncoad_energy_dict, Ncoad_config_dict, configs_of_concern
+    return Ncoad_energy_dict, Ncoad_config_dict, configs_of_concern, diagnostics
