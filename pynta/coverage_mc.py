@@ -523,9 +523,14 @@ def write_mc_chain_xyz(path, pynta_run_directory, central, coadname, Ncoad, site
     energies = []
     for entry in chain:
         b, occ, E = entry[0], entry[1], entry[2]
-        admol = build_admol_from_occ(templates[b][1], coad_simple, occ)
+        base_admol = templates[b][1]
+        nbase = len(base_admol.atoms)
+        admol = build_admol_from_occ(base_admol, coad_simple, occ)
+        # central atoms are the base's atoms (build_admol_from_occ appends coadsorbates), so we can
+        # tell mol_to_atoms directly and skip the subgraph isomorphism
+        central_atoms = [a for a in admol.atoms[:nbase] if not a.is_surface_site()]
         atoms = mol_to_atoms(admol, slab, sites, metal,
-                             partial_atoms=templates[b][0], partial_admol=templates[b][1])
+                             partial_atoms=templates[b][0], atoms_in_partial=central_atoms)
         frames.append(atoms)
         energies.append(E)
 

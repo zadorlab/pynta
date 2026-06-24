@@ -1791,13 +1791,38 @@ class SelectCalculationsTask(FiretaskBase):
                 if not template_cache[adname]:
                     template_cache[adname] = [(read(admol_name_path_dict[adname]), admol_name_structure_dict[adname])]
             admol_path = admol_name_path_dict[adname]
+            templates = template_cache[adname]
             init_atoms = None
-            for partial_atoms, partial_admol in template_cache[adname]:
-                try:
-                    init_atoms = mol_to_atoms(config,slab,sites,metal,partial_atoms=partial_atoms,partial_admol=partial_admol)
-                    break
-                except Exception:
-                    continue
+            # Fast path: configs are built by APPENDING coadsorbates to a base arrangement
+            # (build_config / get_configurations both use add_ad_to_site), so config.atoms[:nbase]
+            # are the central template's atoms -- no subgraph isomorphism needed. Identify the
+            # matching base by the (cheap) set of sites its central occupies, then tell mol_to_atoms
+            # which atoms are the central via atoms_in_partial. Falls back to the iso path if the
+            # site-set match fails (e.g. ordering assumption violated).
+            try:
+                config_sites = [a for a in config.atoms if a.is_surface_site()]
+                nbaseatoms = len(templates[0][1].atoms)
+                central_atoms = [a for a in config.atoms[:nbaseatoms] if not a.is_surface_site()]
+                central_set = set(central_atoms)
+                ccentral_ranks = frozenset(k for k, s in enumerate(config_sites)
+                                           if any(n in central_set for n in s.bonds.keys()))
+                for partial_atoms, partial_admol in templates:
+                    bsites = [a for a in partial_admol.atoms if a.is_surface_site()]
+                    bcentral_ranks = frozenset(k for k, s in enumerate(bsites)
+                                               if any(not n.is_surface_site() for n in s.bonds.keys()))
+                    if bcentral_ranks == ccentral_ranks:
+                        init_atoms = mol_to_atoms(config,slab,sites,metal,partial_atoms=partial_atoms,
+                                                  atoms_in_partial=central_atoms)
+                        break
+            except Exception:
+                init_atoms = None
+            if init_atoms is None:  # fallback: subgraph-isomorphism matching against each template
+                for partial_atoms, partial_admol in templates:
+                    try:
+                        init_atoms = mol_to_atoms(config,slab,sites,metal,partial_atoms=partial_atoms,partial_admol=partial_admol)
+                        break
+                    except Exception:
+                        continue
             if init_atoms is None:
                 logging.error("could not build 3D geometry for selected config (no matching central template); skipping")
                 continue

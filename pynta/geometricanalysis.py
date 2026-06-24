@@ -1414,7 +1414,7 @@ def add_coadsorbate_2D(mol2D,site,coad2D,slab,neighbor_sites_2D,site_2D_inds):
     mol2D.identify_ring_membership()
     return mol2D
 
-def mol_to_atoms(admol,slab,sites,metal,partial_atoms=None,partial_admol=None):
+def mol_to_atoms(admol,slab,sites,metal,partial_atoms=None,partial_admol=None,atoms_in_partial=None):
     """Generate a 3D initial guess for a given 2D admol configuration
 
     Args:
@@ -1424,6 +1424,11 @@ def mol_to_atoms(admol,slab,sites,metal,partial_atoms=None,partial_admol=None):
         metal (_type_): metal of the slab
         partial_atoms (_type_, optional): a 3D Atoms object representing part of the target configuraitons. Defaults to None.
         partial_admol (_type_, optional): 2D representation of the partial_atoms Atoms object. Defaults to None.
+        atoms_in_partial (list, optional): the admol atom objects already represented by partial_atoms
+            (i.e. the central species' atoms). If provided, the (expensive) subgraph-isomorphism search
+            that otherwise locates them is skipped -- callers that already know the central/coadsorbate
+            split (e.g. the coverage MC, which builds configs by appending coadsorbates) pass it
+            directly. When given, partial_admol is not needed.
 
     Raises:
         ValueError: _description_
@@ -1432,32 +1437,33 @@ def mol_to_atoms(admol,slab,sites,metal,partial_atoms=None,partial_admol=None):
     Returns:
         _type_: Atoms object corresponding to the admol 2D configuration
     """
-    if partial_atoms and partial_admol:
+    if partial_atoms is not None and (partial_admol is not None or atoms_in_partial is not None):
         atoms = deepcopy(partial_atoms)
-        gpartial_admol = partial_admol.to_group()
-        admol_atom_order = admol.atoms[:]
-        gpartial_admol_order = gpartial_admol.atoms[:]
-        initial_map = dict()
-        for i,a in enumerate(admol.atoms):
-            if a.is_surface_site():
-                assert a.site == gpartial_admol.atoms[i].site[0]
-                initial_map[a] = gpartial_admol.atoms[i]
-        try:
-            subisos = admol.find_subgraph_isomorphisms(gpartial_admol,initial_map=initial_map,save_order=True)
-        except ValueError:
-            subisos = admol.find_subgraph_isomorphisms(gpartial_admol,initial_map=initial_map)
-            admol.atoms = admol_atom_order
-            gpartial_admol.atoms = gpartial_admol_order
-        if len(subisos) == 0:
-            raise ValueError("partial_admol is not subgraph isomorphic to admol: {0}, {1}".format(gpartial_admol.to_adjacency_list(),admol.to_adjacency_list()))
-        subiso = subisos[0]
-        atoms_in_partial = [a for a in subiso.keys() if not a.is_surface_site()]
+        if atoms_in_partial is None:
+            gpartial_admol = partial_admol.to_group()
+            admol_atom_order = admol.atoms[:]
+            gpartial_admol_order = gpartial_admol.atoms[:]
+            initial_map = dict()
+            for i,a in enumerate(admol.atoms):
+                if a.is_surface_site():
+                    assert a.site == gpartial_admol.atoms[i].site[0]
+                    initial_map[a] = gpartial_admol.atoms[i]
+            try:
+                subisos = admol.find_subgraph_isomorphisms(gpartial_admol,initial_map=initial_map,save_order=True)
+            except ValueError:
+                subisos = admol.find_subgraph_isomorphisms(gpartial_admol,initial_map=initial_map)
+                admol.atoms = admol_atom_order
+                gpartial_admol.atoms = gpartial_admol_order
+            if len(subisos) == 0:
+                raise ValueError("partial_admol is not subgraph isomorphic to admol: {0}, {1}".format(gpartial_admol.to_adjacency_list(),admol.to_adjacency_list()))
+            subiso = subisos[0]
+            atoms_in_partial = [a for a in subiso.keys() if not a.is_surface_site()]
         split_structs,adsorbed_atom_dict = split_adsorbed_structures(admol,clear_site_info=False,adsorption_info=True,atoms_to_skip=atoms_in_partial)
-    elif partial_atoms is None and partial_admol is None:
+    elif partial_atoms is None and partial_admol is None and atoms_in_partial is None:
         atoms = deepcopy(slab)
         split_structs,adsorbed_atom_dict = split_adsorbed_structures(admol,clear_site_info=False,adsorption_info=True)
     else:
-        raise ValueError("Must include both partial_atoms, partial_admol to start from partial")
+        raise ValueError("Must include partial_atoms with either partial_admol or atoms_in_partial")
     
     for st in split_structs:
         if len(st.atoms) == 0:
