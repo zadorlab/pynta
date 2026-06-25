@@ -24,6 +24,29 @@ import shutil
 import os
 import itertools 
 import logging
+import pickle
+
+def get_allowed_structure_site_structures_cached(adsorbates_path, sites, site_adjacency, nslab, cache_path, max_dist=np.inf):
+    """generate_allowed_structure_site_structures, cached to cache_path (pickle). It depends only on
+    the isolated adsorbates + slab sites, which are fixed for a covdep run, so it is computed ONCE and
+    reused across iterations/tasks instead of regenerated in every firework (expensive on large
+    slabs). Falls back to recompute (without caching) if the pickle is unreadable/unwritable."""
+    if cache_path and os.path.exists(cache_path):
+        try:
+            with open(cache_path, "rb") as f:
+                return pickle.load(f)
+        except Exception:
+            pass
+    out = generate_allowed_structure_site_structures(adsorbates_path, sites, site_adjacency, nslab, max_dist=max_dist)
+    if cache_path:
+        try:
+            tmp = cache_path + ".tmp"
+            with open(tmp, "wb") as f:
+                pickle.dump(out, f)
+            os.replace(tmp, cache_path)  # atomic, avoids partial-file races
+        except Exception:
+            pass
+    return out
 
 def get_unstable_pairs(pairsdir,adsorbate_dir,sites,site_adjacency,nslab,max_dist=3.0,show=False,metal=None,facet=None,
                        infopath_dict=None,imag_freq_path_dict=None):

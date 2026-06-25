@@ -22,7 +22,7 @@ from pynta.transitionstate import get_unique_optimized_adsorbates,determine_TS_c
 from pynta.utils import *
 from pynta.calculator import run_harmonically_forced, map_harmonically_forced, add_sella_constraint
 from pynta.mol import *
-from pynta.coveragedependence import get_unstable_pairs, mol_to_atoms, get_configs_for_calculation, get_cov_energies_configs_concern_tree, get_configurations, get_unique_adsorbate_admols, get_central_templates, train_sidt_cov_dep_regressor, process_calculation
+from pynta.coveragedependence import get_unstable_pairs, mol_to_atoms, get_configs_for_calculation, get_cov_energies_configs_concern_tree, get_configurations, get_unique_adsorbate_admols, get_central_templates, get_allowed_structure_site_structures_cached, train_sidt_cov_dep_regressor, process_calculation
 from pynta.geometricanalysis import *
 from pynta.adsorbate import construct_initial_guess_files
 from pynta.postprocessing import postprocess, write_rmg_libraries
@@ -1428,24 +1428,26 @@ class TrainCovdepModelTask(FiretaskBase):
         ad_energy_dict = get_lowest_adsorbate_energies(os.path.join(pynta_dir,"Adsorbates"),sidt_isolated_delta=sidt_isolated_delta)
         coad_Es = {coadname: get_adsorbate_energies(coad_paths[coadname],sidt_isolated_delta=sidt_isolated_delta)[0] for coadname in coadnames}
 
-        # If coadmol_E_dict JSON caches exist AND Configurations/ exists, we can skip the expensive
-        # generate_allowed_structure_site_structures + coadmol_E/stability_dict rebuild. The stability
-        # dict is only consulted when Configurations/ is being built; the E dict is loaded from cache
-        # (lookups in it use is_isomorphic, so JSON-rehydrated Molecule keys are equivalent).
+        # coadmol_E_dict and allowed_structure_site_structures depend only on the (fixed) isolated
+        # adsorbates + sites, so they are cached and reused across iterations/tasks: coadmol_E_dict to
+        # JSON, allowed_structure_site_structures to a pickle. Load the E-dict cache whenever present
+        # -- MC never creates a Configurations/ dir, so don't gate on it; only rebuild E (and the
+        # stability dict, which is needed only for the enumerate Configurations build) when missing.
         coadmol_E_dict_paths = {coadname: os.path.join(path, "coadmol_E_dict_" + coadname + ".json") for coadname in coadnames}
+        allowed_cache_path = os.path.join(path, "allowed_structure_site_structures.pkl")
         configs_dir_exists = os.path.exists(os.path.join(path, "Configurations"))
         all_E_caches_exist = all(os.path.exists(p) for p in coadmol_E_dict_paths.values())
 
         coadmol_E_dicts = dict()
         coadmol_stability_dicts = dict()
-        if configs_dir_exists and all_E_caches_exist:
+        if all_E_caches_exist and (config_generation == "mc" or configs_dir_exists):
             for coadname in coadnames:
                 with open(coadmol_E_dict_paths[coadname]) as f:
                     coadmol_E_dicts[coadname] = {Molecule().from_adjacency_list(k, check_consistency=False): v
                                                  for k,v in json.load(f).items()}
             allowed_structure_site_structures = None
         else:
-            allowed_structure_site_structures = generate_allowed_structure_site_structures(os.path.join(pynta_dir,"Adsorbates"),sites,site_adjacency,nslab,max_dist=np.inf)
+            allowed_structure_site_structures = get_allowed_structure_site_structures_cached(os.path.join(pynta_dir,"Adsorbates"),sites,site_adjacency,nslab,allowed_cache_path)
             for coadname in coadnames:
                 coad_path = coad_paths[coadname]
                 coadmol_E_dict = dict()
@@ -1480,7 +1482,7 @@ class TrainCovdepModelTask(FiretaskBase):
                 with open(unstable_pairs_path,'w') as f:
                     json.dump([g.to_adjacency_list() for g in unstable_pairs],f)
             if allowed_structure_site_structures is None:
-                allowed_structure_site_structures = generate_allowed_structure_site_structures(os.path.join(pynta_dir,"Adsorbates"),sites,site_adjacency,nslab,max_dist=np.inf)
+                allowed_structure_site_structures = get_allowed_structure_site_structures_cached(os.path.join(pynta_dir,"Adsorbates"),sites,site_adjacency,nslab,allowed_cache_path)
             for admol_name,admol in admol_name_structure_dict.items():
                 # all valid central arrangements (adsorbate geometries / TS saddles); MC hops among them
                 is_ts_name = any(bd.get_order_str() == 'R' for bd in admol.get_all_edges())
@@ -1687,30 +1689,31 @@ class SelectCalculationsTask(FiretaskBase):
         slab = read(slab_path)
         nslab = len(slab)
         
-        allowed_structure_site_structures = generate_allowed_structure_site_structures(os.path.join(pynta_dir,"Adsorbates"),sites,site_adjacency,nslab,max_dist=np.inf)
-        
+        allowed_cache_path = os.path.join(path, "allowed_structure_site_structures.pkl")
+        allowed_structure_site_structures = get_allowed_structure_site_structures_cached(os.path.join(pynta_dir,"Adsorbates"),sites,site_adjacency,nslab,allowed_cache_path)
+
         ad_energy_dict = get_lowest_adsorbate_energies(os.path.join(pynta_dir,"Adsorbates"))
         coad_Es = {coadname: get_adsorbate_energies(coad_paths[coadname])[0] for coadname in coadnames}
+        # coadmol_E_dict is invariant across the run: load the JSON cache if present, else build it
+        # (passing the cached allowed_structure_site_structures so generate_adsorbate_2D doesn't
+        # recompute it internally). The stability dict built here previously was unused, so dropped.
+        coadmol_E_dict_paths = {coadname: os.path.join(path, "coadmol_E_dict_" + coadname + ".json") for coadname in coadnames}
         coadmol_E_dicts = dict()
-        coadmol_stability_dicts = dict()
-        for coadname in coadnames:
-            coadmol_E_dict = dict()
-            coadmol_stability_dict = dict()
-            for p in os.listdir(coad_paths[coadname]):
-                if p == "info.json" or (p not in coad_Es[coadname].keys()):
-                    continue
-                admol_init,neighbor_sites_init,ninds_init = generate_adsorbate_2D(read(os.path.join(coad_paths[coadname],p,p+"_init.xyz")),sites,site_adjacency,nslab,max_dist=np.inf)
-                admol,neighbor_sites,ninds = generate_adsorbate_2D(read(os.path.join(coad_paths[coadname],p,p+".xyz")),sites,site_adjacency,nslab,max_dist=np.inf)
-                out_struct = split_adsorbed_structures(admol,clear_site_info=False)[0]
-                out_struct_init = split_adsorbed_structures(admol_init,clear_site_info=False)[0]
-                coadmol_E_dict[out_struct] = coad_Es[coadname][p] 
-                if admol_init.is_isomorphic(admol,save_order=True):
-                    coadmol_stability_dict[out_struct_init] = True
-                else:
-                    coadmol_stability_dict[out_struct_init] = False
-            
-            coadmol_E_dicts[coadname] = coadmol_E_dict
-            coadmol_stability_dicts[coadname] = coadmol_stability_dict
+        if all(os.path.exists(p) for p in coadmol_E_dict_paths.values()):
+            for coadname in coadnames:
+                with open(coadmol_E_dict_paths[coadname]) as f:
+                    coadmol_E_dicts[coadname] = {Molecule().from_adjacency_list(k, check_consistency=False): v
+                                                 for k,v in json.load(f).items()}
+        else:
+            for coadname in coadnames:
+                coadmol_E_dict = dict()
+                for p in os.listdir(coad_paths[coadname]):
+                    if p == "info.json" or (p not in coad_Es[coadname].keys()):
+                        continue
+                    admol,neighbor_sites,ninds = generate_adsorbate_2D(read(os.path.join(coad_paths[coadname],p,p+".xyz")),sites,site_adjacency,nslab,max_dist=np.inf,allowed_structure_site_structures=allowed_structure_site_structures)
+                    out_struct = split_adsorbed_structures(admol,clear_site_info=False)[0]
+                    coadmol_E_dict[out_struct] = coad_Es[coadname][p]
+                coadmol_E_dicts[coadname] = coadmol_E_dict
 
         #cache ad_energy_dict and per-coadname coadmol_E_dict to disk so per-sample
         #ExtractDatumTask workers don't rebuild them (rebuild requires generate_adsorbate_2D
