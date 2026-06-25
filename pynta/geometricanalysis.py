@@ -1414,7 +1414,7 @@ def add_coadsorbate_2D(mol2D,site,coad2D,slab,neighbor_sites_2D,site_2D_inds):
     mol2D.identify_ring_membership()
     return mol2D
 
-def mol_to_atoms(admol,slab,sites,metal,partial_atoms=None,partial_admol=None,atoms_in_partial=None):
+def mol_to_atoms(admol,slab,sites,metal,partial_atoms=None,partial_admol=None,atoms_in_partial=None,random_offset=True):
     """Generate a 3D initial guess for a given 2D admol configuration
 
     Args:
@@ -1491,7 +1491,7 @@ def mol_to_atoms(admol,slab,sites,metal,partial_atoms=None,partial_admol=None,at
                 atom_surf_inds.append(mol_to_atoms_map[adatom_molind])
                 ad_sites.append(sites[sind])
 
-        atoms,_,_ = place_adsorbate_covdep(ad,atoms,atom_surf_inds,ad_sites,metal)
+        atoms,_,_ = place_adsorbate_covdep(ad,atoms,atom_surf_inds,ad_sites,metal,random_offset=random_offset)
 
     return atoms
 

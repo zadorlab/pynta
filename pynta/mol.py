@@ -118,7 +118,7 @@ def get_site_bond_length(sitetype,atomtype=None,metal=None):
         return site_bond_length_dict[(sitetype,None,None)]
 
 def add_adsorbate_to_site(atoms, adsorbate, surf_ind, site, height=None,
-                          orientation=None, tilt_angle=0.):
+                          orientation=None, tilt_angle=0., random_offset=True):
     """The base function for adding one adsorbate to a site.
     Site must include information of 'normal' and 'position'.
     Useful for adding adsorbate to multiple sites or adding
@@ -217,33 +217,35 @@ def add_adsorbate_to_site(atoms, adsorbate, surf_ind, site, height=None,
                 a.position = rm_n @ a.position
 
     ads.translate(pos - bondpos)
-    # Randomly offsetting atoms to avoid highly symmetric structures
-    for atom in ads:
-        x_trans = random.choice([-0.05, 0.05])
-        y_trans = random.choice([-0.05, 0.05])
-        atom.position[0] += x_trans
-        atom.position[1] += y_trans
+    # Randomly offsetting atoms to avoid highly symmetric structures (skipped when random_offset is
+    # False, e.g. for reproducible visualization of MC chains)
+    if random_offset:
+        for atom in ads:
+            x_trans = random.choice([-0.05, 0.05])
+            y_trans = random.choice([-0.05, 0.05])
+            atom.position[0] += x_trans
+            atom.position[1] += y_trans
 
     atoms += ads
     if ads.get_chemical_formula() == 'H2':
         shift = (atoms.positions[-2] - atoms.positions[-1]) / 2
         atoms.positions[-2:,:] += shift
 
-def place_adsorbate_covdep(ads,slab,atom_surf_inds,sites,metal):
+def place_adsorbate_covdep(ads,slab,atom_surf_inds,sites,metal,random_offset=True):
     if len(atom_surf_inds) == 1:
         geo = slab.copy()
         h = get_site_bond_length(sites[0]["site"],ads.get_chemical_symbols()[atom_surf_inds[0]],metal)
-        add_adsorbate_to_site(geo, ads, atom_surf_inds[0], sites[0], height=h)
+        add_adsorbate_to_site(geo, ads, atom_surf_inds[0], sites[0], height=h, random_offset=random_offset)
         return geo,h,None
     elif len(atom_surf_inds) == 2:
         geo = slab.copy()
         h1 = get_site_bond_length(sites[0]["site"],ads.get_chemical_symbols()[atom_surf_inds[0]],metal)
         h2 = get_site_bond_length(sites[1]["site"],ads.get_chemical_symbols()[atom_surf_inds[1]],metal)
         ori = get_mic(sites[0]['position'], sites[1]['position'], geo.cell)
-        add_adsorbate_to_site(geo, deepcopy(ads), atom_surf_inds[0], sites[0], height=h1, orientation=ori)
+        add_adsorbate_to_site(geo, deepcopy(ads), atom_surf_inds[0], sites[0], height=h1, orientation=ori, random_offset=random_offset)
         if np.isnan(geo.positions).any(): #if nans just ignore orientation and let it optimize
             geo = slab.copy()
-            add_adsorbate_to_site(geo, deepcopy(ads), atom_surf_inds[0], sites[0], height=h1, orientation=None)
+            add_adsorbate_to_site(geo, deepcopy(ads), atom_surf_inds[0], sites[0], height=h1, orientation=None, random_offset=random_offset)
         return geo,h1,h2
     else:
         raise ValueError

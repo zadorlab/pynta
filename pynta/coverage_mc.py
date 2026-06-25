@@ -530,8 +530,11 @@ def write_mc_chain_xyz(path, pynta_run_directory, central, coadname, Ncoad, site
         # central atoms are the base's atoms (build_admol_from_occ appends coadsorbates), so we can
         # tell mol_to_atoms directly and skip the subgraph isomorphism
         central_atoms = [a for a in admol.atoms[:nbase] if not a.is_surface_site()]
+        # random_offset=False -> the same config renders identically, so converged (rejected) runs
+        # show as still frames and only real site-hops change the picture
         atoms = mol_to_atoms(admol, slab, sites, metal,
-                             partial_atoms=templates[b][0], atoms_in_partial=central_atoms)
+                             partial_atoms=templates[b][0], atoms_in_partial=central_atoms,
+                             random_offset=False)
         frames.append(atoms)
         energies.append(E)
 
