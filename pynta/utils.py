@@ -537,7 +537,8 @@ def plot_interaction_graph(atoms, tree, sites, site_adjacency, nslab,
     else:
         fig = ax.figure
 
-    contribs = [t[2] for t in terms if not np.isnan(t[2])]
+    EV = 1.0 / (96.48530749925793 * 1000.0)  # J/mol -> eV
+    contribs = [t[2] * EV for t in terms if not np.isnan(t[2])]
     maxc = max((abs(c) for c in contribs), default=1.0) or 1.0
     norm = plt.Normalize(-maxc, maxc)
     cm = plt.get_cmap(cmap)
@@ -545,6 +546,7 @@ def plot_interaction_graph(atoms, tree, sites, site_adjacency, nslab,
     for ai, aj, c, g in terms:
         if np.isnan(c):
             continue
+        c = c * EV
         p, q = ad_xy(ai), ad_xy(aj)
         if p is None or q is None:
             continue
@@ -552,7 +554,7 @@ def plot_interaction_graph(atoms, tree, sites, site_adjacency, nslab,
                 linewidth=0.5 + 5.0 * abs(c) / maxc, alpha=0.8, zorder=2)
         if label_values:
             mid = (p + q) / 2.0
-            ax.annotate("{:.0f}".format(c), mid, fontsize=6, zorder=5)
+            ax.annotate("{:.3f}".format(c), mid, fontsize=6, zorder=5)
 
     for a in admol.atoms:
         if a.is_bonded_to_surface() and not a.is_surface_site():
@@ -564,12 +566,12 @@ def plot_interaction_graph(atoms, tree, sites, site_adjacency, nslab,
 
     sm = plt.cm.ScalarMappable(norm=norm, cmap=cm)
     sm.set_array([])
-    fig.colorbar(sm, ax=ax, label="pair interaction contribution (J/mol)")
+    fig.colorbar(sm, ax=ax, label="pair interaction contribution (eV)")
     ax.set_aspect("equal")
     ax.set_xlabel("x [A]")
     ax.set_ylabel("y [A]")
-    total = sum(c for c in contribs)
-    ax.set_title(title or "interaction E = {:.0f} J/mol ({} terms)".format(total, len(terms)))
+    total = sum(contribs)
+    ax.set_title(title or "interaction E = {:.3f} eV ({} terms)".format(total, len(terms)))
     if out_png:
         fig.savefig(out_png, dpi=150, bbox_inches="tight")
     return fig, ax
