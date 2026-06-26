@@ -471,22 +471,24 @@ def write_sites_xyz(slab, sites, out_xyz="sites.xyz", marker_height=0.0, by="sit
         print("  {:3s} -> {}".format(e, c))
     return atoms, legend
 
-def _interaction_terms(atoms, tree, sites, site_adjacency, nslab, allowed_structure_site_structures=None):
-    """Decompose a 3D config into its SIDT interaction terms for visualization. Returns
-    (admol, ad_xy, terms): ad_xy maps a surface-bonded adsorbate atom -> its site xy; terms is a list
-    of (atom_i, atom_j, contribution, node_id), one per pair-centered subgraph in the SAME order as
-    the tree's decomposition/trace, where contribution is the matched node's value (J/mol)."""
+def _interaction_terms(admol, tree, sites):
+    """Decompose a 2D config admol into its SIDT interaction terms for visualization. Returns
+    (ad_xy, terms): ad_xy maps a surface-bonded adsorbate atom -> its site xy; terms is a list of
+    (atom_i, atom_j, contribution, node_id), one per pair-centered subgraph in the SAME order as the
+    tree's decomposition/trace (contribution = matched node value, J/mol). Works directly on the 2D
+    admol (no 3D round-trip), so adsorbates close in space are not merged. Assumes the admol was built
+    with max_dist=inf, where generate_adsorbate_molecule keeps ninds=range(len(sites)), so the admol's
+    k-th surface-site atom maps to sites[k]."""
     import logging
-    from pynta.geometricanalysis import generate_adsorbate_2D
     from pynta.mol import find_adsorbate_atoms_surface_sites
 
-    admol, neighbor_sites, ninds = generate_adsorbate_2D(
-        atoms, sites, site_adjacency, nslab, max_dist=np.inf,
-        allowed_structure_site_structures=allowed_structure_site_structures)
-
-    # admol surface-site atoms are in neighbor_sites order -> xy from neighbor_sites positions
+    # max_dist=inf admols: k-th surface-site atom <-> sites[k]
     site_atoms = [a for a in admol.atoms if a.is_surface_site()]
-    site_xy = {id(a): np.asarray(neighbor_sites[k]["position"])[:2] for k, a in enumerate(site_atoms)}
+    if len(site_atoms) != len(sites):
+        logging.warning("interaction_terms: admol has %d surface sites but sites has %d; xy mapping "
+                        "assumes the admol was built with max_dist=inf", len(site_atoms), len(sites))
+    site_xy = {id(a): np.asarray(sites[k]["position"])[:2]
+               for k, a in enumerate(site_atoms) if k < len(sites)}
 
     def ad_xy(atom):
         ps = [site_xy[id(s)] for s in atom.bonds.keys() if s.is_surface_site() and id(s) in site_xy]
@@ -515,28 +517,40 @@ def _interaction_terms(atoms, tree, sites, site_adjacency, nslab, allowed_struct
         except Exception:
             c = float("nan")
         terms.append((admol.atoms[indi], admol.atoms[indj], c, g))
-    return admol, ad_xy, terms
+    return ad_xy, terms
 
-def plot_interaction_graph(atoms, tree, sites, site_adjacency, nslab,
-                           allowed_structure_site_structures=None, out_png=None, ax=None,
-                           cmap="coolwarm", label_values=False, title=None):
-    """Overlay the SIDT interaction-energy decomposition of a 3D config on the xy site projection.
-    Markers = surface-bonded adsorbate atoms; one edge per pair-centered interaction term, width
-    proportional to |contribution| and color by sign (diverging cmap). The decomposition is
-    pair-centered but environment-aware (each subgraph includes neighbors within local_radius), so an
-    edge summarizes a term whose true subgraph may involve more atoms. Returns (fig, ax).
+def plot_interaction_graph(admol, tree, sites, site_adjacency, slab,
+                           out_png=None, ax=None, cmap="coolwarm", label_values=False, title=None):
+    """Overlay the SIDT interaction-energy decomposition of a 2D config admol on the xy site
+    projection. The underlying site graph is drawn light gray; markers = surface-bonded adsorbate
+    atoms; one edge per pair-centered interaction term, width proportional to |contribution| and
+    color by sign (diverging cmap). Works directly from the 2D admol (no 3D->2D round-trip, so
+    adsorbates close in space are not merged). Axes span the full slab cell. Contributions in eV.
+    Returns (fig, ax).
 
-    atoms: 3D config (e.g. an MC chain frame or an init.xyz); tree: the trained interaction regressor.
+    admol: 2D config admol (e.g. from build_admol_from_occ); tree: trained interaction regressor;
+    slab: ase.Atoms for the slab (cell extent + PBC for the site-graph underlay).
     """
     import matplotlib.pyplot as plt
+    from ase.geometry import get_distances
 
-    admol, ad_xy, terms = _interaction_terms(atoms, tree, sites, site_adjacency, nslab,
-                                             allowed_structure_site_structures)
+    ad_xy, terms = _interaction_terms(admol, tree, sites)
     if ax is None:
         fig, ax = plt.subplots(figsize=(7, 7))
     else:
         fig = ax.figure
 
+    # --- underlying site graph (light gray), minimum-image segments to avoid cross-cell lines ---
+    site_pos = [np.asarray(s["position"]) for s in sites]
+    for i, neighbors in site_adjacency.items():
+        pi = site_pos[i][:2]
+        for j in neighbors:
+            v, _ = get_distances([site_pos[i]], [site_pos[j]], cell=slab.cell, pbc=slab.pbc)
+            end = pi + v[0][0][:2]
+            ax.plot([pi[0], end[0]], [pi[1], end[1]], color="0.85", lw=0.6, zorder=0)
+    ax.scatter([p[0] for p in site_pos], [p[1] for p in site_pos], s=8, c="0.8", zorder=1)
+
+    # --- interaction terms (eV) ---
     EV = 1.0 / (96.48530749925793 * 1000.0)  # J/mol -> eV
     contribs = [t[2] * EV for t in terms if not np.isnan(t[2])]
     maxc = max((abs(c) for c in contribs), default=1.0) or 1.0
@@ -551,7 +565,7 @@ def plot_interaction_graph(atoms, tree, sites, site_adjacency, nslab,
         if p is None or q is None:
             continue
         ax.plot([p[0], q[0]], [p[1], q[1]], color=cm(norm(c)),
-                linewidth=0.5 + 5.0 * abs(c) / maxc, alpha=0.8, zorder=2)
+                linewidth=0.5 + 5.0 * abs(c) / maxc, alpha=0.85, zorder=2)
         if label_values:
             mid = (p + q) / 2.0
             ax.annotate("{:.3f}".format(c), mid, fontsize=6, zorder=5)
@@ -567,6 +581,14 @@ def plot_interaction_graph(atoms, tree, sites, site_adjacency, nslab,
     sm = plt.cm.ScalarMappable(norm=norm, cmap=cm)
     sm.set_array([])
     fig.colorbar(sm, ax=ax, label="pair interaction contribution (eV)")
+
+    # axes span the full slab cell (in-plane bounding box)
+    a_xy, b_xy = np.asarray(slab.cell[0])[:2], np.asarray(slab.cell[1])[:2]
+    corners = np.array([[0.0, 0.0], a_xy, b_xy, a_xy + b_xy])
+    mx = 0.05 * (corners[:, 0].max() - corners[:, 0].min() + 1e-9)
+    my = 0.05 * (corners[:, 1].max() - corners[:, 1].min() + 1e-9)
+    ax.set_xlim(corners[:, 0].min() - mx, corners[:, 0].max() + mx)
+    ax.set_ylim(corners[:, 1].min() - my, corners[:, 1].max() + my)
     ax.set_aspect("equal")
     ax.set_xlabel("x [A]")
     ax.set_ylabel("y [A]")

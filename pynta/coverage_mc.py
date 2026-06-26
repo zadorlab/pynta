@@ -542,3 +542,57 @@ def write_mc_chain_xyz(path, pynta_run_directory, central, coadname, Ncoad, site
         out_xyz = "mc_chain_{}_{}_N{}_iter{}.xyz".format(central, coadname, Ncoad, iteration)
     write(out_xyz, frames)
     return out_xyz, frames, energies
+
+
+def plot_mc_frame_interaction_graph(path, pynta_run_directory, central, coadname, Ncoad, frame,
+                                    sites, site_adjacency, metal, facet, iteration=None,
+                                    adsorbate_site_energy_cutoff=None, slab=None,
+                                    allowed_structure_site_structures=None, out_png=None, **plot_kwargs):
+    """Plot the SIDT interaction-energy decomposition of ONE saved MC chain frame (no 3D round-trip).
+
+    Thin wrapper around pynta.utils.plot_interaction_graph: takes the same run inputs as
+    write_mc_chain_xyz plus ``frame`` (index into this Ncoad's chain). Loads the chain entry
+    (base_idx, occ), rebuilds the 2D config admol via build_admol_from_occ (so close adsorbates are
+    not merged), loads the iteration's interaction regressor, and plots. Returns (fig, ax).
+    """
+    from pynta.utils import plot_interaction_graph
+    from pysidt.sidt import read_nodes, MultiEvalSubgraphIsomorphicDecisionTreeRegressor
+    from pynta.coveragedependence import adsorbate_interaction_decomposition
+
+    if iteration is None:
+        iters = [int(d) for d in os.listdir(os.path.join(path, "Iterations")) if d.isdigit()]
+        iteration = max(iters)
+    chain_file = os.path.join(path, "Iterations", str(iteration), "mc_chain_" + central + "_" + coadname + ".json")
+    with open(chain_file) as f:
+        chains = json.load(f)
+    if str(Ncoad) not in chains:
+        raise KeyError("no chain for Ncoad={} in {} (have {})".format(Ncoad, chain_file, list(chains.keys())))
+    entry = chains[str(Ncoad)][frame]
+    b, occ, E = entry[0], entry[1], entry[2]
+
+    if slab is None:
+        slab = read(os.path.join(pynta_run_directory, "slab.xyz"))
+    nslab = len(slab)
+    if allowed_structure_site_structures is None:
+        allowed_structure_site_structures = generate_allowed_structure_site_structures(
+            os.path.join(pynta_run_directory, "Adsorbates"), sites, site_adjacency, nslab, max_dist=np.inf)
+
+    is_ts = central.startswith("TS")
+    templates = get_central_templates(central, is_ts, pynta_run_directory, metal, facet, sites,
+                                      site_adjacency, nslab,
+                                      allowed_structure_site_structures=allowed_structure_site_structures,
+                                      energy_cutoff=adsorbate_site_energy_cutoff)
+    coad_templates = get_central_templates(coadname, False, pynta_run_directory, metal, facet, sites,
+                                           site_adjacency, nslab,
+                                           allowed_structure_site_structures=allowed_structure_site_structures,
+                                           energy_cutoff=None)
+    coad_simple = remove_slab(coad_templates[0][1])
+    admol = build_admol_from_occ(templates[b][1], coad_simple, occ)
+
+    nodes = read_nodes(os.path.join(path, "Iterations", str(iteration), "regressor.json"))
+    tree = MultiEvalSubgraphIsomorphicDecisionTreeRegressor([adsorbate_interaction_decomposition], nodes=nodes)
+
+    title = plot_kwargs.pop("title", "MC {} +{}x{} iter{} frame{} (E={:.3f} eV)".format(
+        central, Ncoad, coadname, iteration, frame, E / (96.48530749925793 * 1000.0)))
+    return plot_interaction_graph(admol, tree, sites, site_adjacency, slab,
+                                  out_png=out_png, title=title, **plot_kwargs)
