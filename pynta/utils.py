@@ -520,16 +520,23 @@ def _interaction_terms(admol, tree, sites):
     return ad_xy, terms
 
 def plot_interaction_graph(admol, tree, sites, site_adjacency, slab,
-                           out_png=None, ax=None, cmap="coolwarm", label_values=False, title=None):
+                           out_png=None, ax=None, cmap="coolwarm", label_values=False, title=None,
+                           repeat=1):
     """Overlay the SIDT interaction-energy decomposition of a 2D config admol on the xy site
     projection. The underlying site graph is drawn light gray; markers = surface-bonded adsorbate
     atoms; one edge per pair-centered interaction term, width proportional to |contribution| and
     color by sign (diverging cmap). Works directly from the 2D admol (no 3D->2D round-trip, so
-    adsorbates close in space are not merged). Axes span the full slab cell. Contributions in eV.
-    Returns (fig, ax).
+    adsorbates close in space are not merged). Contributions in eV. Returns (fig, ax).
+
+    With repeat>=1 the cell is tiled over a (2*repeat+1)x(2*repeat+1) block of periodic images so
+    that interactions crossing the cell boundary are drawn as full edges landing on real (faded)
+    image atoms rather than running across the cell or off into empty space; repeat=1 (the default,
+    3x3 block) is enough to surely contain every minimum-image partner. The central cell is drawn
+    solid/labeled, the images faded. repeat=0 draws only the single cell (edges become short
+    minimum-image stubs off the boundary).
 
     admol: 2D config admol (e.g. from build_admol_from_occ); tree: trained interaction regressor;
-    slab: ase.Atoms for the slab (cell extent + PBC for the site-graph underlay).
+    slab: ase.Atoms for the slab (cell extent + PBC); repeat: periodic-image halo radius.
     """
     import matplotlib.pyplot as plt
     from ase.geometry import get_distances
@@ -540,17 +547,44 @@ def plot_interaction_graph(admol, tree, sites, site_adjacency, slab,
     else:
         fig = ax.figure
 
-    # --- underlying site graph (light gray), minimum-image segments to avoid cross-cell lines ---
+    a_xy = np.asarray(slab.cell[0])[:2]
+    b_xy = np.asarray(slab.cell[1])[:2]
+    r = int(repeat)
+    shifts = [i * a_xy + j * b_xy for i in range(-r, r + 1) for j in range(-r, r + 1)]
     site_pos = [np.asarray(s["position"]) for s in sites]
+
+    # minimum-image adjacency vectors (independent of which image we draw -> compute once)
+    adj_vecs = {}
     for i, neighbors in site_adjacency.items():
-        pi = site_pos[i][:2]
         for j in neighbors:
             v, _ = get_distances([site_pos[i]], [site_pos[j]], cell=slab.cell, pbc=slab.pbc)
-            end = pi + v[0][0][:2]
-            ax.plot([pi[0], end[0]], [pi[1], end[1]], color="0.85", lw=0.6, zorder=0)
-    ax.scatter([p[0] for p in site_pos], [p[1] for p in site_pos], s=8, c="0.8", zorder=1)
+            adj_vecs[(i, j)] = v[0][0][:2]
 
-    # --- interaction terms (eV) ---
+    # --- underlying site graph + dots, tiled over the periodic images (light gray) ---
+    for sh in shifts:
+        for (i, j), vij in adj_vecs.items():
+            pi = site_pos[i][:2] + sh
+            ax.plot([pi[0], pi[0] + vij[0]], [pi[1], pi[1] + vij[1]], color="0.88", lw=0.5, zorder=0)
+        ax.scatter([p[0] + sh[0] for p in site_pos], [p[1] + sh[1] for p in site_pos],
+                   s=6, c="0.85", zorder=1)
+
+    # --- adsorbate markers: central cell solid+labeled, periodic images faded ---
+    ad_xys = [(a, ad_xy(a)) for a in admol.atoms
+              if a.is_bonded_to_surface() and not a.is_surface_site()]
+    for sh in shifts:
+        central = bool(np.allclose(sh, 0.0))
+        for a, xy in ad_xys:
+            if xy is None:
+                continue
+            x, y = xy[0] + sh[0], xy[1] + sh[1]
+            if central:
+                ax.scatter(x, y, s=120, c="k", zorder=3)
+                ax.annotate(a.element.symbol, (x, y), color="white", ha="center", va="center",
+                            fontsize=7, zorder=4)
+            else:
+                ax.scatter(x, y, s=70, c="0.6", alpha=0.5, zorder=2)
+
+    # --- interaction terms (eV): central-cell edges drawn to the nearest image of each partner ---
     EV = 1.0 / (96.48530749925793 * 1000.0)  # J/mol -> eV
     contribs = [t[2] * EV for t in terms if not np.isnan(t[2])]
     maxc = max((abs(c) for c in contribs), default=1.0) or 1.0
@@ -567,34 +601,26 @@ def plot_interaction_graph(admol, tree, sites, site_adjacency, slab,
         col = cm(norm(c))
         lw = 0.5 + 5.0 * abs(c) / maxc
         # the modeled interaction is between ai and the NEAREST image of aj (the SIDT decomposition is
-        # periodic), so draw the minimum-image edge: a stub from each atom toward the other's nearest
-        # image. For an in-cell pair this is just the normal p--q segment; for a cross-boundary pair it
-        # renders as two short stubs off opposite edges instead of one long line across the cell.
+        # periodic), so draw the minimum-image edge from each atom toward the other's nearest image.
+        # With tiling those endpoints land on the faded image markers; in-cell pairs collapse to the
+        # normal p--q segment.
         v, _ = get_distances([[p[0], p[1], 0.0]], [[q[0], q[1], 0.0]], cell=slab.cell, pbc=slab.pbc)
         vxy = v[0][0][:2]
-        ax.plot([p[0], p[0] + vxy[0]], [p[1], p[1] + vxy[1]], color=col, linewidth=lw, alpha=0.85, zorder=2)
-        ax.plot([q[0], q[0] - vxy[0]], [q[1], q[1] - vxy[1]], color=col, linewidth=lw, alpha=0.85, zorder=2)
+        ax.plot([p[0], p[0] + vxy[0]], [p[1], p[1] + vxy[1]], color=col, linewidth=lw, alpha=0.85, zorder=5)
+        ax.plot([q[0], q[0] - vxy[0]], [q[1], q[1] - vxy[1]], color=col, linewidth=lw, alpha=0.85, zorder=5)
         if label_values:
             mid = (np.asarray(p) + np.asarray([p[0] + vxy[0], p[1] + vxy[1]])) / 2.0
-            ax.annotate("{:.3f}".format(c), mid, fontsize=6, zorder=5)
-
-    for a in admol.atoms:
-        if a.is_bonded_to_surface() and not a.is_surface_site():
-            xy = ad_xy(a)
-            if xy is not None:
-                ax.scatter(xy[0], xy[1], s=120, c="k", zorder=3)
-                ax.annotate(a.element.symbol, xy, color="white", ha="center", va="center",
-                            fontsize=7, zorder=4)
+            ax.annotate("{:.3f}".format(c), mid, fontsize=6, zorder=6)
 
     sm = plt.cm.ScalarMappable(norm=norm, cmap=cm)
     sm.set_array([])
     fig.colorbar(sm, ax=ax, label="pair interaction contribution (eV)")
 
-    # axes span the full slab cell (in-plane bounding box)
-    a_xy, b_xy = np.asarray(slab.cell[0])[:2], np.asarray(slab.cell[1])[:2]
-    corners = np.array([[0.0, 0.0], a_xy, b_xy, a_xy + b_xy])
-    mx = 0.05 * (corners[:, 0].max() - corners[:, 0].min() + 1e-9)
-    my = 0.05 * (corners[:, 1].max() - corners[:, 1].min() + 1e-9)
+    # axes span the tiled block (in-plane bounding box over all drawn images)
+    corners = np.array([np.asarray(c0) + sh
+                        for sh in shifts for c0 in ([0.0, 0.0], a_xy, b_xy, a_xy + b_xy)])
+    mx = 0.03 * (corners[:, 0].max() - corners[:, 0].min() + 1e-9)
+    my = 0.03 * (corners[:, 1].max() - corners[:, 1].min() + 1e-9)
     ax.set_xlim(corners[:, 0].min() - mx, corners[:, 0].max() + mx)
     ax.set_ylim(corners[:, 1].min() - my, corners[:, 1].max() + my)
     ax.set_aspect("equal")
