@@ -471,6 +471,109 @@ def write_sites_xyz(slab, sites, out_xyz="sites.xyz", marker_height=0.0, by="sit
         print("  {:3s} -> {}".format(e, c))
     return atoms, legend
 
+def _interaction_terms(atoms, tree, sites, site_adjacency, nslab, allowed_structure_site_structures=None):
+    """Decompose a 3D config into its SIDT interaction terms for visualization. Returns
+    (admol, ad_xy, terms): ad_xy maps a surface-bonded adsorbate atom -> its site xy; terms is a list
+    of (atom_i, atom_j, contribution, node_id), one per pair-centered subgraph in the SAME order as
+    the tree's decomposition/trace, where contribution is the matched node's value (J/mol)."""
+    import logging
+    from pynta.geometricanalysis import generate_adsorbate_2D
+    from pynta.mol import find_adsorbate_atoms_surface_sites
+
+    admol, neighbor_sites, ninds = generate_adsorbate_2D(
+        atoms, sites, site_adjacency, nslab, max_dist=np.inf,
+        allowed_structure_site_structures=allowed_structure_site_structures)
+
+    # admol surface-site atoms are in neighbor_sites order -> xy from neighbor_sites positions
+    site_atoms = [a for a in admol.atoms if a.is_surface_site()]
+    site_xy = {id(a): np.asarray(neighbor_sites[k]["position"])[:2] for k, a in enumerate(site_atoms)}
+
+    def ad_xy(atom):
+        ps = [site_xy[id(s)] for s in atom.bonds.keys() if s.is_surface_site() and id(s) in site_xy]
+        return np.mean(ps, axis=0) if ps else None
+
+    # pairs in the SAME order as adsorbate_interaction_decomposition (i>j, skip same-adsorbate)
+    surf_bonded = [a for a in admol.atoms if a.is_bonded_to_surface() and not a.is_surface_site()]
+    sb_inds = [admol.atoms.index(a) for a in surf_bonded]
+    pairs = []
+    for i, indi in enumerate(sb_inds):
+        for j, indj in enumerate(sb_inds):
+            if i > j:
+                ad_atoms_j, _ = find_adsorbate_atoms_surface_sites(admol.atoms[indj], admol)
+                if admol.atoms[indi] in ad_atoms_j:
+                    continue
+                pairs.append((indi, indj))
+
+    E, sigma, trace = tree.evaluate(admol, trace=True, estimate_uncertainty=True)
+    if len(trace) != len(pairs):
+        logging.warning("interaction_terms: trace length %d != pair count %d; edge mapping may be off",
+                        len(trace), len(pairs))
+    terms = []
+    for (indi, indj), g in zip(pairs, trace):
+        try:
+            c = float(tree.nodes[g].rule.value)
+        except Exception:
+            c = float("nan")
+        terms.append((admol.atoms[indi], admol.atoms[indj], c, g))
+    return admol, ad_xy, terms
+
+def plot_interaction_graph(atoms, tree, sites, site_adjacency, nslab,
+                           allowed_structure_site_structures=None, out_png=None, ax=None,
+                           cmap="coolwarm", label_values=False, title=None):
+    """Overlay the SIDT interaction-energy decomposition of a 3D config on the xy site projection.
+    Markers = surface-bonded adsorbate atoms; one edge per pair-centered interaction term, width
+    proportional to |contribution| and color by sign (diverging cmap). The decomposition is
+    pair-centered but environment-aware (each subgraph includes neighbors within local_radius), so an
+    edge summarizes a term whose true subgraph may involve more atoms. Returns (fig, ax).
+
+    atoms: 3D config (e.g. an MC chain frame or an init.xyz); tree: the trained interaction regressor.
+    """
+    import matplotlib.pyplot as plt
+
+    admol, ad_xy, terms = _interaction_terms(atoms, tree, sites, site_adjacency, nslab,
+                                             allowed_structure_site_structures)
+    if ax is None:
+        fig, ax = plt.subplots(figsize=(7, 7))
+    else:
+        fig = ax.figure
+
+    contribs = [t[2] for t in terms if not np.isnan(t[2])]
+    maxc = max((abs(c) for c in contribs), default=1.0) or 1.0
+    norm = plt.Normalize(-maxc, maxc)
+    cm = plt.get_cmap(cmap)
+
+    for ai, aj, c, g in terms:
+        if np.isnan(c):
+            continue
+        p, q = ad_xy(ai), ad_xy(aj)
+        if p is None or q is None:
+            continue
+        ax.plot([p[0], q[0]], [p[1], q[1]], color=cm(norm(c)),
+                linewidth=0.5 + 5.0 * abs(c) / maxc, alpha=0.8, zorder=2)
+        if label_values:
+            mid = (p + q) / 2.0
+            ax.annotate("{:.0f}".format(c), mid, fontsize=6, zorder=5)
+
+    for a in admol.atoms:
+        if a.is_bonded_to_surface() and not a.is_surface_site():
+            xy = ad_xy(a)
+            if xy is not None:
+                ax.scatter(xy[0], xy[1], s=120, c="k", zorder=3)
+                ax.annotate(a.element.symbol, xy, color="white", ha="center", va="center",
+                            fontsize=7, zorder=4)
+
+    sm = plt.cm.ScalarMappable(norm=norm, cmap=cm)
+    sm.set_array([])
+    fig.colorbar(sm, ax=ax, label="pair interaction contribution (J/mol)")
+    ax.set_aspect("equal")
+    ax.set_xlabel("x [A]")
+    ax.set_ylabel("y [A]")
+    total = sum(c for c in contribs)
+    ax.set_title(title or "interaction E = {:.0f} J/mol ({} terms)".format(total, len(terms)))
+    if out_png:
+        fig.savefig(out_png, dpi=150, bbox_inches="tight")
+    return fig, ax
+
 def construct_constraint(d):
     """
     construct a constrain from a dictionary that is the input to the constraint
