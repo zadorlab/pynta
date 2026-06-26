@@ -564,10 +564,18 @@ def plot_interaction_graph(admol, tree, sites, site_adjacency, slab,
         p, q = ad_xy(ai), ad_xy(aj)
         if p is None or q is None:
             continue
-        ax.plot([p[0], q[0]], [p[1], q[1]], color=cm(norm(c)),
-                linewidth=0.5 + 5.0 * abs(c) / maxc, alpha=0.85, zorder=2)
+        col = cm(norm(c))
+        lw = 0.5 + 5.0 * abs(c) / maxc
+        # the modeled interaction is between ai and the NEAREST image of aj (the SIDT decomposition is
+        # periodic), so draw the minimum-image edge: a stub from each atom toward the other's nearest
+        # image. For an in-cell pair this is just the normal p--q segment; for a cross-boundary pair it
+        # renders as two short stubs off opposite edges instead of one long line across the cell.
+        v, _ = get_distances([[p[0], p[1], 0.0]], [[q[0], q[1], 0.0]], cell=slab.cell, pbc=slab.pbc)
+        vxy = v[0][0][:2]
+        ax.plot([p[0], p[0] + vxy[0]], [p[1], p[1] + vxy[1]], color=col, linewidth=lw, alpha=0.85, zorder=2)
+        ax.plot([q[0], q[0] - vxy[0]], [q[1], q[1] - vxy[1]], color=col, linewidth=lw, alpha=0.85, zorder=2)
         if label_values:
-            mid = (p + q) / 2.0
+            mid = (np.asarray(p) + np.asarray([p[0] + vxy[0], p[1] + vxy[1]])) / 2.0
             ax.annotate("{:.3f}".format(c), mid, fontsize=6, zorder=5)
 
     for a in admol.atoms:
