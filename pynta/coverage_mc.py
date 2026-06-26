@@ -197,35 +197,45 @@ class CanonicalCoverageMC:
         return configuration_is_valid(m, self.base_admols[0], self.is_ts, self.unstable_pairs)
 
     # ------------------------------------------------------------------ initialization
+    def _greedy_fill(self, base_idx, Ncoad, rng):
+        """Greedily place Ncoad valid coadsorbates on base_idx in random site order.
+        Returns (occ, admol) or (None, None) if it gets stuck."""
+        occ = set()
+        m = self.base_admols[base_idx]
+        while len(occ) < Ncoad:
+            cands = list(self._stable_empty[base_idx] - occ)
+            rng.shuffle(cands)
+            placed = False
+            for e in cands:
+                cand = occ | {e}
+                try:
+                    mc = self.build_config(base_idx, cand)
+                except Exception:
+                    continue
+                if self.is_valid(mc):
+                    occ, m, placed = cand, mc, True
+                    break
+            if not placed:
+                return None, None
+        return occ, m
+
     def _greedy_valid_state(self, Ncoad, rng, max_restarts=200):
-        """Greedily build a valid (base_idx, occ) with len(occ)==Ncoad. Returns (base_idx, occ, admol)."""
+        """Greedily build a valid (base_idx, occ) with len(occ)==Ncoad. Bases are tried in index
+        order; since get_central_templates sorts arrangements by central energy (lowest first), this
+        starts the chain from the central's lowest-energy geometry -- usually the best site even under
+        coverage, which helps learning. The chain can still leave it via central hops (p_central).
+        Escalates to a higher-energy arrangement only if the lower one cannot host Ncoad coadsorbates
+        validly. Returns (base_idx, occ, admol)."""
         viable = [b for b in range(len(self.base_admols)) if len(self._stable_empty[b]) >= Ncoad]
         if not viable:
             raise RuntimeError("no base structure can host Ncoad={} coadsorbates "
                                "(max stable sites {})".format(Ncoad, max(len(se) for se in self._stable_empty)))
-        for _ in range(max_restarts):
-            b = rng.choice(viable)
-            occ = set()
-            m = self.base_admols[b]
-            stuck = False
-            while len(occ) < Ncoad:
-                cands = list(self._stable_empty[b] - occ)
-                rng.shuffle(cands)
-                placed = False
-                for e in cands:
-                    cand = occ | {e}
-                    try:
-                        mc = self.build_config(b, cand)
-                    except Exception:
-                        continue
-                    if self.is_valid(mc):
-                        occ, m, placed = cand, mc, True
-                        break
-                if not placed:
-                    stuck = True
-                    break
-            if not stuck and len(occ) == Ncoad:
-                return b, occ, m
+        per_base = max(10, max_restarts // len(viable))
+        for b in viable:
+            for _ in range(per_base):
+                occ, m = self._greedy_fill(b, Ncoad, rng)
+                if occ is not None:
+                    return b, occ, m
         raise RuntimeError("could not build a valid starting configuration with Ncoad={}".format(Ncoad))
 
     # ------------------------------------------------------------------ the sampler

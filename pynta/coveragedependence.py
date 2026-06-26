@@ -1712,8 +1712,14 @@ def get_central_templates(name, is_ts, pynta_dir, metal, facet, sites, site_adja
         ts_path = os.path.join(pynta_dir, name)
         if not os.path.isdir(ts_path):
             ts_path = os.path.join(pynta_dir, name.rsplit("_", 1)[0])
-        return get_unique_TS_admols(ts_path, os.path.join(pynta_dir, "Adsorbates"), metal, facet,
-                                    sites, site_adjacency, nslab, allowed_structure_site_structures)
+        ts_admols = get_unique_TS_admols(ts_path, os.path.join(pynta_dir, "Adsorbates"), metal, facet,
+                                         sites, site_adjacency, nslab, allowed_structure_site_structures)
+        # order saddles by energy (lowest first) when available so the MC starts from the best one
+        try:
+            ts_admols.sort(key=lambda t: t[0].get_potential_energy())
+        except Exception:
+            pass
+        return ts_admols
 
     ad_path = os.path.join(pynta_dir, "Adsorbates", name)
     with open(os.path.join(ad_path, "info.json")) as f:
@@ -1747,6 +1753,12 @@ def get_central_templates(name, is_ts, pynta_dir, metal, facet, sites, site_adja
         except Exception:
             continue
         out.append((geo, st))
+    # order arrangements by central energy (lowest first) so the coverage MC starts from the
+    # central's best site (base_idx 0); base ordering stays consistent across run/geometry-gen/render
+    try:
+        out.sort(key=lambda t: t[0].get_potential_energy())
+    except Exception:
+        pass
     return out
 
 def get_configurations(admol, coad, coad_stable_sites, tree_interaction_classifier=None, coadmol_stability_dict=None, unstable_groups=None,
