@@ -392,7 +392,7 @@ class CanonicalCoverageMC:
 def mc_cov_energies_configs_concern(base_admols, coad, coad_stable_sites, tree_interaction_regressor,
                                     Nocc_isolated=None, concern_energy_tol=None, coadmol_E_dict=None,
                                     tree_atom_regressor=None, unstable_pairs=None, is_ts=False,
-                                    max_coadsorbates=None, n_jobs=1, seed=None, local_radius=2,
+                                    max_coadsorbates=None, Ncoads=None, n_jobs=1, seed=None, local_radius=2,
                                     chain_max_frames=500, **mc_run_kwargs):
     """MC analogue of ``get_cov_energies_configs_concern_tree`` (coveragedependence.py).
 
@@ -436,7 +436,7 @@ def mc_cov_energies_configs_concern(base_admols, coad, coad_stable_sites, tree_i
                              tree_atom_regressor=tree_atom_regressor, coadmol_E_dict=coadmol_E_dict,
                              unstable_pairs=unstable_pairs, is_ts=is_ts, local_radius=local_radius,
                              seed=seed)
-    res = mc.scan_coverages(max_coadsorbates=max_coadsorbates, n_jobs=n_jobs,
+    res = mc.scan_coverages(Ncoads=Ncoads, max_coadsorbates=max_coadsorbates, n_jobs=n_jobs,
                             record_trajectory=True, **mc_run_kwargs)
 
     Ncoad_energy_dict = res["Ncoad_energy_dict"]

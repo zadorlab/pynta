@@ -1141,30 +1141,33 @@ class MolecularHFSP(OptimizationTask):
 def calculate_configruation_energies_firework(admol_name,tree_file,path,coadname,coad_stable_sites,Nocc_isolated,
                                               coadmol_E_dict,concern_energy_tol=None,out_path=None,parents=[],iter=0,ignore_errors=False,
                                               config_generation="enumerate",mc_kwargs=None,base_admols=None,coad_adjlist=None,
-                                              unstable_pairs_path=None,is_ts=False,max_coadsorbates=None):
+                                              unstable_pairs_path=None,is_ts=False,max_coadsorbates=None,Ncoad=None):
+    # Ncoad=None -> compute all coverages in one task (enumerate, or MC without per-chain split);
+    # Ncoad=<int> -> MC for that single coverage only (one firework per chain), files suffixed _N<Ncoad>
     d = {"admol_name": admol_name,"tree_file": tree_file,"path": path,"coadname": coadname,
          "coad_stable_sites": coad_stable_sites,"Nocc_isolated": Nocc_isolated,"coadmol_E_dict": coadmol_E_dict,
          "concern_energy_tol": concern_energy_tol,
          "config_generation": config_generation,"mc_kwargs": mc_kwargs,"base_admols": base_admols,
          "coad_adjlist": coad_adjlist,"unstable_pairs_path": unstable_pairs_path,"is_ts": is_ts,
-         "max_coadsorbates": max_coadsorbates}
+         "max_coadsorbates": max_coadsorbates,"Ncoad": Ncoad}
     t1 = CalculateConfigurationEnergiesTask(d)
     out_dir = os.path.split(tree_file)[0] if out_path is None else out_path
-    files = [{'src': "Ncoad_energy_"+admol_name+"_"+coadname+".json", 'dest': os.path.join(out_dir,"Ncoad_energy_"+admol_name+"_"+coadname+".json")},
-             {'src': "Ncoad_config_"+admol_name+"_"+coadname+".json", 'dest': os.path.join(out_dir,"Ncoad_config_"+admol_name+"_"+coadname+".json")},
-             {'src': "configs_of_concern_"+admol_name+"_"+coadname+".json", 'dest': os.path.join(out_dir,"configs_of_concern_"+admol_name+"_"+coadname+".json")}]
+    suf = "" if Ncoad is None else "_N"+str(Ncoad)
+    def _name(kind):
+        return kind+"_"+admol_name+"_"+coadname+suf+".json"
+    files = [{'src': _name("Ncoad_energy"), 'dest': os.path.join(out_dir,_name("Ncoad_energy"))},
+             {'src': _name("Ncoad_config"), 'dest': os.path.join(out_dir,_name("Ncoad_config"))},
+             {'src': _name("configs_of_concern"), 'dest': os.path.join(out_dir,_name("configs_of_concern"))}]
     if config_generation == "mc":  # MC also writes per-coverage diagnostics + the chain trajectory
-        diag_name = "mc_diagnostics_"+admol_name+"_"+coadname+".json"
-        chain_name = "mc_chain_"+admol_name+"_"+coadname+".json"
-        files.append({'src': diag_name, 'dest': os.path.join(out_dir, diag_name)})
-        files.append({'src': chain_name, 'dest': os.path.join(out_dir, chain_name)})
+        files.append({'src': _name("mc_diagnostics"), 'dest': os.path.join(out_dir, _name("mc_diagnostics"))})
+        files.append({'src': _name("mc_chain"), 'dest': os.path.join(out_dir, _name("mc_chain"))})
     t2 = FileTransferTask({'files': files, 'mode': 'copy', 'ignore_errors': ignore_errors})
-    return Firework([t1,t2],parents=parents,name=admol_name+"_"+coadname+"_energies"+str(iter))
+    return Firework([t1,t2],parents=parents,name=admol_name+"_"+coadname+suf+"_energies"+str(iter))
 
 @explicit_serialize
 class CalculateConfigurationEnergiesTask(FiretaskBase):
     required_params = ["admol_name","tree_file","path","coad_stable_sites","Nocc_isolated","coadmol_E_dict","coadname"]
-    optional_params = ["concern_energy_tol","ignore_errors","config_generation","mc_kwargs","base_admols","coad_adjlist","unstable_pairs_path","is_ts","max_coadsorbates"]
+    optional_params = ["concern_energy_tol","ignore_errors","config_generation","mc_kwargs","base_admols","coad_adjlist","unstable_pairs_path","is_ts","max_coadsorbates","Ncoad"]
     def run_task(self, fw_spec):
         admol_name = self['admol_name']
         tree_file = self["tree_file"]
@@ -1177,6 +1180,9 @@ class CalculateConfigurationEnergiesTask(FiretaskBase):
         ignore_errors = self["ignore_errors"] if "ignore_errors" in self.keys() else False
         config_generation = self["config_generation"] if "config_generation" in self.keys() else "enumerate"
         mc_kwargs = self["mc_kwargs"] if ("mc_kwargs" in self.keys() and self["mc_kwargs"] is not None) else dict()
+        # single-coverage (per-chain) mode when Ncoad is set: run only that coverage and suffix files
+        Ncoad = self["Ncoad"] if "Ncoad" in self.keys() else None
+        suf = "" if Ncoad is None else "_N"+str(Ncoad)
 
         try:
             nodes = read_nodes(tree_file)
@@ -1196,6 +1202,7 @@ class CalculateConfigurationEnergiesTask(FiretaskBase):
                     concern_energy_tol=concern_energy_tol, coadmol_E_dict=coadmol_E_dict,
                     unstable_pairs=unstable_pairs, is_ts=self["is_ts"],
                     max_coadsorbates=self["max_coadsorbates"] if "max_coadsorbates" in self.keys() else None,
+                    Ncoads=([Ncoad] if Ncoad is not None else None),
                     **mc_kwargs)
             else:
                 with open(os.path.join(path,"Configurations",admol_name+"_"+coadname+".json"),'r') as f:
@@ -1203,17 +1210,17 @@ class CalculateConfigurationEnergiesTask(FiretaskBase):
 
                 Ncoad_energy_dict,Ncoad_config_dict,configs_of_concern_admol = get_cov_energies_configs_concern_tree(tree, configs, coad_stable_sites, Nocc_isolated, concern_energy_tol,
                                                     coadmol_E_dict=coadmol_E_dict)
-            with open("Ncoad_energy_"+admol_name+"_"+coadname+".json",'w') as f:
+            with open("Ncoad_energy_"+admol_name+"_"+coadname+suf+".json",'w') as f:
                 json.dump(Ncoad_energy_dict,f)
-            with open("Ncoad_config_"+admol_name+"_"+coadname+".json",'w') as f:
+            with open("Ncoad_config_"+admol_name+"_"+coadname+suf+".json",'w') as f:
                 json.dump(Ncoad_config_dict,f)
-            with open("configs_of_concern_"+admol_name+"_"+coadname+".json",'w') as f:
+            with open("configs_of_concern_"+admol_name+"_"+coadname+suf+".json",'w') as f:
                 json.dump([tuple([v[0].to_adjacency_list(),v[1],v[2],v[3]]) for v in configs_of_concern_admol.values()],f)
             if mc_diagnostics is not None:
-                with open("mc_diagnostics_"+admol_name+"_"+coadname+".json",'w') as f:
+                with open("mc_diagnostics_"+admol_name+"_"+coadname+suf+".json",'w') as f:
                     json.dump(mc_diagnostics,f)
             if mc_chains is not None:
-                with open("mc_chain_"+admol_name+"_"+coadname+".json",'w') as f:
+                with open("mc_chain_"+admol_name+"_"+coadname+suf+".json",'w') as f:
                     json.dump(mc_chains,f)
                 
         except Exception as e:
