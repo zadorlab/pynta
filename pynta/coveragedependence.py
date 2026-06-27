@@ -2322,27 +2322,58 @@ def get_configs_for_calculation(configs_of_concern_by_coad_admol,Ncoad_energy_by
                     group_to_occurence[grp] = n/N
                     
     concern_groups = list(group_to_occurence.keys()) #selected ordering
-        
-    group_to_weight = np.array([group_to_occurence[g]*tree_regressor.nodes[g].rule.uncertainty for g in concern_groups])
-    
+
+    from collections import Counter
+    group_unc = np.array([tree_regressor.nodes[g].rule.uncertainty for g in concern_groups])
+    group_to_weight = np.array([group_to_occurence[g] for g in concern_groups]) * group_unc
+
+    # index groups so each config's group counts come from a single Counter pass over its trace
+    # (instead of tr.count(g) for every group -> O(#groups * len(tr)) per config)
+    group_pos = {g: i for i, g in enumerate(concern_groups)}
     config_to_group_fract = dict()
     for j,v in enumerate(configs_of_concern):
         config,E,tr,std = v
-        config_group_unc = np.array([tr.count(g)*tree_regressor.nodes[g].rule.uncertainty for g in concern_groups])
+        config_group_unc = np.zeros(len(concern_groups))
+        for g, n in Counter(tr).items():
+            pos = group_pos.get(g)
+            if pos is not None:
+                config_group_unc[pos] = n
+        config_group_unc *= group_unc
         s = config_group_unc.sum()
-        if s == 0:
-            config_to_group_fract[j] = config_group_unc
-        else:
-            config_to_group_fract[j] = config_group_unc/s
+        config_to_group_fract[j] = config_group_unc if s == 0 else config_group_unc/s
             
     
     configs_for_calculation = []
     group_fract_for_calculation = []
     maxval = 0.0
     config_list = [x[0] for x in configs_of_concern]
+
+    # --- precompute cheap invariants so the greedy loop avoids O(N^2) scans and needless isomorphism.
+    # Two graphs can be isomorphic only if they share the same atom multiset, so is_isomorphic is only
+    # ever attempted within a composition bucket (same central + #coadsorbates + elements); configs of a
+    # different composition are skipped outright. Also: "already computed?" depends only on the fixed
+    # computed_configs, so it is evaluated ONCE here instead of for every candidate on all 10 passes. ---
+    def _comp_key(m):
+        return tuple(sorted(a.element.symbol for a in m.atoms))
+    is_ts_map = {id(c): any(bd.get_order_str() == 'R' for bd in c.get_all_edges()) for c in config_list}
+    config_index = {}
+    config_keys = {}
+    for i, c in enumerate(config_list):
+        config_index.setdefault(id(c), i)
+        config_keys[id(c)] = _comp_key(c)
+
+    computed_by_key = dict()
+    for c in computed_configs:
+        computed_by_key.setdefault(_comp_key(c), []).append(c)
+    already_computed = set()
+    for i, c in enumerate(config_list):
+        for cc in computed_by_key.get(config_keys[id(c)], ()):
+            if c.is_isomorphic(cc, save_order=True):
+                already_computed.add(i)
+                break
+
     #sort lower numbers of coadsorbates first, larger numbers of coadsorbates later
     bond_count_key = lambda x: len([bd for bd in x.get_all_edges() if (bd.atom1.is_surface_site() and not bd.atom2.is_surface_site()) or (bd.atom2.is_surface_site() and not bd.atom1.is_surface_site())])
-    is_ts = lambda x: any(bd.get_order_str() == 'R' for bd in x.get_all_edges())
     sorted_config_list = sorted(config_list[:], key=bond_count_key)
 
     if ts_frac is not None:
@@ -2351,54 +2382,68 @@ def get_configs_for_calculation(configs_of_concern_by_coad_admol,Ncoad_energy_by
     ts_count = 0
     non_ts_count = 0
 
-    for q in range(calculation_selection_iterations): #loop the greedy optimization a number of times to get close to local min
+    selected_by_key = dict()  # composition key -> list of currently-selected configs (for dup check)
+    selected_keys = []        # parallel to configs_for_calculation
+
+    def _bucket_remove(key, cfg):  # identity-based removal (avoid Molecule.__eq__ semantics)
+        b = selected_by_key.get(key, [])
+        for bi, bc in enumerate(b):
+            if bc is cfg:
+                b.pop(bi)
+                return
+
+    for q in range(calculation_selection_iterations): #loop the greedy optimization to approach a local min
         for config in sorted_config_list:
-            ind = [i for i,c in enumerate(config_list) if c is config][0]
-            if ind not in config_to_group_fract.keys():
+            ind = config_index[id(config)]
+            if ind not in config_to_group_fract:
                 logging.error("config not in config_to_group_fract")
                 continue
-            for c in computed_configs:
-                if config.is_isomorphic(c,save_order=True):
-                    break
+            if ind in already_computed:  # isomorphic to an already-computed config -> skip
+                continue
+            key = config_keys[id(config)]
+            # skip if isomorphic to an already-selected config of the same composition
+            if any(config.is_isomorphic(c, save_order=True) for c in selected_by_key.get(key, ())):
+                continue
+
+            if ts_frac is not None:
+                config_is_ts = is_ts_map[id(config)]
+                slot_available = (config_is_ts and ts_count < ts_quota) or \
+                                 ((not config_is_ts) and non_ts_count < non_ts_quota)
             else:
-                for c in configs_for_calculation:
-                    if config.is_isomorphic(c,save_order=True):
-                        break
-                else:
-                    if ts_frac is not None:
-                        config_is_ts = is_ts(config)
-                        slot_available = (config_is_ts and ts_count < ts_quota) or \
-                                         ((not config_is_ts) and non_ts_count < non_ts_quota)
-                    else:
-                        slot_available = len(configs_for_calculation) < Ncalc_per_iter
+                slot_available = len(configs_for_calculation) < Ncalc_per_iter
 
-                    if slot_available:
-                        configs_for_calculation = configs_for_calculation + [config]
-                        group_fract = config_to_group_fract[ind]
-                        group_fract_for_calculation.append(group_fract)
-                        maxval = np.linalg.norm(sum(group_fract_for_calculation) * group_to_weight, ord=1)
-                        if ts_frac is not None:
-                            if config_is_ts:
-                                ts_count += 1
-                            else:
-                                non_ts_count += 1
+            if slot_available:
+                configs_for_calculation = configs_for_calculation + [config]
+                group_fract = config_to_group_fract[ind]
+                group_fract_for_calculation.append(group_fract)
+                selected_keys.append(key)
+                selected_by_key.setdefault(key, []).append(config)
+                maxval = np.linalg.norm(sum(group_fract_for_calculation) * group_to_weight, ord=1)
+                if ts_frac is not None:
+                    if config_is_ts:
+                        ts_count += 1
                     else:
-                        group_fract = config_to_group_fract[ind]
-                        g_old_sum = sum(group_fract_for_calculation)
-                        maxarglocal = None
-                        maxvallocal = maxval
-                        for i in range(len(configs_for_calculation)):
-                            if ts_frac is not None and is_ts(config) != is_ts(configs_for_calculation[i]):
-                                continue
-                            val = np.linalg.norm((g_old_sum - group_fract_for_calculation[i] + group_fract) * group_to_weight, ord=1)
-                            if val > maxvallocal:
-                                maxarglocal = i
-                                maxvallocal = val
+                        non_ts_count += 1
+            else:
+                group_fract = config_to_group_fract[ind]
+                g_old_sum = sum(group_fract_for_calculation)
+                maxarglocal = None
+                maxvallocal = maxval
+                for i in range(len(configs_for_calculation)):
+                    if ts_frac is not None and is_ts_map[id(config)] != is_ts_map[id(configs_for_calculation[i])]:
+                        continue
+                    val = np.linalg.norm((g_old_sum - group_fract_for_calculation[i] + group_fract) * group_to_weight, ord=1)
+                    if val > maxvallocal:
+                        maxarglocal = i
+                        maxvallocal = val
 
-                        if maxarglocal is not None:
-                            group_fract_for_calculation[maxarglocal] = group_fract
-                            configs_for_calculation[maxarglocal] = config
-                            maxval = maxvallocal
+                if maxarglocal is not None:
+                    _bucket_remove(selected_keys[maxarglocal], configs_for_calculation[maxarglocal])
+                    group_fract_for_calculation[maxarglocal] = group_fract
+                    configs_for_calculation[maxarglocal] = config
+                    selected_keys[maxarglocal] = key
+                    selected_by_key.setdefault(key, []).append(config)
+                    maxval = maxvallocal
 
     coad_admol_to_config_for_calculation = {coadname: dict() for coadname in coadnames}
     
