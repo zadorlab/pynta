@@ -2323,7 +2323,11 @@ def get_configs_for_calculation(configs_of_concern_by_coad_admol,Ncoad_energy_by
                     
     concern_groups = list(group_to_occurence.keys()) #selected ordering
 
+    import time
     from collections import Counter
+    logging.info("get_configs_for_calculation: %d candidate configs, %d computed configs, %d groups",
+                 len(configs_of_concern), len(computed_configs), len(concern_groups))
+    _t = time.time()
     group_unc = np.array([tree_regressor.nodes[g].rule.uncertainty for g in concern_groups])
     group_to_weight = np.array([group_to_occurence[g] for g in concern_groups]) * group_unc
 
@@ -2343,6 +2347,7 @@ def get_configs_for_calculation(configs_of_concern_by_coad_admol,Ncoad_energy_by
         config_to_group_fract[j] = config_group_unc if s == 0 else config_group_unc/s
             
     
+    logging.info("  group-fraction setup: %.1f s", time.time()-_t); _t = time.time()
     configs_for_calculation = []
     group_fract_for_calculation = []
     maxval = 0.0
@@ -2371,6 +2376,8 @@ def get_configs_for_calculation(configs_of_concern_by_coad_admol,Ncoad_energy_by
             if c.is_isomorphic(cc, save_order=True):
                 already_computed.add(i)
                 break
+    logging.info("  already-computed precompute: %d/%d candidates already computed, %d composition buckets, %.1f s",
+                 len(already_computed), len(config_list), len(computed_by_key), time.time()-_t); _t = time.time()
 
     #sort lower numbers of coadsorbates first, larger numbers of coadsorbates later
     bond_count_key = lambda x: len([bd for bd in x.get_all_edges() if (bd.atom1.is_surface_site() and not bd.atom2.is_surface_site()) or (bd.atom2.is_surface_site() and not bd.atom1.is_surface_site())])
@@ -2445,8 +2452,11 @@ def get_configs_for_calculation(configs_of_concern_by_coad_admol,Ncoad_energy_by
                     selected_by_key.setdefault(key, []).append(config)
                     maxval = maxvallocal
 
+    logging.info("  greedy selection (%d passes): %d configs selected, %.1f s",
+                 calculation_selection_iterations, len(configs_for_calculation), time.time()-_t)
+
     coad_admol_to_config_for_calculation = {coadname: dict() for coadname in coadnames}
-    
+
     for config in configs_for_calculation:
         found = False
         for coadname in coadnames:

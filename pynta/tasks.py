@@ -1736,6 +1736,7 @@ class SelectCalculationsTask(FiretaskBase):
             coadmol_E_dict_paths[coadname] = p
 
         #load configurations and Ncoad_energies
+        _t_load = time.time()
         configs_of_concern_by_coad_admol = dict()
         Ncoad_energy_by_coad_admol = dict()
         for coadname in coadnames:
@@ -1749,6 +1750,9 @@ class SelectCalculationsTask(FiretaskBase):
                 with open(Ncoad_energy_path,'r') as f:
                     Ncoad_energy_by_coad_admol[coadname][admol_name] = {int(k):v for k,v in json.load(f).items()}
                 
+        n_cand = sum(len(v) for cd in configs_of_concern_by_coad_admol.values() for v in cd.values())
+        logging.info("covdep select: loaded %d candidate configs in %.1f s", n_cand, time.time()-_t_load)
+
         #load tree
         nodes = read_nodes(os.path.join(path,"Iterations",str(iter),"regressor.json"))
         tree = MultiEvalSubgraphIsomorphicDecisionTreeRegressor([adsorbate_interaction_decomposition],
@@ -1760,13 +1764,16 @@ class SelectCalculationsTask(FiretaskBase):
         
         
         ts_frac = self["ts_frac"] if "ts_frac" in self.keys() else None
+        _t_sel = time.time()
         configs_for_calculation,coad_admol_to_config_for_calculation = get_configs_for_calculation(configs_of_concern_by_coad_admol,Ncoad_energy_by_coad_admol,admol_name_structure_dict,coadnames,computed_configs,tree,Ncalc_per_iter,ts_frac=ts_frac)
+        logging.info("covdep select: get_configs_for_calculation selected %d configs in %.1f s", len(configs_for_calculation), time.time()-_t_sel)
 
         os.makedirs(os.path.join(path,"Iterations",str(iter),"Samples"))
         assert len(configs_for_calculation) > 0, configs_for_calculation
         sample_fws = []
         calculation_directories = []
         template_cache = {}  # adname -> [(partial_atoms, partial_admol)] central-arrangement templates
+        _t_geo = time.time()
         for i,config in enumerate(configs_for_calculation):
             adname = None
             coadname = None
@@ -1883,6 +1890,7 @@ class SelectCalculationsTask(FiretaskBase):
                                                    parents=[fwvib], ignore_errors=True)
                 sample_fws.extend([fwopt,fwvib,fwextract])
             
+        logging.info("covdep select: built %d init geometries + spawned fireworks in %.1f s", len(calculation_directories), time.time()-_t_geo)
         max_coadsorbates_next = self["max_coadsorbates"] if "max_coadsorbates" in self.keys() else None
         sidt_isolated_delta_model_next = self["sidt_isolated_delta_model"] if "sidt_isolated_delta_model" in self.keys() else None
         sidt_covdep_delta_model_next = self["sidt_covdep_delta_model"] if "sidt_covdep_delta_model" in self.keys() else None
