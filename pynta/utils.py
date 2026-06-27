@@ -612,6 +612,10 @@ def plot_interaction_graph(admol, tree, sites, site_adjacency, slab,
             mid = (np.asarray(p) + np.asarray([p[0] + vxy[0], p[1] + vxy[1]])) / 2.0
             ax.annotate("{:.3f}".format(c), mid, fontsize=6, zorder=6)
 
+    # outline the central (home) cell so the periodic images are visually distinct
+    cell_box = np.array([[0.0, 0.0], a_xy, a_xy + b_xy, b_xy, [0.0, 0.0]])
+    ax.plot(cell_box[:, 0], cell_box[:, 1], color="k", lw=1.5, zorder=6)
+
     sm = plt.cm.ScalarMappable(norm=norm, cmap=cm)
     sm.set_array([])
     fig.colorbar(sm, ax=ax, label="pair interaction contribution (eV)")
