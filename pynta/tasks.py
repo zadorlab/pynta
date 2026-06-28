@@ -1944,3 +1944,324 @@ def restart_wf(lpad,queue):
         rapidfirequeue(lpad,fworker,qadapter)
     else:
         rapidfire(lpad)
+
+"""
+Parallel lattice-constant optimization as a FireWorks workflow.
+
+Design (mirrors Pynta's adsorbate fan-out: pre-generate xyz per point ->
+one energy Firework per xyz -> one collect Firework that fans in):
+
+    build_lattice_scan_geometries(...)      # factory-time geometry builder
+        -> writes lattice_scan/a_{a}/input.xyz for each a   (one file per point)
+    lattice_energy_firework(xyz, a, ...)     # 1 of N: single-point energy
+        -> LatticeSinglePointTask -> writes a_{a}_energy.json
+    lattice_collect_firework(parents=...)    # fan-in
+        -> LatticeCollectTask -> reads N energies, polyfit, writes a_opt
+
+    lattice_optimization_workflow(...)       # ties it all together -> Workflow
+
+WHY pre-generate geometries:
+    The serial Prep.calculate_lattice_parameters builds each scaled cell
+    *inside* its energy(a) closure (s = a/a0; scale only the in-plane lattice
+    vectors; keep fractional coords so vacuum z is fixed). To parallelize, that
+    exact scaling is hoisted into build_lattice_scan_geometries so every scan
+    point becomes a standalone extxyz carrying its own scaled Lattice. Each
+    Firework then just reads one xyz and evaluates a single-point energy --
+    embarrassingly parallel, no shared state.
+
+Conventions follow pynta/tasks.py: FiretaskBase subclasses, to_ase_software,
+FileTransferTask to copy results out of the rocket's run dir, and
+_allow_fizzled_parents on the collector so one failed point can't kill the fit.
+"""
+
+import os
+import json
+import numpy as np
+
+from ase.io import read, write
+
+from fireworks import Firework, Workflow, FileTransferTask, FWAction
+from fireworks.core.firework import FiretaskBase
+from fireworks.utilities.fw_utilities import explicit_serialize
+
+from pynta.utils import to_ase_software
+
+
+# ============================================================
+# Geometry builder (runs at workflow-build time, no DFT)
+# ============================================================
+
+def _scaled_atoms(atoms0, a, a0, scale_dirs):
+    """Return a copy of atoms0 with its cell rigidly scaled to lattice const a.
+
+    Identical math to Prep.calculate_lattice_parameters.energy(): scale only the
+    lattice vectors flagged in scale_dirs by s = a/a0, then re-apply the original
+    fractional coordinates so in-plane directions scale while vacuum (z) is held
+    fixed. scale_atoms=False because we set fractional positions explicitly.
+    """
+    s = a / a0
+    cell0 = atoms0.get_cell().array.copy()
+    frac0 = atoms0.get_scaled_positions(wrap=False)
+    cell = cell0.copy()
+    for d in range(3):
+        if scale_dirs[d]:
+            cell[d] = cell0[d] * s
+    atoms = atoms0.copy()
+    atoms.set_cell(cell, scale_atoms=False)
+    atoms.set_scaled_positions(frac0)
+    return atoms
+
+
+def build_lattice_scan_geometries(
+    slab,
+    a0,
+    da=0.1,
+    scan_step=0.02,
+    centered=True,
+    inplane_only=None,
+    pbc=(True, True, False),
+    scan_dir="lattice_scan",
+):
+    """Generate one scaled-geometry xyz per scan point.
+
+    Parameters mirror Prep.calculate_lattice_parameters. `slab` may be a path
+    (str) or an ase.Atoms. Returns a list of (a, xyz_path) pairs, deterministic
+    in a0/da/scan_step, so the caller knows every Firework up front.
+    """
+    atoms0 = read(slab) if isinstance(slab, str) else slab.copy()
+
+    if atoms0.cell.rank < 3 or atoms0.get_volume() <= 0.0:
+        raise ValueError(
+            "slab has no usable 3D cell; cannot scale. Ensure it carries a "
+            "Lattice/cell (e.g. extxyz with a Lattice=... header)."
+        )
+    if not any(atoms0.pbc):
+        atoms0.set_pbc(pbc)
+
+    # decide which lattice vectors to scale (in-plane only for a slab)
+    if inplane_only is None:
+        inplane_only = not all(atoms0.pbc)
+    if inplane_only:
+        scale_dirs = [bool(p) for p in atoms0.pbc]
+        if not any(scale_dirs):
+            scale_dirs = [True, True, False]
+    else:
+        scale_dirs = [True, True, True]
+
+    if centered:
+        avals = np.arange(a0 - da, a0 + da + 1e-12, scan_step)
+    else:
+        avals = np.arange(a0, a0 + da + 1e-12, scan_step)
+
+    os.makedirs(scan_dir, exist_ok=True)
+    out = []
+    for a in avals:
+        pt_dir = os.path.join(scan_dir, f"a_{a:.3f}")
+        os.makedirs(pt_dir, exist_ok=True)
+        xyz = os.path.abspath(os.path.join(pt_dir, "input.xyz"))
+        atoms = _scaled_atoms(atoms0, a, a0, scale_dirs)
+        # extxyz preserves the scaled Lattice header so the worker reads it back
+        write(xyz, atoms, format="extxyz")
+        out.append((float(a), xyz))
+    return out
+
+
+# ============================================================
+# Per-point single-point energy Firework
+# ============================================================
+
+def lattice_energy_firework(xyz, a, software, label, software_kwargs={},
+                            parents=[], out_path=None, ignore_errors=True):
+    """One scan point: single-point energy of the pre-scaled geometry at `xyz`.
+
+    Writes {"a": a, "energy_eV": E} so the collector needs no path parsing.
+    """
+    d = {"xyz": xyz, "a": a, "software": software, "label": label}
+    if software_kwargs:
+        d["software_kwargs"] = software_kwargs
+    d["ignore_errors"] = ignore_errors
+    t1 = LatticeSinglePointTask(d)
+    directory = os.path.dirname(xyz)
+    if out_path is None:
+        out_path = os.path.join(directory, label + "_energy.json")
+    t2 = FileTransferTask({"files": [{"src": label + "_energy.json", "dest": out_path}],
+                           "mode": "copy", "ignore_errors": ignore_errors})
+    return Firework([t1, t2], parents=parents, name=label + "_latticeE")
+
+
+@explicit_serialize
+class LatticeSinglePointTask(FiretaskBase):
+    required_params = ["xyz", "a", "software", "label"]
+    optional_params = ["software_kwargs", "energy_kwargs", "ignore_errors"]
+
+    def run_task(self, fw_spec):
+        from copy import deepcopy
+        xyz = self["xyz"]
+        a = self["a"]
+        label = self["label"]
+        software_kwargs = deepcopy(self["software_kwargs"]) if "software_kwargs" in self.keys() else dict()
+        energy_kwargs = deepcopy(self["energy_kwargs"]) if "energy_kwargs" in self.keys() else dict()
+        ignore_errors = self["ignore_errors"] if "ignore_errors" in self.keys() else False
+        software = to_ase_software(self["software"], software_kwargs)
+
+        try:
+            sp = read(xyz)
+            sp.calc = software(**software_kwargs)
+            en = float(sp.get_potential_energy(**energy_kwargs))
+            with open(label + "_energy.json", "w") as f:
+                json.dump({"a": float(a), "energy_eV": en}, f)
+        except Exception as e:
+            if not ignore_errors:
+                raise e
+            # record the failure but let the collector proceed without this point
+            with open(label + "_energy.json", "w") as f:
+                json.dump({"a": float(a), "energy_eV": None, "error": str(e)}, f)
+            return FWAction(stored_data={"error": str(e)}, exit=True)
+
+        return FWAction()
+
+
+# ============================================================
+# Fan-in collector Firework
+# ============================================================
+
+def lattice_collect_firework(energy_jsons, a0, out_path, label="lattice",
+                             n_fit=None, parents=[], allow_fizzled_parents=True):
+    """Fan-in: read all per-point energy jsons, parabolic fit, write a_opt."""
+    task = LatticeCollectTask({"energy_jsons": energy_jsons, "a0": a0,
+                               "out_path": out_path, "label": label,
+                               "n_fit": n_fit})
+    return Firework([task], parents=parents, name=label + "_latticeCollect",
+                    spec={"_allow_fizzled_parents": allow_fizzled_parents, "_priority": 5})
+
+
+@explicit_serialize
+class LatticeCollectTask(FiretaskBase):
+    required_params = ["energy_jsons", "a0", "out_path", "label"]
+    optional_params = ["n_fit"]
+
+    def run_task(self, fw_spec):
+        energy_jsons = self["energy_jsons"]
+        a0 = self["a0"]
+        out_path = self["out_path"]
+        label = self["label"]
+        n_fit = self["n_fit"] if "n_fit" in self.keys() else None
+
+        avals, evals = [], []
+        for jpath in energy_jsons:
+            if not os.path.exists(jpath):
+                continue  # the point's task fizzled before copy-out
+            try:
+                with open(jpath) as f:
+                    rec = json.load(f)
+            except Exception:
+                continue
+            if rec.get("energy_eV") is None:
+                continue  # point recorded an error
+            avals.append(float(rec["a"]))
+            evals.append(float(rec["energy_eV"]))
+
+        if len(avals) < 3:
+            raise ValueError(
+                f"Only {len(avals)} usable scan points; need >=3 for a parabola."
+            )
+
+        order = np.argsort(avals)
+        avals = np.array(avals)[order]
+        evals = np.array(evals)[order]
+
+        # optionally fit only the n_fit lowest-energy points (robust to wide scans)
+        if n_fit and n_fit < len(avals):
+            keep = np.argsort(evals)[:n_fit]
+            fit_a, fit_e = avals[keep], evals[keep]
+        else:
+            fit_a, fit_e = avals, evals
+
+        p = np.polyfit(fit_a, fit_e, 2)
+        if p[0] <= 0:
+            raise RuntimeError(
+                "Quadratic fit curvature is non-positive; widen da / add points."
+            )
+        a_opt = float(-p[1] / (2 * p[0]))
+
+        edge_warning = not (avals[0] < a_opt < avals[-1])
+
+        out_dir = os.path.dirname(out_path) or "."
+        os.makedirs(out_dir, exist_ok=True)
+
+        # scan.csv next to the result
+        csv_path = os.path.join(out_dir, "scan.csv")
+        with open(csv_path, "w") as f:
+            f.write("a_Angstrom,E_eV\n")
+            for a, e in zip(avals, evals):
+                f.write(f"{a:.4f},{e:.8f}\n")
+
+        result = {
+            "lattice_constant": a_opt,
+            "a0": float(a0),
+            "n_points_used": int(len(avals)),
+            "scan_avals_A": avals.tolist(),
+            "scan_Evals_eV": evals.tolist(),
+            "fit_coeffs": [float(c) for c in p],
+            "edge_of_window_warning": bool(edge_warning),
+            "scan_window": [float(avals[0]), float(avals[-1])],
+        }
+        with open(out_path, "w") as f:
+            json.dump(result, f, indent=2)
+
+        return FWAction(stored_data={"lattice_constant": a_opt,
+                                     "edge_of_window_warning": bool(edge_warning)})
+
+
+# ============================================================
+# Workflow factory
+# ============================================================
+
+def lattice_optimization_workflow(
+    slab,
+    a0,
+    software,
+    software_kwargs,
+    da=0.1,
+    scan_step=0.02,
+    centered=True,
+    inplane_only=None,
+    pbc=(True, True, False),
+    label="lattice",
+    scan_dir="lattice_scan",
+    out_path=None,
+    n_fit=None,
+):
+    """Build the full lattice-opt Workflow: N energy FWs + 1 collector.
+
+    Returns a fireworks.Workflow ready for LaunchPad.add_wf(). The geometries
+    are generated here (cheap, deterministic), so the exact number of Fireworks
+    is fixed at build time -- e.g. a0=3.96, da=0.1, step=0.02, centered=True ->
+    11 single-point Fireworks (3.86..4.06) feeding one collector.
+    """
+    pairs = build_lattice_scan_geometries(
+        slab, a0, da=da, scan_step=scan_step, centered=centered,
+        inplane_only=inplane_only, pbc=pbc, scan_dir=scan_dir,
+    )
+
+    energy_fws = []
+    energy_jsons = []
+    for a, xyz in pairs:
+        pt_label = f"{label}_a_{a:.3f}"
+        ejson = os.path.join(os.path.dirname(xyz), pt_label + "_energy.json")
+        fw = lattice_energy_firework(
+            xyz=xyz, a=a, software=software, label=pt_label,
+            software_kwargs=software_kwargs, out_path=ejson, ignore_errors=True,
+        )
+        energy_fws.append(fw)
+        energy_jsons.append(ejson)
+
+    if out_path is None:
+        out_path = os.path.abspath(os.path.join(scan_dir, "lattice_constant.json"))
+
+    collect_fw = lattice_collect_firework(
+        energy_jsons=energy_jsons, a0=a0, out_path=out_path, label=label,
+        n_fit=n_fit, parents=energy_fws, allow_fizzled_parents=True,
+    )
+
+    return Workflow(energy_fws + [collect_fw], name=label + "_lattice_opt")
