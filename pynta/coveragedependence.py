@@ -1479,8 +1479,32 @@ def train_sidt_cov_dep_regressor(pairs_datums,sampling_datums,r_site=None,r_morp
                                                    iter_item_cap=100,
                                                   )
         
-    treepair.generate_tree(data=pairs_datums+sampling_datums,max_nodes=Nfullnodes)
-    
+    # pysidt's estimate_uncertainty inverts the Gram matrix A.T@A (A = data x tree-node design matrix)
+    # via np.linalg.pinv. As the tree grows across AL iterations A.T@A becomes rank-deficient/ill-
+    # conditioned (more nodes than independent data constraints), and numpy's gesdd SVD can raise
+    # "SVD did not converge" (it did at iter 2 here; iters 0-1 had smaller, better-conditioned trees).
+    # Temporarily wrap pinv to retry on failure with a tiny ridge A.T@A + eps*I (Tikhonov
+    # regularization) -- restores SVD convergence and gives finite variances for under-determined
+    # nodes, without altering already-well-conditioned results. Scoped to this call only.
+    _orig_pinv = np.linalg.pinv
+    def _robust_pinv(a, *args, **kwargs):
+        try:
+            return _orig_pinv(a, *args, **kwargs)
+        except np.linalg.LinAlgError:
+            arr = np.asarray(a)
+            if arr.ndim == 2 and arr.shape[0] == arr.shape[1]:
+                n = arr.shape[0]
+                scale = float(np.trace(arr)) / n if n else 1.0
+                ridge = (1e-10 * scale) if scale > 0 else 1e-12
+                logging.warning("estimate_uncertainty: pinv SVD did not converge; retrying with ridge %.3e", ridge)
+                return _orig_pinv(arr + ridge * np.eye(n), *args, **kwargs)
+            raise
+    np.linalg.pinv = _robust_pinv
+    try:
+        treepair.generate_tree(data=pairs_datums+sampling_datums,max_nodes=Nfullnodes)
+    finally:
+        np.linalg.pinv = _orig_pinv
+
     return treepair
 
 def train_sidt_cov_dep_classifier(datums,r_site=None,
