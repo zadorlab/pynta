@@ -1,4 +1,5 @@
 import os
+import re
 import json
 import time
 import inspect
@@ -6,6 +7,7 @@ import logging
 import numpy as np
 import yaml
 import copy
+from pathlib import Path
 from copy import deepcopy
 
 from scipy import optimize as opt
@@ -15,6 +17,7 @@ from ase.io import read, write, Trajectory
 from ase.build import add_adsorbate, bulk
 from ase.constraints import FixAtoms
 from ase.optimize import BFGSLineSearch
+from ase.calculators.espresso import EspressoProfile
 from ase.data import chemical_symbols, reference_states
 from ase.geometry import get_distances
 from ase.geometry.analysis import Analysis
@@ -767,12 +770,19 @@ class Prep:
         self.adsorbate = adsorbate
         self.position = position
         self.vacuum = vacuum
-        self.slab = slab
+        # slab may be a file path, an ase.Atoms object, or None
+        if slab is None:
+            self.slab = None
+        elif isinstance(slab, str):
+            logger.info(f"Reading slab from path: {slab}")
+            self.slab = read(slab)
+        else:
+            self.slab = slab  # assume ase.Atoms
         self.layers = self.repeats[2]
         if self.slab is None:
             self.nslab = int(np.prod(np.array(self.repeats)))
         else:
-            self.nslab = len(read(self.slab))
+            self.nslab = len(self.slab)
         self.frozen_layers = frozen_layers
         self.freeze_ind = int((self.nslab / self.layers) * self.frozen_layers) if self.frozen_layers is not None else None
 
@@ -824,6 +834,29 @@ class Prep:
             self.lattice_opt_software_kwargs = lattice_opt_software_kwargs
             logger.info("Using user-provided lattice_opt_software_kwargs")
 
+        # --- ASE >=3.23: Espresso requires an EspressoProfile, not a `command` kwarg ---
+        # Build one profile from `command`/`pseudo_dir` and route it through both kwargs
+        # dicts so every Espresso(**kwargs) call site picks it up automatically.
+        self.profile = None
+        if self.software == "Espresso":
+            raw = (self.software_kwargs.pop("command", None)
+                   or self.lattice_opt_software_kwargs.pop("command", None)
+                   or "pw.x")
+            # new API wants launcher+binary only: strip `-input`/`-in` and `< > ` redirection
+            run_cmd = raw.split("-in")[0].split("<")[0].strip() or "pw.x"
+            pseudo_dir = (self.software_kwargs.pop("pseudo_dir", None)
+                          or self.lattice_opt_software_kwargs.pop("pseudo_dir", None)
+                          or ".")
+            # drop any stray copies left in either dict
+            for d in (self.software_kwargs, self.lattice_opt_software_kwargs):
+                d.pop("command", None)
+                d.pop("pseudo_dir", None)
+            self.profile = EspressoProfile(command=run_cmd, pseudo_dir=pseudo_dir)
+            # pass profile through the **kwargs call sites without further edits
+            self.software_kwargs["profile"] = self.profile
+            self.lattice_opt_software_kwargs["profile"] = self.profile
+            logger.info(f"EspressoProfile: command={run_cmd!r} pseudo_dir={pseudo_dir!r}")
+
         self.path = path or os.getcwd()
 
         self.output_file = "prep_convergence.json"
@@ -856,7 +889,7 @@ class Prep:
 
     def _save_output(self):
         with open(self.output_file, "w") as f:
-            json.dump(self.output, f, indent=2)
+            json.dump(self.output, f, indent=2, default=str)
 
     def _record_step(self, name, inputs=None, outputs=None, status="completed"):
         entry = {
@@ -1084,17 +1117,134 @@ class Prep:
 
     @step(2)
     @requires("optimize_lattice")
-    def calculate_lattice_parameters(self, da=0.1):
-        logger.info("Optimizing bulk lattice constant")
+    def calculate_lattice_parameters(self, da=0.1, scan_step=0.01, inplane_only=None,
+                                     centered=True):
+        """Optimize the lattice constant by an energy scan + parabolic fit.
 
+        If a structure has been supplied (e.g. ``prep.slab = read(...)`` for a
+        custom surface), its lattice constant is optimized by rigidly scaling
+        the cell. For a slab the vacuum direction is held fixed and only the
+        in-plane lattice vectors are scaled (``inplane_only=True``); set
+        ``inplane_only=False`` to scale all three vectors uniformly (bulk cell).
+        If no structure is supplied, a clean ``bulk(metal, 'fcc')`` cell is used.
+        The reported ``a`` is referenced to ``self.a0`` (scale factor a/a0).
+
+        ``centered`` controls where ``a0`` sits in the scan window:
+          * ``True``  (default) -> scan ``a0 - da .. a0 + da`` (a0 is the CENTER).
+            Preferred for a parabolic fit: it brackets the minimum on both sides.
+          * ``False`` -> scan ``a0 .. a0 + da`` (a0 is the STARTING point).
+            One-sided; only safe when the true minimum is known to lie above the
+            guess. If the fit lands at/outside the window you'll get the
+            edge-of-window warning -- widen ``da`` or switch back to centered.
+        """
         calc = name_to_ase_software(self.software)(**self.lattice_opt_software_kwargs)
+
+        def _scan_avals():
+            """Build the lattice scan grid honoring the ``centered`` flag."""
+            if centered:
+                return np.arange(self.a0 - da, self.a0 + da + 1e-12, scan_step)
+            return np.arange(self.a0, self.a0 + da + 1e-12, scan_step)
+
+        # ---- structure provided (custom surface / slab) -> scale it ----
+        if self.slab is not None:
+            atoms0 = self.slab.copy()
+            if atoms0.cell.rank < 3 or atoms0.get_volume() <= 0.0:
+                raise ValueError(
+                    "prep.slab has no usable 3D cell, so it cannot be scaled. "
+                    "Ensure the structure carries a Lattice/cell (e.g. extxyz "
+                    "with a Lattice=... header)."
+                )
+            # inherit Prep.pbc if the read structure left pbc unset
+            if not any(atoms0.pbc):
+                atoms0.set_pbc(self.pbc)
+
+            if inplane_only is None:
+                inplane_only = not all(atoms0.pbc)   # any non-periodic dir -> slab
+            if inplane_only:
+                scale_dirs = [bool(p) for p in atoms0.pbc]
+                if not any(scale_dirs):              # safety: assume z is vacuum
+                    scale_dirs = [True, True, False]
+            else:
+                scale_dirs = [True, True, True]
+
+            logger.info(
+                "Optimizing lattice constant of supplied structure "
+                "(natoms=%d, scale_dirs=%s, inplane_only=%s)",
+                len(atoms0), scale_dirs, inplane_only,
+            )
+
+            cell0 = atoms0.get_cell().array.copy()
+            frac0 = atoms0.get_scaled_positions(wrap=False)
+
+            def energy(a):
+                s = a / self.a0
+                cell = cell0.copy()
+                for d in range(3):
+                    if scale_dirs[d]:
+                        cell[d] = cell0[d] * s
+                atoms = atoms0.copy()
+                atoms.set_cell(cell, scale_atoms=False)
+                atoms.set_scaled_positions(frac0)   # in-plane scales, vacuum z fixed
+                # give each scan point its own directory so espresso.pwi/pwo are
+                # NOT overwritten between points (ASE reuses one dir by default)
+                pt_dir = os.path.join("lattice_scan", f"a_{a:.3f}")
+                os.makedirs(pt_dir, exist_ok=True)
+                calc.directory = Path(pt_dir)
+                atoms.calc = calc
+                return atoms.get_potential_energy()
+
+            avals = _scan_avals()
+            logger.info("Lattice scan (%s): %d points from a=%.3f to %.3f (step %.3f)",
+                        "centered a0" if centered else "a0 start",
+                        len(avals), avals[0], avals[-1], scan_step)
+
+            energies = []
+            for i, a in enumerate(avals, 1):
+                e = energy(a)
+                energies.append(e)
+                logger.info("  [%2d/%2d] a = %.4f Å | E = %.6f eV",
+                            i, len(avals), a, e)
+
+            # write a plain-text scan summary alongside the per-point dirs
+            with open(os.path.join("lattice_scan", "scan.csv"), "w") as f:
+                f.write("a_Angstrom,E_eV\n")
+                for a, e in zip(avals, energies):
+                    f.write(f"{a:.4f},{e:.8f}\n")
+
+            p = np.polyfit(avals, energies, 2)
+            if p[0] <= 0:
+                raise RuntimeError(
+                    "Quadratic fit curvature is non-positive; widen da / add points."
+                )
+            self.a = -p[1] / (2 * p[0])
+            if not (avals[0] < self.a < avals[-1]):
+                logger.warning(
+                    "Fitted minimum a=%.4f is at/outside the scan window [%.3f, %.3f]; "
+                    "widen `da`%s and rerun.", self.a, avals[0], avals[-1],
+                    " or set centered=True" if not centered else "")
+
+            logger.info(f"Optimized lattice constant: a = {self.a:.6f} Å")
+
+            self._record_step(
+                "calculate_lattice_parameters",
+                inputs={"a0": self.a0, "da": da, "scan_step": scan_step,
+                        "inplane_only": inplane_only, "scale_dirs": scale_dirs,
+                        "centered": centered, "source": "supplied_slab"},
+                outputs={"lattice_constant": self.a,
+                         "scan_avals_A": avals.tolist(),
+                         "scan_Evals_eV": [float(e) for e in energies]},
+            )
+            return self.a
+
+        # ---- no structure supplied -> clean bulk fcc fallback ----
+        logger.info("Optimizing bulk lattice constant (no slab supplied)")
 
         def energy(a):
             atoms = bulk(self.metal, "fcc", a=a, cubic=True)
             atoms.calc = calc
             return atoms.get_potential_energy()
 
-        avals = np.arange(self.a0 - da, self.a0 + da, 0.01)
+        avals = _scan_avals()
         energies = [energy(a) for a in avals]
 
         p = np.polyfit(avals, energies, 2)
@@ -1104,7 +1254,8 @@ class Prep:
 
         self._record_step(
             "calculate_lattice_parameters",
-            inputs={"a0": self.a0, "da": da},
+            inputs={"a0": self.a0, "da": da, "scan_step": scan_step,
+                    "centered": centered, "source": "bulk_fcc"},
             outputs={"lattice_constant": self.a},
         )
 
@@ -1153,37 +1304,154 @@ class Prep:
         write("slab.xyz", self.slab)
         return self.slab
 
+    def _ensure_slab(self):
+        """Build a clean, unrelaxed slab if none was generated or supplied.
+
+        Used by the convergence steps so they can run standalone (via
+        run_selected) without requiring the generate_slab step. If a slab is
+        already present (generated, restored, or set via prep.slab = read(...)),
+        it is left untouched.
+        """
+        if self.slab is not None:
+            return
+        logger.info(
+            "No slab set; building an unrelaxed %s slab (a=%.4f, repeats=%s)",
+            self.surface_type, self.a, self.repeats,
+        )
+        slab_type = getattr(build, self.surface_type)
+        build_kwargs = dict(symbol=self.metal, size=self.repeats,
+                            a=self.a, vacuum=self.vacuum)
+        if self.c is not None:
+            build_kwargs["c"] = self.c
+        slab = slab_type(**build_kwargs)
+        slab.pbc = self.pbc
+        self.slab = slab
+
+    def _single_point_energy(self, ecut, kpts):
+        """Single-point energy (eV) of the current slab at a given ecut/k-mesh.
+
+        Builds the slab if none is set, then runs one static Espresso evaluation
+        on a copy so self.slab is not left attached to a throwaway calculator.
+        """
+        self._ensure_slab()
+        input_data = {
+            k: v for k, v in self.software_kwargs.items()
+            if k not in ("profile", "pseudopotentials", "kpts")
+        }
+        input_data["ecutwfc"] = ecut
+        input_data["ecutrho"] = 4 * ecut
+
+        calc = name_to_ase_software(self.software)(
+            profile=self.profile,
+            input_data=input_data,
+            pseudopotentials=self.software_kwargs["pseudopotentials"],
+            kpts=kpts,
+        )
+        atoms = self.slab.copy()
+        atoms.calc = calc
+        return atoms.get_potential_energy()
+
+    @step(3.5)
+    @requires("optimize_slab")
+    def optimize_slab(self, fmax=None, constraints=("freeze bottom layers",)):
+        """Relax the supplied/built slab geometry (BFGS) at production settings.
+
+        Distinct from calculate_lattice_parameters (which scans the cell): this
+        relaxes atomic positions at fixed cell. Bottom layers are frozen only if
+        `frozen_layers` was set on the Prep object.
+        """
+        self._ensure_slab()
+        fmax = self.fmax if fmax is None else fmax
+
+        slab = self.slab
+        slab.calc = name_to_ase_software(self.software)(**self.software_kwargs)
+
+        if self.frozen_layers is not None:
+            self.apply_constraints(slab, list(constraints))
+        else:
+            logger.info("frozen_layers not set; relaxing slab without freezing")
+
+        dyn = BFGSLineSearch(slab, trajectory="slab_opt.traj")
+        dyn.run(fmax=fmax, steps=200)
+
+        E = float(slab.get_potential_energy())
+        write("slab_opt.xyz", slab)
+        self.slab = slab
+        logger.info(f"Slab relaxation done: E = {E:.6f} eV (fmax={fmax})")
+
+        self._record_step(
+            "optimize_slab",
+            inputs={"fmax": fmax, "constraints": list(constraints)},
+            outputs={"slab_file": "slab_opt.xyz", "energy_eV": E},
+        )
+        return slab
+
     @step(4)
-    @requires("ecut_values", "kmesh_values")
-    def run_convergence(self, ecut_values, kmesh_values):
-        logger.info("Running convergence tests")
+    @requires("ecut_values")
+    def run_ecut_convergence(self, ecut_values, kpts=None):
+        """Plane-wave cutoff convergence scan at a fixed k-mesh."""
+        kpts = tuple(kpts) if kpts is not None else self.software_kwargs.get("kpts", (3, 3, 1))
+        logger.info(f"Running ecut convergence at fixed kpts={kpts}")
 
         results = []
+        for ecut in ecut_values:
+            E = self._single_point_energy(ecut, kpts)
+            logger.info(f"ecut={ecut} Ry | kpts={kpts} | E={E:.6f} eV")
+            results.append((ecut, E))
 
+        self._record_step(
+            "run_ecut_convergence",
+            inputs={"ecut_values": list(ecut_values), "kpts": list(kpts)},
+            outputs={"results": results},
+        )
+        return results
+
+    @step(4)
+    @requires("kmesh_values")
+    def run_kpoint_convergence(self, kmesh_values, ecut=None):
+        """k-point mesh convergence scan at a fixed plane-wave cutoff."""
+        ecut = ecut if ecut is not None else self.software_kwargs.get("ecutwfc", 40)
+        logger.info(f"Running k-point convergence at fixed ecut={ecut} Ry")
+
+        results = []
+        for kpts in kmesh_values:
+            kpts = tuple(kpts)
+            E = self._single_point_energy(ecut, kpts)
+            logger.info(f"kpts={kpts} | ecut={ecut} Ry | E={E:.6f} eV")
+            results.append((kpts, E))
+
+        self._record_step(
+            "run_kpoint_convergence",
+            inputs={"kmesh_values": [list(k) for k in kmesh_values], "ecut": ecut},
+            outputs={"results": results},
+        )
+        return results
+
+    @step(5)
+    @requires("convergence_grid", "ecut_values", "kmesh_values")
+    def run_convergence(self, ecut_values, kmesh_values, convergence_grid=None):
+        """Full 2D (ecut x k-mesh) convergence grid.
+
+        Opt-in: in keyword mode this runs only when `convergence_grid=True` is
+        passed, so giving just `ecut_values`/`kmesh_values` triggers the cheaper
+        independent 1D scans instead. Always callable directly.
+        """
+        logger.info("Running full ecut x k-mesh convergence grid")
+
+        results = []
         for ecut in ecut_values:
             for kpts in kmesh_values:
-                input_data = self.software_kwargs.copy()
-                input_data["ecutwfc"] = ecut
-                input_data["ecutrho"] = 4 * ecut
-
-                calc = name_to_ase_software(self.software)(
-                    input_data=input_data,
-                    pseudopotentials=self.software_kwargs["pseudopotentials"],
-                    kpts=kpts,
-                )
-
-                self.slab.calc = calc
-                E = self.slab.get_potential_energy()
-
+                kpts = tuple(kpts)
+                E = self._single_point_energy(ecut, kpts)
                 logger.info(f"ecut={ecut} Ry | kpts={kpts} | E={E:.6f} eV")
                 results.append((ecut, kpts, E))
 
         self._record_step(
             "run_convergence",
-            inputs={"ecut_values": list(ecut_values), "kmesh_values": list(kmesh_values)},
+            inputs={"ecut_values": list(ecut_values),
+                    "kmesh_values": [list(k) for k in kmesh_values]},
             outputs={"results": results},
         )
-
         return results
 
     @step(5)
@@ -1199,6 +1467,8 @@ class Prep:
         logger.info("Starting adsorbate convergence test")
         results = []
 
+        self._ensure_slab()
+
         if adsorbate is None:
             adsorbate = Atoms("H")
             is_hydrogen = True
@@ -1211,11 +1481,15 @@ class Prep:
 
         for ecut in ecut_values:
             for kpts in kmesh_values:
-                input_data = self.software_kwargs.copy()
+                input_data = {
+                    k: v for k, v in self.software_kwargs.items()
+                    if k not in ("profile", "pseudopotentials", "kpts")
+                }
                 input_data["ecutwfc"] = ecut
                 input_data["ecutrho"] = 4 * ecut
 
                 calc = name_to_ase_software(self.software)(
+                    profile=self.profile,
                     input_data=input_data,
                     pseudopotentials=self.software_kwargs["pseudopotentials"],
                     kpts=kpts,
