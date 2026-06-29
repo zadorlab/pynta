@@ -366,7 +366,6 @@ class MolecularEnergyTask(EnergyTask):
     optional_params = ["software_kwargs","energy_kwargs","ignore_errors"]
     def run_task(self, fw_spec):
         xyz = self['xyz']
-        software = to_ase_software(self["software"],software_kwargs)
         label = self["label"]
         software_kwargs = deepcopy(self["software_kwargs"]) if "software_kwargs" in self.keys() else dict()
         energy_kwargs = deepcopy(self["energy_kwargs"]) if "energy_kwargs" in self.keys() else dict()
@@ -374,7 +373,9 @@ class MolecularEnergyTask(EnergyTask):
 
         try:
             sp = read(xyz)
-            sp.calc = software(**software_kwargs)
+            # define software_kwargs first (it was read before assignment before),
+            # build once, and route through the ASE >=3.23-aware adapter.
+            sp.calc = _build_calculator(self["software"], software_kwargs)
             en = sp.get_potential_energy(**energy_kwargs)
             with open(label+'_energy.json', 'a') as file:
                 wr = json.dump(en,file)
@@ -1945,46 +1946,67 @@ def restart_wf(lpad,queue):
     else:
         rapidfire(lpad)
 
-"""
-Parallel lattice-constant optimization as a FireWorks workflow.
+# ================================================================
+# ================================================================
+#  Parallel lattice-constant optimization as a FireWorks workflow
+# ================================================================
+# Mirrors Pynta's adsorbate fan-out: pre-generate one xyz per scan point ->
+# one single-point-energy Firework per xyz -> one collect Firework that fans in
+# and fits the parabola.
+#
+#     build_lattice_scan_geometries(...)   # factory-time geometry builder
+#         -> writes lattice_scan/a_{a}/input.xyz for each a
+#     lattice_energy_firework(xyz, a, ...) # 1 of N: single-point energy
+#         -> LatticeSinglePointTask -> writes a_{a}_energy.json
+#     lattice_collect_firework(parents=..) # fan-in
+#         -> LatticeCollectTask -> reads N energies, polyfit, writes a_opt
+#     lattice_optimization_workflow(...)   # ties it together -> Workflow
+#
+# WHY pre-generate geometries: the serial Prep.calculate_lattice_parameters
+# builds each scaled cell *inside* its energy(a) closure (s = a/a0; scale only
+# in-plane lattice vectors; keep fractional coords so vacuum z is fixed). To
+# parallelize, that exact scaling is hoisted into build_lattice_scan_geometries
+# so every point becomes a standalone extxyz with its own scaled Lattice; each
+# Firework then just reads one xyz and evaluates a single-point energy.
+#
+# os/json/numpy/read/write/Firework/Workflow/FileTransferTask/FWAction/
+# FiretaskBase/explicit_serialize/to_ase_software/name_to_ase_software all come
+# in via the module-level imports at the top of tasks.py. EspressoProfile is the
+# only addition needed for the ASE >=3.23 calculator adapter below.
+from ase.calculators.espresso import EspressoProfile
 
-Design (mirrors Pynta's adsorbate fan-out: pre-generate xyz per point ->
-one energy Firework per xyz -> one collect Firework that fans in):
 
-    build_lattice_scan_geometries(...)      # factory-time geometry builder
-        -> writes lattice_scan/a_{a}/input.xyz for each a   (one file per point)
-    lattice_energy_firework(xyz, a, ...)     # 1 of N: single-point energy
-        -> LatticeSinglePointTask -> writes a_{a}_energy.json
-    lattice_collect_firework(parents=...)    # fan-in
-        -> LatticeCollectTask -> reads N energies, polyfit, writes a_opt
+# ============================================================
+# Calculator construction (ASE >=3.23 aware)
+# ============================================================
 
-    lattice_optimization_workflow(...)       # ties it all together -> Workflow
+def _build_calculator(software, software_kwargs):
+    """Return a constructed ASE calculator instance for a single-point energy.
 
-WHY pre-generate geometries:
-    The serial Prep.calculate_lattice_parameters builds each scaled cell
-    *inside* its energy(a) closure (s = a/a0; scale only the in-plane lattice
-    vectors; keep fractional coords so vacuum z is fixed). To parallelize, that
-    exact scaling is hoisted into build_lattice_scan_geometries so every scan
-    point becomes a standalone extxyz carrying its own scaled Lattice. Each
-    Firework then just reads one xyz and evaluates a single-point energy --
-    embarrassingly parallel, no shared state.
+    For Espresso on ASE >=3.23, `Espresso(command=...)` is invalid -- the
+    launcher must go through an EspressoProfile. pynta.utils.to_ase_software
+    does `Espresso(**software_kwargs)`, which crashes if `command`/`pseudo_dir`
+    are present. So for Espresso we replicate preprocessing.py: pop
+    `command`/`pseudo_dir`, build an EspressoProfile, and pass the rest as
+    input_data (+ kpts/pseudopotentials). For any other software (MACE, XTB,
+    ...), to_ase_software is correct and used unchanged.
+    """
+    if software != "Espresso":
+        return to_ase_software(software, software_kwargs)
 
-Conventions follow pynta/tasks.py: FiretaskBase subclasses, to_ase_software,
-FileTransferTask to copy results out of the rocket's run dir, and
-_allow_fizzled_parents on the collector so one failed point can't kill the fit.
-"""
+    kw = dict(software_kwargs)  # shallow copy; we pop launcher-only keys
+    raw = kw.pop("command", None) or "pw.x"
+    # new API wants launcher+binary only: strip -in/-input and < > redirection
+    run_cmd = raw.split("-in")[0].split("<")[0].strip() or "pw.x"
+    pseudo_dir = kw.pop("pseudo_dir", None) or "."
+    profile = EspressoProfile(command=run_cmd, pseudo_dir=pseudo_dir)
 
-import os
-import json
-import numpy as np
-
-from ase.io import read, write
-
-from fireworks import Firework, Workflow, FileTransferTask, FWAction
-from fireworks.core.firework import FiretaskBase
-from fireworks.utilities.fw_utilities import explicit_serialize
-
-from pynta.utils import to_ase_software
+    pseudopotentials = kw.pop("pseudopotentials", None)
+    kpts = kw.pop("kpts", None)
+    # everything else is QE input_data (ecutwfc, occupations, smearing, ...)
+    Espresso = name_to_ase_software("Espresso")
+    return Espresso(profile=profile, input_data=kw,
+                    pseudopotentials=pseudopotentials, kpts=kpts)
 
 
 # ============================================================
@@ -2102,11 +2124,12 @@ class LatticeSinglePointTask(FiretaskBase):
         software_kwargs = deepcopy(self["software_kwargs"]) if "software_kwargs" in self.keys() else dict()
         energy_kwargs = deepcopy(self["energy_kwargs"]) if "energy_kwargs" in self.keys() else dict()
         ignore_errors = self["ignore_errors"] if "ignore_errors" in self.keys() else False
-        software = to_ase_software(self["software"], software_kwargs)
 
         try:
             sp = read(xyz)
-            sp.calc = software(**software_kwargs)
+            # ASE >=3.23 aware: builds an EspressoProfile for QE, else falls
+            # back to to_ase_software (which returns a ready instance).
+            sp.calc = _build_calculator(self["software"], software_kwargs)
             en = float(sp.get_potential_energy(**energy_kwargs))
             with open(label + "_energy.json", "w") as f:
                 json.dump({"a": float(a), "energy_eV": en}, f)
