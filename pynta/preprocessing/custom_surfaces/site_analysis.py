@@ -151,13 +151,16 @@ def suggest_n_layers(slab, dz=0.5, verbose=True):
 
 
 def _reduce_to_representatives(single_geoms, single_sites_lists):
-    """Return one geometry and site-list per distinct site label (first occurrence)."""
+    """Return one geometry and site-list per distinct (site, morphology) label
+    (first occurrence). The unique-site tag lives in the morphology field, so
+    both fields together identify a distinct labelled site."""
     seen = {}
     for i, sites in enumerate(single_sites_lists):
         for s in sites:
-            label = s.get("site")
-            if label and label not in seen:
-                seen[label] = i
+            if s.get("site"):
+                label = (s.get("site"), s.get("morphology"))
+                if label not in seen:
+                    seen[label] = i
     rep_indices = sorted(seen.values())
     return (
         [single_geoms[i] for i in rep_indices],
@@ -493,18 +496,20 @@ def _classify_defect_sites_by_cn_and_graph(cn_geoms, cn_site_dicts):
 
 def update_site_labels_by_graph_and_type(single_sites_lists, clusters, geom_indices):
     """
-    Assign labels of the form {site_type}{N} (e.g. "3fold0", "3fold1", "bridge0").
+    Assign labels of the form {morphology}{N} (e.g. "terrace0", "terrace1",
+    "sc-tc0") and write them to the "morphology" field. The "site" field is
+    left as the bare ACAT site type ("ontop", "bridge", "3fold", ...).
 
     Two sites receive the same label iff:
       1. Their local slab graphs are isomorphic (same cluster).
       2. They share the same "site" value.
       3. They share the same "morphology" value.
 
-    N counts distinct (cluster, site, morphology) triplets per site_type,
-    starting from 0.  Morphology is kept as a differentiator so that
-    "3fold_terrace" and "3fold_sc-tc" always produce distinct labels even
-    when they land in the same isomorphic cluster — but the morphology name
-    does NOT appear in the label string itself.
+    N counts distinct (cluster, site, morphology) triplets per morphology,
+    starting from 0.  The site type is kept as a differentiator (and preserved
+    in the "site" field) so that "ontop_terrace" and "bridge_terrace" always
+    produce distinct labels even when they land in the same isomorphic cluster
+    — but the site type does NOT appear in the label string itself.
 
     Returns
     -------
@@ -517,7 +522,7 @@ def update_site_labels_by_graph_and_type(single_sites_lists, clusters, geom_indi
                 return s.get("site"), s.get("morphology")
         return None, None
 
-    type_counters = {}   # site_val -> next available integer
+    type_counters = {}   # morph_val -> next available integer
     key_to_label  = {}   # (cluster_id, site_val, morph_val) -> label
     geom_to_label = {}
 
@@ -527,9 +532,9 @@ def update_site_labels_by_graph_and_type(single_sites_lists, clusters, geom_indi
             site_val, morph_val = _first_site_morph(geom_idx)
             key = (cluster_id, site_val, morph_val)
             if key not in key_to_label:
-                n = type_counters.get(site_val, 0)
-                type_counters[site_val] = n + 1
-                prefix = site_val if site_val else "site"
+                n = type_counters.get(morph_val, 0)
+                type_counters[morph_val] = n + 1
+                prefix = morph_val if morph_val else "morph"
                 key_to_label[key] = f"{prefix}{n}"
             geom_to_label[geom_idx] = key_to_label[key]
 
@@ -538,7 +543,7 @@ def update_site_labels_by_graph_and_type(single_sites_lists, clusters, geom_indi
         if label is not None:
             for s in sites:
                 if s.get("site"):
-                    s["site"] = label
+                    s["morphology"] = label
 
     return geom_to_label, key_to_label
 
@@ -1554,11 +1559,11 @@ def workflow_no_defect_unique_sites(
         print(f"Distinct labels     : {len(rep_geoms)}")
         print()
         label_to_key = {v: k for k, v in key_to_label.items()}
-        print(f"  {'Label':<12} {'Original site':<14} Morphology")
+        print(f"  {'Label':<12} {'Site type':<14} Morphology")
         print(f"  {'-'*44}")
         for entry in rep_sites:
             for s in entry:
-                label = s.get("site", "")
+                label = s.get("morphology", "")
                 _, orig_site, morph = label_to_key.get(label, (None, "", ""))
                 print(f"  {label:<12} {orig_site:<14} {morph}")
         print()
@@ -1851,10 +1856,11 @@ def visualize_labeled_sites(
     label_to_admol = {}
     for graph_idx, geom_idx in enumerate(geom_indices):
         for s in single_sites_lists[geom_idx]:
-            label = s.get("site")
-            if label and label not in label_to_admol:
-                label_to_admol[label] = admols[graph_idx]
-                break
+            if s.get("site"):
+                label = s.get("morphology")
+                if label and label not in label_to_admol:
+                    label_to_admol[label] = admols[graph_idx]
+                    break
 
     # ── RMG mol → networkx graph ──────────────────────────────────────────────
     def rmg_to_nx(mol):
@@ -2012,7 +2018,7 @@ def plot_site_equivalence_xy(
         for s in sites:
             if s.get("site"):
                 x, y = s["position"][0], s["position"][1]
-                records.append((_stype(s["site"]), s["site"], x, y, cid))
+                records.append((_stype(s["site"]), s.get("morphology"), x, y, cid))
                 break
 
     present = [t for t in site_types if any(r[0] == t for r in records)]
