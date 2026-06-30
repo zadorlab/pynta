@@ -118,7 +118,7 @@ def get_site_bond_length(sitetype,atomtype=None,metal=None):
         return site_bond_length_dict[(sitetype,None,None)]
 
 def add_adsorbate_to_site(atoms, adsorbate, surf_ind, site, height=None,
-                          orientation=None, tilt_angle=0., offset=True, tilt=True):
+                          orientation=None, tilt_angle=0., random_offset=True, tilt=True):
     """The base function for adding one adsorbate to a site.
     Site must include information of 'normal' and 'position'.
     Useful for adding adsorbate to multiple sites or adding
@@ -218,7 +218,7 @@ def add_adsorbate_to_site(atoms, adsorbate, surf_ind, site, height=None,
 
     ads.translate(pos - bondpos)
     # Randomly offsetting atoms to avoid highly symmetric structures
-    if offset:
+    if random_offset:
         for atom in ads:
             x_trans = random.choice([-0.05, 0.05])
             y_trans = random.choice([-0.05, 0.05])

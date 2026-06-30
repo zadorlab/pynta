@@ -69,8 +69,8 @@ def generate_unique_sites(slab, sites, nslab, site_bond_cutoff, adsorbate_height
             surf_ind=0,
             site=site,
             height=adsorbate_height,
-            tilt_angle=25.24, 
-            offset=False)
+            tilt_angle=25.24,
+            random_offset=False)
         geoms.append(g)
         sites_per_geom.append([site])
 
@@ -99,7 +99,7 @@ def generate_all_sites(slab, sites, nslab, site_bond_cutoff, adsorbate_height):
             site=site,
             height=adsorbate_height,
             tilt_angle=25.24,
-            offset=False)
+            random_offset=False)
         geoms.append(g)
         sites_per_geom.append([site])
 
