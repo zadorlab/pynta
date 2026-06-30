@@ -330,7 +330,15 @@ def generate_graph_slab_fixed(atoms):
         atoms = atoms.copy()
         atoms.pbc = (True, True, False)
     analysis = Analysis(atoms)
+    # ASE's adjacency_matrix is stored upper-triangular only (bonds recorded as
+    # i<j); a given metal-metal bond may land in either triangle. Reading only
+    # adj[i, j] for i<j therefore silently drops ~half the bonds, and does so
+    # inconsistently between geometrically equivalent atoms. The resulting graph
+    # loses the slab's translational/point symmetry, so symmetry-equivalent
+    # adsorption sites come out non-isomorphic and are never merged (e.g. 144
+    # Pt(332) sites collapse to ~135 instead of ~30). Symmetrize first.
     adj = analysis.adjacency_matrix[0]
+    adj = adj + adj.T
 
     adatoms = []
     for at in atoms:
