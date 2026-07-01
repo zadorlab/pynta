@@ -516,14 +516,20 @@ def update_site_labels_by_graph_and_type(single_sites_lists, clusters, geom_indi
     geom_to_label : dict  {geom_idx: label_string}
     key_to_label  : dict  {(cluster_id, site, morphology): label_string}
     """
+    def _base_morph(m):
+        # Strip any trailing index so re-labelling an already-labelled file is
+        # idempotent (e.g. "corner0" -> "corner"). ACAT morphologies never end
+        # in a digit, so this only removes labels this function added.
+        return m.rstrip("0123456789") if m else m
+
     def _first_site_morph(geom_idx):
         for s in single_sites_lists[geom_idx]:
             if s.get("site"):
-                return s.get("site"), s.get("morphology")
+                return s.get("site"), _base_morph(s.get("morphology"))
         return None, None
 
-    type_counters = {}   # morph_val -> next available integer
-    key_to_label  = {}   # (cluster_id, site_val, morph_val) -> label
+    type_counters = {}   # morph_base -> next available integer
+    key_to_label  = {}   # (cluster_id, site_val, morph_base) -> label
     geom_to_label = {}
 
     for cluster_id, members in enumerate(clusters.values()):
@@ -1538,41 +1544,42 @@ def workflow_no_defect_unique_sites(
         single_sites_lists, clusters, geom_indices
     )
 
-    # reduce: one representative geometry per distinct label
-    rep_geoms, rep_sites = _reduce_to_representatives(single_geoms, single_sites_lists)
-
+    # Write EVERY site (all ACAT sites), not just one representative per label.
+    # Isomorphic sites of the same (site type, morphology) already share the
+    # same numerical label in their "morphology" field. The traj and the json
+    # stay index-aligned (visualize_labeled_sites zips them together).
     traj = Trajectory(traj_filename, "w")
-    for g in rep_geoms:
+    for g in single_geoms:
         traj.write(g)
     traj.close()
 
     labeled_sites_data = [
         {"geom_index": i, "sites": sites}
-        for i, sites in enumerate(rep_sites)
+        for i, sites in enumerate(single_sites_lists)
     ]
     save_sites_to_json(labeled_sites_data, filename=labeled_sites_json)
 
+    n_labels = len(set(key_to_label.values()))
     if verbose:
         surface_type = "CustomSurface" if use_custom else f'"{surface}"'
         print(f"Surface             : {surface_type}")
         print(f"Total ACAT sites    : {len(all_sites)}")
-        print(f"Distinct labels     : {len(rep_geoms)}")
+        print(f"Sites written       : {len(single_sites_lists)}")
+        print(f"Distinct labels     : {n_labels}")
         print()
         label_to_key = {v: k for k, v in key_to_label.items()}
         print(f"  {'Label':<12} {'Site type':<14} Morphology")
         print(f"  {'-'*44}")
-        for entry in rep_sites:
-            for s in entry:
-                label = s.get("morphology", "")
-                _, orig_site, morph = label_to_key.get(label, (None, "", ""))
-                print(f"  {label:<12} {orig_site:<14} {morph}")
+        for label in sorted(label_to_key):
+            _, orig_site, morph = label_to_key[label]
+            print(f"  {label:<12} {orig_site:<14} {morph}")
         print()
         print(f"Wrote: {traj_filename}")
         print(f"Wrote: {sites_json}")
         print(f"Wrote: {neighbor_json}")
         print(f"Wrote: {labeled_sites_json}")
 
-    return rep_geoms, rep_sites, clusters
+    return single_geoms, single_sites_lists, clusters
 
 # ============================================================
 # Workflows (for clean notebooks)
