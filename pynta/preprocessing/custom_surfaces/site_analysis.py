@@ -2159,3 +2159,112 @@ def scatter_sites(site_list, label=None, xyz_path=None, save_path="site_position
     if show:
         plt.show()
     print(f"Saved: {save_path}")
+
+
+def plot_labeled_sites_xy(labeled_sites_json="labeled_sites.json", xyz_path=None,
+                          save_path="labeled_sites_xy.png", show=True,
+                          figsize=(9, 8), markersize=340, annotate=True):
+    """
+    Plot every labelled site in the x-y plane.
+
+      colour  = site type       (ontop / bridge / 3fold / 4fold / ...)
+      marker  = morphology base  (terrace / step / corner / sc-tc / ...)
+      number  = the label index appended to the morphology; sites that are
+                graph-isomorphic (same site type + morphology) share the same
+                number.
+
+    Reads labeled_sites.json (the all-sites file written by the workflow). If
+    xyz_path is given, the slab cell is outlined.
+    """
+    import json, re
+    import numpy as np
+    import matplotlib.pyplot as plt
+    import matplotlib.lines as mlines
+    import matplotlib.patches as mpatches
+    import matplotlib.colors as mcolors
+
+    with open(labeled_sites_json) as f:
+        raw = json.load(f)
+
+    # accept both the nested {geom_index, sites:[...]} form and flat site dicts
+    sites = []
+    for item in raw:
+        if isinstance(item, dict) and "sites" in item and "position" not in item:
+            sites.extend(item["sites"])
+        else:
+            sites.append(item)
+
+    def _split_morph(m):
+        m = m or ""
+        mm = re.match(r"^(.*?)(\d+)$", m)
+        return (mm.group(1), mm.group(2)) if mm else (m, "")
+
+    recs = []  # (site_type, morph_base, idx_str, x, y)
+    for s in sites:
+        st = s.get("site")
+        if not st:
+            continue
+        base, idx = _split_morph(s.get("morphology"))
+        recs.append((st, base, idx, s["position"][0], s["position"][1]))
+
+    site_types = sorted({r[0] for r in recs})
+    morphs     = sorted({r[1] for r in recs})
+
+    # colour per site type
+    fixed_colors = {"ontop": "#4C72B0", "bridge": "#55A868", "3fold": "#CCB974",
+                    "4fold": "#64B5CD", "defect": "#C44E52"}
+    palette = list(plt.cm.tab10.colors) + list(plt.cm.Set2.colors)
+    color_map, ci = {}, 0
+    for t in site_types:
+        if t in fixed_colors:
+            color_map[t] = fixed_colors[t]
+        else:
+            color_map[t] = palette[ci % len(palette)]; ci += 1
+
+    # marker per morphology base
+    marker_pool = ["o", "s", "^", "D", "v", "P", "X", "*", "<", ">", "p", "h", "H", "8"]
+    marker_map = {m: marker_pool[i % len(marker_pool)] for i, m in enumerate(morphs)}
+
+    def _text_color(c):
+        r, g, b = mcolors.to_rgb(c)
+        return "black" if (0.299 * r + 0.587 * g + 0.114 * b) > 0.6 else "white"
+
+    fig, ax = plt.subplots(figsize=figsize)
+
+    if xyz_path is not None:
+        from ase.io import read
+        slab = read(xyz_path)
+        a_xy = np.array([slab.cell[0][0], slab.cell[0][1]])
+        b_xy = np.array([slab.cell[1][0], slab.cell[1][1]])
+        box = np.array([[0, 0], a_xy, a_xy + b_xy, b_xy, [0, 0]])
+        ax.plot(box[:, 0], box[:, 1], color="0.6", lw=1.2, zorder=1)
+
+    for (st, base, idx, x, y) in recs:
+        ax.scatter(x, y, color=color_map[st], marker=marker_map[base],
+                   s=markersize, alpha=0.95, edgecolors="#333333",
+                   linewidths=0.6, zorder=3)
+        if annotate and idx != "":
+            ax.text(x, y, idx, ha="center", va="center", fontsize=7,
+                    fontweight="bold", color=_text_color(color_map[st]), zorder=4)
+
+    ax.set_xlabel("x (Å)"); ax.set_ylabel("y (Å)")
+    ax.set_aspect("equal")
+    ax.spines[["top", "right"]].set_visible(False)
+    ax.set_title("Labelled sites\n(colour = site type, marker = morphology, "
+                 "number = label index)", fontsize=12, fontweight="bold")
+
+    color_handles = [mpatches.Patch(color=color_map[t], label=t) for t in site_types]
+    marker_handles = [mlines.Line2D([], [], marker=marker_map[m], color="w",
+                      markerfacecolor="#888", markeredgecolor="#333",
+                      markersize=10, label=m) for m in morphs]
+    leg1 = ax.legend(handles=color_handles, title="site type", loc="upper left",
+                     bbox_to_anchor=(1.01, 1.0), frameon=False, fontsize=9)
+    ax.add_artist(leg1)
+    ax.legend(handles=marker_handles, title="morphology", loc="upper left",
+              bbox_to_anchor=(1.01, 0.5), frameon=False, fontsize=9)
+
+    plt.tight_layout()
+    plt.savefig(save_path, dpi=150, bbox_inches="tight")
+    if show:
+        plt.show()
+    print(f"Saved: {save_path}")
