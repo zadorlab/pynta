@@ -226,6 +226,21 @@ def save_sites_to_json(single_sits_lists, filename='sites.json'):
 
     print(f"Sites data saved to '{filename}'.")
 
+
+def read_labeled_sites(labeled_sites_json="labeled_sites.json"):
+    """Load labeled_sites.json as a flat list of site dicts (same structure as
+    sites.json). Tolerates the older nested [{geom_index, sites:[...]}, ...]
+    form so previously-written files still load."""
+    with open(labeled_sites_json) as f:
+        raw = json.load(f)
+    flat = []
+    for item in raw:
+        if isinstance(item, dict) and "sites" in item and "position" not in item:
+            flat.extend(item["sites"])
+        else:
+            flat.append(item)
+    return flat
+
 #def save_sites_to_json(single_sites_lists, filename='sites.json'):
 #    """Save unique sites to a JSON file."""
 #    
@@ -1517,8 +1532,9 @@ def workflow_no_defect_unique_sites(
       1. Get all ACAT sites → sites.json
       2. Generate one tagged geometry per unoccupied site
       3. Build RMG graphs, cluster by isomorphism + (site, morphology)
-      4. Assign labels: 3fold0, 3fold1, bridge0, ...
-      5. Reduce to one representative per distinct label → labeled_sites.json + traj
+      4. Assign labels on the morphology field: terrace0, terrace1, sc-tc0, ...
+      5. Write every site (flat list, same structure as sites.json) →
+         labeled_sites.json + traj; isomorphic sites share the same label.
     """
     from ase.io.trajectory import Trajectory
     from acat.settings import CustomSurface
@@ -1553,10 +1569,8 @@ def workflow_no_defect_unique_sites(
         traj.write(g)
     traj.close()
 
-    labeled_sites_data = [
-        {"geom_index": i, "sites": sites}
-        for i, sites in enumerate(single_sites_lists)
-    ]
+    # flat list of site dicts (same structure as sites.json)
+    labeled_sites_data = [s for sites in single_sites_lists for s in sites]
     save_sites_to_json(labeled_sites_data, filename=labeled_sites_json)
 
     n_labels = len(set(key_to_label.values()))
@@ -1720,8 +1734,9 @@ def workflow_defect_vacancy_drop(
     update_site_labels_by_graph_and_type(single_sites_lists, clusters, geom_indices)
 
     # reduce to one representative per distinct label → labeled_sites.json
+    # (flat list of site dicts, same structure as sites.json)
     rep_geoms, rep_site_lists = _reduce_to_representatives(geom_all, single_sites_lists)
-    rep_data = [{"geom_index": i, "sites": s} for i, s in enumerate(rep_site_lists)]
+    rep_data = [s for site_list in rep_site_lists for s in site_list]
     save_sites_to_json(rep_data, filename=labeled_sites_json)
 
     if verbose:
@@ -1831,9 +1846,8 @@ def visualize_labeled_sites(
         except Exception:
             geoms = read("unique_sites.traj", index=":")
 
-    # ── load labeled sites ────────────────────────────────────────────────────
-    with open(labeled_sites_json) as f:
-        raw = json.load(f)
+    # ── load labeled sites (flat list of site dicts) ──────────────────────────
+    flat_sites = read_labeled_sites(labeled_sites_json)
 
     try:
         with open(sites_json) as f:
@@ -1841,7 +1855,8 @@ def visualize_labeled_sites(
     except Exception:
         n_total_acat = None
 
-    single_sites_lists = [entry["sites"] for entry in raw]
+    # one geometry per site: wrap each site in its own list for the graph pipeline
+    single_sites_lists = [[s] for s in flat_sites]
 
     # ── graph pipeline ────────────────────────────────────────────────────────
     admols, geom_indices = classify_all_sites(geoms, single_sites_lists)
@@ -1849,7 +1864,7 @@ def visualize_labeled_sites(
     _, key_to_label      = update_site_labels_by_graph_and_type(
         single_sites_lists, clusters, geom_indices
     )
-    save_sites_to_json(raw, filename=labeled_sites_json)
+    save_sites_to_json(flat_sites, filename=labeled_sites_json)
 
     label_to_key = {v: k for k, v in key_to_label.items()}
 
@@ -1996,9 +2011,8 @@ def plot_site_equivalence_xy(
     MARKER = {"ontop": "o", "bridge": "s", "3fold": "^", "4fold": "D", "defect": "X"}
 
     if single_sites_lists is None:
-        with open(labeled_sites_json) as f:
-            raw = json.load(f)
-        single_sites_lists = [entry["sites"] for entry in raw]
+        # flat list of site dicts -> one geometry per site
+        single_sites_lists = [[s] for s in read_labeled_sites(labeled_sites_json)]
 
     if clusters is None or geom_indices is None:
         if traj_file is not None:
@@ -2188,16 +2202,7 @@ def plot_labeled_sites_xy(labeled_sites_json="labeled_sites.json", xyz_path=None
     import matplotlib.patches as mpatches
     import matplotlib.colors as mcolors
 
-    with open(labeled_sites_json) as f:
-        raw = json.load(f)
-
-    # accept both the nested {geom_index, sites:[...]} form and flat site dicts
-    sites = []
-    for item in raw:
-        if isinstance(item, dict) and "sites" in item and "position" not in item:
-            sites.extend(item["sites"])
-        else:
-            sites.append(item)
+    sites = read_labeled_sites(labeled_sites_json)
 
     def _split_morph(m):
         m = m or ""
