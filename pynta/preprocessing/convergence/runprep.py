@@ -11,10 +11,14 @@
 # default wait=True -- blocks until the collector writes lattice_constant.json,
 # then returns the optimized lattice constant.
 
+import json
 import os
-import re
+import sys
+import numpy as np
 
-from preprocessing import Prep
+sys.path.insert(0, os.path.dirname(os.path.abspath(".")))
+from preprocessing import plot_results, Prep
+
 
 
 def mypause(flag):
