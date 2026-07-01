@@ -2162,21 +2162,26 @@ def scatter_sites(site_list, label=None, xyz_path=None, save_path="site_position
 
 
 def plot_labeled_sites_xy(labeled_sites_json="labeled_sites.json", xyz_path=None,
+                          neighbor_site_list_json="neighbor_site_list.json",
                           save_path="labeled_sites_xy.png", show=True,
                           figsize=(9, 8), markersize=340, annotate=True):
     """
     Plot every labelled site in the x-y plane.
 
-      colour  = site type       (ontop / bridge / 3fold / 4fold / ...)
+      colour  = site type       (ontop / bridge / fcc / hcp / 4fold / ...)
       marker  = morphology base  (terrace / step / corner / sc-tc / ...)
       number  = the label index appended to the morphology; sites that are
                 graph-isomorphic (same site type + morphology) share the same
                 number.
 
+    The underlying site-adjacency graph (neighbor_site_list.json) is drawn in
+    light gray beneath the markers, minimum-imaged across the cell boundary
+    when xyz_path (hence the cell) is available.
+
     Reads labeled_sites.json (the all-sites file written by the workflow). If
     xyz_path is given, the slab cell is outlined.
     """
-    import json, re
+    import os, json, re
     import numpy as np
     import matplotlib.pyplot as plt
     import matplotlib.lines as mlines
@@ -2210,10 +2215,11 @@ def plot_labeled_sites_xy(labeled_sites_json="labeled_sites.json", xyz_path=None
     site_types = sorted({r[0] for r in recs})
     morphs     = sorted({r[1] for r in recs})
 
-    # colour per site type
-    fixed_colors = {"ontop": "#4C72B0", "bridge": "#55A868", "3fold": "#CCB974",
-                    "4fold": "#64B5CD", "defect": "#C44E52"}
-    palette = list(plt.cm.tab10.colors) + list(plt.cm.Set2.colors)
+    # colour per site type — distinct, recognisable colours for the common types
+    fixed_colors = {"ontop": "#4C72B0", "bridge": "#55A868", "fcc": "#DD8452",
+                    "hcp": "#8172B3", "3fold": "#CCB974", "4fold": "#64B5CD",
+                    "defect": "#C44E52"}
+    palette = list(plt.cm.Dark2.colors) + list(plt.cm.tab10.colors)
     color_map, ci = {}, 0
     for t in site_types:
         if t in fixed_colors:
@@ -2231,6 +2237,7 @@ def plot_labeled_sites_xy(labeled_sites_json="labeled_sites.json", xyz_path=None
 
     fig, ax = plt.subplots(figsize=figsize)
 
+    slab = None
     if xyz_path is not None:
         from ase.io import read
         slab = read(xyz_path)
@@ -2238,6 +2245,49 @@ def plot_labeled_sites_xy(labeled_sites_json="labeled_sites.json", xyz_path=None
         b_xy = np.array([slab.cell[1][0], slab.cell[1][1]])
         box = np.array([[0, 0], a_xy, a_xy + b_xy, b_xy, [0, 0]])
         ax.plot(box[:, 0], box[:, 1], color="0.6", lw=1.2, zorder=1)
+
+    # underlying site-adjacency graph, drawn first (light gray)
+    neighbors = None
+    if neighbor_site_list_json and os.path.exists(neighbor_site_list_json):
+        try:
+            with open(neighbor_site_list_json) as f:
+                neighbors = json.load(f)
+        except Exception:
+            neighbors = None
+    pos3 = np.array([s["position"] for s in sites if s.get("site")], float)
+    # get_neighbor_site_list() is a dict {site_index: [neighbor indices]}; after
+    # a JSON round-trip the keys are strings. Also tolerate a plain list form.
+    if isinstance(neighbors, dict):
+        nbr_items = [(int(k), v) for k, v in neighbors.items()]
+    elif isinstance(neighbors, list):
+        nbr_items = list(enumerate(neighbors))
+    else:
+        nbr_items = []
+    if nbr_items and len(nbr_items) == len(pos3):
+        from ase.geometry import get_distances
+        drawn = set()
+        for i, nbrs in nbr_items:
+            if not isinstance(nbrs, (list, tuple)) or not (0 <= i < len(pos3)):
+                continue
+            for j in nbrs:
+                j = int(j)
+                if not (0 <= j < len(pos3)):
+                    continue
+                e = (i, j) if i < j else (j, i)
+                if e in drawn:
+                    continue
+                drawn.add(e)
+                pi, pj = pos3[i], pos3[j]
+                if slab is not None:
+                    v, _ = get_distances([pi], [pj], cell=slab.cell, pbc=slab.pbc)
+                    d = v[0][0]  # minimum-image displacement pi -> pj
+                    ax.plot([pi[0], pi[0] + d[0]], [pi[1], pi[1] + d[1]],
+                            color="0.85", lw=0.8, zorder=0)
+                    ax.plot([pj[0], pj[0] - d[0]], [pj[1], pj[1] - d[1]],
+                            color="0.85", lw=0.8, zorder=0)
+                else:
+                    ax.plot([pi[0], pj[0]], [pi[1], pj[1]],
+                            color="0.85", lw=0.8, zorder=0)
 
     for (st, base, idx, x, y) in recs:
         ax.scatter(x, y, color=color_map[st], marker=marker_map[base],
