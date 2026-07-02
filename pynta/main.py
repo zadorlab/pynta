@@ -54,9 +54,10 @@ class Pynta:
         if isinstance(software,list): #SumCalculator
             assert len(software) == len(software_kwargs)
             assert len(software) == len(software_kwargs_gas)
-        if isinstance(harm_f_software,list): #SumCalculator
+        if isinstance(harm_f_software,list): #1 calculator, or SumCalculator for 2+
+            assert len(harm_f_software) >= 1, "harm_f_software list must not be empty"
             assert len(harm_f_software) == len(harm_f_software_kwargs)
-            
+
         self.surface_type = surface_type
         if launchpad_path:
             launchpad = LaunchPad.from_file(launchpad_path)
