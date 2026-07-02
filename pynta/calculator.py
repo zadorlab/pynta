@@ -101,6 +101,13 @@ def run_harmonically_forced(atoms,atom_bond_potentials,site_bond_potentials,nsla
             
     atoms.set_constraint(out_constraints)
     
+    # A single-element software list is equivalent to the scalar (single
+    # calculator) case, e.g. ["MACECalculator"] == "MACECalculator". A list of
+    # 2+ builds a SumCalculator (e.g. MACE + TorchDFTD3 for dispersion).
+    if isinstance(harm_f_software, list) and len(harm_f_software) == 1:
+        harm_f_software = harm_f_software[0]
+        harm_f_software_kwargs = harm_f_software_kwargs[0]
+
     hfsoft = name_to_ase_software(harm_f_software)
     
     if not isinstance(hfsoft,list):
@@ -175,7 +182,9 @@ def run_harmonically_forced(atoms,atom_bond_potentials,site_bond_potentials,nsla
                 hf_kwargs[k] = to_ase_software(typ,dv,module_name=harm_f_software)
         
         
-        hf = SumCalculator([HarmonicallyForced(**hf_kwargs),to_ase_software(harm_f_software[1],harm_f_software_kwargs[1])])
+        extra_calcs = [to_ase_software(harm_f_software[i], harm_f_software_kwargs[i])
+                       for i in range(1, len(harm_f_software))]
+        hf = SumCalculator([HarmonicallyForced(**hf_kwargs)] + extra_calcs)
         
     atoms.calc = hf
 
@@ -346,6 +355,13 @@ def run_harmonically_forced_no_pbc(atoms,atom_bond_potentials,site_bond_potentia
                 indices=list(range(n))
                 ))
     
+    # A single-element software list is equivalent to the scalar (single
+    # calculator) case, e.g. ["MACECalculator"] == "MACECalculator". A list of
+    # 2+ builds a SumCalculator (e.g. MACE + TorchDFTD3 for dispersion).
+    if isinstance(harm_f_software, list) and len(harm_f_software) == 1:
+        harm_f_software = harm_f_software[0]
+        harm_f_software_kwargs = harm_f_software_kwargs[0]
+
     hfsoft = name_to_ase_software(harm_f_software)
     
     if not isinstance(hfsoft,list):
@@ -419,7 +435,9 @@ def run_harmonically_forced_no_pbc(atoms,atom_bond_potentials,site_bond_potentia
                 dv = {k:v for k,v in v.items() if k != "type"}
                 hf_kwargs[k] = to_ase_software(typ,dv,module_name=harm_f_software)
         
-        hf = SumCalculator([HarmonicallyForced(**hf_kwargs),to_ase_software(harm_f_software[1],harm_f_software_kwargs[1])])
+        extra_calcs = [to_ase_software(harm_f_software[i], harm_f_software_kwargs[i])
+                       for i in range(1, len(harm_f_software))]
+        hf = SumCalculator([HarmonicallyForced(**hf_kwargs)] + extra_calcs)
     
     bigad.set_constraint(out_constraints)
     bigad.calc = hf
