@@ -64,6 +64,15 @@ def check_socket_software(software_name,socket):
             "optimizer's max steps), or use software='Vasp' with socket=True."
         )
 
+def enforce_vasp_pbc(atoms, software_name):
+    """VASP is a plane-wave code and requires full 3D periodicity. Force
+    pbc=(True,True,True) for Vasp/VaspInteractive regardless of the pbc stored
+    in the geometry or configured on the Pynta object (e.g. a slab run set up
+    with pbc=(T,T,F) that is later refined with VASP). No-op for other software."""
+    if isinstance(software_name, str) and software_name.lower() in ("vasp", "vaspinteractive"):
+        atoms.pbc = (True, True, True)
+    return atoms
+
 class OptimizationTask(FiretaskBase):
     def run_task(self, fw_spec):
         raise NotImplementedError
@@ -168,6 +177,7 @@ class MolecularOptimizationTask(OptimizationTask):
         if socket and os.path.exists(socket_address):
             os.unlink(socket_address)
 
+        enforce_vasp_pbc(sp,self["software"])
         sp.calc = SocketIOCalculator(software,log=sys.stdout,unixsocket=unixsocket) if socket else software
 
         constraints = deepcopy(self["constraints"]) if "constraints" in self.keys() else []
@@ -365,6 +375,7 @@ class MolecularOptimizationFailTask(OptimizationTask):
         xyz = self['xyz']
         sp = read(xyz)
 
+        enforce_vasp_pbc(sp,self["software"])
         sp.calc = software
         opt = opt_method(sp,trajectory=label+".traj")
         opt.run(fmax=0.02,steps=2)
@@ -403,6 +414,7 @@ class MolecularEnergyTask(EnergyTask):
         sp = None
         try:
             sp = read(xyz)
+            enforce_vasp_pbc(sp,self["software"])
             sp.calc = software(**software_kwargs)
             en = sp.get_potential_energy(**energy_kwargs)
             with open(label+'_energy.json', 'a') as file:
@@ -460,6 +472,7 @@ class MolecularVibrationsTask(VibrationTask):
         sp = None
         try:
             sp = read(xyz)
+            enforce_vasp_pbc(sp,self["software"])
             sp.calc = SocketIOCalculator(software,log=sys.stdout,unixsocket=unixsocket) if socket else software
 
             constraints = deepcopy(self["constraints"]) if "constraints" in self.keys() else []
@@ -1049,6 +1062,7 @@ class MolecularIRC(FiretaskBase):
         if socket and os.path.exists(socket_address):
             os.unlink(socket_address)
 
+        enforce_vasp_pbc(sp,self["software"])
         sp.calc = SocketIOCalculator(software,log=sys.stdout,unixsocket=unixsocket) if socket else software
 
         constraints = deepcopy(self["constraints"]) if "constraints" in self.keys() else []
