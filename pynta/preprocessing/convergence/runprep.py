@@ -10,15 +10,28 @@
 # self.launch() (queue or local per how Prep was constructed), and -- with the
 # default wait=True -- blocks until the collector writes lattice_constant.json,
 # then returns the optimized lattice constant.
+#
+# NOTE on the Espresso API (ASE >= 3.23 / EspressoProfile):
+# software_kwargs below intentionally stays a plain, JSON-serializable dict
+# using the old-style "command" and "pseudo_dir" keys, because FireWorks
+# serializes the spec into MongoDB (an EspressoProfile object cannot be
+# stored there). The conversion to the new API,
+#     EspressoProfile(command="srun ... pw.x", pseudo_dir=...),
+# happens at calculator-construction time inside each rocket, via
+# pynta.utils.adapt_espresso_kwargs / make_calculator. Do NOT put an
+# EspressoProfile object in this dict, and do NOT include shell redirection
+# ("< PREFIX.pwi > PREFIX.pwo") in the command -- the profile handles i/o
+# itself (the adapter strips a redirect if one is present, for backwards
+# compatibility with old submit scripts).
 
 import json
 import os
+import re
 import sys
 import numpy as np
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(".")))
-from preprocessing import plot_results, Prep
-
+from preprocessing import Prep
 
 
 def mypause(flag):
@@ -59,10 +72,15 @@ def run():
     # The launcher each energy Firework uses to run pw.x. With queue=True the
     # qadapter provides the allocation, so resolving ntasks here is only a
     # sanity print; the rocket inherits SLURM_NTASKS from its own job.
+    # Bare launch command, no "< PREFIX.pwi > PREFIX.pwo" (see API note above).
     ntasks = slurm_ntasks()
     command = f"srun -n {ntasks} --mpi=pmi2 --cpu-bind=cores pw.x"
     print(f"QE launch command (per Firework): {command}  (ntasks here={ntasks})")
 
+    # Old-style flat dict on purpose: JSON-serializable for the FireWorks spec.
+    # adapt_espresso_kwargs converts it to
+    #   profile=EspressoProfile(command=..., pseudo_dir=...) + input_data={...}
+    # inside each rocket on ASE >= 3.23 (and leaves it as-is on older ASE).
     espresso_kwargs = {
         "kpts": (5, 5, 1),
         "ecutwfc": 70,

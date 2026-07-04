@@ -369,6 +369,77 @@ def name_to_ase_software(software_name,module_name=None):
         module = import_module("ase.calculators."+module_name.lower())
         return getattr(module, software_name)
 
+# keyword arguments that are Espresso-constructor arguments rather than
+# Quantum ESPRESSO input-file keys, and must NOT be folded into input_data
+_ESPRESSO_NON_QE_KEYS = {
+    "kpts", "koffset", "kspacing", "pseudopotentials", "input_data",
+    "directory", "label", "profile", "parallel_info",
+}
+
+def adapt_espresso_kwargs(software_kwargs):
+    """Bridge old-style flat Espresso kwargs to the new ASE (>= 3.23) API.
+
+    Old style (ASE <= 3.22 / pynta convention), JSON-serializable so it can
+    live in a FireWorks spec:
+        {"command": "srun pw.x < PREFIX.pwi > PREFIX.pwo",
+         "pseudo_dir": "/path/to/pseudo",
+         "ecutwfc": 70, "kpts": (5,5,1), "pseudopotentials": {...}, ...}
+
+    New style produced here at construction time:
+        {"profile": EspressoProfile(command="srun pw.x", pseudo_dir=...),
+         "input_data": {"ecutwfc": 70, ...},
+         "kpts": (5,5,1), "pseudopotentials": {...}}
+
+    On ASE <= 3.22 (no EspressoProfile) the kwargs are returned unchanged.
+    If a 'profile' is already present, the kwargs are assumed new-style and
+    returned unchanged.
+    """
+    try:
+        from ase.calculators.espresso import EspressoProfile
+    except ImportError:
+        return software_kwargs  # old ASE: old-style kwargs are valid as-is
+
+    kw = deepcopy(software_kwargs)
+    if kw.get("profile") is not None:
+        return kw
+
+    command = kw.pop("command", None)
+    pseudo_dir = kw.pop("pseudo_dir", None) or os.environ.get("ESPRESSO_PSEUDO")
+
+    # fold flat QE keywords (ecutwfc, degauss, input_dft, ...) into input_data;
+    # construct_namelist sorts a flat dict into the proper namelists
+    input_data = kw.pop("input_data", None) or {}
+    for k in list(kw):
+        if k not in _ESPRESSO_NON_QE_KEYS:
+            input_data.setdefault(k, kw.pop(k))
+    if input_data:
+        kw["input_data"] = input_data
+
+    if command is not None:
+        # the new profile handles input/output redirection itself; strip the
+        # old-style '< PREFIX.pwi > PREFIX.pwo' but keep flags (e.g. --ipi ...)
+        command = command.split("<")[0].strip()
+        kw["profile"] = EspressoProfile(command=command,
+                                        pseudo_dir=pseudo_dir or ".")
+    elif pseudo_dir is not None:
+        kw["profile"] = EspressoProfile(command="pw.x", pseudo_dir=pseudo_dir)
+    # else: profile=None -> ASE reads [espresso] from ~/.config/ase/config.ini
+
+    return kw
+
+def make_calculator(software_name, software_kwargs, module_name=None):
+    """Construct an ASE calculator from a software name and a plain-dict
+    software_kwargs, bridging the old/new Espresso APIs transparently.
+
+    Use this instead of name_to_ase_software(name)(**kwargs) so that
+    JSON-serializable old-style kwargs keep working on any ASE version.
+    """
+    cls = name_to_ase_software(software_name, module_name=module_name)
+    kw = deepcopy(software_kwargs)
+    if str(software_name).lower() == "espresso":
+        kw = adapt_espresso_kwargs(kw)
+    return cls(**kw)
+
 def to_ase_software(object_name,software_kwargs,module_name=None):
     if module_name is None:
         module_name = object_name
@@ -383,6 +454,8 @@ def to_ase_software(object_name,software_kwargs,module_name=None):
                 dv = {k:v for k,v in v.items() if k != "type"}
                 software_kwargs[k] = to_ase_software(typ,dv,module_name=module_name)
         
+        if str(object_name).lower() == "espresso":
+            software_kwargs = adapt_espresso_kwargs(software_kwargs)
         return software(**software_kwargs) 
     else:
        return SumCalculator([to_ase_software(object_name[i],software_kwargs[i],module_name=module_name[i]) if module_name is not None else to_ase_software(object_name[i],software_kwargs[i]) for i in range(len(object_name))])

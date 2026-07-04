@@ -14,17 +14,13 @@ import matplotlib.pyplot as plt
 from scipy import optimize as opt
 
 from ase import Atoms, build
-from ase.io import read, write, Trajectory
+from ase.io import read, write
 from ase.build import add_adsorbate, bulk
 from ase.optimize import BFGSLineSearch
-from ase.calculators.espresso import Espresso
 from ase.constraints import FixAtoms
-from ase.visualize import view
 
-from pynta.utils import name_to_ase_software
-from pynta.tasks import *
-from pynta.calculator import get_lattice_parameters
-from pynta.main import generate_slab
+from pynta.utils import make_calculator
+from pynta.tasks import energy_firework, lattice_optimization_workflow
 
 from fireworks import LaunchPad, Workflow
 from fireworks.queue.queue_launcher import rapidfire as rapidfirequeue
@@ -55,6 +51,33 @@ logger.addHandler(fh)
 ch = logging.StreamHandler()
 ch.setFormatter(fmt)
 logger.addHandler(ch)
+
+
+# ============================================================
+# Software-agnostic helpers
+# ============================================================
+
+_ECUT_KEY = {
+    "gpaw": "ecut",
+    "espresso": "ecutwfc",
+    "nwchem": "cutoff",
+    "pwdft": "cutoff",
+}
+
+
+def set_ecut(software, software_kwargs, ecut):
+    """Set the plane-wave cutoff in a software_kwargs dict for the given code."""
+    key = _ECUT_KEY.get(software.lower())
+    if key is None:
+        raise ValueError(
+            f"Don't know the cutoff keyword for software='{software}'. "
+            f"Known: {sorted(_ECUT_KEY)}"
+        )
+    software_kwargs[key] = ecut
+    if software.lower() == "espresso":
+        # keep charge-density cutoff consistent while scanning (PAW/USPP-safe)
+        software_kwargs["ecutrho"] = 4 * ecut
+    return software_kwargs
 
 
 # ============================================================
@@ -103,21 +126,14 @@ def fit_lattice_constant_from_scan(
     n_fit=7,
     bounds_width=0.01,
     title="Lattice constant optimization",
-    show_plot=False,
     save_plot=True,
     plot_filename="lattice_constant_fit.png",
 ):
-    plotting_available = False
-    if show_plot or save_plot:
-        try:
-            import matplotlib
-            if not show_plot:
-                matplotlib.use("Agg")
-            import matplotlib.pyplot as plt
-            plotting_available = True
-        except Exception:
-            plotting_available = False
+    """Quadratic fit + bounded minimization of E(a) scan data.
 
+    Returns (a_interp, a_opt). Used by the collector step of the
+    FireWorks lattice-optimization workflow.
+    """
     outavals = np.asarray(outavals, dtype=float)
     Evals = np.asarray(Evals, dtype=float)
 
@@ -149,7 +165,7 @@ def fit_lattice_constant_from_scan(
 
     a_opt = float(out.x)
 
-    if plotting_available:
+    if save_plot:
         x_vals = np.linspace(a_interp - 2 * bounds_width, a_interp + 2 * bounds_width, 200)
         y_vals = f(x_vals)
         plt.figure(figsize=(10, 6))
@@ -163,10 +179,7 @@ def fit_lattice_constant_from_scan(
         plt.title(title)
         plt.grid(True)
         plt.legend()
-        if save_plot:
-            plt.savefig(plot_filename, dpi=300, bbox_inches="tight")
-        if show_plot:
-            plt.show()
+        plt.savefig(plot_filename, dpi=300, bbox_inches="tight")
         plt.close()
 
     return a_interp, a_opt
@@ -478,6 +491,7 @@ class Prep:
                     "C": "C.pbe-n-kjpaw_psl.1.0.0.UPF",
                     "N": "N.pbe-n-kjpaw_psl.1.0.0.UPF",
                     "Pt": "Pt.pbe-spn-kjpaw_psl.1.0.0.UPF",
+                    "Au": "Au.pbe-n-kjpaw_psl.1.0.0.UPF",
                 },
             }
         else:
@@ -537,6 +551,38 @@ class Prep:
         self.restore_state_from_provenance()
 
     # --------------------------------------------------------
+    # Slab handling (works for conventional AND custom surfaces)
+    # --------------------------------------------------------
+
+    def ensure_slab(self):
+        """Return self.slab, building it from surface_type if necessary.
+
+        - If a slab was supplied (Atoms object or file path), it is used as-is;
+          this is the path for custom surfaces (SAAs, oxides, reconstructions).
+        - Otherwise surface_type must name an ase.build function (fcc111,
+          bcc110, hcp0001, fcc332, ...) and the slab is built at the current
+          lattice constant (self.a, initially a0).
+        """
+        if self.slab is not None:
+            return self.slab
+
+        builder = getattr(build, self.surface_type, None)
+        if builder is None:
+            raise ValueError(
+                f"surface_type='{self.surface_type}' is not an ase.build surface "
+                "function. For custom surfaces, pass slab= (file path or Atoms) "
+                "to Prep."
+            )
+        kw = dict(symbol=self.metal, size=self.repeats,
+                  a=self.a or self.a0, vacuum=self.vacuum)
+        if self.c is not None:
+            kw["c"] = self.c
+        slab = builder(**kw)
+        slab.pbc = self.pbc
+        self.slab = slab
+        return slab
+
+    # --------------------------------------------------------
     # FireWorks execution
     # --------------------------------------------------------
 
@@ -558,13 +604,57 @@ class Prep:
             launch_multiprocess(self.launchpad, self.fworker, "INFO",
                                 "infinite", self.num_jobs, 5)
 
+    # --------------------------------------------------------
+    # Workflow steps
+    # --------------------------------------------------------
+
+    @step(1)
+    @requires("alloy_A", "alloy_B", "alloy_xA")
+    def calculate_alloy_lattice_parameters(self, alloy_A=None, alloy_B=None,
+                                           alloy_xA=None, da=0.1):
+        """Optimize an alloy bulk lattice constant locally (ordered cubic cell)."""
+        A = alloy_A or self.alloy_A
+        B = alloy_B or self.alloy_B
+        xA = alloy_xA if alloy_xA is not None else self.alloy_xA
+        logger.info("Optimizing alloy bulk lattice constant: %s%.3g%s", A, xA, B)
+
+        calc = make_calculator(self.software, self.lattice_opt_software_kwargs)
+        res = get_alloy_lattice_constant_min_energy(
+            A, B, xA, self.surface_type, calc, a_guess=self.a0,
+            maxrep=self.alloy_maxrep, da=da, scan_step=self.alloy_scan_step,
+        )
+        self.a = res["a0_A"]
+
+        out_json = self.alloy_path or os.path.join(self.path, "alloy_lattice.json")
+        with open(out_json, "w") as f:
+            json.dump(res, f, indent=2)
+
+        logger.info("Optimized alloy lattice constant: a = %.6f Å", self.a)
+        self._record_step(
+            "calculate_alloy_lattice_parameters",
+            inputs={"A": A, "B": B, "xA": xA, "a0": self.a0, "da": da},
+            outputs={"lattice_constant": self.a, "result_file": out_json},
+        )
+        return self.a
+
+    @step(2)
+    @requires("optimize_lattice")
     def lattice_optimization(self, da=0.1, scan_step=0.02, centered=True,
                              inplane_only=None, n_fit=None, label=None,
                              skip_launch=False, wait=True, poll=2.0):
-        """Run lattice-constant scan as a FireWorks workflow (parallel fan-out)."""
+        """Run lattice-constant scan as a FireWorks workflow (parallel fan-out).
+
+        Works for ANY slab: a custom slab passed via Prep(slab=...) or a
+        conventional one built automatically from surface_type. The scan
+        scales the cell of the actual Atoms object, so no assumptions about
+        crystal structure are made here.
+        """
         self._require_fw()
-        if self.slab is None:
-            raise ValueError("Prep.slab is None; set a slab before lattice_optimization().")
+        slab = self.ensure_slab()
+
+        if inplane_only is None:
+            # slabs (non-periodic z) should only scale in-plane
+            inplane_only = not bool(self.pbc[2])
 
         lbl = label or self.label or "lattice"
         software_kwargs = self.lattice_opt_software_kwargs or self.software_kwargs
@@ -572,7 +662,7 @@ class Prep:
         out_path = os.path.join(scan_dir, "lattice_constant.json")
 
         wf = lattice_optimization_workflow(
-            slab=self.slab, a0=self.a0, software=self.software,
+            slab=slab, a0=self.a0, software=self.software,
             software_kwargs=software_kwargs, da=da, scan_step=scan_step,
             centered=centered, inplane_only=inplane_only, pbc=self.pbc,
             label=lbl, scan_dir=scan_dir, out_path=out_path, n_fit=n_fit,
@@ -584,7 +674,7 @@ class Prep:
         if skip_launch:
             return wf
 
-        self.launch(single_job=True)
+        self.launch()
 
         if not wait:
             return wf
@@ -601,207 +691,190 @@ class Prep:
                 a_opt, result.get("scan_window"),
                 " or set centered=True" if not centered else "")
         logger.info("Optimized lattice constant: a = %.6f Angstrom", a_opt)
+        self._record_step(
+            "lattice_optimization",
+            inputs={"a0": self.a0, "da": da, "scan_step": scan_step,
+                    "inplane_only": bool(inplane_only), "centered": bool(centered)},
+            outputs={"lattice_constant": a_opt, "result_file": out_path},
+        )
         return a_opt
 
-    def opt_cutoff_energy(self, ecut_range=None, skip_launch=False):
-        """Optimize cutoff energy via a FireWorks workflow (or locally if skip_launch)."""
-        self._require_fw()
+    @step(3)
+    @requires("generate_slab")
+    def generate_slab(self, a=None, slab_xyz="slab.xyz"):
+        """Build (if needed) and locally optimize the slab structure.
+
+        Custom slabs passed via Prep(slab=...) are used directly; conventional
+        surfaces are rebuilt at the (optimized) lattice constant.
+        """
+        logger.info("Generating slab")
+        if a is not None:
+            self.a = a
 
         if self.slab is None:
-            self.slab = bulk(self.metal, self.surface_type[:3], a=self.a0)
-            self.slab.pbc = (True, True, False)
+            self.ensure_slab()
+        slab = self.slab
+        slab.pbc = self.pbc
 
-        write(os.path.join(self.path, "test_bulk.xyz"), self.slab)
+        if self.freeze_ind:
+            slab.set_constraint(FixAtoms(indices=list(range(self.freeze_ind))))
+
+        if self.software != "XTB":
+            slab.calc = make_calculator(self.software, self.software_kwargs)
+            dyn = BFGSLineSearch(slab, trajectory="slab.traj")
+            dyn.run(fmax=self.fmax, steps=200)
+
+        slab_xyz = os.path.join(self.path, slab_xyz)
+        write(slab_xyz, slab)
+        self._record_step(
+            "generate_slab",
+            inputs={"surface_type": self.surface_type, "repeats": list(self.repeats),
+                    "vacuum": self.vacuum, "a": self.a},
+            outputs={"slab_file": slab_xyz},
+        )
+        return slab
+
+    def _convergence_structure(self, prefer_bulk=True):
+        """Structure used for ecut convergence: bulk if inferable, else the slab."""
+        if self.slab is not None:
+            return self.slab
+        if prefer_bulk:
+            try:
+                crystal = infer_crystal_from_surface(self.surface_type)
+                atoms = bulk(self.metal, crystal, a=self.a or self.a0)
+                atoms.pbc = True
+                return atoms
+            except ValueError:
+                logger.info(
+                    "Cannot infer bulk from surface_type='%s'; "
+                    "using slab for convergence test.", self.surface_type)
+        return self.ensure_slab()
+
+    @step(4)
+    @requires("ecut_range")
+    def opt_cutoff_energy(self, ecut_range=None, skip_launch=False):
+        """Cutoff-energy convergence via FireWorks fan-out (or locally with skip_launch)."""
         ecut_range = ecut_range or self.ecut_range
+        if ecut_range is None:
+            raise ValueError("ecut_range is not set.")
+
+        atoms = self._convergence_structure()
+        struct_path = os.path.join(self.path, "conv_structure.xyz")
+        write(struct_path, atoms)
+
         cutoff_energy = {}
-
-        for ecut in range(*ecut_range):
-            sw_kw = copy.deepcopy(self.software_kwargs)
-            if self.software.lower() == 'gpaw':
-                sw_kw['ecut'] = ecut
-            elif self.software.lower() == 'espresso':
-                sw_kw['ecutwfc'] = ecut
-            elif self.software.lower() in ['nwchem', 'pwdft']:
-                sw_kw['cutoff'] = ecut
-
-            if skip_launch:
-                calc = name_to_ase_software(self.software)(**sw_kw)
-                self.slab.calc = calc
-                E = self.slab.get_potential_energy()
+        if skip_launch:
+            for ecut in range(*ecut_range):
+                sw_kw = set_ecut(self.software, copy.deepcopy(self.software_kwargs), ecut)
+                probe = atoms.copy()
+                probe.calc = make_calculator(self.software, sw_kw)
+                E = probe.get_potential_energy()
                 cutoff_energy[ecut] = E
-                print(f'Calculator: {self.software}, Cutoff: {ecut} eV, Energy: {E:.6f} eV')
-            else:
+                logger.info("Calculator: %s | Cutoff: %s | Energy: %.6f eV",
+                            self.software, ecut, E)
+        else:
+            self._require_fw()
+            out_paths = {}
+            for ecut in range(*ecut_range):
+                sw_kw = set_ecut(self.software, copy.deepcopy(self.software_kwargs), ecut)
                 out_json = os.path.join(self.path, f"energy_convergence_{ecut}.json")
                 fwenergy = energy_firework(
-                    os.path.join(self.path, "test_bulk.xyz"), self.software,
-                    f"energy_convergence_{ecut}", software_kwargs=sw_kw, out_path=out_json,
+                    struct_path, self.software, f"energy_convergence_{ecut}",
+                    software_kwargs=sw_kw, out_path=out_json,
                 )
-                wf = Workflow([fwenergy], name=f"{self.label}_ecut_{ecut}")
-                self.launchpad.add_wf(wf)
+                self.launchpad.add_wf(Workflow([fwenergy], name=f"{self.label}_ecut_{ecut}"))
+                out_paths[ecut] = out_json
+
+            self.launch()
+
+            for ecut, out_json in out_paths.items():
                 while not os.path.exists(out_json):
                     time.sleep(1)
                 with open(out_json) as f:
                     E = json.load(f)
                 cutoff_energy[ecut] = E
-                print(f'Calculator: {self.software}, Cutoff: {ecut} eV, Energy: {E:.6f} eV')
+                logger.info("Calculator: %s | Cutoff: %s | Energy: %.6f eV",
+                            self.software, ecut, E)
 
         with open(os.path.join(self.path, 'cutoff_energy.json'), 'w') as f:
             json.dump(cutoff_energy, f, indent=4)
 
+        self._record_step(
+            "opt_cutoff_energy",
+            inputs={"ecut_range": list(ecut_range)},
+            outputs={"result_file": "cutoff_energy.json"},
+        )
         return cutoff_energy
 
+    @step(5)
+    @requires("kpts_range")
     def opt_kpoints(self, kpts_range=None, skip_launch=False):
-        """Optimize k-points via a FireWorks workflow (or locally if skip_launch)."""
-        self._require_fw()
+        """K-point convergence via FireWorks fan-out (or locally with skip_launch)."""
+        if kpts_range is None:
+            raise ValueError("kpts_range is not set.")
 
-        if self.slab is None:
-            self.slab = self.make_test_slab()
+        slab = self.ensure_slab()
+        struct_path = os.path.join(self.path, "test_slab.xyz")
+        write(struct_path, slab)
 
         energies = []
         kpts_list = []
         results = {}
 
-        for kpts in kpts_range:
-            sw_kw = copy.deepcopy(self.software_kwargs)
-            sw_kw['kpts'] = kpts
-
-            if skip_launch:
-                calc = name_to_ase_software(self.software)(**sw_kw)
-                slab = self.slab.copy()
-                slab.calc = calc
-                slab.pbc = (True, True, False)
-                E = slab.get_potential_energy()
+        if skip_launch:
+            for kpts in kpts_range:
+                sw_kw = copy.deepcopy(self.software_kwargs)
+                sw_kw['kpts'] = kpts
+                probe = slab.copy()
+                probe.calc = make_calculator(self.software, sw_kw)
+                probe.pbc = self.pbc
+                E = probe.get_potential_energy()
                 kpts_list.append(kpts)
                 energies.append(E)
                 results[str(kpts)] = E
-            else:
+                logger.info("kpts=%s | E=%.6f eV", kpts, E)
+        else:
+            self._require_fw()
+            out_paths = {}
+            for kpts in kpts_range:
+                sw_kw = copy.deepcopy(self.software_kwargs)
+                sw_kw['kpts'] = kpts
                 kpts_name = ''.join(map(str, kpts))
                 out_json = os.path.join(self.path, f"kpoints_{kpts_name}_energy.json")
                 fwkpt = energy_firework(
-                    os.path.join(self.path, "test_slab.xyz"), self.software,
-                    f"kpoints_{kpts_name}", software_kwargs=sw_kw,
+                    struct_path, self.software, f"kpoints_{kpts_name}",
+                    software_kwargs=sw_kw, out_path=out_json,
                 )
-                wf = Workflow([fwkpt], name=f"{self.label}_kpt_{kpts_name}")
-                self.launchpad.add_wf(wf)
+                self.launchpad.add_wf(Workflow([fwkpt], name=f"{self.label}_kpt_{kpts_name}"))
+                out_paths[tuple(kpts)] = out_json
+
+            self.launch()
+
+            for kpts, out_json in out_paths.items():
                 while not os.path.exists(out_json):
                     time.sleep(1)
                 with open(out_json) as f:
                     E = json.load(f)
-                kpts_list.append(kpts)
+                kpts_list.append(list(kpts))
                 energies.append(E)
-                results[str(kpts)] = E
+                results[str(list(kpts))] = E
+                logger.info("kpts=%s | E=%.6f eV", kpts, E)
 
         with open(os.path.join(self.path, 'kpts.json'), 'w') as f:
             json.dump(results, f, indent=4)
 
+        self._record_step(
+            "opt_kpoints",
+            inputs={"kpts_range": [list(k) for k in kpts_range]},
+            outputs={"result_file": "kpts.json"},
+        )
         return kpts_list, energies
 
-    def make_test_slab(self):
-        """Create a small test slab for convergence calculations."""
-        slab_builder = getattr(build, self.surface_type)
-        test_slab = slab_builder(self.metal, size=self.repeats)
-        test_slab.center(vacuum=self.vacuum, axis=2)
-        mask = [atom.tag > 2 for atom in test_slab]
-        test_slab.set_constraint(FixAtoms(mask=mask))
-        if self.adsorbate is not None:
-            add_adsorbate(test_slab, adsorbate=self.adsorbate, position=self.position)
-        write(os.path.join(self.path, "test_slab.xyz"), test_slab)
-        return test_slab
-
-    # --------------------------------------------------------
-    # Local (non-FireWorks) execution
-    # --------------------------------------------------------
-
-    @step(2)
-    @requires("optimize_lattice")
-    def calculate_lattice_parameters(self, da=0.1):
-        """Optimize bulk lattice constant locally via energy scan + quadratic fit."""
-        logger.info("Optimizing bulk lattice constant")
-        calc = name_to_ase_software(self.software)(**self.lattice_opt_software_kwargs)
-
-        def energy(a):
-            atoms = bulk(self.metal, "fcc", a=a, cubic=True)
-            atoms.calc = calc
-            return atoms.get_potential_energy()
-
-        avals = np.arange(self.a0 - da, self.a0 + da, 0.01)
-        energies = [energy(a) for a in avals]
-        p = np.polyfit(avals, energies, 2)
-        self.a = -p[1] / (2 * p[0])
-        logger.info("Optimized lattice constant: a = %.6f Å", self.a)
-        self._record_step(
-            "calculate_lattice_parameters",
-            inputs={"a0": self.a0, "da": da},
-            outputs={"lattice_constant": self.a},
-        )
-        return self.a
-
-    @step(3)
-    @requires("generate_slab")
-    def generate_slab(self, a=None, slab_xyz="slab.xyz"):
-        """Build and locally optimize the slab structure."""
-        logger.info("Generating slab")
-        if a is not None:
-            self.a = a
-        elif self.a is None:
-            self.a = self.calculate_lattice_parameters()
-
-        slab_builder = getattr(build, self.surface_type)
-        if self.c is not None:
-            slab = slab_builder(symbol=self.metal, size=self.repeats, a=self.a,
-                                c=self.c, vacuum=self.vacuum)
-        else:
-            slab = slab_builder(symbol=self.metal, size=self.repeats, a=self.a,
-                                vacuum=self.vacuum)
-        slab.pbc = self.pbc
-        self.slab = slab
-
-        if self.software != "XTB":
-            self.slab.calc = name_to_ase_software(self.software)(**self.software_kwargs)
-            dyn = BFGSLineSearch(self.slab, trajectory="slab.traj")
-            dyn.run(fmax=self.fmax, steps=200)
-
-        write(slab_xyz, self.slab)
-        self._record_step(
-            "generate_slab",
-            inputs={"surface_type": self.surface_type, "repeats": list(self.repeats),
-                    "vacuum": self.vacuum},
-            outputs={"slab_file": slab_xyz},
-        )
-        return self.slab
-
-    @step(4)
-    @requires("ecut_values", "kmesh_values")
-    def run_convergence(self, ecut_values, kmesh_values):
-        """Run local ecut + kpoints convergence grid on self.slab."""
-        logger.info("Running convergence tests")
-        results = []
-        for ecut in ecut_values:
-            for kpts in kmesh_values:
-                sw_kw = copy.deepcopy(self.software_kwargs)
-                sw_kw["ecutwfc"] = ecut
-                sw_kw["ecutrho"] = 4 * ecut
-                calc = Espresso(
-                    input_data=sw_kw,
-                    pseudopotentials=sw_kw["pseudopotentials"],
-                    kpts=kpts,
-                )
-                self.slab.calc = calc
-                E = self.slab.get_potential_energy()
-                logger.info("ecut=%s Ry | kpts=%s | E=%.6f eV", ecut, kpts, E)
-                results.append((ecut, kpts, E))
-        self._record_step(
-            "run_convergence",
-            inputs={"ecut_values": list(ecut_values), "kmesh_values": list(kmesh_values)},
-            outputs={"results": results},
-        )
-        return results
-
-    @step(5)
+    @step(6)
     @requires("run_adsorbate_convergence", "ecut_values", "kmesh_values")
     def run_convergence_adsorbate(self, ecut_values, kmesh_values,
                                   adsorbate=None, height=1.0, position="ontop"):
-        """Run local adsorbate adsorption-energy convergence on self.slab."""
+        """Adsorption-energy convergence grid on self.slab (any DFT code)."""
         logger.info("Starting adsorbate convergence test")
         results = []
 
@@ -813,39 +886,39 @@ class Prep:
             if isinstance(adsorbate, str):
                 adsorbate = Atoms(adsorbate)
 
-        slab_clean = self.slab.copy()
+        slab_clean = self.ensure_slab().copy()
 
         for ecut in ecut_values:
             for kpts in kmesh_values:
-                sw_kw = copy.deepcopy(self.software_kwargs)
-                sw_kw["ecutwfc"] = ecut
-                sw_kw["ecutrho"] = 4 * ecut
-                calc = Espresso(input_data=sw_kw,
-                                pseudopotentials=sw_kw["pseudopotentials"], kpts=kpts)
+                sw_kw = set_ecut(self.software, copy.deepcopy(self.software_kwargs), ecut)
+                sw_kw["kpts"] = kpts
 
                 slab = slab_clean.copy()
-                slab.calc = calc
+                slab.calc = make_calculator(self.software, sw_kw)
                 E_slab = slab.get_potential_energy()
 
                 slab_ads = slab_clean.copy()
                 add_adsorbate(slab_ads, adsorbate, height=height, position=position)
-                slab_ads.calc = calc
+                slab_ads.calc = make_calculator(self.software, sw_kw)
                 E_slab_ads = slab_ads.get_potential_energy()
 
+                # gas-phase reference in a box, gamma point only
+                ref_kw = copy.deepcopy(sw_kw)
+                ref_kw["kpts"] = (1, 1, 1)
                 if is_hydrogen:
                     ref = Atoms("H2", positions=[[0, 0, 0], [0, 0, 0.74]],
-                                cell=[10, 10, 10], pbc=False)
-                    ref.calc = calc
+                                cell=[10, 10, 10], pbc=True)
+                    ref.calc = make_calculator(self.software, ref_kw)
                     E_ref = 0.5 * ref.get_potential_energy()
                 else:
                     ref = adsorbate.copy()
                     ref.cell = [10, 10, 10]
-                    ref.pbc = False
-                    ref.calc = calc
+                    ref.pbc = True
+                    ref.calc = make_calculator(self.software, ref_kw)
                     E_ref = ref.get_potential_energy()
 
                 E_ads = E_slab_ads - E_slab - E_ref
-                logger.info("ecut=%s Ry | kpts=%s | E_ads=%.6f eV", ecut, kpts, E_ads)
+                logger.info("ecut=%s | kpts=%s | E_ads=%.6f eV", ecut, kpts, E_ads)
                 results.append((ecut, kpts, E_ads))
 
         self._record_step(
@@ -856,7 +929,7 @@ class Prep:
         )
         return results
 
-    @step(6)
+    @step(7)
     @requires("analyze_sites")
     def analyze_sites(self, xyz_path="slab.xyz", n_layers=4, adsorbate_height=1.0,
                       site_bond_cutoff=1.5, surface_string_no_defect="fcc332",
@@ -936,7 +1009,7 @@ class Prep:
                 return json.load(f)
         return {
             "created": time.strftime("%Y-%m-%d %H:%M:%S"),
-            "user_arguments": self.user_args,
+            "user_arguments": {k: repr(v) for k, v in self.user_args.items()},
             "steps": [],
             "outputs": [],
         }
@@ -958,11 +1031,11 @@ class Prep:
     def restore_state_from_provenance(self):
         logger.info("Restoring state from provenance")
         for entry in self.provenance.get("steps", []):
-            if entry["step"] == "calculate_lattice_parameters":
+            if entry["step"] in ("lattice_optimization",
+                                 "calculate_lattice_parameters",  # legacy
+                                 "calculate_alloy_lattice_parameters"):
                 self.a = entry["outputs"].get("lattice_constant", self.a)
             if entry["step"] == "generate_slab":
                 slab_file = entry["outputs"].get("slab_file")
                 if slab_file and os.path.exists(slab_file):
                     self.slab = read(slab_file)
-            if entry["step"] == "calculate_alloy_lattice_parameters":
-                self.a = entry["outputs"].get("lattice_constant", self.a)
