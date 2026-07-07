@@ -507,7 +507,8 @@ class Pynta:
             self.launch()
 
     def refine(self,reoptimize_software,reoptimize_software_kwargs,reoptimize_software_kwargs_gas=None,
-               reoptimize_selection=-1.0,reoptimize_socket=False,launch=True):
+               reoptimize_selection=-1.0,reoptimize_socket=False,a_refined=None,c_refined=None,
+               scale_slab=None,launch=True):
         """
         Second-level refinement stage: re-optimize selected results of a finished (cheap, e.g. MACE)
         Pynta run with a higher-level calculator (e.g. DFT/VASP), seeding from the already-optimized
@@ -529,6 +530,20 @@ class Pynta:
                 Gas-phase reference species always refine only their lowest valid configuration.
             reoptimize_socket: whether to use a SocketIOCalculator for the refinement jobs (default False;
                 must be False for software="VaspInteractive")
+            a_refined: optional target in-plane lattice constant (Angstrom) for the DFT method. Every
+                structure sent to refine (slab, adsorbates, TS) is rescaled by keeping its fractional
+                coordinates fixed and scaling the cell so the in-plane lattice constant becomes a_refined.
+                Requires a built-in slab (self.a known). Use this when the DFT equilibrium lattice constant
+                differs from the one the cheap (e.g. MACE) run used; the frozen bottom layers in particular
+                need DFT-commensurate interlayer spacing. Mutually exclusive with scale_slab.
+            c_refined: optional target out-of-plane lattice constant (Angstrom), for surfaces with a
+                distinct c (e.g. hcp0001). If omitted, the out-of-plane cell vector is scaled by the same
+                factor as the in-plane ones (correct for fcc/bcc). Requires self.c to be known.
+            scale_slab: optional direct multiplicative scale factor for the cell, for use with custom slabs
+                (slab_path) where no lattice constant is defined. May be a scalar (isotropic, all three cell
+                vectors), a 2-tuple (s_inplane, s_z), or a 3-tuple (s_a, s_b, s_c) applied per cell vector.
+                Mutually exclusive with a_refined/c_refined. Note: scaling the out-of-plane vector also
+                scales the vacuum; keep the scaling modest and leave enough vacuum in the cheap run.
             launch: whether to launch the refinement workflow immediately
         """
         from pynta.postprocessing import postprocess, GasConfiguration
@@ -574,6 +589,54 @@ class Pynta:
         spc_dict,ts_dict,_ = postprocess(self.path,self.metal,self.facet,self.sites,self.site_adjacency,
                                          self.repeats,get_all_configs=True)
 
+        #--- resolve the per-cell-vector scale factors (a_refined/c_refined or scale_slab) ---
+        if scale_slab is not None and (a_refined is not None or c_refined is not None):
+            raise ValueError("refine(): pass either a_refined/c_refined (built-in slab) or scale_slab "
+                             "(custom slab), not both.")
+        cell_scale = None  # (sa, sb, sc) or None for no rescaling
+        if a_refined is not None or c_refined is not None:
+            if self.a is None:
+                raise ValueError("refine(): a_refined/c_refined require a known lattice constant "
+                                 "(self.a). For a custom slab (slab_path) use scale_slab instead.")
+            sa = a_refined / self.a if a_refined is not None else 1.0
+            if c_refined is not None:
+                if not self.c:
+                    raise ValueError("refine(): c_refined requires a known out-of-plane lattice "
+                                     "constant (self.c), which is only set for surfaces with a distinct c.")
+                sc = c_refined / self.c
+            else:
+                sc = sa
+            cell_scale = (sa, sa, sc)
+        elif scale_slab is not None:
+            if np.isscalar(scale_slab):
+                cell_scale = (float(scale_slab),)*3
+            elif len(scale_slab) == 2:
+                cell_scale = (float(scale_slab[0]), float(scale_slab[0]), float(scale_slab[1]))
+            elif len(scale_slab) == 3:
+                cell_scale = tuple(float(s) for s in scale_slab)
+            else:
+                raise ValueError("refine(): scale_slab must be a scalar, a 2-tuple (s_inplane, s_z), "
+                                 "or a 3-tuple (s_a, s_b, s_c).")
+        if cell_scale is not None:
+            logger.info("refine(): rescaling every structure by cell-vector factors {}".format(cell_scale))
+
+        def _rescale(atoms):
+            """Rescale atoms to the refined lattice by keeping fractional coordinates fixed and
+            scaling each cell vector (in-plane -> DFT lattice constant; also scales interlayer
+            spacing so the frozen bottom layers are DFT-commensurate)."""
+            if cell_scale is None:
+                return atoms
+            if atoms.cell.rank < 3:
+                logger.warning("refine(): structure has no full 3D cell; skipping lattice rescale.")
+                return atoms
+            frac = atoms.get_scaled_positions(wrap=False)
+            newcell = atoms.get_cell().copy()
+            for i in range(3):
+                newcell[i] *= cell_scale[i]
+            atoms.set_cell(newcell)
+            atoms.set_scaled_positions(frac)
+            return atoms
+
         def _select(configs,value_fn,lowest_only=False):
             valid = {k:v for k,v in configs.items() if v.valid}
             if len(valid) == 0:
@@ -591,7 +654,7 @@ class Pynta:
         slab_dft_dir = os.path.join(self.path,"slab_dft")
         os.makedirs(slab_dft_dir,exist_ok=True)
         slab_seed = os.path.join(slab_dft_dir,"slab_init.xyz")
-        write(slab_seed,read(slab_file))
+        write(slab_seed,_rescale(read(slab_file)))
         fws.append(optimize_firework(slab_seed,reoptimize_software,"slab",opt_method="BFGSLineSearch",
                    socket=reoptimize_socket,software_kwargs=reoptimize_software_kwargs,
                    run_kwargs={"fmax": self.fmaxopt},out_path=os.path.join(self.path,"slab_dft.xyz"),
@@ -625,7 +688,7 @@ class Pynta:
                 d = os.path.join(dft_spc_dir,ind)
                 os.makedirs(d,exist_ok=True)
                 seed = os.path.join(d,ind+"_init.xyz")
-                write(seed,read(src_geom))
+                write(seed,read(src_geom) if is_gas else _rescale(read(src_geom)))
                 fwopt = optimize_firework(seed,reoptimize_software,ind,sella=True,order=0,
                         socket=reoptimize_socket,software_kwargs=sw_kwargs,
                         run_kwargs={"fmax": self.fmaxopt, "steps": 70},constraints=opt_constraints,
@@ -656,7 +719,7 @@ class Pynta:
                 d = os.path.join(dft_ts_dir,ind)
                 os.makedirs(d,exist_ok=True)
                 seed = os.path.join(d,"opt_init.xyz")
-                write(seed,read(src_geom))
+                write(seed,_rescale(read(src_geom)))
                 fwopt = optimize_firework(seed,reoptimize_software,"opt",sella=True,order=1,
                         socket=reoptimize_socket,software_kwargs=reoptimize_software_kwargs,
                         run_kwargs={"fmax": self.fmaxopt, "steps": 70},
