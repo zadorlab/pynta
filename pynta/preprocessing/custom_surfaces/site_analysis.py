@@ -1518,6 +1518,7 @@ def workflow_no_defect_unique_sites(
     # graph clustering + label assignment
     admols, geom_indices = classify_all_sites(single_geoms, single_sites_lists)
     _, clusters = cluster_isomorphic_graphs(admols)
+    geom_indices, clusters = cluster_sites_local(single_geoms, single_sites_lists, n_shells=n_shells)
     _, key_to_label = update_site_labels_by_graph_and_type(
         single_sites_lists, clusters, geom_indices
     )
@@ -2015,19 +2016,29 @@ def plot_site_equivalence_xy(
             continue
         mk = MARKER.get(t, "P")
         if tc_counts[(t, cid)] == 1:
-            ax.scatter(x, y, marker=mk, color="#d9d9d9", s=45,
+            ax.scatter(x, y, marker=mk, color="#d9d9d9", s=440,
                        alpha=0.9, edgecolors="none", zorder=2)
         else:
             if (t, cid) not in group_color:
                 group_color[(t, cid)] = GROUP_COLORS[gi % len(GROUP_COLORS)]
                 gi += 1
-            ax.scatter(x, y, marker=mk, color=group_color[(t, cid)], s=45,
+            ax.scatter(x, y, marker=mk, color=group_color[(t, cid)], s=440,
                        alpha=0.95, edgecolors="none", zorder=3)
 
-    ax.set_xlabel("x (Å)"); ax.set_ylabel("y (Å)")
+    ax.set_xlabel("x (Å)", fontsize=18, fontweight="bold", labelpad=10)
+    ax.set_ylabel("y (Å)", fontsize=18, fontweight="bold", labelpad=10)
     ax.set_aspect("equal")
     ax.spines[["top", "right"]].set_visible(False)
+    ax.spines[["bottom", "left"]].set_linewidth(2)
     ax.set_title(title, fontsize=12, fontweight="bold")
+    # CHANGED: Make tick marks larger and thicker
+    ax.tick_params(axis="both", which="major", labelsize=12, width=2, size=6)
+
+# CHANGED: Make the tick label numbers bold
+    for tick in ax.get_xticklabels():
+        tick.set_fontweight("bold")
+    for tick in ax.get_yticklabels():
+        tick.set_fontweight("bold")
 
     # ── two bottom rows: site type, then equivalence (like ACAT plots) ────────
     type_handles = [mlines.Line2D([], [], marker=MARKER.get(t, "P"), color="w",
@@ -2035,14 +2046,14 @@ def plot_site_equivalence_xy(
                     markersize=9, label=t) for t in present]
     state_handles = [
         mlines.Line2D([], [], marker="o", color="w", markerfacecolor="#d9d9d9",
-                      markeredgecolor="#999", markersize=12, label="unique (different)"),
+                      markeredgecolor="#999", markersize=15, label="unique (different)"),
         mlines.Line2D([], [], marker="o", color="w", markerfacecolor="#e0709a",
-                      markeredgecolor="none", markersize=12, label="shared (same colour = same site)"),
+                      markeredgecolor="none", markersize=15, label="shared (same colour = same site)"),
     ]
     fig.legend(handles=type_handles, loc="lower center", ncol=len(present),
-               frameon=False, fontsize=10, bbox_to_anchor=(0.5, -0.02))
+               frameon=False, fontsize=15, bbox_to_anchor=(0.5, -0.05))
     fig.legend(handles=state_handles, loc="lower center", ncol=2,
-               frameon=False, fontsize=10, bbox_to_anchor=(0.5, -0.08))
+               frameon=False, fontsize=15, bbox_to_anchor=(0.5, -0.12))
     plt.tight_layout()
     plt.savefig(save_path, dpi=150, bbox_inches="tight")
     plt.show()
@@ -2070,10 +2081,6 @@ def plot_site_equivalence_xy(
     print(f"Saved: {save_path}")
     return report
 
-# Add to site_analysis.py. Call from the notebook as:
-#   sa.scatter_sites(all_sites, xyz_path=xyz_path)
-# Same visual format as plot_site_equivalence_xy (markers, size, bottom legend).
-
 def scatter_sites(site_list, label=None, xyz_path=None, save_path="site_positions.png",
                   show=True):
     """
@@ -2085,8 +2092,11 @@ def scatter_sites(site_list, label=None, xyz_path=None, save_path="site_position
     [{geom_index, sites:[...]}, ...] form (labeled_sites.json) — it flattens
     automatically. Title falls back to `label`, then `xyz_path`, then a default.
     """
+    import json
+    from collections import defaultdict, Counter
     import matplotlib.pyplot as plt
     import matplotlib.lines as mlines
+    from ase.io import read
 
     def _stype(name):
         return (name or "").rstrip("0123456789")   # 'bridge00' or plain 'bridge'
@@ -2113,23 +2123,472 @@ def scatter_sites(site_list, label=None, xyz_path=None, save_path="site_position
         t = _stype(site.get("site", ""))
         x, y = site["position"][0], site["position"][1]
         ax.scatter(x, y, color=color_map.get(t, "#999999"),
-                   marker=marker_map.get(t, "o"), s=45, alpha=0.9, edgecolors="none")
+                   marker=marker_map.get(t, "o"), s=440, alpha=0.9, edgecolors="none")
 
+    # CHANGED: Increased title font size
     ax.set_title(label or xyz_path or "Site positions (x-y plane)",
-                 fontsize=12, fontweight="bold")
-    ax.set_xlabel("x (Å)"); ax.set_ylabel("y (Å)")
+                 fontsize=15, fontweight="bold", pad=15)
+    
+    # CHANGED: Increased font size and made labels bold
+    ax.set_xlabel("x (Å)", fontsize=18, fontweight="bold", labelpad=10)
+    ax.set_ylabel("y (Å)", fontsize=18, fontweight="bold", labelpad=10)
     ax.set_aspect("equal")
+    
+    # CHANGED: Hide top/right spines, but make bottom/left spines thicker to match the bold theme
     ax.spines[["top", "right"]].set_visible(False)
+    ax.spines[["bottom", "left"]].set_linewidth(2)
+
+    # CHANGED: Make tick marks larger and thicker
+    ax.tick_params(axis="both", which="major", labelsize=12, width=2, size=6)
+    
+    # CHANGED: Make the tick label numbers bold
+    for tick in ax.get_xticklabels():
+        tick.set_fontweight("bold")
+    for tick in ax.get_yticklabels():
+        tick.set_fontweight("bold")
 
     legend_handles = [
         mlines.Line2D([], [], marker=marker_map[k], color="w", markerfacecolor=color_map[k],
-                      markeredgecolor="none", markersize=9, label=k)
+                      markeredgecolor="none", markersize=14, label=k)
         for k in present
     ]
+    # CHANGED: Made legend labels bold and adjusted font size/spacing slightly
     fig.legend(handles=legend_handles, loc="lower center", ncol=max(len(present), 1),
-               frameon=False, fontsize=10, bbox_to_anchor=(0.5, -0.05))
+               frameon=False, fontsize=15, bbox_to_anchor=(0.5, -0.05),
+               prop={"weight": "bold", "size": 15})
+    
     plt.tight_layout()
     plt.savefig(save_path, dpi=150, bbox_inches="tight")
     if show:
         plt.show()
     print(f"Saved: {save_path}")
+
+# Add to site_analysis.py. End-to-end: ACAT sites -> graph isomorphism ->
+# equivalence labels -> JSON outputs + figures (b) and (c), on a PERIODIC slab.
+#
+# Produces:
+#   sites.json             - raw ACAT sites (every site ACAT finds)
+#   labeled_sites.json     - representatives, new labels after isomorphism
+#   site_equivalence.json  - FULL set with cluster_id / n_equivalent / unique,
+#                            enough to redraw figure (c) with no recompute
+# and (optionally) shows figure (b) [type] and figure (c) [equivalence].
+
+def _equiv_assign_labels(single_sites_lists, clusters, geom_indices):
+    """Label each site as {base_type}{N}; equivalent sites share a label.
+    Grouping key = (graph cluster, base site type, morphology) — does NOT use
+    the raw site string, so it merges correctly even if ACAT pre-numbered sites.
+    """
+    def base(s):
+        return (s or "").rstrip("0123456789")
+    g2c = {}
+    for cid, members in enumerate(clusters.values()):
+        for gi in members:
+            g2c[geom_indices[gi]] = cid
+    counters, key2label, geom2label, geom2cid = {}, {}, {}, {}
+    for geom_idx, sites in enumerate(single_sites_lists):
+        cid = g2c.get(geom_idx)
+        if cid is None:
+            continue
+        s0 = next((s for s in sites if s.get("site")), None)
+        if s0 is None:
+            continue
+        bt, morph = base(s0["site"]), s0.get("morphology")
+        key = (cid, bt, morph)
+        if key not in key2label:
+            n = counters.get(bt, 0); counters[bt] = n + 1
+            key2label[key] = f"{bt}{n}"
+        geom2label[geom_idx] = key2label[key]
+        geom2cid[geom_idx] = cid
+    for geom_idx, sites in enumerate(single_sites_lists):
+        lab = geom2label.get(geom_idx)
+        if lab:
+            for s in sites:
+                if s.get("site"):
+                    s["site"] = lab
+    return geom2label, geom2cid
+
+# Replace your existing build_labeled_sites with this version. Changes from before:
+#   - new arg  n_shells=2
+#   - clustering now uses cluster_sites_local (local WL hash) instead of
+#     classify_all_sites + cluster_isomorphic_graphs (whole-slab RMG isomorphism)
+# Requires: cluster_sites_local, _equiv_assign_labels, plot_equivalence_from_json,
+# scatter_sites, save_sites_to_json, generate_all_sites, _reduce_to_representatives.
+
+def build_labeled_sites(
+    slab, surface, nslab=None,
+    adsorbate_height=1.0, site_bond_cutoff=1.5,
+    n_shells=2,
+    xyz_path="",
+    sites_json="sites.json",
+    labeled_sites_json="labeled_sites.json",
+    equivalence_json="site_equivalence.json",
+    traj_filename="unique_sites.traj",
+    make_plots=True, verbose=True,
+):
+    """ACAT + local-graph (WL hash) site equivalence on a PERIODIC slab.
+    Writes sites.json, labeled_sites.json, site_equivalence.json (and figures)."""
+    import json
+    from collections import Counter
+    from ase.io.trajectory import Trajectory
+    from acat.settings import CustomSurface
+
+    if nslab is None:
+        nslab = len(slab)
+    if verbose and (not any(slab.pbc) or float(abs(slab.cell.array).sum()) == 0.0):
+        print("WARNING: slab is not periodic (pbc all False or zero cell). "
+              "Equivalent sites may over-split. Set slab.pbc/slab.cell first.")
+
+    # 1) ACAT sites -> sites.json
+    if isinstance(surface, CustomSurface):
+        cas = SlabAdsorptionSites(slab, surface=surface, composition_effect=True)
+    else:
+        cas = SlabAdsorptionSites(slab, surface, composition_effect=True)
+    all_sites = cas.get_sites()
+    save_sites_to_json(all_sites, filename=sites_json)
+
+    # 2) full geoms + per-site lists
+    single_geoms, single_sites_lists = generate_all_sites(
+        slab, all_sites, nslab, site_bond_cutoff, adsorbate_height)
+
+    # 3) LOCAL-graph clustering (robust to boundaries / probe collision / RMG quirks)
+    geom_indices, clusters = cluster_sites_local(
+        single_geoms, single_sites_lists, n_shells=n_shells)
+    geom2label, geom2cid = _equiv_assign_labels(single_sites_lists, clusters, geom_indices)
+    label_counts = Counter(geom2label.values())
+
+    # 4) FULL equivalence records -> site_equivalence.json (drives figure (c))
+    def _base(s): return (s or "").rstrip("0123456789")
+    equiv_records = []
+    for geom_idx, sites in enumerate(single_sites_lists):
+        s = next((x for x in sites if x.get("site")), None)
+        if s is None:
+            continue
+        lab = s["site"]
+        equiv_records.append({
+            "geom_index": geom_idx,
+            "position": list(s["position"]),
+            "site_type": _base(lab),
+            "morphology": s.get("morphology"),
+            "site": lab,
+            "cluster_id": geom2cid.get(geom_idx),
+            "n_equivalent": label_counts[lab],
+            "unique": label_counts[lab] == 1,
+            "indices": s.get("indices"),
+            "composition": s.get("composition"),
+        })
+    save_sites_to_json(equiv_records, filename=equivalence_json)
+
+    # 5) representatives -> labeled_sites.json + traj
+    rep_geoms, rep_sites = _reduce_to_representatives(single_geoms, single_sites_lists)
+    traj = Trajectory(traj_filename, "w")
+    for g in rep_geoms:
+        traj.write(g)
+    traj.close()
+    labeled_sites_data = [{"geom_index": i, "sites": s} for i, s in enumerate(rep_sites)]
+    save_sites_to_json(labeled_sites_data, filename=labeled_sites_json)
+
+    if verbose:
+        n_shared = sum(1 for r in equiv_records if not r["unique"])
+        print(f"\nACAT sites          : {len(all_sites)}")
+        print(f"Sites clustered     : {len(equiv_records)}")
+        print(f"Distinct labels     : {len(rep_sites)}  "
+              f"({len(equiv_records)-n_shared} unique, {n_shared} shared)")
+        for t in ("ontop", "bridge", "3fold", "4fold"):
+            labs = {r["site"] for r in equiv_records if r["site_type"] == t}
+            if labs:
+                print(f"  {t:7s}: {sum(1 for r in equiv_records if r['site_type']==t)} sites "
+                      f"-> {len(labs)} distinct")
+        print(f"Wrote: {sites_json}, {labeled_sites_json}, {equivalence_json}, {traj_filename}")
+
+    # 6) figures (b) ACAT type  and  (c) graph equivalence
+    if make_plots:
+        scatter_sites(all_sites, xyz_path=xyz_path or "ACAT site positions",
+                      save_path="site_positions.png")
+        plot_equivalence_from_json(equivalence_json,
+                                   title=(xyz_path or "Site equivalence") + "  (graph isomorphism)",
+                                   save_path="site_equivalence.png")
+
+    return {"clusters": clusters, "geom_indices": geom_indices,
+            "single_sites_lists": single_sites_lists, "equiv_records": equiv_records,
+            "single_geoms": single_geoms}
+
+def plot_equivalence_from_json(equivalence_json="site_equivalence.json",
+                               site_types=("ontop", "bridge", "3fold", "4fold", "defect"),
+                               title="Site equivalence (graph isomorphism)",
+                               save_path="site_equivalence.png"):
+    """Redraw figure (c) straight from site_equivalence.json (no recompute).
+    Shape = site type. Colour = equivalence CLASS within that type, drawn from a
+    per-type colour family (ontop=blues, bridge=greens, 3fold=oranges, ...), so
+    e.g. three ontop classes get three distinct blues. Grey = unique (singleton).
+    Same colour + same shape = the same site."""
+    import json
+    import numpy as np
+    from collections import Counter, defaultdict
+    import matplotlib.pyplot as plt
+    import matplotlib.lines as mlines
+
+    with open(equivalence_json) as f:
+        records = json.load(f)
+
+    MARKER = {"ontop": "o", "bridge": "s", "3fold": "^", "4fold": "D", "defect": "X"}
+    TYPE_CMAP = {"ontop": plt.cm.Blues, "bridge": plt.cm.Greens, "3fold": plt.cm.YlOrBr,
+                 "4fold": plt.cm.Purples, "defect": plt.cm.Reds}
+    UNIQUE = "#d0d0d0"
+    present = [t for t in site_types if any(r["site_type"] == t for r in records)]
+
+    # distinct colour per SHARED label, sampled from its type's colour family
+    label_counts = Counter(r["site"] for r in records)
+    shared_by_type = defaultdict(list)
+    for lab, cnt in sorted(label_counts.items()):
+        if cnt > 1:
+            t = next((r["site_type"] for r in records if r["site"] == lab), None)
+            shared_by_type[t].append(lab)
+    label_color = {}
+    for t, labs in shared_by_type.items():
+        cmap = TYPE_CMAP.get(t, plt.cm.Greys)
+        for lab, col in zip(labs, cmap(np.linspace(0.45, 0.9, len(labs)))):
+            label_color[lab] = col
+
+    fig, ax = plt.subplots(figsize=(7.5, 7))
+    for r in records:
+        t = r["site_type"]
+        if t not in present:
+            continue
+        x, y, mk = r["position"][0], r["position"][1], MARKER.get(t, "P")
+        if r.get("unique", True):
+            ax.scatter(x, y, marker=mk, color=UNIQUE, s=45, alpha=0.9, edgecolors="none")
+        else:
+            ax.scatter(x, y, marker=mk, color=label_color[r["site"]], s=440, alpha=0.9,
+                       edgecolors="k", linewidths=0.4)
+
+
+    # CHANGED: Make tick marks larger and thicker
+    ax.tick_params(axis="both", which="major", labelsize=12, width=2, size=6)
+    
+    # CHANGED: Make the tick label numbers bold
+    for tick in ax.get_xticklabels():
+        tick.set_fontweight("bold")
+    for tick in ax.get_yticklabels():
+        tick.set_fontweight("bold")
+
+    
+    # CHANGED: Increased font size and made labels bold
+    ax.set_xlabel("x (Å)", fontsize=18, fontweight="bold", labelpad=10)
+    ax.set_ylabel("y (Å)", fontsize=18, fontweight="bold", labelpad=10)
+    ax.set_aspect("equal")
+    
+    # CHANGED: Hide top/right spines, but make bottom/left spines thicker to match the bold theme
+    ax.spines[["top", "right"]].set_visible(False)
+    ax.spines[["bottom", "left"]].set_linewidth(2)
+
+    #ax.set_xlabel("x (Å)"); ax.set_ylabel("y (Å)")
+    #ax.set_aspect("equal")
+    #ax.spines[["top", "right"]].set_visible(False)
+    ax.set_title(title, fontsize=15, fontweight="bold", pad=15)
+
+    # legend: grey 'unique' + one entry per shared class (shape conveys type)
+    handles = [mlines.Line2D([], [], marker="o", color="w", markerfacecolor=UNIQUE,
+                             markeredgecolor="#999", markersize=14, label="unique")]
+    for t in present:
+        for lab in shared_by_type.get(t, []):
+            handles.append(mlines.Line2D([], [], marker=MARKER.get(t, "P"), color="w",
+                           markerfacecolor=label_color[lab], markeredgecolor="k",
+                           markersize=14, label=lab))
+    ncol = min(max(len(handles), 1), 6)
+    fig.legend(handles=handles, loc="lower center", ncol=ncol, frameon=False,
+               fontsize=14, bbox_to_anchor=(0.5, -0.07),
+               prop={"weight": "bold", "size": 15})
+    plt.tight_layout()
+    plt.savefig(save_path, dpi=150, bbox_inches="tight")
+    plt.show()
+    print(f"Saved: {save_path}")
+
+# Add to site_analysis.py. Robust replacement for the whole-slab graph: cluster
+# sites by their LOCAL environment (probe + n bond shells, minimum-image), which
+# is what "same site" physically means and doesn't depend on global slab symmetry
+# or the pbc flag. Use these in build_labeled_sites (one-line swap, see bottom).
+
+def generate_graph_local(atoms, n_shells=2, probe_symbols=("Ne", "He"),
+                         cutoff_mult=1.2, probe_radius=1.6):
+    """RMG graph of just the probe + its neighbourhood out to `n_shells` bonds.
+
+    Bonds use minimum-image distances (mic=True), so edge sites wrap correctly
+    given any sane cell, regardless of atoms.pbc. The probe maps to a distinct
+    element ('Li' via ase_to_rmg_symbol), so it can't be confused with a Pt.
+    """
+    import numpy as np
+    from ase.neighborlist import natural_cutoffs
+
+    n = len(atoms)
+    cut = list(natural_cutoffs(atoms, mult=cutoff_mult))
+    probe = next((i for i, a in enumerate(atoms) if a.symbol in probe_symbols), n - 1)
+    cut[probe] = probe_radius   # guarantee the probe bonds to its anchors
+
+    _cache = {}
+    def nbrs(i):
+        if i not in _cache:
+            d = atoms.get_distances(i, list(range(n)), mic=True)
+            _cache[i] = [j for j in range(n) if j != i and d[j] < cut[i] + cut[j]]
+        return _cache[i]
+
+    # BFS out to n_shells from the probe
+    seen, frontier = {probe}, {probe}
+    for _ in range(n_shells):
+        nxt = set()
+        for i in frontier:
+            for j in nbrs(i):
+                if j not in seen:
+                    nxt.add(j)
+        seen |= nxt
+        frontier = nxt
+
+    local = sorted(seen)
+    pos = {g: k for k, g in enumerate(local)}
+    adatoms = []
+    for g in local:
+        rsym = ase_to_rmg_symbol(atoms[g].symbol)
+        adatoms.append(Atom(element=rsym, lone_pairs=lone_pairs_for(rsym)))
+    mol = Molecule(atoms=adatoms)
+    for gi in local:
+        for gj in nbrs(gi):
+            if gj in pos and pos[gj] > pos[gi]:
+                mol.add_bond(Bond(mol.atoms[pos[gi]], mol.atoms[pos[gj]], 1.0))
+    mol.update_multiplicity()
+    mol.update_connectivity_values()
+    return mol
+
+
+def classify_all_sites_local(single_geoms, single_sites_lists, n_shells=2):
+    """Like classify_all_sites, but builds the LOCAL site graph per geometry."""
+    admols, geom_indices = [], []
+    for i, (geom, sites) in enumerate(zip(single_geoms, single_sites_lists)):
+        for s in sites:
+            if s.get("site"):
+                admols.append(generate_graph_local(geom, n_shells=n_shells))
+                geom_indices.append(i)
+                break
+    return admols, geom_indices
+
+
+def diagnose_cell(slab):
+    """Quick sanity check: is the slab actually periodic in-plane?"""
+    import numpy as np
+    L = slab.cell.lengths()
+    print(f"cell lengths (Å): {np.round(L, 3)}   pbc: {list(slab.pbc)}")
+    if L[0] == 0 or L[1] == 0:
+        print("  -> no in-plane cell: every site will look unique. Set slab.cell.")
+        return
+    # do edge atoms find wrap neighbours?
+    wrap_hits = 0
+    for i in range(min(len(slab), 12)):
+        d_plain = slab.get_distances(i, list(range(len(slab))), mic=False)
+        d_mic = slab.get_distances(i, list(range(len(slab))), mic=True)
+        if np.any((d_mic < 3.0) & (d_plain > 3.0)):
+            wrap_hits += 1
+    print(f"  atoms gaining a neighbour under MIC wrap: {wrap_hits}/12 "
+          f"({'periodic OK' if wrap_hits else 'NO wrap — cell is likely a loose box'})")
+    
+    # Add to site_analysis.py. Clusters sites by the LOCAL environment using a
+# Weisfeiler-Lehman graph hash on raw element symbols. This avoids three things
+# that make the whole-slab + RMG path return "all unique":
+#   - whole-slab fragility   -> only the probe's neighbourhood is compared
+#   - probe 'X' collision    -> raw symbols, so Ne stays distinct from Pt
+#   - is_isomorphic(strict=True) quirks on surface graphs -> WL hash instead
+#
+# Wire into build_labeled_sites by replacing
+#     admols, geom_indices = classify_all_sites(single_geoms, single_sites_lists)
+#     _, clusters = cluster_isomorphic_graphs(admols)
+# with
+#     geom_indices, clusters = cluster_sites_local(single_geoms, single_sites_lists,
+#                                                  n_shells=n_shells)
+
+def build_local_nx_graph(atoms, n_shells=2, probe_symbols=("Ne", "He"),
+                         cutoff_mult=1.2, probe_radius=1.6):
+    """networkx graph of the probe + its neighbourhood out to n_shells bonds,
+    using minimum-image distances. Node attribute 'element' = raw ASE symbol."""
+    import networkx as nx
+    from ase.neighborlist import natural_cutoffs
+
+    n = len(atoms)
+    cut = list(natural_cutoffs(atoms, mult=cutoff_mult))
+    probe = next((i for i, a in enumerate(atoms) if a.symbol in probe_symbols), n - 1)
+    cut[probe] = probe_radius
+
+    cache = {}
+    def nbrs(i):
+        if i not in cache:
+            d = atoms.get_distances(i, list(range(n)), mic=True)
+            cache[i] = [j for j in range(n) if j != i and d[j] < cut[i] + cut[j]]
+        return cache[i]
+
+    seen, frontier = {probe}, {probe}
+    for _ in range(n_shells):
+        nxt = set()
+        for i in frontier:
+            for j in nbrs(i):
+                if j not in seen:
+                    nxt.add(j)
+        seen |= nxt
+        frontier = nxt
+
+    local = sorted(seen)
+    pos = {g: k for k, g in enumerate(local)}
+    G = nx.Graph()
+    for g in local:
+        G.add_node(pos[g], element=atoms[g].symbol)
+    for gi in local:
+        for gj in nbrs(gi):
+            if gj in pos and pos[gj] > pos[gi]:
+                G.add_edge(pos[gi], pos[gj])
+    return G
+
+
+def cluster_sites_local(single_geoms, single_sites_lists, n_shells=2,
+                        cutoff_mult=1.2, probe_radius=1.6, return_debug=False):
+    """Cluster sites by local-environment WL hash.
+    Returns (geom_indices, clusters) where clusters = {hash: [graph_idx, ...]},
+    compatible with build_labeled_sites / _equiv_assign_labels."""
+    import networkx as nx
+    from collections import defaultdict
+
+    geom_indices, hashes, debug = [], [], []
+    for i, (geom, sites) in enumerate(zip(single_geoms, single_sites_lists)):
+        s = next((x for x in sites if x.get("site")), None)
+        if s is None:
+            continue
+        G = build_local_nx_graph(geom, n_shells=n_shells,
+                                 cutoff_mult=cutoff_mult, probe_radius=probe_radius)
+        h = nx.weisfeiler_lehman_graph_hash(G, node_attr="element",
+                                            iterations=n_shells + 2)
+        geom_indices.append(i)
+        hashes.append(h)
+        if return_debug:
+            debug.append((s.get("site"), G.number_of_nodes(), G.number_of_edges(), h[:8]))
+
+    clusters = defaultdict(list)
+    for graph_idx, h in enumerate(hashes):
+        clusters[h].append(graph_idx)
+    clusters = dict(clusters)
+
+    if return_debug:
+        return geom_indices, clusters, debug
+    return geom_indices, clusters
+
+
+def debug_local_clusters(single_geoms, single_sites_lists, n_shells=2):
+    """Print what the local clustering sees, to spot mis-grouping fast."""
+    from collections import Counter, defaultdict
+    geom_indices, clusters, debug = cluster_sites_local(
+        single_geoms, single_sites_lists, n_shells=n_shells, return_debug=True)
+
+    def base(s): return (s or "").rstrip("0123456789")
+    by_type = defaultdict(set)
+    h_of = {gi: h for h, members in clusters.items() for gi in members}
+    for k, (site, nn, ne, h8) in enumerate(debug):
+        by_type[base(site)].add(h_of[k])
+    print(f"{len(debug)} sites -> {len(clusters)} distinct local environments")
+    for t, hs in sorted(by_type.items()):
+        n = sum(1 for d in debug if base(d[0]) == t)
+        print(f"  {t:7s}: {n} sites -> {len(hs)} classes")
+    sizes = Counter((nn, ne) for _, nn, ne, _ in debug)
+    print("  (local graph sizes  (#nodes,#edges) -> count):", dict(sizes))
