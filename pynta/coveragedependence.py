@@ -2613,7 +2613,9 @@ def collect_pairs_interaction_data(path, pynta_path, coadname, ad_energy_dict, s
                     "central_label": central_label,
                     "central_site_inds": central_site_inds,
                     "central_xy": np.asarray(central_atoms.positions)[:, :2],
-                    "coad_xy": np.asarray(coad_atoms.positions)[:, :2].mean(axis=0),
+                    "central_symbols": central_atoms.get_chemical_symbols(),
+                    "coad_xy": np.asarray(coad_atoms.positions)[:, :2],  # per-atom
+                    "coad_symbols": coad_atoms.get_chemical_symbols(),
                     "dE_eV": dE,
                     "num_dir": d,
                     "is_ts": is_ts,
@@ -2666,6 +2668,16 @@ def plot_pairs_interaction_maps(path, pynta_path, coadname, ad_energy_dict, slab
     if out_dir:
         os.makedirs(out_dir, exist_ok=True)
 
+    from ase.data import atomic_numbers, covalent_radii
+    from ase.data.colors import jmol_colors
+    from ase.geometry import get_distances
+
+    def elem_color(sym):
+        return jmol_colors[atomic_numbers[sym]]
+
+    def elem_size(sym):
+        return 60.0 + 260.0 * covalent_radii[atomic_numbers[sym]]  # bigger for heavier/larger atoms
+
     def slug(s):
         return re.sub(r"[^0-9A-Za-z]+", "_", s).strip("_")
 
@@ -2676,24 +2688,63 @@ def plot_pairs_interaction_maps(path, pynta_path, coadname, ad_energy_dict, slab
             continue
         central_label, central_site_inds = key
 
+        # anchor everything to the first config's central centroid, drawing each atom at its
+        # minimum-image position relative to the anchor. This keeps the central "pile" together and
+        # places every coadsorbate physically around it (never wrapped to the far side of the cell).
+        anchor = records[0]["central_xy"].mean(axis=0)
+
+        def mi(p):  # minimum-image xy of p relative to anchor
+            v, _ = get_distances([[anchor[0], anchor[1], 0.0]], [[p[0], p[1], 0.0]],
+                                 cell=slab.cell, pbc=slab.pbc)
+            return anchor + v[0][0][:2]
+
         fig, ax = plt.subplots(figsize=(7, 7))
         plot_atoms(slab, ax, radii=0.9)  # metal lattice background (top view)
 
-        # overlay every central adatom from every config -> the "pile" at the shared central site
-        for rec in records:
-            ax.scatter(rec["central_xy"][:, 0], rec["central_xy"][:, 1],
-                       s=45, c="red", edgecolors="k", linewidths=0.4, zorder=5)
+        drawn = [anchor]
+        elems_seen = set()
 
-        # each coadsorbate: red dot + lettered dE label
+        # central "pile": every central adatom from every config, colored by element (faded, so the
+        # spread of the overlaid centrals is visible without hiding the coadsorbates)
+        for rec in records:
+            for sym, xy in zip(rec["central_symbols"], rec["central_xy"]):
+                q = mi(xy); drawn.append(q); elems_seen.add(sym)
+                ax.scatter(q[0], q[1], s=elem_size(sym), c=[elem_color(sym)],
+                           edgecolors="k", linewidths=0.4, alpha=0.55, zorder=4)
+
+        # each coadsorbate config: element-colored atom(s) + a lettered dE label offset OUTWARD from
+        # the central with a leader line, so the label never paints over the coad dot
         for k, rec in enumerate(records):
-            x, y = rec["coad_xy"]
             val = rec["dE_eV"] * fac
-            ax.scatter(x, y, s=45, c="red", edgecolors="k", linewidths=0.4, zorder=5)
+            qs = []
+            for sym, xy in zip(rec["coad_symbols"], rec["coad_xy"]):
+                q = mi(xy); qs.append(q); drawn.append(q); elems_seen.add(sym)
+                ax.scatter(q[0], q[1], s=elem_size(sym), c=[elem_color(sym)],
+                           edgecolors="k", linewidths=0.6, zorder=5)
             if min_abs is not None and abs(val) < min_abs:
                 continue
-            ax.annotate("{}: {:.1f}".format(_term_letter(k), val), (x, y),
-                        fontsize=label_fontsize, ha="center", va="center", zorder=6,
-                        bbox=dict(boxstyle="round,pad=0.15", fc="white", ec="0.4", lw=0.5))
+            center = np.mean(qs, axis=0)
+            d_out = center - anchor
+            n = np.linalg.norm(d_out)
+            d_out = d_out / n if n > 1e-6 else np.array([1.0, 0.0])
+            lab = center + d_out * 2.3  # push the label off the dot, radially outward
+            drawn.append(lab)
+            ax.annotate("{}: {:.1f}".format(_term_letter(k), val), xy=center, xytext=lab,
+                        fontsize=label_fontsize, ha="center", va="center", zorder=7,
+                        bbox=dict(boxstyle="round,pad=0.15", fc="white", ec="0.4", lw=0.5),
+                        arrowprops=dict(arrowstyle="-", lw=0.4, color="0.4"))
+
+        # crop to the neighborhood (plot_atoms otherwise frames the whole slab) with a margin
+        drawn = np.asarray(drawn)
+        pad = 3.0
+        ax.set_xlim(drawn[:, 0].min() - pad, drawn[:, 0].max() + pad)
+        ax.set_ylim(drawn[:, 1].min() - pad, drawn[:, 1].max() + pad)
+
+        # element legend
+        handles = [plt.Line2D([0], [0], marker="o", ls="", mec="k", mfc=elem_color(s),
+                              ms=8, label=s) for s in sorted(elems_seen)]
+        if handles:
+            ax.legend(handles=handles, loc="upper right", fontsize=7, framealpha=0.9)
 
         ax.set_aspect("equal")
         ax.set_axis_off()
