@@ -1999,8 +1999,16 @@ def extract_covdep_data(path,pynta_path,ts_dict,metal,facet,sites,site_adjacency
         with open(os.path.join(pynta_path,ts_name,"info.json"),'r') as f:
             ts_info[ts_name] = json.load(f)
 
+    # An iteration can have a regressor.json but no Ncoad_energy_* files (e.g. an incomplete /
+    # in-progress iteration). Such an iteration carries no per-coverage data, so drop it -- otherwise
+    # max() below (and the downstream plotting cells that index [config_name]) choke on an empty dict.
+    for coad_name in coad_names:
+        for i in [j for j, d in Ncoad_energy_dict[coad_name].items() if not d]:
+            Ncoad_energy_dict[coad_name].pop(i, None)
+            Ncoad_config_dict[coad_name].pop(i, None)
+
     max_coad_indexes = {coad_name: {i:max(Ncoad_energy_dict[coad_name][i].keys()) for i in sorted(Ncoad_energy_dict[coad_name].keys())} for coad_name in coad_names}
-    
+
     return Ncoad_energy_dict,Ncoad_config_dict,tree_dict,admol_name_structure_dict,admol_name_path_dict,ts_info,max_coad_indexes,ad_energy_dict,coadmol_E_dict
 
 def analyze_covdep_lowest_energy(Ncoad_config_dict,iter_configs,config_name,coad_name,metal,slab,sites,admol_name_structure_dict,admol_name_path_dict,tree_dict):
