@@ -2734,11 +2734,12 @@ def plot_pairs_interaction_maps(path, pynta_path, coadname, ad_energy_dict, slab
                         bbox=dict(boxstyle="round,pad=0.15", fc="white", ec="0.4", lw=0.5),
                         arrowprops=dict(arrowstyle="-", lw=0.4, color="0.4"))
 
-        # crop to the neighborhood (plot_atoms otherwise frames the whole slab) with a margin
-        drawn = np.asarray(drawn)
-        pad = 3.0
-        ax.set_xlim(drawn[:, 0].min() - pad, drawn[:, 0].max() + pad)
-        ax.set_ylim(drawn[:, 1].min() - pad, drawn[:, 1].max() + pad)
+        # show the ENTIRE slab (so the central's location on the surface is visible), unioned with any
+        # adsorbate/label that overhangs the slab edge so nothing gets clipped
+        allpts = np.vstack([np.asarray(drawn), slab.get_positions()[:, :2]])
+        pad = 1.5
+        ax.set_xlim(allpts[:, 0].min() - pad, allpts[:, 0].max() + pad)
+        ax.set_ylim(allpts[:, 1].min() - pad, allpts[:, 1].max() + pad)
 
         # element legend
         handles = [plt.Line2D([0], [0], marker="o", ls="", mec="k", mfc=elem_color(s),
