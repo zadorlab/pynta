@@ -2499,3 +2499,173 @@ def get_configs_for_calculation(configs_of_concern_by_coad_admol,Ncoad_energy_by
 
     return configs_for_calculation,coad_admol_to_config_for_calculation
 
+
+def _term_letter(k):
+    """Spreadsheet-style tag for the k-th (0-based) coadsorbate in a map: A..Z, AA, AB, ..."""
+    s = ""
+    k += 1
+    while k:
+        k, r = divmod(k - 1, 26)
+        s = chr(ord("A") + r) + s
+    return s
+
+
+def collect_pairs_interaction_data(path, pynta_path, coadname, ad_energy_dict, slab, sites,
+                                   site_adjacency, metal, facet, max_dist=3.0):
+    """Read the raw pairwise coadsorption data (path/pairs) for one coadsorbate and group it by the
+    central adsorbate's binding site.
+
+    Each pairs subdir path/pairs/<central>_<coadname>/<num>/ is one optimized central+ONE-coadsorbate
+    config (out.xyz). For every such config with a usable ZPE-corrected interaction energy this
+    computes dE = E_coadsorbed - E_central_isolated - E_coad_isolated (eV, via load_coverage_delta,
+    the exact quantity the SIDT model is trained on -- configs missing vib.json are skipped) and finds
+    the central's occupied site(s) and the coadsorbate's real xy from out.xyz.
+
+    Grouping key is (central_label, frozenset(central_site_indices)) so all configs whose central sits
+    on the same actual site(s) land in one group -- "one central location per group". No translations
+    or rotations are applied (graphically equivalent centrals already share the same real site).
+
+    Returns groups: dict key -> list of records, each record a dict with:
+        central_label, central_site_inds (sorted tuple), central_xy (Nx2 array of the central adatom
+        xy), coad_xy (mean xy of the coadsorbate adatoms), dE_eV, num_dir, is_ts.
+    Both non-TS adsorbate centrals and TS centrals are included.
+    """
+    pairsdir = os.path.join(path, "pairs")
+    nslab = len(slab)
+    addir = os.path.join(pynta_path, "Adsorbates")
+
+    # number of coadsorbate adatoms (coad is appended last in each pair geometry)
+    with open(os.path.join(addir, coadname, "info.json")) as f:
+        coad_info = json.load(f)
+    coad_struct = Molecule().from_adjacency_list(coad_info["adjlist"])
+    ncoad = len([at for at in coad_struct.atoms if not at.is_surface_site()])
+
+    asss = generate_allowed_structure_site_structures(addir, sites, site_adjacency, nslab,
+                                                      max_dist=max_dist, cut_off_num=None)
+    site_pos = np.array([s["position"] for s in sites])
+
+    def nearest_site_index(pos):
+        return int(np.argmin(np.linalg.norm(site_pos - np.asarray(pos), axis=1)))
+
+    groups = {}
+    for name in sorted(os.listdir(pairsdir)):
+        if name.startswith(".") or "_" not in name:
+            continue
+        if name.rsplit("_", 1)[1] != coadname:
+            continue
+        central_label = name.rsplit("_", 1)[0]
+        namedir = os.path.join(pairsdir, name)
+        for num in sorted(os.listdir(namedir)):
+            d = os.path.join(namedir, num)
+            if not (num.isdigit() and os.path.isdir(d)):
+                continue
+            if not os.path.exists(os.path.join(d, "out.xyz")):
+                continue
+            try:
+                with open(os.path.join(d, "info.json")) as f:
+                    info = json.load(f)
+                is_ts = "tsdir" in info
+                _, _, _, dE = load_coverage_delta(
+                    d, ad_energy_dict, slab, metal, facet, sites, site_adjacency,
+                    ts_pynta_dir=pynta_path, allowed_structure_site_structures=asss,
+                    out_file_name="out", vib_file_name="vib", is_ad=(not is_ts))
+                if dE is None:
+                    continue
+                atoms = read(os.path.join(d, "out.xyz"))
+                ncentral = len(atoms) - nslab - ncoad
+                if ncentral < 1:
+                    continue
+                central_atoms = atoms[nslab:nslab + ncentral]
+                coad_atoms = atoms[nslab + ncentral:]
+                sub = slab + central_atoms
+                occ = get_occupied_sites(sub, sites, nslab)
+                central_site_inds = tuple(sorted({nearest_site_index(o["position"]) for o in occ}))
+                if not central_site_inds:
+                    continue
+                key = (central_label, central_site_inds)
+                groups.setdefault(key, []).append({
+                    "central_label": central_label,
+                    "central_site_inds": central_site_inds,
+                    "central_xy": np.asarray(central_atoms.positions)[:, :2],
+                    "coad_xy": np.asarray(coad_atoms.positions)[:, :2].mean(axis=0),
+                    "dE_eV": dE,
+                    "num_dir": d,
+                    "is_ts": is_ts,
+                })
+            except Exception as e:
+                logging.warning("collect_pairs_interaction_data: skipping %s (%s)", d, e)
+                continue
+    return groups
+
+
+def plot_pairs_interaction_maps(path, pynta_path, coadname, ad_energy_dict, slab, sites,
+                                site_adjacency, metal, facet, out_dir=None, unit="meV",
+                                max_dist=3.0, min_configs=1, label_fontsize=6, min_abs=None,
+                                groups=None):
+    """One top-view interaction map per central-adsorbate location, built from the raw path/pairs data.
+
+    For the given coadsorbate, groups every path/pairs/<central>_<coadname>/<num>/ config by the
+    central's binding site (collect_pairs_interaction_data) and draws, per group, a real top-view of
+    the metal slab with every central adatom overlaid (the "pile" at the shared central site) and each
+    coadsorbate marked by a red dot + a lettered dE label -- the style of the central-atom interaction
+    figures. dE is the ZPE-corrected coadsorption interaction energy (eV internally), shown in `unit`
+    (meV/eV/kJ/mol). No translations/rotations are applied.
+
+    out_dir: if given, one PNG per group is written there (auto-named by central + site); returns the
+    list of (key, fig, ax). min_configs skips groups with fewer configs; min_abs (in `unit`) hides
+    labels below that magnitude. Pass a precomputed `groups` to skip re-reading the pairs data.
+    """
+    import re
+    import matplotlib.pyplot as plt
+    from ase.visualize.plot import plot_atoms
+
+    fac = {"mev": 1000.0, "ev": 1.0, "kj/mol": 96.48530749925793}.get(unit.lower())
+    if fac is None:
+        raise ValueError("unit must be 'meV', 'eV' or 'kJ/mol', got {!r}".format(unit))
+
+    if groups is None:
+        groups = collect_pairs_interaction_data(path, pynta_path, coadname, ad_energy_dict, slab,
+                                                sites, site_adjacency, metal, facet, max_dist=max_dist)
+    if out_dir:
+        os.makedirs(out_dir, exist_ok=True)
+
+    def slug(s):
+        return re.sub(r"[^0-9A-Za-z]+", "_", s).strip("_")
+
+    results = []
+    for key in sorted(groups.keys(), key=lambda k: (k[0], k[1])):
+        records = groups[key]
+        if len(records) < min_configs:
+            continue
+        central_label, central_site_inds = key
+
+        fig, ax = plt.subplots(figsize=(7, 7))
+        plot_atoms(slab, ax, radii=0.9)  # metal lattice background (top view)
+
+        # overlay every central adatom from every config -> the "pile" at the shared central site
+        for rec in records:
+            ax.scatter(rec["central_xy"][:, 0], rec["central_xy"][:, 1],
+                       s=45, c="red", edgecolors="k", linewidths=0.4, zorder=5)
+
+        # each coadsorbate: red dot + lettered dE label
+        for k, rec in enumerate(records):
+            x, y = rec["coad_xy"]
+            val = rec["dE_eV"] * fac
+            ax.scatter(x, y, s=45, c="red", edgecolors="k", linewidths=0.4, zorder=5)
+            if min_abs is not None and abs(val) < min_abs:
+                continue
+            ax.annotate("{}: {:.1f}".format(_term_letter(k), val), (x, y),
+                        fontsize=label_fontsize, ha="center", va="center", zorder=6,
+                        bbox=dict(boxstyle="round,pad=0.15", fc="white", ec="0.4", lw=0.5))
+
+        ax.set_aspect("equal")
+        ax.set_axis_off()
+        ax.set_title("{} + {}  central site {}  ({} coadsorptions, {})".format(
+            central_label, coadname, list(central_site_inds), len(records), unit))
+        if out_dir:
+            fname = "pairsmap_{}_{}_site{}.png".format(
+                slug(central_label), slug(coadname), "-".join(map(str, central_site_inds)))
+            fig.savefig(os.path.join(out_dir, fname), dpi=150, bbox_inches="tight")
+        results.append((key, fig, ax))
+    return results
+
