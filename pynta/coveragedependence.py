@@ -2512,7 +2512,8 @@ def _term_letter(k):
 
 def collect_pairs_interaction_data(path, pynta_path, coadname, ad_energy_dict, slab, sites,
                                    site_adjacency, metal, facet, max_dist=3.0,
-                                   coadmol_E_dict=None, add_atom_correction=False, verbose=False):
+                                   coadmol_E_dict=None, add_atom_correction=False, verbose=False,
+                                   centrals=None):
     """Read the raw pairwise coadsorption data (path/pairs) for one coadsorbate and group it by the
     central adsorbate's binding site.
 
@@ -2553,6 +2554,9 @@ def collect_pairs_interaction_data(path, pynta_path, coadname, ad_energy_dict, s
     ncoad = len([at for at in coad_struct.atoms if not at.is_surface_site()])
 
     site_pos = np.array([s["position"] for s in sites])
+    if isinstance(centrals, str):
+        centrals = [centrals]
+    centrals = set(centrals) if centrals is not None else None
 
     def nearest_site_index(pos):
         return int(np.argmin(np.linalg.norm(site_pos - np.asarray(pos), axis=1)))
@@ -2566,6 +2570,8 @@ def collect_pairs_interaction_data(path, pynta_path, coadname, ad_energy_dict, s
         if name.rsplit("_", 1)[1] != coadname:
             continue
         central_label = name.rsplit("_", 1)[0]
+        if centrals is not None and central_label not in centrals:
+            continue
         namedir = os.path.join(pairsdir, name)
         for num in sorted(os.listdir(namedir)):
             d = os.path.join(namedir, num)
@@ -2635,7 +2641,7 @@ def plot_pairs_interaction_maps(path, pynta_path, coadname, ad_energy_dict, slab
                                 site_adjacency, metal, facet, out_dir=None, unit="meV",
                                 max_dist=3.0, min_configs=1, label_fontsize=6, min_abs=None,
                                 groups=None, coadmol_E_dict=None, add_atom_correction=False,
-                                verbose=True):
+                                verbose=True, centrals=None):
     """One top-view interaction map per central-adsorbate location, built from the raw path/pairs data.
 
     For the given coadsorbate, groups every path/pairs/<central>_<coadname>/<num>/ config by the
@@ -2646,6 +2652,11 @@ def plot_pairs_interaction_maps(path, pynta_path, coadname, ad_energy_dict, slab
     coadsorption energy with the per-adsorbate baseline subtracted), shown in `unit` (meV/eV/kJ/mol).
     Pass coadmol_E_dict + add_atom_correction=True to instead show the physical dE (baseline added
     back). No translations/rotations are applied.
+
+    centrals: restrict to one or more central species (the folder prefix in
+    path/pairs/<central>_<coadname>/, also the first token of each plot title, e.g. "[O]=[Pt]",
+    "[OH][Pt]", "TS0_52"); a str or list of them, or None for all. Every plot is framed to the same
+    fixed slab extent so all images come out the same size.
 
     out_dir: if given, one PNG per group is written there (auto-named by central + site); returns the
     list of (key, fig, ax). min_configs skips groups with fewer configs; min_abs (in `unit`) hides
@@ -2664,7 +2675,8 @@ def plot_pairs_interaction_maps(path, pynta_path, coadname, ad_energy_dict, slab
         groups = collect_pairs_interaction_data(path, pynta_path, coadname, ad_energy_dict, slab,
                                                 sites, site_adjacency, metal, facet, max_dist=max_dist,
                                                 coadmol_E_dict=coadmol_E_dict,
-                                                add_atom_correction=add_atom_correction, verbose=verbose)
+                                                add_atom_correction=add_atom_correction, verbose=verbose,
+                                                centrals=centrals)
     if out_dir:
         os.makedirs(out_dir, exist_ok=True)
 
@@ -2680,6 +2692,13 @@ def plot_pairs_interaction_maps(path, pynta_path, coadname, ad_energy_dict, slab
 
     def slug(s):
         return re.sub(r"[^0-9A-Za-z]+", "_", s).strip("_")
+
+    # fixed frame: the whole slab + a symmetric margin, identical for every plot so all images come
+    # out the same size and none look cropped (the frame does NOT depend on adsorbate/label positions)
+    slab_xy = slab.get_positions()[:, :2]
+    fpad = 2.5
+    xlo, xhi = slab_xy[:, 0].min() - fpad, slab_xy[:, 0].max() + fpad
+    ylo, yhi = slab_xy[:, 1].min() - fpad, slab_xy[:, 1].max() + fpad
 
     results = []
     for key in sorted(groups.keys(), key=lambda k: (k[0], k[1])):
@@ -2701,14 +2720,13 @@ def plot_pairs_interaction_maps(path, pynta_path, coadname, ad_energy_dict, slab
         fig, ax = plt.subplots(figsize=(7, 7))
         plot_atoms(slab, ax, radii=0.9)  # metal lattice background (top view)
 
-        drawn = [anchor]
         elems_seen = set()
 
         # central "pile": every central adatom from every config, colored by element (faded, so the
         # spread of the overlaid centrals is visible without hiding the coadsorbates)
         for rec in records:
             for sym, xy in zip(rec["central_symbols"], rec["central_xy"]):
-                q = mi(xy); drawn.append(q); elems_seen.add(sym)
+                q = mi(xy); elems_seen.add(sym)
                 ax.scatter(q[0], q[1], s=elem_size(sym), c=[elem_color(sym)],
                            edgecolors="k", linewidths=0.4, alpha=0.55, zorder=4)
 
@@ -2718,7 +2736,7 @@ def plot_pairs_interaction_maps(path, pynta_path, coadname, ad_energy_dict, slab
             val = rec["dE_eV"] * fac
             qs = []
             for sym, xy in zip(rec["coad_symbols"], rec["coad_xy"]):
-                q = mi(xy); qs.append(q); drawn.append(q); elems_seen.add(sym)
+                q = mi(xy); qs.append(q); elems_seen.add(sym)
                 ax.scatter(q[0], q[1], s=elem_size(sym), c=[elem_color(sym)],
                            edgecolors="k", linewidths=0.6, zorder=5)
             if min_abs is not None and abs(val) < min_abs:
@@ -2728,18 +2746,16 @@ def plot_pairs_interaction_maps(path, pynta_path, coadname, ad_energy_dict, slab
             n = np.linalg.norm(d_out)
             d_out = d_out / n if n > 1e-6 else np.array([1.0, 0.0])
             lab = center + d_out * 2.3  # push the label off the dot, radially outward
-            drawn.append(lab)
+            lab = [min(max(lab[0], xlo + 0.8), xhi - 0.8),   # keep the label inside the fixed frame
+                   min(max(lab[1], ylo + 0.8), yhi - 0.8)]
             ax.annotate("{}: {:.1f}".format(_term_letter(k), val), xy=center, xytext=lab,
                         fontsize=label_fontsize, ha="center", va="center", zorder=7,
                         bbox=dict(boxstyle="round,pad=0.15", fc="white", ec="0.4", lw=0.5),
                         arrowprops=dict(arrowstyle="-", lw=0.4, color="0.4"))
 
-        # show the ENTIRE slab (so the central's location on the surface is visible), unioned with any
-        # adsorbate/label that overhangs the slab edge so nothing gets clipped
-        allpts = np.vstack([np.asarray(drawn), slab.get_positions()[:, :2]])
-        pad = 1.5
-        ax.set_xlim(allpts[:, 0].min() - pad, allpts[:, 0].max() + pad)
-        ax.set_ylim(allpts[:, 1].min() - pad, allpts[:, 1].max() + pad)
+        # fixed frame (whole slab + margin), identical for every plot -> uniform size, no crop
+        ax.set_xlim(xlo, xhi)
+        ax.set_ylim(ylo, yhi)
 
         # element legend
         handles = [plt.Line2D([0], [0], marker="o", ls="", mec="k", mfc=elem_color(s),
@@ -2754,7 +2770,7 @@ def plot_pairs_interaction_maps(path, pynta_path, coadname, ad_energy_dict, slab
         if out_dir:
             fname = "pairsmap_{}_{}_site{}.png".format(
                 slug(central_label), slug(coadname), "-".join(map(str, central_site_inds)))
-            fig.savefig(os.path.join(out_dir, fname), dpi=150, bbox_inches="tight")
+            fig.savefig(os.path.join(out_dir, fname), dpi=150)  # fixed frame -> identical image sizes
         results.append((key, fig, ax))
     return results
 
