@@ -2536,8 +2536,9 @@ def collect_pairs_interaction_data(path, pynta_path, coadname, ad_energy_dict, s
     or rotations are applied (graphically equivalent centrals already share the same real site).
 
     Returns groups: dict key -> list of records, each record a dict with:
-        central_label, central_site_inds (sorted tuple), central_xy (Nx2 array of the central adatom
-        xy), coad_xy (mean xy of the coadsorbate adatoms), dE_eV, num_dir, is_ts.
+        central_label, central_site_inds (sorted tuple), central_positions (Nx3 raw xyz of the
+        central atoms) + central_symbols, coad_positions (Nx3 raw xyz of the coadsorbate atoms) +
+        coad_symbols, dE_eV, num_dir, is_ts.
     Both non-TS adsorbate centrals and TS centrals are included. verbose=True prints skip-reason
     counts (why configs were dropped) -- useful when a coadsorbate yields zero groups.
     """
@@ -2618,9 +2619,9 @@ def collect_pairs_interaction_data(path, pynta_path, coadname, ad_energy_dict, s
                 groups.setdefault(key, []).append({
                     "central_label": central_label,
                     "central_site_inds": central_site_inds,
-                    "central_xy": np.asarray(central_atoms.positions)[:, :2],
+                    "central_positions": np.asarray(central_atoms.positions),  # Nx3 (raw)
                     "central_symbols": central_atoms.get_chemical_symbols(),
-                    "coad_xy": np.asarray(coad_atoms.positions)[:, :2],  # per-atom
+                    "coad_positions": np.asarray(coad_atoms.positions),  # Nx3 (raw)
                     "coad_symbols": coad_atoms.get_chemical_symbols(),
                     "dE_eV": dE,
                     "num_dir": d,
@@ -2645,13 +2646,14 @@ def plot_pairs_interaction_maps(path, pynta_path, coadname, ad_energy_dict, slab
     """One top-view interaction map per central-adsorbate location, built from the raw path/pairs data.
 
     For the given coadsorbate, groups every path/pairs/<central>_<coadname>/<num>/ config by the
-    central's binding site (collect_pairs_interaction_data) and draws, per group, a real top-view of
-    the metal slab with every central adatom overlaid (the "pile" at the shared central site) and each
-    coadsorbate marked by a red dot + a lettered dE label -- the style of the central-atom interaction
-    figures. dE is read from each pair's datum.json (the SIDT training target: ZPE-corrected
-    coadsorption energy with the per-adsorbate baseline subtracted), shown in `unit` (meV/eV/kJ/mol).
-    Pass coadmol_E_dict + add_atom_correction=True to instead show the physical dE (baseline added
-    back). No translations/rotations are applied.
+    central's binding site (collect_pairs_interaction_data). Per group it builds ONE merged structure
+    -- the bare slab + every central atom (all configs, overlaid into the central "pile") + every
+    coadsorbate atom, in raw coordinates -- and renders it with ASE (top view, real element colors),
+    then overlays a lettered dE label on each coadsorbate. No minimum-image / periodic images are
+    drawn, so raw coordinates are shown as-is. dE is read from each pair's datum.json (the SIDT
+    training target: ZPE-corrected coadsorption energy with the per-adsorbate baseline subtracted),
+    shown in `unit` (meV/eV/kJ/mol). Pass coadmol_E_dict + add_atom_correction=True to instead show
+    the physical dE (baseline added back).
 
     centrals: restrict to one or more central species (the folder prefix in
     path/pairs/<central>_<coadname>/, also the first token of each plot title, e.g. "[O]=[Pt]",
@@ -2665,7 +2667,6 @@ def plot_pairs_interaction_maps(path, pynta_path, coadname, ad_energy_dict, slab
     """
     import re
     import matplotlib.pyplot as plt
-    from ase.visualize.plot import plot_atoms
 
     fac = {"mev": 1000.0, "ev": 1.0, "kj/mol": 96.48530749925793}.get(unit.lower())
     if fac is None:
@@ -2680,25 +2681,23 @@ def plot_pairs_interaction_maps(path, pynta_path, coadname, ad_energy_dict, slab
     if out_dir:
         os.makedirs(out_dir, exist_ok=True)
 
-    from ase.data import atomic_numbers, covalent_radii
+    from ase import Atoms
+    from ase.visualize.plot import Matplotlib
+    from ase.data import atomic_numbers
     from ase.data.colors import jmol_colors
-    from ase.geometry import get_distances
 
     def elem_color(sym):
         return jmol_colors[atomic_numbers[sym]]
 
-    def elem_size(sym):
-        return 60.0 + 260.0 * covalent_radii[atomic_numbers[sym]]  # bigger for heavier/larger atoms
-
     def slug(s):
         return re.sub(r"[^0-9A-Za-z]+", "_", s).strip("_")
 
-    # fixed frame: the whole slab + a symmetric margin, identical for every plot so all images come
-    # out the same size and none look cropped (the frame does NOT depend on adsorbate/label positions)
-    slab_xy = slab.get_positions()[:, :2]
-    fpad = 2.5
-    xlo, xhi = slab_xy[:, 0].min() - fpad, slab_xy[:, 0].max() + fpad
-    ylo, yhi = slab_xy[:, 1].min() - fpad, slab_xy[:, 1].max() + fpad
+    # one FIXED image-plane bbox (from the bare slab + a symmetric margin), reused for every plot so
+    # all images come out the same size and the whole slab is always shown
+    sxy = slab.get_positions()[:, :2]
+    bpad = 2.0
+    bbox = (sxy[:, 0].min() - bpad, sxy[:, 1].min() - bpad,
+            sxy[:, 0].max() + bpad, sxy[:, 1].max() + bpad)
 
     results = []
     for key in sorted(groups.keys(), key=lambda k: (k[0], k[1])):
@@ -2707,55 +2706,46 @@ def plot_pairs_interaction_maps(path, pynta_path, coadname, ad_energy_dict, slab
             continue
         central_label, central_site_inds = key
 
-        # anchor everything to the first config's central centroid, drawing each atom at its
-        # minimum-image position relative to the anchor. This keeps the central "pile" together and
-        # places every coadsorbate physically around it (never wrapped to the far side of the cell).
-        anchor = records[0]["central_xy"].mean(axis=0)
-
-        def mi(p):  # minimum-image xy of p relative to anchor
-            v, _ = get_distances([[anchor[0], anchor[1], 0.0]], [[p[0], p[1], 0.0]],
-                                 cell=slab.cell, pbc=slab.pbc)
-            return anchor + v[0][0][:2]
+        # Build ONE merged structure -- bare slab + every central atom (all configs, overlaid) + every
+        # coadsorbate atom -- in RAW coordinates (no minimum-image / periodic images), then let ASE
+        # render the whole thing in a single pass so the adsorbates are guaranteed in sync with the
+        # slab. We read ASE's transformed coordinates back out (Matplotlib.positions) to place labels.
+        M = slab.copy()
+        nslab = len(slab)
+        for rec in records:  # central pile first
+            M += Atoms(symbols=rec["central_symbols"], positions=rec["central_positions"])
+        ncentral_end = len(M)
+        coad_ranges = []
+        for rec in records:  # then coadsorbates, tracking each config's atom index range
+            start = len(M)
+            M += Atoms(symbols=rec["coad_symbols"], positions=rec["coad_positions"])
+            coad_ranges.append((start, len(M)))
 
         fig, ax = plt.subplots(figsize=(7, 7))
-        plot_atoms(slab, ax, radii=0.9)  # metal lattice background (top view)
+        mpl = Matplotlib(M, ax, radii=0.9, bbox=bbox, show_unit_cell=0)
+        mpl.write()  # draws slab+adsorbates; sets xlim/ylim to (0,w),(0,h) -- fixed by our bbox
+        drawn = np.asarray(mpl.positions)[:, :2]  # ASE's on-screen xy for each atom of M
+        w, h = mpl.w, mpl.h
 
-        elems_seen = set()
+        elems_seen = set(s for rec in records for s in rec["central_symbols"] + rec["coad_symbols"])
+        central_center = drawn[nslab:ncentral_end].mean(axis=0)
 
-        # central "pile": every central adatom from every config, colored by element (faded, so the
-        # spread of the overlaid centrals is visible without hiding the coadsorbates)
-        for rec in records:
-            for sym, xy in zip(rec["central_symbols"], rec["central_xy"]):
-                q = mi(xy); elems_seen.add(sym)
-                ax.scatter(q[0], q[1], s=elem_size(sym), c=[elem_color(sym)],
-                           edgecolors="k", linewidths=0.4, alpha=0.55, zorder=4)
-
-        # each coadsorbate config: element-colored atom(s) + a lettered dE label offset OUTWARD from
-        # the central with a leader line, so the label never paints over the coad dot
-        for k, rec in enumerate(records):
+        # one lettered dE label per coadsorbate config, offset OUTWARD from the central with a leader
+        # line back to the coad, clamped inside the frame so the label never paints over the coad
+        for k, ((start, end), rec) in enumerate(zip(coad_ranges, records)):
             val = rec["dE_eV"] * fac
-            qs = []
-            for sym, xy in zip(rec["coad_symbols"], rec["coad_xy"]):
-                q = mi(xy); qs.append(q); elems_seen.add(sym)
-                ax.scatter(q[0], q[1], s=elem_size(sym), c=[elem_color(sym)],
-                           edgecolors="k", linewidths=0.6, zorder=5)
             if min_abs is not None and abs(val) < min_abs:
                 continue
-            center = np.mean(qs, axis=0)
-            d_out = center - anchor
+            center = drawn[start:end].mean(axis=0)
+            d_out = center - central_center
             n = np.linalg.norm(d_out)
             d_out = d_out / n if n > 1e-6 else np.array([1.0, 0.0])
-            lab = center + d_out * 2.3  # push the label off the dot, radially outward
-            lab = [min(max(lab[0], xlo + 0.8), xhi - 0.8),   # keep the label inside the fixed frame
-                   min(max(lab[1], ylo + 0.8), yhi - 0.8)]
+            lab = center + d_out * 2.3
+            lab = [min(max(lab[0], 0.8), w - 0.8), min(max(lab[1], 0.8), h - 0.8)]
             ax.annotate("{}: {:.1f}".format(_term_letter(k), val), xy=center, xytext=lab,
                         fontsize=label_fontsize, ha="center", va="center", zorder=7,
                         bbox=dict(boxstyle="round,pad=0.15", fc="white", ec="0.4", lw=0.5),
                         arrowprops=dict(arrowstyle="-", lw=0.4, color="0.4"))
-
-        # fixed frame (whole slab + margin), identical for every plot -> uniform size, no crop
-        ax.set_xlim(xlo, xhi)
-        ax.set_ylim(ylo, yhi)
 
         # element legend
         handles = [plt.Line2D([0], [0], marker="o", ls="", mec="k", mfc=elem_color(s),
@@ -2763,7 +2753,6 @@ def plot_pairs_interaction_maps(path, pynta_path, coadname, ad_energy_dict, slab
         if handles:
             ax.legend(handles=handles, loc="upper right", fontsize=7, framealpha=0.9)
 
-        ax.set_aspect("equal")
         ax.set_axis_off()
         ax.set_title("{} + {}  central site {}  ({} coadsorptions, {})".format(
             central_label, coadname, list(central_site_inds), len(records), unit))
