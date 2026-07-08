@@ -2511,15 +2511,24 @@ def _term_letter(k):
 
 
 def collect_pairs_interaction_data(path, pynta_path, coadname, ad_energy_dict, slab, sites,
-                                   site_adjacency, metal, facet, max_dist=3.0):
+                                   site_adjacency, metal, facet, max_dist=3.0,
+                                   coadmol_E_dict=None, add_atom_correction=False, verbose=False):
     """Read the raw pairwise coadsorption data (path/pairs) for one coadsorbate and group it by the
     central adsorbate's binding site.
 
     Each pairs subdir path/pairs/<central>_<coadname>/<num>/ is one optimized central+ONE-coadsorbate
-    config (out.xyz). For every such config with a usable ZPE-corrected interaction energy this
-    computes dE = E_coadsorbed - E_central_isolated - E_coad_isolated (eV, via load_coverage_delta,
-    the exact quantity the SIDT model is trained on -- configs missing vib.json are skipped) and finds
-    the central's occupied site(s) and the coadsorbate's real xy from out.xyz.
+    config. The interaction energy is read straight from that dir's datum.json -- the per-pair result
+    the covdep sampler already computed and the SIDT model is trained on (datum_E.value, J/mol): the
+    ZPE-corrected coadsorption energy dE = E_coadsorbed - E_central - E_coad_isolated with the
+    per-adsorbate baseline (atom-centered correction) subtracted. This avoids recomputing from vib
+    data, which the raw pairs dirs don't carry (their vib file is vib_vib.json and load_coverage_delta
+    would otherwise return None for every config). The central's occupied site(s) and the
+    coadsorbate's real xy come from out.xyz.
+
+    add_atom_correction=True (with coadmol_E_dict, the {coad_name: {mol: E}} dict from
+    extract_covdep_data) adds the atom-centered baseline back so the label is the physical dE rather
+    than the baseline-subtracted training target. ad_energy_dict is accepted for backwards
+    compatibility and no longer used.
 
     Grouping key is (central_label, frozenset(central_site_indices)) so all configs whose central sits
     on the same actual site(s) land in one group -- "one central location per group". No translations
@@ -2528,11 +2537,14 @@ def collect_pairs_interaction_data(path, pynta_path, coadname, ad_energy_dict, s
     Returns groups: dict key -> list of records, each record a dict with:
         central_label, central_site_inds (sorted tuple), central_xy (Nx2 array of the central adatom
         xy), coad_xy (mean xy of the coadsorbate adatoms), dE_eV, num_dir, is_ts.
-    Both non-TS adsorbate centrals and TS centrals are included.
+    Both non-TS adsorbate centrals and TS centrals are included. verbose=True prints skip-reason
+    counts (why configs were dropped) -- useful when a coadsorbate yields zero groups.
     """
     pairsdir = os.path.join(path, "pairs")
     nslab = len(slab)
     addir = os.path.join(pynta_path, "Adsorbates")
+    EV = 1.0 / (96.48530749925793 * 1000.0)  # J/mol -> eV
+    coad_baseline = coadmol_E_dict.get(coadname) if (coadmol_E_dict and add_atom_correction) else None
 
     # number of coadsorbate adatoms (coad is appended last in each pair geometry)
     with open(os.path.join(addir, coadname, "info.json")) as f:
@@ -2540,13 +2552,13 @@ def collect_pairs_interaction_data(path, pynta_path, coadname, ad_energy_dict, s
     coad_struct = Molecule().from_adjacency_list(coad_info["adjlist"])
     ncoad = len([at for at in coad_struct.atoms if not at.is_surface_site()])
 
-    asss = generate_allowed_structure_site_structures(addir, sites, site_adjacency, nslab,
-                                                      max_dist=max_dist, cut_off_num=None)
     site_pos = np.array([s["position"] for s in sites])
 
     def nearest_site_index(pos):
         return int(np.argmin(np.linalg.norm(site_pos - np.asarray(pos), axis=1)))
 
+    from collections import Counter
+    skips = Counter()
     groups = {}
     for name in sorted(os.listdir(pairsdir)):
         if name.startswith(".") or "_" not in name:
@@ -2559,28 +2571,42 @@ def collect_pairs_interaction_data(path, pynta_path, coadname, ad_energy_dict, s
             d = os.path.join(namedir, num)
             if not (num.isdigit() and os.path.isdir(d)):
                 continue
+            skips["total"] += 1
             if not os.path.exists(os.path.join(d, "out.xyz")):
+                skips["no_out.xyz"] += 1
+                continue
+            datum_path = os.path.join(d, "datum.json")
+            if not os.path.exists(datum_path):
+                skips["no_datum.json"] += 1
                 continue
             try:
-                with open(os.path.join(d, "info.json")) as f:
-                    info = json.load(f)
-                is_ts = "tsdir" in info
-                _, _, _, dE = load_coverage_delta(
-                    d, ad_energy_dict, slab, metal, facet, sites, site_adjacency,
-                    ts_pynta_dir=pynta_path, allowed_structure_site_structures=asss,
-                    out_file_name="out", vib_file_name="vib", is_ad=(not is_ts))
-                if dE is None:
+                with open(datum_path) as f:
+                    datum = json.load(f)
+                if not datum.get("valid"):
+                    skips["datum_invalid"] += 1
                     continue
+                if datum.get("datum_E") is None:
+                    skips["no_datum_E"] += 1
+                    continue
+                dE = datum["datum_E"]["value"] * EV  # J/mol -> eV (baseline-subtracted)
+                if coad_baseline is not None:
+                    mol_out = Molecule().from_adjacency_list(datum["datum_E"]["mol"],
+                                                             check_consistency=False)
+                    dE += get_atom_centered_correction(mol_out, coad_baseline)  # add baseline back
+
+                with open(os.path.join(d, "info.json")) as f:
+                    is_ts = "tsdir" in json.load(f)
                 atoms = read(os.path.join(d, "out.xyz"))
                 ncentral = len(atoms) - nslab - ncoad
                 if ncentral < 1:
+                    skips["bad_atom_count"] += 1
                     continue
                 central_atoms = atoms[nslab:nslab + ncentral]
                 coad_atoms = atoms[nslab + ncentral:]
-                sub = slab + central_atoms
-                occ = get_occupied_sites(sub, sites, nslab)
+                occ = get_occupied_sites(slab + central_atoms, sites, nslab)
                 central_site_inds = tuple(sorted({nearest_site_index(o["position"]) for o in occ}))
                 if not central_site_inds:
+                    skips["no_central_site"] += 1
                     continue
                 key = (central_label, central_site_inds)
                 groups.setdefault(key, []).append({
@@ -2592,28 +2618,37 @@ def collect_pairs_interaction_data(path, pynta_path, coadname, ad_energy_dict, s
                     "num_dir": d,
                     "is_ts": is_ts,
                 })
+                skips["kept"] += 1
             except Exception as e:
+                skips["exception"] += 1
                 logging.warning("collect_pairs_interaction_data: skipping %s (%s)", d, e)
                 continue
+    if verbose:
+        print("collect_pairs_interaction_data[{}]: {} groups from {}".format(
+            coadname, len(groups), dict(skips)))
     return groups
 
 
 def plot_pairs_interaction_maps(path, pynta_path, coadname, ad_energy_dict, slab, sites,
                                 site_adjacency, metal, facet, out_dir=None, unit="meV",
                                 max_dist=3.0, min_configs=1, label_fontsize=6, min_abs=None,
-                                groups=None):
+                                groups=None, coadmol_E_dict=None, add_atom_correction=False,
+                                verbose=True):
     """One top-view interaction map per central-adsorbate location, built from the raw path/pairs data.
 
     For the given coadsorbate, groups every path/pairs/<central>_<coadname>/<num>/ config by the
     central's binding site (collect_pairs_interaction_data) and draws, per group, a real top-view of
     the metal slab with every central adatom overlaid (the "pile" at the shared central site) and each
     coadsorbate marked by a red dot + a lettered dE label -- the style of the central-atom interaction
-    figures. dE is the ZPE-corrected coadsorption interaction energy (eV internally), shown in `unit`
-    (meV/eV/kJ/mol). No translations/rotations are applied.
+    figures. dE is read from each pair's datum.json (the SIDT training target: ZPE-corrected
+    coadsorption energy with the per-adsorbate baseline subtracted), shown in `unit` (meV/eV/kJ/mol).
+    Pass coadmol_E_dict + add_atom_correction=True to instead show the physical dE (baseline added
+    back). No translations/rotations are applied.
 
     out_dir: if given, one PNG per group is written there (auto-named by central + site); returns the
     list of (key, fig, ax). min_configs skips groups with fewer configs; min_abs (in `unit`) hides
     labels below that magnitude. Pass a precomputed `groups` to skip re-reading the pairs data.
+    verbose prints per-coadsorbate skip-reason counts (handy when a run yields zero groups).
     """
     import re
     import matplotlib.pyplot as plt
@@ -2625,7 +2660,9 @@ def plot_pairs_interaction_maps(path, pynta_path, coadname, ad_energy_dict, slab
 
     if groups is None:
         groups = collect_pairs_interaction_data(path, pynta_path, coadname, ad_energy_dict, slab,
-                                                sites, site_adjacency, metal, facet, max_dist=max_dist)
+                                                sites, site_adjacency, metal, facet, max_dist=max_dist,
+                                                coadmol_E_dict=coadmol_E_dict,
+                                                add_atom_correction=add_atom_correction, verbose=verbose)
     if out_dir:
         os.makedirs(out_dir, exist_ok=True)
 
