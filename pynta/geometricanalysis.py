@@ -220,6 +220,15 @@ def choose_bond_to_fix(symbols,octets,orders,bonded_to_surface):
                         priority.append(j+11)
                     else:
                         priority.append(j+1)
+                    break
+            else:
+                # sym not in atom_order (e.g. H): a higher bond order cannot be formed through it, so
+                # it is never a fix candidate. Append 0 so priority stays aligned 1:1 with symbols
+                # (otherwise argmax below indexes the wrong neighbor); an all-H neighborhood then gives
+                # max==0, which the caller treats as an unfixable octet (-> FailedFixBondsException).
+                priority.append(0)
+    if len(priority) == 0:  # no non-surface neighbors to fix the octet through
+        return 0, 0
     return np.argmax(priority),np.max(priority)
 
 class TooManyElectronsException(Exception):
