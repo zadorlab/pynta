@@ -2758,8 +2758,8 @@ def plot_pairs_interaction_maps(path, pynta_path, coadname, ad_energy_dict, slab
             base = cluster_center - central_center
             nb = np.linalg.norm(base)
             base_ang = np.arctan2(base[1], base[0]) if nb > 1e-6 else 0.0
-            radius = 2.3 + 0.5 * (m - 1)                        # push fanned labels further out
-            spread = np.radians(min(50.0 * (m - 1), 260.0))     # total angular fan for the cluster
+            radius = 2.3 + 0.25 * (m - 1)                       # push fanned labels slightly further out
+            spread = np.radians(min(28.0 * (m - 1), 130.0))     # total angular fan for the cluster
             for j, i in enumerate(cl):
                 ang = base_ang if m == 1 else base_ang - spread / 2.0 + spread * j / (m - 1)
                 lab = cluster_center + radius * np.array([np.cos(ang), np.sin(ang)])
