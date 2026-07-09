@@ -2721,7 +2721,16 @@ def plot_pairs_interaction_maps(path, pynta_path, coadname, ad_energy_dict, slab
             M += Atoms(symbols=rec["coad_symbols"], positions=rec["coad_positions"])
             coad_ranges.append((start, len(M)))
 
-        fig, ax = plt.subplots(figsize=(7, 7))
+        # figure = structure on top + a provenance table (letter / dE / pair dir) underneath, sized
+        # to the number of visible configs so the structure panel itself stays a uniform 7in tall
+        n_vis = sum(1 for rec in records
+                    if not (min_abs is not None and abs(rec["dE_eV"] * fac) < min_abs))
+        table_h = 0.3 + 0.22 * max(n_vis, 1)  # inches reserved for the table
+        fig = plt.figure(figsize=(7, 7 + table_h))
+        gs = fig.add_gridspec(2, 1, height_ratios=[7, table_h])
+        ax = fig.add_subplot(gs[0])
+        tax = fig.add_subplot(gs[1])
+        tax.axis("off")
         mpl = Matplotlib(M, ax, radii=0.9, bbox=bbox, show_unit_cell=0)
         mpl.write()  # draws slab+adsorbates; sets xlim/ylim to (0,w),(0,h) -- fixed by our bbox
         drawn = np.asarray(mpl.positions)[:, :2]  # ASE's on-screen xy for each atom of M
@@ -2740,7 +2749,8 @@ def plot_pairs_interaction_maps(path, pynta_path, coadname, ad_energy_dict, slab
             val = rec["dE_eV"] * fac
             if min_abs is not None and abs(val) < min_abs:
                 continue
-            items.append({"k": k, "center": drawn[start:end].mean(axis=0), "val": val})
+            items.append({"k": k, "center": drawn[start:end].mean(axis=0), "val": val,
+                          "num_dir": rec["num_dir"], "is_ts": rec.get("is_ts", False)})
 
         coincide_tol = 0.9  # ASE drawn units (~Angstrom): coads closer than this share a label fan
         clusters = []       # each is a list of indices into `items`
@@ -2780,6 +2790,18 @@ def plot_pairs_interaction_maps(path, pynta_path, coadname, ad_energy_dict, slab
         ax.set_axis_off()
         ax.set_title("{} + {}  central site {}  ({} coadsorptions, {})".format(
             central_label, coadname, list(central_site_inds), len(records), unit))
+
+        # provenance table under the plot: label letter, dE, and the pair folder each config came from
+        # (pairs/<central>_<coad>/<num>, the pointer back to the raw calculation)
+        if items:
+            rows = [[_term_letter(it["k"]), "{:.1f}".format(it["val"]),
+                     os.path.join(*it["num_dir"].split(os.sep)[-3:]) + (" (TS)" if it["is_ts"] else "")]
+                    for it in items]
+            tbl = tax.table(cellText=rows, colLabels=["", "dE ({})".format(unit), "pair dir"],
+                            colWidths=[0.06, 0.18, 0.76], loc="upper center", cellLoc="left")
+            tbl.auto_set_font_size(False)
+            tbl.set_fontsize(7)
+            tbl.scale(1, 1.2)
         if out_dir:
             fname = "pairsmap_{}_{}_site{}.png".format(
                 slug(central_label), slug(coadname), "-".join(map(str, central_site_inds)))
