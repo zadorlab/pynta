@@ -1775,14 +1775,18 @@ def workflow_auto(
     nslab = len(slab)
     if not any(slab.pbc) and _has_reasonable_cell(slab):
         slab.pbc = (True, True, False)
-    surface_obj = CustomSurface(slab, n_layers=n_layers)
-
-    # surface passed to no-defect workflow: explicit facet string OR CustomSurface
-    surface_no_defect = facet if facet is not None else surface_obj
+    # CustomSurface is only needed when no facet string is given (no-defect path) or for the defect
+    # path. Build it lazily -- constructing it eagerly crashes on vicinal/stepped slabs that ACAT
+    # cannot layer (n_planes not a multiple of n_layers, or n_morphs > 3), even when a facet string
+    # was supplied precisely to bypass CustomSurface.
+    def _custom_surface():
+        return CustomSurface(slab, n_layers=n_layers)
 
     defect_sites = workflow_detect_vacancies(slab, nslab, verbose=verbose)
 
     if len(defect_sites) == 0:
+        # explicit facet string OR CustomSurface
+        surface_no_defect = facet if facet is not None else _custom_surface()
         return workflow_no_defect_unique_sites(
             slab=slab,
             nslab=nslab,
@@ -1796,7 +1800,7 @@ def workflow_auto(
             slab=slab,
             nslab=nslab,
             xyz_path=xyz_path,
-            surface_obj=surface_obj,
+            surface_obj=_custom_surface(),
             site_bond_cutoff=site_bond_cutoff,
             tag_symbol=tag_symbol,
             dz=dz,
