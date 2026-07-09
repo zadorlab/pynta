@@ -158,7 +158,10 @@ class Pynta:
             self.nslab = int(np.prod(np.array(self.repeats)))
         else:
             self.nslab = len(read(self.slab_path))
-        self.layers = self.repeats[2]
+        if self.surface_type == "CustomSurface" and hasattr(self, "slab") and "layer" in self.slab.arrays:
+            self.layers = len(set(self.slab.arrays["layer"].tolist()))
+        else:
+            self.layers = self.repeats[2]
         self.frozen_layers = frozen_layers
         self.freeze_ind = int((self.nslab/self.layers)*self.frozen_layers)
         self.mol_dict = None
@@ -577,7 +580,10 @@ class CoverageDependence:
         self.coadsorbates = coadsorbates
         self.max_dist = max_dist
         self.frozen_layers = frozen_layers
-        self.layers = self.repeats[2]
+        if self.surface_type == "CustomSurface" and hasattr(self, "slab") and "layer" in self.slab.arrays:
+            self.layers = len(set(self.slab.arrays["layer"].tolist()))
+        else:
+            self.layers = self.repeats[2]
         self.freeze_ind = int((self.nslab/self.layers)*self.frozen_layers)
         self.fmaxopt = fmaxopt
         self.label = label
