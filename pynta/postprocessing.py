@@ -1392,8 +1392,8 @@ def get_kinetics(path,adsorbates_path,metal,facet,slab,sites,site_adjacency,nsla
         config_dict = dict()
         for spc_name in np.unique(np.array(info["species_names"]+info["reverse_names"])):
             spcs = get_species(os.path.join(adsorbates_path,spc_name),adsorbates_path,metal,facet,slab,sites,site_adjacency,nslab,c_ref=c_ref,o_ref=o_ref,h_ref=h_ref,n_ref=n_ref,delta_sidt=delta_sidt)
-#            minspc = spcs[min({k:v for k,v in spcs.items()},key=lambda x: spcs[x].energy)]
-            minspc = spcs[min({k:v for k,v in spcs.items() if v.valid},key=lambda x: spcs[x].energy)]
+            minspc = spcs[min({k:v for k,v in spcs.items()},key=lambda x: spcs[x].energy)]
+#            minspc = spcs[min({k:v for k,v in spcs.items() if v.valid},key=lambda x: spcs[x].energy)]
             config_dict[spc_name] = minspc
 
 
@@ -1413,9 +1413,9 @@ def get_kinetics(path,adsorbates_path,metal,facet,slab,sites,site_adjacency,nsla
     product_mol.clear_labeled_atoms()
 
     family_comment = ""
-    if "family_name" in info.keys():
+    if info.get("family_name"):
         family_comment += info["family_name"]+"\n"
-
+        
     family_comment += "reactants:\n" + rstr
     family_comment += "products:\n" + pstr
 
@@ -2127,3 +2127,119 @@ def write_all_kinetics(path, metal, facet, slab, sites, site_adjacency,
                 len(skipped), ", ".join(skipped)))
 
     return all_valid_kinetics, min_kin_index, skipped
+
+# ---------------------------------------------------------------------------
+# Per-mole re-expression of the kinetics written by write_all_kinetics
+# ---------------------------------------------------------------------------
+import re as _re
+import copy as _copy
+
+# CODATA Avogadro constant [1/mol]
+_N_A = 6.02214076e23
+
+
+def _mol_concentration_units(units):
+    """Map a molecule-based rate-coefficient unit string to a mol-based one.
+
+    Returns (molecule_exponent, mol_units_string). The exponent is the power
+    of the molecule concentration unit in the denominator, i.e. the reaction
+    molecularity minus one:
+
+        "s^-1"                       -> (0, "s^-1")            unimolecular
+        "m^2/(molecule*s)"           -> (1, "m^2/(mol*s)")     bimolecular
+        "m^5/(molecules^2*s)"        -> (2, "m^5/(mol^2*s)")   termolecular
+    """
+    # termolecular and higher: "molecules^K"
+    match = _re.search(r"molecules\^(\d+)", units)
+    if match:
+        k = int(match.group(1))
+        return k, units.replace("molecules^{}".format(k), "mol^{}".format(k))
+    # bimolecular: singular "molecule"
+    if "molecule" in units:
+        return 1, units.replace("molecule", "mol")
+    # unimolecular: nothing to convert
+    return 0, units
+
+
+def convert_arrhenius_to_mol(arr):
+    """Return a copy of a SurfaceArrhenius with A re-expressed per mole.
+
+    get_kinetics builds rate coefficients on a per-molecule concentration
+    basis (molecules/m^2, molecules/m^3), so the fitted A-factor carries
+    molecule^-(molecularity-1). This multiplies A by N_A**(molecularity-1)
+    and relabels molecule -> mol. n, Ea, T0, Tmin, Tmax and the comment are
+    physically unchanged and left as-is. Returns None if arr is None.
+    """
+    if arr is None:
+        return None
+
+    new = _copy.deepcopy(arr)
+    m, mol_units = _mol_concentration_units(arr.A.units)
+    if m == 0:
+        return new  # s^-1: no concentration units to convert
+
+    new_value = arr.A.value * (_N_A ** m)
+    new.A = (new_value, mol_units)
+
+    # multiplicative uncertainty (*|/) is a dimensionless ratio; preserve it
+    unc = getattr(arr.A, "uncertainty", None)
+    if unc is not None:
+        try:
+            new.A.uncertainty = unc
+            new.A.uncertaintyType = getattr(arr.A, "uncertaintyType", "*|/")
+        except Exception:
+            pass
+
+    return new
+
+
+def write_all_kinetics_unit(all_valid_kinetics, min_kin_index, path,
+                            log_name="rate_coefficient_unit.log", verbose=True):
+    """Write a per-mole version of the write_all_kinetics log.
+
+    Consumes the results returned by write_all_kinetics and writes a
+    consolidated log with every arr_f/arr_r A-factor converted from
+    molecule-based to mole-based concentration units (see
+    convert_arrhenius_to_mol). The layout matches rate_coefficient.log, so
+    the same parser reads either file.
+
+    Parameters
+    ----------
+    all_valid_kinetics : dict
+        {ts_name: {index: kin}} as returned by write_all_kinetics.
+    min_kin_index : dict
+        {ts_name: index of lowest-barrier config} as returned by
+        write_all_kinetics.
+    path : str
+        Directory the log is written into.
+    log_name : str
+        Name of the per-mole log (default "rate_coefficient_unit.log").
+    verbose : bool
+        If True, print the saved path.
+
+    Returns
+    -------
+    str
+        Full path to the written log.
+    """
+    log_path = os.path.join(path, log_name)
+
+    with open(log_path, "w") as f:
+        for ts_name, valid in all_valid_kinetics.items():
+            minkinind = min_kin_index.get(ts_name)
+
+            f.write("=" * 60 + "\n")
+            f.write("TS: {}\n".format(ts_name))
+            f.write("=" * 60 + "\n")
+            for ind, kin in valid.items():
+                marker = "  <-- lowest barrier" if ind == minkinind else ""
+                f.write("Index: {}{}\n".format(ind, marker))
+                f.write("Reaction: {}\n".format(kin.reaction_str))
+                f.write("arr_f: {}\n".format(repr(convert_arrhenius_to_mol(kin.arr_f))))
+                f.write("arr_r: {}\n".format(repr(convert_arrhenius_to_mol(kin.arr_r))))
+                f.write("\n")
+
+    if verbose:
+        print("Saved per-mole kinetics log to {}".format(log_path))
+
+    return log_path
