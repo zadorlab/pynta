@@ -2731,21 +2731,45 @@ def plot_pairs_interaction_maps(path, pynta_path, coadname, ad_energy_dict, slab
         central_center = drawn[nslab:ncentral_end].mean(axis=0)
 
         # one lettered dE label per coadsorbate config, offset OUTWARD from the central with a leader
-        # line back to the coad, clamped inside the frame so the label never paints over the coad
+        # line back to the coad. Two different pairs whose coadsorbates relaxed to (nearly) the same
+        # site (e.g. one slid from a top into the hollow another pair already occupies) would stack
+        # their labels on top of each other -- so we cluster coincident coadsorbates and FAN their
+        # labels out to distinct angles, keeping each dot at its true (overlapping) coordinates.
+        items = []
         for k, ((start, end), rec) in enumerate(zip(coad_ranges, records)):
             val = rec["dE_eV"] * fac
             if min_abs is not None and abs(val) < min_abs:
                 continue
-            center = drawn[start:end].mean(axis=0)
-            d_out = center - central_center
-            n = np.linalg.norm(d_out)
-            d_out = d_out / n if n > 1e-6 else np.array([1.0, 0.0])
-            lab = center + d_out * 2.3
-            lab = [min(max(lab[0], 0.8), w - 0.8), min(max(lab[1], 0.8), h - 0.8)]
-            ax.annotate("{}: {:.1f}".format(_term_letter(k), val), xy=center, xytext=lab,
-                        fontsize=label_fontsize, ha="center", va="center", zorder=7,
-                        bbox=dict(boxstyle="round,pad=0.15", fc="white", ec="0.4", lw=0.5),
-                        arrowprops=dict(arrowstyle="-", lw=0.4, color="0.4"))
+            items.append({"k": k, "center": drawn[start:end].mean(axis=0), "val": val})
+
+        coincide_tol = 0.9  # ASE drawn units (~Angstrom): coads closer than this share a label fan
+        clusters = []       # each is a list of indices into `items`
+        for i, it in enumerate(items):
+            for cl in clusters:
+                if np.linalg.norm(it["center"] - items[cl[0]]["center"]) < coincide_tol:
+                    cl.append(i)
+                    break
+            else:
+                clusters.append([i])
+
+        for cl in clusters:
+            m = len(cl)
+            cluster_center = np.mean([items[i]["center"] for i in cl], axis=0)
+            base = cluster_center - central_center
+            nb = np.linalg.norm(base)
+            base_ang = np.arctan2(base[1], base[0]) if nb > 1e-6 else 0.0
+            radius = 2.3 + 0.5 * (m - 1)                        # push fanned labels further out
+            spread = np.radians(min(50.0 * (m - 1), 260.0))     # total angular fan for the cluster
+            for j, i in enumerate(cl):
+                ang = base_ang if m == 1 else base_ang - spread / 2.0 + spread * j / (m - 1)
+                lab = cluster_center + radius * np.array([np.cos(ang), np.sin(ang)])
+                lab = [min(max(lab[0], 0.8), w - 0.8), min(max(lab[1], 0.8), h - 0.8)]
+                it = items[i]
+                ax.annotate("{}: {:.1f}".format(_term_letter(it["k"]), it["val"]),
+                            xy=it["center"], xytext=lab,
+                            fontsize=label_fontsize, ha="center", va="center", zorder=7,
+                            bbox=dict(boxstyle="round,pad=0.15", fc="white", ec="0.4", lw=0.5),
+                            arrowprops=dict(arrowstyle="-", lw=0.4, color="0.4"))
 
         # element legend
         handles = [plt.Line2D([0], [0], marker="o", ls="", mec="k", mfc=elem_color(s),
