@@ -100,7 +100,7 @@ def get_unstable_pairs(pairsdir,adsorbate_dir,sites,site_adjacency,nslab,max_dis
                     except (FindingPathError, SiteOccupationException, TooManyElectronsException):
                         continue
                     except (FailedFixBondsException, IndexError): #Pynta is unable to understand the final structure in a resonance sense...definitely not isomorphic
-                        logging.error("Failed to fix bonds for structure: {}".format(p))
+                        logging.warning("Failed to fix bonds for structure: {}".format(p))
                         out_pairs.append(g.to_group())
                         if show:
                             config_show.append(init)
@@ -1839,7 +1839,7 @@ def load_coverage_delta(d,ad_energy_dict,slab,metal,facet,sites,site_adjacency,t
                     Esep += E
                     break
             else:
-                logging.error("no matching adsorbate for {}".format(split_struct.to_smiles()))
+                logging.warning("no matching adsorbate for {}".format(split_struct.to_smiles()))
                 return None,None,None,None
         
         dE = Ecad - Esep
@@ -1891,7 +1891,7 @@ def load_coverage_delta(d,ad_energy_dict,slab,metal,facet,sites,site_adjacency,t
                     Esep += E
                     break
             else:
-                logging.error("no matching adsorbate for {}".format(split_struct.to_smiles()))
+                logging.warning("no matching adsorbate for {}".format(split_struct.to_smiles()))
                 return None,None,None,None
                 
         dE = Ecad - Esep
@@ -2052,7 +2052,7 @@ def extract_sample(d,ad_energy_dict,slab,metal,facet,sites,site_adjacency,pynta_
         if valid:
             valid = not (admol is None)
             if not valid:
-                logging.error("TS admol has disconnected graph")
+                logging.warning("TS admol has disconnected graph")
 
         if valid:
             #convert TS path
