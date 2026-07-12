@@ -267,8 +267,8 @@ def fix_atom_only_required(mol,atom,allow_failure=False,cleanup_surface_bonds=Tr
                 if allow_failure:
                     break
                 else:
-                    logging.error(mol.to_adjacency_list())
-                    logging.error(mol.atoms.index(atom))
+                    logging.debug(mol.to_adjacency_list())
+                    logging.debug(mol.atoms.index(atom))
                     raise FailedFixBondsException
             bd = atom.bonds[atoms[ind]]
             bd.increment_order()
