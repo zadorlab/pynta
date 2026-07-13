@@ -459,7 +459,12 @@ class Pynta:
         """
         if self.queue:
             rapidfirequeue(self.launchpad,self.fworker,self.qadapter,njobs_queue=self.njobs_queue,nlaunches="infinite")
-        elif not self.queue and (self.num_jobs == 1 or single_job):
+        elif single_job:
+            #one-shot launch (e.g. the slab optimization inside generate_slab): run the
+            #currently-ready firework(s) and return. Using "infinite" here would loop forever
+            #after the slab finished, blocking execute() from ever setting up the adsorbates.
+            rapidfire(self.launchpad,self.fworker,nlaunches=0)
+        elif self.num_jobs == 1:
             rapidfire(self.launchpad,self.fworker,nlaunches="infinite")
         else:
             launch_multiprocess(self.launchpad,self.fworker,"INFO","infinite",self.num_jobs,5)
