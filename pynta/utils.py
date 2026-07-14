@@ -53,6 +53,24 @@ def get_occupied_sites(struct,sites,nslab,allowed_site_dict=dict(),site_bond_cut
     Returns:
         _type_: _description_
     """
+    def _within_bond_cutoff(siteout,mindist):
+        corr = cutoff_corrections[siteout["site"]] if siteout["site"] in cutoff_corrections.keys() else 0.0
+        return mindist < site_bond_cutoff + corr
+
+    def _nearest_site(pos,allowed_sites):
+        siteout = None
+        mindist = None
+        n = None
+        for site in sites:
+            if allowed_sites and (site["site"],site["morphology"]) not in allowed_sites: #skip disallowed sites
+                continue
+            v,dist = get_distances([site["position"]], [pos], cell=struct.cell, pbc=struct.pbc)
+            if siteout is None or dist < mindist:
+                siteout = site
+                mindist = dist
+                n = v
+        return siteout,mindist,n
+
     occ_sites = []
     for i in range(nslab,len(struct)):
         pos = struct.positions[i]
@@ -60,28 +78,25 @@ def get_occupied_sites(struct,sites,nslab,allowed_site_dict=dict(),site_bond_cut
             allowed_sites = allowed_site_dict[i]
         else:
             allowed_sites = None
-        siteout = None
-        mindist = None
-        for site in sites:
-            if allowed_sites and (site["site"],site["morphology"]) not in allowed_sites: #skip disallowed sites
-                continue
-            v,dist = get_distances([site["position"]], [pos], cell=struct.cell, pbc=struct.pbc)
-            if siteout is None:
-                siteout = site
-                mindist = dist
-                n = v
-            else:
-                if dist < mindist:
-                    mindist = dist
-                    siteout = site
-                    n = v
-        
+        siteout,mindist,n = _nearest_site(pos,allowed_sites)
+
+        #An allowed-site restriction must never DESORB a geometrically-bonded atom: if the nearest
+        #ALLOWED site is out of bonding range but the atom's true (unrestricted) nearest site is within
+        #range, keep the real site. Without this, a valid adsorbate sitting on a site the isolated
+        #species never relaxes to (e.g. O held on a step bridge by a TS) loses its surface bond
+        #entirely, corrupting the 2D graph downstream. The restriction still re-assigns among the
+        #allowed sites whenever one of them is actually reachable.
+        if allowed_sites is not None and (siteout is None or not _within_bond_cutoff(siteout,mindist)):
+            siteout2,mindist2,n2 = _nearest_site(pos,None)
+            if siteout2 is not None and _within_bond_cutoff(siteout2,mindist2):
+                siteout,mindist,n = siteout2,mindist2,n2
+
         if mindist is None:
             #print(i)
             #view(struct)
             raise ValueError
-        
-        if (siteout["site"] not in cutoff_corrections.keys() and mindist < site_bond_cutoff) or (siteout["site"] in cutoff_corrections.keys() and mindist < site_bond_cutoff + cutoff_corrections[siteout["site"]]):
+
+        if _within_bond_cutoff(siteout,mindist):
             mindn = None
             for j in range(nslab,len(struct)): #check for site bond disruption by other adsorbed atoms
                 if i == j:
