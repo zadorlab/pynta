@@ -40,6 +40,8 @@ with significant flexiblity in running Pynta.
 
 Instructions on how to install and run Pynta are available in the documentation [here](https://zadorlab.github.io/pynta/).
 
+You can also check out a [tutorial](https://hackmd.io/@jzador/r1p1TWMEzg#/).
+
 # Acknowledgments
 
 Please cite our paper if you are using Pynta:
