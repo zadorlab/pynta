@@ -2046,13 +2046,16 @@ def analyze_covdep_lowest_energy(Ncoad_config_dict,iter_configs,config_name,coad
 
 def analyze_covdep_sample_data(config_name,coad_name,Ncoad_energy_dict,path,pynta_path,
                                slab,metal,facet,sites,site_adjacency,ad_energy_dict,ts_dict,coadmol_E_dict,reactant_names=None,
-                               coad_iso_energy=None):
+                               coad_iso_energy=None,admol_name_structure_dict=None):
 
     to_eV = ase.units.J / ase.units.mol #J/mol -> eV (= 1/Faraday constant, provided by ASE)
 
     # energy of j coadsorbate molecules alone; j==0 is the isolated single coadsorbate, which the model
-    # never stores (Ncoad_energy_dict keys start at 1). Supplying coad_iso_energy lets the lowest coverage
-    # (Ncoad==1, the pair) survive instead of being silently dropped below.
+    # never stores (Ncoad_energy_dict keys start at 1). Without it the lowest coverage (Ncoad==1, the
+    # pair) is silently dropped below. Reconstruct it from the isolated-coadsorbate graph when the caller
+    # passes admol_name_structure_dict (so every caller gets the pair layer without threading the value).
+    if coad_iso_energy is None and admol_name_structure_dict is not None and coad_name in admol_name_structure_dict:
+        coad_iso_energy = get_atom_centered_correction(admol_name_structure_dict[coad_name], coadmol_E_dict[coad_name]) / to_eV
     last_iter = len(Ncoad_energy_dict[coad_name]) - 1
     def coad_ref(j, it):
         if j == 0:
