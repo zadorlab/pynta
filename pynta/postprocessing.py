@@ -15,8 +15,8 @@ from acat.adsorption_sites import SlabAdsorptionSites
 from molecule.thermo import Wilhoit
 from pynta.mol import split_adsorbed_structures
 from pynta.geometricanalysis import *
-from pynta.utils import to_dict
-from pynta.coveragedependence import mol_to_atoms, process_calculation
+from pynta.utils import to_dict, load_slab_sites
+from pynta.coveragedependence import mol_to_atoms, process_calculation, get_atom_centered_correction
 from pysidt.sidt import *
 import logging 
 from molecule.exceptions import AtomTypeError
@@ -2151,6 +2151,128 @@ def analyze_covdep_sample_data(config_name,coad_name,Ncoad_energy_dict,path,pynt
                 config_Es.append(None)
 
     return configs_3D,config_Es,config_E_correction,config_xyzs,config_mols
+
+
+def load_or_build_sites(path, slab=None, facet=None, metal=None, custom_surface=True,
+                        allow_6fold=False, composition_effect=False):
+    """Resolve (sites, site_adjacency) for a postprocessing notebook, hiding the custom-surface toggle.
+
+    custom_surface=True  : load the EXACT sites the run saved (load_slab_sites from `path`). Required for
+                           stepped/custom surfaces (ACAT can't reproduce the _N site labels there) and
+                           always safe -- it is the covdep default, since the SIDT training maps configs
+                           onto these exact site indices.
+    custom_surface=False : rebuild sites + neighbor list with ACAT from metal/facet. Flat surfaces only,
+                           and only when ACAT is trusted to reproduce the run's site ordering.
+
+    slab/facet/metal are only needed when custom_surface=False."""
+    if custom_surface:
+        return load_slab_sites(path)
+    cas = SlabAdsorptionSites(slab, facet, allow_6fold=allow_6fold, composition_effect=composition_effect,
+                              label_sites=True, surrogate_metal=metal)
+    return cas.get_sites(), cas.get_neighbor_site_list()
+
+
+def plot_config_energy_correction(config_name, coad_name, Ncoad_energy_dict, ts_dict, ts_info,
+                                  admol_name_structure_dict, coadmol_E_dict, path, pynta_path,
+                                  slab, metal, facet, sites, site_adjacency, ad_energy_dict,
+                                  MLsize, coad_nice_name, reactant_names=None, cmap=None, forward=True,
+                                  plot_lowest_samples=True, visualize_lowest_samples=False,
+                                  write_lowest_samples=True):
+    """Plot the per-iteration SIDT energy-correction curves for config_name in a coad_name environment,
+    overlaying the lowest-energy computed sample at each coverage. This is the body of the covdep
+    "analyze an individual configuration" notebook cell, moved here to keep the notebook short.
+
+    Returns ncoad_to_best = {Ncoad: (Ecorr_eV, xyz_path, atoms)} for the lowest sample at each coverage.
+
+    The isolated single-coadsorbate reference coad[0] (which the model never stores) is reconstructed
+    internally from the atom-centered correction; see get_energy_correction_configuration."""
+    to_eV = ase.units.J / ase.units.mol  # J/mol -> eV (= 1/Faraday, from ASE)
+    if cmap is None:
+        cmap = plt.colormaps["Blues"]
+
+    # coad[0]: energy (J/mol) of one isolated coadsorbate = atom-centered correction (eV) / to_eV,
+    # with zero interaction. Lets the lowest-coverage (pair, Ncoad=1) layer be drawn instead of dropped.
+    coad_iso_energy = get_atom_centered_correction(admol_name_structure_dict[coad_name],
+                                                   coadmol_E_dict[coad_name]) / to_eV
+
+    plt.figure()
+    L = len(Ncoad_energy_dict[coad_name])
+    leg = []
+    for i in sorted(Ncoad_energy_dict[coad_name].keys()):
+        leg.append("SIDT Iter " + str(i))
+        coad_keys = Ncoad_energy_dict[coad_name][i][coad_name].keys()
+        # include the pair layer (x-1 == 0): its coad[0] reference now comes from coad_iso_energy
+        Ncoads = np.array(sorted([x for x in Ncoad_energy_dict[coad_name][i][config_name].keys()
+                                  if (x - 1 in coad_keys) or (x - 1 == 0)]))
+        energies = [get_energy_correction_configuration(Ncoad_energy_dict, ts_dict, config_name, coad_name, i, Ncoad,
+                        reactant_names=reactant_names, coad_iso_energy=coad_iso_energy) * to_eV if Ncoad > 0 else 0.0
+                    for Ncoad in Ncoads if (Ncoad - 1 in coad_keys) or (Ncoad - 1 == 0)]
+        plt.plot(Ncoads / MLsize, energies, color=cmap(i / L))
+
+    ncoad_to_best = {}
+    if plot_lowest_samples or visualize_lowest_samples or write_lowest_samples:
+        _3D, _Es, _Ecorr, _xyzs, _mols = analyze_covdep_sample_data(
+            config_name, coad_name, Ncoad_energy_dict, path, pynta_path, slab, metal, facet, sites, site_adjacency,
+            ad_energy_dict, ts_dict, coadmol_E_dict, reactant_names=reactant_names, coad_iso_energy=coad_iso_energy)
+        # config_mols/config_E_correction are only populated for valid datums; align via the non-None mask in _Es
+        _valid_xyzs = [xyz for xyz, E in zip(_xyzs, _Es) if E is not None]
+        _valid_3D = [c for c, E in zip(_3D, _Es) if E is not None]
+        for _mol, _Ec, _xyz, _atoms in zip(_mols, _Ecorr, _valid_xyzs, _valid_3D):
+            _Ncoad = len(split_adsorbed_structures(_mol)) - 1
+            # When the plotted species IS the coadsorbate, every fragment is a coadsorbate, so an
+            # N-fragment config is the N-coadsorbate case (not N-1). Shift by one coverage unit.
+            if config_name == coad_name:
+                _Ncoad += 1
+            # Put the dot in the same frame as the line: the line uses full E (atom_correction + tree
+            # pred); the dot from analyze_covdep_sample_data has atom_correction subtracted -- add it back.
+            _Ec_consistent = _Ec + get_atom_centered_correction(_mol, coadmol_E_dict[coad_name])
+            if _Ncoad not in ncoad_to_best or _Ec_consistent < ncoad_to_best[_Ncoad][0]:
+                ncoad_to_best[_Ncoad] = (_Ec_consistent, _xyz, _atoms)
+
+    if plot_lowest_samples and ncoad_to_best:
+        _ns = sorted(ncoad_to_best.keys())
+        plt.scatter(np.array(_ns) / MLsize, [ncoad_to_best[n][0] for n in _ns], color='red', zorder=10)
+        leg.append("Lowest sample")
+
+    plt.legend(leg, loc="upper left")
+    if config_name not in ts_dict.keys():
+        plt.ylabel("Energy Correction " + config_name + " [eV]")
+    else:
+        plt.ylabel("Energy Correction TS " + ts_info[config_name]["name"] + " [eV]")
+    plt.xlabel(r"$\theta_{" + coad_nice_name + r"}$")
+    plt.show()
+
+    if ncoad_to_best:
+        if plot_lowest_samples:
+            print(f"Lowest energy sample locations for {config_name}:")
+            for _n in sorted(ncoad_to_best.keys()):
+                print(f"  Ncoad={_n} (theta={_n/MLsize:.3f}): {ncoad_to_best[_n][1]}")
+        # Always write the lowest structures so they can be opened externally (independent of the viewer).
+        if write_lowest_samples:
+            _safe = config_name.replace("/", "_")
+            _outpath = f"lowest_samples_{_safe}.xyz"
+            _ns = sorted(ncoad_to_best.keys())
+            _atoms_list = []
+            for _n in _ns:
+                _a = ncoad_to_best[_n][2].copy()
+                _a.info["Ncoad"] = _n
+                _a.info["theta"] = round(_n / MLsize, 4)
+                _a.info["Ecorr_eV"] = round(ncoad_to_best[_n][0], 4)
+                _atoms_list.append(_a)
+            write(_outpath, _atoms_list)
+            print(f"Wrote {len(_atoms_list)} lowest-energy structures to {_outpath}  (frame order = increasing Ncoad):")
+            for _i, _n in enumerate(_ns):
+                print(f"    frame {_i}: Ncoad={_n} theta={_n/MLsize:.3f} Ecorr={ncoad_to_best[_n][0]:.3f} eV  src={ncoad_to_best[_n][1]}")
+        if visualize_lowest_samples:
+            _atoms_list_v = [ncoad_to_best[_n][2] for _n in sorted(ncoad_to_best.keys())]
+            try:
+                view(_atoms_list_v)
+            except Exception as _e:
+                print(f"view() failed ({_e}); use the written xyz above instead.")
+    elif visualize_lowest_samples or plot_lowest_samples or write_lowest_samples:
+        print(f"No samples found for {config_name}.")
+
+    return ncoad_to_best
 
 
 def write_all_kinetics(path, metal, facet, slab, sites, site_adjacency,
