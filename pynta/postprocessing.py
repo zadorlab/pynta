@@ -1798,7 +1798,11 @@ def get_energy_correction_configuration(Ncoad_energy_dict,ts_dict,config_name,co
     if config_name not in Ncoad_energy_dict[coad_name][0].keys(): #gas phase
         return 0.0
     elif not is_ts and config_name != coad_name: #adsorbate that is not the co-adsorbate
-        return Ncoad_energy_dict[coad_name][iter][config_name][Ncoad]-coad_ref(Ncoad-1)
+        # True energy correction = atom_corr + interaction, referenced to the species on separate
+        # slabs in their own lowest-E site (== the raw stored Ncoad_energy value, 0 at zero coverage).
+        # Do NOT subtract the coad_ref (coadsorbate-cluster) series -- that re-references away from
+        # isolated species and drives the low-coverage curve unphysically negative.
+        return Ncoad_energy_dict[coad_name][iter][config_name][Ncoad]
     elif not is_ts and config_name == coad_name: #co-adsorbate
         try:
             return coad_ref(Ncoad-1)/Ncoad
@@ -1811,7 +1815,8 @@ def get_energy_correction_configuration(Ncoad_energy_dict,ts_dict,config_name,co
         if Ncoad-Ncoad_reactants <= 0:
             return 0.0
         else:
-            return Ncoad_energy_dict[coad_name][iter][config_name][Ncoad-Ncoad_reactants]-coad_ref(Ncoad-1)
+            # True energy correction (referenced to isolated species); see the adsorbate branch above.
+            return Ncoad_energy_dict[coad_name][iter][config_name][Ncoad-Ncoad_reactants]
 
 def get_barrier_correction(Ncoad_energy_dict,ts_dict,ts_name,coad_name,iter,Ncoad,reactant_names):
     ts_correction = get_energy_correction_configuration(Ncoad_energy_dict,ts_dict,ts_name,coad_name,iter,Ncoad,reactant_names=reactant_names)
@@ -2152,8 +2157,11 @@ def analyze_covdep_sample_data(config_name,coad_name,Ncoad_energy_dict,path,pynt
                 else:
                     config_Es.append(datum_E.value*to_eV)
                     config_mols.append(datum_E.mol)
+                    # Ecorr here is the interaction (atom_corr-subtracted); the caller adds atom_corr
+                    # back to get the physical dE = atom_corr + interaction, referenced to isolated
+                    # species. Do NOT subtract the coad_ref series (see get_energy_correction_configuration).
                     if not is_ts and config_name != coad_name: #adsorbate that is not the co-adsorbate
-                        Ecorr = (datum_E.value-coad_ref(Ncoad-1,last_iter))*to_eV
+                        Ecorr = datum_E.value*to_eV
                     elif not is_ts and config_name == coad_name: #co-adsorbate
                         Ecorr = (datum_E.value - coad_ref(Ncoad-1,k)/Ncoad)*to_eV
                     else: #TS
@@ -2162,7 +2170,7 @@ def analyze_covdep_sample_data(config_name,coad_name,Ncoad_energy_dict,path,pynt
                         if Ncoad-Ncoad_reactants <= 0:
                             Ecorr = 0.0
                         else:
-                            Ecorr = (datum_E.value-coad_ref(Ncoad-1,last_iter)/Ncoad*(Ncoad-Ncoad_reactants))*to_eV
+                            Ecorr = datum_E.value*to_eV
 
                     config_E_correction.append(Ecorr)
             else:
@@ -2237,13 +2245,12 @@ def plot_config_energy_correction(config_name, coad_name, Ncoad_energy_dict, ts_
     leg = []
     for i in sorted(Ncoad_energy_dict[coad_name].keys()):
         leg.append("SIDT Iter " + str(i))
-        coad_keys = Ncoad_energy_dict[coad_name][i][coad_name].keys()
-        # include the pair layer (x-1 == 0): its coad[0] reference now comes from coad_iso_energy
-        Ncoads = np.array(sorted([x for x in Ncoad_energy_dict[coad_name][i][config_name].keys()
-                                  if (x - 1 in coad_keys) or (x - 1 == 0)]))
+        # True correction = raw stored energy (atom_corr + interaction), referenced to isolated
+        # species, so include the (0,0) zero-coverage point explicitly and every sampled coverage.
+        Ncoads = np.array([0] + sorted(Ncoad_energy_dict[coad_name][i][config_name].keys()))
         energies = [get_energy_correction_configuration(Ncoad_energy_dict, ts_dict, config_name, coad_name, i, Ncoad,
                         reactant_names=reactant_names, coad_iso_energy=coad_iso_energy) * to_eV if Ncoad > 0 else 0.0
-                    for Ncoad in Ncoads if (Ncoad - 1 in coad_keys) or (Ncoad - 1 == 0)]
+                    for Ncoad in Ncoads]
         plt.plot(Ncoads / MLsize, energies, color=cmap(i / L))
 
     ncoad_to_best = {}
