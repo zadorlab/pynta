@@ -1,7 +1,8 @@
 import shutil
 import os
 import ase
-from ase import Atoms 
+import ase.units
+from ase import Atoms
 from molecule.quantity import ScalarQuantity
 from ase.utils.structure_comparator import SymmetryEquivalenceCheck
 from ase.io import write, read
@@ -600,7 +601,7 @@ def plot_interaction_graph(admol, tree, sites, site_adjacency, slab,
                 ax.scatter(x, y, s=70, c="0.6", alpha=0.5, zorder=2)
 
     # --- interaction terms (eV): central-cell edges drawn to the nearest image of each partner ---
-    EV = 1.0 / (96.48530749925793 * 1000.0)  # J/mol -> eV
+    EV = ase.units.J / ase.units.mol  # J/mol -> eV
     contribs = [t[2] * EV for t in terms if not np.isnan(t[2])]
     maxc = max((abs(c) for c in contribs), default=1.0) or 1.0
     norm = plt.Normalize(-maxc, maxc)

@@ -13,6 +13,9 @@ import json
 import shutil
 import os
 import logging
+import ase.units
+
+EV_TO_JMOL = ase.units.mol / ase.units.J  # eV -> J/mol (Faraday)
 
 def generate_site_molecule(slab, target_sites, sites, site_adjacency, max_dist=None):
     
@@ -1270,11 +1273,11 @@ def get_adsorbate_energies(ad_path,atom_corrections=None,include_zpe=True,sidt_i
                     admol = None
                     
                 if admol:
-                    dE = sidt_isolated_delta.evaluate(admol)/96485.0 
+                    dE = sidt_isolated_delta.evaluate(admol)/EV_TO_JMOL
                 else:
                     dE = 0.0
             else:
-                dE = sidt_isolated_delta.evaluate(mol)/96485.0 
+                dE = sidt_isolated_delta.evaluate(mol)/EV_TO_JMOL
         else:
             dE = 0.0
         

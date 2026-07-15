@@ -38,14 +38,15 @@ import random
 import logging
 from collections import deque
 from ase.io import read, write
+import ase.units
 
 from pynta.coveragedependence import (add_ad_to_site, configuration_is_valid,
                                        get_atom_centered_correction, get_central_templates,
                                        remove_slab, mol_to_atoms,
                                        generate_allowed_structure_site_structures)
 
-R = 8.314  # J/mol/K, matches the Boltzmann weighting used elsewhere in covdep
-EV_TO_JMOL = 96.48530749925793 * 1000.0  # eV -> J/mol, matches get_cov_energies
+R = ase.units._k * ase.units._Nav        # gas constant, J/mol/K (Boltzmann * Avogadro)
+EV_TO_JMOL = ase.units.mol / ase.units.J  # eV -> J/mol (Faraday); matches get_cov_energies
 
 
 def _coad_stable_sites_set(coad_stable_sites):
@@ -603,6 +604,6 @@ def plot_mc_frame_interaction_graph(path, pynta_run_directory, central, coadname
     tree = MultiEvalSubgraphIsomorphicDecisionTreeRegressor([adsorbate_interaction_decomposition], nodes=nodes)
 
     title = plot_kwargs.pop("title", "MC {} +{}x{} iter{} frame{} (E={:.3f} eV)".format(
-        central, Ncoad, coadname, iteration, frame, E / (96.48530749925793 * 1000.0)))
+        central, Ncoad, coadname, iteration, frame, E / EV_TO_JMOL))
     return plot_interaction_graph(admol, tree, sites, site_adjacency, slab,
                                   out_png=out_png, title=title, **plot_kwargs)

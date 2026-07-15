@@ -22,9 +22,13 @@ import numpy as np
 import json
 import shutil
 import os
-import itertools 
+import itertools
 import logging
 import pickle
+import ase.units
+
+EV_TO_JMOL = ase.units.mol / ase.units.J  # eV -> J/mol (Faraday)
+R = ase.units._k * ase.units._Nav         # gas constant, J/mol/K (Boltzmann * Avogadro)
 
 def get_allowed_structure_site_structures_cached(adsorbates_path, sites, site_adjacency, nslab, cache_path, max_dist=np.inf):
     """generate_allowed_structure_site_structures, cached to cache_path (pickle). It depends only on
@@ -1824,7 +1828,7 @@ def get_configurations(admol, coad, coad_stable_sites, tree_interaction_classifi
                         if tree_atom_regressor is not None:
                             E = tree_atom_regressor.evaluate(m) + tree_interaction_regressor.evaluate(m)
                         elif coadmol_E_dict is not None:
-                            E = get_atom_centered_correction(m,coadmol_E_dict)*96.48530749925793*1000.0 + tree_interaction_regressor.evaluate(m)
+                            E = get_atom_centered_correction(m,coadmol_E_dict)*EV_TO_JMOL + tree_interaction_regressor.evaluate(m)
                         else:
                             raise ValueError
 
@@ -1882,7 +1886,7 @@ def get_cov_energies_configs_concern_tree(tree_interaction_regressor, configs, c
             E = tree_atom_regressor.evaluate(m) + Einteraction
         elif coadmol_E_dict is not None:
             Einteraction,std,tr = tree_interaction_regressor.evaluate(m,trace=True, estimate_uncertainty=True)
-            E = get_atom_centered_correction(m,coadmol_E_dict)*96.48530749925793*1000.0 + Einteraction
+            E = get_atom_centered_correction(m,coadmol_E_dict)*EV_TO_JMOL + Einteraction
         else:
             raise ValueError
 
@@ -1919,7 +1923,7 @@ def get_cov_energies(tree_interaction_regressor, configs, coad_stable_sites, Nco
         if tree_atom_regressor is not None:
             E = tree_atom_regressor.evaluate(m) + tree_interaction_regressor.evaluate(m)
         elif coadmol_E_dict is not None:
-            E = get_atom_centered_correction(m,coadmol_E_dict)*96.48530749925793*1000.0 + tree_interaction_regressor.evaluate(m)
+            E = get_atom_centered_correction(m,coadmol_E_dict)*EV_TO_JMOL + tree_interaction_regressor.evaluate(m)
         else:
             raise ValueError
         if Ncoad not in Ncoad_energy_dict.keys():
@@ -1949,7 +1953,7 @@ def get_configs_of_concern(tree_interaction_regressor,configs,coad_stable_sites,
             E = tree_atom_regressor.evaluate(m) + Einteraction
         elif coadmol_E_dict is not None:
             Einteraction,std,tr = tree_interaction_regressor.evaluate(m,trace=True, estimate_uncertainty=True)
-            E = get_atom_centered_correction(m,coadmol_E_dict)*96.48530749925793*1000.0 + Einteraction
+            E = get_atom_centered_correction(m,coadmol_E_dict)*EV_TO_JMOL + Einteraction
         else:
             raise ValueError
         if Ncoad_energy_dict[Ncoad] + concern_energy_tol > E:
@@ -1990,8 +1994,8 @@ def load_coverage_delta(d,ad_energy_dict,slab,metal,facet,sites,site_adjacency,t
             return admol,neighbor_sites,ninds,None
             
         Ecad = (atoms.get_potential_energy() - slab.get_potential_energy() + vibdata.get_zero_point_energy()
-                + (0.0 if sidt_isolated_delta is None else sidt_isolated_delta.evaluate(admol)/96485.0)
-                + (0.0 if sidt_covdep_delta is None else sidt_covdep_delta.evaluate(admol)/96485.0))
+                + (0.0 if sidt_isolated_delta is None else sidt_isolated_delta.evaluate(admol)/EV_TO_JMOL)
+                + (0.0 if sidt_covdep_delta is None else sidt_covdep_delta.evaluate(admol)/EV_TO_JMOL))
 
         Esep = 0.0
         for split_struct in split_structs:
@@ -2028,13 +2032,13 @@ def load_coverage_delta(d,ad_energy_dict,slab,metal,facet,sites,site_adjacency,t
             return admol,neighbor_sites,ninds,None
         
         Ecad = (atoms.get_potential_energy() - slab.get_potential_energy() + vibdata.get_zero_point_energy()
-                + (0.0 if sidt_isolated_delta is None else sidt_isolated_delta.evaluate(admol)/96485.0)
-                + (0.0 if sidt_covdep_delta is None else sidt_covdep_delta.evaluate(admol)/96485.0))
+                + (0.0 if sidt_isolated_delta is None else sidt_isolated_delta.evaluate(admol)/EV_TO_JMOL)
+                + (0.0 if sidt_covdep_delta is None else sidt_covdep_delta.evaluate(admol)/EV_TO_JMOL))
 
         ts = read(xyz) #isolated TS
         ts_vibdata = get_vibdata(xyz,os.path.join(os.path.split(xyz)[0],"vib.json_vib.json"),len(slab))
         Ets = (ts.get_potential_energy() - slab.get_potential_energy() + ts_vibdata.get_zero_point_energy()
-               + (0.0 if sidt_isolated_delta is None else sidt_isolated_delta.evaluate(admol)/96485.0))
+               + (0.0 if sidt_isolated_delta is None else sidt_isolated_delta.evaluate(admol)/EV_TO_JMOL))
         
         num_ts_atoms = len(ts) - len(slab)
         
@@ -2305,7 +2309,7 @@ def process_calculation(d,ad_energy_dict,slab,metal,facet,sites,site_adjacency,p
                         skip = True
                 if not skip:
                     try:
-                        datum_E = Datum(mol_out,(outdict["dE"] - get_atom_centered_correction(mol_out,coadmol_E_dict))*96.48530749925793*1000.0) #eV to J/mol
+                        datum_E = Datum(mol_out,(outdict["dE"] - get_atom_centered_correction(mol_out,coadmol_E_dict))*EV_TO_JMOL) #eV to J/mol
                         datums_stability.append(Datum(mol_out,True))
                     except KeyError:
                         pass
@@ -2334,10 +2338,10 @@ def get_configs_for_calculation(configs_of_concern_by_coad_admol,Ncoad_energy_by
                 Emin = Ncoad_energy_by_coad_admol[coadname][admol_name][Nocc-Nocc_isolated]
                 for grp in grps:
                     if grp in group_to_occurence_admol:
-                        group_to_occurence_admol[grp] += np.exp(-(E-Emin)/(8.314*T))
+                        group_to_occurence_admol[grp] += np.exp(-(E-Emin)/(R*T))
                         N += 1
                     else:
-                        group_to_occurence_admol[grp] = np.exp(-(E-Emin)/(8.314*T))
+                        group_to_occurence_admol[grp] = np.exp(-(E-Emin)/(R*T))
                         N += 1
             for grp,n in group_to_occurence_admol.items():
                 if grp in group_to_occurence:
@@ -2545,7 +2549,7 @@ def collect_pairs_interaction_data(path, pynta_path, coadname, ad_energy_dict, s
     pairsdir = os.path.join(path, "pairs")
     nslab = len(slab)
     addir = os.path.join(pynta_path, "Adsorbates")
-    EV = 1.0 / (96.48530749925793 * 1000.0)  # J/mol -> eV
+    EV = 1.0 / EV_TO_JMOL  # J/mol -> eV
     coad_baseline = coadmol_E_dict.get(coadname) if (coadmol_E_dict and add_atom_correction) else None
 
     # number of coadsorbate adatoms (coad is appended last in each pair geometry)
@@ -2668,7 +2672,7 @@ def plot_pairs_interaction_maps(path, pynta_path, coadname, ad_energy_dict, slab
     import re
     import matplotlib.pyplot as plt
 
-    fac = {"mev": 1000.0, "ev": 1.0, "kj/mol": 96.48530749925793}.get(unit.lower())
+    fac = {"mev": 1000.0, "ev": 1.0, "kj/mol": ase.units.mol / ase.units.kJ}.get(unit.lower())
     if fac is None:
         raise ValueError("unit must be 'meV', 'eV' or 'kJ/mol', got {!r}".format(unit))
 
