@@ -2033,7 +2033,7 @@ def analyze_covdep_lowest_energy(Ncoad_config_dict,iter_configs,config_name,coad
 def analyze_covdep_sample_data(config_name,coad_name,Ncoad_energy_dict,path,pynta_path,
                                slab,metal,facet,sites,site_adjacency,ad_energy_dict,ts_dict,coadmol_E_dict,reactant_names=None):
 
-    to_eV = 1.0/(96.48530749925793*1000.0) #converts from J/mol to eV
+    to_eV = ase.units.J / ase.units.mol #J/mol -> eV (= 1/Faraday constant, provided by ASE)
     configs_3D = []
     config_Es = []
     config_E_correction = []
