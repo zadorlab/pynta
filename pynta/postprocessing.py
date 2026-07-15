@@ -1791,11 +1791,15 @@ def get_energy_correction_configuration(Ncoad_energy_dict,ts_dict,config_name,co
             return coad_iso_energy
         return Ncoad_energy_dict[coad_name][iter][coad_name][j]
 
+    # A TS config key is either an original name ("TS2") or a compound name ("TS2_286") whose base is
+    # in ts_dict (list-valued ts_dict expands each config to its own key). Match both.
+    is_ts = config_name in ts_dict or config_name.rsplit("_", 1)[0] in ts_dict
+
     if config_name not in Ncoad_energy_dict[coad_name][0].keys(): #gas phase
         return 0.0
-    elif config_name not in ts_dict.keys() and config_name != coad_name: #adsorbate that is not the co-adsorbate
+    elif not is_ts and config_name != coad_name: #adsorbate that is not the co-adsorbate
         return Ncoad_energy_dict[coad_name][iter][config_name][Ncoad]-coad_ref(Ncoad-1)
-    elif config_name not in ts_dict.keys() and config_name == coad_name: #co-adsorbate
+    elif not is_ts and config_name == coad_name: #co-adsorbate
         try:
             return coad_ref(Ncoad-1)/Ncoad
         except Exception as e:
@@ -2008,10 +2012,18 @@ def extract_covdep_data(path,pynta_path,ts_dict,metal,facet,sites,site_adjacency
             i += 1
             iter_path = os.path.join(path,"Iterations",str(i))
 
+    # Key ts_info by the same (possibly compound) keys used everywhere else
+    # (admol_name_structure_dict, Ncoad_energy_dict, ...). A string value keeps the
+    # original TS name ("TS2"); a list value expands to compound keys ("TS2_286").
     ts_info = dict()
-    for ts_name in ts_dict.keys():
-        with open(os.path.join(pynta_path,ts_name,"info.json"),'r') as f:
-            ts_info[ts_name] = json.load(f)
+    for k, inds in ts_dict.items():
+        with open(os.path.join(pynta_path,k,"info.json"),'r') as f:
+            info = json.load(f)
+        if isinstance(inds, str):
+            ts_info[k] = info
+        else:
+            for ind in inds:
+                ts_info[f"{k}_{ind}"] = info
 
     # An iteration can have a regressor.json but no Ncoad_energy_* files (e.g. an incomplete /
     # in-progress iteration). Such an iteration carries no per-coverage data, so drop it -- otherwise
@@ -2057,6 +2069,8 @@ def analyze_covdep_sample_data(config_name,coad_name,Ncoad_energy_dict,path,pynt
     if coad_iso_energy is None and admol_name_structure_dict is not None and coad_name in admol_name_structure_dict:
         coad_iso_energy = get_atom_centered_correction(admol_name_structure_dict[coad_name], coadmol_E_dict[coad_name]) / to_eV
     last_iter = len(Ncoad_energy_dict[coad_name]) - 1
+    # A TS config key is an original name ("TS2") or a compound name ("TS2_286") whose base is in ts_dict.
+    is_ts = config_name in ts_dict or config_name.rsplit("_", 1)[0] in ts_dict
     def coad_ref(j, it):
         if j == 0:
             return coad_iso_energy  # may be None -> guarded before use
@@ -2138,9 +2152,9 @@ def analyze_covdep_sample_data(config_name,coad_name,Ncoad_energy_dict,path,pynt
                 else:
                     config_Es.append(datum_E.value*to_eV)
                     config_mols.append(datum_E.mol)
-                    if config_name not in ts_dict.keys() and config_name != coad_name: #adsorbate that is not the co-adsorbate
+                    if not is_ts and config_name != coad_name: #adsorbate that is not the co-adsorbate
                         Ecorr = (datum_E.value-coad_ref(Ncoad-1,last_iter))*to_eV
-                    elif config_name not in ts_dict.keys() and config_name == coad_name: #co-adsorbate
+                    elif not is_ts and config_name == coad_name: #co-adsorbate
                         Ecorr = (datum_E.value - coad_ref(Ncoad-1,k)/Ncoad)*to_eV
                     else: #TS
                         assert reactant_names is not None
@@ -2258,7 +2272,9 @@ def plot_config_energy_correction(config_name, coad_name, Ncoad_energy_dict, ts_
         leg.append("Lowest sample")
 
     plt.legend(leg, loc="upper left")
-    if config_name not in ts_dict.keys():
+    # config_name may be a compound TS key ("TS2_286"); recognize its base in ts_dict.
+    is_ts = config_name in ts_dict or config_name.rsplit("_", 1)[0] in ts_dict
+    if not is_ts:
         plt.ylabel("Energy Correction " + config_name + " [eV]")
     else:
         plt.ylabel("Energy Correction TS " + ts_info[config_name]["name"] + " [eV]")
