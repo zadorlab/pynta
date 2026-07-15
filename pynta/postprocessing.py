@@ -22,7 +22,8 @@ import logging
 from molecule.exceptions import AtomTypeError
 import glob 
 
-eV_to_Jmol = 9.648328e4
+eV_to_Jmol = ase.units.mol / ase.units.J        # eV -> J/mol (Faraday)
+Jmol_to_kcalmol = ase.units.J / ase.units.kcal  # J/mol -> kcal/mol (= 1/4184)
 
 def load_harm_parameters(path):
     """Load the harmonic-filter parameters (Eharmtol, Eharmfiltertol, Nharmmin) that a Pynta run
@@ -511,13 +512,13 @@ class GasConfiguration:
             valid (bool, optional): whether the configuration is valid for thermochemistry/kinetics. Defaults to True.
         """
         
-        # start by defining some physical constants
-        self.R = 8.3144621  # ideal Gas constant in J/mol-K
-        self.kB = 1.38065e-23  # Boltzmann constant in J/K
-        self.h = 6.62607e-34  # Planck constant in J*s
-        self.c = 2.99792458e8  # speed of light in m/s
-        self.amu = 1.6605e-27  # atomic mass unit in kg
-        self.Avogadro = 6.0221E23  # mole^-1
+        # start by defining some physical constants (from ase.units)
+        self.R = ase.units._k * ase.units._Nav  # ideal Gas constant in J/mol-K
+        self.kB = ase.units._k  # Boltzmann constant in J/K
+        self.h = ase.units._hplanck  # Planck constant in J*s
+        self.c = ase.units._c  # speed of light in m/s
+        self.amu = ase.units._amu  # atomic mass unit in kg
+        self.Avogadro = ase.units._Nav  # mole^-1
         self.GHz_to_Hz = 1.0E9  # convert rotational constants from GHz to Hz
         self.invcm_to_invm = 1.0E2  # convert cm^-1 to m^-1, for frequencies
         self.P_ref = 1.0E5  # reference pressure, 1 bar = 1E5 Pascal
@@ -557,7 +558,7 @@ class GasConfiguration:
         
     def compute_heat_of_formation(self):
         if self.delta_sidt:
-            self.energy = self.DFT_energy + self.ZPE_energy + self.delta_sidt.evaluate(self.mol)/96485.0
+            self.energy = self.DFT_energy + self.ZPE_energy + self.delta_sidt.evaluate(self.mol)/eV_to_Jmol
         else:
             self.energy = self.DFT_energy + self.ZPE_energy
             
@@ -597,8 +598,8 @@ class GasConfiguration:
         line += self.thermo_lines
         line += f'    \nlongDesc = u"""Calculated using Pynta https://doi.org/10.1021/acs.jcim.3c00948. \n'
         line += "                   Thermochemistry computed using approach from Blondal et. al in https://doi.org/10.1021/acscatal.2c03378. \nIf you use this library in your work, please cite the publications mentioned above.\n"
-        line += "Hf298: {} [kcal/mol]\n".format(self.H[0]/4184.0)
-        line += "Sf298: {} [cal/(mol-K)]\n".format(self.S[0]/4.184)
+        line += "Hf298: {} [kcal/mol]\n".format(self.H[0]*Jmol_to_kcalmol)
+        line += "Sf298: {} [cal/(mol-K)]\n".format(self.S[0]*Jmol_to_kcalmol*1000.0)
         line += xyz
         line += '""",\n)\n'
 
@@ -729,13 +730,13 @@ class SurfaceConfiguration:
                  mol=None,
                  delta_sidt=None):
 
-        # start by defining some physical constants
-        self.R = 8.3144621  # ideal Gas constant in J/mol-K
-        self.kB = 1.38065e-23  # Boltzmann constant in J/K
-        self.h = 6.62607e-34  # Planck constant in J*s
-        self.c = 2.99792458e8  # speed of light in m/s
-        self.amu = 1.6605e-27  # atomic mass unit in kg
-        self.Avogadro = 6.0221E23  # mole^-1
+        # start by defining some physical constants (from ase.units)
+        self.R = ase.units._k * ase.units._Nav  # ideal Gas constant in J/mol-K
+        self.kB = ase.units._k  # Boltzmann constant in J/K
+        self.h = ase.units._hplanck  # Planck constant in J*s
+        self.c = ase.units._c  # speed of light in m/s
+        self.amu = ase.units._amu  # atomic mass unit in kg
+        self.Avogadro = ase.units._Nav  # mole^-1
         self.GHz_to_Hz = 1.0E9  # convert rotational constants from GHz to Hz
         self.invcm_to_invm = 1.0E2  # convert cm^-1 to m^-1, for frequencies
         self.P_ref = 1.0E5  # reference pressure, 1 bar = 1E5 Pascal
@@ -818,7 +819,7 @@ class SurfaceConfiguration:
         
     def compute_heat_of_formation(self):
         if self.delta_sidt and self.admol is not None:
-            self.energy = self.DFT_energy + self.ZPE_energy + self.delta_sidt.evaluate(self.admol)/96485.0
+            self.energy = self.DFT_energy + self.ZPE_energy + self.delta_sidt.evaluate(self.admol)/eV_to_Jmol
         else:
             self.energy = self.DFT_energy + self.ZPE_energy
 
@@ -953,8 +954,8 @@ class SurfaceConfiguration:
         line += self.thermo_lines
         line += f'    \nlongDesc = u"""Calculated using Pynta https://doi.org/10.1021/acs.jcim.3c00948. \n'
         line += "                   Thermochemistry computed using approach from Blondal et. al in https://doi.org/10.1021/acscatal.2c03378. \nIf you use this library in your work, please cite the publications mentioned above.\n"
-        line += "Hf298: {} [kcal/mol]\n".format(self.H[0]/4184.0)
-        line += "Sf298: {} [cal/(mol-K)]\n".format(self.S[0]/4.184)
+        line += "Hf298: {} [kcal/mol]\n".format(self.H[0]*Jmol_to_kcalmol)
+        line += "Sf298: {} [cal/(mol-K)]\n".format(self.S[0]*Jmol_to_kcalmol*1000.0)
         line += xyz
         if self.twoD_gas:
             line += '\n            The two lowest frequencies, %.1F and %.1F %s, where replaced by the 2D gas model.' % (
@@ -1114,7 +1115,7 @@ class Kinetics:
         
     def calculate_kinetic_parameters(self):
         kB = ase.units.kB
-        R = 8.314 #J/(mol K)
+        R = ase.units._k * ase.units._Nav #J/(mol K)
         h = 6.582119569e-16 # eV * s
         c0 = 2.4282*10**22*1000.0 #molecules/m^3
 
