@@ -2030,6 +2030,25 @@ def extract_covdep_data(path,pynta_path,ts_dict,metal,facet,sites,site_adjacency
             for ind in inds:
                 ts_info[f"{k}_{ind}"] = info
 
+    # Robustness: also key ts_info by every TS config name that actually appears in the run data
+    # (the Ncoad_energy_* files), regardless of how ts_dict was written (string "26" vs list ["26"]).
+    # A data config name is a TS if it -- or its "<base>_<idx>" base -- is a ts_dict key. This makes
+    # config_name="TS0_26" resolve even when ts_dict={"TS0":"26"}, so downstream cells always find
+    # reactant_names and never hit the TS-branch assert in get_energy_correction_configuration.
+    data_config_keys = set()
+    for cn in coad_names:
+        for it_dict in Ncoad_energy_dict[cn].values():
+            data_config_keys.update(it_dict.keys())
+    for key in data_config_keys:
+        if key in ts_info:
+            continue
+        base = key if key in ts_dict else key.rsplit("_", 1)[0]
+        if base in ts_dict:
+            info_path = os.path.join(pynta_path, base, "info.json")
+            if os.path.exists(info_path):
+                with open(info_path, "r") as f:
+                    ts_info[key] = json.load(f)
+
     # An iteration can have a regressor.json but no Ncoad_energy_* files (e.g. an incomplete /
     # in-progress iteration). Such an iteration carries no per-coverage data, so drop it -- otherwise
     # max() below (and the downstream plotting cells that index [config_name]) choke on an empty dict.
@@ -2163,7 +2182,8 @@ def analyze_covdep_sample_data(config_name,coad_name,Ncoad_energy_dict,path,pynt
                     if not is_ts and config_name != coad_name: #adsorbate that is not the co-adsorbate
                         Ecorr = datum_E.value*to_eV
                     elif not is_ts and config_name == coad_name: #co-adsorbate
-                        Ecorr = (datum_E.value - coad_ref(Ncoad-1,k)/Ncoad)*to_eV
+                        # same total-energy quantity as any adsorbate; caller adds atom_corr -> dE
+                        Ecorr = datum_E.value*to_eV
                     else: #TS
                         assert reactant_names is not None
                         Ncoad_reactants = reactant_names.count(coad_name)
@@ -2245,12 +2265,20 @@ def plot_config_energy_correction(config_name, coad_name, Ncoad_energy_dict, ts_
     leg = []
     for i in sorted(Ncoad_energy_dict[coad_name].keys()):
         leg.append("SIDT Iter " + str(i))
+        keys = sorted(Ncoad_energy_dict[coad_name][i][config_name].keys())
         # True correction = raw stored energy (atom_corr + interaction), referenced to isolated
         # species, so include the (0,0) zero-coverage point explicitly and every sampled coverage.
-        Ncoads = np.array([0] + sorted(Ncoad_energy_dict[coad_name][i][config_name].keys()))
-        energies = [get_energy_correction_configuration(Ncoad_energy_dict, ts_dict, config_name, coad_name, i, Ncoad,
-                        reactant_names=reactant_names, coad_iso_energy=coad_iso_energy) * to_eV if Ncoad > 0 else 0.0
-                    for Ncoad in Ncoads]
+        if config_name == coad_name:
+            # every fragment is a coadsorbate: dict key k is the (k+1)-coadsorbate config, and a
+            # single isolated coadsorbate (coverage 1) is the zero reference. Shift x by +1 and plot
+            # the raw total energy (same quantity as the other adsorbates).
+            Ncoads = np.array([0, 1] + [k + 1 for k in keys])
+            energies = [0.0, 0.0] + [Ncoad_energy_dict[coad_name][i][config_name][k] * to_eV for k in keys]
+        else:
+            Ncoads = np.array([0] + keys)
+            energies = [get_energy_correction_configuration(Ncoad_energy_dict, ts_dict, config_name, coad_name, i, Ncoad,
+                            reactant_names=reactant_names, coad_iso_energy=coad_iso_energy) * to_eV if Ncoad > 0 else 0.0
+                        for Ncoad in Ncoads]
         plt.plot(Ncoads / MLsize, energies, color=cmap(i / L))
 
     ncoad_to_best = {}
