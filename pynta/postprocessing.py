@@ -2155,18 +2155,37 @@ def analyze_covdep_sample_data(config_name,coad_name,Ncoad_energy_dict,path,pynt
 
 
 def load_or_build_sites(path, slab=None, facet=None, metal=None, custom_surface=True,
+                        sites_file=None, site_adjacency_file=None,
                         allow_6fold=False, composition_effect=False):
     """Resolve (sites, site_adjacency) for a postprocessing notebook, hiding the custom-surface toggle.
 
-    custom_surface=True  : load the EXACT sites the run saved (load_slab_sites from `path`). Required for
-                           stepped/custom surfaces (ACAT can't reproduce the _N site labels there) and
-                           always safe -- it is the covdep default, since the SIDT training maps configs
-                           onto these exact site indices.
+    custom_surface=True  : load the EXACT sites the run saved. Required for stepped/custom surfaces
+                           (ACAT can't reproduce the _N site labels there) and always safe -- it is the
+                           covdep default, since the SIDT training maps configs onto these exact site
+                           indices. By default reads sites.json / site_adjacency.json from `path` (with
+                           the legacy single_sites_lists.json / neighbor_site_list.json fallback). Pass
+                           sites_file AND site_adjacency_file to point at specific files whose
+                           names/location differ.
     custom_surface=False : rebuild sites + neighbor list with ACAT from metal/facet. Flat surfaces only,
                            and only when ACAT is trusted to reproduce the run's site ordering.
 
     slab/facet/metal are only needed when custom_surface=False."""
     if custom_surface:
+        if sites_file is not None or site_adjacency_file is not None:
+            if sites_file is None or site_adjacency_file is None:
+                raise ValueError("pass both sites_file and site_adjacency_file, or neither (to use the "
+                                 "default names in `path`)")
+            with open(sites_file) as f:
+                sites = json.load(f)
+            for s in sites:
+                s["position"] = np.array(s["position"])
+                if s.get("normal") is not None:
+                    s["normal"] = np.array(s["normal"])
+                if s.get("indices") is not None:
+                    s["indices"] = tuple(s["indices"])
+            with open(site_adjacency_file) as f:
+                site_adjacency = {int(k): v for k, v in json.load(f).items()}
+            return sites, site_adjacency
         return load_slab_sites(path)
     cas = SlabAdsorptionSites(slab, facet, allow_6fold=allow_6fold, composition_effect=composition_effect,
                               label_sites=True, surrogate_metal=metal)
