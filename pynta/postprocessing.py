@@ -1771,19 +1771,32 @@ def write_rmg_libraries(path,spc_dict,spc_dict_thermo,ts_dict,metal,facet):
     with open(os.path.join(path,"reaction_library","dictionary.txt"),'w') as f:
         f.write(spc_dictionary_txt)
         
-def get_energy_correction_configuration(Ncoad_energy_dict,ts_dict,config_name,coad_name,iter,Ncoad,reactant_names=None):
+def get_energy_correction_configuration(Ncoad_energy_dict,ts_dict,config_name,coad_name,iter,Ncoad,reactant_names=None,coad_iso_energy=None):
     """Compute the energy corrections (difference in energy between the isolated configuration and non-isolated configuraitons)
         at each coverage for adsorbate/TS with name config_name
-        
+
         Note the TS energy correction can depend on the direction of reaction so it needs the reactant_names
+
+        coad_iso_energy is the energy of a single, isolated coadsorbate molecule (J/mol) -- the j==0 element of
+        the coad[j] reference series. The model never stores it (Ncoad_energy_dict keys start at 1), so the
+        lowest coverage (Ncoad==1, i.e. the pair) is only computable when it is supplied here.
     """
+    # energy of j coadsorbate molecules alone (coad-central + (j-1) extra coads). j==0 is the isolated
+    # single coadsorbate, which the model never stores -> supply via coad_iso_energy.
+    def coad_ref(j):
+        if j == 0:
+            if coad_iso_energy is None:
+                raise KeyError("isolated coadsorbate energy (Ncoad-1==0) unavailable; pass coad_iso_energy")
+            return coad_iso_energy
+        return Ncoad_energy_dict[coad_name][iter][coad_name][j]
+
     if config_name not in Ncoad_energy_dict[coad_name][0].keys(): #gas phase
         return 0.0
     elif config_name not in ts_dict.keys() and config_name != coad_name: #adsorbate that is not the co-adsorbate
-        return Ncoad_energy_dict[coad_name][iter][config_name][Ncoad]-Ncoad_energy_dict[coad_name][iter][coad_name][Ncoad-1]
+        return Ncoad_energy_dict[coad_name][iter][config_name][Ncoad]-coad_ref(Ncoad-1)
     elif config_name not in ts_dict.keys() and config_name == coad_name: #co-adsorbate
         try:
-            return Ncoad_energy_dict[coad_name][iter][config_name][Ncoad-1]/Ncoad
+            return coad_ref(Ncoad-1)/Ncoad
         except Exception as e:
             print((config_name,coad_name,iter,Ncoad))
             raise e
@@ -1793,7 +1806,7 @@ def get_energy_correction_configuration(Ncoad_energy_dict,ts_dict,config_name,co
         if Ncoad-Ncoad_reactants <= 0:
             return 0.0
         else:
-            return Ncoad_energy_dict[coad_name][iter][config_name][Ncoad-Ncoad_reactants]-Ncoad_energy_dict[coad_name][iter][coad_name][Ncoad-1]
+            return Ncoad_energy_dict[coad_name][iter][config_name][Ncoad-Ncoad_reactants]-coad_ref(Ncoad-1)
 
 def get_barrier_correction(Ncoad_energy_dict,ts_dict,ts_name,coad_name,iter,Ncoad,reactant_names):
     ts_correction = get_energy_correction_configuration(Ncoad_energy_dict,ts_dict,ts_name,coad_name,iter,Ncoad,reactant_names=reactant_names)
@@ -2031,9 +2044,19 @@ def analyze_covdep_lowest_energy(Ncoad_config_dict,iter_configs,config_name,coad
     return configs_3D,configs_2D,sidt_Es,sidt_traces
 
 def analyze_covdep_sample_data(config_name,coad_name,Ncoad_energy_dict,path,pynta_path,
-                               slab,metal,facet,sites,site_adjacency,ad_energy_dict,ts_dict,coadmol_E_dict,reactant_names=None):
+                               slab,metal,facet,sites,site_adjacency,ad_energy_dict,ts_dict,coadmol_E_dict,reactant_names=None,
+                               coad_iso_energy=None):
 
     to_eV = ase.units.J / ase.units.mol #J/mol -> eV (= 1/Faraday constant, provided by ASE)
+
+    # energy of j coadsorbate molecules alone; j==0 is the isolated single coadsorbate, which the model
+    # never stores (Ncoad_energy_dict keys start at 1). Supplying coad_iso_energy lets the lowest coverage
+    # (Ncoad==1, the pair) survive instead of being silently dropped below.
+    last_iter = len(Ncoad_energy_dict[coad_name]) - 1
+    def coad_ref(j, it):
+        if j == 0:
+            return coad_iso_energy  # may be None -> guarded before use
+        return Ncoad_energy_dict[coad_name][it][coad_name][j]
     configs_3D = []
     config_Es = []
     config_E_correction = []
@@ -2101,25 +2124,27 @@ def analyze_covdep_sample_data(config_name,coad_name,Ncoad_energy_dict,path,pynt
             configs_3D.append(read(xyz))
             if datum_E is not None:
                 Ncoad = len(split_adsorbed_structures(datum_E.mol)) - 1
-                last_iter = len(Ncoad_energy_dict[coad_name])-1
                 # Skip degenerate cases: e.g., a pair where MACE collapsed two adsorbates
-                # into one fragment (Ncoad=0), or coverages not represented in the model.
-                if Ncoad < 1 or (Ncoad-1) not in Ncoad_energy_dict[coad_name][last_iter][coad_name]:
+                # into one fragment (Ncoad=0), or coverages not represented in the model. The
+                # Ncoad==1 (pair) layer references coad[0] (the isolated coadsorbate), which the
+                # model never stores -- keep it only when coad_iso_energy supplies that reference.
+                have_ref = ((Ncoad-1) in Ncoad_energy_dict[coad_name][last_iter][coad_name]) or (Ncoad-1 == 0 and coad_iso_energy is not None)
+                if Ncoad < 1 or not have_ref:
                     config_Es.append(None)
                 else:
                     config_Es.append(datum_E.value*to_eV)
                     config_mols.append(datum_E.mol)
                     if config_name not in ts_dict.keys() and config_name != coad_name: #adsorbate that is not the co-adsorbate
-                        Ecorr = (datum_E.value-Ncoad_energy_dict[coad_name][last_iter][coad_name][Ncoad-1])*to_eV
+                        Ecorr = (datum_E.value-coad_ref(Ncoad-1,last_iter))*to_eV
                     elif config_name not in ts_dict.keys() and config_name == coad_name: #co-adsorbate
-                        Ecorr = (datum_E.value - Ncoad_energy_dict[coad_name][k][config_name][Ncoad-1]/Ncoad)*to_eV
+                        Ecorr = (datum_E.value - coad_ref(Ncoad-1,k)/Ncoad)*to_eV
                     else: #TS
                         assert reactant_names is not None
                         Ncoad_reactants = reactant_names.count(coad_name)
                         if Ncoad-Ncoad_reactants <= 0:
                             Ecorr = 0.0
                         else:
-                            Ecorr = (datum_E.value-Ncoad_energy_dict[coad_name][last_iter][coad_name][Ncoad-1]/Ncoad*(Ncoad-Ncoad_reactants))*to_eV
+                            Ecorr = (datum_E.value-coad_ref(Ncoad-1,last_iter)/Ncoad*(Ncoad-Ncoad_reactants))*to_eV
 
                     config_E_correction.append(Ecorr)
             else:
