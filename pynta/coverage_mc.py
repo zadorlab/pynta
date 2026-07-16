@@ -476,6 +476,43 @@ def build_admol_from_occ(base_admol, coad, occ_ranks):
     return m
 
 
+def _load_mc_chains(path, central, coadname, Ncoad, iteration=None):
+    """Resolve which Iterations/<i> to read this MC chain from, and load it.
+
+    iteration=None -> the LATEST iteration whose mc_chain_<central>_<coad>.json exists AND contains
+    this Ncoad. The newest iteration's MC may not have finished (or may not cover this coverage yet),
+    so walk back until one with usable data is found. An explicit iteration is honored, and errors
+    clearly if it lacks the data. Returns (resolved_iteration, chains_dict).
+    """
+    iters_dir = os.path.join(path, "Iterations")
+    def _try(it):
+        cf = os.path.join(iters_dir, str(it), "mc_chain_" + central + "_" + coadname + ".json")
+        if not os.path.exists(cf):
+            return None
+        try:
+            with open(cf) as f:
+                chains = json.load(f)
+        except (ValueError, OSError):
+            return None  # partially-written / unreadable -> treat as "not ready"
+        return chains if str(Ncoad) in chains else None
+
+    if iteration is not None:
+        chains = _try(iteration)
+        if chains is None:
+            raise FileNotFoundError(
+                "no MC chain for central={} coad={} Ncoad={} in Iterations/{}".format(
+                    central, coadname, Ncoad, iteration))
+        return iteration, chains
+
+    for it in sorted((int(d) for d in os.listdir(iters_dir) if d.isdigit()), reverse=True):
+        chains = _try(it)
+        if chains is not None:
+            return it, chains
+    raise FileNotFoundError(
+        "no MC chain for central={} coad={} Ncoad={} in any Iterations/*/ under {}".format(
+            central, coadname, Ncoad, iters_dir))
+
+
 def write_mc_chain_xyz(path, pynta_run_directory, central, coadname, Ncoad, sites, site_adjacency,
                        metal, facet, iteration=None, adsorbate_site_energy_cutoff=None,
                        out_xyz=None, slab=None, allowed_structure_site_structures=None):
@@ -503,14 +540,7 @@ def write_mc_chain_xyz(path, pynta_run_directory, central, coadname, Ncoad, site
     Returns (out_xyz, frames, energies): the written path (auto-named with the resolved iteration
     unless out_xyz was given), the list of ase.Atoms, and the per-frame energies [J/mol].
     """
-    if iteration is None:
-        iters = [int(d) for d in os.listdir(os.path.join(path, "Iterations")) if d.isdigit()]
-        iteration = max(iters)
-    chain_file = os.path.join(path, "Iterations", str(iteration), "mc_chain_" + central + "_" + coadname + ".json")
-    with open(chain_file) as f:
-        chains = json.load(f)
-    if str(Ncoad) not in chains:
-        raise KeyError("no chain for Ncoad={} in {} (have {})".format(Ncoad, chain_file, list(chains.keys())))
+    iteration, chains = _load_mc_chains(path, central, coadname, Ncoad, iteration)
     chain = chains[str(Ncoad)]
 
     if slab is None:
@@ -570,15 +600,9 @@ def plot_mc_frame_interaction_graph(path, pynta_run_directory, central, coadname
     from pysidt.sidt import read_nodes, MultiEvalSubgraphIsomorphicDecisionTreeRegressor
     from pynta.coveragedependence import adsorbate_interaction_decomposition
 
-    if iteration is None:
-        iters = [int(d) for d in os.listdir(os.path.join(path, "Iterations")) if d.isdigit()]
-        iteration = max(iters)
-    chain_file = os.path.join(path, "Iterations", str(iteration), "mc_chain_" + central + "_" + coadname + ".json")
-    with open(chain_file) as f:
-        chains = json.load(f)
-    if str(Ncoad) not in chains:
-        raise KeyError("no chain for Ncoad={} in {} (have {})".format(Ncoad, chain_file, list(chains.keys())))
-    entry = chains[str(Ncoad)][frame]
+    iteration, chains = _load_mc_chains(path, central, coadname, Ncoad, iteration)
+    chain = chains[str(Ncoad)]
+    entry = chain[frame]
     b, occ, E = entry[0], entry[1], entry[2]
 
     if slab is None:
@@ -602,6 +626,13 @@ def plot_mc_frame_interaction_graph(path, pynta_run_directory, central, coadname
 
     nodes = read_nodes(os.path.join(path, "Iterations", str(iteration), "regressor.json"))
     tree = MultiEvalSubgraphIsomorphicDecisionTreeRegressor([adsorbate_interaction_decomposition], nodes=nodes)
+
+    # default output name carries the descriptors (species, coad, coverage, iteration, frame),
+    # mirroring the mc_chain_<central>_<coad>_N<N>_iter<i> xyz naming, so files don't overwrite.
+    if out_png is None:
+        frame_idx = frame if frame >= 0 else len(chain) + frame
+        out_png = "interaction_{}_{}_N{}_iter{}_frame{}.png".format(
+            central, coadname, Ncoad, iteration, frame_idx)
 
     title = plot_kwargs.pop("title", "MC {} +{}x{} iter{} frame{} (E={:.3f} eV)".format(
         central, Ncoad, coadname, iteration, frame, E / EV_TO_JMOL))
