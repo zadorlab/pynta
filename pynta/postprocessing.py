@@ -175,6 +175,38 @@ def get_irc_dirs(path):
             freq_dirs.append(p)
     return freq_dirs
 
+def get_diffusion_connecting_sites(ts_path, ind, sites, site_adjacency, nslab, max_dist=np.inf):
+    """Return the two adsorption sites a TS guess's IRC connects, as (site_forward, site_reverse).
+
+    For a diffusion barrier the reactant and product are the SAME species, so get_kinetics assigns the
+    same lowest-energy config to both -- it does NOT know the two distinct endpoint sites. Those live
+    only in the IRC trajectories: the last frame of irc_forward.traj / irc_reverse.traj relaxes toward
+    the minimum on each side. This maps each endpoint onto the site graph (same machinery the validity
+    check uses) and reads the occupied site's type/morphology.
+
+    Args:
+        ts_path: the TS directory (e.g. .../TS52); guesses live in ts_path/<ind>/
+        ind: the TS-guess index (the key used in the get_kinetics dict)
+    Returns:
+        (site_forward, site_reverse), each a "site/morphology" string (comma-joined if the adsorbate
+        occupies >1 site), or "desorbed/unknown" if an endpoint can't be mapped onto a site, or None if
+        that IRC trajectory is missing.
+    """
+    def _endpoint(traj_name):
+        p = os.path.join(ts_path, str(ind), traj_name)
+        if not os.path.exists(p):
+            return None
+        atoms = read(p, index=-1)  # last frame ~ the relaxed minimum on that side
+        try:
+            admol, _, _ = generate_adsorbate_2D(atoms, sites, site_adjacency, nslab, max_dist=max_dist)
+        except (SiteOccupationException, TooManyElectronsException, FailedFixBondsException, ValueError):
+            return "desorbed/unknown"
+        labs = ["{}/{}".format(at.site, at.morphology) for at in admol.atoms
+                if at.is_surface_site() and any(not a2.is_surface_site() for a2 in at.edges)]
+        return ", ".join(labs) if labs else "-"
+
+    return _endpoint("irc_forward.traj"), _endpoint("irc_reverse.traj")
+
 def get_energies(path,atom_corrections=None):
     Es = dict()
     thermos = dict()
