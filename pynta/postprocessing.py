@@ -1930,27 +1930,40 @@ def extract_covdep_data(path,pynta_path,ts_dict,metal,facet,sites,site_adjacency
             st,_,_ = generate_adsorbate_2D(atoms, sites, site_adjacency, nslab, max_dist=np.inf, allowed_structure_site_structures=allowed_structure_site_structures)
             admol_name_structure_dict[ad] = st
 
-    ad_energy_dict = get_lowest_adsorbate_energies(os.path.join(pynta_path,"Adsorbates"))
-    
+    # ad_energy_dict / coadmol_E_dict: prefer the EXACT dicts the workflow cached for training
+    # (_cache_covdep_dicts writes them to the covdep run root). Rebuilding them here from the
+    # isolated geometries is NOT equivalent: this rebuild used allowed_structure_site_structures
+    # (which can snap site assignments) while the training cache did not, so the site-labeled
+    # isomorphism lookup in get_atom_centered_correction silently mismatched and returned 0 for
+    # every sample -- putting the sample dots in the interaction frame while the model curves are
+    # atom_corr + interaction. Loading the caches makes dot and line frames identical by construction.
+    ad_energy_dict_path = os.path.join(path, "ad_energy_dict.json")
+    if os.path.exists(ad_energy_dict_path):
+        with open(ad_energy_dict_path) as f:
+            ad_energy_dict = {Molecule().from_adjacency_list(k, check_consistency=False): v
+                              for k, v in json.load(f).items()}
+    else:
+        ad_energy_dict = get_lowest_adsorbate_energies(os.path.join(pynta_path,"Adsorbates"))
+
     coadmol_E_dict = dict()
-    coadmol_stability_dict = dict()
     for coad_name in coad_names:
+        cache_path = os.path.join(path, "coadmol_E_dict_" + coad_name + ".json")
+        if os.path.exists(cache_path):
+            with open(cache_path) as f:
+                coadmol_E_dict[coad_name] = {Molecule().from_adjacency_list(k, check_consistency=False): v
+                                             for k, v in json.load(f).items()}
+            continue
+        # fallback for runs predating the caches: rebuild WITHOUT allowed_structure_site_structures,
+        # mirroring _cache_covdep_dicts (main.py), so the site labels match the training-time keys.
         coad_path = os.path.join(pynta_path,"Adsorbates",coad_name)
         coadmol_E_dict[coad_name] = dict()
-        coadmol_stability_dict[coad_name] = dict()
         Es = get_adsorbate_energies(coad_path)[0]
         for p in os.listdir(coad_path):
             if p == "info.json" or (p not in Es.keys()):
                 continue
-            admol_init,neighbor_sites_init,ninds_init = generate_adsorbate_2D(read(os.path.join(coad_path,p,p+"_init.xyz")),sites,site_adjacency,nslab,max_dist=np.inf,allowed_structure_site_structures=allowed_structure_site_structures)
-            admol,neighbor_sites,ninds = generate_adsorbate_2D(read(os.path.join(coad_path,p,p+".xyz")),sites,site_adjacency,nslab,max_dist=np.inf,allowed_structure_site_structures=allowed_structure_site_structures)
+            admol,neighbor_sites,ninds = generate_adsorbate_2D(read(os.path.join(coad_path,p,p+".xyz")),sites,site_adjacency,nslab,max_dist=np.inf)
             out_struct = split_adsorbed_structures(admol,clear_site_info=False)[0]
-            out_struct_init = split_adsorbed_structures(admol_init,clear_site_info=False)[0]
-            coadmol_E_dict[coad_name][out_struct] = Es[p] 
-            if admol_init.is_isomorphic(admol,save_order=True):
-                coadmol_stability_dict[coad_name][out_struct_init] = True
-            else:
-                coadmol_stability_dict[coad_name][out_struct_init] = False
+            coadmol_E_dict[coad_name][out_struct] = Es[p]
 
     i = 0
     Ncoad_energy_dict = dict()
@@ -2274,12 +2287,25 @@ def plot_config_energy_correction(config_name, coad_name, Ncoad_energy_dict, ts_
                                   slab, metal, facet, sites, site_adjacency, ad_energy_dict,
                                   MLsize, coad_nice_name, reactant_names=None, cmap=None, forward=True,
                                   plot_lowest_samples=True, visualize_lowest_samples=False,
-                                  write_lowest_samples=True):
+                                  write_lowest_samples=True, Ncoad_config_dict=None):
     """Plot the per-iteration SIDT energy-correction curves for config_name in a coad_name environment,
     overlaying the lowest-energy computed sample at each coverage. This is the body of the covdep
     "analyze an individual configuration" notebook cell, moved here to keep the notebook short.
 
-    Returns ncoad_to_best = {Ncoad: (Ecorr_eV, xyz_path, atoms)} for the lowest sample at each coverage.
+    Two panels, SAME configs, two frames:
+      left  "Interaction only": adsorbate-adsorbate interaction, every adsorbate referenced to the
+            site it actually occupies (= the SIDT training target / datum);
+      right "Total correction": interaction + atom-centered site penalties, i.e. referenced to each
+            species at its lowest-energy isolated site -- the physically-rankable total, and the
+            frame the stored model curves (Ncoad_energy_dict) live in.
+    The lowest-interaction and lowest-total sample can be DIFFERENT configs (e.g. an H-bonded
+    arrangement can win on interaction while paying a site penalty that loses on total).
+
+    Ncoad_config_dict: pass extract_covdep_data's stored per-coverage-lowest configs to draw the
+    interaction-frame model curves (total minus the stored config's atom-centered part); without it
+    only the total panel gets model curves.
+
+    Returns {"interaction": best_int, "total": best_tot}, each {Ncoad: (E_eV, xyz_path, atoms)}.
 
     The isolated single-coadsorbate reference coad[0] (which the model never stores) is reconstructed
     internally from the atom-centered correction; see get_energy_correction_configuration."""
@@ -2292,8 +2318,26 @@ def plot_config_energy_correction(config_name, coad_name, Ncoad_energy_dict, ts_
     coad_iso_energy = get_atom_centered_correction(admol_name_structure_dict[coad_name],
                                                    coadmol_E_dict[coad_name]) / to_eV
 
-    plt.figure()
+    fig, (ax_int, ax_tot) = plt.subplots(1, 2, figsize=(11.5, 4.6), sharex=True)
     L = len(Ncoad_energy_dict[coad_name])
+    # config_name may be a compound TS key ("TS2_286"); recognize its base in ts_dict.
+    is_ts = config_name in ts_dict or config_name.rsplit("_", 1)[0] in ts_dict
+    Ncoad_reactants = reactant_names.count(coad_name) if (is_ts and reactant_names is not None) else 0
+
+    def _ac_eV(mol):
+        # atom-centered (per-adsorbate site-penalty) part in eV; silently 0 when nothing matches
+        return get_atom_centered_correction(mol, coadmol_E_dict[coad_name])
+
+    def _stored_config_ac(i, key):
+        # atom-centered part of the model's stored per-coverage-lowest config (interaction line)
+        if Ncoad_config_dict is None:
+            return None
+        try:
+            mols = Ncoad_config_dict[coad_name][i][config_name][key]
+        except KeyError:
+            return None
+        return _ac_eV(mols[0]) if mols else None
+
     leg = []
     for i in sorted(Ncoad_energy_dict[coad_name].keys()):
         # A partially-complete run can have an iteration for the coadsorbate whose config_name
@@ -2303,22 +2347,35 @@ def plot_config_energy_correction(config_name, coad_name, Ncoad_energy_dict, ts_
             continue
         leg.append("SIDT Iter " + str(i))
         keys = sorted(Ncoad_energy_dict[coad_name][i][config_name].keys())
-        # True correction = raw stored energy (atom_corr + interaction), referenced to isolated
-        # species, so include the (0,0) zero-coverage point explicitly and every sampled coverage.
+        # Total correction = raw stored energy (atom_corr + interaction), referenced to isolated
+        # species at their lowest-E sites; include the (0,0) zero-coverage point explicitly.
         if config_name == coad_name:
             # every fragment is a coadsorbate: dict key k is the (k+1)-coadsorbate config, and a
             # single isolated coadsorbate (coverage 1) is the zero reference. Shift x by +1 and plot
             # the raw total energy (same quantity as the other adsorbates).
             Ncoads = np.array([0, 1] + [k + 1 for k in keys])
-            energies = [0.0, 0.0] + [Ncoad_energy_dict[coad_name][i][config_name][k] * to_eV for k in keys]
+            totals = [0.0, 0.0] + [Ncoad_energy_dict[coad_name][i][config_name][k] * to_eV for k in keys]
+            store_keys = [None, None] + list(keys)
         else:
             Ncoads = np.array([0] + keys)
-            energies = [get_energy_correction_configuration(Ncoad_energy_dict, ts_dict, config_name, coad_name, i, Ncoad,
+            totals = [get_energy_correction_configuration(Ncoad_energy_dict, ts_dict, config_name, coad_name, i, Ncoad,
                             reactant_names=reactant_names, coad_iso_energy=coad_iso_energy) * to_eV if Ncoad > 0 else 0.0
-                        for Ncoad in Ncoads]
-        plt.plot(Ncoads / MLsize, energies, color=cmap(i / L))
+                      for Ncoad in Ncoads]
+            # the stored-config key behind each plotted total (the TS branch stores at Ncoad - Ncoad_reactants)
+            store_keys = [None] + [((Ncoad - Ncoad_reactants) if is_ts else Ncoad) for Ncoad in keys]
+        # interaction curve = total minus the stored config's atom-centered part (NaN gap if unavailable)
+        ints = []
+        for tot, sk in zip(totals, store_keys):
+            if sk is None or (is_ts and sk <= 0):
+                ints.append(tot)  # zero-coverage anchors / TS below reactant threshold: no coad ac
+            else:
+                ac = _stored_config_ac(i, sk)
+                ints.append(tot - ac if ac is not None else np.nan)
+        ax_tot.plot(Ncoads / MLsize, totals, color=cmap(i / L))
+        ax_int.plot(Ncoads / MLsize, np.array(ints, dtype=float), color=cmap(i / L))
 
-    ncoad_to_best = {}
+    best_int = {}   # Ncoad -> (E_interaction_eV, xyz, atoms): lowest-INTERACTION sample per coverage
+    best_tot = {}   # Ncoad -> (E_total_eV, xyz, atoms): lowest-TOTAL sample per coverage
     if plot_lowest_samples or visualize_lowest_samples or write_lowest_samples:
         _3D, _Es, _Ecorr, _xyzs, _mols = analyze_covdep_sample_data(
             config_name, coad_name, Ncoad_energy_dict, path, pynta_path, slab, metal, facet, sites, site_adjacency,
@@ -2326,64 +2383,86 @@ def plot_config_energy_correction(config_name, coad_name, Ncoad_energy_dict, ts_
         # config_mols/config_E_correction are only populated for valid datums; align via the non-None mask in _Es
         _valid_xyzs = [xyz for xyz, E in zip(_xyzs, _Es) if E is not None]
         _valid_3D = [c for c, E in zip(_3D, _Es) if E is not None]
-        for _mol, _Ec, _xyz, _atoms in zip(_mols, _Ecorr, _valid_xyzs, _valid_3D):
+        _acs = [_ac_eV(m) for m in _mols]
+        # get_atom_centered_correction returns 0 on a silent key mismatch. All-zero across many samples
+        # while the coad site-energy dict spans multiple values means the lookup is broken (the historic
+        # frame bug) and the total panel would understate every dot -- warn loudly instead of failing silently.
+        _dict_vals = set(round(v, 6) for v in coadmol_E_dict[coad_name].values())
+        if len(_acs) >= 10 and all(abs(a) < 1e-9 for a in _acs) and len(_dict_vals) > 1:
+            print("WARNING: atom-centered correction matched 0 for ALL samples -- coadmol_E_dict keys "
+                  "likely don't match the datum structures, so total-energy dots are missing their site "
+                  "penalties. Is the run's coadmol_E_dict_<coad>.json cache present in the covdep path?")
+        for _mol, _Ec, _ac, _xyz, _atoms in zip(_mols, _Ecorr, _acs, _valid_xyzs, _valid_3D):
             _Ncoad = len(split_adsorbed_structures(_mol)) - 1
             # When the plotted species IS the coadsorbate, every fragment is a coadsorbate, so an
             # N-fragment config is the N-coadsorbate case (not N-1). Shift by one coverage unit.
             if config_name == coad_name:
                 _Ncoad += 1
-            # Put the dot in the same frame as the line: the line uses full E (atom_correction + tree
-            # pred); the dot from analyze_covdep_sample_data has atom_correction subtracted -- add it back.
-            _Ec_consistent = _Ec + get_atom_centered_correction(_mol, coadmol_E_dict[coad_name])
-            if _Ncoad not in ncoad_to_best or _Ec_consistent < ncoad_to_best[_Ncoad][0]:
-                ncoad_to_best[_Ncoad] = (_Ec_consistent, _xyz, _atoms)
+            if _Ncoad not in best_int or _Ec < best_int[_Ncoad][0]:
+                best_int[_Ncoad] = (_Ec, _xyz, _atoms)
+            # total = datum (interaction) + atom-centered part -- the frame the model curves live in
+            _Et = _Ec + _ac
+            if _Ncoad not in best_tot or _Et < best_tot[_Ncoad][0]:
+                best_tot[_Ncoad] = (_Et, _xyz, _atoms)
 
-    if plot_lowest_samples and ncoad_to_best:
-        _ns = sorted(ncoad_to_best.keys())
-        plt.scatter(np.array(_ns) / MLsize, [ncoad_to_best[n][0] for n in _ns], color='red', zorder=10)
-        leg.append("Lowest sample")
+    for ax, best, lbl in ((ax_int, best_int, "Lowest-interaction sample"),
+                          (ax_tot, best_tot, "Lowest-total sample")):
+        if plot_lowest_samples and best:
+            _ns = sorted(best.keys())
+            ax.scatter(np.array(_ns) / MLsize, [best[n][0] for n in _ns], color='red', zorder=10)
+            ax.legend(leg + [lbl], loc="best")
+        else:
+            ax.legend(leg, loc="best")
 
-    plt.legend(leg, loc="upper left")
-    # config_name may be a compound TS key ("TS2_286"); recognize its base in ts_dict.
-    is_ts = config_name in ts_dict or config_name.rsplit("_", 1)[0] in ts_dict
-    if not is_ts:
-        plt.ylabel("Energy Correction " + config_name + " [eV]")
-    else:
-        plt.ylabel("Energy Correction TS " + ts_info[config_name]["name"] + " [eV]")
-    plt.xlabel(r"$\theta_{" + coad_nice_name + r"}$")
+    name_label = config_name if not is_ts else "TS " + ts_info[config_name]["name"]
+    ax_int.set_title("Interaction only (adsorbate–adsorbate)")
+    ax_tot.set_title("Total correction (incl. site penalties)")
+    ax_int.set_ylabel("Interaction energy [eV]")
+    ax_tot.set_ylabel("Total energy correction [eV]")
+    for ax in (ax_int, ax_tot):
+        ax.set_xlabel(r"$\theta_{" + coad_nice_name + r"}$")
+    fig.suptitle("Coverage dependence: " + name_label + " with " + coad_nice_name)
+    fig.tight_layout()
     plt.show()
 
-    if ncoad_to_best:
-        if plot_lowest_samples:
-            print(f"Lowest energy sample locations for {config_name}:")
-            for _n in sorted(ncoad_to_best.keys()):
-                print(f"  Ncoad={_n} (theta={_n/MLsize:.3f}): {ncoad_to_best[_n][1]}")
-        # Always write the lowest structures so they can be opened externally (independent of the viewer).
+    def _write_best(best, kind, value_key):
+        # one multi-frame xyz per frame-of-reference, named to say WHICH lowest it is
+        _safe = config_name.replace("/", "_")
+        _outpath = f"lowest_{kind}_samples_{_safe}.xyz"
+        _ns = sorted(best.keys())
+        _atoms_list = []
+        for _n in _ns:
+            _a = best[_n][2].copy()
+            _a.info["Ncoad"] = _n
+            _a.info["theta"] = round(_n / MLsize, 4)
+            _a.info[value_key] = round(best[_n][0], 4)
+            _atoms_list.append(_a)
+        write(_outpath, _atoms_list)
+        print(f"Wrote {len(_atoms_list)} lowest-{kind} structures to {_outpath}  (frame order = increasing Ncoad):")
+        for _i, _n in enumerate(_ns):
+            print(f"    frame {_i}: Ncoad={_n} theta={_n/MLsize:.3f} E_{kind}={best[_n][0]:.3f} eV  src={best[_n][1]}")
+
+    if best_int or best_tot:
         if write_lowest_samples:
-            _safe = config_name.replace("/", "_")
-            _outpath = f"lowest_samples_{_safe}.xyz"
-            _ns = sorted(ncoad_to_best.keys())
-            _atoms_list = []
-            for _n in _ns:
-                _a = ncoad_to_best[_n][2].copy()
-                _a.info["Ncoad"] = _n
-                _a.info["theta"] = round(_n / MLsize, 4)
-                _a.info["Ecorr_eV"] = round(ncoad_to_best[_n][0], 4)
-                _atoms_list.append(_a)
-            write(_outpath, _atoms_list)
-            print(f"Wrote {len(_atoms_list)} lowest-energy structures to {_outpath}  (frame order = increasing Ncoad):")
-            for _i, _n in enumerate(_ns):
-                print(f"    frame {_i}: Ncoad={_n} theta={_n/MLsize:.3f} Ecorr={ncoad_to_best[_n][0]:.3f} eV  src={ncoad_to_best[_n][1]}")
-        if visualize_lowest_samples:
-            _atoms_list_v = [ncoad_to_best[_n][2] for _n in sorted(ncoad_to_best.keys())]
+            if best_int:
+                _write_best(best_int, "interaction", "E_interaction_eV")
+            if best_tot:
+                _write_best(best_tot, "total", "E_total_eV")
+        elif plot_lowest_samples:
+            print(f"Lowest sample locations for {config_name} (interaction-frame | total-frame):")
+            for _n in sorted(set(best_int) | set(best_tot)):
+                bi = best_int.get(_n); bt = best_tot.get(_n)
+                print(f"  Ncoad={_n}: int={bi[0]:+.3f} eV {bi[1] if bi else ''} | tot={bt[0]:+.3f} eV {bt[1] if bt else ''}")
+        if visualize_lowest_samples and best_tot:
+            _atoms_list_v = [best_tot[_n][2] for _n in sorted(best_tot.keys())]
             try:
-                view(_atoms_list_v)
+                view(_atoms_list_v)  # viewer shows the lowest-TOTAL (physically most stable) samples
             except Exception as _e:
                 print(f"view() failed ({_e}); use the written xyz above instead.")
     elif visualize_lowest_samples or plot_lowest_samples or write_lowest_samples:
         print(f"No samples found for {config_name}.")
 
-    return ncoad_to_best
+    return {"interaction": best_int, "total": best_tot}
 
 
 def write_all_kinetics(path, metal, facet, slab, sites, site_adjacency,
