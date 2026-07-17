@@ -2296,6 +2296,11 @@ def plot_config_energy_correction(config_name, coad_name, Ncoad_energy_dict, ts_
     L = len(Ncoad_energy_dict[coad_name])
     leg = []
     for i in sorted(Ncoad_energy_dict[coad_name].keys()):
+        # A partially-complete run can have an iteration for the coadsorbate whose config_name
+        # (e.g. a compound TS key "TS0_26") hasn't produced its Ncoad_energy file yet. Skip it
+        # rather than KeyError; the finished iterations still plot.
+        if config_name not in Ncoad_energy_dict[coad_name][i]:
+            continue
         leg.append("SIDT Iter " + str(i))
         keys = sorted(Ncoad_energy_dict[coad_name][i][config_name].keys())
         # True correction = raw stored energy (atom_corr + interaction), referenced to isolated
