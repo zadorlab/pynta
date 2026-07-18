@@ -192,7 +192,9 @@ def make_calc():
     from mace.calculators import MACECalculator
     from torch_dftd.torch_dftd3_calculator import TorchDFTD3Calculator
     from ase.calculators.mixing import SumCalculator
-    mace = MACECalculator(model_paths=[MODEL], head=MACE_HEAD, device="cpu", default_dtype="float64")
+    # kwargs mirror the covdep run's software_kwargs exactly (model_path singular -- the spelling
+    # the installed mace version demonstrably accepts)
+    mace = MACECalculator(model_path=MODEL, head=MACE_HEAD, device="cpu", default_dtype="float64")
     d3 = TorchDFTD3Calculator(device="cpu", damping="bj", xc="pbe")
     return SumCalculator([mace, d3])
 
