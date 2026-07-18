@@ -1688,6 +1688,20 @@ def get_unique_TS_admols(ts_path, adsorbates_path, metal, facet, sites, site_adj
     valid_dict, valid_info = validate_TS_configs(ts_path, sites, site_adjacency, nslab, irc_concern_len=8)
     with open(os.path.join(ts_path, "info.json")) as f:
         info = json.load(f)
+
+    # Diffusion (Surface_Migration) TSs: the strict validate_TS (covalent-bond geometry + imaginary-
+    # mode alignment) doesn't fit a lateral site-to-site hop and rejects most good diffusion saddles,
+    # which would leave the covdep MC seeded with only the single user-chosen arrangement. Use the
+    # criterion meaningful for diffusion instead -- both IRC endpoints relax onto mapped adsorption
+    # sites -- mirroring the same override in postprocessing.get_TS. Guesses without IRC trajectories
+    # keep the strict verdict. Evaluated from finished files at covdep setup; nothing needs rerunning.
+    if info.get("family_name") == "Surface_Migration":
+        for k in valid_dict.keys():
+            site_f, site_r = get_diffusion_connecting_sites(ts_path, k, sites, site_adjacency, nslab)
+            if site_f is None or site_r is None:  # missing IRC data -> can't apply the relaxed test
+                continue
+            valid_dict[k] = not any(s in ("desorbed/unknown", "-") for s in (site_f, site_r))
+
     reactants = Molecule().from_adjacency_list(info["reactants"])
     products = Molecule().from_adjacency_list(info["products"])
 
