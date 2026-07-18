@@ -1375,21 +1375,22 @@ def get_TS(path,adsorbates_path,metal,facet,slab,sites,site_adjacency,nslab,c_re
     reactants = Molecule().from_adjacency_list(info["reactants"])
     products = Molecule().from_adjacency_list(info["products"])
 
-    # Diffusion (Surface_Migration) TSs: pynta's strict validate_TS combines a covalent-bond geometry
-    # check with an imaginary-mode direction alignment, neither of which fits a lateral site-to-site
-    # hop, so it rejects most good diffusion saddles. Override with the criterion that is actually
-    # meaningful for diffusion -- both IRC endpoints relax onto mapped adsorption sites -- and keep
-    # the strict verdict in valid_info["Strict_Valid"] for reference. This is postprocessing-only
-    # (the running workflow never consults validity), so changing it requires no recomputation.
-    # Guesses without IRC trajectories keep the strict verdict (the forgiving test needs the IRCs).
+    # Diffusion (Surface_Migration) TSs: pynta's strict validate_TS mis-rejects lateral site-to-site
+    # hops (see validate_diffusion_TS), so use the diffusion-appropriate criterion instead: both IRC
+    # endpoints on mapped sites AND intact species AND geometrically distinct minima. The strict
+    # verdict is kept in valid_info["Strict_Valid"]; the sub-criteria land in
+    # valid_info["Diffusion_Validation"]. Postprocessing-only (the running workflow never consults
+    # validity), so no recomputation. Guesses without IRC trajectories keep the strict verdict.
     if info.get("family_name") == "Surface_Migration":
         for k in valid_dict.keys():
-            site_f, site_r = get_diffusion_connecting_sites(path, k, sites, site_adjacency, nslab)
-            if site_f is None or site_r is None:  # missing IRC data -> can't apply the relaxed test
+            relaxed, dinfo = validate_diffusion_TS(path, k, sites, site_adjacency, nslab,
+                                                   species_mol=reactants)
+            if relaxed is None:  # missing IRC data -> can't apply the diffusion test
                 continue
             valid_info[k]["Strict_Valid"] = valid_dict[k]
-            valid_info[k]["Diffusion_Connecting_Sites"] = (site_f, site_r)
-            valid_dict[k] = not any(s in ("desorbed/unknown", "-") for s in (site_f, site_r))
+            valid_info[k]["Diffusion_Validation"] = dinfo
+            valid_info[k]["Diffusion_Connecting_Sites"] = dinfo["connecting_sites"]
+            valid_dict[k] = relaxed
 
     broken_bonds,formed_bonds = get_broken_formed_bonds(reactants,products)
     target_TS = reactants.copy(deep=True)

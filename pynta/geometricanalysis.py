@@ -745,6 +745,42 @@ def generate_allowed_structure_site_structures(adsorbate_dir,sites,site_adjacenc
 
     return allowed_structure_site_structures
 
+def _diffusion_endpoint_2D(ts_path, ind, traj_name, sites, site_adjacency, nslab, max_dist=np.inf):
+    """One IRC endpoint of a diffusion TS guess: last frame of ts_path/<ind>/<traj_name> mapped onto
+    the site graph. Returns (admol, site_labels, atoms):
+      site_labels: "site/morph, ..." for the occupied site(s), "desorbed/unknown" if the endpoint
+        cannot be mapped, "-" if mapped but no occupied site found, or None if the traj is missing.
+      admol: the 2D structure (None when unmappable); atoms: the endpoint ase.Atoms (None if missing).
+    """
+    p = os.path.join(ts_path, str(ind), traj_name)
+    if not os.path.exists(p):
+        return None, None, None
+    atoms = read(p, index=-1)  # last frame ~ the relaxed minimum on that side
+
+    def _gen(**kwargs):
+        admol, _, _ = generate_adsorbate_2D(atoms, sites, site_adjacency, nslab, max_dist=max_dist, **kwargs)
+        labs = ["{}/{}".format(at.site, at.morphology) for at in admol.atoms
+                if at.is_surface_site() and any(not a2.is_surface_site() for a2 in at.edges)]
+        return admol, labs
+
+    admol = None
+    labs = None
+    try:
+        admol, labs = _gen()
+    except (SiteOccupationException, TooManyElectronsException, FailedFixBondsException, ValueError):
+        pass
+    if not labs:
+        # Physisorbed endpoint: the plain 2D generation drops the order-0 (vdW) binding bond,
+        # leaving no occupied site (the "- -> -" rows). Retry keeping vdW bonds so the occupied
+        # site resolves; the chemisorbed/physisorbed split is a valence formality in pynta.
+        try:
+            admol, labs = _gen(keep_binding_vdW_bonds=True, keep_vdW_surface_bonds=True)
+        except (SiteOccupationException, TooManyElectronsException, FailedFixBondsException, ValueError):
+            pass
+    if admol is None:
+        return None, "desorbed/unknown", atoms
+    return admol, (", ".join(labs) if labs else "-"), atoms
+
 def get_diffusion_connecting_sites(ts_path, ind, sites, site_adjacency, nslab, max_dist=np.inf):
     """Return the two adsorption sites a TS guess's IRC connects, as (site_forward, site_reverse).
 
@@ -762,33 +798,89 @@ def get_diffusion_connecting_sites(ts_path, ind, sites, site_adjacency, nslab, m
         occupies >1 site), or "desorbed/unknown" if an endpoint can't be mapped onto a site, or None if
         that IRC trajectory is missing.
     """
-    def _labels(atoms, **kwargs):
-        admol, _, _ = generate_adsorbate_2D(atoms, sites, site_adjacency, nslab, max_dist=max_dist, **kwargs)
-        return ["{}/{}".format(at.site, at.morphology) for at in admol.atoms
-                if at.is_surface_site() and any(not a2.is_surface_site() for a2 in at.edges)]
+    _, labs_f, _ = _diffusion_endpoint_2D(ts_path, ind, "irc_forward.traj", sites, site_adjacency, nslab, max_dist=max_dist)
+    _, labs_r, _ = _diffusion_endpoint_2D(ts_path, ind, "irc_reverse.traj", sites, site_adjacency, nslab, max_dist=max_dist)
+    return labs_f, labs_r
 
-    def _endpoint(traj_name):
-        p = os.path.join(ts_path, str(ind), traj_name)
-        if not os.path.exists(p):
-            return None
-        atoms = read(p, index=-1)  # last frame ~ the relaxed minimum on that side
-        labs = None
-        try:
-            labs = _labels(atoms)
-        except (SiteOccupationException, TooManyElectronsException, FailedFixBondsException, ValueError):
-            labs = None
-        if not labs:
-            # Physisorbed endpoint: the plain 2D generation drops the order-0 (vdW) binding bond,
-            # leaving no occupied site (the "- -> -" rows). Retry keeping vdW bonds so the occupied
-            # site resolves; the chemisorbed/physisorbed split is a valence formality in pynta.
-            try:
-                labs = _labels(atoms, keep_binding_vdW_bonds=True, keep_vdW_surface_bonds=True)
-            except (SiteOccupationException, TooManyElectronsException, FailedFixBondsException, ValueError):
-                if labs is None:
-                    return "desorbed/unknown"
-        return ", ".join(labs) if labs else "-"
+def validate_diffusion_TS(ts_path, ind, sites, site_adjacency, nslab, species_mol=None,
+                          min_endpoint_sep=0.5, max_dist=np.inf):
+    """Diffusion-appropriate validity for one TS guess. The strict validate_TS machinery (covalent-bond
+    saddle-graph match + imaginary-mode/reaction-bond alignment) mis-rejects lateral site-to-site hops;
+    this instead requires all of:
+      (a) endpoints_mapped:   both IRC endpoints occupy mapped adsorption sites
+      (b) endpoints_intact:   both endpoints are the intact diffusing species (adsorbate-only graph,
+                              surface sites stripped, isomorphic to species_mol's) -- catches
+                              fragmentation / desorption / H-transfer along the IRC
+      (c) endpoints_distinct: the two endpoints are geometrically different minima (max adsorbate-atom
+                              displacement between the endpoint frames >= min_endpoint_sep, minimum
+                              image in the periodic surface directions) -- catches saddles whose two
+                              IRCs slide into the SAME well (the same-direction IRC failure)
 
-    return _endpoint("irc_forward.traj"), _endpoint("irc_reverse.traj")
+    species_mol: the slab-bound species Molecule (e.g. TS info.json "reactants"); if None, (b) only
+    checks the endpoint is a single connected adsorbate.
+
+    Returns (valid, info): valid is True/False, or None when an IRC trajectory is missing (undecidable
+    here -- callers should fall back to the strict verdict). info records each sub-criterion.
+    """
+    def _adsorbate_graph(m):
+        g = m.copy(deep=True)
+        g.clear_labeled_atoms()
+        for a in [a for a in g.atoms if a.is_surface_site()]:
+            g.remove_atom(a)
+        return g
+
+    target = None
+    if species_mol is not None:
+        tg = _adsorbate_graph(species_mol)
+        frags = tg.split()
+        if len(frags) == 1:  # diffusion: single species; anything else -> skip the isomorphism part
+            target = frags[0]
+            target.multiplicity = target.get_radical_count() + 1
+
+    info = {"connecting_sites": None, "endpoints_mapped": None, "endpoints_intact": None,
+            "endpoints_distinct": None, "endpoint_max_disp": None}
+    endpoints = [_diffusion_endpoint_2D(ts_path, ind, t, sites, site_adjacency, nslab, max_dist=max_dist)
+                 for t in ("irc_forward.traj", "irc_reverse.traj")]
+    info["connecting_sites"] = (endpoints[0][1], endpoints[1][1])
+    if any(e[2] is None for e in endpoints):  # missing IRC trajectory -> undecidable
+        return None, info
+
+    # (a) both endpoints on mapped, occupied sites
+    mapped = all(e[0] is not None and e[1] not in (None, "desorbed/unknown", "-") for e in endpoints)
+    info["endpoints_mapped"] = mapped
+    if not mapped:
+        return False, info
+
+    # (b) intact species on both sides
+    intact = True
+    for admol, labs, atoms in endpoints:
+        g = _adsorbate_graph(admol)
+        frags = g.split()
+        if len(frags) != 1:
+            intact = False
+            break
+        if target is not None:
+            f = frags[0]
+            f.multiplicity = f.get_radical_count() + 1
+            if not f.is_isomorphic(target):
+                intact = False
+                break
+    info["endpoints_intact"] = intact
+    if not intact:
+        return False, info
+
+    # (c) the two endpoints are different minima
+    a1, a2 = endpoints[0][2], endpoints[1][2]
+    d = a1.positions[nslab:] - a2.positions[nslab:]
+    cell = a1.cell
+    for k in range(2):  # minimum image in the (orthogonal) periodic surface directions
+        L = cell[k][k]
+        if L:
+            d[:, k] -= np.round(d[:, k] / L) * L
+    maxdisp = float(np.max(np.linalg.norm(d, axis=1))) if len(d) else 0.0
+    info["endpoint_max_disp"] = maxdisp
+    info["endpoints_distinct"] = bool(maxdisp >= min_endpoint_sep)
+    return info["endpoints_distinct"], info
 
 def get_best_adsorbate_geometries(adsorbate_path,aseinds,siteinfo,sites,site_adjacency,imag_freq_max=150.0):
     """
