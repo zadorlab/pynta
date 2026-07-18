@@ -270,7 +270,9 @@ def generate_pair_geometries(adpath1,adpath2,slabpath,metal,facet,sites,site_adj
         keep_vdW_surface_bonds = keep_vdW_surface_bonds_in_reactants and keep_vdW_surface_bonds_in_products
         
         admol1,neighbor_sites1,ninds1 = generate_TS_2D(read(os.path.join(adpath1,"opt.xyz")), adinfo1, metal, facet, sites, site_adjacency, nslab, max_dist=np.inf,
-                                                    imag_freq_path=os.path.join(adpath1,"vib.json_vib.json"),
+                                                    # vib.0.traj = the imaginary-mode trajectory (what every other caller passes);
+                                                    # vib.json_vib.json is the frequencies JSON and is NOT ULM/trajectory-readable
+                                                    imag_freq_path=os.path.join(adpath1,"vib.0.traj"),
                                                     allowed_structure_site_structures=allowed_structure_site_structures,
                                                     keep_binding_vdW_bonds=keep_binding_vdW_bonds,
                                                     keep_vdW_surface_bonds=keep_vdW_surface_bonds,
