@@ -421,12 +421,25 @@ def generate_TS_2D(atoms, info_path,  metal, facet, sites, site_adjacency, nslab
         info = json.load(f)
     
     occ = get_occupied_sites(atoms,sites,nslab,site_bond_cutoff=site_bond_cutoff)
-    
+
     template_mol_map = [{int(k):v for k,v in x.items()}  for x in info["template_mol_map"]]
     molecule_to_atom_maps = [{int(k):v for k,v in x.items()}  for x in info["molecule_to_atom_maps"]]
-    broken_bonds,formed_bonds = get_broken_formed_bonds(Molecule().from_adjacency_list(info["reactants"]),
-                                                        Molecule().from_adjacency_list(info["products"]))
+    reactants_2D = Molecule().from_adjacency_list(info["reactants"])
+    products_2D = Molecule().from_adjacency_list(info["products"])
+    broken_bonds,formed_bonds = get_broken_formed_bonds(reactants_2D,products_2D)
     rbonds = broken_bonds | formed_bonds
+
+    def _template_rbond_order(bd):
+        """The order this reaction bond carries in whichever template side (reactants/products)
+        contains it -- 'vdW' for a physisorbed binding bond, 'S' for chemisorbed (the historical
+        default)."""
+        l1, l2 = tuple(bd)
+        for mol in (reactants_2D, products_2D):
+            a1s = mol.get_labeled_atoms(l1)
+            a2s = mol.get_labeled_atoms(l2)
+            if a1s and a2s and mol.has_bond(a1s[0], a2s[0]):
+                return mol.get_bond(a1s[0], a2s[0]).get_order_str()
+        return "S"
     if info["forward"]:
         template = Molecule().from_adjacency_list(info["reactants"])
     else:
@@ -468,8 +481,15 @@ def generate_TS_2D(atoms, info_path,  metal, facet, sites, site_adjacency, nslab
             b = admol.get_bond(admol.atoms[inds2D[0]],admol.atoms[inds2D[1]])
             if b.get_order_str() != "R":
                 b.set_order_str("R")
-            else: 
-                b.set_order_str("S") #this ensures the the split_ts leaves this bond connected 
+            else:
+                # Two distinct reaction bonds (diffusion: adsorbate-*2 broken, adsorbate-*3 formed)
+                # can resolve to the SAME 2D surface bond, because the template's site atoms have no
+                # 3D mapping. Keeping this bond a real bond (not R) ensures split_ts leaves it
+                # connected -- but the order must come from the TEMPLATE, not a blanket "S": a
+                # vdW-bound species (e.g. NH3 diffusion) needs order 0 here, or the adatom goes
+                # hypervalent and fix_bond_orders raises TooManyElectronsException. Chemisorbed
+                # diffusion keeps the historical "S".
+                b.set_order_str(_template_rbond_order(bd))
         else:
             if len(inds3D) == 2:
                 v,dist = get_distances(atoms.positions[inds3D[0]],atoms.positions[inds3D[1]],cell=atoms.cell,pbc=atoms.pbc)
