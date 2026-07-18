@@ -600,16 +600,21 @@ def generate_TS_2D(atoms, info_path,  metal, facet, sites, site_adjacency, nslab
                 if imag_freq_path is None:
                     logging.warning("Could not resolve diffusion type R-bonds due to lack of imaginary frequency info")
                     continue
+                # allowed_site_dict only has entries for atoms the mismatch analysis flagged; an atom
+                # whose site arrangement matched expectations has NO entry -> valid_sites=None means
+                # "no allowed-sites restriction" (the mode-alignment/distance/halfwayness criteria
+                # below still constrain the site-pair choice).
+                valid_sites = None
                 if admol.atoms[inds2D[0]].is_surface_site():
                     site_atom_center = admol.atoms[inds2D[0]]
                     Ratom = admol.atoms[inds2D[1]]
                     if allowed_structure_site_structures:
-                        valid_sites = allowed_site_dict[inds2D[1] - len(neighbor_sites) + nslab]
+                        valid_sites = allowed_site_dict.get(inds2D[1] - len(neighbor_sites) + nslab)
                 else:
                     site_atom_center = admol.atoms[inds2D[1]]
                     Ratom = admol.atoms[inds2D[0]]
                     if allowed_structure_site_structures:
-                        valid_sites = allowed_site_dict[inds2D[0] - len(neighbor_sites) + nslab]
+                        valid_sites = allowed_site_dict.get(inds2D[0] - len(neighbor_sites) + nslab)
                 site_center_ind = admol.atoms.index(site_atom_center)
                 
                 #get imaginary frequency motion
@@ -644,7 +649,7 @@ def generate_TS_2D(atoms, info_path,  metal, facet, sites, site_adjacency, nslab
                         dist2t = dist2t[0][0]
                         halfwayness = np.linalg.norm(v1t+v2t)/(dist2t+dist1t)
                         dist_site = max(dist1t,dist2t)
-                        if not np.isnan(motion_alignment) and motion_alignment > 0.95 and dist < 3.0 and dist_site < 2.0 and (not allowed_structure_site_structures or (site1_id in valid_sites and site2_id in valid_sites)):
+                        if not np.isnan(motion_alignment) and motion_alignment > 0.95 and dist < 3.0 and dist_site < 2.0 and (valid_sites is None or (site1_id in valid_sites and site2_id in valid_sites)):
                             iters += 1
                             metric = 1.0 / (halfwayness*dist_site)
                             if site_pair is None:
