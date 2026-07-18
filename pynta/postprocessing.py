@@ -1882,15 +1882,24 @@ def extract_covdep_data(path,pynta_path,ts_dict,metal,facet,sites,site_adjacency
                 continue
         
         info_path = os.path.join(pynta_path, ts, "info.json")
-        atoms = read(ts_xyz_path)
-        st, _, _ = generate_TS_2D(atoms, info_path, metal, facet, sites, site_adjacency, nslab,
-                                  max_dist=np.inf, allowed_structure_site_structures=allowed_structure_site_structures)
-        admol_name_structure_dict[ts_key] = st
         with open(info_path, "r") as f:
             info = json.load(f)
-            for name in info["species_names"] + info["reverse_names"]:
-                if name not in ads:
-                    ads.append(name)
+        # imag_freq_path tags the saddle's adsorbate-site contacts as reaction (R) bonds; the vdW
+        # keep-flags preserve order-0 binding bonds. Without these a vdW-bound TS (e.g. NH3
+        # diffusion) gets a covalent site bond -> hypervalent adatom -> TooManyElectronsException.
+        keep_binding_vdW_bonds, keep_vdW_surface_bonds = ts_vdW_keep_flags(
+            Molecule().from_adjacency_list(info["reactants"]),
+            Molecule().from_adjacency_list(info["products"]))
+        atoms = read(ts_xyz_path)
+        st, _, _ = generate_TS_2D(atoms, info_path, metal, facet, sites, site_adjacency, nslab,
+                                  imag_freq_path=os.path.join(os.path.split(ts_xyz_path)[0], "vib.0.traj"),
+                                  max_dist=np.inf, allowed_structure_site_structures=allowed_structure_site_structures,
+                                  keep_binding_vdW_bonds=keep_binding_vdW_bonds,
+                                  keep_vdW_surface_bonds=keep_vdW_surface_bonds)
+        admol_name_structure_dict[ts_key] = st
+        for name in info["species_names"] + info["reverse_names"]:
+            if name not in ads:
+                ads.append(name)
     
     for ad in ads:
         p = os.path.join(pynta_path,"Adsorbates",ad)

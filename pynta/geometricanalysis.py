@@ -745,6 +745,26 @@ def generate_allowed_structure_site_structures(adsorbate_dir,sites,site_adjacenc
 
     return allowed_structure_site_structures
 
+def ts_vdW_keep_flags(reactants, products):
+    """(keep_binding_vdW_bonds, keep_vdW_surface_bonds) for a TS, from its reactant/product graphs:
+    a vdW (order-0) binding bond is kept only when BOTH sides bind through one. Same derivation as
+    the inline copies in get_TS / get_unique_TS_admols / collate_isolated_structures."""
+    def _flags(mol):
+        kb = False
+        ks = False
+        for bd in mol.get_all_edges():
+            if bd.order == 0 and (bd.atom1.is_surface_site() or bd.atom2.is_surface_site()):
+                kb = True
+                m = mol.copy(deep=True)
+                b = m.get_bond(m.atoms[mol.atoms.index(bd.atom1)], m.atoms[mol.atoms.index(bd.atom2)])
+                m.remove_bond(b)
+                if len(m.split()) == 1:  # vdW bond is not the only thing connecting adsorbate to surface
+                    ks = True
+        return kb, ks
+    kb_r, ks_r = _flags(reactants)
+    kb_p, ks_p = _flags(products)
+    return kb_r and kb_p, ks_r and ks_p
+
 def _diffusion_endpoint_2D(ts_path, ind, traj_name, sites, site_adjacency, nslab, max_dist=np.inf):
     """One IRC endpoint of a diffusion TS guess: last frame of ts_path/<ind>/<traj_name> mapped onto
     the site graph. Returns (admol, site_labels, atoms):

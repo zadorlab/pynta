@@ -766,7 +766,11 @@ class CoverageDependence:
             keep_vdW_surface_bonds = keep_vdW_surface_bonds_in_reactants and keep_vdW_surface_bonds_in_products
             
             atoms = read(ts_xyz_path)
+            # imag_freq_path is REQUIRED to tag the saddle's adsorbate-site contacts as reaction (R)
+            # bonds (the motion_alignment machinery); without it a vdW-bound TS (e.g. NH3 diffusion)
+            # gets an ordinary covalent site bond -> hypervalent adatom -> TooManyElectronsException.
             st, _, _ = generate_TS_2D(atoms, info_path, self.metal, self.surface_type, self.sites, self.site_adjacency, self.nslab,
+                     imag_freq_path=os.path.join(os.path.split(ts_xyz_path)[0], "vib.0.traj"),
                      max_dist=np.inf, allowed_structure_site_structures=allowed_structure_site_structures,
                      keep_binding_vdW_bonds=keep_binding_vdW_bonds, keep_vdW_surface_bonds=keep_vdW_surface_bonds)
             admol_name_structure_dict[ts_key] = st

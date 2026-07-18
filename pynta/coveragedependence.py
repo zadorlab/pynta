@@ -800,7 +800,14 @@ def get_adsorbate_ts_information(xyz,slabxyz,is_ts,
                 break
     
     if is_ts:
-        admol,neighbor_sites_2D,ninds = generate_TS_2D(ad, xyzinfo, metal, facet, sites, site_adjacency, nslab, max_dist=None)
+        # imag_freq_path tags the saddle's adsorbate-site contacts as reaction (R) bonds; the vdW
+        # keep-flags preserve order-0 binding bonds. Without these a vdW-bound TS (e.g. NH3
+        # diffusion) gets a covalent site bond -> hypervalent adatom -> TooManyElectronsException.
+        keep_binding_vdW_bonds, keep_vdW_surface_bonds = ts_vdW_keep_flags(reactants, products)
+        admol,neighbor_sites_2D,ninds = generate_TS_2D(ad, xyzinfo, metal, facet, sites, site_adjacency, nslab,
+                                        imag_freq_path=os.path.join(os.path.split(xyz)[0], "vib.0.traj"),
+                                        max_dist=None, keep_binding_vdW_bonds=keep_binding_vdW_bonds,
+                                        keep_vdW_surface_bonds=keep_vdW_surface_bonds)
     else:
         admol,neighbor_sites_2D,ninds = generate_adsorbate_2D(ad, sites, site_adjacency, nslab, max_dist=None)
     
