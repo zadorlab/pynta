@@ -627,6 +627,10 @@ def generate_TS_2D(atoms, info_path,  metal, facet, sites, site_adjacency, nslab
                 site_pair = None
                 best_metric = None
                 iters = 1
+                # The 2.0 A site-to-atom cutoff assumes chemisorbed heights (~1-1.5 A above the
+                # surface plane); a physisorbed diffuser (vdW template bond, e.g. NH3) floats
+                # ~2.2-3 A above the sites, so NO pair could ever qualify. Widen only for vdW.
+                dist_site_cut = 3.5 if _template_rbond_order(bd) == "vdW" else 2.0
                 for i,site1 in enumerate(neighbor_sites):
                     pos1 = site1["position"]
                     site1_id = (site1["site"],site1["morphology"])
@@ -649,7 +653,7 @@ def generate_TS_2D(atoms, info_path,  metal, facet, sites, site_adjacency, nslab
                         dist2t = dist2t[0][0]
                         halfwayness = np.linalg.norm(v1t+v2t)/(dist2t+dist1t)
                         dist_site = max(dist1t,dist2t)
-                        if not np.isnan(motion_alignment) and motion_alignment > 0.95 and dist < 3.0 and dist_site < 2.0 and (valid_sites is None or (site1_id in valid_sites and site2_id in valid_sites)):
+                        if not np.isnan(motion_alignment) and motion_alignment > 0.95 and dist < 3.0 and dist_site < dist_site_cut and (valid_sites is None or (site1_id in valid_sites and site2_id in valid_sites)):
                             iters += 1
                             metric = 1.0 / (halfwayness*dist_site)
                             if site_pair is None:
