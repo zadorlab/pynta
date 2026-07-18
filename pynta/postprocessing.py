@@ -192,17 +192,30 @@ def get_diffusion_connecting_sites(ts_path, ind, sites, site_adjacency, nslab, m
         occupies >1 site), or "desorbed/unknown" if an endpoint can't be mapped onto a site, or None if
         that IRC trajectory is missing.
     """
+    def _labels(atoms, **kwargs):
+        admol, _, _ = generate_adsorbate_2D(atoms, sites, site_adjacency, nslab, max_dist=max_dist, **kwargs)
+        return ["{}/{}".format(at.site, at.morphology) for at in admol.atoms
+                if at.is_surface_site() and any(not a2.is_surface_site() for a2 in at.edges)]
+
     def _endpoint(traj_name):
         p = os.path.join(ts_path, str(ind), traj_name)
         if not os.path.exists(p):
             return None
         atoms = read(p, index=-1)  # last frame ~ the relaxed minimum on that side
+        labs = None
         try:
-            admol, _, _ = generate_adsorbate_2D(atoms, sites, site_adjacency, nslab, max_dist=max_dist)
+            labs = _labels(atoms)
         except (SiteOccupationException, TooManyElectronsException, FailedFixBondsException, ValueError):
-            return "desorbed/unknown"
-        labs = ["{}/{}".format(at.site, at.morphology) for at in admol.atoms
-                if at.is_surface_site() and any(not a2.is_surface_site() for a2 in at.edges)]
+            labs = None
+        if not labs:
+            # Physisorbed endpoint: the plain 2D generation drops the order-0 (vdW) binding bond,
+            # leaving no occupied site (the "- -> -" rows). Retry keeping vdW bonds so the occupied
+            # site resolves; the chemisorbed/physisorbed split is a valence formality in pynta.
+            try:
+                labs = _labels(atoms, keep_binding_vdW_bonds=True, keep_vdW_surface_bonds=True)
+            except (SiteOccupationException, TooManyElectronsException, FailedFixBondsException, ValueError):
+                if labs is None:
+                    return "desorbed/unknown"
         return ", ".join(labs) if labs else "-"
 
     return _endpoint("irc_forward.traj"), _endpoint("irc_reverse.traj")
@@ -1403,7 +1416,23 @@ def get_TS(path,adsorbates_path,metal,facet,slab,sites,site_adjacency,nslab,c_re
         
     reactants = Molecule().from_adjacency_list(info["reactants"])
     products = Molecule().from_adjacency_list(info["products"])
-    
+
+    # Diffusion (Surface_Migration) TSs: pynta's strict validate_TS combines a covalent-bond geometry
+    # check with an imaginary-mode direction alignment, neither of which fits a lateral site-to-site
+    # hop, so it rejects most good diffusion saddles. Override with the criterion that is actually
+    # meaningful for diffusion -- both IRC endpoints relax onto mapped adsorption sites -- and keep
+    # the strict verdict in valid_info["Strict_Valid"] for reference. This is postprocessing-only
+    # (the running workflow never consults validity), so changing it requires no recomputation.
+    # Guesses without IRC trajectories keep the strict verdict (the forgiving test needs the IRCs).
+    if info.get("family_name") == "Surface_Migration":
+        for k in valid_dict.keys():
+            site_f, site_r = get_diffusion_connecting_sites(path, k, sites, site_adjacency, nslab)
+            if site_f is None or site_r is None:  # missing IRC data -> can't apply the relaxed test
+                continue
+            valid_info[k]["Strict_Valid"] = valid_dict[k]
+            valid_info[k]["Diffusion_Connecting_Sites"] = (site_f, site_r)
+            valid_dict[k] = not any(s in ("desorbed/unknown", "-") for s in (site_f, site_r))
+
     broken_bonds,formed_bonds = get_broken_formed_bonds(reactants,products)
     target_TS = reactants.copy(deep=True)
     
