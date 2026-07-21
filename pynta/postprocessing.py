@@ -2103,7 +2103,19 @@ def extract_covdep_data(path,pynta_path,ts_dict,metal,facet,sites,site_adjacency
 
     return Ncoad_energy_dict,Ncoad_config_dict,tree_dict,admol_name_structure_dict,admol_name_path_dict,ts_info,max_coad_indexes,ad_energy_dict,coadmol_E_dict
 
-def analyze_covdep_lowest_energy(Ncoad_config_dict,iter_configs,config_name,coad_name,metal,slab,sites,admol_name_structure_dict,admol_name_path_dict,tree_dict):
+def analyze_covdep_lowest_energy(Ncoad_config_dict,iter_configs,config_name,coad_name,metal,slab,sites,admol_name_structure_dict,admol_name_path_dict,tree_dict,
+                                 pynta_path=None,facet=None,site_adjacency=None,allowed_structure_site_structures=None,adsorbate_site_energy_cutoff=None):
+    """Reconstruct 3D geometries for the model's per-coverage lowest configs.
+
+    A predicted config's central species can sit on ANY of its valid site arrangements (the MC hops
+    among them), not just the single one in admol_name_structure_dict. Reconstructing with only that
+    fixed template fails (mol_to_atoms raises "partial_admol is not subgraph isomorphic") whenever the
+    central moved. So gather ALL central templates (get_central_templates, lowest-energy first) and
+    try each until one is subgraph-isomorphic to the config -- the unique geometrically-correct one.
+
+    Pass pynta_path/facet/site_adjacency (and optionally nslab via len(slab)) to enable the multi-
+    template path; without them it falls back to the single fixed template (old behavior).
+    """
     configs_3D = []
     configs_2D = []
     sidt_Es = []
@@ -2111,15 +2123,44 @@ def analyze_covdep_lowest_energy(Ncoad_config_dict,iter_configs,config_name,coad
     partial_admol = admol_name_structure_dict[config_name]
     admol_path = admol_name_path_dict[config_name]
     partial_atoms = read(admol_path)
+
+    templates = None
+    if pynta_path is not None and facet is not None and site_adjacency is not None:
+        is_ts = any(bd.get_order_str() == 'R' for bd in partial_admol.get_all_edges())
+        try:
+            templates = get_central_templates(config_name, is_ts, pynta_path, metal, facet, sites,
+                                              site_adjacency, len(slab),
+                                              allowed_structure_site_structures=allowed_structure_site_structures,
+                                              energy_cutoff=adsorbate_site_energy_cutoff)
+        except Exception as e:
+            logging.warning("get_central_templates failed for %s (%s); using the single fixed template", config_name, e)
+            templates = None
+
     for k,v in Ncoad_config_dict[coad_name][iter_configs][config_name].items():
         for x in v:
-            atoms = mol_to_atoms(x,slab,sites,metal,partial_atoms=partial_atoms,partial_admol=partial_admol)
+            atoms = None
+            if templates:
+                # try every central arrangement (lowest-energy first); only the one whose central
+                # sits on the config's sites is subgraph-isomorphic, so the first success is correct
+                for t_atoms, t_admol in templates:
+                    try:
+                        atoms = mol_to_atoms(x,slab,sites,metal,partial_atoms=t_atoms,partial_admol=t_admol)
+                        break
+                    except ValueError:
+                        continue
+            if atoms is None:
+                try:
+                    atoms = mol_to_atoms(x,slab,sites,metal,partial_atoms=partial_atoms,partial_admol=partial_admol)
+                except ValueError:
+                    logging.warning("no central template matched a predicted lowest config of %s at "
+                                    "coverage key %s; skipping that config", config_name, k)
+                    continue
             configs_3D.append(atoms)
             Einteraction,std,tr = tree_dict[iter_configs].evaluate(x,trace=True, estimate_uncertainty=True)
             sidt_traces.append(tr)
             configs_2D.append(x)
             sidt_Es.append(Einteraction)
-            
+
     return configs_3D,configs_2D,sidt_Es,sidt_traces
 
 def analyze_covdep_sample_data(config_name,coad_name,Ncoad_energy_dict,path,pynta_path,
