@@ -17,6 +17,15 @@ from copy import deepcopy
 import itertools
 from pynta.utils import *
 import json
+import threading
+
+#torch.fx tracks the active patcher in a module level global (CURRENT_PATCHER in
+#torch/fx/_symbolic_trace.py). deserializing a model saved as an fx GraphModule re-traces it
+#and pushes/pops that global, so constructing calculators that call torch.load concurrently
+#from multiple threads races and fails with "assert CURRENT_PATCHER is not None". the harmonic
+#forcing calculators are built inside parallel workers, so serialize their construction. only
+#construction is locked, the optimization itself still runs in parallel
+CALCULATOR_CONSTRUCTION_LOCK = threading.Lock()
 
 def get_energy_atom_bond(atoms,ind1,ind2,k,deq):
     bd,d = get_distances([atoms.positions[ind1]], [atoms.positions[ind2]], cell=atoms.cell, pbc=atoms.pbc)
@@ -138,7 +147,8 @@ def run_harmonically_forced(atoms,atom_bond_potentials,site_bond_potentials,nsla
                 dv = {k:v for k,v in v.items() if k != "type"}
                 hf_kwargs[k] = to_ase_software(typ,dv,module_name=harm_f_software)
         
-        hf = HarmonicallyForced(**hf_kwargs)
+        with CALCULATOR_CONSTRUCTION_LOCK:
+            hf = HarmonicallyForced(**hf_kwargs)
     else:
         class HarmonicallyForced(hfsoft[0]):
             def get_energy_forces(self):
@@ -175,7 +185,8 @@ def run_harmonically_forced(atoms,atom_bond_potentials,site_bond_potentials,nsla
                 hf_kwargs[k] = to_ase_software(typ,dv,module_name=harm_f_software)
         
         
-        hf = SumCalculator([HarmonicallyForced(**hf_kwargs),to_ase_software(harm_f_software[1],harm_f_software_kwargs[1])])
+        with CALCULATOR_CONSTRUCTION_LOCK:
+            hf = SumCalculator([HarmonicallyForced(**hf_kwargs),to_ase_software(harm_f_software[1],harm_f_software_kwargs[1])])
         
     atoms.calc = hf
 
@@ -383,7 +394,8 @@ def run_harmonically_forced_no_pbc(atoms,atom_bond_potentials,site_bond_potentia
                 dv = {k:v for k,v in v.items() if k != "type"}
                 hf_kwargs[k] = to_ase_software(typ,dv,module_name=harm_f_software)
         
-        hf = HarmonicallyForced(**hf_kwargs)
+        with CALCULATOR_CONSTRUCTION_LOCK:
+            hf = HarmonicallyForced(**hf_kwargs)
     else:
         class HarmonicallyForced(hfsoft[0]):
             def get_energy_forces(self):
@@ -419,7 +431,8 @@ def run_harmonically_forced_no_pbc(atoms,atom_bond_potentials,site_bond_potentia
                 dv = {k:v for k,v in v.items() if k != "type"}
                 hf_kwargs[k] = to_ase_software(typ,dv,module_name=harm_f_software)
         
-        hf = SumCalculator([HarmonicallyForced(**hf_kwargs),to_ase_software(harm_f_software[1],harm_f_software_kwargs[1])])
+        with CALCULATOR_CONSTRUCTION_LOCK:
+            hf = SumCalculator([HarmonicallyForced(**hf_kwargs),to_ase_software(harm_f_software[1],harm_f_software_kwargs[1])])
     
     bigad.set_constraint(out_constraints)
     bigad.calc = hf
