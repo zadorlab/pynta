@@ -1973,7 +1973,8 @@ def restart_wf(lpad,queue):
 # FiretaskBase/explicit_serialize/to_ase_software/name_to_ase_software all come
 # in via the module-level imports at the top of tasks.py. EspressoProfile is the
 # only addition needed for the ASE >=3.23 calculator adapter below.
-from ase.calculators.espresso import EspressoProfile
+
+#from ase.calculators.espresso import EspressoProfile
 
 
 # ============================================================
