@@ -258,9 +258,10 @@ def fix_atom_only_required(mol,atom,allow_failure=False,cleanup_surface_bonds=Tr
                 if allow_failure:
                     break
                 else:
-                    logging.error(mol.to_adjacency_list())
-                    logging.error(mol.atoms.index(atom))
-                    raise FailedFixBondsException
+                    raise FailedFixBondsException(
+                        "fix_atom_only_required could not fix bond orders for atom index "
+                        f"{mol.atoms.index(atom)} ({atom.symbol})\n{mol.to_adjacency_list()}"
+                    )
             bd = atom.bonds[atoms[ind]]
             bd.increment_order()
             delta -= 2
@@ -301,7 +302,10 @@ def fix_atom(mol,atom,allow_failure=False,cleanup_surface_bonds=True):
                 if allow_failure:
                     break
                 else:
-                    raise FailedFixBondsException
+                    raise FailedFixBondsException(
+                        "fix_atom could not fix bond orders for atom index "
+                        f"{mol.atoms.index(atom)} ({atom.symbol})\n{mol.to_adjacency_list()}"
+                    )
             bd = atom.bonds[atoms[ind]]
             bd.increment_order()
             delta -= 2
@@ -1489,35 +1493,60 @@ def mol_to_atoms(admol,slab,sites,metal,partial_atoms=None,partial_admol=None):
 
     return atoms
 
-def get_best_adsorbate_xyz(adsorbate_path,sites,site_adjacency,nslab,allowed_structure_site_structures,keep_binding_vdW_bonds,keep_vdW_surface_bonds):
+def get_best_adsorbate_xyz(adsorbate_path,sites,site_adjacency,nslab,allowed_structure_site_structures,keep_binding_vdW_bonds,keep_vdW_surface_bonds,
+                           return_diagnostics=False):
     """
     load the adsorbates associated with the reaction and find the unique optimized
     adsorbate structures for each species
-    returns a dictionary mapping each adsorbate name to a list of ase.Atoms objects
+    returns the path to the lowest energy xyz whose perceived 2D graph is isomorphic
+    to the target adjacency list in info.json, or None if no candidate qualifies
+
+    every candidate that is discarded is recorded with the reason it was discarded.
+    the reasons are logged at debug level and, if return_diagnostics is True, returned
+    alongside the result as a list of (prefix, reason) tuples. callers that raise on a
+    None result should include them so the failure is actionable.
     """
     with open(os.path.join(adsorbate_path,"info.json"),"r") as f:
         info = json.load(f)
-        
+
     mol = Molecule().from_adjacency_list(info["adjlist"])
-    
+
     adsorbate = None
     min_energy = np.inf
+    diagnostics = []
     Es,_,freq = get_adsorbate_energies(adsorbate_path)
     for prefix in Es.keys():
         xyz = os.path.join(adsorbate_path,prefix,prefix+".xyz")
         strind = os.path.split(xyz)[1].split(".")[0]
         if strind not in Es.keys():
+            diagnostics.append((prefix,"no energy parsed for this prefix"))
             continue
         geo = read(xyz)
         try:
             admol,_,_ = generate_adsorbate_2D(geo, sites, site_adjacency, nslab, max_dist=np.inf, allowed_structure_site_structures=allowed_structure_site_structures,
                                                 keep_binding_vdW_bonds=keep_binding_vdW_bonds,keep_vdW_surface_bonds=keep_vdW_surface_bonds)
         except (SiteOccupationException,TooManyElectronsException,ValueError,FailedFixBondsException) as e:
+            diagnostics.append((prefix,"generate_adsorbate_2D raised {}: {}".format(type(e).__name__,e)))
             continue
         molp = split_adsorbed_structures(admol,clear_site_info=True)[0]
-        if molp.is_isomorphic(mol,save_order=True) and Es[strind] < min_energy: #if matches target and is lower in energy
-            adsorbate = xyz
-            min_energy = Es[strind]
+        if not molp.is_isomorphic(mol,save_order=True): #does not match target
+            diagnostics.append((prefix,"perceived graph not isomorphic to target\nperceived:\n{}\ntarget:\n{}".format(
+                molp.to_adjacency_list(),mol.to_adjacency_list())))
+            continue
+        if Es[strind] >= min_energy: #matches target but a lower energy match was already found
+            diagnostics.append((prefix,"isomorphic but higher in energy ({} >= {})".format(Es[strind],min_energy)))
+            continue
+        diagnostics.append((prefix,"accepted, E = {}".format(Es[strind])))
+        adsorbate = xyz
+        min_energy = Es[strind]
+
+    if adsorbate is None:
+        logging.debug("get_best_adsorbate_xyz found no acceptable structure in %s",adsorbate_path)
+        for prefix,reason in diagnostics:
+            logging.debug("  %s: %s",prefix,reason)
+
+    if return_diagnostics:
+        return adsorbate,diagnostics
 
     return adsorbate
 
