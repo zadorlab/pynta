@@ -822,7 +822,26 @@ class CoverageDependence:
                                 keep_vdW_surface_bonds = True
                         
                 ad_xyz = get_best_adsorbate_xyz(p,self.sites,self.site_adjacency,self.nslab,allowed_structure_site_structures,keep_binding_vdW_bonds,keep_vdW_surface_bonds)
-                admol_name_path_dict[ad] = ad_xyz 
+                if ad_xyz is None:
+                    Es_dbg = get_adsorbate_energies(p)[0]
+                    subdirs = sorted(d for d in os.listdir(p) if os.path.isdir(os.path.join(p,d)))
+                    xyzs = {d: sorted(f for f in os.listdir(os.path.join(p,d)) if f.endswith(".xyz")) for d in subdirs}
+                    raise RuntimeError(
+                        "get_best_adsorbate_xyz found no acceptable structure for adsorbate "
+                        f"{ad!r}\n"
+                        f"  path                    : {p}\n"
+                        f"  nslab (from slab.xyz)   : {self.nslab}\n"
+                        f"  subdirs present         : {subdirs}\n"
+                        f"  xyz files per subdir    : {xyzs}\n"
+                        f"  prefixes with energies  : {sorted(Es_dbg.keys())}\n"
+                        f"  target adjlist          :\n{mol.to_adjacency_list()}\n"
+                        f"  keep_binding_vdW_bonds  : {keep_binding_vdW_bonds}\n"
+                        f"  keep_vdW_surface_bonds  : {keep_vdW_surface_bonds}\n"
+                        "  If 'prefixes with energies' is empty, get_adsorbate_energies parsed nothing "
+                        "(check vib output filenames). Otherwise every candidate was rejected by "
+                        "generate_adsorbate_2D or failed the isomorphism check in get_best_adsorbate_xyz."
+                    )
+                admol_name_path_dict[ad] = ad_xyz
                 atoms = read(ad_xyz)
                 st,_,_ = generate_adsorbate_2D(atoms, self.sites, self.site_adjacency, self.nslab, max_dist=np.inf, allowed_structure_site_structures=allowed_structure_site_structures,
                                                keep_binding_vdW_bonds=keep_binding_vdW_bonds,keep_vdW_surface_bonds=keep_vdW_surface_bonds)
