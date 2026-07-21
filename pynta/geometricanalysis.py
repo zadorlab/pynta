@@ -1493,6 +1493,68 @@ def mol_to_atoms(admol,slab,sites,metal,partial_atoms=None,partial_admol=None):
 
     return atoms
 
+def shift_surface_charges_to_bond_order(mol):
+    """
+    convert the formal charge representation of a surface bond to the neutral higher bond
+    order representation, ie X#[C-] with a +1 site becomes X$C
+
+    RMG writes an adsorbate atom that donates a lone pair to the surface as a negatively
+    charged atom bonded to a positively charged site, while fix_bond_orders perceives the
+    same structure from geometry as a neutral atom with a higher order surface bond. this
+    produces the second form from the first when the two differ only in that way, and
+    returns None when the molecule does not have that shape.
+    """
+    m = mol.copy(deep=True)
+    shifted = False
+    for site in [a for a in m.atoms if a.is_surface_site()]:
+        if site.charge != 1:
+            continue
+        adatoms = [a for a in site.bonds.keys() if not a.is_surface_site()]
+        if len(adatoms) != 1:
+            continue
+        adatom = adatoms[0]
+        if adatom.charge != -1 or adatom.lone_pairs < 1:
+            continue
+        bd = site.bonds[adatom]
+        if bd.order >= 4:
+            continue
+        bd.increment_order()
+        site.charge = 0
+        adatom.charge = 0
+        adatom.lone_pairs -= 1
+        shifted = True
+
+    if not shifted:
+        return None
+
+    m.update_multiplicity()
+    m.update_atomtypes()
+    m.update_connectivity_values()
+    return m
+
+def get_resonance_family(mol):
+    """
+    return the target molecule together with any resonance structures worth matching against
+
+    uses the molecule package's resonance generation where available and adds the surface
+    charge shifted form, which the resonance algorithms do not always produce for adsorbates
+    """
+    structures = [mol]
+
+    try:
+        for m in mol.generate_resonance_structures(keep_isomorphic=False,save_order=True):
+            if not any(m.is_isomorphic(s,save_order=True) for s in structures):
+                structures.append(m)
+    except Exception as e: #resonance generation is best effort, the explicit shift below is the fallback
+        logging.debug("resonance generation failed for %s: %s",mol.to_smiles(),e)
+
+    for m in list(structures):
+        shifted = shift_surface_charges_to_bond_order(m)
+        if shifted is not None and not any(shifted.is_isomorphic(s,save_order=True) for s in structures):
+            structures.append(shifted)
+
+    return structures
+
 def get_best_adsorbate_xyz(adsorbate_path,sites,site_adjacency,nslab,allowed_structure_site_structures,keep_binding_vdW_bonds,keep_vdW_surface_bonds,
                            return_diagnostics=False):
     """
@@ -1510,6 +1572,13 @@ def get_best_adsorbate_xyz(adsorbate_path,sites,site_adjacency,nslab,allowed_str
         info = json.load(f)
 
     mol = Molecule().from_adjacency_list(info["adjlist"])
+
+    #fix_bond_orders saturates an adsorbate atom's octet through its surface bonds, so a
+    #species RMG writes as a lower bond order with formal charges (adsorbed atomic carbon
+    #is [C-]#[Pt+]) is perceived from geometry as the higher bond order neutral form
+    #(X#C perceived as X$C). these are resonance structures of one another, so compare
+    #against the whole resonance family rather than the single form stored in info.json
+    target_structures = get_resonance_family(mol)
 
     adsorbate = None
     min_energy = np.inf
@@ -1529,9 +1598,9 @@ def get_best_adsorbate_xyz(adsorbate_path,sites,site_adjacency,nslab,allowed_str
             diagnostics.append((prefix,"generate_adsorbate_2D raised {}: {}".format(type(e).__name__,e)))
             continue
         molp = split_adsorbed_structures(admol,clear_site_info=True)[0]
-        if not molp.is_isomorphic(mol,save_order=True): #does not match target
-            diagnostics.append((prefix,"perceived graph not isomorphic to target\nperceived:\n{}\ntarget:\n{}".format(
-                molp.to_adjacency_list(),mol.to_adjacency_list())))
+        if not any(molp.is_isomorphic(target,save_order=True) for target in target_structures): #does not match target
+            diagnostics.append((prefix,"perceived graph not isomorphic to target or any of its {} resonance structures\nperceived:\n{}\ntarget:\n{}".format(
+                len(target_structures),molp.to_adjacency_list(),mol.to_adjacency_list())))
             continue
         if Es[strind] >= min_energy: #matches target but a lower energy match was already found
             diagnostics.append((prefix,"isomorphic but higher in energy ({} >= {})".format(Es[strind],min_energy)))
