@@ -17,6 +17,8 @@ from copy import deepcopy
 import itertools
 from pynta.utils import *
 import json
+import os
+import logging
 import threading
 
 #torch.fx tracks the active patcher in a module level global (CURRENT_PATCHER in
@@ -25,7 +27,53 @@ import threading
 #from multiple threads races and fails with "assert CURRENT_PATCHER is not None". the harmonic
 #forcing calculators are built inside parallel workers, so serialize their construction. only
 #construction is locked, the optimization itself still runs in parallel
-CALCULATOR_CONSTRUCTION_LOCK = threading.Lock()
+#reentrant because share_loaded_models acquires it and is called from inside the guarded block
+CALCULATOR_CONSTRUCTION_LOCK = threading.RLock()
+
+#maps (absolute model path, device) to the loaded model, so a model used by many parallel
+#tasks is read from disk and traced once instead of once per task
+LOADED_MODEL_CACHE = dict()
+
+def share_loaded_models(kwargs):
+    """
+    replace a model_paths argument with the corresponding preloaded models
+
+    every harmonic forcing task builds its own calculator from the same model path, so
+    without this the model is read from disk and retraced once per structure. loaded models
+    are cached by path and device and shared across tasks. inference does not mutate them.
+
+    returns kwargs unchanged when there is no model_paths entry, when models were already
+    supplied, or when the model cannot be loaded
+    """
+    if "model_paths" not in kwargs or kwargs.get("models") is not None:
+        return kwargs
+
+    try:
+        import torch
+    except ImportError:
+        return kwargs
+
+    model_paths = kwargs["model_paths"]
+    single = isinstance(model_paths,str)
+    if single:
+        model_paths = [model_paths]
+
+    models = []
+    device = kwargs.get("device","cpu")
+    with CALCULATOR_CONSTRUCTION_LOCK:
+        for model_path in model_paths:
+            key = (os.path.abspath(model_path),device)
+            if key not in LOADED_MODEL_CACHE:
+                try:
+                    LOADED_MODEL_CACHE[key] = torch.load(f=model_path,map_location=device)
+                except Exception as e: #fall back to letting the calculator load it itself
+                    logging.debug("could not preload %s: %s",model_path,e)
+                    return kwargs
+            models.append(LOADED_MODEL_CACHE[key])
+
+    kwargs = {k:v for k,v in kwargs.items() if k != "model_paths"}
+    kwargs["models"] = models[0] if single else models
+    return kwargs
 
 def get_energy_atom_bond(atoms,ind1,ind2,k,deq):
     bd,d = get_distances([atoms.positions[ind1]], [atoms.positions[ind2]], cell=atoms.cell, pbc=atoms.pbc)
@@ -147,6 +195,7 @@ def run_harmonically_forced(atoms,atom_bond_potentials,site_bond_potentials,nsla
                 dv = {k:v for k,v in v.items() if k != "type"}
                 hf_kwargs[k] = to_ase_software(typ,dv,module_name=harm_f_software)
         
+        hf_kwargs = share_loaded_models(hf_kwargs)
         with CALCULATOR_CONSTRUCTION_LOCK:
             hf = HarmonicallyForced(**hf_kwargs)
     else:
@@ -185,6 +234,7 @@ def run_harmonically_forced(atoms,atom_bond_potentials,site_bond_potentials,nsla
                 hf_kwargs[k] = to_ase_software(typ,dv,module_name=harm_f_software)
         
         
+        hf_kwargs = share_loaded_models(hf_kwargs)
         with CALCULATOR_CONSTRUCTION_LOCK:
             hf = SumCalculator([HarmonicallyForced(**hf_kwargs),to_ase_software(harm_f_software[1],harm_f_software_kwargs[1])])
         
@@ -394,6 +444,7 @@ def run_harmonically_forced_no_pbc(atoms,atom_bond_potentials,site_bond_potentia
                 dv = {k:v for k,v in v.items() if k != "type"}
                 hf_kwargs[k] = to_ase_software(typ,dv,module_name=harm_f_software)
         
+        hf_kwargs = share_loaded_models(hf_kwargs)
         with CALCULATOR_CONSTRUCTION_LOCK:
             hf = HarmonicallyForced(**hf_kwargs)
     else:
@@ -431,6 +482,7 @@ def run_harmonically_forced_no_pbc(atoms,atom_bond_potentials,site_bond_potentia
                 dv = {k:v for k,v in v.items() if k != "type"}
                 hf_kwargs[k] = to_ase_software(typ,dv,module_name=harm_f_software)
         
+        hf_kwargs = share_loaded_models(hf_kwargs)
         with CALCULATOR_CONSTRUCTION_LOCK:
             hf = SumCalculator([HarmonicallyForced(**hf_kwargs),to_ase_software(harm_f_software[1],harm_f_software_kwargs[1])])
     
