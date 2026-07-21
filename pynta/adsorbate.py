@@ -184,7 +184,17 @@ def generate_adsorbate_guesses(mol,ads,slab,mol_to_atoms_map,metal,
     
     inputs = [ (geos[j],[],site_bond_params_lists[j],nslab,constraint_list,None,j,mol_to_atoms_map,None,harm_f_software,harm_f_software_kwargs) for j in range(len(geos))]
 
-    outputs = Parallel(n_jobs=nprocs)(delayed(map_harmonically_forced)(inp) for inp in inputs)
+    try:
+        import torch
+        torch.set_num_threads(1)
+    except ImportError:
+        pass
+
+    outputs = Parallel(n_jobs=nprocs, backend="threading")(delayed(map_harmonically_forced)(inp) for inp in inputs)
+    
+    #inputs = [ (geos[j],[],site_bond_params_lists[j],nslab,constraint_list,None,j,mol_to_atoms_map,None,harm_f_software,harm_f_software_kwargs) for j in range(len(geos))]
+#
+    #outputs = Parallel(n_jobs=nprocs)(delayed(map_harmonically_forced)(inp) for inp in inputs)
     for i in range(len(outputs)):
         geo_out,Eharm,_ = outputs[i]
         if geo_out:
