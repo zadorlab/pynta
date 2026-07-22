@@ -1172,10 +1172,24 @@ def adsorbate_interaction_decomposition(mol,local_radius=5):
                     print(mol.to_adjacency_list())
                     print(st.to_adjacency_list())
                     raise e
+                # positional site labels: tag each surface site by its shortest site-hop
+                # distance to the nearest adsorbate endpoint (the two endpoints keep "*").
+                # sites equidistant from the two endpoints share a label, so the scheme is
+                # palindromic/symmetric by construction and is a canonical graph invariant.
+                # this pins site correspondence during (sub)graph isomorphism -> big speedup.
+                # must stay consistent with the labeling in get_adsorbed_atom_pairs.
+                endpoints = [a for a in stout.atoms if a.label == "*" and not a.is_surface_site()]
                 for a in stout.atoms:
                     if a.is_surface_site():
-                        a.label = ""
-                
+                        dmin = None
+                        for e in endpoints:
+                            p = find_shortest_paths_sites(e, a)
+                            if p:
+                                d = len(p[0]) - 1
+                                if dmin is None or d < dmin:
+                                    dmin = d
+                        a.label = "*" + str(dmin) if dmin is not None else ""
+
                 structs.append(stout)
     
     return structs
@@ -1205,7 +1219,11 @@ def get_adsorbed_atom_pairs(length=7, r_bonds=None):
         g = Group().from_adjacency_list("""1 * R u0 px cx""")
         a2 = g.atoms[0]
         for i in range(j):
-            a = GroupAtom(atomtype=["X"],radical_electrons=[0],lone_pairs=[0],charge=[0])
+            pos = i + 1
+            # label sites by distance to the nearest endpoint (symmetric/palindromic), matching
+            # adsorbate_interaction_decomposition so datums stay subgraph-isomorphic to this group
+            a = GroupAtom(atomtype=["X"],radical_electrons=[0],lone_pairs=[0],charge=[0],
+                          label="*"+str(min(pos, j+1-pos)))
             if i == 0:
                 b = GroupBond(a2, a, order=r_bonds)
             else:
