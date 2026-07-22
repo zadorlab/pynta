@@ -1456,11 +1456,15 @@ def train_sidt_cov_dep_regressor(pairs_datums,sampling_datums,r_site=None,r_morp
     if r_atoms is None:
         r_atoms = ["C","O","N","H","X"]
     
+    # sites labeled *1 (distance 1 from their endpoint) to stay consistent with the
+    # distance-labeled sites in get_adsorbed_atom_pairs / adsorbate_interaction_decomposition;
+    # an unlabeled X here fails to match the labeled child/datum sites under
+    # generate_initial_map=False (Root_0 not subgraph isomorphic to Root otherwise).
     root_pair = Group().from_adjacency_list("""
-    1 * R u0 px cx {2,[S,D,T,Q,R,vdW]}
-    2   X u0 p0 c0 {1,[S,D,T,Q,R,vdW]}
-    3 * R u0 px cx {4,[S,D,T,Q,R,vdW]}
-    4   X u0 p0 c0 {3,[S,D,T,Q,R,vdW]}
+    1 *  R u0 px cx {2,[S,D,T,Q,R,vdW]}
+    2 *1 X u0 p0 c0 {1,[S,D,T,Q,R,vdW]}
+    3 *  R u0 px cx {4,[S,D,T,Q,R,vdW]}
+    4 *1 X u0 p0 c0 {3,[S,D,T,Q,R,vdW]}
     """)
 
     root_pair_node = Node(group=root_pair,name="Root",parent=None,depth=0)
