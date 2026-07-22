@@ -131,6 +131,36 @@ def _train_and_eval(pairs_datums, sampling_datums, train_kwargs, emulate_old):
     return tree, seconds, preds, datums
 
 
+def run_new_only(pairs_datums, sampling_datums, **train_kwargs):
+    """Train ONLY the new (labeled) tree, timed, with a prediction sanity check.
+
+    Skips the slow old-emulated baseline -- use when you just want the speed number
+    (compare `train s` to your known old iter0 time) and a quick did-it-break check.
+    """
+    print("[parity] training NEW only (labeled) ...")
+    new_tree, new_s, new_p, datums = _train_and_eval(pairs_datums, sampling_datums, train_kwargs, False)
+
+    ok = [p for p in new_p if p is not None]
+    failed = sum(1 for p in new_p if p is None)
+    print("=" * 62)
+    print(f"nodes    : {len(new_tree.nodes)}")
+    print(f"train s  : {new_s:.1f}   <- compare to your known OLD iter0 time")
+    print(f"datums   : {len(datums)} total, {failed} failed to evaluate")
+    if ok:
+        print(f"pred J/mol: min {min(ok):.1f}  mean {sum(ok)/len(ok):.1f}  max {max(ok):.1f}")
+    print("=" * 62)
+    if failed:
+        print("WARNING: some datums failed to evaluate -- possible root/label mismatch; "
+              "run the full parity (drop --new-only) to inspect.")
+    elif not ok:
+        print("WARNING: NO datums evaluated -- datums likely detached from root "
+              "(unlabeled root_pair not matching labeled sites). Needs fixing.")
+    else:
+        print("sanity OK: tree built and all datums evaluate. For semantic parity vs old, "
+              "run without --new-only when you can spare the time.")
+    return {"new_nodes": len(new_tree.nodes), "new_s": new_s, "failed": failed}
+
+
 def run(pairs_datums, sampling_datums, tol=1.0, **train_kwargs):
     """Train old-emulated vs new in one process and print the parity + speedup report."""
     print("[parity] training OLD-emulated (labels stripped) ...")
@@ -173,9 +203,13 @@ def run(pairs_datums, sampling_datums, tol=1.0, **train_kwargs):
 
 if __name__ == "__main__":
     args = sys.argv[1:]
+    new_only = "--new-only" in args
+    args = [a for a in args if a != "--new-only"]
     if not args:
         print(__doc__)
-        print("usage: python scripts/parity_check_labeling.py <run_path> [iter=0] [tol_Jmol=1.0]")
+        print("usage: python scripts/parity_check_labeling.py <run_path> [iter=0] [tol_Jmol=1.0] [--new-only]")
+        print("  --new-only : train just the fast new tree (skips the slow baseline); "
+              "gives the speed number + a did-it-break check in ~one training.")
         sys.exit(0)
     run_path = args[0]
     it = int(args[1]) if len(args) > 1 else 0
@@ -183,4 +217,7 @@ if __name__ == "__main__":
     pairs, sampling = load_datums(run_path, it)
     print(f"[parity] loaded {len(pairs)} pairs + {len(sampling)} sampling datums "
           f"from {run_path} (iter {it})")
-    run(pairs, sampling, tol=tol, node_fract_training=0.7)
+    if new_only:
+        run_new_only(pairs, sampling, node_fract_training=0.7)
+    else:
+        run(pairs, sampling, tol=tol, node_fract_training=0.7)
