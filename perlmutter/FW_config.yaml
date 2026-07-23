@@ -1,0 +1,8 @@
+# FireWorks CLI config (lpad/qlaunch) for the Perlmutter GPU setup.
+# LAUNCHPAD_LOC points at my_launchpad.yaml, which is NOT included here since
+# it needs your real MongoDB host/credentials -- create
+# perlmutter/my_launchpad.yaml yourself (see the fireworks installation docs
+# linked from docsrc/README.rst) before using this file.
+LAUNCHPAD_LOC: /Users/shinae/code/pynta/perlmutter/my_launchpad.yaml
+FWORKER_LOC: /Users/shinae/code/pynta/perlmutter/my_fworker.yaml
+QUEUEADAPTER_LOC: /Users/shinae/code/pynta/perlmutter/my_qadapter.yaml

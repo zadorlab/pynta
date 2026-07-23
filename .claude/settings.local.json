@@ -1,7 +1,12 @@
 {
   "permissions": {
     "allow": [
-      "WebFetch(domain:gitlab.com)"
+      "WebFetch(domain:gitlab.com)",
+      "Bash(python3 -c \"import fireworks, os; print\\(fireworks.__file__\\)\")",
+      "Bash(pip show *)",
+      "Bash(python3 -c ' *)",
+      "Bash(git log *)",
+      "Bash(awk '/class MolecularTSEstimate/,/^class [A-Za-z]/' /Users/shinae/code/pynta/pynta/tasks.py)"
     ]
   }
 }

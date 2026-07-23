@@ -1,0 +1,7 @@
+# Generic fireworker: matches any firework in the queue. Every rlaunch
+# process started by my_qadapter.yaml's rocket_launch (4 per node) uses
+# this same file, so all 4 GPUs on a node pull from the same pool of ready
+# fireworks rather than being partitioned by category.
+name: perlmutter gpu fireworker
+category: ''
+query: '{}'

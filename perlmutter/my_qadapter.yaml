@@ -1,0 +1,27 @@
+# FireWorks queue adapter for Perlmutter GPU nodes.
+#
+# Perlmutter's `regular` QOS on the GPU partition only allocates whole nodes
+# (4x A100 each) -- there is no way to request a single GPU under `regular`
+# (that requires the `shared` QOS instead). So each queue submission below
+# reserves 1 full node and runs 4 fireworkers inside it via `srun
+# --gpu-bind=single:1`, one per GPU. Set njobs_queue=N in the Pynta(...)
+# call to keep N such node-jobs submitted concurrently: njobs_queue=2 -> 2
+# nodes x 4 fireworkers/node = 8 fireworkers total.
+#
+# rlaunch's `rapidfire --timeout` keeps each fireworker pulling new jobs off
+# the launchpad for the duration of the walltime (minus a safety margin)
+# instead of exiting after a single firework.
+_fw_name: CommonAdapter
+_fw_q_type: SLURM
+_fw_template_file: /Users/shinae/code/pynta/perlmutter/SLURM_template.txt
+rocket_launch: srun --ntasks=4 --ntasks-per-node=4 --gpus-per-node=4 --gpu-bind=single:1 --cpu-bind=cores rlaunch -c <<launch_dir>> rapidfire --timeout 3300
+nodes: 1
+ntasks_per_node: 4
+gpus_per_node: 4
+cpus_per_task: 16
+qos: regular
+account: shikim
+walltime: '01:00:00'
+job_name: pynta_gpu
+pre_rocket: null
+post_rocket: null

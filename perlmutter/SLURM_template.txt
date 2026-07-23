@@ -1,0 +1,18 @@
+#!/bin/bash -l
+
+#SBATCH --nodes=<<nodes>>
+#SBATCH --constraint=gpu
+#SBATCH --qos=<<qos>>
+#SBATCH --account=<<account>>
+#SBATCH --time=<<walltime>>
+#SBATCH --job-name=<<job_name>>
+#SBATCH --output=<<job_name>>-%j.out
+#SBATCH --error=<<job_name>>-%j.error
+#SBATCH --ntasks-per-node=<<ntasks_per_node>>
+#SBATCH --gpus-per-node=<<gpus_per_node>>
+#SBATCH --cpus-per-task=<<cpus_per_task>>
+
+<<pre_rocket>>
+cd <<launch_dir>>
+<<rocket_launch>>
+<<post_rocket>>
