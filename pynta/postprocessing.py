@@ -3,6 +3,7 @@ from ase.io.trajectory import Trajectory
 from ase.visualize import view
 import json
 import os
+import shutil
 import numpy as np
 import matplotlib.pyplot as plt
 from ase.vibrations import VibrationsData
@@ -14,16 +15,40 @@ from acat.adsorption_sites import SlabAdsorptionSites
 from molecule.thermo import Wilhoit
 from pynta.mol import split_adsorbed_structures
 from pynta.geometricanalysis import *
-from pynta.utils import to_dict
-from pynta.coveragedependence import mol_to_atoms, process_calculation
+from pynta.utils import to_dict, load_slab_sites
+from pynta.coveragedependence import mol_to_atoms, process_calculation, get_atom_centered_correction
 from pysidt.sidt import *
 import logging 
 from molecule.exceptions import AtomTypeError
 import glob 
 
-eV_to_Jmol = 9.648328e4
+eV_to_Jmol = ase.units.mol / ase.units.J        # eV -> J/mol (Faraday)
+Jmol_to_kcalmol = ase.units.J / ase.units.kcal  # J/mol -> kcal/mol (= 1/4184)
 
-def plot_eharm(path,Eharmtol=3.0,Eharmfiltertol=30.0):
+def load_harm_parameters(path):
+    """Load the harmonic-filter parameters (Eharmtol, Eharmfiltertol, Nharmmin) that a Pynta run
+    wrote to harm_parameters.json. Looks in path and its parent (so passing a TS/adsorbate guess
+    directory works as well as the run root). Returns an empty dict if not found."""
+    for p in [os.path.join(path,"harm_parameters.json"),
+              os.path.join(os.path.dirname(os.path.normpath(path)),"harm_parameters.json")]:
+        if os.path.exists(p):
+            with open(p) as f:
+                return json.load(f)
+    return dict()
+
+def plot_eharm(path,Eharmtol=None,Eharmfiltertol=None,Nharmmin=None):
+    """Plot the harmonic energies of the guesses in path along with the selection cutoffs.
+    Eharmtol/Eharmfiltertol/Nharmmin default to the values the Pynta run saved in
+    harm_parameters.json (falling back to 3.0/30.0/None if absent); pass explicit values to override.
+    """
+    params = load_harm_parameters(path)
+    if Eharmtol is None:
+        Eharmtol = params.get("Eharmtol",3.0)
+    if Eharmfiltertol is None:
+        Eharmfiltertol = params.get("Eharmfiltertol",30.0)
+    if Nharmmin is None:
+        Nharmmin = params.get("Nharmmin",5)
+
     eharms = []
     guess_dirs = os.listdir(path)
     for guess in guess_dirs:
@@ -33,6 +58,9 @@ def plot_eharm(path,Eharmtol=3.0,Eharmfiltertol=30.0):
                 eharms.append(out["harmonic energy"])
         except:
             pass
+    if len(eharms) == 0:
+        logging.warning("plot_eharm: no harm.json files found in {}".format(path))
+        return
     eharms = sorted(eharms)
     eharmmin = np.min(eharms)
 
@@ -40,8 +68,73 @@ def plot_eharm(path,Eharmtol=3.0,Eharmfiltertol=30.0):
     plt.xlabel("TS Guess in Order of Increasing Energy")
     plt.ylabel("Harmonic Energy [eV]")
     plt.yscale("log")
-    plt.plot(range(len(eharms)),np.ones(len(eharms))*eharmmin*Eharmtol)
-    plt.plot(range(len(eharms)),np.ones(len(eharms))*eharmmin*Eharmfiltertol)
+    plt.axhline(eharmmin*Eharmtol,ls="--",color="C1",label="Eharmtol ({:g}x min): keep all below".format(Eharmtol))
+    plt.axhline(eharmmin*Eharmfiltertol,ls="--",color="C2",label="Eharmfiltertol ({:g}x min): drop above".format(Eharmfiltertol))
+    if Nharmmin is not None:
+        plt.axvline(Nharmmin-0.5,ls=":",color="C3",label="Nharmmin ({:d}): min kept".format(int(Nharmmin)))
+    plt.legend()
+
+def extract_ts_structures(ts_path,out_dir=None,kinetics=None,use_all=False,only_valid=True):
+    """
+    Collect the optimized TS geometries, optimization trajectories and IRC trajectories of a TS
+    directory into a single folder of (multi-frame) .xyz files for easy visualization (e.g. in OVITO).
+    The xtb/HFSP guess is not exported separately because it is the first frame of the optimization
+    trajectory anyway.
+
+    Args:
+        ts_path: path to a TS directory of a Pynta run (e.g. .../TS3)
+        out_dir: output folder; defaults to "<TS name>_vis"
+        kinetics: dict mapping guess index -> Kinetics (from get_kinetics); required unless
+            use_all=True and only_valid=False
+        use_all: if True, scan every guess folder on disk (works mid-run, ignores kinetics);
+            if False, use only the indices present in kinetics
+        only_valid: if True, restrict to indices where kinetics[ind].valid is True (entries not
+            present in kinetics, e.g. mid-run folders, are dropped)
+
+    Returns:
+        out_dir
+    """
+    ts = os.path.basename(os.path.normpath(ts_path))
+    if out_dir is None:
+        out_dir = ts + "_vis"
+    os.makedirs(out_dir,exist_ok=True)
+
+    def _traj(src,out):
+        if os.path.exists(src):
+            write(out,list(Trajectory(src)))   # multi-frame .traj -> .xyz
+
+    def _copy(src,out):
+        if os.path.exists(src):                # guard: file may not exist yet mid-run
+            shutil.copy(src,out)
+
+    def _is_valid(ind):
+        key = ind
+        if kinetics is not None and key not in kinetics and isinstance(key,str) and key.isdigit():
+            key = int(key)                     # normalize folder-name str -> kinetics int key
+        return kinetics is not None and kinetics.get(key) is not None and kinetics[key].valid
+
+    if use_all:
+        inds = sorted([d for d in os.listdir(ts_path) if os.path.isdir(os.path.join(ts_path,d))],
+                      key=lambda d: int(d) if d.isdigit() else float("inf"))
+    else:
+        if kinetics is None:
+            raise ValueError("extract_ts_structures: kinetics is required when use_all=False")
+        inds = [k for k in kinetics]
+
+    if only_valid:
+        if kinetics is None:
+            raise ValueError("extract_ts_structures: kinetics is required when only_valid=True")
+        inds = [ind for ind in inds if _is_valid(ind)]
+
+    for ind in inds:
+        d = os.path.join(ts_path,str(ind))
+        _copy(os.path.join(d,"opt.xyz"),          os.path.join(out_dir,"{}_{}_opt.xyz".format(ts,ind)))
+        _traj(os.path.join(d,"opt.xyz.traj"),     os.path.join(out_dir,"{}_{}_opttraj.xyz".format(ts,ind)))
+        _traj(os.path.join(d,"irc_forward.traj"), os.path.join(out_dir,"{}_{}_IRC1.xyz".format(ts,ind)))
+        _traj(os.path.join(d,"irc_reverse.traj"), os.path.join(out_dir,"{}_{}_IRC2.xyz".format(ts,ind)))
+
+    print("wrote {} ({} folders scanned)".format(out_dir,len(inds)))
+    return out_dir
 
 def get_opt_dirs(path):
     opt_dirs = []
@@ -81,6 +174,9 @@ def get_irc_dirs(path):
         if os.path.exists(p):
             freq_dirs.append(p)
     return freq_dirs
+
+# get_diffusion_connecting_sites lives in pynta.geometricanalysis (shared with the covdep TS-template
+# selection in coveragedependence.py); the star import above keeps it importable from here.
 
 def get_energies(path,atom_corrections=None):
     Es = dict()
@@ -419,13 +515,13 @@ class GasConfiguration:
             valid (bool, optional): whether the configuration is valid for thermochemistry/kinetics. Defaults to True.
         """
         
-        # start by defining some physical constants
-        self.R = 8.3144621  # ideal Gas constant in J/mol-K
-        self.kB = 1.38065e-23  # Boltzmann constant in J/K
-        self.h = 6.62607e-34  # Planck constant in J*s
-        self.c = 2.99792458e8  # speed of light in m/s
-        self.amu = 1.6605e-27  # atomic mass unit in kg
-        self.Avogadro = 6.0221E23  # mole^-1
+        # start by defining some physical constants (from ase.units)
+        self.R = ase.units._k * ase.units._Nav  # ideal Gas constant in J/mol-K
+        self.kB = ase.units._k  # Boltzmann constant in J/K
+        self.h = ase.units._hplanck  # Planck constant in J*s
+        self.c = ase.units._c  # speed of light in m/s
+        self.amu = ase.units._amu  # atomic mass unit in kg
+        self.Avogadro = ase.units._Nav  # mole^-1
         self.GHz_to_Hz = 1.0E9  # convert rotational constants from GHz to Hz
         self.invcm_to_invm = 1.0E2  # convert cm^-1 to m^-1, for frequencies
         self.P_ref = 1.0E5  # reference pressure, 1 bar = 1E5 Pascal
@@ -465,7 +561,7 @@ class GasConfiguration:
         
     def compute_heat_of_formation(self):
         if self.delta_sidt:
-            self.energy = self.DFT_energy + self.ZPE_energy + self.delta_sidt.evaluate(self.mol)/96485.0
+            self.energy = self.DFT_energy + self.ZPE_energy + self.delta_sidt.evaluate(self.mol)/eV_to_Jmol
         else:
             self.energy = self.DFT_energy + self.ZPE_energy
             
@@ -505,8 +601,8 @@ class GasConfiguration:
         line += self.thermo_lines
         line += f'    \nlongDesc = u"""Calculated using Pynta https://doi.org/10.1021/acs.jcim.3c00948. \n'
         line += "                   Thermochemistry computed using approach from Blondal et. al in https://doi.org/10.1021/acscatal.2c03378. \nIf you use this library in your work, please cite the publications mentioned above.\n"
-        line += "Hf298: {} [kcal/mol]\n".format(self.H[0]/4184.0)
-        line += "Sf298: {} [cal/(mol-K)]\n".format(self.S[0]/4.184)
+        line += "Hf298: {} [kcal/mol]\n".format(self.H[0]*Jmol_to_kcalmol)
+        line += "Sf298: {} [cal/(mol-K)]\n".format(self.S[0]*Jmol_to_kcalmol*1000.0)
         line += xyz
         line += '""",\n)\n'
 
@@ -637,13 +733,13 @@ class SurfaceConfiguration:
                  mol=None,
                  delta_sidt=None):
 
-        # start by defining some physical constants
-        self.R = 8.3144621  # ideal Gas constant in J/mol-K
-        self.kB = 1.38065e-23  # Boltzmann constant in J/K
-        self.h = 6.62607e-34  # Planck constant in J*s
-        self.c = 2.99792458e8  # speed of light in m/s
-        self.amu = 1.6605e-27  # atomic mass unit in kg
-        self.Avogadro = 6.0221E23  # mole^-1
+        # start by defining some physical constants (from ase.units)
+        self.R = ase.units._k * ase.units._Nav  # ideal Gas constant in J/mol-K
+        self.kB = ase.units._k  # Boltzmann constant in J/K
+        self.h = ase.units._hplanck  # Planck constant in J*s
+        self.c = ase.units._c  # speed of light in m/s
+        self.amu = ase.units._amu  # atomic mass unit in kg
+        self.Avogadro = ase.units._Nav  # mole^-1
         self.GHz_to_Hz = 1.0E9  # convert rotational constants from GHz to Hz
         self.invcm_to_invm = 1.0E2  # convert cm^-1 to m^-1, for frequencies
         self.P_ref = 1.0E5  # reference pressure, 1 bar = 1E5 Pascal
@@ -726,7 +822,7 @@ class SurfaceConfiguration:
         
     def compute_heat_of_formation(self):
         if self.delta_sidt and self.admol is not None:
-            self.energy = self.DFT_energy + self.ZPE_energy + self.delta_sidt.evaluate(self.admol)/96485.0
+            self.energy = self.DFT_energy + self.ZPE_energy + self.delta_sidt.evaluate(self.admol)/eV_to_Jmol
         else:
             self.energy = self.DFT_energy + self.ZPE_energy
 
@@ -861,8 +957,8 @@ class SurfaceConfiguration:
         line += self.thermo_lines
         line += f'    \nlongDesc = u"""Calculated using Pynta https://doi.org/10.1021/acs.jcim.3c00948. \n'
         line += "                   Thermochemistry computed using approach from Blondal et. al in https://doi.org/10.1021/acscatal.2c03378. \nIf you use this library in your work, please cite the publications mentioned above.\n"
-        line += "Hf298: {} [kcal/mol]\n".format(self.H[0]/4184.0)
-        line += "Sf298: {} [cal/(mol-K)]\n".format(self.S[0]/4.184)
+        line += "Hf298: {} [kcal/mol]\n".format(self.H[0]*Jmol_to_kcalmol)
+        line += "Sf298: {} [cal/(mol-K)]\n".format(self.S[0]*Jmol_to_kcalmol*1000.0)
         line += xyz
         if self.twoD_gas:
             line += '\n            The two lowest frequencies, %.1F and %.1F %s, where replaced by the 2D gas model.' % (
@@ -1022,7 +1118,7 @@ class Kinetics:
         
     def calculate_kinetic_parameters(self):
         kB = ase.units.kB
-        R = 8.314 #J/(mol K)
+        R = ase.units._k * ase.units._Nav #J/(mol K)
         h = 6.582119569e-16 # eV * s
         c0 = 2.4282*10**22*1000.0 #molecules/m^3
 
@@ -1278,7 +1374,24 @@ def get_TS(path,adsorbates_path,metal,facet,slab,sites,site_adjacency,nslab,c_re
         
     reactants = Molecule().from_adjacency_list(info["reactants"])
     products = Molecule().from_adjacency_list(info["products"])
-    
+
+    # Diffusion (Surface_Migration) TSs: pynta's strict validate_TS mis-rejects lateral site-to-site
+    # hops (see validate_diffusion_TS), so use the diffusion-appropriate criterion instead: both IRC
+    # endpoints on mapped sites AND intact species AND geometrically distinct minima. The strict
+    # verdict is kept in valid_info["Strict_Valid"]; the sub-criteria land in
+    # valid_info["Diffusion_Validation"]. Postprocessing-only (the running workflow never consults
+    # validity), so no recomputation. Guesses without IRC trajectories keep the strict verdict.
+    if info.get("family_name") == "Surface_Migration":
+        for k in valid_dict.keys():
+            relaxed, dinfo = validate_diffusion_TS(path, k, sites, site_adjacency, nslab,
+                                                   species_mol=reactants)
+            if relaxed is None:  # missing IRC data -> can't apply the diffusion test
+                continue
+            valid_info[k]["Strict_Valid"] = valid_dict[k]
+            valid_info[k]["Diffusion_Validation"] = dinfo
+            valid_info[k]["Diffusion_Connecting_Sites"] = dinfo["connecting_sites"]
+            valid_dict[k] = relaxed
+
     broken_bonds,formed_bonds = get_broken_formed_bonds(reactants,products)
     target_TS = reactants.copy(deep=True)
     
@@ -1679,19 +1792,40 @@ def write_rmg_libraries(path,spc_dict,spc_dict_thermo,ts_dict,metal,facet):
     with open(os.path.join(path,"reaction_library","dictionary.txt"),'w') as f:
         f.write(spc_dictionary_txt)
         
-def get_energy_correction_configuration(Ncoad_energy_dict,ts_dict,config_name,coad_name,iter,Ncoad,reactant_names=None):
+def get_energy_correction_configuration(Ncoad_energy_dict,ts_dict,config_name,coad_name,iter,Ncoad,reactant_names=None,coad_iso_energy=None):
     """Compute the energy corrections (difference in energy between the isolated configuration and non-isolated configuraitons)
         at each coverage for adsorbate/TS with name config_name
-        
+
         Note the TS energy correction can depend on the direction of reaction so it needs the reactant_names
+
+        coad_iso_energy is the energy of a single, isolated coadsorbate molecule (J/mol) -- the j==0 element of
+        the coad[j] reference series. The model never stores it (Ncoad_energy_dict keys start at 1), so the
+        lowest coverage (Ncoad==1, i.e. the pair) is only computable when it is supplied here.
     """
+    # energy of j coadsorbate molecules alone (coad-central + (j-1) extra coads). j==0 is the isolated
+    # single coadsorbate, which the model never stores -> supply via coad_iso_energy.
+    def coad_ref(j):
+        if j == 0:
+            if coad_iso_energy is None:
+                raise KeyError("isolated coadsorbate energy (Ncoad-1==0) unavailable; pass coad_iso_energy")
+            return coad_iso_energy
+        return Ncoad_energy_dict[coad_name][iter][coad_name][j]
+
+    # A TS config key is either an original name ("TS2") or a compound name ("TS2_286") whose base is
+    # in ts_dict (list-valued ts_dict expands each config to its own key). Match both.
+    is_ts = config_name in ts_dict or config_name.rsplit("_", 1)[0] in ts_dict
+
     if config_name not in Ncoad_energy_dict[coad_name][0].keys(): #gas phase
         return 0.0
-    elif config_name not in ts_dict.keys() and config_name != coad_name: #adsorbate that is not the co-adsorbate
-        return Ncoad_energy_dict[coad_name][iter][config_name][Ncoad]-Ncoad_energy_dict[coad_name][iter][coad_name][Ncoad-1]
-    elif config_name not in ts_dict.keys() and config_name == coad_name: #co-adsorbate
+    elif not is_ts and config_name != coad_name: #adsorbate that is not the co-adsorbate
+        # True energy correction = atom_corr + interaction, referenced to the species on separate
+        # slabs in their own lowest-E site (== the raw stored Ncoad_energy value, 0 at zero coverage).
+        # Do NOT subtract the coad_ref (coadsorbate-cluster) series -- that re-references away from
+        # isolated species and drives the low-coverage curve unphysically negative.
+        return Ncoad_energy_dict[coad_name][iter][config_name][Ncoad]
+    elif not is_ts and config_name == coad_name: #co-adsorbate
         try:
-            return Ncoad_energy_dict[coad_name][iter][config_name][Ncoad-1]/Ncoad
+            return coad_ref(Ncoad-1)/Ncoad
         except Exception as e:
             print((config_name,coad_name,iter,Ncoad))
             raise e
@@ -1701,7 +1835,8 @@ def get_energy_correction_configuration(Ncoad_energy_dict,ts_dict,config_name,co
         if Ncoad-Ncoad_reactants <= 0:
             return 0.0
         else:
-            return Ncoad_energy_dict[coad_name][iter][config_name][Ncoad-Ncoad_reactants]-Ncoad_energy_dict[coad_name][iter][coad_name][Ncoad-1]
+            # True energy correction (referenced to isolated species); see the adsorbate branch above.
+            return Ncoad_energy_dict[coad_name][iter][config_name][Ncoad-Ncoad_reactants]
 
 def get_barrier_correction(Ncoad_energy_dict,ts_dict,ts_name,coad_name,iter,Ncoad,reactant_names):
     ts_correction = get_energy_correction_configuration(Ncoad_energy_dict,ts_dict,ts_name,coad_name,iter,Ncoad,reactant_names=reactant_names)
@@ -1747,15 +1882,24 @@ def extract_covdep_data(path,pynta_path,ts_dict,metal,facet,sites,site_adjacency
                 continue
         
         info_path = os.path.join(pynta_path, ts, "info.json")
-        atoms = read(ts_xyz_path)
-        st, _, _ = generate_TS_2D(atoms, info_path, metal, facet, sites, site_adjacency, nslab,
-                                  max_dist=np.inf, allowed_structure_site_structures=allowed_structure_site_structures)
-        admol_name_structure_dict[ts_key] = st
         with open(info_path, "r") as f:
             info = json.load(f)
-            for name in info["species_names"] + info["reverse_names"]:
-                if name not in ads:
-                    ads.append(name)
+        # imag_freq_path tags the saddle's adsorbate-site contacts as reaction (R) bonds; the vdW
+        # keep-flags preserve order-0 binding bonds. Without these a vdW-bound TS (e.g. NH3
+        # diffusion) gets a covalent site bond -> hypervalent adatom -> TooManyElectronsException.
+        keep_binding_vdW_bonds, keep_vdW_surface_bonds = ts_vdW_keep_flags(
+            Molecule().from_adjacency_list(info["reactants"]),
+            Molecule().from_adjacency_list(info["products"]))
+        atoms = read(ts_xyz_path)
+        st, _, _ = generate_TS_2D(atoms, info_path, metal, facet, sites, site_adjacency, nslab,
+                                  imag_freq_path=os.path.join(os.path.split(ts_xyz_path)[0], "vib.0.traj"),
+                                  max_dist=np.inf, allowed_structure_site_structures=allowed_structure_site_structures,
+                                  keep_binding_vdW_bonds=keep_binding_vdW_bonds,
+                                  keep_vdW_surface_bonds=keep_vdW_surface_bonds)
+        admol_name_structure_dict[ts_key] = st
+        for name in info["species_names"] + info["reverse_names"]:
+            if name not in ads:
+                ads.append(name)
     
     for ad in ads:
         p = os.path.join(pynta_path,"Adsorbates",ad)
@@ -1783,27 +1927,40 @@ def extract_covdep_data(path,pynta_path,ts_dict,metal,facet,sites,site_adjacency
             st,_,_ = generate_adsorbate_2D(atoms, sites, site_adjacency, nslab, max_dist=np.inf, allowed_structure_site_structures=allowed_structure_site_structures)
             admol_name_structure_dict[ad] = st
 
-    ad_energy_dict = get_lowest_adsorbate_energies(os.path.join(pynta_path,"Adsorbates"))
-    
+    # ad_energy_dict / coadmol_E_dict: prefer the EXACT dicts the workflow cached for training
+    # (_cache_covdep_dicts writes them to the covdep run root). Rebuilding them here from the
+    # isolated geometries is NOT equivalent: this rebuild used allowed_structure_site_structures
+    # (which can snap site assignments) while the training cache did not, so the site-labeled
+    # isomorphism lookup in get_atom_centered_correction silently mismatched and returned 0 for
+    # every sample -- putting the sample dots in the interaction frame while the model curves are
+    # atom_corr + interaction. Loading the caches makes dot and line frames identical by construction.
+    ad_energy_dict_path = os.path.join(path, "ad_energy_dict.json")
+    if os.path.exists(ad_energy_dict_path):
+        with open(ad_energy_dict_path) as f:
+            ad_energy_dict = {Molecule().from_adjacency_list(k, check_consistency=False): v
+                              for k, v in json.load(f).items()}
+    else:
+        ad_energy_dict = get_lowest_adsorbate_energies(os.path.join(pynta_path,"Adsorbates"))
+
     coadmol_E_dict = dict()
-    coadmol_stability_dict = dict()
     for coad_name in coad_names:
+        cache_path = os.path.join(path, "coadmol_E_dict_" + coad_name + ".json")
+        if os.path.exists(cache_path):
+            with open(cache_path) as f:
+                coadmol_E_dict[coad_name] = {Molecule().from_adjacency_list(k, check_consistency=False): v
+                                             for k, v in json.load(f).items()}
+            continue
+        # fallback for runs predating the caches: rebuild WITHOUT allowed_structure_site_structures,
+        # mirroring _cache_covdep_dicts (main.py), so the site labels match the training-time keys.
         coad_path = os.path.join(pynta_path,"Adsorbates",coad_name)
         coadmol_E_dict[coad_name] = dict()
-        coadmol_stability_dict[coad_name] = dict()
         Es = get_adsorbate_energies(coad_path)[0]
         for p in os.listdir(coad_path):
             if p == "info.json" or (p not in Es.keys()):
                 continue
-            admol_init,neighbor_sites_init,ninds_init = generate_adsorbate_2D(read(os.path.join(coad_path,p,p+"_init.xyz")),sites,site_adjacency,nslab,max_dist=np.inf,allowed_structure_site_structures=allowed_structure_site_structures)
-            admol,neighbor_sites,ninds = generate_adsorbate_2D(read(os.path.join(coad_path,p,p+".xyz")),sites,site_adjacency,nslab,max_dist=np.inf,allowed_structure_site_structures=allowed_structure_site_structures)
+            admol,neighbor_sites,ninds = generate_adsorbate_2D(read(os.path.join(coad_path,p,p+".xyz")),sites,site_adjacency,nslab,max_dist=np.inf)
             out_struct = split_adsorbed_structures(admol,clear_site_info=False)[0]
-            out_struct_init = split_adsorbed_structures(admol_init,clear_site_info=False)[0]
-            coadmol_E_dict[coad_name][out_struct] = Es[p] 
-            if admol_init.is_isomorphic(admol,save_order=True):
-                coadmol_stability_dict[coad_name][out_struct_init] = True
-            else:
-                coadmol_stability_dict[coad_name][out_struct_init] = False
+            coadmol_E_dict[coad_name][out_struct] = Es[p]
 
     i = 0
     Ncoad_energy_dict = dict()
@@ -1902,16 +2059,63 @@ def extract_covdep_data(path,pynta_path,ts_dict,metal,facet,sites,site_adjacency
             i += 1
             iter_path = os.path.join(path,"Iterations",str(i))
 
+    # Key ts_info by the same (possibly compound) keys used everywhere else
+    # (admol_name_structure_dict, Ncoad_energy_dict, ...). A string value keeps the
+    # original TS name ("TS2"); a list value expands to compound keys ("TS2_286").
     ts_info = dict()
-    for ts_name in ts_dict.keys():
-        with open(os.path.join(pynta_path,ts_name,"info.json"),'r') as f:
-            ts_info[ts_name] = json.load(f)
+    for k, inds in ts_dict.items():
+        with open(os.path.join(pynta_path,k,"info.json"),'r') as f:
+            info = json.load(f)
+        if isinstance(inds, str):
+            ts_info[k] = info
+        else:
+            for ind in inds:
+                ts_info[f"{k}_{ind}"] = info
+
+    # Robustness: also key ts_info by every TS config name that actually appears in the run data
+    # (the Ncoad_energy_* files), regardless of how ts_dict was written (string "26" vs list ["26"]).
+    # A data config name is a TS if it -- or its "<base>_<idx>" base -- is a ts_dict key. This makes
+    # config_name="TS0_26" resolve even when ts_dict={"TS0":"26"}, so downstream cells always find
+    # reactant_names and never hit the TS-branch assert in get_energy_correction_configuration.
+    data_config_keys = set()
+    for cn in coad_names:
+        for it_dict in Ncoad_energy_dict[cn].values():
+            data_config_keys.update(it_dict.keys())
+    for key in data_config_keys:
+        if key in ts_info:
+            continue
+        base = key if key in ts_dict else key.rsplit("_", 1)[0]
+        if base in ts_dict:
+            info_path = os.path.join(pynta_path, base, "info.json")
+            if os.path.exists(info_path):
+                with open(info_path, "r") as f:
+                    ts_info[key] = json.load(f)
+
+    # An iteration can have a regressor.json but no Ncoad_energy_* files (e.g. an incomplete /
+    # in-progress iteration). Such an iteration carries no per-coverage data, so drop it -- otherwise
+    # max() below (and the downstream plotting cells that index [config_name]) choke on an empty dict.
+    for coad_name in coad_names:
+        for i in [j for j, d in Ncoad_energy_dict[coad_name].items() if not d]:
+            Ncoad_energy_dict[coad_name].pop(i, None)
+            Ncoad_config_dict[coad_name].pop(i, None)
 
     max_coad_indexes = {coad_name: {i:max(Ncoad_energy_dict[coad_name][i].keys()) for i in sorted(Ncoad_energy_dict[coad_name].keys())} for coad_name in coad_names}
-    
+
     return Ncoad_energy_dict,Ncoad_config_dict,tree_dict,admol_name_structure_dict,admol_name_path_dict,ts_info,max_coad_indexes,ad_energy_dict,coadmol_E_dict
 
-def analyze_covdep_lowest_energy(Ncoad_config_dict,iter_configs,config_name,coad_name,metal,slab,sites,admol_name_structure_dict,admol_name_path_dict,tree_dict):
+def analyze_covdep_lowest_energy(Ncoad_config_dict,iter_configs,config_name,coad_name,metal,slab,sites,admol_name_structure_dict,admol_name_path_dict,tree_dict,
+                                 pynta_path=None,facet=None,site_adjacency=None,allowed_structure_site_structures=None,adsorbate_site_energy_cutoff=None):
+    """Reconstruct 3D geometries for the model's per-coverage lowest configs.
+
+    A predicted config's central species can sit on ANY of its valid site arrangements (the MC hops
+    among them), not just the single one in admol_name_structure_dict. Reconstructing with only that
+    fixed template fails (mol_to_atoms raises "partial_admol is not subgraph isomorphic") whenever the
+    central moved. So gather ALL central templates (get_central_templates, lowest-energy first) and
+    try each until one is subgraph-isomorphic to the config -- the unique geometrically-correct one.
+
+    Pass pynta_path/facet/site_adjacency (and optionally nslab via len(slab)) to enable the multi-
+    template path; without them it falls back to the single fixed template (old behavior).
+    """
     configs_3D = []
     configs_2D = []
     sidt_Es = []
@@ -1919,21 +2123,65 @@ def analyze_covdep_lowest_energy(Ncoad_config_dict,iter_configs,config_name,coad
     partial_admol = admol_name_structure_dict[config_name]
     admol_path = admol_name_path_dict[config_name]
     partial_atoms = read(admol_path)
+
+    templates = None
+    if pynta_path is not None and facet is not None and site_adjacency is not None:
+        is_ts = any(bd.get_order_str() == 'R' for bd in partial_admol.get_all_edges())
+        try:
+            templates = get_central_templates(config_name, is_ts, pynta_path, metal, facet, sites,
+                                              site_adjacency, len(slab),
+                                              allowed_structure_site_structures=allowed_structure_site_structures,
+                                              energy_cutoff=adsorbate_site_energy_cutoff)
+        except Exception as e:
+            logging.warning("get_central_templates failed for %s (%s); using the single fixed template", config_name, e)
+            templates = None
+
     for k,v in Ncoad_config_dict[coad_name][iter_configs][config_name].items():
         for x in v:
-            atoms = mol_to_atoms(x,slab,sites,metal,partial_atoms=partial_atoms,partial_admol=partial_admol)
+            atoms = None
+            if templates:
+                # try every central arrangement (lowest-energy first); only the one whose central
+                # sits on the config's sites is subgraph-isomorphic, so the first success is correct
+                for t_atoms, t_admol in templates:
+                    try:
+                        atoms = mol_to_atoms(x,slab,sites,metal,partial_atoms=t_atoms,partial_admol=t_admol)
+                        break
+                    except ValueError:
+                        continue
+            if atoms is None:
+                try:
+                    atoms = mol_to_atoms(x,slab,sites,metal,partial_atoms=partial_atoms,partial_admol=partial_admol)
+                except ValueError:
+                    logging.warning("no central template matched a predicted lowest config of %s at "
+                                    "coverage key %s; skipping that config", config_name, k)
+                    continue
             configs_3D.append(atoms)
             Einteraction,std,tr = tree_dict[iter_configs].evaluate(x,trace=True, estimate_uncertainty=True)
             sidt_traces.append(tr)
             configs_2D.append(x)
             sidt_Es.append(Einteraction)
-            
+
     return configs_3D,configs_2D,sidt_Es,sidt_traces
 
 def analyze_covdep_sample_data(config_name,coad_name,Ncoad_energy_dict,path,pynta_path,
-                               slab,metal,facet,sites,site_adjacency,ad_energy_dict,ts_dict,coadmol_E_dict,reactant_names=None):
+                               slab,metal,facet,sites,site_adjacency,ad_energy_dict,ts_dict,coadmol_E_dict,reactant_names=None,
+                               coad_iso_energy=None,admol_name_structure_dict=None):
 
-    to_eV = 1.0/(96.48530749925793*1000.0) #converts from J/mol to eV
+    to_eV = ase.units.J / ase.units.mol #J/mol -> eV (= 1/Faraday constant, provided by ASE)
+
+    # energy of j coadsorbate molecules alone; j==0 is the isolated single coadsorbate, which the model
+    # never stores (Ncoad_energy_dict keys start at 1). Without it the lowest coverage (Ncoad==1, the
+    # pair) is silently dropped below. Reconstruct it from the isolated-coadsorbate graph when the caller
+    # passes admol_name_structure_dict (so every caller gets the pair layer without threading the value).
+    if coad_iso_energy is None and admol_name_structure_dict is not None and coad_name in admol_name_structure_dict:
+        coad_iso_energy = get_atom_centered_correction(admol_name_structure_dict[coad_name], coadmol_E_dict[coad_name]) / to_eV
+    last_iter = len(Ncoad_energy_dict[coad_name]) - 1
+    # A TS config key is an original name ("TS2") or a compound name ("TS2_286") whose base is in ts_dict.
+    is_ts = config_name in ts_dict or config_name.rsplit("_", 1)[0] in ts_dict
+    def coad_ref(j, it):
+        if j == 0:
+            return coad_iso_energy  # may be None -> guarded before use
+        return Ncoad_energy_dict[coad_name][it][coad_name][j]
     configs_3D = []
     config_Es = []
     config_E_correction = []
@@ -2001,31 +2249,258 @@ def analyze_covdep_sample_data(config_name,coad_name,Ncoad_energy_dict,path,pynt
             configs_3D.append(read(xyz))
             if datum_E is not None:
                 Ncoad = len(split_adsorbed_structures(datum_E.mol)) - 1
-                last_iter = len(Ncoad_energy_dict[coad_name])-1
                 # Skip degenerate cases: e.g., a pair where MACE collapsed two adsorbates
-                # into one fragment (Ncoad=0), or coverages not represented in the model.
-                if Ncoad < 1 or (Ncoad-1) not in Ncoad_energy_dict[coad_name][last_iter][coad_name]:
+                # into one fragment (Ncoad=0), or coverages not represented in the model. The
+                # Ncoad==1 (pair) layer references coad[0] (the isolated coadsorbate), which the
+                # model never stores -- keep it only when coad_iso_energy supplies that reference.
+                have_ref = ((Ncoad-1) in Ncoad_energy_dict[coad_name][last_iter][coad_name]) or (Ncoad-1 == 0 and coad_iso_energy is not None)
+                if Ncoad < 1 or not have_ref:
                     config_Es.append(None)
                 else:
                     config_Es.append(datum_E.value*to_eV)
                     config_mols.append(datum_E.mol)
-                    if config_name not in ts_dict.keys() and config_name != coad_name: #adsorbate that is not the co-adsorbate
-                        Ecorr = (datum_E.value-Ncoad_energy_dict[coad_name][last_iter][coad_name][Ncoad-1])*to_eV
-                    elif config_name not in ts_dict.keys() and config_name == coad_name: #co-adsorbate
-                        Ecorr = (datum_E.value - Ncoad_energy_dict[coad_name][k][config_name][Ncoad-1]/Ncoad)*to_eV
+                    # Ecorr here is the interaction (atom_corr-subtracted); the caller adds atom_corr
+                    # back to get the physical dE = atom_corr + interaction, referenced to isolated
+                    # species. Do NOT subtract the coad_ref series (see get_energy_correction_configuration).
+                    if not is_ts and config_name != coad_name: #adsorbate that is not the co-adsorbate
+                        Ecorr = datum_E.value*to_eV
+                    elif not is_ts and config_name == coad_name: #co-adsorbate
+                        # same total-energy quantity as any adsorbate; caller adds atom_corr -> dE
+                        Ecorr = datum_E.value*to_eV
                     else: #TS
                         assert reactant_names is not None
                         Ncoad_reactants = reactant_names.count(coad_name)
                         if Ncoad-Ncoad_reactants <= 0:
                             Ecorr = 0.0
                         else:
-                            Ecorr = (datum_E.value-Ncoad_energy_dict[coad_name][last_iter][coad_name][Ncoad-1]/Ncoad*(Ncoad-Ncoad_reactants))*to_eV
+                            Ecorr = datum_E.value*to_eV
 
                     config_E_correction.append(Ecorr)
             else:
                 config_Es.append(None)
 
     return configs_3D,config_Es,config_E_correction,config_xyzs,config_mols
+
+
+def load_or_build_sites(path, slab=None, facet=None, metal=None, custom_surface=True,
+                        sites_file=None, site_adjacency_file=None,
+                        allow_6fold=False, composition_effect=False):
+    """Resolve (sites, site_adjacency) for a postprocessing notebook, hiding the custom-surface toggle.
+
+    custom_surface=True  : load the EXACT sites the run saved. Required for stepped/custom surfaces
+                           (ACAT can't reproduce the _N site labels there) and always safe -- it is the
+                           covdep default, since the SIDT training maps configs onto these exact site
+                           indices. By default reads sites.json / site_adjacency.json from `path` (with
+                           the legacy single_sites_lists.json / neighbor_site_list.json fallback). Pass
+                           sites_file AND site_adjacency_file to point at specific files whose
+                           names/location differ.
+    custom_surface=False : rebuild sites + neighbor list with ACAT from metal/facet. Flat surfaces only,
+                           and only when ACAT is trusted to reproduce the run's site ordering.
+
+    slab/facet/metal are only needed when custom_surface=False."""
+    if custom_surface:
+        if sites_file is not None or site_adjacency_file is not None:
+            if sites_file is None or site_adjacency_file is None:
+                raise ValueError("pass both sites_file and site_adjacency_file, or neither (to use the "
+                                 "default names in `path`)")
+            with open(sites_file) as f:
+                sites = json.load(f)
+            for s in sites:
+                s["position"] = np.array(s["position"])
+                if s.get("normal") is not None:
+                    s["normal"] = np.array(s["normal"])
+                if s.get("indices") is not None:
+                    s["indices"] = tuple(s["indices"])
+            with open(site_adjacency_file) as f:
+                site_adjacency = {int(k): v for k, v in json.load(f).items()}
+            return sites, site_adjacency
+        return load_slab_sites(path)
+    cas = SlabAdsorptionSites(slab, facet, allow_6fold=allow_6fold, composition_effect=composition_effect,
+                              label_sites=True, surrogate_metal=metal)
+    return cas.get_sites(), cas.get_neighbor_site_list()
+
+
+def plot_config_energy_correction(config_name, coad_name, Ncoad_energy_dict, ts_dict, ts_info,
+                                  admol_name_structure_dict, coadmol_E_dict, path, pynta_path,
+                                  slab, metal, facet, sites, site_adjacency, ad_energy_dict,
+                                  MLsize, coad_nice_name, reactant_names=None, cmap=None, forward=True,
+                                  plot_lowest_samples=True, visualize_lowest_samples=False,
+                                  write_lowest_samples=True, Ncoad_config_dict=None):
+    """Plot the per-iteration SIDT energy-correction curves for config_name in a coad_name environment,
+    overlaying the lowest-energy computed sample at each coverage. This is the body of the covdep
+    "analyze an individual configuration" notebook cell, moved here to keep the notebook short.
+
+    Two panels, SAME configs, two frames:
+      left  "Interaction only": adsorbate-adsorbate interaction, every adsorbate referenced to the
+            site it actually occupies (= the SIDT training target / datum);
+      right "Total correction": interaction + atom-centered site penalties, i.e. referenced to each
+            species at its lowest-energy isolated site -- the physically-rankable total, and the
+            frame the stored model curves (Ncoad_energy_dict) live in.
+    The lowest-interaction and lowest-total sample can be DIFFERENT configs (e.g. an H-bonded
+    arrangement can win on interaction while paying a site penalty that loses on total).
+
+    Ncoad_config_dict: pass extract_covdep_data's stored per-coverage-lowest configs to draw the
+    interaction-frame model curves (total minus the stored config's atom-centered part); without it
+    only the total panel gets model curves.
+
+    Returns {"interaction": best_int, "total": best_tot}, each {Ncoad: (E_eV, xyz_path, atoms)}.
+
+    The isolated single-coadsorbate reference coad[0] (which the model never stores) is reconstructed
+    internally from the atom-centered correction; see get_energy_correction_configuration."""
+    to_eV = ase.units.J / ase.units.mol  # J/mol -> eV (= 1/Faraday, from ASE)
+    if cmap is None:
+        cmap = plt.colormaps["Blues"]
+
+    # coad[0]: energy (J/mol) of one isolated coadsorbate = atom-centered correction (eV) / to_eV,
+    # with zero interaction. Lets the lowest-coverage (pair, Ncoad=1) layer be drawn instead of dropped.
+    coad_iso_energy = get_atom_centered_correction(admol_name_structure_dict[coad_name],
+                                                   coadmol_E_dict[coad_name]) / to_eV
+
+    fig, (ax_int, ax_tot) = plt.subplots(1, 2, figsize=(11.5, 4.6), sharex=True)
+    L = len(Ncoad_energy_dict[coad_name])
+    # config_name may be a compound TS key ("TS2_286"); recognize its base in ts_dict.
+    is_ts = config_name in ts_dict or config_name.rsplit("_", 1)[0] in ts_dict
+    Ncoad_reactants = reactant_names.count(coad_name) if (is_ts and reactant_names is not None) else 0
+
+    def _ac_eV(mol):
+        # atom-centered (per-adsorbate site-penalty) part in eV; silently 0 when nothing matches
+        return get_atom_centered_correction(mol, coadmol_E_dict[coad_name])
+
+    def _stored_config_ac(i, key):
+        # atom-centered part of the model's stored per-coverage-lowest config (interaction line)
+        if Ncoad_config_dict is None:
+            return None
+        try:
+            mols = Ncoad_config_dict[coad_name][i][config_name][key]
+        except KeyError:
+            return None
+        return _ac_eV(mols[0]) if mols else None
+
+    leg = []
+    for i in sorted(Ncoad_energy_dict[coad_name].keys()):
+        # A partially-complete run can have an iteration for the coadsorbate whose config_name
+        # (e.g. a compound TS key "TS0_26") hasn't produced its Ncoad_energy file yet. Skip it
+        # rather than KeyError; the finished iterations still plot.
+        if config_name not in Ncoad_energy_dict[coad_name][i]:
+            continue
+        leg.append("SIDT Iter " + str(i))
+        keys = sorted(Ncoad_energy_dict[coad_name][i][config_name].keys())
+        # Total correction = raw stored energy (atom_corr + interaction), referenced to isolated
+        # species at their lowest-E sites; include the (0,0) zero-coverage point explicitly.
+        if config_name == coad_name:
+            # every fragment is a coadsorbate: dict key k is the (k+1)-coadsorbate config, and a
+            # single isolated coadsorbate (coverage 1) is the zero reference. Shift x by +1 and plot
+            # the raw total energy (same quantity as the other adsorbates).
+            Ncoads = np.array([0, 1] + [k + 1 for k in keys])
+            totals = [0.0, 0.0] + [Ncoad_energy_dict[coad_name][i][config_name][k] * to_eV for k in keys]
+            store_keys = [None, None] + list(keys)
+        else:
+            Ncoads = np.array([0] + keys)
+            totals = [get_energy_correction_configuration(Ncoad_energy_dict, ts_dict, config_name, coad_name, i, Ncoad,
+                            reactant_names=reactant_names, coad_iso_energy=coad_iso_energy) * to_eV if Ncoad > 0 else 0.0
+                      for Ncoad in Ncoads]
+            # the stored-config key behind each plotted total (the TS branch stores at Ncoad - Ncoad_reactants)
+            store_keys = [None] + [((Ncoad - Ncoad_reactants) if is_ts else Ncoad) for Ncoad in keys]
+        # interaction curve = total minus the stored config's atom-centered part (NaN gap if unavailable)
+        ints = []
+        for tot, sk in zip(totals, store_keys):
+            if sk is None or (is_ts and sk <= 0):
+                ints.append(tot)  # zero-coverage anchors / TS below reactant threshold: no coad ac
+            else:
+                ac = _stored_config_ac(i, sk)
+                ints.append(tot - ac if ac is not None else np.nan)
+        ax_tot.plot(Ncoads / MLsize, totals, color=cmap(i / L))
+        ax_int.plot(Ncoads / MLsize, np.array(ints, dtype=float), color=cmap(i / L))
+
+    best_int = {}   # Ncoad -> (E_interaction_eV, xyz, atoms): lowest-INTERACTION sample per coverage
+    best_tot = {}   # Ncoad -> (E_total_eV, xyz, atoms): lowest-TOTAL sample per coverage
+    if plot_lowest_samples or visualize_lowest_samples or write_lowest_samples:
+        _3D, _Es, _Ecorr, _xyzs, _mols = analyze_covdep_sample_data(
+            config_name, coad_name, Ncoad_energy_dict, path, pynta_path, slab, metal, facet, sites, site_adjacency,
+            ad_energy_dict, ts_dict, coadmol_E_dict, reactant_names=reactant_names, coad_iso_energy=coad_iso_energy)
+        # config_mols/config_E_correction are only populated for valid datums; align via the non-None mask in _Es
+        _valid_xyzs = [xyz for xyz, E in zip(_xyzs, _Es) if E is not None]
+        _valid_3D = [c for c, E in zip(_3D, _Es) if E is not None]
+        _acs = [_ac_eV(m) for m in _mols]
+        # get_atom_centered_correction returns 0 on a silent key mismatch. All-zero across many samples
+        # while the coad site-energy dict spans multiple values means the lookup is broken (the historic
+        # frame bug) and the total panel would understate every dot -- warn loudly instead of failing silently.
+        _dict_vals = set(round(v, 6) for v in coadmol_E_dict[coad_name].values())
+        if len(_acs) >= 10 and all(abs(a) < 1e-9 for a in _acs) and len(_dict_vals) > 1:
+            print("WARNING: atom-centered correction matched 0 for ALL samples -- coadmol_E_dict keys "
+                  "likely don't match the datum structures, so total-energy dots are missing their site "
+                  "penalties. Is the run's coadmol_E_dict_<coad>.json cache present in the covdep path?")
+        for _mol, _Ec, _ac, _xyz, _atoms in zip(_mols, _Ecorr, _acs, _valid_xyzs, _valid_3D):
+            _Ncoad = len(split_adsorbed_structures(_mol)) - 1
+            # When the plotted species IS the coadsorbate, every fragment is a coadsorbate, so an
+            # N-fragment config is the N-coadsorbate case (not N-1). Shift by one coverage unit.
+            if config_name == coad_name:
+                _Ncoad += 1
+            if _Ncoad not in best_int or _Ec < best_int[_Ncoad][0]:
+                best_int[_Ncoad] = (_Ec, _xyz, _atoms)
+            # total = datum (interaction) + atom-centered part -- the frame the model curves live in
+            _Et = _Ec + _ac
+            if _Ncoad not in best_tot or _Et < best_tot[_Ncoad][0]:
+                best_tot[_Ncoad] = (_Et, _xyz, _atoms)
+
+    for ax, best, lbl in ((ax_int, best_int, "Lowest-interaction sample"),
+                          (ax_tot, best_tot, "Lowest-total sample")):
+        if plot_lowest_samples and best:
+            _ns = sorted(best.keys())
+            ax.scatter(np.array(_ns) / MLsize, [best[n][0] for n in _ns], color='red', zorder=10)
+            ax.legend(leg + [lbl], loc="best")
+        else:
+            ax.legend(leg, loc="best")
+
+    name_label = config_name if not is_ts else "TS " + ts_info[config_name]["name"]
+    ax_int.set_title("Interaction only (adsorbate–adsorbate)")
+    ax_tot.set_title("Total correction (incl. site penalties)")
+    ax_int.set_ylabel("Interaction energy [eV]")
+    ax_tot.set_ylabel("Total energy correction [eV]")
+    for ax in (ax_int, ax_tot):
+        ax.set_xlabel(r"$\theta_{" + coad_nice_name + r"}$")
+    fig.suptitle("Coverage dependence: " + name_label + " with " + coad_nice_name)
+    fig.tight_layout()
+    plt.show()
+
+    def _write_best(best, kind, value_key):
+        # one multi-frame xyz per frame-of-reference, named to say WHICH lowest it is
+        _safe = config_name.replace("/", "_")
+        _outpath = f"lowest_{kind}_samples_{_safe}.xyz"
+        _ns = sorted(best.keys())
+        _atoms_list = []
+        for _n in _ns:
+            _a = best[_n][2].copy()
+            _a.info["Ncoad"] = _n
+            _a.info["theta"] = round(_n / MLsize, 4)
+            _a.info[value_key] = round(best[_n][0], 4)
+            _atoms_list.append(_a)
+        write(_outpath, _atoms_list)
+        print(f"Wrote {len(_atoms_list)} lowest-{kind} structures to {_outpath}  (frame order = increasing Ncoad):")
+        for _i, _n in enumerate(_ns):
+            print(f"    frame {_i}: Ncoad={_n} theta={_n/MLsize:.3f} E_{kind}={best[_n][0]:.3f} eV  src={best[_n][1]}")
+
+    if best_int or best_tot:
+        if write_lowest_samples:
+            if best_int:
+                _write_best(best_int, "interaction", "E_interaction_eV")
+            if best_tot:
+                _write_best(best_tot, "total", "E_total_eV")
+        elif plot_lowest_samples:
+            print(f"Lowest sample locations for {config_name} (interaction-frame | total-frame):")
+            for _n in sorted(set(best_int) | set(best_tot)):
+                bi = best_int.get(_n); bt = best_tot.get(_n)
+                print(f"  Ncoad={_n}: int={bi[0]:+.3f} eV {bi[1] if bi else ''} | tot={bt[0]:+.3f} eV {bt[1] if bt else ''}")
+        if visualize_lowest_samples and best_tot:
+            _atoms_list_v = [best_tot[_n][2] for _n in sorted(best_tot.keys())]
+            try:
+                view(_atoms_list_v)  # viewer shows the lowest-TOTAL (physically most stable) samples
+            except Exception as _e:
+                print(f"view() failed ({_e}); use the written xyz above instead.")
+    elif visualize_lowest_samples or plot_lowest_samples or write_lowest_samples:
+        print(f"No samples found for {config_name}.")
+
+    return {"interaction": best_int, "total": best_tot}
 
 
 def write_all_kinetics(path, metal, facet, slab, sites, site_adjacency,

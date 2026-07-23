@@ -6,7 +6,11 @@
       "Bash(pip show *)",
       "Bash(python3 -c ' *)",
       "Bash(git log *)",
-      "Bash(awk '/class MolecularTSEstimate/,/^class [A-Za-z]/' /Users/shinae/code/pynta/pynta/tasks.py)"
+      "Bash(awk '/class MolecularTSEstimate/,/^class [A-Za-z]/' /Users/shinae/code/pynta/pynta/tasks.py)",
+      "Bash(git ls-tree *)",
+      "Bash(grep -n *)",
+      "Bash(python3 -m py_compile merged.py)",
+      "Bash(python3 -m py_compile pynta/postprocessing.py)"
     ]
   }
 }
