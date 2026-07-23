@@ -1,7 +1,8 @@
 import shutil
 import os
 import ase
-from ase import Atoms 
+import ase.units
+from ase import Atoms
 from molecule.quantity import ScalarQuantity
 from ase.utils.structure_comparator import SymmetryEquivalenceCheck
 from ase.io import write, read
@@ -53,6 +54,24 @@ def get_occupied_sites(struct,sites,nslab,allowed_site_dict=dict(),site_bond_cut
     Returns:
         _type_: _description_
     """
+    def _within_bond_cutoff(siteout,mindist):
+        corr = cutoff_corrections[siteout["site"]] if siteout["site"] in cutoff_corrections.keys() else 0.0
+        return mindist < site_bond_cutoff + corr
+
+    def _nearest_site(pos,allowed_sites):
+        siteout = None
+        mindist = None
+        n = None
+        for site in sites:
+            if allowed_sites and (site["site"],site["morphology"]) not in allowed_sites: #skip disallowed sites
+                continue
+            v,dist = get_distances([site["position"]], [pos], cell=struct.cell, pbc=struct.pbc)
+            if siteout is None or dist < mindist:
+                siteout = site
+                mindist = dist
+                n = v
+        return siteout,mindist,n
+
     occ_sites = []
     for i in range(nslab,len(struct)):
         pos = struct.positions[i]
@@ -60,28 +79,25 @@ def get_occupied_sites(struct,sites,nslab,allowed_site_dict=dict(),site_bond_cut
             allowed_sites = allowed_site_dict[i]
         else:
             allowed_sites = None
-        siteout = None
-        mindist = None
-        for site in sites:
-            if allowed_sites and (site["site"],site["morphology"]) not in allowed_sites: #skip disallowed sites
-                continue
-            v,dist = get_distances([site["position"]], [pos], cell=struct.cell, pbc=struct.pbc)
-            if siteout is None:
-                siteout = site
-                mindist = dist
-                n = v
-            else:
-                if dist < mindist:
-                    mindist = dist
-                    siteout = site
-                    n = v
-        
+        siteout,mindist,n = _nearest_site(pos,allowed_sites)
+
+        #An allowed-site restriction must never DESORB a geometrically-bonded atom: if the nearest
+        #ALLOWED site is out of bonding range but the atom's true (unrestricted) nearest site is within
+        #range, keep the real site. Without this, a valid adsorbate sitting on a site the isolated
+        #species never relaxes to (e.g. O held on a step bridge by a TS) loses its surface bond
+        #entirely, corrupting the 2D graph downstream. The restriction still re-assigns among the
+        #allowed sites whenever one of them is actually reachable.
+        if allowed_sites is not None and (siteout is None or not _within_bond_cutoff(siteout,mindist)):
+            siteout2,mindist2,n2 = _nearest_site(pos,None)
+            if siteout2 is not None and _within_bond_cutoff(siteout2,mindist2):
+                siteout,mindist,n = siteout2,mindist2,n2
+
         if mindist is None:
             #print(i)
             #view(struct)
             raise ValueError
-        
-        if (siteout["site"] not in cutoff_corrections.keys() and mindist < site_bond_cutoff) or (siteout["site"] in cutoff_corrections.keys() and mindist < site_bond_cutoff + cutoff_corrections[siteout["site"]]):
+
+        if _within_bond_cutoff(siteout,mindist):
             mindn = None
             for j in range(nslab,len(struct)): #check for site bond disruption by other adsorbed atoms
                 if i == j:
@@ -500,6 +516,253 @@ def clean_pynta_path(path,save_initial_guess=True):
         shutil.rmtree(os.path.join(path,"reaction_library"))
     if os.path.exists(os.path.join(path,"thermo_library.py")):
         os.remove(os.path.join(path,"thermo_library.py"))
+
+def save_slab_sites(path, sites, site_adjacency):
+    """Persist the ACAT-derived sites + site_adjacency for a slab to JSON in ``path`` (sites.json,
+    site_adjacency.json), so coverage dependence and postprocessing reuse the EXACT same set (and
+    ordering) instead of re-deriving them with ACAT -- which can reorder sites or fail get_labels on
+    open/stepped surfaces. numpy arrays/tuples are made JSON-safe; load with load_slab_sites."""
+    import json
+    def _jsonify(o):
+        if isinstance(o, np.ndarray):
+            return o.tolist()
+        if isinstance(o, np.integer):
+            return int(o)
+        if isinstance(o, np.floating):
+            return float(o)
+        if isinstance(o, dict):
+            return {k: _jsonify(v) for k, v in o.items()}
+        if isinstance(o, (list, tuple)):
+            return [_jsonify(v) for v in o]
+        return o
+    with open(os.path.join(path, "sites.json"), "w") as f:
+        json.dump(_jsonify(sites), f)
+    with open(os.path.join(path, "site_adjacency.json"), "w") as f:
+        json.dump({int(k): [int(x) for x in v] for k, v in site_adjacency.items()}, f)
+
+def load_slab_sites(path):
+    """Load sites + site_adjacency saved by save_slab_sites (falling back to the legacy
+    single_sites_lists.json / neighbor_site_list.json names if present), converting position/normal
+    back to numpy arrays and indices to tuples. Use this everywhere instead of re-running
+    SlabAdsorptionSites so the whole pipeline shares one site definition. Returns (sites, site_adjacency)."""
+    import json
+    sites_file = os.path.join(path, "sites.json")
+    if not os.path.exists(sites_file) and os.path.exists(os.path.join(path, "single_sites_lists.json")):
+        sites_file = os.path.join(path, "single_sites_lists.json")
+    adj_file = os.path.join(path, "site_adjacency.json")
+    if not os.path.exists(adj_file) and os.path.exists(os.path.join(path, "neighbor_site_list.json")):
+        adj_file = os.path.join(path, "neighbor_site_list.json")
+    if not os.path.exists(sites_file) or not os.path.exists(adj_file):
+        raise FileNotFoundError(
+            "no saved sites in {} (looked for sites.json/site_adjacency.json and the legacy "
+            "single_sites_lists.json/neighbor_site_list.json). Pass sites/site_adjacency explicitly, "
+            "or re-run the isolated workflow with current pynta so it saves them.".format(path))
+    with open(sites_file) as f:
+        sites = json.load(f)
+    for s in sites:
+        s["position"] = np.array(s["position"])
+        if s.get("normal") is not None:
+            s["normal"] = np.array(s["normal"])
+        if s.get("indices") is not None:
+            s["indices"] = tuple(s["indices"])
+    with open(adj_file) as f:
+        site_adjacency = {int(k): v for k, v in json.load(f).items()}
+    return sites, site_adjacency
+
+def write_sites_xyz(slab, sites, out_xyz="sites.xyz", marker_height=0.0, by="site"):
+    """Write the slab + one marker atom per adsorption site to an xyz so the sites can be viewed
+    spatially (e.g. to check whether nearby sites are genuinely distinct or near-duplicates). The
+    marker element encodes the site category (by="site" | "morphology" | "label") so a viewer colors
+    them; a legend (marker element -> category) is printed. marker_height raises markers in z.
+    Returns (atoms, legend)."""
+    marker_pool = ["H","He","Li","Be","B","C","N","F","Ne","Na","Mg","Al","Si","P","S","Cl","Ar","K","Ca","Sc"]
+    def _cat(s):
+        if by == "morphology":
+            return s.get("morphology", "?")
+        if by == "label":
+            return str(s.get("label", "?"))
+        return s.get("site", "?")
+    cats = [_cat(s) for s in sites]
+    legend = {c: marker_pool[i % len(marker_pool)] for i, c in enumerate(sorted(set(cats)))}
+    symbols = [legend[c] for c in cats]
+    positions = []
+    for s in sites:
+        p = np.array(s["position"], dtype=float).copy()
+        p[2] += marker_height
+        positions.append(p)
+    atoms = slab.copy()
+    if positions:
+        atoms += Atoms(symbols=symbols, positions=positions)
+    write(out_xyz, atoms)
+    print("wrote {} (slab + {} site markers). legend (marker element -> {} category):".format(out_xyz, len(sites), by))
+    for c, e in sorted(legend.items(), key=lambda kv: kv[1]):
+        print("  {:3s} -> {}".format(e, c))
+    return atoms, legend
+
+def _interaction_terms(admol, tree, sites):
+    """Decompose a 2D config admol into its SIDT interaction terms for visualization. Returns
+    (ad_xy, terms): ad_xy maps a surface-bonded adsorbate atom -> its site xy; terms is a list of
+    (atom_i, atom_j, contribution, node_id), one per pair-centered subgraph in the SAME order as the
+    tree's decomposition/trace (contribution = matched node value, J/mol). Works directly on the 2D
+    admol (no 3D round-trip), so adsorbates close in space are not merged. Assumes the admol was built
+    with max_dist=inf, where generate_adsorbate_molecule keeps ninds=range(len(sites)), so the admol's
+    k-th surface-site atom maps to sites[k]."""
+    import logging
+    from pynta.mol import find_adsorbate_atoms_surface_sites
+
+    # max_dist=inf admols: k-th surface-site atom <-> sites[k]
+    site_atoms = [a for a in admol.atoms if a.is_surface_site()]
+    if len(site_atoms) != len(sites):
+        logging.warning("interaction_terms: admol has %d surface sites but sites has %d; xy mapping "
+                        "assumes the admol was built with max_dist=inf", len(site_atoms), len(sites))
+    site_xy = {id(a): np.asarray(sites[k]["position"])[:2]
+               for k, a in enumerate(site_atoms) if k < len(sites)}
+
+    def ad_xy(atom):
+        ps = [site_xy[id(s)] for s in atom.bonds.keys() if s.is_surface_site() and id(s) in site_xy]
+        return np.mean(ps, axis=0) if ps else None
+
+    # pairs in the SAME order as adsorbate_interaction_decomposition (i>j, skip same-adsorbate)
+    surf_bonded = [a for a in admol.atoms if a.is_bonded_to_surface() and not a.is_surface_site()]
+    sb_inds = [admol.atoms.index(a) for a in surf_bonded]
+    pairs = []
+    for i, indi in enumerate(sb_inds):
+        for j, indj in enumerate(sb_inds):
+            if i > j:
+                ad_atoms_j, _ = find_adsorbate_atoms_surface_sites(admol.atoms[indj], admol)
+                if admol.atoms[indi] in ad_atoms_j:
+                    continue
+                pairs.append((indi, indj))
+
+    E, sigma, trace = tree.evaluate(admol, trace=True, estimate_uncertainty=True)
+    if len(trace) != len(pairs):
+        logging.warning("interaction_terms: trace length %d != pair count %d; edge mapping may be off",
+                        len(trace), len(pairs))
+    terms = []
+    for (indi, indj), g in zip(pairs, trace):
+        try:
+            c = float(tree.nodes[g].rule.value)
+        except Exception:
+            c = float("nan")
+        terms.append((admol.atoms[indi], admol.atoms[indj], c, g))
+    return ad_xy, terms
+
+def plot_interaction_graph(admol, tree, sites, site_adjacency, slab,
+                           out_png=None, ax=None, cmap="coolwarm", label_values=False, title=None,
+                           repeat=1):
+    """Overlay the SIDT interaction-energy decomposition of a 2D config admol on the xy site
+    projection. The underlying site graph is drawn light gray; markers = surface-bonded adsorbate
+    atoms; one edge per pair-centered interaction term, width proportional to |contribution| and
+    color by sign (diverging cmap). Works directly from the 2D admol (no 3D->2D round-trip, so
+    adsorbates close in space are not merged). Contributions in eV. Returns (fig, ax).
+
+    With repeat>=1 the cell is tiled over a (2*repeat+1)x(2*repeat+1) block of periodic images so
+    that interactions crossing the cell boundary are drawn as full edges landing on real (faded)
+    image atoms rather than running across the cell or off into empty space; repeat=1 (the default,
+    3x3 block) is enough to surely contain every minimum-image partner. The central cell is drawn
+    solid/labeled, the images faded. repeat=0 draws only the single cell (edges become short
+    minimum-image stubs off the boundary).
+
+    admol: 2D config admol (e.g. from build_admol_from_occ); tree: trained interaction regressor;
+    slab: ase.Atoms for the slab (cell extent + PBC); repeat: periodic-image halo radius.
+    """
+    import matplotlib.pyplot as plt
+    from ase.geometry import get_distances
+
+    ad_xy, terms = _interaction_terms(admol, tree, sites)
+    if ax is None:
+        fig, ax = plt.subplots(figsize=(7, 7))
+    else:
+        fig = ax.figure
+
+    a_xy = np.asarray(slab.cell[0])[:2]
+    b_xy = np.asarray(slab.cell[1])[:2]
+    r = int(repeat)
+    shifts = [i * a_xy + j * b_xy for i in range(-r, r + 1) for j in range(-r, r + 1)]
+    site_pos = [np.asarray(s["position"]) for s in sites]
+
+    # minimum-image adjacency vectors (independent of which image we draw -> compute once)
+    adj_vecs = {}
+    for i, neighbors in site_adjacency.items():
+        for j in neighbors:
+            v, _ = get_distances([site_pos[i]], [site_pos[j]], cell=slab.cell, pbc=slab.pbc)
+            adj_vecs[(i, j)] = v[0][0][:2]
+
+    # --- underlying site graph + dots, tiled over the periodic images (light gray) ---
+    for sh in shifts:
+        for (i, j), vij in adj_vecs.items():
+            pi = site_pos[i][:2] + sh
+            ax.plot([pi[0], pi[0] + vij[0]], [pi[1], pi[1] + vij[1]], color="0.88", lw=0.5, zorder=0)
+        ax.scatter([p[0] + sh[0] for p in site_pos], [p[1] + sh[1] for p in site_pos],
+                   s=6, c="0.85", zorder=1)
+
+    # --- adsorbate markers: central cell solid+labeled, periodic images faded ---
+    ad_xys = [(a, ad_xy(a)) for a in admol.atoms
+              if a.is_bonded_to_surface() and not a.is_surface_site()]
+    for sh in shifts:
+        central = bool(np.allclose(sh, 0.0))
+        for a, xy in ad_xys:
+            if xy is None:
+                continue
+            x, y = xy[0] + sh[0], xy[1] + sh[1]
+            if central:
+                ax.scatter(x, y, s=120, c="k", zorder=3)
+                ax.annotate(a.element.symbol, (x, y), color="white", ha="center", va="center",
+                            fontsize=7, zorder=4)
+            else:
+                ax.scatter(x, y, s=70, c="0.6", alpha=0.5, zorder=2)
+
+    # --- interaction terms (eV): central-cell edges drawn to the nearest image of each partner ---
+    EV = ase.units.J / ase.units.mol  # J/mol -> eV
+    contribs = [t[2] * EV for t in terms if not np.isnan(t[2])]
+    maxc = max((abs(c) for c in contribs), default=1.0) or 1.0
+    norm = plt.Normalize(-maxc, maxc)
+    cm = plt.get_cmap(cmap)
+
+    for ai, aj, c, g in terms:
+        if np.isnan(c):
+            continue
+        c = c * EV
+        p, q = ad_xy(ai), ad_xy(aj)
+        if p is None or q is None:
+            continue
+        col = cm(norm(c))
+        lw = 0.5 + 5.0 * abs(c) / maxc
+        # the modeled interaction is between ai and the NEAREST image of aj (the SIDT decomposition is
+        # periodic), so draw the minimum-image edge from each atom toward the other's nearest image.
+        # With tiling those endpoints land on the faded image markers; in-cell pairs collapse to the
+        # normal p--q segment.
+        v, _ = get_distances([[p[0], p[1], 0.0]], [[q[0], q[1], 0.0]], cell=slab.cell, pbc=slab.pbc)
+        vxy = v[0][0][:2]
+        ax.plot([p[0], p[0] + vxy[0]], [p[1], p[1] + vxy[1]], color=col, linewidth=lw, alpha=0.85, zorder=5)
+        ax.plot([q[0], q[0] - vxy[0]], [q[1], q[1] - vxy[1]], color=col, linewidth=lw, alpha=0.85, zorder=5)
+        if label_values:
+            mid = (np.asarray(p) + np.asarray([p[0] + vxy[0], p[1] + vxy[1]])) / 2.0
+            ax.annotate("{:.3f}".format(c), mid, fontsize=6, zorder=6)
+
+    # outline the central (home) cell so the periodic images are visually distinct
+    cell_box = np.array([[0.0, 0.0], a_xy, a_xy + b_xy, b_xy, [0.0, 0.0]])
+    ax.plot(cell_box[:, 0], cell_box[:, 1], color="k", lw=1.5, zorder=6)
+
+    sm = plt.cm.ScalarMappable(norm=norm, cmap=cm)
+    sm.set_array([])
+    fig.colorbar(sm, ax=ax, label="pair interaction contribution (eV)")
+
+    # axes span the tiled block (in-plane bounding box over all drawn images)
+    corners = np.array([np.asarray(c0) + sh
+                        for sh in shifts for c0 in ([0.0, 0.0], a_xy, b_xy, a_xy + b_xy)])
+    mx = 0.03 * (corners[:, 0].max() - corners[:, 0].min() + 1e-9)
+    my = 0.03 * (corners[:, 1].max() - corners[:, 1].min() + 1e-9)
+    ax.set_xlim(corners[:, 0].min() - mx, corners[:, 0].max() + mx)
+    ax.set_ylim(corners[:, 1].min() - my, corners[:, 1].max() + my)
+    ax.set_aspect("equal")
+    ax.set_xlabel("x [A]")
+    ax.set_ylabel("y [A]")
+    total = sum(contribs)
+    ax.set_title(title or "interaction E = {:.3f} eV ({} terms)".format(total, len(terms)))
+    if out_png:
+        fig.savefig(out_png, dpi=150, bbox_inches="tight")
+    return fig, ax
 
 def construct_constraint(d):
     """
