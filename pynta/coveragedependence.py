@@ -42,11 +42,27 @@ def get_unstable_pairs(pairsdir,adsorbate_dir,sites,site_adjacency,nslab,max_dis
         coad_struct = Molecule().from_adjacency_list(info_coad["adjlist"])
         cut_off_num = len([at for at in coad_struct.atoms if not at.is_surface_site()])
         if infopath_dict:
-            info_path = infopath_dict[adname]
+            if adname in infopath_dict:
+                info_path = infopath_dict[adname]
+            else:
+                # TSs with a single conformer are keyed by the bare TS name
+                # (see Workflow.collate_isolated_structures), while pairs
+                # directories always embed the conformer index in their
+                # folder name. Fall back to the index-stripped name.
+                base_adname = adname.rsplit("_", 1)[0]
+                if base_adname not in infopath_dict:
+                    raise KeyError(f"No info path found for '{adname}' (pair dir '{pair}')")
+                info_path = infopath_dict[base_adname]
         else:
             info_path = None
         if imag_freq_path_dict:
-            imag_freq_path = imag_freq_path_dict[adname]
+            if adname in imag_freq_path_dict:
+                imag_freq_path = imag_freq_path_dict[adname]
+            else:
+                base_adname = adname.rsplit("_", 1)[0]
+                if base_adname not in imag_freq_path_dict:
+                    raise KeyError(f"No imaginary frequency path found for '{adname}' (pair dir '{pair}')")
+                imag_freq_path = imag_freq_path_dict[base_adname]
         else:
             imag_freq_path = None
         for num in os.listdir(os.path.join(pairsdir,pair)):
