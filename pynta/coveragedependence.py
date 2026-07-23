@@ -1172,24 +1172,10 @@ def adsorbate_interaction_decomposition(mol,local_radius=5):
                     print(mol.to_adjacency_list())
                     print(st.to_adjacency_list())
                     raise e
-                # positional site labels: tag each surface site by its shortest site-hop
-                # distance to the nearest adsorbate endpoint (the two endpoints keep "*").
-                # sites equidistant from the two endpoints share a label, so the scheme is
-                # palindromic/symmetric by construction and is a canonical graph invariant.
-                # this pins site correspondence during (sub)graph isomorphism -> big speedup.
-                # must stay consistent with the labeling in get_adsorbed_atom_pairs.
-                endpoints = [a for a in stout.atoms if a.label == "*" and not a.is_surface_site()]
                 for a in stout.atoms:
                     if a.is_surface_site():
-                        dmin = None
-                        for e in endpoints:
-                            p = find_shortest_paths_sites(e, a)
-                            if p:
-                                d = len(p[0]) - 1
-                                if dmin is None or d < dmin:
-                                    dmin = d
-                        a.label = "*" + str(dmin) if dmin is not None else ""
-
+                        a.label = ""
+                
                 structs.append(stout)
     
     return structs
@@ -1219,11 +1205,7 @@ def get_adsorbed_atom_pairs(length=7, r_bonds=None):
         g = Group().from_adjacency_list("""1 * R u0 px cx""")
         a2 = g.atoms[0]
         for i in range(j):
-            pos = i + 1
-            # label sites by distance to the nearest endpoint (symmetric/palindromic), matching
-            # adsorbate_interaction_decomposition so datums stay subgraph-isomorphic to this group
-            a = GroupAtom(atomtype=["X"],radical_electrons=[0],lone_pairs=[0],charge=[0],
-                          label="*"+str(min(pos, j+1-pos)))
+            a = GroupAtom(atomtype=["X"],radical_electrons=[0],lone_pairs=[0],charge=[0])
             if i == 0:
                 b = GroupBond(a2, a, order=r_bonds)
             else:
@@ -1456,15 +1438,11 @@ def train_sidt_cov_dep_regressor(pairs_datums,sampling_datums,r_site=None,r_morp
     if r_atoms is None:
         r_atoms = ["C","O","N","H","X"]
     
-    # sites labeled *1 (distance 1 from their endpoint) to stay consistent with the
-    # distance-labeled sites in get_adsorbed_atom_pairs / adsorbate_interaction_decomposition;
-    # an unlabeled X here fails to match the labeled child/datum sites under
-    # generate_initial_map=False (Root_0 not subgraph isomorphic to Root otherwise).
     root_pair = Group().from_adjacency_list("""
-    1 *  R u0 px cx {2,[S,D,T,Q,R,vdW]}
-    2 *1 X u0 p0 c0 {1,[S,D,T,Q,R,vdW]}
-    3 *  R u0 px cx {4,[S,D,T,Q,R,vdW]}
-    4 *1 X u0 p0 c0 {3,[S,D,T,Q,R,vdW]}
+    1 * R u0 px cx {2,[S,D,T,Q,R,vdW]}
+    2   X u0 p0 c0 {1,[S,D,T,Q,R,vdW]}
+    3 * R u0 px cx {4,[S,D,T,Q,R,vdW]}
+    4   X u0 p0 c0 {3,[S,D,T,Q,R,vdW]}
     """)
 
     root_pair_node = Node(group=root_pair,name="Root",parent=None,depth=0)
