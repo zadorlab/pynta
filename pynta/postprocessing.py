@@ -2469,7 +2469,7 @@ def plot_config_energy_correction(config_name, coad_name, Ncoad_energy_dict, ts_
                      "lines = lowest interaction the model predicts at each coverage (over samples)\n"
                      "red = lowest-interaction computed sample", fontsize=8)
     ax_tot.set_title("Total correction (incl. site penalties)\n"
-                     "lines = lowest total-energy config (interaction + site penalties)\n"
+                     "lines = lowest total over the full MC sweep (interaction + site penalties)\n"
                      "red = lowest-total computed sample", fontsize=8)
     ax_int.set_ylabel("Interaction energy [eV]")
     ax_tot.set_ylabel("Total energy correction [eV]")
