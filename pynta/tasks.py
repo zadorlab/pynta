@@ -1162,7 +1162,17 @@ def calculate_configruation_energies_firework(admol_name,tree_file,path,coadname
         files.append({'src': _name("mc_diagnostics"), 'dest': os.path.join(out_dir, _name("mc_diagnostics"))})
         files.append({'src': _name("mc_chain"), 'dest': os.path.join(out_dir, _name("mc_chain"))})
     t2 = FileTransferTask({'files': files, 'mode': 'copy', 'ignore_errors': ignore_errors})
-    return Firework([t1,t2],parents=parents,name=admol_name+"_"+coadname+suf+"_energies"+str(iter))
+    # MC runs the per-coverage chains in parallel (joblib n_jobs in scan_coverages) only when this
+    # firework handles all coverages at once (Ncoad is None). Request that many cores via a per-firework
+    # _queueadapter override (same mechanism as the HFSP fireworks) so qlaunch sizes the SLURM job to
+    # match -- otherwise joblib oversubscribes the qadapter's default (often 1) core. Per-chain mode
+    # (Ncoad set) runs a single chain, so it keeps the default 1-core allocation.
+    spec = {}
+    if config_generation == "mc" and mc_kwargs and Ncoad is None:
+        _njobs = int(mc_kwargs.get("n_jobs", 1) or 1)
+        if _njobs > 1:
+            spec["_queueadapter"] = {"ntasks": _njobs}
+    return Firework([t1,t2],parents=parents,name=admol_name+"_"+coadname+suf+"_energies"+str(iter),spec=spec)
 
 @explicit_serialize
 class CalculateConfigurationEnergiesTask(FiretaskBase):
