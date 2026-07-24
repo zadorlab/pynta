@@ -2325,7 +2325,7 @@ def plot_config_energy_correction(config_name, coad_name, Ncoad_energy_dict, ts_
                                   slab, metal, facet, sites, site_adjacency, ad_energy_dict,
                                   MLsize, coad_nice_name, reactant_names=None, cmap=None, forward=True,
                                   plot_lowest_samples=True, visualize_lowest_samples=False,
-                                  write_lowest_samples=True, Ncoad_config_dict=None):
+                                  write_lowest_samples=True, Ncoad_config_dict=None, tree_dict=None):
     """Plot the per-iteration SIDT energy-correction curves for config_name in a coad_name environment,
     overlaying the lowest-energy computed sample at each coverage. This is the body of the covdep
     "analyze an individual configuration" notebook cell, moved here to keep the notebook short.
@@ -2337,11 +2337,15 @@ def plot_config_energy_correction(config_name, coad_name, Ncoad_energy_dict, ts_
             species at its lowest-energy isolated site -- the physically-rankable total, and the
             frame the stored model curves (Ncoad_energy_dict) live in.
     The lowest-interaction and lowest-total sample can be DIFFERENT configs (e.g. an H-bonded
-    arrangement can win on interaction while paying a site penalty that loses on total).
+    arrangement can win on interaction while paying a site penalty that loses on total). Accordingly
+    each panel is internally consistent: the LEFT line and dot both track the lowest INTERACTION,
+    the RIGHT line and dot both track the lowest TOTAL.
 
-    Ncoad_config_dict: pass extract_covdep_data's stored per-coverage-lowest configs to draw the
-    interaction-frame model curves (total minus the stored config's atom-centered part); without it
-    only the total panel gets model curves.
+    tree_dict: per-iteration SIDT models (from extract_covdep_data). The left/interaction panel line
+    is the LOWEST interaction each iteration's model predicts over the computed samples at each
+    coverage -- so it is directly comparable to the lowest-interaction red dot and to the interaction
+    parity plot (same sample set). Without tree_dict the left panel shows only the red dots.
+    Ncoad_config_dict is retained for backward compatibility but no longer needed for the curves.
 
     Returns {"interaction": best_int, "total": best_tot}, each {Ncoad: (E_eV, xyz_path, atoms)}.
 
@@ -2401,20 +2405,15 @@ def plot_config_energy_correction(config_name, coad_name, Ncoad_energy_dict, ts_
                       for Ncoad in Ncoads]
             # the stored-config key behind each plotted total (the TS branch stores at Ncoad - Ncoad_reactants)
             store_keys = [None] + [((Ncoad - Ncoad_reactants) if is_ts else Ncoad) for Ncoad in keys]
-        # interaction curve = total minus the stored config's atom-centered part (NaN gap if unavailable)
-        ints = []
-        for tot, sk in zip(totals, store_keys):
-            if sk is None or (is_ts and sk <= 0):
-                ints.append(tot)  # zero-coverage anchors / TS below reactant threshold: no coad ac
-            else:
-                ac = _stored_config_ac(i, sk)
-                ints.append(tot - ac if ac is not None else np.nan)
+        # RIGHT panel: lowest TOTAL config energy per coverage (interaction + site penalties).
+        # LEFT panel (interaction) curves are drawn below, after the samples are loaded, as the
+        # model's lowest predicted interaction per coverage.
         ax_tot.plot(Ncoads / MLsize, totals, color=cmap(i / L))
-        ax_int.plot(Ncoads / MLsize, np.array(ints, dtype=float), color=cmap(i / L))
 
     best_int = {}   # Ncoad -> (E_interaction_eV, xyz, atoms): lowest-INTERACTION sample per coverage
     best_tot = {}   # Ncoad -> (E_total_eV, xyz, atoms): lowest-TOTAL sample per coverage
-    if plot_lowest_samples or visualize_lowest_samples or write_lowest_samples:
+    samples_by_ncoad = {}   # Ncoad -> [sample mols]; the interaction line is the model's min over these
+    if plot_lowest_samples or visualize_lowest_samples or write_lowest_samples or tree_dict is not None:
         _3D, _Es, _Ecorr, _xyzs, _mols = analyze_covdep_sample_data(
             config_name, coad_name, Ncoad_energy_dict, path, pynta_path, slab, metal, facet, sites, site_adjacency,
             ad_energy_dict, ts_dict, coadmol_E_dict, reactant_names=reactant_names, coad_iso_energy=coad_iso_energy)
@@ -2436,12 +2435,25 @@ def plot_config_energy_correction(config_name, coad_name, Ncoad_energy_dict, ts_
             # N-fragment config is the N-coadsorbate case (not N-1). Shift by one coverage unit.
             if config_name == coad_name:
                 _Ncoad += 1
+            samples_by_ncoad.setdefault(_Ncoad, []).append(_mol)
             if _Ncoad not in best_int or _Ec < best_int[_Ncoad][0]:
                 best_int[_Ncoad] = (_Ec, _xyz, _atoms)
             # total = datum (interaction) + atom-centered part -- the frame the model curves live in
             _Et = _Ec + _ac
             if _Ncoad not in best_tot or _Et < best_tot[_Ncoad][0]:
                 best_tot[_Ncoad] = (_Et, _xyz, _atoms)
+
+    # LEFT panel model curves: the LOWEST interaction each iteration's model predicts at each
+    # coverage, minimized over the computed samples -- the same configs the interaction parity plot
+    # uses, so the line's minimum at a coverage equals the lowest predicted parity point there.
+    if tree_dict is not None and samples_by_ncoad:
+        _int_ncs = sorted(samples_by_ncoad.keys())
+        for i in sorted(Ncoad_energy_dict[coad_name].keys()):
+            if i not in tree_dict or config_name not in Ncoad_energy_dict[coad_name][i]:
+                continue
+            _imins = [min(tree_dict[i].evaluate(m, estimate_uncertainty=False) * to_eV
+                          for m in samples_by_ncoad[nc]) for nc in _int_ncs]
+            ax_int.plot([0.0] + [nc / MLsize for nc in _int_ncs], [0.0] + _imins, color=cmap(i / L))
 
     for ax, best, lbl in ((ax_int, best_int, "Lowest-interaction sample"),
                           (ax_tot, best_tot, "Lowest-total sample")):
@@ -2453,14 +2465,18 @@ def plot_config_energy_correction(config_name, coad_name, Ncoad_energy_dict, ts_
             ax.legend(leg, loc="best")
 
     name_label = config_name if not is_ts else "TS " + ts_info[config_name]["name"]
-    ax_int.set_title("Interaction only (adsorbate–adsorbate)")
-    ax_tot.set_title("Total correction (incl. site penalties)")
+    ax_int.set_title("Interaction only (adsorbate–adsorbate)\n"
+                     "lines = lowest interaction the model predicts at each coverage (over samples)\n"
+                     "red = lowest-interaction computed sample", fontsize=8)
+    ax_tot.set_title("Total correction (incl. site penalties)\n"
+                     "lines = lowest total-energy config (interaction + site penalties)\n"
+                     "red = lowest-total computed sample", fontsize=8)
     ax_int.set_ylabel("Interaction energy [eV]")
     ax_tot.set_ylabel("Total energy correction [eV]")
     for ax in (ax_int, ax_tot):
         ax.set_xlabel(r"$\theta_{" + coad_nice_name + r"}$")
     fig.suptitle("Coverage dependence: " + name_label + " with " + coad_nice_name)
-    fig.tight_layout()
+    fig.tight_layout(rect=[0, 0, 1, 0.93])  # reserve top strip for suptitle above the 3-line titles
     plt.show()
 
     def _write_best(best, kind, value_key):
