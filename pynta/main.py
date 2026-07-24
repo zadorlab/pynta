@@ -512,7 +512,8 @@ class CoverageDependence:
                  fworker_path=None,queue=False,njobs_queue=0,reset_launchpad=False,queue_adapter_path=None,
                  num_jobs=25,surrogate_metal=None,concern_energy_tol=None,max_iters=np.inf,imag_freq_max=150.0,max_coadsorbates=None,
                  sidt_isolated_delta_model=None,sidt_covdep_delta_model=None,coad_selection_E_diff_tol=0.1,iter=0,ts_frac=None,
-                 adsorbate_site_energy_cutoff="default",config_generation="enumerate",mc_kwargs=None):
+                 adsorbate_site_energy_cutoff="default",config_generation="enumerate",mc_kwargs=None,
+                 sample_opt_time_limit_hrs=None):
         self.path = path
         self.metal = metal
         self.repeats = repeats
@@ -571,6 +572,10 @@ class CoverageDependence:
         if adsorbate_site_energy_cutoff == "default":
             adsorbate_site_energy_cutoff = None if config_generation == "mc" else 0.0
         self.adsorbate_site_energy_cutoff = adsorbate_site_energy_cutoff
+        # wall-clock cap (hours) on each sample OUT optimization; None -> no limit. When set, the
+        # optimizer stops at the limit and returns the current (unconverged) geometry, which the
+        # downstream vib/extract then discards -- so a stuck/bad sample can't eat the whole walltime.
+        self.sample_opt_time_limit_hrs = sample_opt_time_limit_hrs
 
         self.collate_isolated_structures()
         
@@ -893,7 +898,8 @@ class CoverageDependence:
                                 Ncalc_per_iter=self.Ncalc_per_iter,iter=self.iter,concern_energy_tol=self.concern_energy_tol,ignore_errors=True,max_coadsorbates=self.max_coadsorbates,
                                 sidt_isolated_delta_model=self.sidt_isolated_delta_model,sidt_covdep_delta_model=self.sidt_covdep_delta_model,ts_frac=self.ts_frac,
                                 adsorbate_site_energy_cutoff=self.adsorbate_site_energy_cutoff,
-                                config_generation=self.config_generation,mc_kwargs=self.mc_kwargs)
+                                config_generation=self.config_generation,mc_kwargs=self.mc_kwargs,
+                                sample_opt_time_limit_hrs=self.sample_opt_time_limit_hrs)
 
         self.fws.append(fw)
     
