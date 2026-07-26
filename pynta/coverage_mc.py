@@ -15,8 +15,12 @@ purely on the 2D adsorbate-site graph (``admol``):
   * the MC state is ``(base_idx, set of occupied coadsorbate-site ranks)`` -- hashable, cheap to
     dedup, and independent of atom-identity bookkeeping. Site "ranks" are the canonical order of
     surface-site atoms, shared across all base arrangements (same slab/site graph);
-  * energies/uncertainties come from the trained SIDT regressor exactly as in
-    ``get_cov_energies`` (E = atom-centered + interaction, both in J/mol);
+  * energies/uncertainties come from the trained SIDT regressor as in ``get_cov_energies``
+    (atom-centered + interaction, J/mol) PLUS a per-arrangement central penalty (``base_penalties``)
+    that ``get_cov_energies`` omits: the isolated-energy cost of the central sitting on this
+    arrangement vs its lowest one. The SIDT interaction datum references each config to its own
+    arrangement, so without this term central hops are unphysically free and the MC drifts to
+    high-energy central arrangements whenever the coadsorbates pack slightly better;
   * two move types, canonical in #coadsorbates: a coadsorbate relocation (move one coad
     occupied->empty, mostly nearby with an occasional global jump) and, with probability
     ``p_central``, a central hop (swap to another valid central arrangement, keeping the coads);
@@ -84,7 +88,7 @@ class CanonicalCoverageMC:
 
     def __init__(self, base_admols, coad, coad_stable_sites, tree_interaction_regressor,
                  tree_atom_regressor=None, coadmol_E_dict=None, unstable_pairs=None,
-                 is_ts=False, local_radius=2, seed=None):
+                 is_ts=False, local_radius=2, seed=None, base_penalties=None):
         if tree_atom_regressor is None and coadmol_E_dict is None:
             raise ValueError("provide either tree_atom_regressor or coadmol_E_dict")
         if not isinstance(base_admols, (list, tuple)):
@@ -92,6 +96,16 @@ class CanonicalCoverageMC:
         if len(base_admols) == 0:
             raise ValueError("base_admols is empty")
         self.base_admols = list(base_admols)
+        # per-arrangement isolated-energy penalty (J/mol), aligned 1:1 with base_admols and referenced
+        # to the lowest arrangement (get_central_templates returns them sorted, so index 0 is 0.0).
+        # None -> all zeros = the old (penalty-free) behavior; energy() adds base_penalties[base_idx].
+        if base_penalties is None:
+            self.base_penalties = [0.0] * len(self.base_admols)
+        elif len(base_penalties) != len(self.base_admols):
+            raise ValueError("base_penalties length ({}) != base_admols length ({})".format(
+                len(base_penalties), len(self.base_admols)))
+        else:
+            self.base_penalties = [float(p) for p in base_penalties]
         self.coad = coad
         self.tree_interaction_regressor = tree_interaction_regressor
         self.tree_atom_regressor = tree_atom_regressor
@@ -182,15 +196,27 @@ class CanonicalCoverageMC:
             m = add_ad_to_site(m, self.coad, m.atoms[si[rank]])
         return m
 
-    def energy(self, m):
-        """(E, sigma, trace) for a config, identical decomposition to get_cov_energies (J/mol)."""
+    def energy(self, m, base_idx):
+        """(E, sigma, trace) for a config on central arrangement ``base_idx`` (J/mol).
+
+        Three-part decomposition:
+          * pairwise interaction (SIDT tree), referenced to each species at its own site;
+          * atom-centered 1-body coadsorbate site penalties (get_atom_centered_correction);
+          * the central's arrangement penalty ``base_penalties[base_idx]`` -- the isolated-energy
+            cost of the central sitting on this arrangement rather than its lowest one. The SIDT
+            interaction datum references every config to its OWN arrangement's isolated central
+            (dE = Ecad - Ets - sum E_coad), so this penalty is NOT in the tree and must be added
+            back here; without it central hops (p_central) are unphysically free and the MC drifts
+            to high-energy central arrangements whenever the coadsorbates pack slightly better.
+        get_cov_energies (the enumerative path) still omits this term.
+        """
         Einteraction, sigma, tr = self.tree_interaction_regressor.evaluate(
             m, trace=True, estimate_uncertainty=True)
         if self.tree_atom_regressor is not None:
             E = self.tree_atom_regressor.evaluate(m) + Einteraction
         else:
             E = get_atom_centered_correction(m, self.coadmol_E_dict) * EV_TO_JMOL + Einteraction
-        return E, sigma, tr
+        return E + self.base_penalties[base_idx], sigma, tr
 
     def is_valid(self, m):
         if not self.unstable_pairs:
@@ -271,7 +297,7 @@ class CanonicalCoverageMC:
         nbases = len(self.base_admols)
 
         b, occ, m_cur = self._greedy_valid_state(Ncoad, rng)
-        E_cur, s_cur, tr_cur = self.energy(m_cur)
+        E_cur, s_cur, tr_cur = self.energy(m_cur, b)
 
         visited = {}  # (base_idx, frozenset(occ)) -> (admol, E, sigma, trace)
 
@@ -319,7 +345,7 @@ class CanonicalCoverageMC:
             if not self.is_valid(m_new):
                 continue
 
-            E_new, s_new, tr_new = self.energy(m_new)
+            E_new, s_new, tr_new = self.energy(m_new, b_new)
             record(b_new, occ_new, m_new, E_new, s_new, tr_new)
             if do_central:
                 n_central += 1
@@ -394,7 +420,7 @@ def mc_cov_energies_configs_concern(base_admols, coad, coad_stable_sites, tree_i
                                     Nocc_isolated=None, concern_energy_tol=None, coadmol_E_dict=None,
                                     tree_atom_regressor=None, unstable_pairs=None, is_ts=False,
                                     max_coadsorbates=None, Ncoads=None, n_jobs=1, seed=None, local_radius=2,
-                                    chain_max_frames=500, **mc_run_kwargs):
+                                    chain_max_frames=500, base_penalties=None, **mc_run_kwargs):
     """MC analogue of ``get_cov_energies_configs_concern_tree`` (coveragedependence.py).
 
     Drop-in replacement: returns ``(Ncoad_energy_dict, Ncoad_config_dict, configs_of_concern)`` in
@@ -420,6 +446,9 @@ def mc_cov_energies_configs_concern(base_admols, coad, coad_stable_sites, tree_i
         n_jobs: joblib workers for the per-coverage chains
         seed: base RNG seed
         local_radius: site-graph hop radius for local moves (hops, not Angstrom; default 2)
+        base_penalties: per-arrangement isolated-energy penalties [J/mol], aligned 1:1 with
+            base_admols and referenced to the lowest arrangement (index 0 = 0.0). None -> zeros
+            (penalty-free, the pre-fix behavior). Charges the central for hopping off its lowest site.
         **mc_run_kwargs: forwarded to run (n_steps, T, lam, p_local, p_central)
 
     Returns:
@@ -436,7 +465,7 @@ def mc_cov_energies_configs_concern(base_admols, coad, coad_stable_sites, tree_i
     mc = CanonicalCoverageMC(base_admols, coad, coad_stable_sites, tree_interaction_regressor,
                              tree_atom_regressor=tree_atom_regressor, coadmol_E_dict=coadmol_E_dict,
                              unstable_pairs=unstable_pairs, is_ts=is_ts, local_radius=local_radius,
-                             seed=seed)
+                             seed=seed, base_penalties=base_penalties)
     res = mc.scan_coverages(Ncoads=Ncoads, max_coadsorbates=max_coadsorbates, n_jobs=n_jobs,
                             record_trajectory=True, **mc_run_kwargs)
 

@@ -1754,13 +1754,33 @@ def get_unique_TS_admols(ts_path, adsorbates_path, metal, facet, sites, site_adj
         out.append((atoms, admol))
     return out
 
+def _central_arrangement_penalties(templates):
+    """Per-arrangement isolated-energy penalty [J/mol] for a sorted (lowest-first) list of
+    (atoms, admol) central templates, referenced to the lowest arrangement (so index 0 == 0.0).
+    The slab energy cancels in the difference; ZPE differences between arrangements are neglected
+    (the electronic term dominates). Returns all-zeros if any potential energy is unavailable, i.e.
+    it falls back to the pre-existing penalty-free behavior rather than raising."""
+    try:
+        es = [t[0].get_potential_energy() for t in templates]
+    except Exception:
+        return [0.0] * len(templates)
+    if not es:
+        return []
+    emin = min(es)
+    return [(e - emin) * EV_TO_JMOL for e in es]
+
 def get_central_templates(name, is_ts, pynta_dir, metal, facet, sites, site_adjacency, nslab,
-                          allowed_structure_site_structures=None, energy_cutoff=None):
+                          allowed_structure_site_structures=None, energy_cutoff=None,
+                          return_penalties=False):
     """Return [(atoms, admol)] for all valid base arrangements of a central species: all valid TS
     saddles, or all stable adsorbate geometries within energy_cutoff (None = all) of the lowest.
     These are the 3D templates the coverage MC decorates and that mol_to_atoms uses to rebuild a
     selected config from the SAME central arrangement it came from. (A single template only covers
-    configs whose central sits on its sites, which is why we need the full list.)"""
+    configs whose central sits on its sites, which is why we need the full list.)
+
+    return_penalties=True additionally returns a per-arrangement isolated-energy penalty list
+    [J/mol] (aligned with the sorted templates, lowest arrangement = 0.0) for the coverage MC to
+    charge the central for hopping off its lowest arrangement -- returns (templates, penalties)."""
     if is_ts:
         ts_path = os.path.join(pynta_dir, name)
         if not os.path.isdir(ts_path):
@@ -1772,6 +1792,8 @@ def get_central_templates(name, is_ts, pynta_dir, metal, facet, sites, site_adja
             ts_admols.sort(key=lambda t: t[0].get_potential_energy())
         except Exception:
             pass
+        if return_penalties:
+            return ts_admols, _central_arrangement_penalties(ts_admols)
         return ts_admols
 
     ad_path = os.path.join(pynta_dir, "Adsorbates", name)
@@ -1812,6 +1834,8 @@ def get_central_templates(name, is_ts, pynta_dir, metal, facet, sites, site_adja
         out.sort(key=lambda t: t[0].get_potential_energy())
     except Exception:
         pass
+    if return_penalties:
+        return out, _central_arrangement_penalties(out)
     return out
 
 def get_configurations(admol, coad, coad_stable_sites, tree_interaction_classifier=None, coadmol_stability_dict=None, unstable_groups=None,

@@ -1141,13 +1141,14 @@ class MolecularHFSP(OptimizationTask):
 def calculate_configruation_energies_firework(admol_name,tree_file,path,coadname,coad_stable_sites,Nocc_isolated,
                                               coadmol_E_dict,concern_energy_tol=None,out_path=None,parents=[],iter=0,ignore_errors=False,
                                               config_generation="enumerate",mc_kwargs=None,base_admols=None,coad_adjlist=None,
-                                              unstable_pairs_path=None,is_ts=False,max_coadsorbates=None,Ncoad=None):
+                                              unstable_pairs_path=None,is_ts=False,max_coadsorbates=None,Ncoad=None,base_penalties=None):
     # Ncoad=None -> compute all coverages in one task (enumerate, or MC without per-chain split);
     # Ncoad=<int> -> MC for that single coverage only (one firework per chain), files suffixed _N<Ncoad>
     d = {"admol_name": admol_name,"tree_file": tree_file,"path": path,"coadname": coadname,
          "coad_stable_sites": coad_stable_sites,"Nocc_isolated": Nocc_isolated,"coadmol_E_dict": coadmol_E_dict,
          "concern_energy_tol": concern_energy_tol,
          "config_generation": config_generation,"mc_kwargs": mc_kwargs,"base_admols": base_admols,
+         "base_penalties": base_penalties,
          "coad_adjlist": coad_adjlist,"unstable_pairs_path": unstable_pairs_path,"is_ts": is_ts,
          "max_coadsorbates": max_coadsorbates,"Ncoad": Ncoad}
     t1 = CalculateConfigurationEnergiesTask(d)
@@ -1177,7 +1178,7 @@ def calculate_configruation_energies_firework(admol_name,tree_file,path,coadname
 @explicit_serialize
 class CalculateConfigurationEnergiesTask(FiretaskBase):
     required_params = ["admol_name","tree_file","path","coad_stable_sites","Nocc_isolated","coadmol_E_dict","coadname"]
-    optional_params = ["concern_energy_tol","ignore_errors","config_generation","mc_kwargs","base_admols","coad_adjlist","unstable_pairs_path","is_ts","max_coadsorbates","Ncoad"]
+    optional_params = ["concern_energy_tol","ignore_errors","config_generation","mc_kwargs","base_admols","base_penalties","coad_adjlist","unstable_pairs_path","is_ts","max_coadsorbates","Ncoad"]
     def run_task(self, fw_spec):
         admol_name = self['admol_name']
         tree_file = self["tree_file"]
@@ -1204,6 +1205,7 @@ class CalculateConfigurationEnergiesTask(FiretaskBase):
             if config_generation == "mc":
                 from pynta.coverage_mc import mc_cov_energies_configs_concern
                 base_admols = [Molecule().from_adjacency_list(m,check_consistency=False) for m in (self["base_admols"] or [])]
+                base_penalties = self["base_penalties"] if ("base_penalties" in self.keys() and self["base_penalties"]) else None
                 coad = Molecule().from_adjacency_list(self["coad_adjlist"],check_consistency=False)
                 with open(self["unstable_pairs_path"]) as f:
                     unstable_pairs = [Group().from_adjacency_list(x) for x in json.load(f)]
@@ -1213,6 +1215,7 @@ class CalculateConfigurationEnergiesTask(FiretaskBase):
                     unstable_pairs=unstable_pairs, is_ts=self["is_ts"],
                     max_coadsorbates=self["max_coadsorbates"] if "max_coadsorbates" in self.keys() else None,
                     Ncoads=([Ncoad] if Ncoad is not None else None),
+                    base_penalties=base_penalties,
                     **mc_kwargs)
             else:
                 with open(os.path.join(path,"Configurations",admol_name+"_"+coadname+".json"),'r') as f:
@@ -1488,6 +1491,7 @@ class TrainCovdepModelTask(FiretaskBase):
 
         # base structures (per admol) that MC decorates; only filled in MC mode
         base_admols_by_name = {}
+        base_penalties_by_name = {}  # per-arrangement isolated-energy penalties [J/mol], MC-mode only
         unstable_pairs_path = os.path.join(path, "unstable_pairs.json")
         if config_generation == "mc":
             # MC candidate generation: no enumerated Configurations/. Cache the unstable pairs
@@ -1506,14 +1510,18 @@ class TrainCovdepModelTask(FiretaskBase):
                 # all valid central arrangements (adsorbate geometries / TS saddles); MC hops among them
                 is_ts_name = any(bd.get_order_str() == 'R' for bd in admol.get_all_edges())
                 try:
-                    templates = get_central_templates(admol_name, is_ts_name, pynta_dir, metal, facet,
+                    # penalties: isolated-energy cost of each arrangement vs the lowest, so the MC
+                    # charges the central for hopping off its best site (get_cov_energies omits this)
+                    templates, penalties = get_central_templates(admol_name, is_ts_name, pynta_dir, metal, facet,
                         sites, site_adjacency, nslab,
                         allowed_structure_site_structures=allowed_structure_site_structures,
-                        energy_cutoff=adsorbate_site_energy_cutoff)
+                        energy_cutoff=adsorbate_site_energy_cutoff, return_penalties=True)
                 except Exception:
-                    templates = []
+                    templates, penalties = [], []
                 base_admols = [t_admol for _, t_admol in templates] or [admol]
                 base_admols_by_name[admol_name] = base_admols
+                # keep penalties aligned 1:1 with base_admols (the [admol] fallback has no penalty)
+                base_penalties_by_name[admol_name] = penalties if len(penalties) == len(base_admols) else [0.0] * len(base_admols)
         elif not os.path.exists(os.path.join(path,"Configurations")):
             info_paths = {adname: os.path.join(os.path.split(os.path.split(p)[0])[0],"info.json") for adname,p in admol_name_path_dict.items()}
             imag_freq_paths = {adname: os.path.join(os.path.split(p)[0],"vib.json_vib.json") for adname,p in admol_name_path_dict.items()}
@@ -1630,6 +1638,7 @@ class TrainCovdepModelTask(FiretaskBase):
                                                 {k.to_adjacency_list(): v for k,v in coadmol_E_dicts[coadname].items()},concern_energy_tol=concern_energy_tol,parents=[],iter=iter,ignore_errors=ignore_errors,
                                                 config_generation=config_generation,mc_kwargs=mc_kwargs,
                                                 base_admols=[b.to_adjacency_list() for b in base_admols_by_name.get(admol_name,[])],
+                                                base_penalties=base_penalties_by_name.get(admol_name,[]),
                                                 coad_adjlist=coad_simples[coadname].to_adjacency_list(),
                                                 unstable_pairs_path=unstable_pairs_path,is_ts=is_ts,max_coadsorbates=max_coadsorbates)
                 config_E_fws.append(fw)
