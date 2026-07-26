@@ -22,7 +22,7 @@ from pynta.transitionstate import get_unique_optimized_adsorbates,determine_TS_c
 from pynta.utils import *
 from pynta.calculator import run_harmonically_forced, map_harmonically_forced, add_sella_constraint
 from pynta.mol import *
-from pynta.coveragedependence import get_unstable_pairs, mol_to_atoms, get_configs_for_calculation, get_cov_energies_configs_concern_tree, get_configurations, get_unique_adsorbate_admols, get_central_templates, get_allowed_structure_site_structures_cached, train_sidt_cov_dep_regressor, process_calculation
+from pynta.coveragedependence import get_unstable_pairs, mol_to_atoms, get_configs_for_calculation, get_cov_energies_configs_concern_tree, get_configurations, get_unique_adsorbate_admols, get_central_templates, get_allowed_structure_site_structures_cached, train_sidt_cov_dep_regressor, process_calculation, EV_TO_JMOL
 from pynta.geometricanalysis import *
 from pynta.adsorbate import construct_initial_guess_files
 from pynta.postprocessing import postprocess, write_rmg_libraries
@@ -1522,6 +1522,12 @@ class TrainCovdepModelTask(FiretaskBase):
                 base_admols_by_name[admol_name] = base_admols
                 # keep penalties aligned 1:1 with base_admols (the [admol] fallback has no penalty)
                 base_penalties_by_name[admol_name] = penalties if len(penalties) == len(base_admols) else [0.0] * len(base_admols)
+                # surface the (otherwise silent) central-arrangement penalty so it is auditable in the
+                # TrainCovdepModel firework log; base 0 = lowest-electronic arrangement (0.0), ZPE-incl.
+                _pen = base_penalties_by_name[admol_name]
+                if len(_pen) > 1:
+                    logging.info("covdep MC central penalty %s: %d arrangements, [meV] = %s",
+                                 admol_name, len(_pen), [round(p / EV_TO_JMOL * 1000.0) for p in _pen])
         elif not os.path.exists(os.path.join(path,"Configurations")):
             info_paths = {adname: os.path.join(os.path.split(os.path.split(p)[0])[0],"info.json") for adname,p in admol_name_path_dict.items()}
             imag_freq_paths = {adname: os.path.join(os.path.split(p)[0],"vib.json_vib.json") for adname,p in admol_name_path_dict.items()}
