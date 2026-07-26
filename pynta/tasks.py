@@ -23,6 +23,7 @@ from pynta.utils import *
 from pynta.calculator import run_harmonically_forced, map_harmonically_forced, add_sella_constraint
 from pynta.mol import *
 from pynta.coveragedependence import get_unstable_pairs, mol_to_atoms, get_configs_for_calculation, get_cov_energies_configs_concern_tree, get_configurations, get_unique_adsorbate_admols, get_central_templates, get_allowed_structure_site_structures_cached, train_sidt_cov_dep_regressor, process_calculation, EV_TO_JMOL
+from pynta.runlog import log as runlog  # curated pynta run log (PYNTA_LOG_FILE); separate from FW chatter
 from pynta.geometricanalysis import *
 from pynta.adsorbate import construct_initial_guess_files
 from pynta.postprocessing import postprocess, write_rmg_libraries
@@ -124,6 +125,8 @@ class MolecularOptimizationTask(OptimizationTask):
 
         label = self["label"]
         xyz = self['xyz']
+        _t_opt = time.time()
+        runlog.info("opt start: %s [%s]", label, os.getcwd())
         suffix = os.path.split(xyz)[-1].split(".")[-1]
 
         try:
@@ -181,6 +184,8 @@ class MolecularOptimizationTask(OptimizationTask):
                     with limit_time(time_limit_hrs*60.0*60.0):
                         opt.run(**run_kwargs)
             except Exception as e:
+                if isinstance(e, TimeLimitError):
+                    runlog.warning("opt KILLED (time limit %.2f h): %s [%s]", time_limit_hrs, label, os.getcwd())
                 if not ignore_errors:
                     raise e
                 else:
@@ -229,6 +234,8 @@ class MolecularOptimizationTask(OptimizationTask):
                     with limit_time(time_limit_hrs*60.0*60.0):
                         opt.run(**run_kwargs)
             except Exception as e:
+                if isinstance(e, TimeLimitError):
+                    runlog.warning("opt KILLED (time limit %.2f h): %s [%s]", time_limit_hrs, label, os.getcwd())
                 if not ignore_errors:
                     raise e
                 else:
@@ -317,6 +324,7 @@ class MolecularOptimizationTask(OptimizationTask):
                     del sp_to_write.arrays[key]
             write(label+".xyz", sp_to_write)
 
+        runlog.info("opt finish: %s converged=%s in %.1f s [%s]", label, converged, time.time()-_t_opt, os.getcwd())
         return FWAction(stored_data={"error": errors,"converged": converged})
 
 @explicit_serialize
@@ -1194,6 +1202,9 @@ class CalculateConfigurationEnergiesTask(FiretaskBase):
         # single-coverage (per-chain) mode when Ncoad is set: run only that coverage and suffix files
         Ncoad = self["Ncoad"] if "Ncoad" in self.keys() else None
         suf = "" if Ncoad is None else "_N"+str(Ncoad)
+        _t_cfg = time.time()
+        runlog.info("config energies start (%s): %s + %s%s", config_generation, admol_name, coadname,
+                    "" if Ncoad is None else " N=%d" % Ncoad)
 
         try:
             nodes = read_nodes(tree_file)
@@ -1235,13 +1246,17 @@ class CalculateConfigurationEnergiesTask(FiretaskBase):
             if mc_chains is not None:
                 with open("mc_chain_"+admol_name+"_"+coadname+suf+".json",'w') as f:
                     json.dump(mc_chains,f)
-                
+
         except Exception as e:
             if not ignore_errors:
                 raise e
             else:
+                runlog.warning("config energies FAILED: %s + %s%s (%s)", admol_name, coadname,
+                               "" if Ncoad is None else " N=%d" % Ncoad, e)
                 return FWAction(stored_data={"error": e}, exit=True)
 
+        runlog.info("config energies finish: %s + %s%s in %.1f s", admol_name, coadname,
+                    "" if Ncoad is None else " N=%d" % Ncoad, time.time()-_t_cfg)
         return FWAction()
 
 def extract_datum_firework(d, pynta_dir, slab_path, metal, facet, sites, site_adjacency,
@@ -1355,6 +1370,8 @@ class TrainCovdepModelTask(FiretaskBase):
         max_coadsorbates = self["max_coadsorbates"] if "max_coadsorbates" in self.keys() else None
         adsorbate_site_energy_cutoff = self["adsorbate_site_energy_cutoff"] if "adsorbate_site_energy_cutoff" in self.keys() else 0.0
         config_generation = self["config_generation"] if "config_generation" in self.keys() else "enumerate"
+        _t_train = time.time()
+        runlog.info("covdep iter %d: train tree + config-energy setup start (%s)", self["iter"], config_generation)
         mc_kwargs = self["mc_kwargs"] if ("mc_kwargs" in self.keys() and self["mc_kwargs"] is not None) else dict()
         sample_opt_time_limit_hrs = self["sample_opt_time_limit_hrs"] if "sample_opt_time_limit_hrs" in self.keys() else None
         sites = []
@@ -1526,8 +1543,8 @@ class TrainCovdepModelTask(FiretaskBase):
                 # TrainCovdepModel firework log; base 0 = lowest-electronic arrangement (0.0), ZPE-incl.
                 _pen = base_penalties_by_name[admol_name]
                 if len(_pen) > 1:
-                    logging.info("covdep MC central penalty %s: %d arrangements, [meV] = %s",
-                                 admol_name, len(_pen), [round(p / EV_TO_JMOL * 1000.0) for p in _pen])
+                    runlog.info("covdep MC central penalty %s: %d arrangements, [meV] = %s",
+                                admol_name, len(_pen), [round(p / EV_TO_JMOL * 1000.0) for p in _pen])
         elif not os.path.exists(os.path.join(path,"Configurations")):
             info_paths = {adname: os.path.join(os.path.split(os.path.split(p)[0])[0],"info.json") for adname,p in admol_name_path_dict.items()}
             imag_freq_paths = {adname: os.path.join(os.path.split(p)[0],"vib.json_vib.json") for adname,p in admol_name_path_dict.items()}
@@ -1661,7 +1678,9 @@ class TrainCovdepModelTask(FiretaskBase):
                             sample_opt_time_limit_hrs=sample_opt_time_limit_hrs)
 
         newwf = Workflow(config_E_fws+[scfw],name="Select Calculations "+str(iter))
-        
+
+        runlog.info("covdep iter %d: spawned %d config-energy fireworks in %.1f s", iter,
+                    len(config_E_fws), time.time()-_t_train)
         return FWAction(detours=newwf)
 
 def select_calculations_firework(path,admol_name_path_dict,admol_name_structure_dict,sites,site_adjacency,
@@ -1766,6 +1785,7 @@ class SelectCalculationsTask(FiretaskBase):
             coadmol_E_dict_paths[coadname] = p
 
         #load configurations and Ncoad_energies
+        runlog.info("covdep iter %d: select next samples start", iter)
         _t_load = time.time()
         configs_of_concern_by_coad_admol = dict()
         Ncoad_energy_by_coad_admol = dict()
@@ -1781,7 +1801,7 @@ class SelectCalculationsTask(FiretaskBase):
                     Ncoad_energy_by_coad_admol[coadname][admol_name] = {int(k):v for k,v in json.load(f).items()}
                 
         n_cand = sum(len(v) for cd in configs_of_concern_by_coad_admol.values() for v in cd.values())
-        logging.info("covdep select: loaded %d candidate configs in %.1f s", n_cand, time.time()-_t_load)
+        runlog.info("covdep select: loaded %d candidate configs in %.1f s", n_cand, time.time()-_t_load)
 
         #load tree
         nodes = read_nodes(os.path.join(path,"Iterations",str(iter),"regressor.json"))
@@ -1796,7 +1816,7 @@ class SelectCalculationsTask(FiretaskBase):
         ts_frac = self["ts_frac"] if "ts_frac" in self.keys() else None
         _t_sel = time.time()
         configs_for_calculation,coad_admol_to_config_for_calculation = get_configs_for_calculation(configs_of_concern_by_coad_admol,Ncoad_energy_by_coad_admol,admol_name_structure_dict,coadnames,computed_configs,tree,Ncalc_per_iter,ts_frac=ts_frac)
-        logging.info("covdep select: get_configs_for_calculation selected %d configs in %.1f s", len(configs_for_calculation), time.time()-_t_sel)
+        runlog.info("covdep select: get_configs_for_calculation selected %d configs in %.1f s", len(configs_for_calculation), time.time()-_t_sel)
 
         os.makedirs(os.path.join(path,"Iterations",str(iter),"Samples"))
         assert len(configs_for_calculation) > 0, configs_for_calculation
@@ -1922,7 +1942,7 @@ class SelectCalculationsTask(FiretaskBase):
                                                    parents=[fwvib], ignore_errors=True)
                 sample_fws.extend([fwopt,fwvib,fwextract])
             
-        logging.info("covdep select: built %d init geometries + spawned fireworks in %.1f s", len(calculation_directories), time.time()-_t_geo)
+        runlog.info("covdep select: built %d init geometries + spawned fireworks in %.1f s", len(calculation_directories), time.time()-_t_geo)
         max_coadsorbates_next = self["max_coadsorbates"] if "max_coadsorbates" in self.keys() else None
         sidt_isolated_delta_model_next = self["sidt_isolated_delta_model"] if "sidt_isolated_delta_model" in self.keys() else None
         sidt_covdep_delta_model_next = self["sidt_covdep_delta_model"] if "sidt_covdep_delta_model" in self.keys() else None

@@ -6,6 +6,7 @@ from ase.visualize import view
 from ase.neighborlist import natural_cutoffs
 from acat.adsorption_sites import SlabAdsorptionSites
 from pynta.utils import get_unique_sym, get_occupied_sites, sites_match, SiteOccupationException
+from pynta.runlog import log as runlog  # curated pynta run log (PYNTA_LOG_FILE); separate from FW chatter
 from pynta.mol import *
 from pynta.geometricanalysis import *
 from pysidt import *
@@ -1758,7 +1759,7 @@ def get_unique_TS_admols(ts_path, adsorbates_path, metal, facet, sites, site_adj
             out.append((atoms, admol))
     return out
 
-def _central_arrangement_penalties(templates, xyz_paths=None, nslab=None):
+def _central_arrangement_penalties(templates, xyz_paths=None, nslab=None, central_name=None):
     """Per-arrangement isolated-energy penalty [J/mol] for a list of (atoms, admol) central
     templates, referenced to templates[0] (so penalty[0] == 0.0). The caller keeps templates sorted
     by ELECTRONIC energy so base 0 is the same arrangement the render path (get_central_templates
@@ -1783,7 +1784,8 @@ def _central_arrangement_penalties(templates, xyz_paths=None, nslab=None):
                                   nslab).get_zero_point_energy()
                   for e, xyz in zip(es, xyz_paths)]
         except Exception as exc:
-            logging.warning("central penalty: ZPE unavailable (%s); using potential energy only", exc)
+            runlog.warning("central penalty %s: ZPE unavailable (%s); using potential energy only",
+                           central_name if central_name is not None else "?", exc)
     e0 = es[0]
     return [(e - e0) * EV_TO_JMOL for e in es]
 
@@ -1819,7 +1821,7 @@ def get_central_templates(name, is_ts, pynta_dir, metal, facet, sites, site_adja
             # give the ZPE-corrected isolated energy for the penalty
             templates = [(a, m) for a, m, _ in ts_admols]
             xyz_paths = [os.path.join(d, "opt.xyz") for _, _, d in ts_admols]
-            return templates, _central_arrangement_penalties(templates, xyz_paths, nslab)
+            return templates, _central_arrangement_penalties(templates, xyz_paths, nslab, central_name=name)
         return ts_admols
 
     ad_path = os.path.join(pynta_dir, "Adsorbates", name)
@@ -1870,7 +1872,7 @@ def get_central_templates(name, is_ts, pynta_dir, metal, facet, sites, site_adja
     except Exception:
         pass
     if return_penalties:
-        return out, _central_arrangement_penalties(out, out_xyzs, nslab)
+        return out, _central_arrangement_penalties(out, out_xyzs, nslab, central_name=name)
     return out
 
 def get_configurations(admol, coad, coad_stable_sites, tree_interaction_classifier=None, coadmol_stability_dict=None, unstable_groups=None,
