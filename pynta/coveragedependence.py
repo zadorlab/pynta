@@ -1683,12 +1683,13 @@ def get_unique_adsorbate_admols(adsorbate_path, sites, site_adjacency, nslab,
     return admols
 
 def get_unique_TS_admols(ts_path, adsorbates_path, metal, facet, sites, site_adjacency, nslab,
-                         allowed_structure_site_structures=None, valid_only=True):
+                         allowed_structure_site_structures=None, valid_only=True, return_dirs=False):
     """TS analogue of get_unique_adsorbate_admols: return [(atoms, admol)] for the valid saddle
     configurations of a TS. Each valid saddle is a distinct optimized 3D structure that cannot be
     reconstructed from the 2D graph, so we keep both the 3D atoms and the 2D admol. Used to seed
     the coverage MC with every valid central TS arrangement and to rebuild a selected config from
-    the matching saddle template (mol_to_atoms)."""
+    the matching saddle template (mol_to_atoms). return_dirs=True appends the per-saddle directory
+    to each tuple ((atoms, admol, saddle_dir)) so callers can locate its vib file for ZPE."""
     if not os.path.exists(os.path.join(ts_path, "info.json")):
         return []
     if allowed_structure_site_structures is None:
@@ -1751,23 +1752,40 @@ def get_unique_TS_admols(ts_path, adsorbates_path, metal, facet, sites, site_adj
                                          keep_vdW_surface_bonds=keep_vdW_surface_bonds)
         except Exception:
             continue
-        out.append((atoms, admol))
+        if return_dirs:
+            out.append((atoms, admol, os.path.join(ts_path, k)))
+        else:
+            out.append((atoms, admol))
     return out
 
-def _central_arrangement_penalties(templates):
-    """Per-arrangement isolated-energy penalty [J/mol] for a sorted (lowest-first) list of
-    (atoms, admol) central templates, referenced to the lowest arrangement (so index 0 == 0.0).
-    The slab energy cancels in the difference; ZPE differences between arrangements are neglected
-    (the electronic term dominates). Returns all-zeros if any potential energy is unavailable, i.e.
-    it falls back to the pre-existing penalty-free behavior rather than raising."""
+def _central_arrangement_penalties(templates, xyz_paths=None, nslab=None):
+    """Per-arrangement isolated-energy penalty [J/mol] for a list of (atoms, admol) central
+    templates, referenced to templates[0] (so penalty[0] == 0.0). The caller keeps templates sorted
+    by ELECTRONIC energy so base 0 is the same arrangement the render path (get_central_templates
+    return_penalties=False) resolves -- the MC's base_idx must map to the identical arrangement.
+
+    With xyz_paths (each template's opt geometry; dvib inferred as <dir>/vib.json_vib.json) and
+    nslab, energies are ZPE-corrected (E_pot + ZPE) to match the ZPE-corrected training reference
+    (Ets/Ead = E_pot - E_slab + ZPE); the slab energy cancels in the difference. A penalty can be
+    slightly negative if ZPE makes an arrangement below base 0 in free energy -- that is correct.
+    Falls back to potential-energy-only for ALL arrangements together (kept mutually consistent) if
+    any ZPE is unavailable, and to all-zeros if even the potential energies can't be read (the
+    pre-fix, penalty-free behavior). Never raises."""
     try:
         es = [t[0].get_potential_energy() for t in templates]
     except Exception:
         return [0.0] * len(templates)
     if not es:
         return []
-    emin = min(es)
-    return [(e - emin) * EV_TO_JMOL for e in es]
+    if xyz_paths is not None and nslab is not None and len(xyz_paths) == len(templates):
+        try:
+            es = [e + get_vibdata(xyz, os.path.join(os.path.dirname(xyz), "vib.json_vib.json"),
+                                  nslab).get_zero_point_energy()
+                  for e, xyz in zip(es, xyz_paths)]
+        except Exception as exc:
+            logging.warning("central penalty: ZPE unavailable (%s); using potential energy only", exc)
+    e0 = es[0]
+    return [(e - e0) * EV_TO_JMOL for e in es]
 
 def get_central_templates(name, is_ts, pynta_dir, metal, facet, sites, site_adjacency, nslab,
                           allowed_structure_site_structures=None, energy_cutoff=None,
@@ -1778,22 +1796,30 @@ def get_central_templates(name, is_ts, pynta_dir, metal, facet, sites, site_adja
     selected config from the SAME central arrangement it came from. (A single template only covers
     configs whose central sits on its sites, which is why we need the full list.)
 
-    return_penalties=True additionally returns a per-arrangement isolated-energy penalty list
-    [J/mol] (aligned with the sorted templates, lowest arrangement = 0.0) for the coverage MC to
-    charge the central for hopping off its lowest arrangement -- returns (templates, penalties)."""
+    return_penalties=True additionally returns a per-arrangement ZPE-corrected isolated-energy
+    penalty list [J/mol] (aligned with the sorted templates, penalty[0] = 0.0) for the coverage MC
+    to charge the central for hopping off its lowest arrangement -- returns (templates, penalties).
+    Penalties use E_pot + ZPE (matching the training reference Ets/Ead), falling back to E_pot only
+    if vib data is missing; see _central_arrangement_penalties."""
     if is_ts:
         ts_path = os.path.join(pynta_dir, name)
         if not os.path.isdir(ts_path):
             ts_path = os.path.join(pynta_dir, name.rsplit("_", 1)[0])
         ts_admols = get_unique_TS_admols(ts_path, os.path.join(pynta_dir, "Adsorbates"), metal, facet,
-                                         sites, site_adjacency, nslab, allowed_structure_site_structures)
-        # order saddles by energy (lowest first) when available so the MC starts from the best one
+                                         sites, site_adjacency, nslab, allowed_structure_site_structures,
+                                         return_dirs=return_penalties)
+        # order saddles by ELECTRONIC energy (lowest first) so the MC starts from the best one and the
+        # base ordering is identical here and on the render path (write_mc_chain_xyz)
         try:
             ts_admols.sort(key=lambda t: t[0].get_potential_energy())
         except Exception:
             pass
         if return_penalties:
-            return ts_admols, _central_arrangement_penalties(ts_admols)
+            # ts_admols are (atoms, admol, saddle_dir); the saddle's opt.xyz + <dir>/vib.json_vib.json
+            # give the ZPE-corrected isolated energy for the penalty
+            templates = [(a, m) for a, m, _ in ts_admols]
+            xyz_paths = [os.path.join(d, "opt.xyz") for _, _, d in ts_admols]
+            return templates, _central_arrangement_penalties(templates, xyz_paths, nslab)
         return ts_admols
 
     ad_path = os.path.join(pynta_dir, "Adsorbates", name)
@@ -1812,14 +1838,19 @@ def get_central_templates(name, is_ts, pynta_dir, metal, facet, sites, site_adja
             m.remove_bond(b)
             if len(m.split()) == 1:
                 keep_vdW_surface_bonds = True
-    geoms = get_unique_adsorbate_geometries(ad_path, mol, sites, site_adjacency,
-                                            atom_to_molecule_surface_atom_map, nslab)
+    # request xyz paths too so the penalty can locate each arrangement's vib file for ZPE
+    geoms, xyzs = get_unique_adsorbate_geometries(ad_path, mol, sites, site_adjacency,
+                                                  atom_to_molecule_surface_atom_map, nslab,
+                                                  return_xyzs=True)
     if energy_cutoff is not None and geoms:
         energies = [g.get_potential_energy() for g in geoms]
         emin = min(energies)
-        geoms = [g for g, e in zip(geoms, energies) if e - emin <= energy_cutoff]
-    out = []
-    for geo in geoms:
+        kept = [(g, x) for g, x, e in zip(geoms, xyzs, energies) if e - emin <= energy_cutoff]
+        geoms = [g for g, _ in kept]
+        xyzs = [x for _, x in kept]
+    out = []          # (atoms, admol)
+    out_xyzs = []     # aligned opt-geometry path per template (for ZPE)
+    for geo, xyz in zip(geoms, xyzs):
         try:
             st, _, _ = generate_adsorbate_2D(geo, sites, site_adjacency, nslab, max_dist=np.inf,
                                              allowed_structure_site_structures=allowed_structure_site_structures,
@@ -1828,14 +1859,18 @@ def get_central_templates(name, is_ts, pynta_dir, metal, facet, sites, site_adja
         except Exception:
             continue
         out.append((geo, st))
-    # order arrangements by central energy (lowest first) so the coverage MC starts from the
+        out_xyzs.append(xyz)
+    # order arrangements by ELECTRONIC energy (lowest first) so the coverage MC starts from the
     # central's best site (base_idx 0); base ordering stays consistent across run/geometry-gen/render
+    # (index-based so out_xyzs tracks the same permutation as out)
     try:
-        out.sort(key=lambda t: t[0].get_potential_energy())
+        order = sorted(range(len(out)), key=lambda i: out[i][0].get_potential_energy())
+        out = [out[i] for i in order]
+        out_xyzs = [out_xyzs[i] for i in order]
     except Exception:
         pass
     if return_penalties:
-        return out, _central_arrangement_penalties(out)
+        return out, _central_arrangement_penalties(out, out_xyzs, nslab)
     return out
 
 def get_configurations(admol, coad, coad_stable_sites, tree_interaction_classifier=None, coadmol_stability_dict=None, unstable_groups=None,
