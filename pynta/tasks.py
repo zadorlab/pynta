@@ -1677,9 +1677,13 @@ class TrainCovdepModelTask(FiretaskBase):
                 is_ts = any(bd.get_order_str() == 'R' for bd in st.get_all_edges())
                 # enumerative energy: a config doesn't record its base arrangement, so pass a
                 # {central-arrangement-structure -> penalty[J/mol]} lookup that get_central_penalty
-                # matches each config's central against (MC uses the base_penalties list instead)
+                # matches each config's central against (MC uses the base_penalties list instead).
+                # ONLY for TS centrals: a TS is referenced to its specific saddle so the arrangement
+                # energy is missing from atom_centered+interaction; an adsorbate central is referenced
+                # to its species-lowest (a per-coverage constant) so it is already ranked correctly and
+                # a penalty would double-count (verified empirically). Mirrors the MC-side TS-only gate.
                 central_penalty_dict = None
-                if config_generation != "mc":
+                if config_generation != "mc" and is_ts:
                     try:
                         _tmpl, _pens = get_central_templates(admol_name, is_ts, pynta_dir, metal, facet,
                             sites, site_adjacency, nslab,
