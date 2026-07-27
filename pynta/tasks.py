@@ -1526,23 +1526,35 @@ class TrainCovdepModelTask(FiretaskBase):
             for admol_name,admol in admol_name_structure_dict.items():
                 # all valid central arrangements (adsorbate geometries / TS saddles); MC hops among them
                 is_ts_name = any(bd.get_order_str() == 'R' for bd in admol.get_all_edges())
+                # ONLY TS centrals get an arrangement penalty. A TS's SIDT interaction datum is
+                # referenced to the SPECIFIC saddle it sat on (Ets), so its arrangement energy is
+                # absent from atom_centered+interaction and must be added back. An adsorbate central
+                # is referenced to its species-LOWEST energy (a per-coverage constant), so
+                # atom_centered+interaction already ranks its arrangements correctly -- adding a
+                # penalty would double-count. Confirmed empirically on a pre-penalty run: adsorbate
+                # centrals sit at penalty 0 at every coverage, only TS centrals drift.
                 try:
-                    # penalties: isolated-energy cost of each arrangement vs the lowest, so the MC
-                    # charges the central for hopping off its best site (get_cov_energies omits this)
-                    templates, penalties = get_central_templates(admol_name, is_ts_name, pynta_dir, metal, facet,
-                        sites, site_adjacency, nslab,
-                        allowed_structure_site_structures=allowed_structure_site_structures,
-                        energy_cutoff=adsorbate_site_energy_cutoff, return_penalties=True)
+                    if is_ts_name:
+                        templates, penalties = get_central_templates(admol_name, is_ts_name, pynta_dir, metal, facet,
+                            sites, site_adjacency, nslab,
+                            allowed_structure_site_structures=allowed_structure_site_structures,
+                            energy_cutoff=adsorbate_site_energy_cutoff, return_penalties=True)
+                    else:
+                        templates = get_central_templates(admol_name, is_ts_name, pynta_dir, metal, facet,
+                            sites, site_adjacency, nslab,
+                            allowed_structure_site_structures=allowed_structure_site_structures,
+                            energy_cutoff=adsorbate_site_energy_cutoff)
+                        penalties = []
                 except Exception:
                     templates, penalties = [], []
                 base_admols = [t_admol for _, t_admol in templates] or [admol]
                 base_admols_by_name[admol_name] = base_admols
-                # keep penalties aligned 1:1 with base_admols (the [admol] fallback has no penalty)
+                # zero penalties for adsorbate centrals (and the [admol] fallback); keep 1:1 with base_admols
                 base_penalties_by_name[admol_name] = penalties if len(penalties) == len(base_admols) else [0.0] * len(base_admols)
-                # surface the (otherwise silent) central-arrangement penalty so it is auditable in the
+                # surface the (otherwise silent) TS central penalty so it is auditable in the
                 # TrainCovdepModel firework log; base 0 = lowest-electronic arrangement (0.0), ZPE-incl.
                 _pen = base_penalties_by_name[admol_name]
-                if len(_pen) > 1:
+                if is_ts_name and len(_pen) > 1:
                     runlog.info("covdep MC central penalty %s: %d arrangements, [meV] = %s",
                                 admol_name, len(_pen), [round(p / EV_TO_JMOL * 1000.0) for p in _pen])
         elif not os.path.exists(os.path.join(path,"Configurations")):
