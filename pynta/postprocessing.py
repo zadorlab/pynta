@@ -2325,7 +2325,8 @@ def plot_config_energy_correction(config_name, coad_name, Ncoad_energy_dict, ts_
                                   slab, metal, facet, sites, site_adjacency, ad_energy_dict,
                                   MLsize, coad_nice_name, reactant_names=None, cmap=None, forward=True,
                                   plot_lowest_samples=True, visualize_lowest_samples=False,
-                                  write_lowest_samples=True, Ncoad_config_dict=None, tree_dict=None):
+                                  write_lowest_samples=True, Ncoad_config_dict=None, tree_dict=None,
+                                  ylim_int=None, ylim_tot=None):
     """Plot the per-iteration SIDT energy-correction curves for config_name in a coad_name environment,
     overlaying the lowest-energy computed sample at each coverage. This is the body of the covdep
     "analyze an individual configuration" notebook cell, moved here to keep the notebook short.
@@ -2476,6 +2477,16 @@ def plot_config_energy_correction(config_name, coad_name, Ncoad_energy_dict, ts_
     for ax in (ax_int, ax_tot):
         ax.set_xlabel(r"$\theta_{" + coad_nice_name + r"}$")
     fig.suptitle("Coverage dependence: " + name_label + " with " + coad_nice_name)
+    # optional y-limits: an early iteration's model can dive to huge negatives at high coverage and
+    # crush the sane lines into a sliver -- clip to keep them readable. Each accepts a scalar (bottom
+    # only, top autoscaled) or a (bottom, top) tuple where either may be None. None -> autoscale.
+    def _apply_ylim(ax, yl):
+        if yl is None:
+            return
+        ax.set_ylim(bottom=yl) if np.isscalar(yl) else ax.set_ylim(*yl)
+    _apply_ylim(ax_int, ylim_int)
+    _apply_ylim(ax_tot, ylim_tot)
+
     fig.tight_layout(rect=[0, 0, 1, 0.93])  # reserve top strip for suptitle above the 3-line titles
     plt.show()
 
