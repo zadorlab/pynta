@@ -1149,14 +1149,15 @@ class MolecularHFSP(OptimizationTask):
 def calculate_configruation_energies_firework(admol_name,tree_file,path,coadname,coad_stable_sites,Nocc_isolated,
                                               coadmol_E_dict,concern_energy_tol=None,out_path=None,parents=[],iter=0,ignore_errors=False,
                                               config_generation="enumerate",mc_kwargs=None,base_admols=None,coad_adjlist=None,
-                                              unstable_pairs_path=None,is_ts=False,max_coadsorbates=None,Ncoad=None,base_penalties=None):
+                                              unstable_pairs_path=None,is_ts=False,max_coadsorbates=None,Ncoad=None,base_penalties=None,
+                                              central_penalty_dict=None):
     # Ncoad=None -> compute all coverages in one task (enumerate, or MC without per-chain split);
     # Ncoad=<int> -> MC for that single coverage only (one firework per chain), files suffixed _N<Ncoad>
     d = {"admol_name": admol_name,"tree_file": tree_file,"path": path,"coadname": coadname,
          "coad_stable_sites": coad_stable_sites,"Nocc_isolated": Nocc_isolated,"coadmol_E_dict": coadmol_E_dict,
          "concern_energy_tol": concern_energy_tol,
          "config_generation": config_generation,"mc_kwargs": mc_kwargs,"base_admols": base_admols,
-         "base_penalties": base_penalties,
+         "base_penalties": base_penalties,"central_penalty_dict": central_penalty_dict,
          "coad_adjlist": coad_adjlist,"unstable_pairs_path": unstable_pairs_path,"is_ts": is_ts,
          "max_coadsorbates": max_coadsorbates,"Ncoad": Ncoad}
     t1 = CalculateConfigurationEnergiesTask(d)
@@ -1186,7 +1187,7 @@ def calculate_configruation_energies_firework(admol_name,tree_file,path,coadname
 @explicit_serialize
 class CalculateConfigurationEnergiesTask(FiretaskBase):
     required_params = ["admol_name","tree_file","path","coad_stable_sites","Nocc_isolated","coadmol_E_dict","coadname"]
-    optional_params = ["concern_energy_tol","ignore_errors","config_generation","mc_kwargs","base_admols","base_penalties","coad_adjlist","unstable_pairs_path","is_ts","max_coadsorbates","Ncoad"]
+    optional_params = ["concern_energy_tol","ignore_errors","config_generation","mc_kwargs","base_admols","base_penalties","central_penalty_dict","coad_adjlist","unstable_pairs_path","is_ts","max_coadsorbates","Ncoad"]
     def run_task(self, fw_spec):
         admol_name = self['admol_name']
         tree_file = self["tree_file"]
@@ -1232,8 +1233,13 @@ class CalculateConfigurationEnergiesTask(FiretaskBase):
                 with open(os.path.join(path,"Configurations",admol_name+"_"+coadname+".json"),'r') as f:
                     configs = [Molecule().from_adjacency_list(m,check_consistency=False) for m in json.load(f)]
 
+                # {central-arrangement-structure -> penalty[J/mol]} for the enumerative energy; None
+                # (or absent, for pre-fix fireworks) -> no central penalty, the old behavior
+                _cpd = self["central_penalty_dict"] if ("central_penalty_dict" in self.keys() and self["central_penalty_dict"]) else None
+                central_penalty_dict = ({Molecule().from_adjacency_list(k,check_consistency=False): v for k,v in _cpd.items()}
+                                        if _cpd else None)
                 Ncoad_energy_dict,Ncoad_config_dict,configs_of_concern_admol = get_cov_energies_configs_concern_tree(tree, configs, coad_stable_sites, Nocc_isolated, concern_energy_tol,
-                                                    coadmol_E_dict=coadmol_E_dict)
+                                                    coadmol_E_dict=coadmol_E_dict, central_penalty_dict=central_penalty_dict)
             with open("Ncoad_energy_"+admol_name+"_"+coadname+suf+".json",'w') as f:
                 json.dump(Ncoad_energy_dict,f)
             with open("Ncoad_config_"+admol_name+"_"+coadname+suf+".json",'w') as f:
@@ -1669,11 +1675,37 @@ class TrainCovdepModelTask(FiretaskBase):
                 st = admol_name_structure_dict[admol_name]
                 Nocc_isolated = len([a for a in st.atoms if a.is_surface_site() and any(not a2.is_surface_site() for a2 in a.bonds.keys())])
                 is_ts = any(bd.get_order_str() == 'R' for bd in st.get_all_edges())
+                # enumerative energy: a config doesn't record its base arrangement, so pass a
+                # {central-arrangement-structure -> penalty[J/mol]} lookup that get_central_penalty
+                # matches each config's central against (MC uses the base_penalties list instead).
+                # ONLY for TS centrals: a TS is referenced to its specific saddle so the arrangement
+                # energy is missing from atom_centered+interaction; an adsorbate central is referenced
+                # to its species-lowest (a per-coverage constant) so it is already ranked correctly and
+                # a penalty would double-count (verified empirically). Mirrors the MC-side TS-only gate.
+                central_penalty_dict = None
+                if config_generation != "mc" and is_ts:
+                    try:
+                        _tmpl, _pens = get_central_templates(admol_name, is_ts, pynta_dir, metal, facet,
+                            sites, site_adjacency, nslab,
+                            allowed_structure_site_structures=allowed_structure_site_structures,
+                            energy_cutoff=adsorbate_site_energy_cutoff, return_penalties=True)
+                        central_penalty_dict = {}
+                        for (_a, _bm), _p in zip(_tmpl, _pens):
+                            _cs = split_adsorbed_structures(_bm, clear_site_info=False)
+                            if _cs:
+                                central_penalty_dict[_cs[0].to_adjacency_list()] = _p
+                        if len(central_penalty_dict) > 1:
+                            runlog.info("covdep enum central penalty %s: %d arrangements, [meV] = %s",
+                                        admol_name, len(central_penalty_dict),
+                                        [round(v / EV_TO_JMOL * 1000.0) for v in central_penalty_dict.values()])
+                    except Exception:
+                        central_penalty_dict = None
                 fw = calculate_configruation_energies_firework(admol_name,tree_file,path,coadname,coad_stable_sites[coadname],Nocc_isolated,
                                                 {k.to_adjacency_list(): v for k,v in coadmol_E_dicts[coadname].items()},concern_energy_tol=concern_energy_tol,parents=[],iter=iter,ignore_errors=ignore_errors,
                                                 config_generation=config_generation,mc_kwargs=mc_kwargs,
                                                 base_admols=[b.to_adjacency_list() for b in base_admols_by_name.get(admol_name,[])],
                                                 base_penalties=base_penalties_by_name.get(admol_name,[]),
+                                                central_penalty_dict=central_penalty_dict,
                                                 coad_adjlist=coad_simples[coadname].to_adjacency_list(),
                                                 unstable_pairs_path=unstable_pairs_path,is_ts=is_ts,max_coadsorbates=max_coadsorbates)
                 config_E_fws.append(fw)

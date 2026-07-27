@@ -1949,8 +1949,28 @@ def evaluate_from_datums(config,energy_datums):
     else:
         return None
 
-def get_cov_energies_configs_concern_tree(tree_interaction_regressor, configs, coad_stable_sites, Ncoad_isolated, concern_energy_tol=None, tree_atom_regressor=None, coadmol_E_dict=None, 
-                     stability_datums=None):
+def get_central_penalty(m, central_penalty_dict):
+    """Isolated-energy penalty [J/mol] for m's central arrangement (0.0 if none matches).
+
+    The enumerative analogue of the coverage-MC base_penalties (see coverage_mc.CanonicalCoverageMC):
+    the SIDT interaction datum is referenced to the central at its OWN arrangement, so the central's
+    arrangement-dependent isolated energy is absent from both the interaction tree and the coadsorbate
+    atom-centered term and must be added back here. central_penalty_dict maps each central arrangement
+    (the isolated central's split 2D structure) -> penalty [J/mol], referenced to the lowest-electronic
+    arrangement (penalty 0). A config's central is identified by isomorphism against those structures;
+    arrangements are unique-by-graph by construction (get_central_templates dedups them), so the match
+    is unambiguous. Coadsorbate split structures don't match any central-arrangement key unless the
+    central IS the coadsorbate species (self-coadsorption), which this does not special-case."""
+    if not central_penalty_dict:
+        return 0.0
+    for struct in split_adsorbed_structures(m, clear_site_info=False):
+        for central_struct, pen in central_penalty_dict.items():
+            if struct.is_isomorphic(central_struct, save_order=True):
+                return pen
+    return 0.0
+
+def get_cov_energies_configs_concern_tree(tree_interaction_regressor, configs, coad_stable_sites, Ncoad_isolated, concern_energy_tol=None, tree_atom_regressor=None, coadmol_E_dict=None,
+                     stability_datums=None, central_penalty_dict=None):
     Ncoad_energy_dict = dict()
     Ncoad_config_dict = dict()
     config_to_Eunctr = dict()
@@ -1976,6 +1996,12 @@ def get_cov_energies_configs_concern_tree(tree_interaction_regressor, configs, c
         else:
             raise ValueError
 
+        # central-arrangement penalty: charge the central for sitting on a non-lowest arrangement
+        # (the coverage MC does this via base_penalties; without it the enumerative minimum can pick
+        # a config whose central is on a high-energy arrangement just because the coadsorbates pack
+        # slightly better). central_penalty_dict=None -> no term (pre-fix behavior).
+        E += get_central_penalty(m, central_penalty_dict)
+
         config_to_Eunctr[i] = (m,E,std,tr)
         
         if Ncoad not in Ncoad_energy_dict.keys():
@@ -1998,8 +2024,8 @@ def get_cov_energies_configs_concern_tree(tree_interaction_regressor, configs, c
     
     return Ncoad_energy_dict,Ncoad_config_dict,configs_of_concern
     
-def get_cov_energies(tree_interaction_regressor, configs, coad_stable_sites, Ncoad_isolated, tree_atom_regressor=None, coadmol_E_dict=None, 
-                     stability_datums=None):
+def get_cov_energies(tree_interaction_regressor, configs, coad_stable_sites, Ncoad_isolated, tree_atom_regressor=None, coadmol_E_dict=None,
+                     stability_datums=None, central_penalty_dict=None):
     Ncoad_energy_dict = dict()
     Ncoad_config_dict = dict()
     Nempty = len([a for a in configs[0].atoms if a.is_surface_site() and (a.site,a.morphology) in coad_stable_sites])
@@ -2012,6 +2038,7 @@ def get_cov_energies(tree_interaction_regressor, configs, coad_stable_sites, Nco
             E = get_atom_centered_correction(m,coadmol_E_dict)*EV_TO_JMOL + tree_interaction_regressor.evaluate(m)
         else:
             raise ValueError
+        E += get_central_penalty(m, central_penalty_dict)  # non-lowest central arrangement penalty (0 if dict is None)
         if Ncoad not in Ncoad_energy_dict.keys():
             if (not stability_datums) or check_stable(m,stability_datums):
                 Ncoad_energy_dict[Ncoad] = E
