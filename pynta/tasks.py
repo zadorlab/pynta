@@ -1663,9 +1663,14 @@ class TrainCovdepModelTask(FiretaskBase):
             
         Nconfigs = len(admol_name_structure_dict)
         Ncoads = 1
+        _t_fit = time.time()
         tree = train_sidt_cov_dep_regressor(pairs_datums,sampling_datums,r_site=r_site,r_morph=r_morph,
                             r_atoms=r_atoms,r_un=r_un,r_lone_pairs=r_lone_pairs,node_fract_training=0.7)
-        
+        # dedicated training timer -- the "spawned ... in X s" line lumps setup+read+train+spawn, so
+        # this breaks out the SIDT fit itself (the dominant, data-scaling cost) with node/datum counts
+        runlog.info("covdep iter %d: trained SIDT: %d nodes from %d pairs + %d sample datums in %.1f s",
+                    iter, len(tree.nodes), len(pairs_datums), len(sampling_datums), time.time()-_t_fit)
+
         tree_file = os.path.join(path,"Iterations",str(iter),"regressor.json")
         write_nodes(tree,tree_file)
         
