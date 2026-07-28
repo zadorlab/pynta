@@ -2530,6 +2530,88 @@ def plot_config_energy_correction(config_name, coad_name, Ncoad_energy_dict, ts_
     return {"interaction": best_int, "total": best_tot}
 
 
+def plot_firework_timings(launchpad_file="local_launchpad.yaml", bulk_kinds=("weakopt", "opt", "vib"),
+                          list_max=12, bins=20):
+    """Summarize FireWorks runtimes for a run, straight from the LaunchPad (`l.runtime_secs`) -- no
+    log files. Run it where the launchpad DB is reachable (on the cluster, or through a tunnel).
+
+    Fireworks are grouped by "kind" = the name with its trailing iteration/index stripped
+    (`Training_Model_0/1/2` -> `Training_Model`, `<ad>_<coad>_energies0/1/...` -> one kind per
+    central, etc.). Two matplotlib figures:
+      * PIPELINE kinds (few instances -- training / select / config-energy): grouped bar chart,
+        one bar per firework in HOURS, grouped and colored by kind, x-labeled by iteration index.
+      * BULK kinds (many instances -- names containing any of `bulk_kinds`: opt / weakopt / vib):
+        one histogram subplot per kind, runtime in MINUTES.
+    `list_max` caps how many bars a pipeline kind may contribute before it's treated as bulk-like
+    (histogrammed instead). Returns {kind: [(fw_name, runtime_s), ...]}.
+    """
+    import re
+    from collections import defaultdict
+    from fireworks import LaunchPad
+
+    lp = LaunchPad.from_file(launchpad_file)
+    groups = defaultdict(list)
+    for fid in lp.get_fw_ids({"state": "COMPLETED"}):
+        fw = lp.get_fw_by_id(fid)
+        rt = max((l.runtime_secs or 0.0 for l in fw.launches), default=0.0)
+        nm = fw.name or ("fw" + str(fid))
+        groups[re.sub(r'[_\s]*\d+$', '', nm).strip() or nm].append((nm, rt))
+
+    def _tint(s):
+        m = re.search(r'(\d+)\s*$', s)
+        return int(m.group(1)) if m else -1
+
+    def _is_bulk(kind, members):
+        return any(b in kind.lower() for b in bulk_kinds) or len(members) > list_max
+
+    pipeline = {k: sorted(v, key=lambda x: _tint(x[0])) for k, v in groups.items() if not _is_bulk(k, v)}
+    bulk = {k: [t for _, t in v] for k, v in groups.items() if _is_bulk(k, v)}
+
+    # ---- pipeline: grouped bar chart in hours ----
+    if pipeline:
+        order = sorted(pipeline, key=lambda k: -sum(t for _, t in pipeline[k]))
+        nbars = sum(len(pipeline[k]) for k in order)
+        fig, ax = plt.subplots(figsize=(max(8.0, nbars * 0.45), 4.6))
+        cmap = plt.get_cmap("tab10")
+        x, ticks, ticklabels = 0, [], []
+        for ci, k in enumerate(order):
+            items = pipeline[k]
+            xs = np.arange(x, x + len(items))
+            ax.bar(xs, [t / 3600.0 for _, t in items], color=cmap(ci % 10), label=k)
+            for xi, (nm, _) in zip(xs, items):
+                ticks.append(xi)
+                ticklabels.append(str(_tint(nm)) if _tint(nm) >= 0 else nm)
+            x += len(items) + 1
+        ax.set_xticks(ticks)
+        ax.set_xticklabels(ticklabels)
+        ax.set_ylabel("runtime [h]")
+        ax.set_xlabel("iteration (grouped by kind)")
+        ax.set_title("Pipeline firework runtimes")
+        ax.legend(fontsize=8, loc="best")
+        plt.tight_layout()
+        plt.show()
+
+    # ---- bulk: one histogram per kind, minutes ----
+    if bulk:
+        order = sorted(bulk, key=lambda k: -sum(bulk[k]))
+        ncol = min(3, len(order))
+        nrow = int(np.ceil(len(order) / ncol))
+        fig, axes = plt.subplots(nrow, ncol, figsize=(5.0 * ncol, 3.2 * nrow), squeeze=False)
+        for i, k in enumerate(order):
+            ax = axes[i // ncol][i % ncol]
+            mins = np.array(bulk[k]) / 60.0
+            ax.hist(mins, bins=bins, color="steelblue", edgecolor="white")
+            ax.set_title("{}  (n={}, tot {:.1f} h)".format(k, len(mins), mins.sum() / 60.0), fontsize=9)
+            ax.set_xlabel("runtime [min]")
+            ax.set_ylabel("count")
+        for j in range(len(order), nrow * ncol):
+            axes[j // ncol][j % ncol].axis("off")
+        plt.tight_layout()
+        plt.show()
+
+    return dict(groups)
+
+
 def write_all_kinetics(path, metal, facet, slab, sites, site_adjacency,
                        nslab, site_density, c_ref=0.0, o_ref=0.0,
                        h_ref=0.0, n_ref=0.0, log_name="rate_coefficients.log",
