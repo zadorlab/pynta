@@ -6,7 +6,6 @@ from ase.visualize import view
 from ase.neighborlist import natural_cutoffs
 from acat.adsorption_sites import SlabAdsorptionSites
 from pynta.utils import get_unique_sym, get_occupied_sites, sites_match, SiteOccupationException
-from pynta.runlog import log as runlog  # curated pynta run log (PYNTA_LOG_FILE); separate from FW chatter
 from pynta.mol import *
 from pynta.geometricanalysis import *
 from pysidt import *
@@ -1790,7 +1789,7 @@ def _central_arrangement_penalties(templates, xyz_paths=None, nslab=None, centra
                                   nslab).get_zero_point_energy()
                   for e, xyz in zip(es, xyz_paths)]
         except Exception as exc:
-            runlog.warning("central penalty %s: ZPE unavailable (%s); using potential energy only",
+            logging.warning("central penalty %s: ZPE unavailable (%s); using potential energy only",
                            central_name if central_name is not None else "?", exc)
     e0 = es[0]
     return [(e - e0) * EV_TO_JMOL for e in es]
