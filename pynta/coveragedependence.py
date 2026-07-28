@@ -1477,7 +1477,13 @@ def train_sidt_cov_dep_regressor(pairs_datums,sampling_datums,r_site=None,r_morp
                                                    fract_nodes_expand_per_iter=0.025,
                                                    iter_max=2,
                                                    iter_item_cap=100,
-                                                   weigh_node_selection_by_occurrence=False,
+                                                   # True (= PySIDT's own default) weights node-selection by
+                                                   # uncertainty*len(items), so high-occurrence shallow nodes get
+                                                   # refined. False left the nearest-neighbor bucket Root_0 (fires
+                                                   # in ~40% of TS samples, true interaction -0.07..+0.49 eV) an
+                                                   # unrefined leaf at +0.45 eV -> a systematic ~+500 meV TS
+                                                   # over-prediction band. See covdep-dft / TS-parity analysis.
+                                                   weigh_node_selection_by_occurrence=True,
                                                   )
     except: #pysidt 1.0.0
         treepair = MultiEvalSubgraphIsomorphicDecisionTreeRegressor([adsorbate_interaction_decomposition],
