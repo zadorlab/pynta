@@ -1349,7 +1349,8 @@ def train_covdep_model_firework(path,admol_name_path_dict,admol_name_structure_d
                                 fmaxopt, parents=[],Ncalc_per_iter=6,iter=0,max_iters=6,concern_energy_tol=None,
                                 ignore_errors=False, max_coadsorbates=None,sidt_isolated_delta_model=None,
                                 sidt_covdep_delta_model=None,ts_frac=None,adsorbate_site_energy_cutoff=0.0,
-                                config_generation="enumerate",mc_kwargs=None,sample_opt_time_limit_hrs=None):
+                                config_generation="enumerate",mc_kwargs=None,sample_opt_time_limit_hrs=None,
+                                selection_method="greedy",stratified_sigma_frac=0.5):
     d = {"path": path, "admol_name_path_dict": admol_name_path_dict, "admol_name_structure_dict": {k : v.to_adjacency_list() for k,v in admol_name_structure_dict.items()},
          "sites": sites, "site_adjacency": {str(k):v for k,v in site_adjacency.items()}, "pynta_dir": pynta_dir, "metal": metal, "facet": facet, "slab_path": slab_path,
          "calculation_directories": calculation_directories, "coadnames": coadnames, "coad_stable_sites": coad_stable_sites,
@@ -1358,7 +1359,8 @@ def train_covdep_model_firework(path,admol_name_path_dict,admol_name_structure_d
         "sidt_isolated_delta_model": sidt_isolated_delta_model, "sidt_covdep_delta_model": sidt_covdep_delta_model, "ts_frac": ts_frac,
         "adsorbate_site_energy_cutoff": adsorbate_site_energy_cutoff,
         "config_generation": config_generation, "mc_kwargs": mc_kwargs,
-        "sample_opt_time_limit_hrs": sample_opt_time_limit_hrs}
+        "sample_opt_time_limit_hrs": sample_opt_time_limit_hrs,
+        "selection_method": selection_method, "stratified_sigma_frac": stratified_sigma_frac}
     t1 = TrainCovdepModelTask(d)
     return Firework([t1],parents=parents,name="Training Model "+str(iter),spec={"_allow_fizzled_parents":True, "_priority": 4})
 
@@ -1367,7 +1369,7 @@ class TrainCovdepModelTask(FiretaskBase):
     required_params = ["path","admol_name_path_dict","admol_name_structure_dict","sites","site_adjacency", "pynta_dir", "metal", "facet",
                        "slab_path", "calculation_directories", "coadnames", "coad_stable_sites", "Ncalc_per_iter", "iter", "max_iters", "software", 
                        "software_kwargs", "software_kwargs_TS", "freeze_ind", "fmaxopt"]
-    optional_params = ["concern_energy_tol","ignore_errors", "max_coadsorbates","sidt_isolated_delta_model","sidt_covdep_delta_model","ts_frac","adsorbate_site_energy_cutoff","config_generation","mc_kwargs","sample_opt_time_limit_hrs"]
+    optional_params = ["concern_energy_tol","ignore_errors", "max_coadsorbates","sidt_isolated_delta_model","sidt_covdep_delta_model","ts_frac","adsorbate_site_energy_cutoff","config_generation","mc_kwargs","sample_opt_time_limit_hrs","selection_method","stratified_sigma_frac"]
     def run_task(self, fw_spec):
         path = self["path"]
         admol_name_path_dict = self["admol_name_path_dict"]
@@ -1717,13 +1719,16 @@ class TrainCovdepModelTask(FiretaskBase):
         ts_frac = self["ts_frac"] if "ts_frac" in self.keys() else None
         sidt_isolated_delta_model_param = self["sidt_isolated_delta_model"] if "sidt_isolated_delta_model" in self.keys() else None
         sidt_covdep_delta_model_param = self["sidt_covdep_delta_model"] if "sidt_covdep_delta_model" in self.keys() else None
+        selection_method_param = self["selection_method"] if "selection_method" in self.keys() else "greedy"
+        stratified_sigma_frac_param = self["stratified_sigma_frac"] if "stratified_sigma_frac" in self.keys() else 0.5
         scfw = select_calculations_firework(path,admol_name_path_dict,admol_name_structure_dict,sites,site_adjacency,
                             pynta_dir, metal, facet, slab_path, calculation_directories, coadnames,
                             coad_stable_sites, software, software_kwargs, software_kwargs_TS, freeze_ind, fmaxopt, parents=config_E_fws,Ncalc_per_iter=Ncalc_per_iter,iter=iter,
                             max_iters=max_iters,concern_energy_tol=concern_energy_tol,ignore_errors=ignore_errors,ts_frac=ts_frac,
                             max_coadsorbates=max_coadsorbates,sidt_isolated_delta_model=sidt_isolated_delta_model_param,sidt_covdep_delta_model=sidt_covdep_delta_model_param,
                             config_generation=config_generation,mc_kwargs=mc_kwargs,
-                            sample_opt_time_limit_hrs=sample_opt_time_limit_hrs)
+                            sample_opt_time_limit_hrs=sample_opt_time_limit_hrs,
+                            selection_method=selection_method_param,stratified_sigma_frac=stratified_sigma_frac_param)
 
         newwf = Workflow(config_E_fws+[scfw],name="Select Calculations "+str(iter))
 
@@ -1733,7 +1738,7 @@ class TrainCovdepModelTask(FiretaskBase):
 
 def select_calculations_firework(path,admol_name_path_dict,admol_name_structure_dict,sites,site_adjacency,
                                 pynta_dir, metal, facet, slab_path, calculation_directories, coadnames,
-                                coad_stable_sites, software, software_kwargs, software_kwargs_TS, freeze_ind, fmaxopt, parents=[],Ncalc_per_iter=6,iter=0,max_iters=6,concern_energy_tol=None,ignore_errors=False,ts_frac=None,max_coadsorbates=None,sidt_isolated_delta_model=None,sidt_covdep_delta_model=None,config_generation="enumerate",mc_kwargs=None,sample_opt_time_limit_hrs=None):
+                                coad_stable_sites, software, software_kwargs, software_kwargs_TS, freeze_ind, fmaxopt, parents=[],Ncalc_per_iter=6,iter=0,max_iters=6,concern_energy_tol=None,ignore_errors=False,ts_frac=None,max_coadsorbates=None,sidt_isolated_delta_model=None,sidt_covdep_delta_model=None,config_generation="enumerate",mc_kwargs=None,sample_opt_time_limit_hrs=None,selection_method="greedy",stratified_sigma_frac=0.5):
     d = {"path": path,"admol_name_path_dict": admol_name_path_dict,"admol_name_structure_dict": {k:v.to_adjacency_list() for k,v in admol_name_structure_dict.items()},
          "sites": sites, "site_adjacency": {str(k): v for k,v in site_adjacency.items()}, "pynta_dir": pynta_dir, "metal": metal, "facet": facet, "slab_path": slab_path,
          "calculation_directories": calculation_directories, "coadnames": coadnames, "coad_stable_sites": coad_stable_sites,
@@ -1742,7 +1747,8 @@ def select_calculations_firework(path,admol_name_path_dict,admol_name_structure_
                        "fmaxopt": fmaxopt, "concern_energy_tol": concern_energy_tol, "ignore_errors": ignore_errors, "ts_frac": ts_frac,
                        "max_coadsorbates": max_coadsorbates, "sidt_isolated_delta_model": sidt_isolated_delta_model, "sidt_covdep_delta_model": sidt_covdep_delta_model,
                        "config_generation": config_generation, "mc_kwargs": mc_kwargs,
-                       "sample_opt_time_limit_hrs": sample_opt_time_limit_hrs}
+                       "sample_opt_time_limit_hrs": sample_opt_time_limit_hrs,
+                       "selection_method": selection_method, "stratified_sigma_frac": stratified_sigma_frac}
     t1 = SelectCalculationsTask(d)
     return Firework([t1],parents=parents,name="Selecting Calculations "+str(iter),spec={"_priority": 4})
 
@@ -1751,7 +1757,7 @@ class SelectCalculationsTask(FiretaskBase):
     required_params = ["path","admol_name_path_dict","admol_name_structure_dict","sites","site_adjacency", "pynta_dir", "metal", "facet",
                        "slab_path", "calculation_directories", "coadnames", "coad_stable_sites", "iter", "software", "max_iters",
                        "software_kwargs", "software_kwargs_TS", "freeze_ind", "fmaxopt"]
-    optional_params = ["concern_energy_tol","ignore_errors","ts_frac","max_coadsorbates","sidt_isolated_delta_model","sidt_covdep_delta_model","config_generation","mc_kwargs","sample_opt_time_limit_hrs"]
+    optional_params = ["concern_energy_tol","ignore_errors","ts_frac","max_coadsorbates","sidt_isolated_delta_model","sidt_covdep_delta_model","config_generation","mc_kwargs","sample_opt_time_limit_hrs","selection_method","stratified_sigma_frac"]
     def run_task(self, fw_spec):
         path = self["path"]
         admol_name_path_dict = self["admol_name_path_dict"]
@@ -1862,8 +1868,10 @@ class SelectCalculationsTask(FiretaskBase):
         
         
         ts_frac = self["ts_frac"] if "ts_frac" in self.keys() else None
+        selection_method = self["selection_method"] if "selection_method" in self.keys() else "greedy"
+        stratified_sigma_frac = self["stratified_sigma_frac"] if "stratified_sigma_frac" in self.keys() else 0.5
         _t_sel = time.time()
-        configs_for_calculation,coad_admol_to_config_for_calculation = get_configs_for_calculation(configs_of_concern_by_coad_admol,Ncoad_energy_by_coad_admol,admol_name_structure_dict,coadnames,computed_configs,tree,Ncalc_per_iter,ts_frac=ts_frac)
+        configs_for_calculation,coad_admol_to_config_for_calculation = get_configs_for_calculation(configs_of_concern_by_coad_admol,Ncoad_energy_by_coad_admol,admol_name_structure_dict,coadnames,computed_configs,tree,Ncalc_per_iter,ts_frac=ts_frac,selection_method=selection_method,stratified_sigma_frac=stratified_sigma_frac)
         logging.info("covdep select: get_configs_for_calculation selected %d configs in %.1f s", len(configs_for_calculation), time.time()-_t_sel)
 
         os.makedirs(os.path.join(path,"Iterations",str(iter),"Samples"))
@@ -2002,7 +2010,8 @@ class SelectCalculationsTask(FiretaskBase):
                             Ncalc_per_iter=Ncalc_per_iter,iter=iter+1,max_iters=max_iters,concern_energy_tol=concern_energy_tol,ignore_errors=ignore_errors,ts_frac=ts_frac,
                             max_coadsorbates=max_coadsorbates_next,sidt_isolated_delta_model=sidt_isolated_delta_model_next,sidt_covdep_delta_model=sidt_covdep_delta_model_next,
                             config_generation=config_generation_next,mc_kwargs=mc_kwargs_next,
-                            sample_opt_time_limit_hrs=sample_opt_time_limit_hrs)
+                            sample_opt_time_limit_hrs=sample_opt_time_limit_hrs,
+                            selection_method=selection_method,stratified_sigma_frac=stratified_sigma_frac)
         newwf = Workflow(sample_fws+[tfw],name="Train Iteration "+str(iter+1))
         
         return FWAction(detours=newwf)

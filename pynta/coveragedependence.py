@@ -2435,10 +2435,114 @@ def process_calculation(d,ad_energy_dict,slab,metal,facet,sites,site_adjacency,p
     
     return datum_E,datums_stability
 
+def _select_configs_stratified(configs_of_concern, config_meta, config_keys, is_ts_map,
+                               already_computed, Ncalc_per_iter, ts_quota, non_ts_quota,
+                               sigma_frac):
+    """Stratified per-coverage sampler -- an alternative to the greedy group-coverage optimizer.
+
+    The greedy selector optimizes coverage of the pairwise-decomposition groups: an objective that
+    lives in the same two-body basis as the model and is therefore blind to the many-body error that
+    actually needs sampling. It structurally over-represents ubiquitous far-apart interactions and
+    starves the crowded high-coverage configs. This sampler instead buckets candidates by coverage
+    level (number of coadsorbates added to the isolated central) and fills a per-level share by
+    round-robin, so every coverage level -- including the dense ones -- is guaranteed representation
+    regardless of whether its interaction pieces are "already covered" by cheaper low-coverage samples.
+
+    Within a level, picks blend lowest excess-energy ``E - Emin`` (exploit; the physically relevant
+    low-lying configs) with highest predicted ``sigma`` (explore), controlled by ``sigma_frac``
+    (0 = pure lowest-E, 1 = pure highest-sigma). When ``ts_quota``/``non_ts_quota`` are set (ts_frac),
+    TS and non-TS configs are stratified independently and any unfilled class spills into the other so
+    the full budget is used. Respects ``already_computed`` and dedups selections by isomorphism.
+    """
+    from collections import defaultdict
+    buckets = defaultdict(list)  # (is_ts, coverage_level) -> list of candidate indices j
+    for j, v in enumerate(configs_of_concern):
+        if j in already_computed:
+            continue
+        buckets[(is_ts_map[id(v[0])], config_meta[j][0])].append(j)
+
+    def _ranked(js):
+        # interleave a lowest-excess-E ordering and a highest-sigma ordering per sigma_frac
+        by_E = sorted(js, key=lambda j: configs_of_concern[j][1] - config_meta[j][1])  # E - Emin, ascending
+        by_sig = sorted(js, key=lambda j: -(configs_of_concern[j][3] or 0.0))          # sigma, descending
+        order, seen = [], set()
+        ei = si = n_sig = 0
+        while len(order) < len(js):
+            picked = None
+            if n_sig < round(sigma_frac * (len(order) + 1)):  # take an explore (high-sigma) pick
+                while si < len(by_sig):
+                    c = by_sig[si]; si += 1
+                    if c not in seen:
+                        picked = c; n_sig += 1; break
+            if picked is None:  # take an exploit (low-E) pick
+                while ei < len(by_E):
+                    c = by_E[ei]; ei += 1
+                    if c not in seen:
+                        picked = c; break
+            if picked is None:  # low-E side exhausted -> take whatever high-sigma remains
+                while si < len(by_sig):
+                    c = by_sig[si]; si += 1
+                    if c not in seen:
+                        picked = c; n_sig += 1; break
+            if picked is None:
+                break
+            seen.add(picked); order.append(picked)
+        return order
+
+    ranked = {k: _ranked(js) for k, js in buckets.items()}
+    positions = {k: 0 for k in ranked}
+
+    selected = []
+    selected_by_key = defaultdict(list)
+
+    def _try_add(j):
+        config = configs_of_concern[j][0]
+        key = config_keys[id(config)]
+        for c in selected_by_key[key]:  # skip if isomorphic to an already-selected config
+            if config.is_isomorphic(c, save_order=True):
+                return False
+        selected.append(config)
+        selected_by_key[key].append(config)
+        return True
+
+    def _fill(bucket_keys, quota):
+        bucket_keys = sorted(bucket_keys, key=lambda k: k[1])  # low coverage -> high coverage
+        added = 0
+        progressing = True
+        while added < quota and progressing:  # round-robin: one pick per bucket per sweep
+            progressing = False
+            for k in bucket_keys:
+                if added >= quota:
+                    break
+                q = ranked[k]
+                p = positions[k]
+                while p < len(q):
+                    j = q[p]; p += 1
+                    if _try_add(j):
+                        added += 1
+                        progressing = True
+                        break
+                positions[k] = p
+        return added
+
+    if ts_quota is not None:
+        _fill([k for k in ranked if k[0]], ts_quota)          # TS configs
+        _fill([k for k in ranked if not k[0]], non_ts_quota)  # non-TS configs
+        deficit = Ncalc_per_iter - len(selected)
+        if deficit > 0:  # a class ran short -> spend the remaining budget anywhere
+            _fill(list(ranked.keys()), deficit)
+    else:
+        _fill(list(ranked.keys()), Ncalc_per_iter)
+
+    return selected
+
+
 def get_configs_for_calculation(configs_of_concern_by_coad_admol,Ncoad_energy_by_coad_admol,admol_name_structure_dict,coadnames,
-                                computed_configs,tree_regressor,Ncalc_per_iter,T=5000.0,calculation_selection_iterations=10,ts_frac=None):
+                                computed_configs,tree_regressor,Ncalc_per_iter,T=5000.0,calculation_selection_iterations=10,ts_frac=None,
+                                selection_method="greedy",stratified_sigma_frac=0.5):
     group_to_occurence = dict()
     configs_of_concern = []
+    config_meta = []  # parallel to configs_of_concern: (coverage_level, Emin) for stratified selection
     for coadname in coadnames:
         for admol_name in configs_of_concern_by_coad_admol[coadname].keys():
             admol = admol_name_structure_dict[admol_name]
@@ -2454,6 +2558,7 @@ def get_configs_for_calculation(configs_of_concern_by_coad_admol,Ncoad_energy_by
                 Nocc = len([a for a in m.atoms if a.is_surface_site() and any(not a2.is_surface_site() for a2 in a.bonds.keys())])
                 configs_of_concern.append(v)
                 Emin = Ncoad_energy_by_coad_admol[coadname][admol_name][Nocc-Nocc_isolated]
+                config_meta.append((Nocc-Nocc_isolated, Emin))
                 for grp in grps:
                     if grp in group_to_occurence_admol:
                         group_to_occurence_admol[grp] += np.exp(-(E-Emin)/(R*T))
@@ -2474,36 +2579,13 @@ def get_configs_for_calculation(configs_of_concern_by_coad_admol,Ncoad_energy_by
     logging.info("get_configs_for_calculation: %d candidate configs, %d computed configs, %d groups",
                  len(configs_of_concern), len(computed_configs), len(concern_groups))
     _t = time.time()
-    group_unc = np.array([tree_regressor.nodes[g].rule.uncertainty for g in concern_groups])
-    group_to_weight = np.array([group_to_occurence[g] for g in concern_groups]) * group_unc
 
-    # index groups so each config's group counts come from a single Counter pass over its trace
-    # (instead of tr.count(g) for every group -> O(#groups * len(tr)) per config)
-    group_pos = {g: i for i, g in enumerate(concern_groups)}
-    config_to_group_fract = dict()
-    for j,v in enumerate(configs_of_concern):
-        config,E,tr,std = v
-        config_group_unc = np.zeros(len(concern_groups))
-        for g, n in Counter(tr).items():
-            pos = group_pos.get(g)
-            if pos is not None:
-                config_group_unc[pos] = n
-        config_group_unc *= group_unc
-        s = config_group_unc.sum()
-        config_to_group_fract[j] = config_group_unc if s == 0 else config_group_unc/s
-            
-    
-    logging.info("  group-fraction setup: %.1f s", time.time()-_t); _t = time.time()
-    configs_for_calculation = []
-    group_fract_for_calculation = []
-    maxval = 0.0
-    config_list = [x[0] for x in configs_of_concern]
-
-    # --- precompute cheap invariants so the greedy loop avoids O(N^2) scans and needless isomorphism.
+    # --- shared precompute (used by both greedy and stratified selection).
     # Two graphs can be isomorphic only if they share the same atom multiset, so is_isomorphic is only
     # ever attempted within a composition bucket (same central + #coadsorbates + elements); configs of a
     # different composition are skipped outright. Also: "already computed?" depends only on the fixed
-    # computed_configs, so it is evaluated ONCE here instead of for every candidate on all 10 passes. ---
+    # computed_configs, so it is evaluated ONCE here instead of for every candidate on every pass. ---
+    config_list = [x[0] for x in configs_of_concern]
     def _comp_key(m):
         return tuple(sorted(a.element.symbol for a in m.atoms))
     is_ts_map = {id(c): any(bd.get_order_str() == 'R' for bd in c.get_all_edges()) for c in config_list}
@@ -2525,81 +2607,120 @@ def get_configs_for_calculation(configs_of_concern_by_coad_admol,Ncoad_energy_by
     logging.info("  already-computed precompute: %d/%d candidates already computed, %d composition buckets, %.1f s",
                  len(already_computed), len(config_list), len(computed_by_key), time.time()-_t); _t = time.time()
 
-    #sort lower numbers of coadsorbates first, larger numbers of coadsorbates later
-    bond_count_key = lambda x: len([bd for bd in x.get_all_edges() if (bd.atom1.is_surface_site() and not bd.atom2.is_surface_site()) or (bd.atom2.is_surface_site() and not bd.atom1.is_surface_site())])
-    sorted_config_list = sorted(config_list[:], key=bond_count_key)
-
     if ts_frac is not None:
         ts_quota = int(round(Ncalc_per_iter * ts_frac))
         non_ts_quota = Ncalc_per_iter - ts_quota
-    ts_count = 0
-    non_ts_count = 0
+    else:
+        ts_quota = None
+        non_ts_quota = None
 
-    selected_by_key = dict()  # composition key -> list of currently-selected configs (for dup check)
-    selected_keys = []        # parallel to configs_for_calculation
+    if selection_method == "stratified":
+        # Per-coverage stratified sampler: guarantees every coverage level (including the crowded ones
+        # the greedy group-coverage objective starves) gets representation, instead of optimizing a
+        # two-body objective that is blind to the many-body error it needs to sample. See helper.
+        configs_for_calculation = _select_configs_stratified(
+            configs_of_concern, config_meta, config_keys, is_ts_map, already_computed,
+            Ncalc_per_iter, ts_quota, non_ts_quota, stratified_sigma_frac)
+        logging.info("  stratified selection (sigma_frac=%.2f): %d configs selected, %.1f s",
+                     stratified_sigma_frac, len(configs_for_calculation), time.time()-_t)
+    elif selection_method == "greedy":
+        group_unc = np.array([tree_regressor.nodes[g].rule.uncertainty for g in concern_groups])
+        group_to_weight = np.array([group_to_occurence[g] for g in concern_groups]) * group_unc
 
-    def _bucket_remove(key, cfg):  # identity-based removal (avoid Molecule.__eq__ semantics)
-        b = selected_by_key.get(key, [])
-        for bi, bc in enumerate(b):
-            if bc is cfg:
-                b.pop(bi)
-                return
+        # index groups so each config's group counts come from a single Counter pass over its trace
+        # (instead of tr.count(g) for every group -> O(#groups * len(tr)) per config)
+        group_pos = {g: i for i, g in enumerate(concern_groups)}
+        config_to_group_fract = dict()
+        for j,v in enumerate(configs_of_concern):
+            config,E,tr,std = v
+            config_group_unc = np.zeros(len(concern_groups))
+            for g, n in Counter(tr).items():
+                pos = group_pos.get(g)
+                if pos is not None:
+                    config_group_unc[pos] = n
+            config_group_unc *= group_unc
+            s = config_group_unc.sum()
+            config_to_group_fract[j] = config_group_unc if s == 0 else config_group_unc/s
 
-    for q in range(calculation_selection_iterations): #loop the greedy optimization to approach a local min
-        for config in sorted_config_list:
-            ind = config_index[id(config)]
-            if ind not in config_to_group_fract:
-                logging.error("config not in config_to_group_fract")
-                continue
-            if ind in already_computed:  # isomorphic to an already-computed config -> skip
-                continue
-            key = config_keys[id(config)]
-            # skip if isomorphic to an already-selected config of the same composition
-            if any(config.is_isomorphic(c, save_order=True) for c in selected_by_key.get(key, ())):
-                continue
+        logging.info("  group-fraction setup: %.1f s", time.time()-_t); _t = time.time()
+        configs_for_calculation = []
+        group_fract_for_calculation = []
+        maxval = 0.0
 
-            if ts_frac is not None:
-                config_is_ts = is_ts_map[id(config)]
-                slot_available = (config_is_ts and ts_count < ts_quota) or \
-                                 ((not config_is_ts) and non_ts_count < non_ts_quota)
-            else:
-                slot_available = len(configs_for_calculation) < Ncalc_per_iter
+        #sort lower numbers of coadsorbates first, larger numbers of coadsorbates later
+        bond_count_key = lambda x: len([bd for bd in x.get_all_edges() if (bd.atom1.is_surface_site() and not bd.atom2.is_surface_site()) or (bd.atom2.is_surface_site() and not bd.atom1.is_surface_site())])
+        sorted_config_list = sorted(config_list[:], key=bond_count_key)
 
-            if slot_available:
-                configs_for_calculation = configs_for_calculation + [config]
-                group_fract = config_to_group_fract[ind]
-                group_fract_for_calculation.append(group_fract)
-                selected_keys.append(key)
-                selected_by_key.setdefault(key, []).append(config)
-                maxval = np.linalg.norm(sum(group_fract_for_calculation) * group_to_weight, ord=1)
+        ts_count = 0
+        non_ts_count = 0
+
+        selected_by_key = dict()  # composition key -> list of currently-selected configs (for dup check)
+        selected_keys = []        # parallel to configs_for_calculation
+
+        def _bucket_remove(key, cfg):  # identity-based removal (avoid Molecule.__eq__ semantics)
+            b = selected_by_key.get(key, [])
+            for bi, bc in enumerate(b):
+                if bc is cfg:
+                    b.pop(bi)
+                    return
+
+        for q in range(calculation_selection_iterations): #loop the greedy optimization to approach a local min
+            for config in sorted_config_list:
+                ind = config_index[id(config)]
+                if ind not in config_to_group_fract:
+                    logging.error("config not in config_to_group_fract")
+                    continue
+                if ind in already_computed:  # isomorphic to an already-computed config -> skip
+                    continue
+                key = config_keys[id(config)]
+                # skip if isomorphic to an already-selected config of the same composition
+                if any(config.is_isomorphic(c, save_order=True) for c in selected_by_key.get(key, ())):
+                    continue
+
                 if ts_frac is not None:
-                    if config_is_ts:
-                        ts_count += 1
-                    else:
-                        non_ts_count += 1
-            else:
-                group_fract = config_to_group_fract[ind]
-                g_old_sum = sum(group_fract_for_calculation)
-                maxarglocal = None
-                maxvallocal = maxval
-                for i in range(len(configs_for_calculation)):
-                    if ts_frac is not None and is_ts_map[id(config)] != is_ts_map[id(configs_for_calculation[i])]:
-                        continue
-                    val = np.linalg.norm((g_old_sum - group_fract_for_calculation[i] + group_fract) * group_to_weight, ord=1)
-                    if val > maxvallocal:
-                        maxarglocal = i
-                        maxvallocal = val
+                    config_is_ts = is_ts_map[id(config)]
+                    slot_available = (config_is_ts and ts_count < ts_quota) or \
+                                     ((not config_is_ts) and non_ts_count < non_ts_quota)
+                else:
+                    slot_available = len(configs_for_calculation) < Ncalc_per_iter
 
-                if maxarglocal is not None:
-                    _bucket_remove(selected_keys[maxarglocal], configs_for_calculation[maxarglocal])
-                    group_fract_for_calculation[maxarglocal] = group_fract
-                    configs_for_calculation[maxarglocal] = config
-                    selected_keys[maxarglocal] = key
+                if slot_available:
+                    configs_for_calculation = configs_for_calculation + [config]
+                    group_fract = config_to_group_fract[ind]
+                    group_fract_for_calculation.append(group_fract)
+                    selected_keys.append(key)
                     selected_by_key.setdefault(key, []).append(config)
-                    maxval = maxvallocal
+                    maxval = np.linalg.norm(sum(group_fract_for_calculation) * group_to_weight, ord=1)
+                    if ts_frac is not None:
+                        if config_is_ts:
+                            ts_count += 1
+                        else:
+                            non_ts_count += 1
+                else:
+                    group_fract = config_to_group_fract[ind]
+                    g_old_sum = sum(group_fract_for_calculation)
+                    maxarglocal = None
+                    maxvallocal = maxval
+                    for i in range(len(configs_for_calculation)):
+                        if ts_frac is not None and is_ts_map[id(config)] != is_ts_map[id(configs_for_calculation[i])]:
+                            continue
+                        val = np.linalg.norm((g_old_sum - group_fract_for_calculation[i] + group_fract) * group_to_weight, ord=1)
+                        if val > maxvallocal:
+                            maxarglocal = i
+                            maxvallocal = val
 
-    logging.info("  greedy selection (%d passes): %d configs selected, %.1f s",
-                 calculation_selection_iterations, len(configs_for_calculation), time.time()-_t)
+                    if maxarglocal is not None:
+                        _bucket_remove(selected_keys[maxarglocal], configs_for_calculation[maxarglocal])
+                        group_fract_for_calculation[maxarglocal] = group_fract
+                        configs_for_calculation[maxarglocal] = config
+                        selected_keys[maxarglocal] = key
+                        selected_by_key.setdefault(key, []).append(config)
+                        maxval = maxvallocal
+
+        logging.info("  greedy selection (%d passes): %d configs selected, %.1f s",
+                     calculation_selection_iterations, len(configs_for_calculation), time.time()-_t)
+    else:
+        raise ValueError("selection_method must be 'greedy' or 'stratified', got %r" % (selection_method,))
 
     coad_admol_to_config_for_calculation = {coadname: dict() for coadname in coadnames}
 

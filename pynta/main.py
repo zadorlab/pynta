@@ -513,7 +513,7 @@ class CoverageDependence:
                  num_jobs=25,surrogate_metal=None,concern_energy_tol=None,max_iters=np.inf,imag_freq_max=150.0,max_coadsorbates=None,
                  sidt_isolated_delta_model=None,sidt_covdep_delta_model=None,coad_selection_E_diff_tol=0.1,iter=0,ts_frac=None,
                  adsorbate_site_energy_cutoff="default",config_generation="enumerate",mc_kwargs=None,
-                 sample_opt_time_limit_hrs=None):
+                 sample_opt_time_limit_hrs=None,selection_method="greedy",stratified_sigma_frac=0.5):
         self.path = path
         self.metal = metal
         self.repeats = repeats
@@ -564,6 +564,15 @@ class CoverageDependence:
         assert config_generation in ("enumerate", "mc"), config_generation
         self.config_generation = config_generation
         self.mc_kwargs = mc_kwargs if mc_kwargs is not None else dict()
+        # how the active-learning loop picks which candidate configs to compute each iteration:
+        # "greedy" (the original group-coverage optimizer -- efficient in the pairwise basis but
+        # blind to many-body error, so it starves high-coverage configs) or "stratified" (per-
+        # coverage-level round-robin that guarantees dense-coverage configs get sampled). For
+        # "stratified", stratified_sigma_frac in [0,1] blends within each level between lowest
+        # excess-energy (0) and highest predicted uncertainty (1) picks.
+        assert selection_method in ("greedy", "stratified"), selection_method
+        self.selection_method = selection_method
+        self.stratified_sigma_frac = stratified_sigma_frac
         # which central-adsorbate site arrangements to include. "default" picks per mode: MC uses
         # None (all stable site arrangements) so the central adsorbate can hop across sites; the
         # enumerate path keeps the original lowest-site-only behavior (0.0). Override explicitly with
@@ -899,7 +908,8 @@ class CoverageDependence:
                                 sidt_isolated_delta_model=self.sidt_isolated_delta_model,sidt_covdep_delta_model=self.sidt_covdep_delta_model,ts_frac=self.ts_frac,
                                 adsorbate_site_energy_cutoff=self.adsorbate_site_energy_cutoff,
                                 config_generation=self.config_generation,mc_kwargs=self.mc_kwargs,
-                                sample_opt_time_limit_hrs=self.sample_opt_time_limit_hrs)
+                                sample_opt_time_limit_hrs=self.sample_opt_time_limit_hrs,
+                                selection_method=self.selection_method,stratified_sigma_frac=self.stratified_sigma_frac)
 
         self.fws.append(fw)
     
