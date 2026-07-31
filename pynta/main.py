@@ -47,7 +47,7 @@ class Pynta:
         irc_mode="fixed", #choose irc mode: 'skip', 'relaxed', 'fixed'
         lattice_opt_software_kwargs={'kpts': (25,25,25), 'ecutwfc': 70, 'degauss':0.02, 'mixing_mode': 'plain'},
         reset_launchpad=False,queue_adapter_path=None,num_jobs=25,max_num_hfsp_opts=None,max_dist_hfsp=None,#max_num_hfsp_opts is mostly for fast testing
-        Eharmtol=3.0,Eharmfiltertol=30.0,Nharmmin=5,frozen_layers=2,fmaxopt=0.05,fmaxirc=0.1,c=None,
+        Eharmtol=3.0,Eharmfiltertol=30.0,Nharmmin=5,frozen_layers=2,frozen_atom_indice=None,fmaxopt=0.05,fmaxirc=0.1,c=None,
         surrogate_metal=None,sites_file_path=None,site_adjacency_file_path=None,nprocs_harm=1,postprocess=True,
         calculate_thermodynamic_references=True):
 
@@ -163,7 +163,11 @@ class Pynta:
         else:
             self.layers = self.repeats[2]
         self.frozen_layers = frozen_layers
-        self.freeze_ind = int((self.nslab/self.layers)*self.frozen_layers)
+        self.frozen_atom_indice = frozen_atom_indice
+        if self.frozen_atom_indice is not None:
+            self.freeze_ind = list(self.frozen_atom_indice)
+        else:
+            self.freeze_ind = list(range(int((self.nslab/self.layers)*self.frozen_layers)))
         self.mol_dict = None
         self.Eharmtol = Eharmtol
         self.Eharmfiltertol = Eharmfiltertol
@@ -226,7 +230,7 @@ class Pynta:
         if self.software != "XTB":
             fwslab = optimize_firework(os.path.join(self.path,"slab_init.xyz"),self.software,"slab",
                 opt_method="BFGSLineSearch",socket=self.socket,software_kwargs=self.software_kwargs,
-                run_kwargs={"fmax" : self.fmaxopt},out_path=os.path.join(self.path,"slab.xyz"),constraints=["freeze up to {}".format(self.freeze_ind)],priority=1000)
+                run_kwargs={"fmax" : self.fmaxopt},out_path=os.path.join(self.path,"slab.xyz"),constraints=[{"type": "FixAtoms", "indices": self.freeze_ind}],priority=1000)
             wfslab = Workflow([fwslab], name=self.label+"_slab")
             self.launchpad.add_wf(wfslab)
             if skip_launch:
@@ -247,7 +251,7 @@ class Pynta:
         if self.software != "XTB":
             fwslab = optimize_firework(os.path.join(self.path,"slab_init.xyz"),self.software,"slab",
                 opt_method="BFGSLineSearch",socket=self.socket,software_kwargs=self.software_kwargs,
-                run_kwargs={"fmax" : self.fmaxopt},out_path=os.path.join(self.path,"slab.xyz"),constraints=["freeze up to {}".format(self.freeze_ind)],priority=1000)
+                run_kwargs={"fmax" : self.fmaxopt},out_path=os.path.join(self.path,"slab.xyz"),constraints=[{"type": "FixAtoms", "indices": self.freeze_ind}],priority=1000)
             wfslab = Workflow([fwslab], name=self.label+"_slab")
             self.launchpad.add_wf(wfslab)
             if skip_launch:
@@ -376,7 +380,7 @@ class Pynta:
             if len(mol.get_surface_sites()) > 0:
                 software_kwargs = deepcopy(self.software_kwargs)
                 if self.software != "XTB" and self.software != "TBLite":
-                    opt_constraints = ["freeze up to {}".format(self.freeze_ind)]
+                    opt_constraints = [{"type": "FixAtoms", "indices": self.freeze_ind}]
                 else:
                     opt_constraints = ["freeze up to "+str(self.nslab)]
                 vib_constraints = ["freeze up to "+str(self.nslab)]
@@ -439,7 +443,7 @@ class Pynta:
         """
         if self.software != "XTB" and self.software != "TBLite":
             opt_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":self.software_kwargs_TS,
-                "run_kwargs": {"fmax" : self.fmaxopt, "steps" : 70},"constraints": ["freeze up to {}".format(self.freeze_ind)],"sella":True,"order":1,}
+                "run_kwargs": {"fmax" : self.fmaxopt, "steps" : 70},"constraints": [{"type": "FixAtoms", "indices": self.freeze_ind}],"sella":True,"order":1,}
         else:
             opt_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":self.software_kwargs_TS,
                 "run_kwargs": {"fmax" : 0.02, "steps" : 70},"constraints": ["freeze up to "+str(self.nslab)],"sella":True,"order":1,}
@@ -459,7 +463,7 @@ class Pynta:
 
             elif self.irc_mode == "relaxed":
                 IRC_obj_dict = {"software":self.software,"label":"prefix","socket":self.socket,"software_kwargs":self.software_kwargs,
-                    "run_kwargs": {"fmax" : self.fmaxirc, "steps" : 70},"constraints": ["freeze up to {}".format(self.freeze_ind)]}
+                    "run_kwargs": {"fmax" : self.fmaxirc, "steps" : 70},"constraints": [{"type": "FixAtoms", "indices": self.freeze_ind}]}
         # if irc_mode = "skip" : do not conduct IRC
             else:
                 logger.info("Skip IRC: IRC is not conducted")
@@ -547,7 +551,7 @@ class Pynta:
 
 class CoverageDependence:
     def __init__(self,path,metal,surface_type,repeats,pynta_run_directory,software,software_kwargs,label,sites,site_adjacency,coad_stable_sites=None,adsorbates=[],transition_states=dict(),coadsorbates=[],
-                 max_dist=3.0,frozen_layers=2,fmaxopt=0.05,Ncalc_per_iter=6,TS_opt_software_kwargs=None,launchpad_path=None,
+                 max_dist=3.0,frozen_layers=2,frozen_atom_indice=None,fmaxopt=0.05,Ncalc_per_iter=6,TS_opt_software_kwargs=None,launchpad_path=None,
                  fworker_path=None,queue=False,njobs_queue=0,reset_launchpad=False,queue_adapter_path=None,
                  num_jobs=25,surrogate_metal=None,concern_energy_tol=None,max_iters=np.inf,imag_freq_max=150.0,max_coadsorbates=None,
                  sidt_isolated_delta_model=None,sidt_covdep_delta_model=None,coad_selection_E_diff_tol=0.1,iter=0,ts_frac=None,
@@ -580,11 +584,15 @@ class CoverageDependence:
         self.coadsorbates = coadsorbates
         self.max_dist = max_dist
         self.frozen_layers = frozen_layers
+        self.frozen_atom_indice = frozen_atom_indice
         if self.surface_type == "CustomSurface" and hasattr(self, "slab") and "layer" in self.slab.arrays:
             self.layers = len(set(self.slab.arrays["layer"].tolist()))
         else:
             self.layers = self.repeats[2]
-        self.freeze_ind = int((self.nslab/self.layers)*self.frozen_layers)
+        if self.frozen_atom_indice is not None:
+            self.freeze_ind = list(self.frozen_atom_indice)
+        else:
+            self.freeze_ind = list(range(int((self.nslab/self.layers)*self.frozen_layers)))
         self.fmaxopt = fmaxopt
         self.label = label
         self.max_iters = max_iters
@@ -654,13 +662,13 @@ class CoverageDependence:
                             self.software,"weakopt",
                             opt_method="MDMin",opt_kwargs={'dt': 0.05,"trajectory": "weakopt.traj"},software_kwargs=self.software_kwargs,order=0,
                             run_kwargs={"fmax" : 0.5, "steps" : 30},parents=[],
-                              constraints=["freeze up to {}".format(self.freeze_ind)],
+                              constraints=[{"type": "FixAtoms", "indices": self.freeze_ind}],
                             ignore_errors=True, metal=self.metal, facet=self.surface_type, priority=3)
             fwopt2 = optimize_firework(os.path.join(pair_dir,"weakopt.xyz"),
                             self.software,"out",
                             opt_method="QuasiNewton",opt_kwargs={"trajectory": "out.traj"},software_kwargs=self.software_kwargs,order=0,
                             run_kwargs={"fmax" : self.fmaxopt, "steps" : 70},parents=[fwopt],
-                              constraints=["freeze up to {}".format(self.freeze_ind)],
+                              constraints=[{"type": "FixAtoms", "indices": self.freeze_ind}],
                             ignore_errors=True, metal=self.metal, facet=self.surface_type, priority=2)
 
             fwvib = vibrations_firework(os.path.join(pair_dir,"out.xyz"),
@@ -685,7 +693,7 @@ class CoverageDependence:
                             opt_kwargs={"trajectory": "out.traj"},software_kwargs=self.software_kwargs_TS,
                             order=1,
                             run_kwargs={"fmax" : self.fmaxopt, "steps" : 70},parents=[],
-                              constraints=["freeze up to {}".format(self.freeze_ind)],
+                              constraints=[{"type": "FixAtoms", "indices": self.freeze_ind}],
                             ignore_errors=True, metal=self.metal, facet=self.surface_type, priority=3)
 
             fwvib = vibrations_firework(os.path.join(pair_dir,"out.xyz"),

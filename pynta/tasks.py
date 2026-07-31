@@ -1728,13 +1728,13 @@ class SelectCalculationsTask(FiretaskBase):
                         software,"weakopt",
                         opt_method="MDMin",opt_kwargs={'dt': 0.05,"trajectory": "weakopt.traj"},software_kwargs=software_kwargs,order=0,
                         run_kwargs={"fmax" : 0.5, "steps" : 30},parents=[],
-                            constraints=["freeze up to {}".format(freeze_ind)],
+                            constraints=[{"type": "FixAtoms", "indices": freeze_ind}],
                         ignore_errors=True, metal=metal, facet=facet, priority=3)
                 fwopt2 = optimize_firework(os.path.join(sample_dir,"weakopt.xyz"),
                                 software,"out",
                                 opt_method="QuasiNewton",opt_kwargs={"trajectory": "out.traj"},software_kwargs=software_kwargs,order=0,
                                 run_kwargs={"fmax" : fmaxopt, "steps" : 70},parents=[fwopt],
-                                constraints=["freeze up to {}".format(freeze_ind)],
+                                constraints=[{"type": "FixAtoms", "indices": freeze_ind}],
                                 ignore_errors=True, metal=metal, facet=facet, priority=2)
 
                 fwvib = vibrations_firework(os.path.join(sample_dir,"out.xyz"),
@@ -1750,7 +1750,7 @@ class SelectCalculationsTask(FiretaskBase):
                         opt_kwargs={"trajectory": "out.traj"},software_kwargs=software_kwargs_TS,
                         order=1,
                         run_kwargs={"fmax" : fmaxopt, "steps" : 70},parents=[],
-                            constraints=["freeze up to {}".format(freeze_ind)],
+                            constraints=[{"type": "FixAtoms", "indices": freeze_ind}],
                         ignore_errors=True, metal=metal, facet=facet, priority=3)
 
                 fwvib = vibrations_firework(os.path.join(sample_dir,"out.xyz"),
