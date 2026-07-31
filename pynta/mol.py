@@ -153,9 +153,12 @@ def add_adsorbate_to_site(atoms, adsorbate, surf_ind, site, height=None,
         height = site_heights[site['site']]
 
     # Make the correct position
-    normal = np.array(site['normal'])
-    if np.isnan(np.sum(normal)):
+    if site['normal'] is None:
         normal = np.array([0., 0., 1.])
+    else:
+        normal = np.array(site['normal'])
+        if np.isnan(np.sum(normal)):
+            normal = np.array([0., 0., 1.])
     pos = np.array(site['position']) + normal * height
 
     # Convert the adsorbate to an Atoms object
