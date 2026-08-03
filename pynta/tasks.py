@@ -298,6 +298,8 @@ class MolecularOptimizationTask(OptimizationTask):
         if converged:
             if self["software"] == "XTB" and "initial_charges" in sp.arrays.keys():
                 del sp.arrays["initial_charges"]
+            if self["software"] == "VASP" and hasattr(sp.calc,"nbands"):
+                sp.calc.results.pop("nbands", None)
             write(label+".xyz", sp)
         else:
             return FWAction(stored_data={"error": errors,"converged": converged})
@@ -1105,6 +1107,8 @@ class MolecularHFSP(OptimizationTask):
         if spout:
             if "initial_charges" in sp.arrays.keys(): #avoid bug in ase
                 del sp.arrays["initial_charges"]
+            if self["software"] == "VASP" and hasattr(sp.calc,"nbands"):
+                sp.calc.results.pop("nbands", None)
             write(label+".xyz", spout)
             converged = True 
         else:
