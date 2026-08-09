@@ -25,3 +25,4 @@ rmgcat_to_sella_package.tar.gz
 gitlistobjecbysizer.sh
 *pyc*
 pynta_env
+.claude/settings.local.json
