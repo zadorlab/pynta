@@ -607,7 +607,7 @@ class MolecularTSEstimate(FiretaskBase):
         repeats = self["repeats"]
         for s in sites:
             s["position"] = np.array(s["position"])
-            s["normal"] = np.array(s["normal"])
+            s["normal"] = np.array(s["normal"]) if s["normal"] is not None else np.full(3, np.nan)
         
         site_adjacency = {int(k):[int(x) for x in v] for k,v in self["site_adjacency"].items()}
         Eharmtol = self["Eharmtol"]
@@ -899,7 +899,7 @@ class PostprocessingTask(FiretaskBase):
         repeats = self["repeats"]
         for s in sites:
             s["position"] = np.array(s["position"])
-            s["normal"] = np.array(s["normal"])
+            s["normal"] = np.array(s["normal"]) if s["normal"] is not None else np.full(3, np.nan)
         
         site_adjacency = {int(k):[int(x) for x in v] for k,v in self["site_adjacency"].items()}
         slab_path = self["slab_path"]
@@ -1236,7 +1236,7 @@ class ExtractDatumTask(FiretaskBase):
         sites = []
         for site in self["sites"]:
             site = dict(site)
-            site["normal"] = np.array(site["normal"])
+            site["normal"] = np.array(site["normal"]) if site["normal"] is not None else np.full(3, np.nan)
             site["position"] = np.array(site["position"])
             site["indices"] = tuple(site["indices"])
             sites.append(site)
@@ -1307,7 +1307,7 @@ class TrainCovdepModelTask(FiretaskBase):
         adsorbate_site_energy_cutoff = self["adsorbate_site_energy_cutoff"] if "adsorbate_site_energy_cutoff" in self.keys() else 0.0
         sites = []
         for site in self["sites"]:
-            site["normal"] = np.array(site["normal"])
+            site["normal"] = np.array(site["normal"]) if site["normal"] is not None else np.full(3, np.nan)
             site["position"] = np.array(site["position"])
             site["indices"] = tuple(site["indices"])
             sites.append(site)
@@ -1589,7 +1589,7 @@ class SelectCalculationsTask(FiretaskBase):
         sites = []
         sites = []
         for site in self["sites"]:
-            site["normal"] = np.array(site["normal"])
+            site["normal"] = np.array(site["normal"]) if site["normal"] is not None else np.full(3, np.nan)
             site["position"] = np.array(site["position"])
             site["indices"] = tuple(site["indices"])
             sites.append(site)
