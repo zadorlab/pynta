@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:gitlab.com)",
+      "Bash(python3 -c \"import fireworks, os; print\\(fireworks.__file__\\)\")",
+      "Bash(pip show *)",
+      "Bash(python3 -c ' *)",
+      "Bash(git log *)",
+      "Bash(git ls-tree *)",
+      "Bash(grep -n *)",
+      "Bash(python3 -m py_compile merged.py)",
+      "Bash(python3 -m py_compile pynta/postprocessing.py)",
+      "Bash(git commit -m ' *)"
+    ]
+  }
+}

@@ -10,7 +10,13 @@
       "Bash(git ls-tree *)",
       "Bash(grep -n *)",
       "Bash(python3 -m py_compile merged.py)",
-      "Bash(python3 -m py_compile pynta/postprocessing.py)"
+      "Bash(python3 -m py_compile pynta/postprocessing.py)",
+      "Bash(git commit -m ' *)",
+      "Read(//Users/shikim/code/pynta_local/pynta/.claude/**)",
+      "Skill(update-config)",
+      "Skill(update-config:*)",
+      "Bash(ls -la ../.claude/settings.json 2>&1; echo ---; cat ../.gitignore 2>/dev/null | grep -n claude)",
+      "Bash(python3 -m json.tool ../.claude/settings.json)"
     ]
   }
 }
