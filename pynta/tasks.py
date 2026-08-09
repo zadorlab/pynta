@@ -517,14 +517,14 @@ class MolecularAdsorbateEstimate(FiretaskBase):
         for q in single_sites_lists:
             for s in q:
                 s["position"] = np.array(s["position"])
-                s["normal"] = np.array(s["normal"])
+                s["normal"] = np.array(s["normal"]) if s["normal"] is not None else np.full(3, np.nan)
         double_site_bond_params_lists = self["double_site_bond_params_lists"]
         double_sites_lists = self["double_sites_lists"]
         for q in double_sites_lists:
             for s in q:
                 s["position"] = np.array(s["position"])
-                s["normal"] = np.array(s["normal"])
-            
+                s["normal"] = np.array(s["normal"]) if s["normal"] is not None else np.full(3, np.nan)
+
         metal = self["metal"]
         facet = self["facet"]
         nslab = self["nslab"]
@@ -532,7 +532,7 @@ class MolecularAdsorbateEstimate(FiretaskBase):
         sites = self["sites"]
         for s in sites:
             s["position"] = np.array(s["position"])
-            s["normal"] = np.array(s["normal"])
+            s["normal"] = np.array(s["normal"]) if s["normal"] is not None else np.full(3, np.nan)
         
         site_adjacency = {int(k):[int(x) for x in v] for k,v in self["site_adjacency"].items()}
         Nharmmin = self["Nharmmin"]
