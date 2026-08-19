@@ -1791,7 +1791,42 @@ def write_rmg_libraries(path,spc_dict,spc_dict_thermo,ts_dict,metal,facet):
     
     with open(os.path.join(path,"reaction_library","dictionary.txt"),'w') as f:
         f.write(spc_dictionary_txt)
-        
+
+def print_nasa_polynomial(spc_dict,name):
+    """
+    Print the fitted NASA polynomial thermo for an adsorbate/gas-phase species.
+    Args:
+        spc_dict: dictionary mapping species names to GasConfiguration/SurfaceConfiguration
+            objects, as returned by postprocess()/get_species() (values may also be a dict
+            or list of configs, as when postprocess() is called with get_all_configs=True,
+            in which case the lowest energy valid configuration is used)
+        name: name of the species to print the NASA polynomial for
+    """
+    if name not in spc_dict:
+        raise KeyError("{} not found in spc_dict".format(name))
+
+    spc = spc_dict[name]
+    if isinstance(spc,dict):
+        valid = {k:v for k,v in spc.items() if v.valid}
+        if not valid:
+            print("No valid configurations found for {}".format(name))
+            return
+        spc = valid[min(valid,key=lambda k: valid[k].energy)]
+    elif isinstance(spc,list):
+        valid = [v for v in spc if v.valid]
+        if not valid:
+            print("No valid configurations found for {}".format(name))
+            return
+        spc = min(valid,key=lambda v: v.energy)
+
+    if not hasattr(spc,"nasa"):
+        print("No NASA polynomial fit available for {}".format(name))
+        return
+
+    print("Species: {}".format(name))
+    print(spc.mol.to_adjacency_list())
+    print(repr(spc.nasa))
+
 def get_energy_correction_configuration(Ncoad_energy_dict,ts_dict,config_name,coad_name,iter,Ncoad,reactant_names=None,coad_iso_energy=None):
     """Compute the energy corrections (difference in energy between the isolated configuration and non-isolated configuraitons)
         at each coverage for adsorbate/TS with name config_name
