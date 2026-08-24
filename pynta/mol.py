@@ -739,6 +739,12 @@ def get_name(mol):
         # binding atom(s) are preserved in the name -- this distinguishes e.g. HONH2 bound
         # via N vs via O, and handles bidentate (one dative bond per contact) -- then tag
         # "-vdW". Names come out charged but unique and SMILES-valid, e.g. "[NH3+][Pt]-vdW".
+        # A fully saturated binding atom (e.g. the C in CH4) has no lone pair to donate, so
+        # forming that dative bond would give it one bond too many with nothing to
+        # compensate -- an invalid valence that to_smiles() would silently mangle (e.g.
+        # losing two H's to become "[CH2-]"). For those, just drop the vdW bond instead of
+        # converting it, leaving the site as a disconnected SMILES component, e.g.
+        # "C.[Pt]-vdW".
         # RMG cannot perceive an atomtype for the metal-coordinated charged atom (a benign
         # error), so logging is silenced across the conversion. Falls back to the adjacency
         # list only if even that fails.
@@ -748,11 +754,13 @@ def get_name(mol):
             for bd in [b for b in m.get_all_edges() if b.is_van_der_waals()]:
                 site = bd.atom1 if bd.atom1.is_surface_site() else bd.atom2
                 other = bd.atom2 if bd.atom1.is_surface_site() else bd.atom1
-                bd.set_order_str("S")
                 if other.lone_pairs > 0:
+                    bd.set_order_str("S")
                     other.lone_pairs -= 1
                     other.charge += 1
                     site.charge -= 1
+                else:
+                    m.remove_bond(bd)
             _prev = _logging.root.manager.disable
             _logging.disable(_logging.ERROR)
             try:
