@@ -705,7 +705,7 @@ class MolecularTSEstimate(FiretaskBase):
         print("number of TS guesses pre-empty-sites and multiple mappings:")
         print(len(tsstructs))
 
-        nsites = len([a for a in reactants.atoms if a.is_surface_site() and len(a.bonds) == 0])
+        nsites = len([a for a in reactants.atoms if a.is_surface_site() and all(a2.is_surface_site() for a2 in a.bonds.keys())])
         
         unique_tsstructs,unique_tsmols,target_sites,label_site_mappings = get_unique_TS_templates_site_pairings(tsstructs,
                                         tsmols,reactants,products,nsites,slab,neighbor_sites,ninds,sites,nslab)

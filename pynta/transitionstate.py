@@ -349,18 +349,27 @@ def get_unique_TS_templates_site_pairings(tsstructs,tsmols,forward_template,reve
                 tsmol.atoms[ind].label = label
                 label_site_mapping[label] = s
             
-            for bd in list(broken_bonds)+list(formed_bonds): #create reaction bonds in tsmol
-                label1,label2 = list(bd)
-                if label1 == "" or label2 == "":
-                    continue 
-                else:
-                    a1 = tsmol.get_labeled_atoms(label1)[0]
-                    a2 = tsmol.get_labeled_atoms(label2)[0]
-                    if tsmol.has_bond(a1,a2):
-                        bdts = tsmol.get_bond(a1,a2)
-                        bdts.set_order_str("R")
+            try:
+                for bd in list(broken_bonds)+list(formed_bonds): #create reaction bonds in tsmol
+                    label1,label2 = list(bd)
+                    if label1 == "" or label2 == "":
+                        continue
                     else:
-                        tsmol.add_bond(Bond(a1,a2,order="R"))
+                        a1 = tsmol.get_labeled_atoms(label1)[0]
+                        a2 = tsmol.get_labeled_atoms(label2)[0]
+                        if tsmol.has_bond(a1,a2):
+                            bdts = tsmol.get_bond(a1,a2)
+                            bdts.set_order_str("R")
+                        else:
+                            tsmol.add_bond(Bond(a1,a2,order="R"))
+            except ValueError:
+                # a required reaction-bond label is missing from tsmol, usually because
+                # get_labeled_full_TS_mol had to merge two template site atoms onto one
+                # real site (e.g. a multidentate template matched a monodentate/vdW
+                # candidate geometry) and dropped one of the labels in the process.
+                # This candidate TS guess can't support the template mapping, so skip it.
+                logging.warning("could not build reaction bonds for a TS structure, skipping candidate")
+                continue
             
             for bd in tsmol.get_all_edges(): #Our TS representation isn't entirely unique, but the representation fix_bond_orders generates is consistent and what we train the SIDT on
                 if bd.is_reaction_bond() or (bd.atom1.is_surface_site() and bd.atom2.is_surface_site()):
