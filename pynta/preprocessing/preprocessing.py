@@ -1,5 +1,4 @@
 import os
-import sys
 import json
 import time
 import inspect
@@ -29,9 +28,6 @@ from fireworks.features.multi_launcher import launch_multiprocess
 from fireworks.utilities.fw_serializers import load_object_from_file
 from fireworks.core.fworker import FWorker
 
-# site_analysis.py must be in the same directory as this file or in custom_surfaces/
-_this_dir = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, os.path.join(_this_dir, "custom_surfaces"))
 import site_analysis as sa
 
 

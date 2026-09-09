@@ -1810,6 +1810,251 @@ def workflow_auto(
 
 
 # ============================================================
+# Defect site analysis (notebook helpers)
+# ============================================================
+
+def detect_defect(xyz_path, verbose=True):
+    """Read the slab, detect vacancies, and report whether one was found.
+
+    Returns (slab, nslab, defect_sites, has_defect, void_pos).
+    """
+    slab = read(xyz_path)
+    nslab = len(slab)
+    defect_sites = workflow_detect_vacancies(slab, nslab, verbose=verbose)
+    has_defect = len(defect_sites) > 0
+
+    if has_defect:
+        void_pos = defect_sites[0]["position"]
+        print(f"\nDefect detected → running defect site analysis")
+        print(f"Void centroid: x={void_pos[0]:.3f}  y={void_pos[1]:.3f}  z={void_pos[2]:.3f}")
+    else:
+        void_pos = None
+        print("\nNo defect detected — defect analysis cells will be skipped.")
+
+    return slab, nslab, defect_sites, has_defect, void_pos
+
+
+def panel1_void_ring(slab, nslab, tag_symbol, void_pos, has_defect, xyz_path):
+    """Panel 1 — void ring trajectory + top-view figure."""
+    import matplotlib.pyplot as plt
+
+    if not has_defect:
+        print("No defect — skipping Panel 1.")
+        return
+
+    top = _top_surface_indices(slab, nslab)
+    use_pbc = _has_reasonable_cell(slab)
+    d_nn = _estimate_nn_distance_xy(slab, top, use_pbc_xy=use_pbc)
+    cutoff = 1.25 * d_nn
+
+    nl = NeighborList([cutoff] * nslab, self_interaction=False, bothways=True, skin=0.0)
+    nl.update(slab)
+    top_set = set(top.tolist())
+    deg = np.zeros(len(top), dtype=int)
+    for ii, a in enumerate(top):
+        neigh, _ = nl.get_neighbors(a)
+        deg[ii] = sum(1 for j in neigh if j in top_set)
+
+    expected = int(np.median(deg))
+    under_top = top[deg <= (expected - 1)]
+    print(f"Top-layer atoms  : {len(top)}")
+    print(f"Expected degree  : {expected}")
+    print(f"Undercoordinated : {len(under_top)}")
+
+    frame0 = slab.copy()
+    frame1 = slab.copy()
+    for idx in under_top:
+        pos = slab.positions[idx].copy()
+        pos[2] += 0.5
+        frame1 += Atoms("He", positions=[pos])
+    frame2 = frame1.copy()
+    frame2 += Atoms(tag_symbol, positions=[void_pos])
+
+    traj1 = Trajectory("panel1_void_ring.traj", "w")
+    for f in [frame0, frame1, frame2]:
+        traj1.write(f)
+    traj1.close()
+    print("Wrote: panel1_void_ring.traj  (frame0=clean, frame1=ring He, frame2=+Ne centroid)")
+
+    top_pos, under_pos = slab.positions[top], slab.positions[under_top]
+    fig, ax = plt.subplots(figsize=(5, 5))
+    ax.scatter(top_pos[:, 0], top_pos[:, 1], c="steelblue", s=220,
+               edgecolors="k", linewidths=0.6, zorder=2, label="surface atoms")
+    ax.scatter(under_pos[:, 0], under_pos[:, 1], c="tomato", s=260,
+               edgecolors="k", linewidths=1.2, zorder=3,
+               label=f"undercoordinated (deg ≤ {expected-1})")
+    ax.scatter(void_pos[0], void_pos[1], c="gold", s=350, marker="*",
+               edgecolors="k", linewidths=0.9, zorder=4, label="void centroid")
+    ax.set_xlabel("x (Å)", fontsize=12)
+    ax.set_ylabel("y (Å)", fontsize=12)
+    ax.set_title(f"Panel 1: Void ring — {xyz_path}", fontsize=11)
+    ax.legend(fontsize=9)
+    ax.set_aspect("equal")
+    plt.tight_layout()
+    plt.savefig("panel1_void_ring.png", dpi=150, bbox_inches="tight")
+    plt.show()
+    print("Saved: panel1_void_ring.png")
+
+
+def panel2_drop_trajectory(slab, tag_symbol, void_pos, has_defect, dz,
+                            max_drop, min_clearance, margin, stable_steps):
+    """Panel 2 — noble-gas drop trajectory + CN vs z figure.
+
+    Returns (frames_drop, meta_drop, i_tag), or (None, None, None) if skipped.
+    """
+    import matplotlib.pyplot as plt
+
+    if not has_defect:
+        print("No defect — skipping Panel 2.")
+        return None, None, None
+
+    NOBLE_GASES = {"He", "Ne", "Ar", "Kr", "Xe", "Rn"}
+
+    def _estimate_first_nn(atoms):
+        idx = [i for i, a in enumerate(atoms) if a.symbol not in NOBLE_GASES]
+        if len(idx) < 2:
+            return 3.0
+        pos = atoms.positions[idx]
+        _, dmat = get_distances(pos, pos, cell=atoms.cell, pbc=atoms.pbc)
+        dmat = np.array(dmat)
+        np.fill_diagonal(dmat, np.inf)
+        nn = np.min(dmat, axis=1)
+        nn = nn[np.isfinite(nn)]
+        return float(np.median(nn)) if len(nn) else 3.0
+
+    def _tag_cn(atoms, i_tag, cutoff):
+        # direct distance — avoids NeighborList's pair-cutoff doubling
+        idx = [j for j, a in enumerate(atoms) if j != i_tag and a.symbol not in NOBLE_GASES]
+        if not idx:
+            return 0, []
+        _, d = get_distances(atoms.positions[i_tag:i_tag+1], atoms.positions[idx],
+                             cell=atoms.cell, pbc=atoms.pbc)
+        d = np.array(d).ravel()
+        neigh = [idx[k] for k in range(len(idx)) if d[k] < cutoff]
+        return len(neigh), neigh
+
+    def _min_dist_to_slab(atoms, i_tag):
+        idx = [j for j, a in enumerate(atoms) if j != i_tag and a.symbol not in NOBLE_GASES]
+        if not idx:
+            return np.inf
+        _, d = get_distances(atoms.positions[i_tag:i_tag+1], atoms.positions[idx],
+                             cell=atoms.cell, pbc=atoms.pbc)
+        return float(np.min(d))
+
+    d1 = _estimate_first_nn(slab)
+    cn_cut = d1 + margin
+    print(f"NN distance: {d1:.3f} Å   CN cutoff: {cn_cut:.3f} Å")
+
+    atoms_drop = slab.copy() + Atoms(tag_symbol,
+                                     positions=[[void_pos[0], void_pos[1], void_pos[2] + 3.0]])
+    i_tag = len(atoms_drop) - 1
+
+    frames_drop, meta_drop = [], []
+    max_cn, best_step, no_improve = -1, 0, 0
+
+    for step in range(int(max_drop / dz) + 1):
+        cn, _ = _tag_cn(atoms_drop, i_tag, cn_cut)
+        mind = _min_dist_to_slab(atoms_drop, i_tag)
+        z = float(atoms_drop.positions[i_tag, 2])
+        frames_drop.append(atoms_drop.copy())
+        meta_drop.append({"step": step, "z": z, "cn": cn, "min_dist": mind})
+
+        if mind < min_clearance:
+            print(f"  Stopped: min_clearance reached ({mind:.3f} Å) at step {step}")
+            break
+        if cn > max_cn:
+            max_cn, best_step, no_improve = cn, step, 0
+        elif cn > 0:
+            no_improve += 1
+        if no_improve >= stable_steps:
+            print(f"  Stopped: CN stable for {stable_steps} steps at step {step}")
+            break
+        atoms_drop.positions[i_tag, 2] -= dz
+
+    print(f"Drop: {len(frames_drop)} frames   max CN = {max_cn} at step {best_step} "
+          f'(z = {meta_drop[best_step]["z"]:.3f} Å)')
+    write("panel2_drop_steps.traj", frames_drop)
+    print("Wrote: panel2_drop_steps.traj")
+
+    z_vals, cn_vals = [m["z"] for m in meta_drop], [m["cn"] for m in meta_drop]
+    fig, ax = plt.subplots(figsize=(6, 4))
+    ax.plot(z_vals, cn_vals, "o-", color="steelblue", ms=4, lw=1.8, label="CN during drop")
+    ax.axvline(z_vals[best_step], color="tomato", ls="--", lw=1.5, label=f"max CN = {max_cn}")
+    ax.scatter([z_vals[best_step]], [cn_vals[best_step]], c="gold", s=140,
+               zorder=5, edgecolors="k", linewidths=0.8)
+    ax.invert_xaxis()
+    ax.set_xlabel("z of probe (Å)", fontsize=12)
+    ax.set_ylabel("Coordination number (CN)", fontsize=12)
+    ax.set_title("Panel 2: CN vs z during noble-gas drop into void", fontsize=12)
+    ax.legend(fontsize=9)
+    plt.tight_layout()
+    plt.savefig("panel2_cn_vs_z.png", dpi=150, bbox_inches="tight")
+    plt.show()
+    print("Saved: panel2_cn_vs_z.png")
+
+    return frames_drop, meta_drop, i_tag
+
+
+def panel3_unique_probe_sites(slab, frames_drop, meta_drop, i_tag, uniq_tol, has_defect):
+    """Panel 3 — unique probe sites inside void + side-view figure."""
+    import matplotlib.pyplot as plt
+    from matplotlib.colors import Normalize
+
+    if not has_defect or frames_drop is None:
+        print("No defect — skipping Panel 3.")
+        return
+
+    uniq_frames, uniq_meta = [], []
+    for f, m in zip(frames_drop, meta_drop):
+        pos_f = f.positions[i_tag]
+        keep = True
+        for u in uniq_frames:
+            _, d = get_distances([pos_f], [u.positions[i_tag]], cell=f.cell, pbc=f.pbc)
+            if float(d) < uniq_tol:
+                keep = False
+                break
+        if keep:
+            uniq_frames.append(f.copy())
+            uniq_meta.append(m)
+
+    print(f"Unique probe positions: {len(uniq_frames)}")
+    for m in uniq_meta:
+        print(f"  step {m['step']:3d}  z = {m['z']:.3f} Å  CN = {m['cn']}")
+
+    write("panel3_void_sites.traj", uniq_frames)
+    print("Wrote: panel3_void_sites.traj")
+
+    cn_all = np.array([m["cn"] for m in uniq_meta], dtype=float)
+    z_all = np.array([uniq_frames[k].positions[i_tag, 2] for k in range(len(uniq_frames))])
+    x_all = np.array([uniq_frames[k].positions[i_tag, 0] for k in range(len(uniq_frames))])
+    cmap = plt.cm.plasma
+    norm = Normalize(vmin=cn_all.min() - 0.5, vmax=cn_all.max() + 0.5)
+
+    fig, ax = plt.subplots(figsize=(7, 4))
+    ax.scatter(slab.positions[:, 0], slab.positions[:, 2], c="lightsteelblue", s=130,
+               edgecolors="gray", linewidths=0.5, zorder=2, label="slab atoms")
+    sc = ax.scatter(x_all, z_all, c=cn_all, cmap=cmap, norm=norm,
+                    s=200, edgecolors="k", linewidths=0.8, marker="D",
+                    zorder=4, label="probe positions")
+    plt.colorbar(sc, ax=ax, label="CN")
+    best_idx = int(np.argmax(cn_all))
+    ax.scatter(x_all[best_idx], z_all[best_idx], c="gold", s=350, marker="*",
+               edgecolors="k", linewidths=1.0, zorder=5,
+               label=f"max CN = {int(cn_all[best_idx])}")
+    for k in range(len(uniq_frames)):
+        ax.annotate(f"CN={int(cn_all[k])}", xy=(x_all[k], z_all[k]),
+                    xytext=(x_all[k] + 0.15, z_all[k] + 0.15), fontsize=7)
+    ax.set_xlabel("x (Å)", fontsize=12)
+    ax.set_ylabel("z (Å)", fontsize=12)
+    ax.set_title("Panel 3: Side view — unique probe sites inside void", fontsize=12)
+    ax.legend(fontsize=9, loc="upper right")
+    plt.tight_layout()
+    plt.savefig("panel3_void_sites.png", dpi=150, bbox_inches="tight")
+    plt.show()
+    print("Saved: panel3_void_sites.png")
+
+
+# ============================================================
 # Visualization
 # ============================================================
 
