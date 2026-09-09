@@ -130,7 +130,8 @@ def optimize_firework(xyz,software,label,opt_method=None,sella=None,socket=False
 class MolecularOptimizationTask(OptimizationTask):
     required_params = ["software","label"]
     optional_params = ["software_kwargs","opt_method",
-        "opt_kwargs","run_kwargs", "constraints","sella","order","socket","time_limit_hrs","fmaxhard","ignore_errors","target_site_num","metal","facet"]
+        "opt_kwargs","run_kwargs", "constraints","sella","order","socket","time_limit_hrs","fmaxhard","ignore_errors","target_site_num","metal","facet",
+        "retry_count","max_retries"]
     def run_task(self, fw_spec):
         errors = []
         software_kwargs = deepcopy(self["software_kwargs"]) if "software_kwargs" in self.keys() else dict()
@@ -316,7 +317,14 @@ class MolecularOptimizationTask(OptimizationTask):
             if fmax < fmaxhard:
                 converged = True
             else:
-                e = ValueError("Did not converge fmax below fmaxhard: {0} > {1}".format(fmax,fmaxhard))
+                retry_count = self["retry_count"] if "retry_count" in self.keys() else 0
+                max_retries = self["max_retries"] if "max_retries" in self.keys() else 2
+                if retry_count < max_retries:
+                    fw = retry_opt_firework(self,fw_spec["_tasks"],retry_count)
+                    return FWAction(stored_data={"error": ["Did not converge fmax below fmaxhard: {0} > {1}, retrying (attempt {2}/{3}) with bumped parameters".format(fmax,fmaxhard,retry_count+1,max_retries)],
+                                                  "converged": False,"retry_count": retry_count},
+                                     detours=[fw])
+                e = ValueError("Did not converge fmax below fmaxhard: {0} > {1} after {2} retries".format(fmax,fmaxhard,retry_count))
                 if not ignore_errors:
                     raise e
                 else:
@@ -354,7 +362,10 @@ class MolecularOptimizationTask(OptimizationTask):
                     del sp_to_write.arrays[key]
             write(label+".xyz", sp_to_write)
 
-        return FWAction(stored_data={"error": errors,"converged": converged})
+        #opt.converged() can return numpy.bool_, which isn't BSON-serializable -- fireworks
+        #silently falls back to storing str(value) ("True"/"False") instead; cast to a real
+        #bool so stored_data["converged"] is consistently a bool for consumers to check
+        return FWAction(stored_data={"error": errors,"converged": bool(converged)})
 
 @explicit_serialize
 class MolecularOptimizationFailTask(OptimizationTask):
@@ -608,12 +619,12 @@ class MolecularAdsorbateEstimate(FiretaskBase):
                 fwopt = optimize_firework(os.path.join(path,"Adsorbates",mol_name,prefix,prefix+"_init.xyz"),
                     opt_software,"weakopt_"+prefix,socket=socket,
                     opt_method="MDMin",opt_kwargs={'dt': 0.05},software_kwargs=opt_software_kwargs,
-                    run_kwargs={"fmax" : 0.5, "steps" : 70},parents=[],constraints=opt_constraints,
+                    run_kwargs={"fmax" : 0.5, "steps" : 100},parents=[],constraints=opt_constraints,
                     ignore_errors=True, metal=metal, facet=facet, priority=3.5)
                 fwopt2 = optimize_firework(os.path.join(path,"Adsorbates",mol_name,str(prefix),"weakopt_"+prefix+".xyz"),
                     opt_software,prefix,socket=socket,
-                    opt_method="QuasiNewton",software_kwargs=opt_software_kwargs,
-                    run_kwargs={"fmax" : fmaxopt, "steps" : 70},parents=[fwopt],constraints=opt_constraints,
+                    opt_method="LBFGS",software_kwargs=opt_software_kwargs,
+                    run_kwargs={"fmax" : fmaxopt, "steps" : 100},parents=[fwopt],constraints=opt_constraints,
                     ignore_errors=True, metal=metal, facet=facet, priority=3,
                     allow_fizzled_parents=True)
                 optfws.append(fwopt)
@@ -1880,6 +1891,114 @@ def restart_opt_firework(task,task_list):
     d["xyz"] = os.path.join(os.path.split(task["xyz"])[0],traj_file)
     new_task = reconstruct_task(d,orig_task=task)
     return reconstruct_firework(new_task,task,task_list,full=True)
+
+def retry_opt_firework(task,task_list,retry_count,step_multiplier=2,fallback_opt_method="LBFGS"):
+    """
+    generate a firework to retry a MolecularOptimizationTask that did not converge,
+    continuing from the last trajectory point (like restart_opt_firework) rather than
+    from scratch, with a bumped step budget. From the second retry onward (retry_count
+    >= 1, i.e. bumping steps alone already failed once) also falls back to a more
+    robust optimizer (LBFGS) in case the original optimizer is stuck rather than just
+    short on steps -- skipped for Sella-based (saddle point) searches, which don't use
+    opt_method. retry_count is the number of retries already attempted (0 on first
+    failure); the new task's retry_count is set to retry_count+1 so run_task can stop
+    retrying once max_retries is reached.
+    """
+    traj_file = task["label"]+".traj"
+    shutil.copy(traj_file,os.path.join(os.path.split(task["xyz"])[0],traj_file))
+    d = deepcopy(task.as_dict())
+    d["xyz"] = os.path.join(os.path.split(task["xyz"])[0],traj_file)
+    run_kwargs = deepcopy(d.get("run_kwargs",{}))
+    run_kwargs["steps"] = int(run_kwargs.get("steps",100) * step_multiplier)
+    d["run_kwargs"] = run_kwargs
+    d["retry_count"] = retry_count + 1
+    if retry_count >= 1 and not d.get("sella",False):
+        d["opt_method"] = fallback_opt_method
+        d.pop("opt_kwargs",None) #e.g. MDMin's "dt" kwarg, not accepted by LBFGS
+    new_task = reconstruct_task(d,orig_task=task)
+    return reconstruct_firework(new_task,task,task_list,full=True)
+
+def get_nonconverged_opt_fws(fws):
+    """
+    Given an iterable of already-fetched Firework objects (e.g. Workflow.fws), return the
+    fw_ids among them that are COMPLETED MolecularOptimizationTask fireworks which did not
+    converge and were NOT already picked up by run_task's automatic in-task retry (i.e.
+    they either predate that feature, or already exhausted max_retries there and gave up).
+    These are the candidates for manual resubmission via retry_nonconverged_fw.
+    """
+    out = []
+    for fw in fws:
+        if fw.state != "COMPLETED" or not fw.launches:
+            continue
+        if not any(tk.get("_fw_name") == "{{pynta.tasks.MolecularOptimizationTask}}" for tk in fw.spec.get("_tasks",[])):
+            continue
+        action = fw.launches[-1].action
+        if action is None:
+            continue
+        stored = action.stored_data or {}
+        #ase's opt.converged() can return numpy.bool_, which fireworks falls back to
+        #storing as a plain string ("True"/"False") since it isn't BSON-serializable
+        if stored.get("converged") not in (False,"False"):
+            continue
+        if any("retrying (attempt" in str(e) for e in (stored.get("error") or [])):
+            continue #already retried automatically via detour, in progress or done
+        out.append(fw.fw_id)
+    return out
+
+def retry_nonconverged_fw(lpad,fw_id,step_multiplier=2,fallback_opt_method="LBFGS",max_retries=2,apply=False):
+    """
+    Resubmit a single already-COMPLETED, non-converged MolecularOptimizationTask firework
+    with bumped parameters (same escalation as retry_opt_firework: more steps first, then
+    also fall back to LBFGS), continuing from its last trajectory point when available.
+
+    Returns (would_retry, info): would_retry is False if max_retries is already reached
+    (info explains why); info always describes what was/would be changed. Only mutates the
+    launchpad (rerun_fw + update_spec, which resets this firework -- and any already-
+    completed descendants that depended on its output -- back to WAITING/READY) when
+    apply=True; otherwise this is a dry run.
+    """
+    fw = lpad.get_fw_by_id(fw_id)
+    tasks = fw.spec["_tasks"]
+    task_idx = next(i for i,tk in enumerate(tasks) if tk.get("_fw_name") == "{{pynta.tasks.MolecularOptimizationTask}}")
+    task_dict = deepcopy(tasks[task_idx])
+    retry_count = task_dict.get("retry_count",0)
+    if retry_count >= max_retries:
+        return False,{"fw_id": fw_id,"label": task_dict.get("label"),"reason": "max_retries reached","retry_count": retry_count}
+
+    launch_dir = fw.launches[-1].launch_dir
+    label = task_dict["label"]
+    traj_src = os.path.join(launch_dir,label+".traj")
+    xyz_dir = os.path.dirname(task_dict["xyz"])
+    traj_dst = os.path.join(xyz_dir,label+".traj")
+
+    new_task_dict = deepcopy(task_dict)
+    resumed_from_traj = os.path.exists(traj_src)
+    if resumed_from_traj:
+        if os.path.abspath(traj_src) != os.path.abspath(traj_dst):
+            shutil.copy(traj_src,traj_dst)
+        new_task_dict["xyz"] = traj_dst
+    #else: no trajectory found (e.g. launch_dir cleaned up) -- retry from the original xyz
+
+    run_kwargs = deepcopy(new_task_dict.get("run_kwargs",{}))
+    run_kwargs["steps"] = int(run_kwargs.get("steps",100) * step_multiplier)
+    new_task_dict["run_kwargs"] = run_kwargs
+    new_task_dict["retry_count"] = retry_count + 1
+    if retry_count >= 1 and not new_task_dict.get("sella",False):
+        new_task_dict["opt_method"] = fallback_opt_method
+        new_task_dict.pop("opt_kwargs",None)
+
+    info = {"fw_id": fw_id,"label": label,
+            "old_steps": task_dict.get("run_kwargs",{}).get("steps"),"new_steps": run_kwargs["steps"],
+            "old_opt_method": task_dict.get("opt_method"),"new_opt_method": new_task_dict.get("opt_method"),
+            "new_retry_count": retry_count+1,"resumed_from_traj": resumed_from_traj}
+
+    if apply:
+        new_tasks = deepcopy(tasks)
+        new_tasks[task_idx] = new_task_dict
+        lpad.rerun_fw(fw_id)
+        lpad.update_spec([fw_id],{"_tasks": new_tasks})
+
+    return True,info
 
 def reconstruct_task(task_dict,orig_task=None):
     """

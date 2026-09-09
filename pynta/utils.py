@@ -14,6 +14,39 @@ import numpy as np
 import copy
 import json
 
+def load_slab_sites(path):
+    """Load sites + site_adjacency saved by save_slab_sites (falling back to the legacy
+    single_sites_lists.json / neighbor_site_list.json names if present), converting position/normal
+    back to numpy arrays and indices to tuples. Use this everywhere instead of re-running
+    SlabAdsorptionSites so the whole pipeline shares one site definition. Returns (sites, site_adjacency).
+
+    Ported from update_environment_preprocessing (commit eabda345) into the vasp branch, which
+    diverged from master before this function was added and never got it back -- postprocessing.py
+    (unchanged since the common ancestor) already imports it unconditionally, so pynta.main fails
+    to import at all on this branch without it."""
+    sites_file = os.path.join(path, "sites.json")
+    if not os.path.exists(sites_file) and os.path.exists(os.path.join(path, "single_sites_lists.json")):
+        sites_file = os.path.join(path, "single_sites_lists.json")
+    adj_file = os.path.join(path, "site_adjacency.json")
+    if not os.path.exists(adj_file) and os.path.exists(os.path.join(path, "neighbor_site_list.json")):
+        adj_file = os.path.join(path, "neighbor_site_list.json")
+    if not os.path.exists(sites_file) or not os.path.exists(adj_file):
+        raise FileNotFoundError(
+            "no saved sites in {} (looked for sites.json/site_adjacency.json and the legacy "
+            "single_sites_lists.json/neighbor_site_list.json). Pass sites/site_adjacency explicitly, "
+            "or re-run the isolated workflow with current pynta so it saves them.".format(path))
+    with open(sites_file) as f:
+        sites = json.load(f)
+    for s in sites:
+        s["position"] = np.array(s["position"])
+        if s.get("normal") is not None:
+            s["normal"] = np.array(s["normal"])
+        if s.get("indices") is not None:
+            s["indices"] = tuple(s["indices"])
+    with open(adj_file) as f:
+        site_adjacency = {int(k): v for k, v in json.load(f).items()}
+    return sites, site_adjacency
+
 def sites_match(site1,site2,slab,tol=0.5):
     """determine if two sites match
 
