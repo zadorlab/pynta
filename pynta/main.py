@@ -686,6 +686,16 @@ class Pynta:
                 opt_constraints = ["freeze up to {}".format(self.freeze_ind)]
                 vib_constraints = ["freeze up to "+str(self.nslab)]
                 sw_kwargs = reoptimize_software_kwargs
+                if name.endswith("-vdW") and reoptimize_software in ("Vasp","VaspInteractive"):
+                    # "*-vdW" species are dispersion-bound physisorption wells (the surface
+                    # attachment is a vdW bond, not a chemical bond), and plain PBE has no
+                    # long-range dispersion term -- it badly underbinds/mislocates exactly this
+                    # kind of well (cf. CH4/Pt(111) RPA benchmark, equilibrium C-Pt ~3.75 A,
+                    # E_ads ~-14.5 kJ/mol: JCP 155, 174702 (2021)). Chemisorbed species don't
+                    # need this (dispersion is a small correction on top of real chemical
+                    # bonding there), so it's added only for vdW-named species rather than
+                    # globally, to avoid invalidating already-computed non-dispersion results.
+                    sw_kwargs = dict(sw_kwargs, ivdw=12)
             for ind in inds:
                 src_geom = os.path.join(src_spc_dir,ind,ind+".xyz")
                 if not os.path.exists(src_geom):
