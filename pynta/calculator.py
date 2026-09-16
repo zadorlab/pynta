@@ -177,7 +177,7 @@ def run_harmonically_forced(atoms,atom_bond_potentials,site_bond_potentials,nsla
                         energy += E
                         forces += F
 
-                return energy[0][0],forces
+                return float(np.asarray(energy).reshape(-1)[0]),forces
 
             def calculate(self, atoms=None, properties=None, system_changes=calculator.all_changes):
                 hfsoft.calculate(self,atoms=atoms,properties=properties,system_changes=system_changes)
@@ -215,7 +215,7 @@ def run_harmonically_forced(atoms,atom_bond_potentials,site_bond_potentials,nsla
                         energy += E
                         forces += F
 
-                return energy[0][0],forces
+                return float(np.asarray(energy).reshape(-1)[0]),forces
 
             def calculate(self, atoms=None, properties=None, system_changes=calculator.all_changes):
                 hfsoft[0].calculate(self,atoms=atoms,properties=properties,system_changes=system_changes)
@@ -426,7 +426,7 @@ def run_harmonically_forced_no_pbc(atoms,atom_bond_potentials,site_bond_potentia
                         energy += E
                         forces += F
 
-                return energy[0][0],forces
+                return float(np.asarray(energy).reshape(-1)[0]),forces
 
             def calculate(self, atoms=None, properties=None, system_changes=calculator.all_changes):
                 hfsoft.calculate(self,atoms=atoms,properties=properties,system_changes=system_changes)
@@ -464,7 +464,7 @@ def run_harmonically_forced_no_pbc(atoms,atom_bond_potentials,site_bond_potentia
                         energy += E
                         forces += F
 
-                return energy[0][0],forces
+                return float(np.asarray(energy).reshape(-1)[0]),forces
 
             def calculate(self, atoms=None, properties=None, system_changes=calculator.all_changes):
                 hfsoft[0].calculate(self,atoms=atoms,properties=properties,system_changes=system_changes)
@@ -493,7 +493,10 @@ def run_harmonically_forced_no_pbc(atoms,atom_bond_potentials,site_bond_potentia
 
     try:
         opt.run(fmax=0.02,steps=150)
-    except:
+    except Exception:
+        import traceback
+        print("run_harmonically_forced: opt.run failed")
+        traceback.print_exc()
         return None,None,None
 
     if not isinstance(hf,SumCalculator):
@@ -518,7 +521,7 @@ def map_harmonically_forced(input):
                     harm_f_software=harm_f_software,harm_f_software_kwargs=harm_f_software_kwargs,constraints=constraints)
 
     if sp and path:
-        os.makedirs(os.path.join(path,str(j)))
+        os.makedirs(os.path.join(path,str(j)),exist_ok=True)
         if "initial_charges" in sp.arrays.keys(): #avoid bug in ase
             del sp.arrays["initial_charges"]
         s_bond_potentials = deepcopy(site_bond_potentials)

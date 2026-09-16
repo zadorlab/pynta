@@ -83,7 +83,7 @@ def generate_adsorbate_molecule(adslab, sites, site_adjacency, nslab, max_dist=N
     target_sites = [site for site in sites if any((oc["position"] == site["position"]).all() for oc in occ)]
     
     #find overall neighboring sites
-    if max_dist:
+    if max_dist and target_sites:
         neighbor_sites = []
         ninds = []
         for i,site in enumerate(sites):

@@ -48,9 +48,6 @@ def get_occupied_sites(struct,sites,nslab,allowed_site_dict=dict(),site_bond_cut
         allowed_site_dict (dict, optional): dictionary mapping atom index to a list of allowed (site,morphology) for that atom
         site_bond_cutoff (float, optional): _description_. Defaults to 2.5.
 
-    Raises:
-        ValueError: _description_
-
     Returns:
         _type_: _description_
     """
@@ -93,9 +90,11 @@ def get_occupied_sites(struct,sites,nslab,allowed_site_dict=dict(),site_bond_cut
                 siteout,mindist,n = siteout2,mindist2,n2
 
         if mindist is None:
-            #print(i)
-            #view(struct)
-            raise ValueError
+            #no candidate sites at all were available for this atom (e.g. neighbor_sites
+            #came back empty for a gas-phase-only TS branch where no adsorbate was present
+            #yet when the site list was built) -- nothing to mark as occupied, so skip it
+            #the same way an out-of-cutoff nearest site is skipped below
+            continue
 
         if _within_bond_cutoff(siteout,mindist):
             mindn = None

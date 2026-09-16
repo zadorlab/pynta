@@ -751,6 +751,9 @@ class MolecularTSEstimate(FiretaskBase):
 
         xyzs,Es = filter_nonunique_TS_guess_indices(xyzs,Es) #remove identical guesses (that will just get filtered out later in the collect resulting in less guesses)
 
+        if len(Es) == 0:
+            raise ValueError("No harmonically-mapped TS guesses survived filtering for reaction: {}".format(rxn_name))
+
         Einds = np.argsort(np.array(Es))
         Emin = np.min(np.array(Es))
         xyzsout = []

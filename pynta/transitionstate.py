@@ -179,7 +179,7 @@ def get_unique_TS_structs(adsorbates,species_names,slab,slab_sites,site_adjacenc
             adslabmol,neighbor_sites,ninds = generate_adsorbate_2D(adslab, slab_sites, site_adjacency, nslab, max_dist=np.inf, cut_off_num=None, allowed_structure_site_structures=None,
                           keep_binding_vdW_bonds=True, keep_vdW_surface_bonds=False)
             site = slab_sites[0]
-            add_adsorbate_to_site(adslab,adsorbate=adslab,surf_ind=0,site=site,height=gas_height)
+            add_adsorbate_to_site(adslab,adsorbate=adss[0],surf_ind=0,site=site,height=gas_height)
             adslabmol = adslabmol.merge(mol_dict[species_names[0]])
             adslabmol.update_multiplicity()
             adslabmol.update_atomtypes()
