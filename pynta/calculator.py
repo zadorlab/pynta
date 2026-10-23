@@ -45,6 +45,11 @@ def share_loaded_models(kwargs):
     returns kwargs unchanged when there is no model_paths entry, when models were already
     supplied, or when the model cannot be loaded
     """
+    #MACECalculator still accepts the deprecated model_path. left unshared, every task loads
+    #and retraces the model while other threads run inference, which then fails with
+    #"NameError: module is not installed as a submodule" from torch.fx
+    if "model_path" in kwargs and "model_paths" not in kwargs:
+        kwargs = {("model_paths" if k == "model_path" else k):v for k,v in kwargs.items()}
     if "model_paths" not in kwargs or kwargs.get("models") is not None:
         return kwargs
 
