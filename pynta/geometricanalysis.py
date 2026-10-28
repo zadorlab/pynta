@@ -125,7 +125,13 @@ def generate_adsorbate_molecule(adslab, sites, site_adjacency, nslab, max_dist=N
     
     return fullmol,neighbor_sites,ninds
 
-def fix_bond_orders(mol,allow_failure=False,keep_binding_vdW_bonds=False,keep_vdW_surface_bonds=False):
+def fix_bond_orders(mol,allow_failure=False,keep_binding_vdW_bonds=False,keep_vdW_surface_bonds=False,surface_bond_budget=None):
+    """
+    surface_bond_budget: optional dict mapping adsorbate atoms to how many electron pairs each may take
+        from its surface bond before any adsorbate-adsorbate bond (see generate_adsorbate_2D's
+        surface_bond_preference). None keeps the default, which always raises adsorbate-adsorbate
+        bond orders first.
+    """
     atom_order = ["C","Si","N","P","O","S","F","Cl","Br","I","Li","H"]#["H","Li","I","Br","Cl","F","S","O","P","N","Si","C"]#["C","Si","N","P","O","S","F","Cl","Br","I","Li","H"]
     finished = False
     cleanup_surface_bonds = not (keep_vdW_surface_bonds or keep_binding_vdW_bonds)
@@ -149,7 +155,8 @@ def fix_bond_orders(mol,allow_failure=False,keep_binding_vdW_bonds=False,keep_vd
             for target in atom_order:
                 for a in atoms_to_fix:
                     if a.symbol == target:
-                        boo = fix_atom(mol,a,allow_failure=allow_failure,cleanup_surface_bonds=cleanup_surface_bonds)
+                        boo = fix_atom(mol,a,allow_failure=allow_failure,cleanup_surface_bonds=cleanup_surface_bonds,
+                                       surface_bond_budget=surface_bond_budget)
                         if boo:
                             atoms_modified = True
                             a_to_remove = a
@@ -206,13 +213,15 @@ def get_octet_deviation(atom):
         return 8 - (atom.lone_pairs*2 + 2*sum(x.order for x in atom.bonds.values() if x.order >= 0.5))
     
 
-def choose_bond_to_fix(symbols,octets,orders,bonded_to_surface):
+def choose_bond_to_fix(symbols,octets,orders,bonded_to_surface,prefer_surface=False):
     atom_order = [["X"],["C","Si"],["N","P"],["O","S"]]
     priority = []
     for i in range(len(symbols)):
         sym = symbols[i]
         if (sym != "X" and octets[i] <= 0) or orders[i] == "R":
             priority.append(0)
+        elif sym == "X" and prefer_surface:
+            priority.append(30)
         else:
             for j,atoms in enumerate(atom_order):
                 if sym in atoms:
@@ -282,7 +291,7 @@ def fix_atom_only_required(mol,atom,allow_failure=False,cleanup_surface_bonds=Tr
     
     return fixed
             
-def fix_atom(mol,atom,allow_failure=False,cleanup_surface_bonds=True):
+def fix_atom(mol,atom,allow_failure=False,cleanup_surface_bonds=True,surface_bond_budget=None):
     
     fixed = False
     delta = get_octet_deviation(atom)
@@ -296,7 +305,8 @@ def fix_atom(mol,atom,allow_failure=False,cleanup_surface_bonds=True):
         orders = [v.get_order_str() for k,v in atom.bonds.items()]
         bonded_to_surface = [a.is_bonded_to_surface() for a in atoms]
         while delta > 0:
-            ind,val = choose_bond_to_fix(symbols,octets,orders,bonded_to_surface)
+            prefer_surface = bool(surface_bond_budget) and surface_bond_budget.get(atom,0) > 0
+            ind,val = choose_bond_to_fix(symbols,octets,orders,bonded_to_surface,prefer_surface=prefer_surface)
             fixed = True
             if val == 0:
                 if allow_failure:
@@ -306,6 +316,8 @@ def fix_atom(mol,atom,allow_failure=False,cleanup_surface_bonds=True):
                         "fix_atom could not fix bond orders for atom index "
                         f"{mol.atoms.index(atom)} ({atom.symbol})\n{mol.to_adjacency_list()}"
                     )
+            if prefer_surface and symbols[ind] == "X":
+                surface_bond_budget[atom] -= 1
             bd = atom.bonds[atoms[ind]]
             bd.increment_order()
             delta -= 2
@@ -325,8 +337,28 @@ def fix_atom(mol,atom,allow_failure=False,cleanup_surface_bonds=True):
     
     return fixed
 
+def _surface_bond_budget(admol, atoms, nslab, nsites, surface_bond_preference, surface_bond_cutoff):
+    """Adsorbate atoms of admol (sites first, then atoms[nslab:] in order) that sit on a site and within
+    surface_bond_cutoff (Angstrom) of a slab atom, each allowed surface_bond_preference surface electron pairs."""
+    budget = dict()
+    slab_inds = list(range(nslab))
+    for i in range(nslab, len(atoms)):
+        a = admol.atoms[nsites + i - nslab]
+        if not any(x.is_surface_site() for x in a.bonds.keys()):
+            continue
+        if np.min(atoms.get_distances(i, slab_inds, mic=True)) <= surface_bond_cutoff:
+            budget[a] = surface_bond_preference
+    return budget
+
 def generate_adsorbate_2D(atoms, sites, site_adjacency, nslab, max_dist=3.0, cut_off_num=None, allowed_structure_site_structures=None,
-                          keep_binding_vdW_bonds=False, keep_vdW_surface_bonds=False):
+                          keep_binding_vdW_bonds=False, keep_vdW_surface_bonds=False, surface_bond_preference=None, surface_bond_cutoff=2.3):
+    """
+    surface_bond_preference: None (default) completes octets with adsorbate-adsorbate bonds first, so two
+        neighboring surface-bound atoms (e.g. di-sigma C2H4, C2H2) come out as a gas-phase double/triple bond
+        with the surface bonds dropped. An integer n instead lets each adsorbate atom within surface_bond_cutoff
+        (Angstrom) of a slab atom take up to n electron pairs from its surface bond first. See
+        generate_adsorbate_2D_for_target, which tries these only to match an expected structure.
+    """
     admol,neighbor_sites,ninds = generate_adsorbate_molecule(atoms, sites, site_adjacency, nslab, max_dist=max_dist)
 
     if cut_off_num:
@@ -339,7 +371,10 @@ def generate_adsorbate_2D(atoms, sites, site_adjacency, nslab, max_dist=3.0, cut
         for b in bds_to_remove:
             admol.remove_bond(b)
     
-    fix_bond_orders(admol,keep_binding_vdW_bonds=keep_binding_vdW_bonds,keep_vdW_surface_bonds=keep_vdW_surface_bonds)
+    budget = (_surface_bond_budget(admol, atoms, nslab, len(neighbor_sites), surface_bond_preference, surface_bond_cutoff)
+              if surface_bond_preference else None)
+    fix_bond_orders(admol,keep_binding_vdW_bonds=keep_binding_vdW_bonds,keep_vdW_surface_bonds=keep_vdW_surface_bonds,
+                    surface_bond_budget=budget)
     
     if allowed_structure_site_structures: #we are going to analyze the initial occupational analysis and update it based on expectations
         allowed_site_dict = dict()
@@ -383,7 +418,10 @@ def generate_adsorbate_2D(atoms, sites, site_adjacency, nslab, max_dist=3.0, cut
             for b in bds_to_remove:
                 admol.remove_bond(b)
             
-        fix_bond_orders(admol,keep_binding_vdW_bonds=keep_binding_vdW_bonds,keep_vdW_surface_bonds=keep_vdW_surface_bonds)
+        budget = (_surface_bond_budget(admol, atoms, nslab, len(neighbor_sites), surface_bond_preference, surface_bond_cutoff)
+                  if surface_bond_preference else None)
+        fix_bond_orders(admol,keep_binding_vdW_bonds=keep_binding_vdW_bonds,keep_vdW_surface_bonds=keep_vdW_surface_bonds,
+                        surface_bond_budget=budget)
     
     admol.update_multiplicity()
     admol.update_atomtypes()
@@ -391,6 +429,46 @@ def generate_adsorbate_2D(atoms, sites, site_adjacency, nslab, max_dist=3.0, cut
     admol.identify_ring_membership()
     
     return admol,neighbor_sites,ninds
+
+def generate_adsorbate_2D_for_target(atoms, target, sites, site_adjacency, nslab, max_dist=3.0, matches=None, **kwargs):
+    """
+    generate_adsorbate_2D, retried with surface_bond_preference 1 and then 2 when the default electron
+    assignment doesn't give target. The default always prefers adsorbate-adsorbate bonds, so a multidentate
+    adsorbate whose bound atoms are neighbors ([Pt][CH2][CH2][Pt], [Pt]=[CH][CH]=[Pt], ...) is read as the
+    gas molecule even when every bound atom is ~2.0-2.2 A from the metal. The retries only change which
+    bonds get the electrons; site occupation still comes from the geometry, and the surface_bond_cutoff
+    distance check keeps atoms that have lifted off the surface from being given surface bonds.
+    target may also be a list of Molecules (e.g. a reaction's reactants and products); the retries run only if
+    some fragment of a target is multidentate. matches(admol) -> bool decides the match; by default the single
+    adsorbed structure must be isomorphic to target (save_order=True), as in postprocessing.get_species.
+    Returns (admol, neighbor_sites, ninds) of the first match, else of the default attempt; raises the
+    default attempt's exception if no attempt converts.
+    """
+    targets = target if isinstance(target, (list, tuple)) else [target]
+    multidentate = any(len(frag.get_surface_sites()) >= 2 for t in targets for frag in t.split())
+    if matches is None:
+        def matches(admol):
+            split_structs = split_adsorbed_structures(admol)
+            return len(split_structs) == 1 and split_structs[0].is_isomorphic(target, save_order=True)
+    first = None
+    first_exc = None
+    for preference in (None, 1, 2):
+        try:
+            out = generate_adsorbate_2D(atoms, sites, site_adjacency, nslab, max_dist=max_dist,
+                                        surface_bond_preference=preference, **kwargs)
+        except (SiteOccupationException,TooManyElectronsException,FailedFixBondsException,ValueError,KeyError) as e:
+            if preference is None:
+                first_exc = e
+            continue
+        if preference is None:
+            first = out
+        if matches(out[0]):
+            return out
+        if preference is None and not multidentate:
+            return out  # nothing multidentate to recover
+    if first is None:
+        raise first_exc
+    return first
 
 def generate_TS_2D(atoms, info_path,  metal, facet, sites, site_adjacency, nslab, imag_freq_path=None,
                      max_dist=3.0, cut_off_num=None, allowed_structure_site_structures=None,
@@ -1887,9 +1965,42 @@ def validate_TS_ircs(irc_path1,irc_path2,reactants,products,sites,site_adjacency
     Returns:
         overall assessment of TS validity (bool), if at least one IRC endpoint matches reactants/products (bool), if both IRC endpoints are the same (bool), if reactants and products are the same (bool), if the IRC was short (bool)
     """
+    # An endpoint with a multidentate reactant/product is otherwise read with its surface bonds dropped
+    # (see generate_adsorbate_2D_for_target); accept the surface-preferring reading if it gives either side.
+    target_fragment_sets = []
+    for mol in [reactants,products]:
+        m = mol.copy(deep=True)
+        m.clear_labeled_atoms()
+        frags = [frag for frag in m.split() if not all(a.is_surface_site() for a in frag.atoms)] # vacant sites aren't split out of endpoints
+        for frag in frags:
+            frag.update_multiplicity()
+            frag.update_atomtypes()
+            frag.update_connectivity_values()
+            frag.identify_ring_membership()
+        target_fragment_sets.append(frags)
+
+    def endpoint_matches(admol):
+        structs = split_adsorbed_structures(admol,clear_site_info=True,adsorption_info=False,atoms_to_skip=None,
+                              atom_mapping=False,split_sites_with_multiple_adsorbates=True)
+        for frags in target_fragment_sets:
+            if len(structs) != len(frags):
+                continue
+            used = set()
+            for st in structs:
+                for j,frag in enumerate(frags):
+                    if j not in used and st.is_isomorphic(frag,save_order=True,strict=False):
+                        used.add(j)
+                        break
+                else:
+                    break
+            else:
+                return True
+        return False
+
     tr1 = Trajectory(irc_path1)
     try:
-        admol1,neighbor_sites1,ninds1 = generate_adsorbate_2D(tr1[-1], sites, site_adjacency, nslab, max_dist=np.inf, cut_off_num=None, allowed_structure_site_structures=allowed_structure_site_structures,
+        admol1,neighbor_sites1,ninds1 = generate_adsorbate_2D_for_target(tr1[-1], [reactants,products], sites, site_adjacency, nslab, max_dist=np.inf, matches=endpoint_matches,
+                            cut_off_num=None, allowed_structure_site_structures=allowed_structure_site_structures,
                             keep_binding_vdW_bonds=True, keep_vdW_surface_bonds=vdW_surface_bonds)
     except (SiteOccupationException,FailedFixBondsException,TooManyElectronsException, ValueError):
         return None,None,None,None,None,None,None,None
@@ -1941,7 +2052,8 @@ def validate_TS_ircs(irc_path1,irc_path2,reactants,products,sites,site_adjacency
     
     tr2 = Trajectory(irc_path2)
     try:
-        admol2,neighbor_sites2,ninds2 = generate_adsorbate_2D(tr2[-1], sites, site_adjacency, nslab, max_dist=np.inf, cut_off_num=None, allowed_structure_site_structures=allowed_structure_site_structures,
+        admol2,neighbor_sites2,ninds2 = generate_adsorbate_2D_for_target(tr2[-1], [reactants,products], sites, site_adjacency, nslab, max_dist=np.inf, matches=endpoint_matches,
+                            cut_off_num=None, allowed_structure_site_structures=allowed_structure_site_structures,
                             keep_binding_vdW_bonds=True, keep_vdW_surface_bonds=vdW_surface_bonds)
     except (SiteOccupationException,FailedFixBondsException,TooManyElectronsException, ValueError):
         return False,None,None,None,None,None,None,None

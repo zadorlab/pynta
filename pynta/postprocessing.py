@@ -1306,7 +1306,7 @@ def get_species(path,adsorbates_path,metal,facet,slab,sites,site_adjacency,nslab
             if not gas_phase:
                 vibdata = get_vibdata(dopt,dvib,nslab)
                 try: 
-                    admol,neighbor_sites,ninds = generate_adsorbate_2D(atoms, sites, site_adjacency, nslab, max_dist=np.inf, 
+                    admol,neighbor_sites,ninds = generate_adsorbate_2D_for_target(atoms, mol, sites, site_adjacency, nslab, max_dist=np.inf, 
                           keep_binding_vdW_bonds=keep_binding_vdW_bonds, keep_vdW_surface_bonds=keep_vdW_surface_bonds)
                     split_structs = split_adsorbed_structures(admol)
                     if len(split_structs) != 1 or not split_structs[0].is_isomorphic(mol,save_order=True):
